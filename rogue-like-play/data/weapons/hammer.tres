@@ -4,4 +4,4 @@
 script = ExtResource("1")
 display_name = "ハンマー"
 kind = 2
-knockback = true
+knockback_distance = 2

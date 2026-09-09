@@ -76,11 +76,11 @@ func run_tests() -> void:
 	var run_instance := run_scene.instantiate()
 	root.add_child(run_instance)
 	preload("res://tests/run_fixture.gd").arrange(run_instance)
-	check(run_instance.turns.enemies.size() == 3, "Run spawns three enemies")
+	check(run_instance.turns.enemies.size() == 2, "Run spawns two enemies")
 	var before: Vector2i = run_instance.turns.enemies[0].cell
 	run_instance.turns.submit("move", Vector2i.DOWN)
 	check(run_instance.turns.enemies[0].cell != before, "Enemy approaches on a player move")
-	check(run_instance.dungeon.grid.occupants.size() == 4, "Actors remain distinct")
+	check(run_instance.dungeon.grid.occupants.size() == 3, "Actors remain distinct")
 	run_instance.free()
 	run_instance = run_scene.instantiate()
 	root.add_child(run_instance)

@@ -114,9 +114,12 @@ func test_detection() -> void:
 	relocate(grid, enemy, Vector2i(4, 4))
 	relocate(grid, player, Vector2i(4, 1))
 	enemy.visible = false
+	check(enemy.take_turn(grid, player) == 0 and player.hp == 24 and enemy.shot_direction == Vector2i.UP, "Turret warns before its first shot")
 	check(enemy.take_turn(grid, player) == 3 and player.hp == 21, "Turret fires independently of display visibility")
+	check(enemy.take_turn(grid, player) == 0 and player.hp == 21, "Turret must warn again after firing")
 	check(enemy.cell == Vector2i(4, 4), "Turret stays fixed")
 	relocate(grid, player, Vector2i(1, 1))
+	check(enemy.take_turn(grid, player) == 0, "Changing firing direction requires a fresh warning")
 	check(enemy.take_turn(grid, player) == 3, "Turret can fire diagonally")
 	relocate(grid, player, Vector2i(1, 2))
 	check(enemy.take_turn(grid, player) == 0, "Turret cannot fire off the eight axes")
@@ -141,6 +144,55 @@ func test_detection() -> void:
 	check(enemy.take_turn(grid, player) == 0, "Turret cannot shoot through diagonal corner")
 	player.free()
 	enemy.free()
+
+
+func test_turret_counterplay() -> void:
+	var run := RUN.instantiate()
+	run.dungeon_settings = DungeonSettings.new()
+	run.dungeon_settings.enemy_count = 0
+	run.dungeon_settings.item_count = 0
+	run.generation_seed = 47
+	root.add_child(run)
+	var grid: GridState = run.dungeon.grid
+	grid.walls.clear()
+	grid.pillars.clear()
+	grid.occupants.clear()
+	run.dungeon.has_stairs = false
+	var player: Node2D = run.turns.player
+	grid.place(player, Vector2i(4, 1))
+	var enemy := ENEMY.instantiate()
+	enemy.stats = TURRET
+	run.dungeon.get_node("Actors").add_child(enemy)
+	grid.place(enemy, Vector2i(4, 4))
+	run.turns.enemies.append(enemy)
+	run.turns.submit("attack", Vector2i.UP)
+	check(player.hp == 24 and enemy.shot_direction == Vector2i.UP, "First world action produces a warning, not damage")
+	run._on_action("switch", Vector2i.UP)
+	check(player.hp == 24 and run.turns.turn_count == 1 and enemy.shot_direction == Vector2i.UP, "Free weapon switch does not advance a pending shot")
+	run.turns.submit("move", Vector2i.RIGHT)
+	check(player.hp == 24 and enemy.shot_direction == Vector2i.ZERO, "One sideways movement dodges and cancels the shot")
+	run.turns.submit("move", Vector2i.LEFT)
+	check(player.hp == 24 and enemy.shot_direction == Vector2i.UP, "Returning to the ray requires a new warning")
+	run.turns.submit("move", Vector2i.DOWN)
+	check(player.hp == 21 and enemy.shot_direction == Vector2i.ZERO, "Moving closer along the warned ray does not dodge")
+	run.turns.submit("attack", Vector2i.UP)
+	check(player.hp == 21 and enemy.shot_direction == Vector2i.UP, "Shot is followed by a full warning turn")
+	grid.walls[Vector2i(4, 3)] = true
+	check(enemy.take_turn(grid, player) == 0 and enemy.shot_direction == Vector2i.ZERO, "Cover appearing after warning cancels shot")
+	grid.walls.clear()
+	check(enemy.take_turn(grid, player) == 0, "Removing cover requires a new warning")
+	var blocker := ENEMY.instantiate()
+	run.dungeon.get_node("Actors").add_child(blocker)
+	grid.place(blocker, Vector2i(4, 3))
+	check(enemy.take_turn(grid, player) == 0 and enemy.shot_direction == Vector2i.ZERO and blocker.hp == 8, "Actor entering warned ray cancels shot without friendly fire")
+	grid.remove_actor(blocker)
+	blocker.free()
+	enemy.take_turn(grid, player)
+	relocate(grid, enemy, Vector2i(4, 5))
+	check(enemy.take_turn(grid, player) == 0 and enemy.shot_origin == enemy.cell, "Displaced turret must warn from its new position")
+	relocate(grid, player, Vector2i(20, 20))
+	check(enemy.take_turn(grid, player) == 0 and enemy.shot_direction == Vector2i.ZERO, "Leaving range clears pending shot")
+	run.free()
 
 
 func test_scene_visibility() -> void:
@@ -194,12 +246,16 @@ func test_scene_visibility() -> void:
 	run._refresh()
 	check(run.dungeon.fog.visible.has(run.turns.player.cell), "New floor reveals starting view")
 	run.free()
-	# Default population includes all three behavior resources.
+	# Two enemies per floor rotate through all three behavior resources.
 	run = RUN.instantiate()
 	run.generation_seed = 47
 	root.add_child(run)
-	for index in 3:
-		check(run.turns.enemies[index].stats.detection == index, "Three enemy types populated")
+	for floor_value in range(1, 11):
+		run.floor_number = floor_value
+		run._load_floor()
+		check(run.turns.enemies.size() == (3 if floor_value == 10 else 2), "Two regular enemies per floor plus final boss")
+		for index in 2:
+			check(run.turns.enemies[index].stats.detection == (floor_value - 1 + index) % 3, "Floor composition rotates through three enemy types")
 	run.floor_number = 3
 	run._load_floor()
 	check(not run.dungeon.grid.pillars.is_empty(), "OpenArea generates pillars")
@@ -213,6 +269,7 @@ func test_scene_visibility() -> void:
 func run_tests() -> void:
 	test_los_and_fog()
 	test_detection()
+	test_turret_counterplay()
 	test_scene_visibility()
 	print("Exploration tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)

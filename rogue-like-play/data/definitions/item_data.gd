@@ -28,7 +28,14 @@ static func from_weapon(value: WeaponData) -> ItemData:
 
 func description() -> String:
 	if kind == Kind.WEAPON:
-		return "武器：%s / 基本射程 %d" % [display_name, weapon.reach]
+		var traits: Array[String] = ["基本射程 %d" % weapon.reach, "ダメージ補正 %+d" % weapon.damage_bonus]
+		if weapon.sweeps_sides:
+			traits.append("前方3方向")
+		if weapon.knockback_distance > 0:
+			traits.append("ノックバック %dマス" % weapon.knockback_distance)
+		if weapon.pierces:
+			traits.append("貫通")
+		return "武器：%s / %s" % [display_name, " / ".join(traits)]
 	if kind == Kind.CONSUMABLE:
 		return "HPを%d回復（最大HPまで）" % heal_amount
 	var effects: Array[String] = []

@@ -4,4 +4,4 @@
 script = ExtResource("1")
 width = 40
 height = 40
-enemy_count = 3
+enemy_count = 2

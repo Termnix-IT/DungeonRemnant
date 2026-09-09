@@ -37,7 +37,7 @@ func run_tests() -> void:
 		grid.place(boss, Vector2i(4, 3))
 		var bystander: Node2D = run.turns.enemies[0]
 		grid.place(bystander, Vector2i(3, 4))
-		for index in range(1, 3):
+		for index in range(1, run.turns.enemies.size() - 1):
 			grid.place(run.turns.enemies[index], Vector2i(20, 20 + index))
 		boss.hp = 1
 		run.turns.player.hp = 1

@@ -2,6 +2,7 @@ extends SceneTree
 
 const PLAYER := preload("res://actors/player/player.tscn")
 const ENEMY := preload("res://actors/enemy/enemy.tscn")
+const SWORD := preload("res://data/weapons/sword.tres")
 const SPEAR := preload("res://data/weapons/spear.tres")
 const HAMMER := preload("res://data/weapons/hammer.tres")
 var checks := 0
@@ -49,6 +50,7 @@ func run_tests() -> void:
 	grid.place(enemy, Vector2i(3, 2))
 	grid.place(second, Vector2i(4, 2))
 	enemy.hp = 8
+	second.hp = 8
 	check(CombatRules.attack_cells(grid, player.cell, Vector2i.RIGHT, SPEAR).size() == 1, "Spear stops at first enemy")
 	CombatRules.attack(grid, player, Vector2i.RIGHT, SPEAR)
 	check(second.hp == 8, "Spear does not pierce")
@@ -62,23 +64,35 @@ func run_tests() -> void:
 	check(CombatRules.attack_cells(grid, player.cell, Vector2i(1, 1), SPEAR).size() == 1, "Second diagonal corner blocks spear")
 	grid.walls.clear()
 	grid.remove_actor(second)
+	grid.remove_actor(enemy)
+	grid.place(enemy, Vector2i(3, 2))
+	grid.place(second, Vector2i(3, 1))
+	enemy.hp = 8
+	second.hp = 8
+	check(CombatRules.attack_cells(grid, player.cell, Vector2i.RIGHT, SWORD) == [Vector2i(3, 2), Vector2i(3, 1), Vector2i(3, 3)], "Sword preview sweeps the three forward directions")
+	check(CombatRules.attack(grid, player, Vector2i.RIGHT, SWORD) == 8 and enemy.hp == 4 and second.hp == 4, "Sword sweep damages multiple adjacent enemies once")
+	grid.remove_actor(second)
+	grid.remove_actor(enemy)
 	grid.place(enemy, Vector2i(3, 2))
 	enemy.hp = 8
 	CombatRules.attack(grid, player, Vector2i.RIGHT, HAMMER)
-	check(enemy.cell == Vector2i(4, 2) and enemy.hp == 4, "Hammer pushes surviving enemy")
+	check(enemy.cell == Vector2i(5, 2) and enemy.hp == 4, "Hammer pushes a surviving enemy two cells")
 	check(not grid.occupants.has(Vector2i(3, 2)), "Knockback releases old cell")
 	grid.remove_actor(enemy)
 	grid.place(enemy, Vector2i(3, 2))
 	grid.place(second, Vector2i(4, 2))
 	enemy.hp = 8
+	second.hp = 8
 	CombatRules.attack(grid, player, Vector2i.RIGHT, HAMMER)
 	check(enemy.cell == Vector2i(3, 2) and enemy.hp == 4 and second.hp == 8, "Occupied push has no bonus damage")
 	grid.remove_actor(second)
-	grid.walls[Vector2i(4, 2)] = true
+	grid.walls[Vector2i(5, 2)] = true
 	enemy.hp = 8
 	CombatRules.attack(grid, player, Vector2i.RIGHT, HAMMER)
-	check(enemy.cell == Vector2i(3, 2) and enemy.hp == 4, "Wall blocks knockback")
+	check(enemy.cell == Vector2i(4, 2) and enemy.hp == 4, "Hammer uses the available part of its knockback distance")
 	grid.walls.clear()
+	grid.remove_actor(enemy)
+	grid.place(enemy, Vector2i(3, 2))
 	grid.size = Vector2i(4, 4)
 	enemy.hp = 8
 	CombatRules.attack(grid, player, Vector2i.RIGHT, HAMMER)

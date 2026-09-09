@@ -98,7 +98,7 @@ func _load_floor() -> void:
 	dungeon.grid.place(turns.player, dungeon.start_cell)
 	for cell: Vector2i in dungeon.enemy_cells:
 		var enemy := ENEMY_SCENE.instantiate()
-		enemy.stats = ENEMY_TYPES[turns.enemies.size() % ENEMY_TYPES.size()]
+		enemy.stats = ENEMY_TYPES[(floor_number - 1 + turns.enemies.size()) % ENEMY_TYPES.size()]
 		dungeon.get_node("Actors").add_child(enemy)
 		dungeon.grid.place(enemy, cell)
 		turns.enemies.append(enemy)

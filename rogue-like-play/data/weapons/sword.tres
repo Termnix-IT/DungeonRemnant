@@ -3,3 +3,4 @@
 [resource]
 script = ExtResource("1")
 display_name = "剣"
+sweeps_sides = true

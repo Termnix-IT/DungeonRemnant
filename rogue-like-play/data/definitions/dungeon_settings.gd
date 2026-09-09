@@ -3,7 +3,7 @@ extends Resource
 
 @export_range(20, 60) var width: int = 40
 @export_range(20, 60) var height: int = 40
-@export_range(0, 20) var enemy_count: int = 3
+@export_range(0, 20) var enemy_count: int = 2
 @export_range(0, 20) var item_count: int = 6
 @export_range(1, 12) var enemy_start_distance: int = 6
 @export_range(4, 16) var room_count: int = 9

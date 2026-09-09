@@ -86,7 +86,7 @@ func test_generation() -> void:
 		check(data.enemies.size() <= 20, "Crowded settings never overpopulate")
 
 
-func new_run(enemy_count: int = 3) -> Node2D:
+func new_run(enemy_count: int = 2) -> Node2D:
 	var run := RUN.instantiate()
 	run.generation_seed = 47
 	run.dungeon_settings = DungeonSettings.new()
@@ -159,8 +159,8 @@ func test_stair_combat() -> void:
 	var fresh := true
 	for enemy: Node2D in run.turns.enemies:
 		fresh = fresh and enemy.hp == enemy.stats.max_hp and enemy.cell in run.dungeon.enemy_cells
-	check(fresh and run.turns.enemies.size() == 3, "New enemies have not acted")
-	check(run.dungeon.grid.occupants.size() == 4 and run.dungeon.get_node("Actors").get_child_count() == 4, "No stale occupancy or actors")
+	check(fresh and run.turns.enemies.size() == 2, "New enemies have not acted")
+	check(run.dungeon.grid.occupants.size() == 3 and run.dungeon.get_node("Actors").get_child_count() == 3, "No stale occupancy or actors")
 	run.free()
 	run = new_run()
 	arrange_stair_fight(run)

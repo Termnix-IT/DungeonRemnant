@@ -85,12 +85,13 @@ func test_effects() -> void:
 	var weapons: Array[WeaponData] = [preload("res://data/weapons/sword.tres"), preload("res://data/weapons/spear.tres"), preload("res://data/weapons/hammer.tres")]
 	var effects := [AbilityData.Effect.SWORD_DAMAGE, AbilityData.Effect.SPEAR_DAMAGE, AbilityData.Effect.HAMMER_DAMAGE]
 	for index in 3:
+		var base_bonus: int = weapons[index].damage_bonus
 		player.gain_ability(find_ability(player, effects[index]))
 		player.weapon = weapons[index]
 		var effective: WeaponData = player.effective_weapon()
-		check(effective.damage_bonus == 1 and weapons[index].damage_bonus == 0, "Weapon bonus without definition mutation")
+		check(effective.damage_bonus == base_bonus + 1 and weapons[index].damage_bonus == base_bonus, "Weapon bonus without definition mutation")
 		enemy.hp = 8
-		check(CombatRules.attack(grid, player, Vector2i.RIGHT, effective) == 6, "Weapon bonus changes actual damage")
+		check(CombatRules.attack(grid, player, Vector2i.RIGHT, effective) == 6 + base_bonus, "Weapon bonus changes actual damage")
 	player.weapon = weapons[1]
 	player.gain_ability(find_ability(player, AbilityData.Effect.SPEAR_RANGE))
 	player.gain_ability(find_ability(player, AbilityData.Effect.SPEAR_RANGE))
@@ -208,6 +209,7 @@ func test_piercing_rewards_and_keyboard() -> void:
 	var second: Node2D = run.turns.enemies[1]
 	run.dungeon.grid.remove_actor(second)
 	run.dungeon.grid.place(second, Vector2i(4, 2))
+	run.turns.enemies[0].hp = 4
 	second.hp = 4
 	run.turns.submit("attack", Vector2i.RIGHT)
 	check(run.turns.enemies[0].hp == 0 and second.hp == 0, "Piercing kills both enemies")

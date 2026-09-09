@@ -1,8 +1,22 @@
 class_name CombatRules
 extends RefCounted
 
+const DIRECTIONS: Array[Vector2i] = [
+	Vector2i.UP, Vector2i(1, -1), Vector2i.RIGHT, Vector2i(1, 1),
+	Vector2i.DOWN, Vector2i(-1, 1), Vector2i.LEFT, Vector2i(-1, -1),
+]
+
 
 static func attack_cells(grid: GridState, origin: Vector2i, direction: Vector2i, weapon: WeaponData = null) -> Array[Vector2i]:
+	if weapon != null and weapon.sweeps_sides:
+		var cells: Array[Vector2i] = []
+		var direction_index := DIRECTIONS.find(direction)
+		if direction_index < 0:
+			return cells
+		for offset in [0, -1, 1]:
+			var sweep_direction: Vector2i = DIRECTIONS[(direction_index + offset + DIRECTIONS.size()) % DIRECTIONS.size()]
+			cells.append_array(ray_cells(grid, origin, sweep_direction, weapon.reach, weapon.pierces))
+		return cells
 	return ray_cells(grid, origin, direction, weapon.reach if weapon != null else 1, weapon.pierces if weapon != null else false)
 
 
@@ -34,8 +48,10 @@ static func attack(grid: GridState, attacker: Node2D, direction: Vector2i, weapo
 	var total_damage := 0
 	for target in targets:
 		total_damage += damage_target(grid, attacker, target, bonus)
-		if target.hp > 0 and weapon != null and weapon.knockback:
-			grid.move_actor(target, target.cell + direction)
+		if target.hp > 0 and weapon != null:
+			for step in weapon.knockback_distance:
+				if not grid.move_actor(target, target.cell + direction):
+					break
 	return total_damage
 
 
