@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="EnemyStats" load_steps=2 format=3]
+[ext_resource type="Script" path="res://data/definitions/enemy_stats.gd" id="1"]
+[resource]
+script = ExtResource("1")
+max_hp = 8
+attack = 3
+detection = 1
+detection_range = 4

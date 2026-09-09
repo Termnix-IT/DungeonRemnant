@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="AbilityData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://data/definitions/ability_data.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"spear_damage"
+display_name = "槍威力強化"
+description = "槍のダメージが{amount}増加する"
+effect = 4
+max_level = 5

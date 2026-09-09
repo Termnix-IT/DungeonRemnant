@@ -1,0 +1,35 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="Script" path="res://ui/hud.gd" id="1"]
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1")
+[node name="TopBackground" type="ColorRect" parent="."]
+offset_right = 1000.0
+offset_bottom = 78.0
+mouse_filter = 2
+color = Color(0.05, 0.08, 0.11, 1)
+[node name="BottomBackground" type="ColorRect" parent="."]
+offset_top = 576.0
+offset_right = 1000.0
+offset_bottom = 720.0
+mouse_filter = 2
+color = Color(0.05, 0.08, 0.11, 1)
+[node name="Status" type="Label" parent="."]
+offset_left = 48.0
+offset_top = 12.0
+theme_override_font_sizes/font_size = 22
+text = "PHASE 9 / MVP"
+[node name="Growth" type="Label" parent="."]
+offset_left = 48.0
+offset_top = 46.0
+theme_override_font_sizes/font_size = 16
+[node name="Message" type="Label" parent="."]
+offset_left = 48.0
+offset_top = 584.0
+offset_right = 952.0
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 18
+[node name="Help" type="Label" parent="."]
+offset_left = 48.0
+offset_top = 625.0
+theme_override_font_sizes/font_size = 16
+text = "移動: WASD / 矢印 　斜め: Q E Z C / テンキー1–9\n攻撃: Space → 方向 → Space / キャンセル: Esc　所持品: I　武器切替: Tab\n床アイテムは移動で拾得。金色の階段で次階へ。中断確認: R"

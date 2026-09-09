@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EnemyStats" load_steps=2 format=3]
+[ext_resource type="Script" path="res://data/definitions/enemy_stats.gd" id="1"]
+[resource]
+script = ExtResource("1")
+display_name = "深層の守護者"
+is_boss = true
+max_hp = 48
+attack = 5
+defense = 1
+detection_range = 8
+exp_reward = 30
+gold_reward = 60

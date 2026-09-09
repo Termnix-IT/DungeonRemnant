@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="AbilityData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://data/definitions/ability_data.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"kill_heal"
+display_name = "撃破時回復"
+description = "敵1体を倒すごとにHPを{amount}回復する"
+effect = 9
+max_level = 3

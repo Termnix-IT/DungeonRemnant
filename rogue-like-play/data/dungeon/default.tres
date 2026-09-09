@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="DungeonSettings" load_steps=2 format=3]
+[ext_resource type="Script" path="res://data/definitions/dungeon_settings.gd" id="1"]
+[resource]
+script = ExtResource("1")
+width = 40
+height = 40
+enemy_count = 3

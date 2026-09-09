@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="AbilityData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://data/definitions/ability_data.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"defense"
+display_name = "防御力強化"
+description = "受けるダメージを{amount}軽減する（最低1ダメージ）"
+effect = 2
+max_level = 5

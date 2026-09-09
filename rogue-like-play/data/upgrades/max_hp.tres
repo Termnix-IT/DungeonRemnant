@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="PermanentUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://data/definitions/permanent_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+display_name = "最大HP強化"
+hp_per_level = 1
+costs = Array[int]([30, 60, 90])
