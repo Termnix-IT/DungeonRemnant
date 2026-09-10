@@ -55,6 +55,13 @@ func test_capacity_and_transactions() -> void:
 	var draft := inventory.copy()
 	draft.remove(0)
 	check(draft.entries.size() == inventory.entries.size() - 1, "Transaction copy is independent")
+	var state := RunCarryover.new()
+	state.inventory.add(POTION, 50)
+	check(state.transfer_item(state.inventory, state.storage, 0) == 50 and state.inventory.entries.is_empty(), "Whole consumable stack deposits")
+	check(state.storage.max_entries == 120 and state.storage.max_stack == 999, "Warehouse has dedicated capacity")
+	state.inventory.add(POTION, 49)
+	check(state.transfer_item(state.storage, state.inventory, 0) == 1 and state.storage.entries[0].count == 49, "Withdrawal moves only destination capacity")
+	check(state.transfer_item(state.storage, state.inventory, -1) == 0 and state.transfer_item(state.storage, state.storage, 0) == 0, "Invalid warehouse transfer does not mutate")
 
 
 func new_run() -> Node2D:

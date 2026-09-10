@@ -12,8 +12,12 @@ func settle() -> void:
 
 
 func click(button: Button) -> void:
+	await click_at(button.get_global_rect().get_center())
+
+
+func click_at(position: Vector2) -> void:
 	var event := InputEventMouseButton.new()
-	event.position = button.get_global_rect().get_center()
+	event.position = position
 	event.button_index = MOUSE_BUTTON_LEFT
 	event.pressed = true
 	Input.parse_input_event(event)
@@ -35,10 +39,35 @@ func capture() -> void:
 	var ok := root.get_texture().get_image().save_png("res://.godot/hub_initial.png") == OK
 	# Test-only funds make purchase verification repeatable; production starts at 0.
 	main.state.gold = 101
+	main.state.inventory.add(ItemCatalog.POTION, 10)
 	hub.refresh(main.state)
 	await click(hub.purchase_button)
 	ok = ok and main.state.gold == 71 and main.state.hp_upgrade_level == 1
 	ok = root.get_texture().get_image().save_png("res://.godot/hub_purchased.png") == OK and ok
+	await click(hub.warehouse_button)
+	var warehouse: WarehousePanel = hub.warehouse_panel
+	ok = ok and warehouse.visible
+	ok = root.get_texture().get_image().save_png("res://.godot/hub_warehouse.png") == OK and ok
+	var inventory_list: ItemList = warehouse.get_node("Panel/InventoryList")
+	await click_at(inventory_list.get_global_rect().position + Vector2(24, 20))
+	await click(warehouse.get_node("Panel/Deposit"))
+	ok = ok and main.state.inventory.entries.is_empty() and main.state.storage.entries[0].count == 10
+	var storage_list: ItemList = warehouse.get_node("Panel/StorageList")
+	await click_at(storage_list.get_global_rect().position + Vector2(24, 20))
+	await click(warehouse.get_node("Panel/Withdraw"))
+	ok = ok and main.state.inventory.entries[0].count == 10 and main.state.storage.entries.is_empty()
+	await click(warehouse.get_node("Panel/Close"))
+	ok = ok and not warehouse.visible
+	await click(hub.warehouse_button)
+	var escape := InputEventKey.new()
+	escape.keycode = KEY_ESCAPE
+	escape.pressed = true
+	Input.parse_input_event(escape)
+	var escape_release := escape.duplicate() as InputEventKey
+	escape_release.pressed = false
+	Input.parse_input_event(escape_release)
+	await settle()
+	ok = ok and not warehouse.visible
 	await click(hub.start_button)
 	ok = ok and main.active_run != null and not hub.visible
 	var run: Node2D = main.active_run
@@ -63,5 +92,5 @@ func capture() -> void:
 	await settle()
 	await click(main.active_run.result_panel.accept)
 	ok = ok and hub.visible and main.active_run == null and main.state.gold == 36
-	print("Hub capture, mouse purchase/start/return and keyboard R return: ", "passed" if ok else "FAILED")
+	print("Hub capture, mouse warehouse/purchase/start/return and keyboard R return: ", "passed" if ok else "FAILED")
 	quit(0 if ok else 1)

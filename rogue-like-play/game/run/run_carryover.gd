@@ -1,8 +1,12 @@
 class_name RunCarryover
 extends RefCounted
 
+const STORAGE_MAX_ENTRIES := 120
+const STORAGE_MAX_STACK := 999
+
 var gold := 0
 var inventory := Inventory.new()
+var storage := Inventory.new(STORAGE_MAX_ENTRIES, STORAGE_MAX_STACK)
 var equipment := Equipment.new()
 var hp_upgrade_level := 0
 var upgrade: PermanentUpgrade = preload("res://data/upgrades/max_hp.tres")
@@ -15,6 +19,17 @@ func purchase_upgrade() -> bool:
 	gold -= cost
 	hp_upgrade_level += 1
 	return true
+
+
+func transfer_item(source: Inventory, destination: Inventory, index: int) -> int:
+	if source == null or destination == null or source == destination or index < 0 or index >= source.entries.size():
+		return 0
+	var entry := source.entries[index]
+	var unaccepted := destination.add(entry.item, entry.count)
+	var moved := entry.count - unaccepted
+	if moved > 0:
+		source.remove(index, moved)
+	return moved
 
 
 func capture(player: Node2D, held_gold: int) -> void:

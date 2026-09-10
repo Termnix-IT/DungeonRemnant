@@ -4,6 +4,13 @@ extends RefCounted
 const MAX_ENTRIES := 40
 const MAX_STACK := 50
 var entries: Array[InventoryEntry] = []
+var max_entries: int
+var max_stack: int
+
+
+func _init(entry_limit: int = MAX_ENTRIES, stack_limit: int = MAX_STACK) -> void:
+	max_entries = entry_limit
+	max_stack = stack_limit
 
 
 func add(item: ItemData, amount: int = 1) -> int:
@@ -13,15 +20,15 @@ func add(item: ItemData, amount: int = 1) -> int:
 	if item.stackable():
 		for entry in entries:
 			if entry.item.id == item.id:
-				var accepted := mini(amount, MAX_STACK - entry.count)
+				var accepted := mini(amount, max_stack - entry.count)
 				entry.count += accepted
 				return amount - accepted
-		if entries.size() >= MAX_ENTRIES:
+		if entries.size() >= max_entries:
 			return amount
-		var accepted := mini(amount, MAX_STACK)
+		var accepted := mini(amount, max_stack)
 		entries.append(InventoryEntry.new(item, accepted))
 		return amount - accepted
-	var accepted := mini(amount, MAX_ENTRIES - entries.size())
+	var accepted := mini(amount, max_entries - entries.size())
 	for index in accepted:
 		entries.append(InventoryEntry.new(item))
 	return amount - accepted
@@ -37,7 +44,7 @@ func remove(index: int, amount: int = 1) -> bool:
 
 
 func copy() -> Inventory:
-	var result := Inventory.new()
+	var result := Inventory.new(max_entries, max_stack)
 	for entry in entries:
 		result.entries.append(InventoryEntry.new(entry.item, entry.count))
 	return result

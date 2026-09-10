@@ -31,6 +31,8 @@ func sample() -> RunCarryover:
 	state.inventory.add(ItemCatalog.POTION, 50)
 	for index in 8:
 		state.inventory.add(ItemCatalog.floor_item(index))
+	state.storage.add(ItemCatalog.POTION, 123)
+	state.storage.add(ItemCatalog.floor_item(1), 2)
 	state.equipment.slots[2] = preload("res://data/items/leather_armor.tres")
 	state.equipment.slots[3] = preload("res://data/items/vital_charm.tres")
 	state.equipment.slots[4] = preload("res://data/items/vision_charm.tres")
@@ -41,6 +43,11 @@ func test_codec() -> void:
 	var original := SaveCodec.encode(sample())
 	var roundtrip := SaveCodec.decode(JSON.parse_string(JSON.stringify(original)))
 	check(roundtrip != null and SaveCodec.encode(roundtrip) == original, "JSON round trip preserves all item IDs, counts, five slots and upgrade")
+	check(roundtrip.storage.entries[0].count == 123 and roundtrip.storage.entries.size() == 3, "JSON round trip preserves warehouse")
+	var legacy := original.duplicate(true)
+	legacy.erase("storage")
+	var migrated := SaveCodec.decode(legacy)
+	check(migrated != null and migrated.storage.entries.is_empty(), "Version 1 save without warehouse migrates to empty warehouse")
 	for invalid in [null, [], "data", 42, true, {}, {"version": 2}]:
 		check(SaveCodec.decode(invalid) == null, "Invalid top-level or version rejected")
 	for key in ["gold", "hp_upgrade_level", "version"]:
@@ -59,6 +66,18 @@ func test_codec() -> void:
 	var duplicate_stack := original.duplicate(true)
 	duplicate_stack.inventory.append(duplicate_stack.inventory[0].duplicate())
 	check(SaveCodec.decode(duplicate_stack) == null, "Duplicate stack rejected")
+	for invalid in [null, {}, "items", [{"id": "unknown", "count": 1}], [{"id": "healing_potion", "count": 1000}]]:
+		var data := original.duplicate(true)
+		data.storage = invalid
+		check(SaveCodec.decode(data) == null, "Invalid warehouse rejected")
+	var duplicate_storage_stack := original.duplicate(true)
+	duplicate_storage_stack.storage.append(duplicate_storage_stack.storage[0].duplicate())
+	check(SaveCodec.decode(duplicate_storage_stack) == null, "Duplicate warehouse stack rejected")
+	var storage_overflow := original.duplicate(true)
+	storage_overflow.storage.clear()
+	for index in 121:
+		storage_overflow.storage.append(original.storage[1].duplicate())
+	check(SaveCodec.decode(storage_overflow) == null, "Warehouse over 120 entries rejected")
 	var full := sample()
 	full.inventory = Inventory.new()
 	full.inventory.add(ItemCatalog.floor_item(0), 40)
@@ -126,12 +145,13 @@ func test_game_integration() -> void:
 	main.save_store.path = test_dir + "/game.json"
 	root.add_child(main)
 	main.state.gold = 100
+	main.state.storage.add(ItemCatalog.POTION, 75)
 	check(main.purchase_upgrade() and main.state.gold == 70, "Purchase saved")
 	main.free()
 	main = preload("res://game/main.tscn").instantiate()
 	main.save_store.path = test_dir + "/game.json"
 	root.add_child(main)
-	check(main.state.gold == 70 and main.state.hp_upgrade_level == 1, "New Main restores purchase")
+	check(main.state.gold == 70 and main.state.hp_upgrade_level == 1 and main.state.storage.entries[0].count == 75, "New Main restores purchase and warehouse")
 	main.start_run()
 	main.active_run.turns.gold = 101
 	main.active_run.turns.player.inventory.add(ItemCatalog.POTION, 10)
@@ -142,6 +162,7 @@ func test_game_integration() -> void:
 	main.save_store.path = test_dir + "/game.json"
 	root.add_child(main)
 	check(main.state.gold == 51 and main.state.inventory.entries[0].count == 5 and main.state.hp_upgrade_level == 1, "Restart after result restores once-reduced possessions")
+	check(main.state.storage.entries[0].count == 75, "Adventure loss does not affect warehouse")
 	main.start_run()
 	check(main.active_run.turns.player.hp == 25 and main.active_run.progression.level == 1, "Restart applies permanent bonus, not run growth")
 	main.active_run.turns.gold = 999
@@ -152,6 +173,9 @@ func test_game_integration() -> void:
 	check(main.state.gold == 51, "Interrupted adventure rolls back to departure state")
 	main.state.gold = 100
 	main.save_store.path = test_dir + "/missing/purchase.json"
+	var carried_before: int = main.state.inventory.entries[0].count
+	var stored_before: int = main.state.storage.entries[0].count
+	check(not main.transfer_storage(false, 0) and main.state.inventory.entries[0].count == carried_before and main.state.storage.entries[0].count == stored_before, "Failed warehouse save rolls transfer back")
 	check(not main.purchase_upgrade() and main.state.gold == 100 and main.state.hp_upgrade_level == 1, "Failed save rolls purchase back")
 	main.start_run()
 	check(main.active_run == null and main.get_node("Hub").save_label.text.contains("保存失敗"), "Failed departure save stays in Hub with error")

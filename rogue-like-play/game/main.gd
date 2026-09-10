@@ -15,6 +15,7 @@ func _ready() -> void:
 		state = save_store.load_state()
 	$Hub.start_requested.connect(start_run)
 	$Hub.purchase_requested.connect(purchase_upgrade)
+	$Hub.storage_transfer_requested.connect(transfer_storage)
 	$Hub.refresh(state)
 	_update_save_status()
 
@@ -34,12 +35,37 @@ func purchase_upgrade() -> bool:
 	return purchased
 
 
+func transfer_storage(from_storage: bool, index: int) -> bool:
+	if active_run != null or not has_node("Hub") or not $Hub.visible:
+		return false
+	var previous_inventory := state.inventory.copy()
+	var previous_storage := state.storage.copy()
+	var source := state.storage if from_storage else state.inventory
+	var destination := state.inventory if from_storage else state.storage
+	var moved := state.transfer_item(source, destination, index)
+	if moved == 0:
+		$Hub.warehouse_panel.refresh(state, "移動できません。移動先の空き容量を確認してください。")
+		return false
+	if saving_enabled and not save_store.save_state(state):
+		state.inventory = previous_inventory
+		state.storage = previous_storage
+		$Hub.warehouse_panel.refresh(state, "保存に失敗したため、アイテム移動を取り消しました。")
+		_update_save_status()
+		return false
+	var action := "取り出しました" if from_storage else "預けました"
+	$Hub.refresh(state)
+	$Hub.warehouse_panel.refresh(state, "%d個%s。" % [moved, action])
+	_update_save_status()
+	return true
+
+
 func start_run() -> void:
 	if active_run != null or not has_node("Hub") or not $Hub.visible:
 		return
 	if saving_enabled and not save_store.save_state(state):
 		_update_save_status()
 		return
+	$Hub.warehouse_panel.close()
 	$Hub.hide()
 	active_run = run_scene.instantiate()
 	active_run.name = "Run"

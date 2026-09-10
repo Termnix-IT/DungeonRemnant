@@ -2,6 +2,7 @@ extends CanvasLayer
 
 signal start_requested
 signal purchase_requested
+signal storage_transfer_requested(from_storage: bool, index: int)
 
 var gold_label: Label
 var equipment_label: Label
@@ -10,6 +11,9 @@ var feedback: Label
 var purchase_button: Button
 var start_button: Button
 var save_label: Label
+var warehouse_button: Button
+@onready var warehouse_panel: WarehousePanel = $WarehousePanel
+var _state: RunCarryover
 
 
 func _ready() -> void:
@@ -28,9 +32,14 @@ func _ready() -> void:
 	purchase_button = _button("", Vector2(530, 430), Vector2(400, 48))
 	purchase_button.pressed.connect(func(): purchase_requested.emit())
 	feedback = _label("", Vector2(530, 490), Vector2(400, 55), 18)
+	warehouse_button = _button("倉庫を開く", Vector2(64, 515), Vector2(420, 42))
+	warehouse_button.pressed.connect(func(): warehouse_panel.present(_state))
 	start_button = _button("冒険開始 — 1F / Lv1", Vector2(64, 572), Vector2(866, 54))
 	start_button.pressed.connect(func(): start_requested.emit())
 	save_label = _label("", Vector2(64, 640), Vector2(866, 65), 16)
+	warehouse_panel.transfer_requested.connect(func(from_storage: bool, index: int): storage_transfer_requested.emit(from_storage, index))
+	# GUI input follows sibling order, so keep the modal after dynamically created Hub controls.
+	move_child(warehouse_panel, get_child_count() - 1)
 
 
 func _label(text: String, position: Vector2, size: Vector2, font_size: int) -> Label:
@@ -56,6 +65,7 @@ func _button(text: String, position: Vector2, size: Vector2) -> Button:
 
 
 func refresh(state: RunCarryover, message: String = "") -> void:
+	_state = state
 	gold_label.text = "所持Gold  %d" % state.gold
 	var lines: PackedStringArray = []
 	for index in state.equipment.slots.size():
@@ -69,3 +79,4 @@ func refresh(state: RunCarryover, message: String = "") -> void:
 	purchase_button.text = "強化上限に到達" if cost < 0 else "購入：%d Gold" % cost
 	purchase_button.disabled = cost < 0 or state.gold < cost
 	feedback.text = message if not message.is_empty() else ("Goldが不足しています。" if cost >= 0 and state.gold < cost else "")
+	warehouse_panel.refresh(state)
