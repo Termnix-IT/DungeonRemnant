@@ -36,13 +36,14 @@ Godot製の2Dターン制ローグライクです。拠点で準備を整え、�
 ## 開発環境
 
 - Engine: Godot 4.6系
-- Main scene: `game/main.tscn`
+- Project root: `rogue-like-play/`
+- Main scene: `rogue-like-play/game/main.tscn`
 - Target platform: Windows 64-bit
 
-Godot 4.6系で `project.godot` を開き、`F5` でプロジェクトを実行します。
+Godot 4.6系で `rogue-like-play/project.godot` を開き、`F5` でプロジェクトを実行します。
 
 ## 公開予定
 
 将来的に、GitHub ReleasesでWindows版の公開を予定しています。
 
-詳細な仕様や検証方法は、[開発メモ.md](./%E9%96%8B%E7%99%BA%E3%83%A1%E3%83%A2.md) を参照してください。
+詳細な仕様や検証方法は、[開発メモ.md](./rogue-like-play/%E9%96%8B%E7%99%BA%E3%83%A1%E3%83%A2.md) を参照してください。
