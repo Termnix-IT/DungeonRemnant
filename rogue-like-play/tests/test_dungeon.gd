@@ -95,6 +95,25 @@ func new_run(enemy_count: int = 2) -> Node2D:
 	return run
 
 
+func test_terrain_art() -> void:
+	var run := new_run(0)
+	var terrain: TileMapLayer = run.dungeon.get_node("Terrain")
+	var atlas := terrain.tile_set.get_source(0) as TileSetAtlasSource
+	check(atlas != null and atlas.texture.get_size() == Vector2(256, 32), "Pixel terrain atlas loaded at eight 32px tiles")
+	check(atlas.get_tiles_count() == 8, "All terrain art variants registered")
+	check(run.dungeon._terrain_tile(run.dungeon.stairs_cell) == run.dungeon.STAIRS_TILE, "Stairs use dedicated gold tile")
+	var player_cell: Vector2i = run.turns.player.cell
+	var first_tile: int = run.dungeon._terrain_tile(player_cell)
+	run.dungeon.update_visibility(player_cell, run.turns.player.vision_range)
+	check(first_tile in run.dungeon.FLOOR_TILES and terrain.get_cell_atlas_coords(player_cell).x == first_tile, "Floor art variant remains stable across visibility redraw")
+	var wall_variants_valid := true
+	for cell: Vector2i in run.dungeon.grid.walls:
+		if run.dungeon._terrain_tile(cell) not in run.dungeon.WALL_TILES:
+			wall_variants_valid = false
+	check(wall_variants_valid, "Every wall maps to a registered pixel-art variant")
+	run.free()
+
+
 func test_ten_floors() -> void:
 	# Walk real generated routes with no enemies to isolate transition semantics.
 	var run := new_run(0)
@@ -173,6 +192,7 @@ func test_stair_combat() -> void:
 
 func run_tests() -> void:
 	test_generation()
+	test_terrain_art()
 	test_ten_floors()
 	test_stair_combat()
 	print("Dungeon tests: %d maps, %d checks, %d failures" % [map_count, checks, failures])

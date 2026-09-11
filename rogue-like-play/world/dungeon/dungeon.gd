@@ -1,6 +1,11 @@
 extends Node2D
 
 const TILE_SIZE := 32
+const TERRAIN_ATLAS := preload("res://art/tiles/dungeon_terrain.png")
+const FLOOR_TILES: Array[int] = [0, 4, 5]
+const WALL_TILES: Array[int] = [1, 6, 7]
+const STAIRS_TILE := 2
+const PILLAR_TILE := 3
 var grid := GridState.new()
 var start_cell := Vector2i.ZERO
 var stairs_cell := Vector2i(-1, -1)
@@ -69,11 +74,7 @@ func update_visibility(origin: Vector2i, radius: int) -> void:
 	var remembered: TileMapLayer = $ExploredTerrain
 	terrain.clear()
 	for cell: Vector2i in fog.visible:
-		var tile := 1 if grid.walls.has(cell) else 0
-		if grid.pillars.has(cell):
-			tile = 3
-		if has_stairs and cell == stairs_cell:
-			tile = 2
+		var tile := _terrain_tile(cell)
 		terrain.set_cell(cell, 0, Vector2i(tile, 0))
 		remembered.set_cell(cell, 0, Vector2i(tile, 0))
 	$Items.entries = ground_items
@@ -88,23 +89,23 @@ func sync_actors() -> void:
 
 
 func _make_tileset() -> TileSet:
-	# Placeholder tiles preserve the Phase 1 palette without external art assets.
-	var texture_image := Image.create(TILE_SIZE * 4, TILE_SIZE, false, Image.FORMAT_RGBA8)
-	texture_image.fill(Color("111a22"))
-	for index in 4:
-		var color := Color("374654") if index == 1 else Color("1b252e")
-		texture_image.fill_rect(Rect2i(index * TILE_SIZE, 0, TILE_SIZE - 1, TILE_SIZE - 1), color)
-	for step in 4:
-		texture_image.fill_rect(Rect2i(TILE_SIZE * 2 + 5 + step * 2, 6 + step * 5, 22 - step * 4, 3), Color("efbb81"))
-	texture_image.fill_rect(Rect2i(TILE_SIZE * 3 + 5, 5, 22, 22), Color("667b89"))
-	texture_image.fill_rect(Rect2i(TILE_SIZE * 3 + 8, 8, 16, 16), Color("9aa9b0"))
-	texture_image.fill_rect(Rect2i(TILE_SIZE * 3 + 8, 21, 16, 3), Color("4a5b66"))
 	var atlas := TileSetAtlasSource.new()
-	atlas.texture = ImageTexture.create_from_image(texture_image)
+	atlas.texture = TERRAIN_ATLAS
 	atlas.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
-	for index in 4:
+	for index in 8:
 		atlas.create_tile(Vector2i(index, 0))
 	var result := TileSet.new()
 	result.tile_size = Vector2i(TILE_SIZE, TILE_SIZE)
 	result.add_source(atlas, 0)
 	return result
+
+
+func _terrain_tile(cell: Vector2i) -> int:
+	if has_stairs and cell == stairs_cell:
+		return STAIRS_TILE
+	if grid.pillars.has(cell):
+		return PILLAR_TILE
+	var variation := absi(cell.x * 73856093 ^ cell.y * 19349663)
+	if grid.walls.has(cell):
+		return WALL_TILES[variation % 10] if variation % 10 < WALL_TILES.size() else WALL_TILES[0]
+	return FLOOR_TILES[variation % 12] if variation % 12 < FLOOR_TILES.size() else FLOOR_TILES[0]
