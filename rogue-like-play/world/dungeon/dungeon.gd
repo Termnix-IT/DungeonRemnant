@@ -1,16 +1,25 @@
 extends Node2D
 
 const TILE_SIZE := 32
-const TERRAIN_ATLAS := preload("res://art/tiles/dungeon_terrain.png")
-const FLOOR_TILES: Array[int] = [0, 4, 5]
-const WALL_TILES: Array[int] = [1, 6, 7]
-const STAIRS_TILE := 2
-const PILLAR_TILE := 3
+const TERRAIN_ATLASES: Array[Texture2D] = [
+	preload("res://art/tiles/dungeon_terrain.png"),
+	preload("res://art/tiles/dungeon_terrain_moss.png"),
+	preload("res://art/tiles/dungeon_terrain_ember.png"),
+	preload("res://art/tiles/dungeon_terrain_sanctum.png"),
+]
+const TERRAIN_THEME_NAMES: Array[String] = ["Slate Ruins", "Moss Caverns", "Ember Depths", "Obsidian Sanctum"]
+const FLOOR_TILES: Array[int] = [0, 3, 4]
+const STAIRS_TILE := 1
+const PILLAR_TILE := 2
+const WALL_TILE_START := 5
+const WALL_TILE_COUNT := 16
 var grid := GridState.new()
 var start_cell := Vector2i.ZERO
 var stairs_cell := Vector2i(-1, -1)
 var enemy_cells: Array[Vector2i] = []
 var layout_name := ""
+var terrain_theme_index := 0
+var terrain_theme_name := ""
 var has_stairs := true
 var fog := FogOfWar.new()
 var ground_items: Dictionary = {}
@@ -23,13 +32,14 @@ func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenera
 	stairs_cell = generated.stairs
 	enemy_cells = generated.enemies
 	layout_name = generated.layout
+	terrain_theme_index = _terrain_theme_index(floor_number)
+	terrain_theme_name = TERRAIN_THEME_NAMES[terrain_theme_index]
 	has_stairs = not final_floor
 	fog.reset()
 	ground_items.clear()
 	var terrain: TileMapLayer = $Terrain
 	var remembered: TileMapLayer = $ExploredTerrain
-	if terrain.tile_set == null:
-		terrain.tile_set = _make_tileset()
+	terrain.tile_set = _make_tileset(TERRAIN_ATLASES[terrain_theme_index])
 	# Keep the existing grid, actor, and attack-preview coordinate convention.
 	terrain.position = Vector2.ONE * TILE_SIZE / 2.0 - terrain.map_to_local(Vector2i.ZERO)
 	remembered.tile_set = terrain.tile_set
@@ -88,11 +98,11 @@ func sync_actors() -> void:
 		actor.position = Vector2(actor.cell * TILE_SIZE) + Vector2.ONE * TILE_SIZE / 2.0
 
 
-func _make_tileset() -> TileSet:
+func _make_tileset(texture: Texture2D) -> TileSet:
 	var atlas := TileSetAtlasSource.new()
-	atlas.texture = TERRAIN_ATLAS
+	atlas.texture = texture
 	atlas.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
-	for index in 8:
+	for index in WALL_TILE_START + WALL_TILE_COUNT:
 		atlas.create_tile(Vector2i(index, 0))
 	var result := TileSet.new()
 	result.tile_size = Vector2i(TILE_SIZE, TILE_SIZE)
@@ -100,12 +110,39 @@ func _make_tileset() -> TileSet:
 	return result
 
 
+func _terrain_theme_index(floor_number: int) -> int:
+	if floor_number <= 3:
+		return 0
+	if floor_number <= 6:
+		return 1
+	if floor_number <= 9:
+		return 2
+	return 3
+
+
 func _terrain_tile(cell: Vector2i) -> int:
 	if has_stairs and cell == stairs_cell:
 		return STAIRS_TILE
 	if grid.pillars.has(cell):
 		return PILLAR_TILE
-	var variation := absi(cell.x * 73856093 ^ cell.y * 19349663)
 	if grid.walls.has(cell):
-		return WALL_TILES[variation % 10] if variation % 10 < WALL_TILES.size() else WALL_TILES[0]
+		return WALL_TILE_START + _wall_connection_mask(cell)
+	var variation := absi(cell.x * 73856093 ^ cell.y * 19349663)
 	return FLOOR_TILES[variation % 12] if variation % 12 < FLOOR_TILES.size() else FLOOR_TILES[0]
+
+
+func _wall_connection_mask(cell: Vector2i) -> int:
+	var mask := 0
+	if _is_connectable_wall(cell + Vector2i.UP):
+		mask |= 1
+	if _is_connectable_wall(cell + Vector2i.RIGHT):
+		mask |= 2
+	if _is_connectable_wall(cell + Vector2i.DOWN):
+		mask |= 4
+	if _is_connectable_wall(cell + Vector2i.LEFT):
+		mask |= 8
+	return mask
+
+
+func _is_connectable_wall(cell: Vector2i) -> bool:
+	return grid.walls.has(cell) and not grid.pillars.has(cell)

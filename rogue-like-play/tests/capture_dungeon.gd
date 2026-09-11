@@ -15,7 +15,8 @@ func capture() -> void:
 	main.add_child(run)
 	run.generation_seed = 47
 	root.add_child(main)
-	for floor_value in [1, 2, 3, 10]:
+	# Cover every depth theme while retaining all three layout types.
+	for floor_value in [1, 5, 9, 10]:
 		if floor_value != 1:
 			run.floor_number = floor_value
 			run._load_floor()

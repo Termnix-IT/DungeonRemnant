@@ -220,7 +220,7 @@ func test_scene_visibility() -> void:
 	check(not enemy.visible and run.dungeon.fog.explored.has(enemy.cell), "Remembered enemy cell hides actor")
 	check(run.dungeon.get_node("Terrain").get_cell_source_id(enemy.cell) == -1, "Occluded tile removed from bright layer")
 	check(run.dungeon.get_node("ExploredTerrain").get_cell_source_id(enemy.cell) == 0, "Remembered terrain retained")
-	check(run.dungeon.get_node("Terrain").get_cell_atlas_coords(Vector2i(5, 4)) == Vector2i(3, 0), "Pillar uses distinct tile")
+	check(run.dungeon.get_node("Terrain").get_cell_atlas_coords(Vector2i(5, 4)) == Vector2i(run.dungeon.PILLAR_TILE, 0), "Pillar uses distinct tile")
 	check(run.dungeon.get_node("ExploredTerrain").get_cell_source_id(Vector2i(23, 23)) == -1, "Unexplored map not rendered")
 	check(run.hud.status.text.contains("視界内の敵 0"), "HUD does not reveal hidden enemy count")
 	grid.walls.clear()

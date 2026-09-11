@@ -99,8 +99,8 @@ func test_terrain_art() -> void:
 	var run := new_run(0)
 	var terrain: TileMapLayer = run.dungeon.get_node("Terrain")
 	var atlas := terrain.tile_set.get_source(0) as TileSetAtlasSource
-	check(atlas != null and atlas.texture.get_size() == Vector2(256, 32), "Pixel terrain atlas loaded at eight 32px tiles")
-	check(atlas.get_tiles_count() == 8, "All terrain art variants registered")
+	check(atlas != null and atlas.texture.get_size() == Vector2(672, 32), "Pixel terrain atlas loaded at twenty-one 32px tiles")
+	check(atlas.get_tiles_count() == 21, "All terrain art variants registered")
 	check(run.dungeon._terrain_tile(run.dungeon.stairs_cell) == run.dungeon.STAIRS_TILE, "Stairs use dedicated gold tile")
 	var player_cell: Vector2i = run.turns.player.cell
 	var first_tile: int = run.dungeon._terrain_tile(player_cell)
@@ -108,9 +108,44 @@ func test_terrain_art() -> void:
 	check(first_tile in run.dungeon.FLOOR_TILES and terrain.get_cell_atlas_coords(player_cell).x == first_tile, "Floor art variant remains stable across visibility redraw")
 	var wall_variants_valid := true
 	for cell: Vector2i in run.dungeon.grid.walls:
-		if run.dungeon._terrain_tile(cell) not in run.dungeon.WALL_TILES:
+		var tile: int = run.dungeon._terrain_tile(cell)
+		if tile < run.dungeon.WALL_TILE_START or tile >= run.dungeon.WALL_TILE_START + run.dungeon.WALL_TILE_COUNT:
 			wall_variants_valid = false
-	check(wall_variants_valid, "Every wall maps to a registered pixel-art variant")
+	check(wall_variants_valid, "Every generated wall maps to a registered connection tile")
+	var theme_boundaries := [[1, 0], [3, 0], [4, 1], [6, 1], [7, 2], [9, 2], [10, 3], [99, 3]]
+	for expectation: Array in theme_boundaries:
+		check(run.dungeon._terrain_theme_index(int(expectation[0])) == int(expectation[1]), "Floor %d selects terrain theme %d" % expectation)
+	var theme_floors := [1, 4, 7, 10]
+	var theme_paths := [
+		"res://art/tiles/dungeon_terrain.png",
+		"res://art/tiles/dungeon_terrain_moss.png",
+		"res://art/tiles/dungeon_terrain_ember.png",
+		"res://art/tiles/dungeon_terrain_sanctum.png",
+	]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 47
+	for theme_index in theme_floors.size():
+		var floor_value: int = theme_floors[theme_index]
+		run.dungeon.build(run.dungeon_settings, floor_value, rng, floor_value == 10)
+		atlas = run.dungeon.get_node("Terrain").tile_set.get_source(0) as TileSetAtlasSource
+		check(run.dungeon.terrain_theme_index == theme_index and atlas.texture.resource_path == theme_paths[theme_index] and atlas.texture.get_size() == Vector2(672, 32), "Floor %d loads its complete terrain theme atlas" % floor_value)
+	var center := Vector2i(10, 10)
+	var directions: Array[Vector2i] = [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]
+	for expected_mask in 16:
+		run.dungeon.grid.walls.clear()
+		run.dungeon.grid.pillars.clear()
+		run.dungeon.grid.walls[center] = true
+		for direction_index in directions.size():
+			if expected_mask & (1 << direction_index):
+				run.dungeon.grid.walls[center + directions[direction_index]] = true
+		check(run.dungeon._terrain_tile(center) == run.dungeon.WALL_TILE_START + expected_mask, "Wall connection mask %d maps to its atlas tile" % expected_mask)
+	run.dungeon.grid.walls.clear()
+	run.dungeon.grid.walls[center] = true
+	run.dungeon.grid.walls[center + Vector2i.ONE] = true
+	check(run.dungeon._wall_connection_mask(center) == 0, "Diagonal walls do not create cardinal connections")
+	run.dungeon.grid.walls[center + Vector2i.UP] = true
+	run.dungeon.grid.pillars[center + Vector2i.UP] = true
+	check(run.dungeon._wall_connection_mask(center) == 0, "Freestanding pillars do not merge into walls")
 	run.free()
 
 
