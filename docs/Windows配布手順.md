@@ -42,14 +42,27 @@ godot --headless --path . --export-release "Windows Desktop" "build/windows/Rogu
 
 1つ目のコマンドはアセットのインポートとスクリプト・シーンの読み込み確認、2つ目はRelease実行ファイルの書き出しです。成功時は終了コードが `0` になり、`build/windows/` に `.exe` と `.pck` が生成されます。
 
+## ライセンス通知を用意する
+
+Windows版へ同梱する通知文書を、`rogue-like-play/`から次のコマンドで用意します。Godotを更新した場合は、`GODOT_COPYRIGHT.txt`のURLを使用するEngineバージョンと同じタグへ変更します。
+
+```powershell
+Copy-Item ..\THIRD_PARTY_NOTICES.md build\windows\THIRD_PARTY_NOTICES.md
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/godotengine/godot/4.6.2-stable/COPYRIGHT.txt" -OutFile "build\windows\GODOT_COPYRIGHT.txt"
+```
+
+`THIRD_PARTY_NOTICES.md`にはGodot EngineのMIT Licenseと既定アイコンのCC BY 4.0表記、`GODOT_COPYRIGHT.txt`にはGodot Engineが含む第三者コンポーネントの著作権・ライセンス情報が記載されています。
+
 ## 配布物
 
-`build/windows/` の次の2ファイルを同じフォルダーに置いたまま配布します。
+`build/windows/` の次の4ファイルを同じフォルダーに置いたまま配布します。
 
 - `RogueLike_play.exe`
 - `RogueLike_play.pck`
+- `THIRD_PARTY_NOTICES.md`
+- `GODOT_COPYRIGHT.txt`
 
-片方だけでは起動できません。配布時は2ファイルをZIPにまとめ、展開後に `RogueLike_play.exe` を起動してもらいます。`progress.json` などの保存データは配布物に含めません。
+`.exe`と`.pck`の片方だけでは起動できません。配布時は4ファイルをZIPにまとめ、展開後に `RogueLike_play.exe` を起動してもらいます。`progress.json` などの保存データは配布物に含めません。
 
 このMVP用プリセットはコード署名を行いません。そのため、別のPCではWindowsの警告やセキュリティ製品の確認が表示されることがあります。不特定多数への公開前には、配布元を明示し、必要に応じて正規のコード署名証明書を使う別のリリース工程を用意してください。署名用パスワードや証明書は `export_presets.cfg` に保存・コミットしません。
 
@@ -80,7 +93,7 @@ godot --headless --path . --export-release "Windows Desktop" "build/windows/Rogu
 
 配布用ZIPを新しいフォルダーへ展開し、可能なら開発に使っていないWindowsユーザーまたは別PCで確認します。
 
-- [ ] `RogueLike_play.exe` と `RogueLike_play.pck` が同じフォルダーにある
+- [ ] `RogueLike_play.exe`、`RogueLike_play.pck`、`THIRD_PARTY_NOTICES.md`、`GODOT_COPYRIGHT.txt`が同じフォルダーにある
 - [ ] `RogueLike_play.exe` をダブルクリックすると、余分なコンソール画面を出さずに起動する
 - [ ] 1000×720のウィンドウで拠点画面が表示される
 - [ ] 拠点下部に新規開始を示す保存メッセージが表示される
@@ -101,7 +114,8 @@ godot --headless --path . --export-release "Windows Desktop" "build/windows/Rogu
 ## リリース前の最終確認
 
 - [ ] `Export With Debug` をオフにしたRelease書き出しである
-- [ ] 書き出した2ファイルだけを新しいフォルダーへコピーして起動できる
+- [ ] 書き出した`.exe`と`.pck`、ライセンス通知2ファイルを新しいフォルダーへコピーして起動できる
+- [ ] `THIRD_PARTY_NOTICES.md`と、使用したGodotバージョンに対応する`GODOT_COPYRIGHT.txt`を確認できる
 - [ ] 初回起動と再起動後の保存復元を確認した
 - [ ] ZIP内に `.godot/`、テスト用ログ、テスト用JSON、個人の保存データが含まれていない
 - [ ] 配布するZIPをWindows Defenderなどでスキャンした

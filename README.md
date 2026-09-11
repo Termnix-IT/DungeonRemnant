@@ -46,4 +46,12 @@ Godot 4.6系で `rogue-like-play/project.godot` を開き、`F5` でプロジェ
 
 将来的に、GitHub ReleasesでWindows版の公開を予定しています。
 
-詳細な仕様や検証方法は、[開発メモ.md](./rogue-like-play/%E9%96%8B%E7%99%BA%E3%83%A1%E3%83%A2.md) を参照してください。
+## ライセンス
+
+- ソースコードと関連文書（明示的な除外を除く）: [MIT License](./LICENSE)
+- Termnix-IT制作のゲーム素材: [無断再利用不可](./ASSET_LICENSE.md)
+- Godot Engineと第三者素材: [Third-Party Notices](./THIRD_PARTY_NOTICES.md)
+
+ライセンスごとの適用範囲は各文書を確認してください。現在の`rogue-like-play/icon.svg`はGodot Engineの既定アイコンであり、CC BY 4.0の対象です。
+
+詳細な仕様は[設計仕様](./docs/MVP_SPEC.md)、検証方法と実績は[MVP受け入れ確認](./docs/MVP受け入れ確認.md)を参照してください。
