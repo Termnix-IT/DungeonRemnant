@@ -240,7 +240,7 @@ func _refresh() -> void:
 		enemy.visible = enemy.hp > 0 and dungeon.fog.visible.has(enemy.cell)
 		if enemy.visible:
 			visible_enemies += 1
-	hud.refresh(turns.player.hp, turns.player.stats.max_hp, turns.turn_count, visible_enemies, turns.last_message, floor_number, dungeon.layout_name)
+	hud.refresh(turns.player.hp, turns.player.stats.max_hp, turns.turn_count, visible_enemies, turns.last_message, floor_number, dungeon.layout_name, dungeon.terrain_theme_name)
 	hud.show_progress(progression.level, progression.exp, progression.required_exp())
 	preview.cells.clear()
 	for cell: Vector2i in CombatRules.attack_cells(dungeon.grid, turns.player.cell, turns.player.facing, turns.player.effective_weapon()):
@@ -251,6 +251,17 @@ func _refresh() -> void:
 	hud.show_aim(turns.player.weapon.display_name, preview.visible)
 	hud.show_inventory(turns.player.inventory.entries.size())
 	hud.show_gold(turns.gold)
+	hud.show_equipment(turns.player.equipment)
+	var visible_enemy_cells: Array[Vector2i] = []
+	for enemy: Node2D in turns.enemies:
+		if enemy.visible:
+			visible_enemy_cells.append(enemy.cell)
+	var discovered_items: Array[Vector2i] = []
+	for item_cell: Vector2i in dungeon.ground_items:
+		if dungeon.fog.explored.has(item_cell):
+			discovered_items.append(item_cell)
+	var known_stairs: Vector2i = dungeon.stairs_cell if stairs_discovered else Vector2i(-1, -1)
+	hud.show_minimap(dungeon.grid, dungeon.fog.explored, dungeon.fog.visible, turns.player.cell, known_stairs, visible_enemy_cells, discovered_items)
 	var boss_text := ""
 	for enemy: Node2D in turns.enemies:
 		if enemy.stats.is_boss and enemy.visible:
@@ -396,5 +407,6 @@ func retry_run() -> void:
 	turns.paused = false
 	result = {}
 	floor_number = 1
+	hud.reset_log()
 	_load_floor()
 	_refresh()

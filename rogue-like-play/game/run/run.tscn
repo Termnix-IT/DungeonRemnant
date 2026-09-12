@@ -15,7 +15,6 @@ script = ExtResource("2")
 script = ExtResource("8")
 [node name="Dungeon" parent="." instance=ExtResource("3")]
 [node name="Camera2D" type="Camera2D" parent="."]
-offset = Vector2(0, 36)
 [node name="HUD" parent="." instance=ExtResource("4")]
 [node name="AbilityChoice" parent="." instance=ExtResource("5")]
 [node name="InventoryPanel" parent="." instance=ExtResource("6")]

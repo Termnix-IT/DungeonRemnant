@@ -214,10 +214,13 @@ func test_scene_visibility() -> void:
 	run.turns.enemies.append(enemy)
 	run._refresh()
 	check(enemy.visible, "Enemy visible in current field of view")
+	check(run.hud.minimap.player_cell == run.turns.player.cell, "HUD minimap tracks player position")
+	check(run.hud.minimap.enemy_cells.has(enemy.cell), "HUD minimap shows only visible enemies")
 	grid.walls[Vector2i(5, 4)] = true
 	grid.pillars[Vector2i(5, 4)] = true
 	run._refresh()
 	check(not enemy.visible and run.dungeon.fog.explored.has(enemy.cell), "Remembered enemy cell hides actor")
+	check(not run.hud.minimap.enemy_cells.has(enemy.cell), "HUD minimap does not reveal hidden enemies")
 	check(run.dungeon.get_node("Terrain").get_cell_source_id(enemy.cell) == -1, "Occluded tile removed from bright layer")
 	check(run.dungeon.get_node("ExploredTerrain").get_cell_source_id(enemy.cell) == 0, "Remembered terrain retained")
 	check(run.dungeon.get_node("Terrain").get_cell_atlas_coords(Vector2i(5, 4)) == Vector2i(run.dungeon.PILLAR_TILE, 0), "Pillar uses distinct tile")

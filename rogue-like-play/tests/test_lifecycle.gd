@@ -89,6 +89,7 @@ func run_tests() -> void:
 	run.retry_run()
 	player = run.turns.player
 	check(run.floor_number == 1 and run.turns.turn_count == 0 and run.progression.level == 1 and run.progression.exp == 0, "Retry resets floor, turns, level and EXP")
+	check(run.hud.log_history.size() == 1 and run.hud.log_history[0].contains("1Fに到着"), "Retry clears the previous run log")
 	check(player.abilities.levels.is_empty() and player.stats.attack == 4 and player.stats.max_hp == 32 and player.hp == 32, "Retry resets growth, restores gear bonuses and full HP")
 	check(player.equipment.slots == slots and run.turns.gold == 51 and count_items(player.inventory) == 6, "Retry retains remaining possessions")
 	check(run.turns.earned_gold == 0 and player.input_enabled and run.result.is_empty(), "Retry starts active clean run")
