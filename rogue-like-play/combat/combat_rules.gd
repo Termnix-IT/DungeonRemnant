@@ -35,6 +35,7 @@ static func ray_cells(grid: GridState, origin: Vector2i, direction: Vector2i, re
 
 
 static func attack(grid: GridState, attacker: Node2D, direction: Vector2i, weapon: WeaponData = null) -> int:
+	grid.visual_events.append({"kind": "attack", "actor": attacker, "origin": attacker.cell, "direction": direction, "weapon": weapon})
 	var cells := attack_cells(grid, attacker.cell, direction, weapon)
 	if cells.is_empty():
 		return 0
@@ -57,8 +58,10 @@ static func attack(grid: GridState, attacker: Node2D, direction: Vector2i, weapo
 
 static func damage_target(grid: GridState, attacker: Node2D, target: Node2D, bonus: int = 0) -> int:
 	var damage: int = maxi(1, attacker.stats.attack + bonus - target.stats.defense)
+	var actual_damage: int = mini(target.hp, damage)
 	target.hp = maxi(0, target.hp - damage)
+	grid.visual_events.append({"kind": "hit", "actor": target, "source": attacker, "origin": target.cell, "direction": target.cell - attacker.cell, "damage": actual_damage, "dead": target.hp == 0})
 	if target.hp == 0:
 		grid.remove_actor(target)
 	target.queue_redraw()
-	return damage
+	return actual_damage

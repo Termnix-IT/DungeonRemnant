@@ -137,6 +137,9 @@ func run_tests() -> void:
 	run.turns.player.hp = 1
 	run.turns.gold = 11
 	run.turns.submit("move", Vector2i.RIGHT)
+	if run.presentation.playing:
+		await run.presentation.finished
+		await process_frame
 	check(run.turns.player.hp == 0 and run.result_panel.visible and run.turns.gold == 6, "Enemy lethal action opens result with losses")
 	check(run.floor_number == 1 and run.result.floor == 1, "Death takes precedence over stair transition")
 	check(not run.turns.submit_inventory("switch") and not run.turns.player.input_enabled, "Result disables subsequent actions")

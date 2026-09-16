@@ -15,6 +15,7 @@ script = ExtResource("2")
 script = ExtResource("8")
 [node name="Dungeon" parent="." instance=ExtResource("3")]
 [node name="Camera2D" type="Camera2D" parent="."]
+zoom = Vector2(1.25, 1.25)
 [node name="HUD" parent="." instance=ExtResource("4")]
 [node name="AbilityChoice" parent="." instance=ExtResource("5")]
 [node name="InventoryPanel" parent="." instance=ExtResource("6")]

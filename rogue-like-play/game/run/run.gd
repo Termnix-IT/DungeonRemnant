@@ -33,6 +33,8 @@ var loss_rng := RandomNumberGenerator.new()
 var discovered_item_cells: Dictionary = {}
 var stairs_discovered := false
 var discovery_revision := 0
+var presentation := preload("res://combat/battle_presentation.gd").new()
+var reinforcements := ReinforcementSpawner.new()
 
 @onready var dungeon = $Dungeon
 @onready var turns = $TurnManager
@@ -45,6 +47,8 @@ var discovery_revision := 0
 
 
 func _ready() -> void:
+	dungeon.add_child(presentation)
+	presentation.finished.connect(_refresh)
 	if generation_seed == 0:
 		rng.randomize()
 	else:
@@ -83,7 +87,14 @@ func _ready() -> void:
 
 
 func _load_floor() -> void:
+	if presentation.finished.is_connected(_present_result):
+		presentation.finished.disconnect(_present_result)
+	if presentation.finished.is_connected(_present_ability_choice):
+		presentation.finished.disconnect(_present_ability_choice)
+	presentation.clear()
+	reinforcements.reset(turns.turn_count)
 	rapid_move.stop()
+	turns.player.reset_step()
 	discovered_item_cells.clear()
 	stairs_discovered = false
 	discovery_revision += 1
@@ -125,13 +136,40 @@ func _on_turn_finished() -> void:
 	if not turns.ended and dungeon.has_stairs and turns.player.cell == dungeon.stairs_cell:
 		floor_number += 1
 		_load_floor()
+	else:
+		_spawn_reinforcement()
 	_refresh()
+
+
+func _spawn_reinforcement() -> void:
+	# Use visibility after this turn's movement, and spawn after enemies acted.
+	dungeon.update_visibility(turns.player.cell, turns.player.vision_range)
+	var cell := reinforcements.try_spawn(dungeon.grid, turns.player.cell, dungeon.fog.visible,
+		turns.enemies, dungeon.stairs_cell, dungeon_settings, turns.turn_count,
+		floor_number, rng, dungeon.ground_items)
+	if cell == ReinforcementSpawner.NO_CELL:
+		return
+	var enemy := ENEMY_SCENE.instantiate()
+	enemy.stats = ENEMY_TYPES[rng.randi_range(0, ENEMY_TYPES.size() - 1)]
+	dungeon.get_node("Actors").add_child(enemy)
+	dungeon.grid.place(enemy, cell)
+	turns.enemies.append(enemy)
 
 
 func _show_ability_choice() -> void:
 	rapid_move.stop()
 	inventory_panel.hide()
 	_refresh()
+	if presentation.playing:
+		if not presentation.finished.is_connected(_present_ability_choice):
+			presentation.finished.connect(_present_ability_choice, CONNECT_ONE_SHOT)
+	else:
+		_present_ability_choice()
+
+
+func _present_ability_choice() -> void:
+	if turns.ended or turns.offered_abilities.is_empty():
+		return
 	ability_choice.present(turns.offered_abilities, turns.player.abilities, progression.level, progression.pending_choices)
 
 
@@ -149,6 +187,8 @@ func _on_action(kind: String, direction: Vector2i) -> void:
 	var discovery_before := discovery_revision
 	var succeeded: bool = turns.submit(kind, direction)
 	if kind == "move" and succeeded:
+		if floor_number == floor_before:
+			turns.player.play_step(direction, dungeon.TILE_SIZE)
 		if _can_arm_after_move(origin, direction, destination_was_explored, destination_had_item, floor_before, discovery_before):
 			rapid_move.arm(direction)
 	elif kind == "switch" and succeeded:
@@ -171,6 +211,8 @@ func _on_rapid_step(direction: Vector2i) -> void:
 		rapid_move.stop()
 		_refresh()
 		return
+	if floor_number == floor_before:
+		turns.player.play_step(direction, dungeon.TILE_SIZE)
 	if not _can_arm_after_move(origin, direction, true, destination_had_item, floor_before, discovery_before):
 		rapid_move.stop()
 
@@ -197,7 +239,7 @@ func _can_arm_after_move(origin: Vector2i, direction: Vector2i, destination_was_
 
 
 func _world_input_available() -> bool:
-	return not turns.busy and not turns.ended and not turns.paused and turns.player.hp > 0 \
+	return not presentation.playing and not turns.busy and not turns.ended and not turns.paused and turns.player.hp > 0 \
 		and not inventory_panel.visible and not ability_choice.visible and not result_panel.visible \
 		and not turns.player.aiming
 
@@ -232,6 +274,10 @@ func _refresh() -> void:
 	turns.player.input_enabled = not turns.busy and not turns.ended and not turns.paused and not inventory_panel.visible
 	dungeon.sync_actors()
 	dungeon.update_visibility(turns.player.cell, turns.player.vision_range)
+	var events: Array[Dictionary] = dungeon.grid.visual_events.duplicate()
+	dungeon.grid.visual_events.clear()
+	presentation.present(events, turns.player, dungeon.fog.visible, dungeon.TILE_SIZE)
+	turns.player.input_enabled = turns.player.input_enabled and not presentation.playing
 	_record_discoveries()
 	camera.global_position = turns.player.global_position
 	camera.force_update_scroll()
@@ -284,7 +330,14 @@ func _record_discoveries() -> void:
 
 
 func _collect_items() -> void:
-	turns.last_message += dungeon.collect_items(turns.player)
+	var message: String = dungeon.collect_items(turns.player)
+	turns.last_message += message
+	if not message.is_empty():
+		var center: Vector2 = Vector2(turns.player.cell * dungeon.TILE_SIZE) + Vector2.ONE * dungeon.TILE_SIZE / 2.0
+		var feedback := message.replace(" 所持上限のため残りは床に置いたままです。", "\n収納がいっぱい（残りは床）").strip_edges()
+		presentation.popup(feedback, center + Vector2(0, 34), Color("9de3c3"), 16)
+		if message.contains("取得"):
+			presentation.sound(880)
 
 
 func _inventory_action(kind: String, index: int, slot: int) -> void:
@@ -317,7 +370,7 @@ func _input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("inventory"):
 		get_viewport().set_input_as_handled()
-		if turns.busy or turns.ended:
+		if presentation.playing or turns.busy or turns.ended:
 			return
 		if inventory_panel.visible:
 			_close_inventory()
@@ -338,7 +391,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func request_abort() -> void:
-	if turns.busy or turns.ended or result_panel.visible:
+	if presentation.playing or turns.busy or turns.ended or result_panel.visible:
 		return
 	rapid_move.stop()
 	inventory_panel.hide()
@@ -361,6 +414,7 @@ func finish_run(cleared: bool) -> void:
 	if not result.is_empty():
 		return
 	rapid_move.stop()
+	turns.player.reset_step()
 	turns.ended = true
 	turns.busy = false
 	turns.paused = false
@@ -375,8 +429,16 @@ func finish_run(cleared: bool) -> void:
 	result.merge({"cleared": cleared, "floor": floor_number, "earned_gold": turns.earned_gold, "gold": turns.gold})
 	carryover.capture(turns.player, turns.gold)
 	_refresh()
-	result_panel.present(result)
+	if presentation.playing:
+		presentation.finished.connect(_present_result, CONNECT_ONE_SHOT)
+	else:
+		_present_result()
 	result_ready.emit()
+
+
+func _present_result() -> void:
+	if turns.ended and not result.is_empty():
+		result_panel.present(result)
 
 
 func retry_run() -> void:

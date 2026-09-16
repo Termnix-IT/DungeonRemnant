@@ -8,6 +8,10 @@ var last_seen_cell := Vector2i(-1, -1)
 var exp_claimed := false
 var shot_direction := Vector2i.ZERO
 var shot_origin := Vector2i(-1, -1)
+var visual_offset := Vector2.ZERO:
+	set(value):
+		visual_offset = value
+		queue_redraw()
 
 
 func _ready() -> void:
@@ -88,6 +92,7 @@ func choose_step(grid: GridState, target: Vector2i) -> Vector2i:
 
 
 func _draw() -> void:
+	draw_set_transform(visual_offset)
 	if stats.is_boss:
 		draw_rect(Rect2(-14, -14, 28, 28), Color("de8172"))
 		draw_rect(Rect2(-10, -10, 20, 20), Color("efbb81"), false, 3)

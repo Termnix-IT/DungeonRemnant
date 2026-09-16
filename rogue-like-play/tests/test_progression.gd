@@ -146,6 +146,10 @@ func test_turn_pause() -> void:
 	var run := new_fight()
 	run.turns.player.abilities.definitions.assign([DEFENSE])
 	run.turns.submit("attack", Vector2i.RIGHT)
+	check(run.presentation.playing and not run.ability_choice.visible, "Ability dialog waits until damage and defeat presentation finish")
+	if run.presentation.playing:
+		await run.presentation.finished
+		await process_frame
 	check(run.progression.level == 2 and run.turns.turn_count == 1, "Kill grants configured EXP in one turn")
 	check(run.turns.busy and not run.turns.player.input_enabled and run.ability_choice.visible, "Ability dialog pauses input and enemies")
 	check(run.turns.player.hp == 24 and not run.turns.enemies[0].visible, "Enemy does not retaliate during choice")
@@ -153,6 +157,9 @@ func test_turn_pause() -> void:
 	check(not run.turns.submit("move", Vector2i.LEFT), "Movement rejected during choice")
 	check(not run.turns.choose_ability(&"invalid"), "Non-offered ability rejected")
 	run.ability_choice.buttons[0].pressed.emit()
+	if run.presentation.playing:
+		await run.presentation.finished
+		await process_frame
 	check(not run.turns.busy and run.turns.player.input_enabled and not run.ability_choice.visible, "Choice resumes turn")
 	check(run.turns.player.hp == 22 and run.turns.turn_count == 1, "Chosen defense applies before exactly one enemy action")
 	run.turns.submit("attack", Vector2i.LEFT)
@@ -163,6 +170,9 @@ func test_turn_pause() -> void:
 	run.turns.player.abilities.definitions.assign([DEFENSE])
 	run.turns.submit("attack", Vector2i.RIGHT)
 	check(run.progression.level == 4 and run.progression.pending_choices == 3, "Multiple choices queued")
+	if run.presentation.playing:
+		await run.presentation.finished
+		await process_frame
 	for index in 3:
 		check(run.turns.player.hp == 24, "No retaliation between queued choices")
 		run.ability_choice.buttons[0].pressed.emit()
@@ -214,6 +224,9 @@ func test_piercing_rewards_and_keyboard() -> void:
 	run.turns.submit("attack", Vector2i.RIGHT)
 	check(run.turns.enemies[0].hp == 0 and second.hp == 0, "Piercing kills both enemies")
 	check(player.hp == 22 and run.progression.level == 2 and run.progression.exp == 10, "Both kills grant EXP and healing exactly once")
+	if run.presentation.playing:
+		await run.presentation.finished
+		await process_frame
 	check(run.ability_choice.offers.size() == 3, "Real dialog presents three options")
 	var selected_id: StringName = run.ability_choice.offers[0].id
 	var previous: int = player.abilities.levels.get(selected_id, 0)
@@ -241,6 +254,9 @@ func test_piercing_rewards_and_keyboard() -> void:
 	player.abilities.definitions.assign([preload("res://data/abilities/sword_damage.tres")])
 	run.turns.submit("attack", Vector2i.RIGHT)
 	check(player.hp == 1 and run.turns.busy, "Lethal retaliation waits for choice")
+	if run.presentation.playing:
+		await run.presentation.finished
+		await process_frame
 	run.ability_choice.buttons[0].pressed.emit()
 	check(run.turns.ended and player.hp == 0 and not player.input_enabled and not run.ability_choice.visible, "Death after choice ends run cleanly")
 	run.free()
@@ -253,8 +269,8 @@ func test_piercing_rewards_and_keyboard() -> void:
 func run_tests() -> void:
 	test_exp_and_offers()
 	test_effects()
-	test_turn_pause()
+	await test_turn_pause()
 	test_healing_and_lifecycle()
-	test_piercing_rewards_and_keyboard()
+	await test_piercing_rewards_and_keyboard()
 	print("Progression tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)

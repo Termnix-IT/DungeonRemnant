@@ -1,6 +1,6 @@
 extends Node2D
 
-const TILE_SIZE := 32
+const TILE_SIZE := 48
 const TERRAIN_ATLASES: Array[Texture2D] = [
 	preload("res://art/tiles/dungeon_terrain.png"),
 	preload("res://art/tiles/dungeon_terrain_moss.png"),
@@ -46,6 +46,7 @@ func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenera
 	remembered.position = terrain.position
 	terrain.clear()
 	remembered.clear()
+	$Items.tile_size = TILE_SIZE
 
 
 func spawn_items(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenerator) -> void:

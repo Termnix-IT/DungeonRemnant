@@ -101,6 +101,10 @@ func reset_log() -> void:
 
 
 func _record_log(text: String) -> void:
+	# Routine footsteps must not push damage and pickup feedback out of history.
+	if text == "移動しました。":
+		_render_log()
+		return
 	if text.is_empty() or text == last_log_text:
 		_render_log()
 		return

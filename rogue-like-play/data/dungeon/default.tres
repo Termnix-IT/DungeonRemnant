@@ -4,4 +4,9 @@
 script = ExtResource("1")
 width = 40
 height = 40
-enemy_count = 2
+enemy_count = 3
+reinforcement_interval = 18
+reinforcement_chance = 0.65
+reinforcement_alive_cap = 5
+reinforcement_total_cap = 4
+reinforcement_min_distance = 6

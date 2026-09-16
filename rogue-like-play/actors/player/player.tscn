@@ -4,3 +4,16 @@
 [node name="Player" type="Node2D"]
 script = ExtResource("1")
 stats = ExtResource("2")
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(0, -3)
+scale = Vector2(0.8, 0.8)
+
+[node name="FootMarker" type="Node2D" parent="Sprite"]
+show_behind_parent = true
+position = Vector2(0, 36.25)
+scale = Vector2(1.25, 0.625)
+
+[node name="Weapon" type="Node2D" parent="Sprite"]
+position = Vector2(0, 3.75)
+scale = Vector2(1.875, 1.875)

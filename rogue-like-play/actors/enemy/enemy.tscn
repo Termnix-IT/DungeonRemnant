@@ -2,5 +2,6 @@
 [ext_resource type="Script" path="res://actors/enemy/enemy.gd" id="1"]
 [ext_resource type="Resource" path="res://data/enemies/basic_enemy.tres" id="2"]
 [node name="Enemy" type="Node2D"]
+scale = Vector2(1.5, 1.5)
 script = ExtResource("1")
 stats = ExtResource("2")

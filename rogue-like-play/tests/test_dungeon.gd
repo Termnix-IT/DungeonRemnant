@@ -91,6 +91,7 @@ func new_run(enemy_count: int = 2) -> Node2D:
 	run.generation_seed = 47
 	run.dungeon_settings = DungeonSettings.new()
 	run.dungeon_settings.enemy_count = enemy_count
+	run.dungeon_settings.reinforcement_total_cap = 0
 	root.add_child(run)
 	return run
 
@@ -99,7 +100,7 @@ func test_terrain_art() -> void:
 	var run := new_run(0)
 	var terrain: TileMapLayer = run.dungeon.get_node("Terrain")
 	var atlas := terrain.tile_set.get_source(0) as TileSetAtlasSource
-	check(atlas != null and atlas.texture.get_size() == Vector2(672, 32), "Pixel terrain atlas loaded at twenty-one 32px tiles")
+	check(atlas != null and atlas.texture.get_size() == Vector2(1008, 48), "Pixel terrain atlas loaded at twenty-one 48px tiles")
 	check(atlas.get_tiles_count() == 21, "All terrain art variants registered")
 	check(run.dungeon._terrain_tile(run.dungeon.stairs_cell) == run.dungeon.STAIRS_TILE, "Stairs use dedicated gold tile")
 	var player_cell: Vector2i = run.turns.player.cell
@@ -128,7 +129,7 @@ func test_terrain_art() -> void:
 		var floor_value: int = theme_floors[theme_index]
 		run.dungeon.build(run.dungeon_settings, floor_value, rng, floor_value == 10)
 		atlas = run.dungeon.get_node("Terrain").tile_set.get_source(0) as TileSetAtlasSource
-		check(run.dungeon.terrain_theme_index == theme_index and atlas.texture.resource_path == theme_paths[theme_index] and atlas.texture.get_size() == Vector2(672, 32), "Floor %d loads its complete terrain theme atlas" % floor_value)
+		check(run.dungeon.terrain_theme_index == theme_index and atlas.texture.resource_path == theme_paths[theme_index] and atlas.texture.get_size() == Vector2(1008, 48), "Floor %d loads its complete terrain theme atlas" % floor_value)
 	var center := Vector2i(10, 10)
 	var directions: Array[Vector2i] = [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]
 	for expected_mask in 16:

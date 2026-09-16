@@ -154,6 +154,9 @@ func test_turns_and_ui() -> void:
 	player.hp = 10
 	run.inventory_panel._select_item(0)
 	run.inventory_panel.get_node("Panel/Use").pressed.emit()
+	if run.presentation.playing:
+		await run.presentation.finished
+		await process_frame
 	check(player.hp == 16 and player.inventory.entries[0].count == 1 and run.turns.turn_count == 1, "Potion heals eight then enemy attacks once")
 	player.hp = player.stats.max_hp
 	press_inventory(run)
@@ -226,7 +229,8 @@ func run_tests() -> void:
 	root.add_child(input_setup)
 	test_capacity_and_transactions()
 	test_effects()
-	test_turns_and_ui()
+	await test_turns_and_ui()
 	test_pickup_and_generation()
+	await process_frame
 	print("Inventory tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)

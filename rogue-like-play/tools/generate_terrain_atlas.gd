@@ -4,7 +4,7 @@ const LOGICAL_TILE_SIZE := 16
 const WALL_TILE_START := 5
 const WALL_TILE_COUNT := 16
 const TILE_COUNT := WALL_TILE_START + WALL_TILE_COUNT
-const SCALE := 2
+const SCALE := 3
 
 const THEMES := [
 	{

@@ -6,6 +6,8 @@ var walls: Dictionary = {}
 ## Pillars are also walls for movement, line of sight and attacks.
 var pillars: Dictionary = {}
 var occupants: Dictionary = {}
+## Transient presentation events; combat rules remain synchronous.
+var visual_events: Array[Dictionary] = []
 
 
 func is_floor(cell: Vector2i) -> bool:
@@ -38,6 +40,7 @@ func place(actor: Node2D, cell: Vector2i) -> bool:
 func move_actor(actor: Node2D, destination: Vector2i) -> bool:
 	if not can_step(actor.cell, destination) or occupants.has(destination):
 		return false
+	visual_events.append({"kind": "move", "actor": actor, "origin": actor.cell, "direction": destination - actor.cell})
 	occupants.erase(actor.cell)
 	occupants[destination] = actor
 	actor.cell = destination
