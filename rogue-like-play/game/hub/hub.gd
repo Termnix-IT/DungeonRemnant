@@ -14,6 +14,7 @@ var save_label: Label
 var warehouse_button: Button
 @onready var warehouse_panel: WarehousePanel = $WarehousePanel
 var _state: RunCarryover
+var _content: Control
 
 
 func _ready() -> void:
@@ -21,6 +22,17 @@ func _ready() -> void:
 	background.color = Color("0d141c")
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(background)
+	_content = Control.new()
+	_content.name = "Content"
+	add_child(_content)
+	_content.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_content.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_content.grow_vertical = Control.GROW_DIRECTION_BOTH
+	_content.offset_left = -500.0
+	_content.offset_right = 500.0
+	_content.offset_top = -360.0
+	_content.offset_bottom = 360.0
+	_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_label("拠点", Vector2(64, 42), Vector2(800, 50), 36)
 	_label("装備を引き継ぎ、次の冒険へ。", Vector2(64, 100), Vector2(800, 30), 18)
 	gold_label = _label("", Vector2(64, 154), Vector2(850, 40), 26)
@@ -49,7 +61,7 @@ func _label(text: String, position: Vector2, size: Vector2, font_size: int) -> L
 	label.size = size
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_size_override("font_size", font_size)
-	add_child(label)
+	_content.add_child(label)
 	return label
 
 
@@ -60,7 +72,7 @@ func _button(text: String, position: Vector2, size: Vector2) -> Button:
 	button.size = size
 	button.focus_mode = Control.FOCUS_NONE
 	button.add_theme_font_size_override("font_size", 20)
-	add_child(button)
+	_content.add_child(button)
 	return button
 
 

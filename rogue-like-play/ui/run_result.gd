@@ -20,10 +20,16 @@ func _ready() -> void:
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(shade)
 	var panel := VBoxContainer.new()
-	panel.position = Vector2(160, 110)
-	panel.size = Vector2(680, 500)
+	panel.name = "Panel"
 	panel.add_theme_constant_override("separation", 20)
 	add_child(panel)
+	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	panel.offset_left = -340.0
+	panel.offset_right = 340.0
+	panel.offset_top = -250.0
+	panel.offset_bottom = 250.0
 	title_label = Label.new()
 	title_label.add_theme_font_size_override("font_size", 30)
 	panel.add_child(title_label)

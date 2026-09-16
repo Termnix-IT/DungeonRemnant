@@ -63,10 +63,10 @@ script = ExtResource("1")
 visible = false
 
 [node name="TopLeft" type="Panel" parent="."]
-offset_left = 12.0
-offset_top = 12.0
-offset_right = 238.0
-offset_bottom = 112.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 254.0
+offset_bottom = 116.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("PanelStyle")
 
@@ -117,17 +117,21 @@ horizontal_alignment = 2
 text = "0"
 
 [node name="TopRight" type="Panel" parent="."]
-offset_left = 770.0
-offset_top = 12.0
-offset_right = 988.0
-offset_bottom = 226.0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -276.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 260.0
+grow_horizontal = 0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("PanelStyle")
 
 [node name="Heading" type="Label" parent="TopRight"]
 offset_left = 14.0
 offset_top = 9.0
-offset_right = 204.0
+offset_right = 246.0
 offset_bottom = 31.0
 theme_override_colors/font_color = Color(0.67, 0.7, 0.72, 1)
 theme_override_font_sizes/font_size = 13
@@ -137,24 +141,24 @@ horizontal_alignment = 1
 [node name="Minimap" type="Control" parent="TopRight"]
 offset_left = 15.0
 offset_top = 34.0
-offset_right = 203.0
-offset_bottom = 174.0
+offset_right = 245.0
+offset_bottom = 198.0
 mouse_filter = 2
 script = ExtResource("2")
 
 [node name="Divider" type="ColorRect" parent="TopRight"]
 offset_left = 14.0
-offset_top = 180.0
-offset_right = 204.0
-offset_bottom = 181.0
+offset_top = 204.0
+offset_right = 246.0
+offset_bottom = 205.0
 mouse_filter = 2
 color = Color(0.3, 0.34, 0.37, 0.85)
 
 [node name="Area" type="Label" parent="TopRight"]
 offset_left = 10.0
-offset_top = 187.0
-offset_right = 208.0
-offset_bottom = 207.0
+offset_top = 212.0
+offset_right = 250.0
+offset_bottom = 234.0
 theme_override_colors/font_color = Color(0.76, 0.76, 0.72, 1)
 theme_override_font_sizes/font_size = 13
 text = "蒼灰の遺跡・部屋群"
@@ -162,10 +166,14 @@ horizontal_alignment = 1
 text_overrun_behavior = 3
 
 [node name="BottomLeft" type="Panel" parent="."]
-offset_left = 12.0
-offset_top = 548.0
-offset_right = 268.0
-offset_bottom = 708.0
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -190.0
+offset_right = 292.0
+offset_bottom = -16.0
+grow_vertical = 0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("PanelStyle")
 
@@ -181,7 +189,7 @@ text = "♥  HP"
 [node name="HpValue" type="Label" parent="BottomLeft"]
 offset_left = 90.0
 offset_top = 10.0
-offset_right = 238.0
+offset_right = 258.0
 offset_bottom = 39.0
 theme_override_font_sizes/font_size = 18
 horizontal_alignment = 2
@@ -190,7 +198,7 @@ text = "24 / 24"
 [node name="HpBar" type="ProgressBar" parent="BottomLeft"]
 offset_left = 16.0
 offset_top = 42.0
-offset_right = 240.0
+offset_right = 260.0
 offset_bottom = 57.0
 mouse_filter = 2
 theme_override_styles/background = SubResource("BarBackground")
@@ -209,7 +217,7 @@ text = "Lv 1"
 [node name="ExpValue" type="Label" parent="BottomLeft"]
 offset_left = 100.0
 offset_top = 72.0
-offset_right = 240.0
+offset_right = 260.0
 offset_bottom = 96.0
 theme_override_colors/font_color = Color(0.72, 0.75, 0.77, 1)
 theme_override_font_sizes/font_size = 14
@@ -219,7 +227,7 @@ text = "EXP 0 / 10"
 [node name="ExpBar" type="ProgressBar" parent="BottomLeft"]
 offset_left = 16.0
 offset_top = 101.0
-offset_right = 240.0
+offset_right = 260.0
 offset_bottom = 114.0
 mouse_filter = 2
 theme_override_styles/background = SubResource("BarBackground")
@@ -229,42 +237,56 @@ show_percentage = false
 [node name="Meta" type="Label" parent="BottomLeft"]
 offset_left = 16.0
 offset_top = 128.0
-offset_right = 240.0
+offset_right = 260.0
 offset_bottom = 150.0
 theme_override_colors/font_color = Color(0.58, 0.62, 0.65, 1)
 theme_override_font_sizes/font_size = 13
 text = "TURN 0  ·  所持品 0 / 40"
 
 [node name="Log" type="Panel" parent="."]
-offset_left = 282.0
-offset_top = 614.0
-offset_right = 716.0
-offset_bottom = 708.0
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -330.0
+offset_top = -118.0
+offset_right = 330.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("PanelStyle")
 
 [node name="Entries" type="Label" parent="Log"]
 offset_left = 17.0
 offset_top = 10.0
-offset_right = 417.0
-offset_bottom = 84.0
+offset_right = 643.0
+offset_bottom = 92.0
 theme_override_colors/font_color = Color(0.78, 0.8, 0.8, 1)
 theme_override_font_sizes/font_size = 14
 text = "◇ 探索を開始しました。"
 text_overrun_behavior = 3
 
 [node name="BottomRight" type="Panel" parent="."]
-offset_left = 730.0
-offset_top = 480.0
-offset_right = 988.0
-offset_bottom = 708.0
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -316.0
+offset_top = -264.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("PanelStyle")
 
 [node name="Title" type="Label" parent="BottomRight"]
 offset_left = 14.0
 offset_top = 9.0
-offset_right = 244.0
+offset_right = 286.0
 offset_bottom = 34.0
 theme_override_colors/font_color = Color(0.68, 0.71, 0.73, 1)
 theme_override_font_sizes/font_size = 13
@@ -273,7 +295,7 @@ text = "EQUIPMENT"
 [node name="Divider" type="ColorRect" parent="BottomRight"]
 offset_left = 14.0
 offset_top = 36.0
-offset_right = 244.0
+offset_right = 286.0
 offset_bottom = 37.0
 mouse_filter = 2
 color = Color(0.3, 0.34, 0.37, 0.85)
@@ -281,7 +303,7 @@ color = Color(0.3, 0.34, 0.37, 0.85)
 [node name="Rows" type="VBoxContainer" parent="BottomRight"]
 offset_left = 14.0
 offset_top = 44.0
-offset_right = 244.0
+offset_right = 286.0
 offset_bottom = 201.0
 theme_override_constants/separation = 2
 
@@ -313,7 +335,7 @@ theme_override_font_sizes/font_size = 14
 [node name="Hint" type="Label" parent="BottomRight"]
 offset_left = 14.0
 offset_top = 204.0
-offset_right = 244.0
+offset_right = 286.0
 offset_bottom = 222.0
 theme_override_colors/font_color = Color(0.52, 0.57, 0.6, 1)
 theme_override_font_sizes/font_size = 12
@@ -321,10 +343,14 @@ text = "I 所持品  ·  Tab 武器切替"
 
 [node name="Boss" type="Label" parent="."]
 visible = false
-offset_left = 320.0
+anchors_preset = 10
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -220.0
 offset_top = 14.0
-offset_right = 680.0
+offset_right = 220.0
 offset_bottom = 50.0
+grow_horizontal = 2
 theme_override_colors/font_color = Color(0.94, 0.7, 0.46, 1)
 theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("BossBackground")
