@@ -2,7 +2,7 @@ extends Node2D
 
 const TILE_SIZE := 48
 const DIRECTIONS: Array[StringName] = MioAnimation.DIRECTIONS
-const FACING := [Vector2i.DOWN, Vector2i.UP, Vector2i.LEFT, Vector2i.RIGHT]
+const FACING := MioAnimation.FACINGS
 const WEAPONS := [preload("res://data/weapons/sword.tres"), preload("res://data/weapons/spear.tres"), preload("res://data/weapons/hammer.tres")]
 
 var actual_player: Node2D
@@ -41,7 +41,7 @@ func _create_labels() -> void:
 	_add_label("48pxタイル上の実寸", Vector2(62, 116), 18, Color("b9c5d8"))
 	_add_label("3倍拡大（輪郭・動き確認）", Vector2(573, 116), 18, Color("b9c5d8"))
 	state_label = _add_label("", Vector2(54, 610), 18, Color("f0c77b"))
-	_add_label("矢印 / WASD：向き　Space：待機・歩行　Tab：自動切替　Q：武器", Vector2(54, 654), 16, Color("8f9caf"))
+	_add_label("矢印/WASD：向き　Home/PgUp/End/PgDn：斜め　Space：歩行　Tab：自動　Q：武器", Vector2(54, 654), 16, Color("8f9caf"))
 
 
 func _add_label(text_value: String, position_value: Vector2, font_size: int, color: Color) -> Label:
@@ -93,6 +93,14 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
 	match event.keycode:
+		KEY_HOME:
+			_set_direction(&"back_left")
+		KEY_PAGEUP:
+			_set_direction(&"back_right")
+		KEY_END:
+			_set_direction(&"front_left")
+		KEY_PAGEDOWN:
+			_set_direction(&"front_right")
 		KEY_UP, KEY_W:
 			_set_direction(&"back")
 		KEY_DOWN, KEY_S:

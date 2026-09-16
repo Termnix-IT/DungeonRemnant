@@ -23,11 +23,19 @@ func run_tests() -> void:
 	var sprite: AnimatedSprite2D = player.sprite
 	var directions := [Vector2i.DOWN, Vector2i(1, 1), Vector2i(-1, 1), Vector2i.UP,
 		Vector2i(1, -1), Vector2i(-1, -1), Vector2i.LEFT, Vector2i.RIGHT]
-	var names := ["front", "front", "front", "back", "back", "back", "left", "right"]
+	var names := ["front", "front_right", "front_left", "back", "back_right", "back_left", "left", "right"]
 	for index in directions.size():
 		player.facing = directions[index]
 		check(sprite.animation == StringName("idle_%s" % names[index]), "Eight-way facing %s" % directions[index])
 		check(player.weapon_visual.show_behind_parent == (directions[index].y < 0), "Weapon depth follows facing")
+	player.facing = Vector2i.RIGHT
+	player.play_step(Vector2i.RIGHT, 48)
+	sprite.set_frame_and_progress(2, 0.3)
+	for index in directions.size():
+		player.facing = directions[index]
+		check(sprite.animation == StringName("walk_%s" % names[index]) and sprite.frame == 2,
+			"Eight-way turn preserves walk phase")
+	player.reset_step()
 	player.facing = Vector2i.RIGHT
 	var seen: Dictionary = {}
 	sprite.frame_changed.connect(func():

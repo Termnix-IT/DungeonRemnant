@@ -55,7 +55,7 @@ func capture() -> void:
 	root.add_child(run)
 	var hero: Node2D = run.turns.player
 	var grid: GridState = run.dungeon.grid
-	for direction: Vector2i in [Vector2i.DOWN, Vector2i.UP, Vector2i.LEFT, Vector2i.RIGHT]:
+	for direction: Vector2i in MioAnimation.FACINGS:
 		# Exercise real action/turn/camera handling on generated dungeon terrain.
 		for y in range(1, grid.size.y - 1):
 			var found := false
@@ -78,5 +78,5 @@ func capture() -> void:
 		await create_timer(0.2).timeout
 		await RenderingServer.frame_post_draw
 		error |= root.get_texture().get_image().save_png("res://.godot/player_dungeon_%s_idle.png" % MioAnimation.direction_name(direction))
-	print("Captured real dungeon actions: four directions, walk sequence and idle.")
+	print("Captured real dungeon actions: eight directions, walk sequence and idle.")
 	quit(0 if error == OK else 1)

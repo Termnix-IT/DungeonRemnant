@@ -35,7 +35,7 @@ func run_tests() -> void:
 	root.add_child(player)
 	root.add_child(enemy)
 	var player_sprite: AnimatedSprite2D = player.sprite
-	check(player_sprite.sprite_frames.get_animation_names().size() == 8, "Player uses Mio's four-direction idle and walk animations")
+	check(player_sprite.sprite_frames.get_animation_names().size() == 16, "Player uses Mio's eight-direction idle and walk animations")
 	check(player_sprite.scale == Vector2(0.8, 0.8) and MioAnimation.FRAME_SIZE == Vector2i(80, 80), "Player renders the 80px atlas at an effective 1:1 screen scale")
 	player.facing = Vector2i.DOWN
 	check(player_sprite.animation == &"idle_front", "Player front animation follows downward facing")
