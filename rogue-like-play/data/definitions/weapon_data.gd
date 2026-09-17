@@ -9,3 +9,5 @@ enum Kind { SWORD, SPEAR, HAMMER }
 @export var sweeps_sides: bool = false
 @export_range(0, 4) var knockback_distance: int = 0
 @export var pierces: bool = false
+@export_range(0, 1000000) var sell_price: int = 0
+@export_range(0, 1000000) var buy_price: int = 0

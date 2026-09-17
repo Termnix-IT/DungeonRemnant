@@ -6,3 +6,5 @@ id = &"healing_potion"
 display_name = "回復薬"
 kind = 3
 heal_amount = 8
+sell_price = 5
+buy_price = 20

@@ -32,11 +32,26 @@ func run_tests() -> void:
 	await settle()
 	var hub = main.get_node("Hub")
 	centered(hub.get_node("Content"))
+	for page in ["equipment", "sell", "upgrade", "stages", "confirm"]:
+		hub.show_page(page)
+		await settle()
+		var content: Control = hub.get_node("Content")
+		for control: Control in [hub.equipment_page, hub.sell_page, hub.departure_page, hub.upgrade_page]:
+			if control.visible:
+				check(content.get_global_rect().encloses(control.get_global_rect()), "%s page fits Hub content" % page)
+		if page == "confirm":
+			check(not hub.departure_page.equipment_label.get_global_rect().intersects(hub.departure_page.review_button.get_global_rect()), "Confirmation equipment does not overlap review button")
+		if page == "equipment":
+			check(not hub.equipment_page.comparison.get_global_rect().intersects(hub.equipment_page.equip_button.get_global_rect()), "Equipment comparison leaves action visible")
+			check(not hub.equipment_page.stats_label.get_global_rect().intersects(hub.equipment_page.swap_button.get_global_rect()), "Equipment stats leave swap visible")
+	hub.show_page("home")
 	hub.warehouse_button.pressed.emit()
 	await settle()
 	centered(hub.warehouse_panel.get_node("Panel"))
-	hub.warehouse_panel.hide()
+	hub.warehouse_panel.close()
 	hub.start_button.pressed.emit()
+	hub.departure_page.next_button.pressed.emit()
+	hub.departure_page.confirm_button.pressed.emit()
 	await settle()
 	var run = main.active_run
 	var hud = run.get_node("HUD")

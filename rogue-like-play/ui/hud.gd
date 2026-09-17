@@ -29,9 +29,9 @@ var turn_count := 0
 var inventory_count := 0
 
 
-func refresh(hp: int, max_hp: int, turns: int, visible_enemies: int, log_text: String, floor_number: int, layout_name: String, terrain_name: String = "") -> void:
-	status.text = "%d / 10F  %s     HP %d / %d     TURN %d     視界内の敵 %d" % [floor_number, layout_name, hp, max_hp, turns, visible_enemies]
-	floor_value.text = "%d / 10" % floor_number
+func refresh(hp: int, max_hp: int, turns: int, visible_enemies: int, log_text: String, floor_number: int, layout_name: String, terrain_name: String = "", total_floors: int = 10) -> void:
+	status.text = "%d / %dF  %s     HP %d / %d     TURN %d     視界内の敵 %d" % [floor_number, total_floors, layout_name, hp, max_hp, turns, visible_enemies]
+	floor_value.text = "%d / %d" % [floor_number, total_floors]
 	area.text = "%s・%s" % [_terrain_label(terrain_name), _layout_label(layout_name)]
 	hp_value.text = "%d / %d" % [hp, max_hp]
 	hp_bar.max_value = max(max_hp, 1)

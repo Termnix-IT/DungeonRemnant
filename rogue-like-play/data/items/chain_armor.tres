@@ -6,3 +6,5 @@ id = &"chain_armor"
 display_name = "鎖の防具"
 kind = 1
 defense_bonus = 2
+sell_price = 5
+buy_price = 20

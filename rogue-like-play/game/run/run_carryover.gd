@@ -32,6 +32,57 @@ func transfer_item(source: Inventory, destination: Inventory, index: int) -> int
 	return moved
 
 
+func sell_item(from_storage: bool, index: int, amount: int) -> bool:
+	var source := storage if from_storage else inventory
+	if index < 0 or index >= source.entries.size() or amount <= 0:
+		return false
+	var entry := source.entries[index]
+	var value := entry.item.sell_price * amount
+	var owned := 0
+	for matching in source.entries:
+		if matching.item.id == entry.item.id:
+			owned += matching.count
+	if amount > owned or entry.item.sell_price <= 0 or gold + value > SaveCodec.MAX_GOLD:
+		return false
+	var remaining := amount
+	for item_index in range(source.entries.size() - 1, -1, -1):
+		var matching := source.entries[item_index]
+		if matching.item.id == entry.item.id:
+			var removed := mini(remaining, matching.count)
+			source.remove(item_index, removed)
+			remaining -= removed
+			if remaining == 0:
+				break
+	gold += value
+	return true
+
+
+func buy_item(to_storage: bool, item_id: StringName, amount: int) -> bool:
+	var item := ItemCatalog.by_id(String(item_id))
+	if item == null or item.buy_price <= 0 or amount <= 0 or amount > STORAGE_MAX_STACK:
+		return false
+	var cost := item.buy_price * amount
+	if gold < cost:
+		return false
+	var destination := storage if to_storage else inventory
+	var candidate := destination.copy()
+	if candidate.add(item, amount) != 0:
+		return false
+	destination.entries = candidate.entries
+	gold -= cost
+	return true
+
+
+func preparation_stats(gear: Equipment = equipment) -> Dictionary:
+	var base: ActorStats = preload("res://data/player_stats.tres")
+	var bonus := gear.bonuses()
+	var main := gear.slots[Equipment.Slot.MAIN]
+	return {"hp": base.max_hp + upgrade.hp_bonus(hp_upgrade_level) + bonus.hp,
+		"attack": base.attack + bonus.damage + (main.weapon.damage_bonus if main != null else 0),
+		"defense": base.defense + bonus.defense,
+		"reach": main.weapon.reach if main != null else 0}
+
+
 func capture(player: Node2D, held_gold: int) -> void:
 	gold = held_gold
 	inventory = player.inventory.copy()

@@ -7,6 +7,7 @@ const PLAYER_SCENE := preload("res://actors/player/player.tscn")
 const ENEMY_SCENE := preload("res://actors/enemy/enemy.tscn")
 const PREVIEW := preload("res://combat/attack_preview.gd")
 const FINAL_FLOOR := 10
+@export_range(1, 100) var final_floor: int = FINAL_FLOOR
 const MOVE_DIRECTIONS: Array[Vector2i] = [
 	Vector2i.UP, Vector2i(1, -1), Vector2i.RIGHT, Vector2i(1, 1),
 	Vector2i.DOWN, Vector2i(-1, 1), Vector2i.LEFT, Vector2i(-1, -1),
@@ -103,7 +104,7 @@ func _load_floor() -> void:
 		enemy.get_parent().remove_child(enemy)
 		enemy.queue_free()
 	turns.enemies.clear()
-	dungeon.build(dungeon_settings, floor_number, rng, floor_number == FINAL_FLOOR)
+	dungeon.build(dungeon_settings, floor_number, rng, floor_number == final_floor)
 	turns.grid = dungeon.grid
 	turns.player.aiming = false
 	dungeon.grid.place(turns.player, dungeon.start_cell)
@@ -113,7 +114,7 @@ func _load_floor() -> void:
 		dungeon.get_node("Actors").add_child(enemy)
 		dungeon.grid.place(enemy, cell)
 		turns.enemies.append(enemy)
-	if floor_number == FINAL_FLOOR:
+	if floor_number == final_floor:
 		# The unused exit is the farthest reachable cell, never an enemy spawn.
 		var boss := ENEMY_SCENE.instantiate()
 		boss.stats = preload("res://data/enemies/boss.tres")
@@ -122,8 +123,8 @@ func _load_floor() -> void:
 		turns.enemies.append(boss)
 	dungeon.spawn_items(dungeon_settings, floor_number, rng)
 	turns.last_message = "%dFに到着。金色の階段から次の階へ進めます。" % floor_number
-	if floor_number == FINAL_FLOOR:
-		turns.last_message = "10F：深層の守護者を倒すとクリアです。中断確認はR。"
+	if floor_number == final_floor:
+		turns.last_message = "%dF：深層の守護者を倒すとクリアです。中断確認はR。" % final_floor
 
 
 func _on_turn_finished() -> void:
@@ -286,7 +287,7 @@ func _refresh() -> void:
 		enemy.visible = enemy.hp > 0 and dungeon.fog.visible.has(enemy.cell)
 		if enemy.visible:
 			visible_enemies += 1
-	hud.refresh(turns.player.hp, turns.player.stats.max_hp, turns.turn_count, visible_enemies, turns.last_message, floor_number, dungeon.layout_name, dungeon.terrain_theme_name)
+	hud.refresh(turns.player.hp, turns.player.stats.max_hp, turns.turn_count, visible_enemies, turns.last_message, floor_number, dungeon.layout_name, dungeon.terrain_theme_name, final_floor)
 	hud.show_progress(progression.level, progression.exp, progression.required_exp())
 	preview.cells.clear()
 	for cell: Vector2i in CombatRules.attack_cells(dungeon.grid, turns.player.cell, turns.player.facing, turns.player.effective_weapon()):

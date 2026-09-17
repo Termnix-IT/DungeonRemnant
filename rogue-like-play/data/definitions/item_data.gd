@@ -11,6 +11,8 @@ enum Kind { WEAPON, ARMOR, ACCESSORY, CONSUMABLE }
 @export var vision_bonus: int = 0
 @export var damage_bonus: int = 0
 @export var heal_amount: int = 0
+@export_range(0, 1000000) var sell_price: int = 0
+@export_range(0, 1000000) var buy_price: int = 0
 
 
 func stackable() -> bool:
@@ -23,6 +25,8 @@ static func from_weapon(value: WeaponData) -> ItemData:
 	item.display_name = value.display_name
 	item.kind = Kind.WEAPON
 	item.weapon = value
+	item.sell_price = value.sell_price
+	item.buy_price = value.buy_price
 	return item
 
 

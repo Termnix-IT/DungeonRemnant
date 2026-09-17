@@ -16,6 +16,11 @@ func _ready() -> void:
 	$Hub.start_requested.connect(start_run)
 	$Hub.purchase_requested.connect(purchase_upgrade)
 	$Hub.storage_transfer_requested.connect(transfer_storage)
+	$Hub.equip_requested.connect(equip_item)
+	$Hub.unequip_requested.connect(unequip_item)
+	$Hub.swap_requested.connect(swap_weapons)
+	$Hub.sell_requested.connect(sell_item)
+	$Hub.buy_requested.connect(buy_item)
 	$Hub.refresh(state)
 	_update_save_status()
 
@@ -59,8 +64,52 @@ func transfer_storage(from_storage: bool, index: int) -> bool:
 	return true
 
 
+func equip_item(from_storage: bool, index: int, slot: int) -> bool:
+	return _prepare(func() -> bool: return state.equipment.equip(state.storage if from_storage else state.inventory, index, slot), "装備を変更しました。交換前の装備は選択元に戻しました。")
+
+
+func unequip_item(slot: int) -> bool:
+	return _prepare(func() -> bool: return state.equipment.unequip(state.inventory, slot), "装備を外し、持ち込み所持品に戻しました。")
+
+
+func sell_item(from_storage: bool, index: int, amount: int) -> bool:
+	return _prepare(func() -> bool: return state.sell_item(from_storage, index, amount), "%d個を売却しました。Goldに反映しました。" % amount)
+
+
+func swap_weapons() -> bool:
+	return _prepare(state.equipment.swap_weapons, "Main / Sub Weaponを入れ替えました。")
+
+
+func buy_item(to_storage: bool, item_id: StringName, amount: int) -> bool:
+	return _prepare(func() -> bool: return state.buy_item(to_storage, item_id, amount), "%d個購入し、%sへ入れました。" % [amount, "倉庫" if to_storage else "持ち込み所持品"])
+
+
+func _prepare(action: Callable, success_message: String) -> bool:
+	if active_run != null or not has_node("Hub") or not $Hub.visible:
+		return false
+	var previous_inventory := state.inventory.copy()
+	var previous_storage := state.storage.copy()
+	var previous_slots := state.equipment.slots.duplicate()
+	var previous_gold := state.gold
+	var succeeded: bool = action.call()
+	var message := success_message if succeeded else "変更できません。選択した品・Gold・空き容量を確認してください。"
+	if succeeded and saving_enabled and not save_store.save_state(state):
+		state.inventory = previous_inventory
+		state.storage = previous_storage
+		state.equipment.slots.assign(previous_slots)
+		state.gold = previous_gold
+		succeeded = false
+		message = "保存に失敗したため、変更を取り消しました。"
+	$Hub.refresh(state, message)
+	_update_save_status()
+	return succeeded
+
+
 func start_run() -> void:
 	if active_run != null or not has_node("Hub") or not $Hub.visible:
+		return
+	var stage: StageData = $Hub.departure_page.selected_stage
+	if stage != null and (not stage.available or stage.settings == null or stage.floor_count < 1):
 		return
 	if saving_enabled and not save_store.save_state(state):
 		_update_save_status()
@@ -70,6 +119,9 @@ func start_run() -> void:
 	active_run = run_scene.instantiate()
 	active_run.name = "Run"
 	active_run.initial_state = state
+	if stage != null:
+		active_run.dungeon_settings = stage.settings
+		active_run.final_floor = stage.floor_count
 	active_run.hub_requested.connect(return_to_hub)
 	active_run.result_ready.connect(_save_result)
 	add_child(active_run)
@@ -86,6 +138,7 @@ func return_to_hub() -> void:
 	finished.queue_free()
 	$Hub.refresh(state)
 	$Hub.show()
+	$Hub.show_page("home")
 	_update_save_status()
 
 

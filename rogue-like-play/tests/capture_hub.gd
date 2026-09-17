@@ -41,9 +41,11 @@ func capture() -> void:
 	main.state.gold = 101
 	main.state.inventory.add(ItemCatalog.POTION, 10)
 	hub.refresh(main.state)
+	await click(hub.upgrade_button)
 	await click(hub.purchase_button)
 	ok = ok and main.state.gold == 71 and main.state.hp_upgrade_level == 1
 	ok = root.get_texture().get_image().save_png("res://.godot/hub_purchased.png") == OK and ok
+	await click(hub.back_button)
 	await click(hub.warehouse_button)
 	var warehouse: WarehousePanel = hub.warehouse_panel
 	ok = ok and warehouse.visible
@@ -69,6 +71,8 @@ func capture() -> void:
 	await settle()
 	ok = ok and not warehouse.visible
 	await click(hub.start_button)
+	await click(hub.departure_page.next_button)
+	await click(hub.departure_page.confirm_button)
 	ok = ok and main.active_run != null and not hub.visible
 	var run: Node2D = main.active_run
 	ok = ok and run.turns.player.hp == 25 and run.turns.gold == 71
@@ -87,6 +91,8 @@ func capture() -> void:
 	ok = ok and main.active_run == null and hub.visible and main.state.gold == 36
 	ok = root.get_texture().get_image().save_png("res://.godot/hub_returned.png") == OK and ok
 	await click(hub.start_button)
+	await click(hub.departure_page.next_button)
+	await click(hub.departure_page.confirm_button)
 	ok = ok and main.active_run.turns.player.hp == 25 and main.active_run.turns.gold == 36
 	main.active_run.finish_run(true)
 	await settle()

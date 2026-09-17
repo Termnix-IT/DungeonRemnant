@@ -2,6 +2,8 @@ class_name WarehousePanel
 extends Control
 
 signal transfer_requested(from_storage: bool, index: int)
+signal closed
+signal equipment_requested
 
 var state: RunCarryover
 var inventory_index := -1
@@ -15,6 +17,7 @@ func _ready() -> void:
 	$Panel/Deposit.pressed.connect(func(): transfer_requested.emit(false, inventory_index))
 	$Panel/Withdraw.pressed.connect(func(): transfer_requested.emit(true, storage_index))
 	$Panel/Close.pressed.connect(close)
+	$Panel/Equipment.pressed.connect(func(): close(); equipment_requested.emit())
 
 
 func present(current_state: RunCarryover) -> void:
@@ -23,10 +26,12 @@ func present(current_state: RunCarryover) -> void:
 	storage_index = -1
 	refresh()
 	show()
+	$Panel/InventoryList.grab_focus()
 
 
 func refresh(current_state: RunCarryover = state, message: String = "") -> void:
 	state = current_state
+	$Panel/Gold.text = "Gold  %d" % state.gold
 	$Panel/InventoryTitle.text = "持ち込みInventory  %d / %d枠" % [state.inventory.entries.size(), state.inventory.max_entries]
 	$Panel/StorageTitle.text = "倉庫  %d / %d枠" % [state.storage.entries.size(), state.storage.max_entries]
 	_fill_list($Panel/InventoryList, state.inventory)
@@ -46,12 +51,14 @@ func refresh(current_state: RunCarryover = state, message: String = "") -> void:
 
 func close() -> void:
 	hide()
+	closed.emit()
 
 
 func _fill_list(list: ItemList, inventory: Inventory) -> void:
 	list.clear()
 	for entry: InventoryEntry in inventory.entries:
 		list.add_item("%s  ×%d" % [entry.item.display_name, entry.count])
+		list.set_item_tooltip(list.item_count - 1, entry.item.description())
 
 
 func _select_inventory(index: int) -> void:

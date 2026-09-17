@@ -5,3 +5,5 @@ script = ExtResource("1")
 display_name = "槍"
 kind = 1
 reach = 2
+sell_price = 10
+buy_price = 40

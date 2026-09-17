@@ -6,3 +6,5 @@ id = &"leather_armor"
 display_name = "革の防具"
 kind = 1
 defense_bonus = 1
+sell_price = 5
+buy_price = 20

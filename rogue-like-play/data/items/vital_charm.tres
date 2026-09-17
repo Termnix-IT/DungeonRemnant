@@ -6,3 +6,5 @@ id = &"vital_charm"
 display_name = "生命のお守り"
 kind = 2
 max_hp_bonus = 4
+sell_price = 5
+buy_price = 20

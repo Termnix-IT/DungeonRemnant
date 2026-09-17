@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="StageData" load_steps=4 format=3]
+[ext_resource type="Script" path="res://data/definitions/stage_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/dungeon/default.tres" id="2"]
+[ext_resource type="Texture2D" path="res://art/hub/ancient_ruins.png" id="3"]
+[resource]
+script = ExtResource("1")
+id = &"ancient_ruins"
+display_name = "古代遺跡"
+description = "石の回廊を抜け、遺跡の深層へ。\n一歩ずつ進み、最奥に待つ守護者に挑む。"
+floor_count = 10
+difficulty = "標準"
+features = "階層ごとに変わる地形。\n落ちている装備と能力で、冒険のたびに強くなる。\n長く留まると増援が現れる。"
+enemy_summary = "追跡する敵 / 接近で反応する敵 / 固定砲台\n最終階：深層の守護者"
+settings = ExtResource("2")
+illustration = ExtResource("3")

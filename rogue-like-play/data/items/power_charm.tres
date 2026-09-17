@@ -6,3 +6,5 @@ id = &"power_charm"
 display_name = "力のお守り"
 kind = 2
 damage_bonus = 1
+sell_price = 5
+buy_price = 20
