@@ -13,6 +13,11 @@ func _draw() -> void:
 		var center := Vector2(cell * tile_size) + Vector2.ONE * tile_size / 2.0
 		var item: ItemData = entries[cell].item
 		draw_set_transform(center, 0.0, Vector2.ONE * visual_scale)
+		if not item.effect_id.is_empty():
+			draw_rect(Rect2(-6, -10, 12, 20), Color("e8cf80"))
+			draw_line(Vector2(0, -6), Vector2(0, 6), Color("4d3944"), 3)
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			continue
 		match item.kind:
 			ItemData.Kind.WEAPON:
 				draw_line(Vector2(-7, 7), Vector2(7, -7), Color("c9e3e9"), 4)

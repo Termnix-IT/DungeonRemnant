@@ -52,7 +52,7 @@ func run_tests() -> void:
 	check(main.state.inventory.entries.is_empty() and main.state.gold == 35, "Sell all works on carried source")
 	main.state.gold = 100
 	shop.buy_tab.pressed.emit()
-	check(shop.buying and not shop.sell_all_button.visible and shop.rows.size() == 9, "Purchase tab exposes catalog and hides sell-all")
+	check(shop.buying and not shop.sell_all_button.visible and shop.rows.size() == ItemCatalog.shop_items().size(), "Purchase tab exposes catalog and hides sell-all")
 	shop.item_list.select(0)
 	shop.item_list.item_selected.emit(0)
 	shop.quantity.value = 3

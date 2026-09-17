@@ -16,6 +16,8 @@ const ENEMY_TYPES: Array[EnemyStats] = [
 	preload("res://data/enemies/basic_enemy.tres"),
 	preload("res://data/enemies/proximity_enemy.tres"),
 	preload("res://data/enemies/turret_enemy.tres"),
+	preload("res://data/enemies/fast_enemy.tres"),
+	preload("res://data/enemies/summoner_enemy.tres"),
 ]
 
 @export var starting_weapon: WeaponData = preload("res://data/weapons/sword.tres")
@@ -87,6 +89,8 @@ func _ready() -> void:
 	dungeon.add_child(preview)
 	turns.turn_finished.connect(_on_turn_finished)
 	turns.boss_defeated.connect(_on_boss_defeated)
+	turns.enemy_defeated.connect(_drop_enemy_loot)
+	turns.summon_requested.connect(_summon_enemy)
 	turns.ability_choice_requested.connect(_show_ability_choice)
 	ability_choice.selected.connect(_choose_ability)
 	turns.player_moved.connect(_collect_items)
@@ -101,6 +105,8 @@ func _ready() -> void:
 
 
 func _load_floor() -> void:
+	turns.player.active_effects.change_floor()
+	turns.player.refresh_equipment_effects()
 	turns.floor_turn_count = 0
 	turns.boss_reward_claimed = false
 	floor_limit = dungeon_settings.floor_turn_limit
@@ -130,6 +136,7 @@ func _load_floor() -> void:
 	for cell: Vector2i in dungeon.enemy_cells:
 		var enemy := ENEMY_SCENE.instantiate()
 		enemy.stats = ENEMY_TYPES[(floor_number - 1 + turns.enemies.size()) % ENEMY_TYPES.size()]
+		_make_elite(enemy)
 		dungeon.get_node("Actors").add_child(enemy)
 		dungeon.grid.place(enemy, cell)
 		turns.enemies.append(enemy)
@@ -228,6 +235,7 @@ func _spawn_reinforcement() -> void:
 		return
 	var enemy := ENEMY_SCENE.instantiate()
 	enemy.stats = ENEMY_TYPES[rng.randi_range(0, ENEMY_TYPES.size() - 1)]
+	_make_elite(enemy)
 	dungeon.get_node("Actors").add_child(enemy)
 	dungeon.grid.place(enemy, cell)
 	turns.enemies.append(enemy)
@@ -373,6 +381,7 @@ func _refresh() -> void:
 	preview.queue_redraw()
 	hud.show_aim(turns.player.weapon.display_name, preview.visible)
 	hud.show_inventory(turns.player.inventory.entries.size())
+	hud.show_effects(turns.player.active_effects.summary())
 	hud.show_gold(turns.gold)
 	hud.show_equipment(turns.player.equipment)
 	var visible_enemy_cells: Array[Vector2i] = []
@@ -506,6 +515,8 @@ func finish_run(cleared: bool, safe_return: bool = false, forced_return: bool = 
 		result = RunLoss.apply(turns.player.inventory, turns.gold, loss_rng)
 	turns.gold -= int(result.gold_lost)
 	result.merge({"cleared": cleared, "safe_return": safe_return, "forced_return": forced_return, "floor": floor_number, "earned_gold": turns.earned_gold, "gold": turns.gold})
+	turns.player.active_effects.effects.clear()
+	turns.player.refresh_equipment_effects()
 	carryover.capture(turns.player, turns.gold)
 	_refresh()
 	if presentation.playing:
@@ -551,3 +562,48 @@ func retry_run() -> void:
 	hud.reset_log()
 	_load_floor()
 	_refresh()
+
+
+func _make_elite(enemy: Node2D) -> void:
+	if rng.randf() >= dungeon_settings.elite_chance:
+		return
+	enemy.stats = enemy.stats.duplicate()
+	enemy.stats.elite = true
+	enemy.stats.max_hp += 3
+	enemy.stats.attack += 1
+	enemy.stats.exp_reward += 5
+	enemy.stats.display_name = "精鋭 " + enemy.stats.display_name
+
+
+func _drop_enemy_loot(enemy: Node2D) -> void:
+	if not enemy.stats.elite or rng.randf() >= dungeon_settings.accessory_drop_chance:
+		return
+	var candidates: Array[Vector2i] = [enemy.cell]
+	for direction in MOVE_DIRECTIONS:
+		candidates.append(enemy.cell + direction)
+	for cell in candidates:
+		if dungeon.grid.in_bounds(cell) and not dungeon.grid.walls.has(cell) and not dungeon.ground_items.has(cell) and cell != dungeon.stairs_cell:
+			var items := ItemCatalog.talismans()
+			dungeon.ground_items[cell] = InventoryEntry.new(items[rng.randi_range(0, items.size() - 1)])
+			return
+
+
+func _summon_enemy(source: Node2D) -> void:
+	var alive := 0
+	for enemy: Node2D in turns.enemies:
+		if enemy.hp > 0 and enemy.summoner == source:
+			alive += 1
+	if alive >= source.stats.summon_cap:
+		return
+	for direction in MOVE_DIRECTIONS:
+		var cell: Vector2i = source.cell + direction
+		if not dungeon.grid.can_step(source.cell, cell) or dungeon.grid.occupants.has(cell) or cell == dungeon.stairs_cell:
+			continue
+		var enemy := ENEMY_SCENE.instantiate()
+		enemy.stats = preload("res://data/enemies/charge_enemy.tres")
+		enemy.summoner = source
+		dungeon.get_node("Actors").add_child(enemy)
+		dungeon.grid.place(enemy, cell)
+		turns.enemies.append(enemy)
+		turns.last_message += " 突進獣が召喚された！"
+		return

@@ -140,7 +140,7 @@ func _attack(actor: Node2D, direction: Vector2i, weapon: WeaponData) -> void:
 	if actor.has_method("reset_step"):
 		actor.reset_step()
 	_track(actor)
-	sound(230 if weapon == null else [360, 500, 170][weapon.kind])
+	sound(230 if weapon == null else {WeaponData.Kind.SWORD: 360, WeaponData.Kind.SPEAR: 500, WeaponData.Kind.HAMMER: 170, WeaponData.Kind.AXE: 210}.get(weapon.kind, 420))
 	var vector := Vector2(direction).normalized()
 	var visual: Node2D = actor.combat_visual if actor.get("combat_visual") != null else actor
 	var property := "position" if visual != actor else "visual_offset"

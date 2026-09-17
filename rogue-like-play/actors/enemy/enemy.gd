@@ -1,6 +1,9 @@
 extends Node2D
 
 @export var stats: EnemyStats
+var summon_clock := 0
+var summon_due := false
+var summoner: Node2D
 var hp: int
 var cell := Vector2i.ZERO
 var facing := Vector2i.LEFT
@@ -27,6 +30,44 @@ func detects(grid: GridState, target: Vector2i) -> bool:
 func take_turn(grid: GridState, player: Node2D) -> int:
 	if hp <= 0 or player.hp <= 0:
 		return 0
+	if stats.behavior == EnemyStats.Behavior.SUMMONER:
+		summon_clock += 1
+		summon_due = summon_clock >= stats.summon_interval
+		if summon_due:
+			summon_clock = 0
+		queue_redraw()
+		return 0
+	if stats.behavior == EnemyStats.Behavior.FAST:
+		for step in stats.move_steps:
+			if detects(grid, player.cell) and grid.can_step(cell, player.cell):
+				return _take_normal_turn(grid, player)
+			_take_normal_turn(grid, player)
+		return 0
+	if stats.behavior == EnemyStats.Behavior.CHARGER:
+		return _take_charge_turn(grid, player)
+	return _take_normal_turn(grid, player)
+
+
+func _take_charge_turn(grid: GridState, player: Node2D) -> int:
+	if shot_direction == Vector2i.ZERO:
+		if detects(grid, player.cell):
+			var delta: Vector2i = player.cell - cell
+			shot_direction = Vector2i(signi(delta.x), signi(delta.y))
+			facing = shot_direction
+		queue_redraw()
+		return 0
+	var direction := shot_direction
+	shot_direction = Vector2i.ZERO
+	for step in stats.move_steps:
+		if cell + direction == player.cell and grid.can_step(cell, player.cell):
+			return CombatRules.attack(grid, self, direction)
+		if not grid.move_actor(self, cell + direction):
+			break
+	queue_redraw()
+	return 0
+
+
+func _take_normal_turn(grid: GridState, player: Node2D) -> int:
 	var detected := detects(grid, player.cell)
 	if stats.detection == EnemyStats.Detection.TURRET:
 		return _take_turret_turn(grid, player, detected)
@@ -109,6 +150,16 @@ func _draw() -> void:
 		draw_line(Vector2.ZERO, Vector2(facing) * (28 if charging else 16), Color.WHITE if charging else Color("716b82"), 3)
 	else:
 		draw_line(Vector2.ZERO, Vector2(facing) * 16, Color.WHITE, 3)
+	if stats.elite:
+		draw_arc(Vector2.ZERO, 16, 0, TAU, 24, Color("ffd966"), 3)
+	if stats.behavior == EnemyStats.Behavior.FAST:
+		draw_line(Vector2(-16, -8), Vector2(-10, -8), Color.CYAN, 3)
+		draw_line(Vector2(-18, 0), Vector2(-12, 0), Color.CYAN, 3)
+	if stats.behavior == EnemyStats.Behavior.SUMMONER:
+		draw_circle(Vector2.ZERO, 13, Color("648951"))
+		draw_arc(Vector2.ZERO, 18, -PI / 2, -PI / 2 + TAU * (summon_clock + 1) / stats.summon_interval, 24, Color("ccec92"), 3)
+	if stats.behavior == EnemyStats.Behavior.CHARGER and shot_direction != Vector2i.ZERO:
+		draw_line(Vector2.ZERO, Vector2(shot_direction) * 30, Color.ORANGE_RED, 4)
 	if hp < stats.max_hp:
 		draw_rect(Rect2(-12, -17, 24, 3), Color("45383c"))
 		draw_rect(Rect2(-12, -17, 24.0 * hp / stats.max_hp, 3), Color("efbb81"))

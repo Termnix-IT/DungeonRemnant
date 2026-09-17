@@ -145,3 +145,17 @@ func _layout_label(value: String) -> String:
 		"OpenArea": return "大広間"
 		"Cave": return "洞穴"
 	return value
+
+
+func show_effects(text: String) -> void:
+	var label := get_node_or_null("ActiveEffects") as Label
+	if label == null:
+		label = Label.new()
+		label.name = "ActiveEffects"
+		label.position = Vector2(310, 64)
+		label.size = Vector2(770, 90)
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.add_theme_font_size_override("font_size", 16)
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(label)
+	label.text = text

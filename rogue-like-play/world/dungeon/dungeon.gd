@@ -62,7 +62,7 @@ func spawn_items(settings: DungeonSettings, floor_number: int, rng: RandomNumber
 		var selected := 0 if index == 0 else rng.randi_range(0, candidates.size() - 1)
 		var cell := candidates[selected]
 		candidates.remove_at(selected)
-		var item := ItemCatalog.POTION if index % 3 == 2 else ItemCatalog.floor_item((floor_number - 1) * 4 + index - index / 3)
+		var item := ItemCatalog.POTION if index % 3 == 2 else ItemCatalog.ground_item((floor_number - 1) * 4 + index - index / 3)
 		ground_items[cell] = InventoryEntry.new(item, 2 if item.stackable() else 1)
 
 

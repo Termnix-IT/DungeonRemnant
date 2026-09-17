@@ -77,7 +77,7 @@ func _update_actions() -> void:
 	for slot in 5:
 		equip_buttons[slot].visible = item != null and player.equipment.accepts(item, slot)
 	$Panel/Use.visible = item != null and item.kind == ItemData.Kind.CONSUMABLE
-	$Panel/Use.disabled = player.hp >= player.stats.max_hp
+	$Panel/Use.disabled = item == null or (not player.active_effects.can_use(item) if not item.effect_id.is_empty() else player.hp >= player.stats.max_hp)
 
 
 func _equip(slot: int) -> void:

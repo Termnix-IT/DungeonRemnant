@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://data/definitions/item_data.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"defense_talisman"
+display_name = "守りの護符"
+effect_id = &"defense"
+effect_amount = 2
+effect_turns = 30
+sell_price = 10
+buy_price = 60

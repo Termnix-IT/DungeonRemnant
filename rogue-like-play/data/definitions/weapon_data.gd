@@ -1,7 +1,7 @@
 class_name WeaponData
 extends Resource
 
-enum Kind { SWORD, SPEAR, HAMMER }
+enum Kind { SWORD, SPEAR, HAMMER, AXE }
 @export var kind: Kind = Kind.SWORD
 @export var display_name: String = "剣"
 @export_range(1, 12) var reach: int = 1

@@ -18,6 +18,7 @@ var facing := Vector2i.RIGHT:
 		queue_redraw()
 var input_enabled := true
 var inventory := Inventory.new()
+var active_effects := ActiveEffects.new()
 var equipment := Equipment.new()
 var equipment_effects := {"hp": 0, "defense": 0, "vision": 0, "damage": 0}
 var weapon: WeaponData:
@@ -110,7 +111,7 @@ func gain_ability(ability: AbilityData) -> bool:
 
 func effective_weapon() -> WeaponData:
 	var result: WeaponData = weapon.duplicate()
-	result.damage_bonus += int(equipment_effects.damage)
+	result.damage_bonus += int(equipment_effects.damage) + active_effects.amount(&"damage")
 	match weapon.kind:
 		WeaponData.Kind.SWORD:
 			result.damage_bonus += abilities.total(AbilityData.Effect.SWORD_DAMAGE)
@@ -125,6 +126,8 @@ func effective_weapon() -> WeaponData:
 
 func refresh_equipment_effects() -> void:
 	var next := equipment.bonuses()
+	next.defense += active_effects.amount(&"defense")
+	next.vision += active_effects.amount(&"vision")
 	stats.max_hp += int(next.hp) - int(equipment_effects.hp)
 	stats.defense += int(next.defense) - int(equipment_effects.defense)
 	vision_range += int(next.vision) - int(equipment_effects.vision)
@@ -200,6 +203,10 @@ func _draw_weapon_silhouette() -> void:
 			weapon_visual.draw_line(anchor - direction * 4.0, anchor + direction * 18.0, handle, 2.0)
 			var tip := anchor + direction * 20.0
 			weapon_visual.draw_colored_polygon(PackedVector2Array([tip, tip - direction * 6.0 + side * 3.0, tip - direction * 6.0 - side * 3.0]), metal)
+		WeaponData.Kind.AXE:
+			weapon_visual.draw_line(anchor - direction * 4, anchor + direction * 16, handle, 4)
+			var head := anchor + direction * 12
+			weapon_visual.draw_colored_polygon(PackedVector2Array([head - direction * 5, head + side * 9, head + direction * 5, head - side * 5]), metal)
 		WeaponData.Kind.HAMMER:
 			weapon_visual.draw_line(anchor - direction * 3.0, anchor + direction * 13.0, edge, 4.0)
 			weapon_visual.draw_line(anchor - direction * 3.0, anchor + direction * 13.0, handle, 2.0)

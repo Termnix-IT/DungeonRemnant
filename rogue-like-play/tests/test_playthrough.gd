@@ -8,7 +8,7 @@ func _initialize() -> void:
 	call_deferred("run_tests")
 
 
-func path_to(run: Node2D, target: Vector2i) -> Array[Vector2i]:
+func path_to(run: Node2D, target: Vector2i, fight_through: bool = false) -> Array[Vector2i]:
 	var grid: GridState = run.dungeon.grid
 	var finder := AStarGrid2D.new()
 	finder.region = Rect2i(Vector2i.ZERO, grid.size)
@@ -17,7 +17,7 @@ func path_to(run: Node2D, target: Vector2i) -> Array[Vector2i]:
 	for cell: Vector2i in grid.walls:
 		finder.set_point_solid(cell)
 	for cell: Vector2i in grid.occupants:
-		if cell != run.turns.player.cell and cell != target:
+		if not fight_through and cell != run.turns.player.cell and cell != target:
 			finder.set_point_solid(cell)
 	return finder.get_id_path(run.turns.player.cell, target)
 
@@ -46,9 +46,24 @@ func act(run: Node2D) -> bool:
 			for slot in [3, 4]:
 				if player.equipment.slots[slot] == null:
 					return run.turns.submit_inventory("equip", index, slot)
+	# Summoners are a source objective: do not farm their endlessly replenished guards.
+	for enemy: Node2D in run.turns.enemies:
+		if enemy.hp <= 0 or enemy.stats.behavior != EnemyStats.Behavior.SUMMONER:
+			continue
+		var route := path_to(run, enemy.cell, true)
+		if route.size() > 1 and run.dungeon.grid.occupants.has(route[1]):
+			return run.turns.submit("attack", route[1] - player.cell)
+		if route.size() > 2:
+			return run.turns.submit("move", route[1] - player.cell)
 	for enemy: Node2D in run.turns.enemies:
 		if enemy.hp > 0 and run.dungeon.grid.can_step(player.cell, enemy.cell):
 			return run.turns.submit("attack", enemy.cell - player.cell)
+	# Let a warned charge approach instead of orbiting a target that overshoots.
+	for enemy: Node2D in run.turns.enemies:
+		if enemy.hp > 0 and enemy.stats.behavior == EnemyStats.Behavior.CHARGER and enemy.detects(run.dungeon.grid, player.cell):
+			var delta: Vector2i = enemy.cell - player.cell
+			if delta.x == 0 or delta.y == 0 or absi(delta.x) == absi(delta.y):
+				return run.turns.submit("attack", Vector2i(signi(delta.x), signi(delta.y)))
 	var destinations: Array[Vector2i] = []
 	for cell: Vector2i in run.dungeon.ground_items:
 		if player.inventory.entries.size() < 40:

@@ -249,7 +249,7 @@ func test_scene_visibility() -> void:
 	run._refresh()
 	check(run.dungeon.fog.visible.has(run.turns.player.cell), "New floor reveals starting view")
 	run.free()
-	# Three enemies per floor rotate through all three behavior resources.
+	# Three enemies per floor rotate through five behavior resources.
 	run = RUN.instantiate()
 	run.generation_seed = 47
 	root.add_child(run)
@@ -258,7 +258,8 @@ func test_scene_visibility() -> void:
 		run._load_floor()
 		check(run.turns.enemies.size() == (4 if floor_value == 10 else 3), "Three regular enemies per floor plus final boss")
 		for index in 3:
-			check(run.turns.enemies[index].stats.detection == (floor_value - 1 + index) % 3, "Floor composition rotates through three enemy types")
+			var expected: EnemyStats = run.ENEMY_TYPES[(floor_value - 1 + index) % run.ENEMY_TYPES.size()]
+			check(run.turns.enemies[index].stats.detection == expected.detection and run.turns.enemies[index].stats.behavior == expected.behavior, "Floor composition rotates through five enemy types")
 	run.floor_number = 3
 	run._load_floor()
 	check(not run.dungeon.grid.pillars.is_empty(), "OpenArea generates pillars")

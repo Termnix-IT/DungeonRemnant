@@ -4,6 +4,8 @@ signal turn_finished
 signal ability_choice_requested
 signal player_moved
 signal boss_defeated
+signal enemy_defeated(enemy: Node2D)
+signal summon_requested(enemy: Node2D)
 
 var grid: GridState
 var player: Node2D
@@ -61,7 +63,10 @@ func submit_inventory(kind: String, index: int = -1, slot: int = -1) -> bool:
 		"use":
 			if index >= 0 and index < player.inventory.entries.size():
 				var item: ItemData = player.inventory.entries[index].item
-				if item.kind == ItemData.Kind.CONSUMABLE and item.heal_amount > 0 and player.hp < player.stats.max_hp:
+				if not item.effect_id.is_empty() and player.active_effects.add(item):
+					player.inventory.remove(index)
+					succeeded = true
+				elif item.kind == ItemData.Kind.CONSUMABLE and item.heal_amount > 0 and player.hp < player.stats.max_hp:
 					player.hp = mini(player.stats.max_hp, player.hp + item.heal_amount)
 					player.inventory.remove(index)
 					succeeded = true
@@ -70,7 +75,7 @@ func submit_inventory(kind: String, index: int = -1, slot: int = -1) -> bool:
 		return false
 	player.refresh_equipment_effects()
 	player.aiming = false
-	last_message = "回復薬を使用しました。" if kind == "use" else "装備を変更しました。"
+	last_message = "アイテムを使用しました。" if kind == "use" else "装備を変更しました。"
 	if kind == "use":
 		moved_this_turn = false
 		return _complete_player_action()
@@ -90,13 +95,19 @@ func _complete_player_action() -> bool:
 			if enemy.hp <= 0 and not enemy.exp_claimed:
 				enemy.exp_claimed = true
 				enemy.hide()
+				enemy_defeated.emit(enemy)
 				earned_exp += enemy.stats.exp_reward
 				gold += enemy.stats.gold_reward
 				earned_gold += enemy.stats.gold_reward
 				action_gold += enemy.stats.gold_reward
 				kills += 1
 		if kills > 0:
-			player.hp = mini(player.stats.max_hp, player.hp + kills * player.abilities.total(AbilityData.Effect.KILL_HEAL))
+			player.hp = mini(player.stats.max_hp, player.hp + kills * (player.abilities.total(AbilityData.Effect.KILL_HEAL) + player.active_effects.amount(&"kill_heal")))
+			earned_exp += earned_exp * player.active_effects.amount(&"exp") / 100
+			var bonus_gold: int = action_gold * player.active_effects.amount(&"gold") / 100
+			gold += bonus_gold
+			earned_gold += bonus_gold
+			action_gold += bonus_gold
 			progression.gain_exp(earned_exp)
 			last_message += " EXP +%d / Gold +%d。" % [earned_exp, action_gold]
 		for enemy: Node2D in enemies:
@@ -140,15 +151,23 @@ func choose_ability(id: StringName) -> bool:
 
 
 func _finish_enemy_phase() -> void:
-	for enemy: Node2D in enemies:
+	# Spawned actors start acting on the following turn.
+	for enemy: Node2D in enemies.duplicate():
 		if enemy.hp <= 0:
 			enemy.hide()
 			continue
 		if player.hp <= 0:
 			break
 		var damage: int = enemy.take_turn(grid, player)
+		if enemy.summon_due:
+			enemy.summon_due = false
+			summon_requested.emit(enemy)
 		if damage > 0:
 			last_message += " 敵の攻撃 %d。" % damage
+	if player.hp > 0:
+		player.hp = mini(player.stats.max_hp, player.hp + player.active_effects.amount(&"regen"))
+	player.active_effects.tick()
+	player.refresh_equipment_effects()
 	ended = player.hp <= 0
 	player.input_enabled = not ended
 	busy = false

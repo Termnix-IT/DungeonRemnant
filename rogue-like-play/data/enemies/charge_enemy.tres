@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EnemyStats" load_steps=2 format=3]
+[ext_resource type="Script" path="res://data/definitions/enemy_stats.gd" id="1"]
+[resource]
+script = ExtResource("1")
+display_name = "突進獣"
+behavior = 3
+max_hp = 6
+attack = 2
+move_steps = 3
+exp_reward = 1
+gold_reward = 0

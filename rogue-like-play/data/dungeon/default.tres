@@ -4,6 +4,8 @@
 script = ExtResource("1")
 floor_turn_limit = 5000
 boss_grace_turns = 150
+elite_chance = 0.08
+accessory_drop_chance = 0.15
 width = 40
 height = 40
 enemy_count = 3
