@@ -170,6 +170,7 @@ func test_ten_floors() -> void:
 		for index in range(1, path.size()):
 			check(run.turns.submit("move", path[index] - path[index - 1]), "Route step accepted")
 			turn_total += 1
+		run.resolve_transition(true)
 		check(run.floor_number == expected_floor + 1, "Stair move changes floor once")
 		check(run.turns.player == player and player.hp == 13 and player.weapon == HAMMER, "HP, weapon and player preserved")
 		check(run.turns.turn_count == turn_total, "Stairs cost exactly one move")
@@ -209,6 +210,7 @@ func test_stair_combat() -> void:
 	arrange_stair_fight(run)
 	var old_enemy: Node2D = run.turns.enemies[0]
 	run.turns.submit("move", Vector2i.RIGHT)
+	run.resolve_transition(true)
 	check(run.floor_number == 2 and run.turns.player.hp == 21, "Old enemy attacks before stairs")
 	check(old_enemy.is_queued_for_deletion() and old_enemy.get_parent() == null, "Old enemies detached and released")
 	var fresh := true

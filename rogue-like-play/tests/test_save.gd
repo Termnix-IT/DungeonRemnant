@@ -161,7 +161,7 @@ func test_game_integration() -> void:
 	main = preload("res://game/main.tscn").instantiate()
 	main.save_store.path = test_dir + "/game.json"
 	root.add_child(main)
-	check(main.state.gold == 51 and main.state.inventory.entries[0].count == 5 and main.state.hp_upgrade_level == 1, "Restart after result restores once-reduced possessions")
+	check(main.state.gold == 51 and main.state.inventory.entries.is_empty() and main.state.hp_upgrade_level == 1, "Restart after result restores once-reduced possessions")
 	check(main.state.storage.entries[0].count == 75, "Adventure loss does not affect warehouse")
 	main.start_run()
 	check(main.active_run.turns.player.hp == 25 and main.active_run.progression.level == 1, "Restart applies permanent bonus, not run growth")
@@ -173,6 +173,7 @@ func test_game_integration() -> void:
 	check(main.state.gold == 51, "Interrupted adventure rolls back to departure state")
 	main.state.gold = 100
 	main.save_store.path = test_dir + "/missing/purchase.json"
+	main.state.inventory.add(ItemCatalog.POTION, 10)
 	var carried_before: int = main.state.inventory.entries[0].count
 	var stored_before: int = main.state.storage.entries[0].count
 	check(not main.transfer_storage(false, 0) and main.state.inventory.entries[0].count == carried_before and main.state.storage.entries[0].count == stored_before, "Failed warehouse save rolls transfer back")

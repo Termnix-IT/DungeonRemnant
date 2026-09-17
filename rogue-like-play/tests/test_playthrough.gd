@@ -23,6 +23,9 @@ func path_to(run: Node2D, target: Vector2i) -> Array[Vector2i]:
 
 
 func act(run: Node2D) -> bool:
+	if not run.transition_kind.is_empty():
+		run.resolve_transition(true)
+		return true
 	var player: Node2D = run.turns.player
 	if not run.turns.offered_abilities.is_empty():
 		var priorities := [AbilityData.Effect.DEFENSE, AbilityData.Effect.ATTACK, AbilityData.Effect.KILL_HEAL, AbilityData.Effect.MAX_HP, AbilityData.Effect.SWORD_DAMAGE]

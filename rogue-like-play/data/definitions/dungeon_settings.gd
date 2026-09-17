@@ -1,6 +1,9 @@
 class_name DungeonSettings
 extends Resource
 
+@export_range(1, 10000) var floor_turn_limit: int = 5000
+@export_range(0, 1000) var boss_grace_turns: int = 150
+
 @export_range(20, 60) var width: int = 40
 @export_range(20, 60) var height: int = 40
 @export_range(0, 20) var enemy_count: int = 3

@@ -21,11 +21,13 @@ var layout_name := ""
 var terrain_theme_index := 0
 var terrain_theme_name := ""
 var has_stairs := true
+var escape_cell := Vector2i(-1, -1)
 var fog := FogOfWar.new()
 var ground_items: Dictionary = {}
 
 
 func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenerator, final_floor: bool) -> void:
+	escape_cell = Vector2i(-1, -1)
 	var generated := DungeonGenerator.generate(settings, floor_number, rng)
 	grid = generated.grid
 	start_cell = generated.start
@@ -91,6 +93,7 @@ func update_visibility(origin: Vector2i, radius: int) -> void:
 	$Items.entries = ground_items
 	$Items.visible_cells = fog.visible
 	$Items.queue_redraw()
+	queue_redraw()
 
 
 func sync_actors() -> void:
@@ -147,3 +150,13 @@ func _wall_connection_mask(cell: Vector2i) -> int:
 
 func _is_connectable_wall(cell: Vector2i) -> bool:
 	return grid.walls.has(cell) and not grid.pillars.has(cell)
+
+
+func _draw() -> void:
+	if escape_cell.x < 0 or not fog.visible.has(escape_cell):
+		return
+	var center := Vector2(escape_cell * TILE_SIZE) + Vector2.ONE * TILE_SIZE / 2.0
+	draw_circle(center, 19, Color("5df1c3"), false, 4)
+	draw_line(center + Vector2(0, 12), center + Vector2(0, -12), Color.WHITE, 3)
+	draw_line(center + Vector2(0, -12), center + Vector2(-7, -5), Color.WHITE, 3)
+	draw_line(center + Vector2(0, -12), center + Vector2(7, -5), Color.WHITE, 3)

@@ -63,7 +63,7 @@ func show_save_status(message: String) -> void:
 func present(result: Dictionary) -> void:
 	save_label.text = ""
 	confirming = false
-	title_label.text = "冒険クリア" if result.cleared else "冒険終了"
+	title_label.text = "冒険クリア" if result.cleared else ("無事に帰還" if result.get("safe_return", false) else ("滞在上限：強制帰還" if result.get("forced_return", false) else "冒険終了"))
 	var losses: PackedStringArray = []
 	for label: String in result.items_lost:
 		losses.append("%s ×%d" % [label, result.items_lost[label]])
@@ -77,7 +77,7 @@ func confirm_abort() -> void:
 	save_label.text = ""
 	confirming = true
 	title_label.text = "冒険を中断しますか？"
-	details.text = "死亡時と同じペナルティが適用されます。\n\n・所持Goldの50%を失います。\n・非装備アイテムの50%を個数単位で失います。\n・装備中の5枠は保持されます。\n\n端数は切り捨て。Lv・EXP・能力は再挑戦時にリセットされます。"
+	details.text = "死亡時と同じペナルティが適用されます。\n\n・所持Goldの50%を失います。\n・非装備の所持枠の半数をランダムに失います（切り上げ）。\n・装備中の5枠は保持されます。\n\nGoldの端数は切り捨て。Lv・EXP・能力は再挑戦時にリセットされます。"
 	accept.text = "中断してリザルトへ"
 	cancel.show()
 	show()

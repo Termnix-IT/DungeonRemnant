@@ -25,6 +25,12 @@ const ENEMY_TYPES: Array[EnemyStats] = [
 @export var generation_seed: int = 0
 var preview: Node2D
 var floor_number := 1
+var floor_limit := 5000
+var exit_cell := Vector2i(-1, -1)
+var transition_kind := ""
+var transition_dialog: ConfirmationDialog
+var last_prompt_cell := Vector2i(-1, -1)
+var warning_marks: Array[int] = []
 var rng := RandomNumberGenerator.new()
 var progression := RunProgression.new()
 var carryover := RunCarryover.new()
@@ -48,6 +54,13 @@ var reinforcements := ReinforcementSpawner.new()
 
 
 func _ready() -> void:
+	transition_dialog = ConfirmationDialog.new()
+	transition_dialog.title = "探索の選択"
+	transition_dialog.ok_button_text = "はい"
+	transition_dialog.cancel_button_text = "いいえ"
+	add_child(transition_dialog)
+	transition_dialog.confirmed.connect(func(): resolve_transition(true))
+	transition_dialog.canceled.connect(func(): resolve_transition(false))
 	dungeon.add_child(presentation)
 	presentation.finished.connect(_refresh)
 	if generation_seed == 0:
@@ -73,7 +86,7 @@ func _ready() -> void:
 	preview.tile_size = dungeon.TILE_SIZE
 	dungeon.add_child(preview)
 	turns.turn_finished.connect(_on_turn_finished)
-	turns.boss_defeated.connect(func(): finish_run(true))
+	turns.boss_defeated.connect(_on_boss_defeated)
 	turns.ability_choice_requested.connect(_show_ability_choice)
 	ability_choice.selected.connect(_choose_ability)
 	turns.player_moved.connect(_collect_items)
@@ -88,6 +101,12 @@ func _ready() -> void:
 
 
 func _load_floor() -> void:
+	turns.floor_turn_count = 0
+	turns.boss_reward_claimed = false
+	floor_limit = dungeon_settings.floor_turn_limit
+	exit_cell = Vector2i(-1, -1)
+	last_prompt_cell = exit_cell
+	warning_marks.clear()
 	if presentation.finished.is_connected(_present_result):
 		presentation.finished.disconnect(_present_result)
 	if presentation.finished.is_connected(_present_ability_choice):
@@ -114,7 +133,7 @@ func _load_floor() -> void:
 		dungeon.get_node("Actors").add_child(enemy)
 		dungeon.grid.place(enemy, cell)
 		turns.enemies.append(enemy)
-	if floor_number == final_floor:
+	if floor_number % 10 == 0 or floor_number == final_floor:
 		# The unused exit is the farthest reachable cell, never an enemy spawn.
 		var boss := ENEMY_SCENE.instantiate()
 		boss.stats = preload("res://data/enemies/boss.tres")
@@ -133,13 +152,70 @@ func _on_turn_finished() -> void:
 	if turns.ended:
 		finish_run(false)
 		return
-	# Old-floor enemies have already acted. Death takes precedence over stairs.
-	if not turns.ended and dungeon.has_stairs and turns.player.cell == dungeon.stairs_cell:
-		floor_number += 1
-		_load_floor()
-	else:
-		_spawn_reinforcement()
+	if turns.player.cell != last_prompt_cell:
+		last_prompt_cell = Vector2i(-1, -1)
+	if turns.moved_this_turn and turns.player.cell != last_prompt_cell:
+		if dungeon.has_stairs and turns.player.cell == dungeon.stairs_cell:
+			_request_transition("stairs")
+		elif turns.player.cell == exit_cell:
+			_request_transition("exit")
+	if transition_kind.is_empty() and _check_floor_limit():
+		return
+	_spawn_reinforcement()
 	_refresh()
+
+
+func _on_boss_defeated() -> void:
+	if floor_number == final_floor:
+		finish_run(true)
+		return
+	floor_limit += dungeon_settings.boss_grace_turns
+	exit_cell = dungeon.start_cell
+	dungeon.escape_cell = exit_cell
+	turns.last_message += " 中ボス撃破！入口に脱出口が出現。滞在猶予 +%dターン。" % dungeon_settings.boss_grace_turns
+
+
+func _request_transition(kind: String) -> void:
+	rapid_move.stop()
+	transition_kind = kind
+	last_prompt_cell = turns.player.cell
+	turns.paused = true
+	transition_dialog.dialog_text = "次の階へ降りますか？" if kind == "stairs" else "アイテムを失わずに帰還しますか？"
+	transition_dialog.popup_centered(Vector2i(460, 160))
+
+
+func resolve_transition(accepted: bool) -> void:
+	if transition_kind.is_empty() or turns.ended:
+		return
+	var kind := transition_kind
+	transition_kind = ""
+	transition_dialog.hide()
+	turns.paused = false
+	if accepted:
+		if kind == "stairs":
+			floor_number += 1
+			_load_floor()
+		else:
+			finish_run(false, true)
+			return
+	if not _check_floor_limit():
+		_refresh()
+
+
+func _check_floor_limit() -> bool:
+	var remaining: int = floor_limit - turns.floor_turn_count
+	if remaining <= 0:
+		finish_run(false, false, true)
+		return true
+	for percent in [30, 20, 10]:
+		var threshold: int = dungeon_settings.floor_turn_limit * percent / 100
+		if remaining <= threshold and not warning_marks.has(percent):
+			warning_marks.append(percent)
+			turns.last_message += " ダンジョンの様子が変だ……残り%dターン。" % remaining
+	if remaining <= 100 and not warning_marks.has(0):
+		warning_marks.append(0)
+		turns.last_message += " もう無理だ！あと%dターンで強制帰還になる！" % remaining
+	return false
 
 
 func _spawn_reinforcement() -> void:
@@ -371,7 +447,7 @@ func _input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("inventory"):
 		get_viewport().set_input_as_handled()
-		if presentation.playing or turns.busy or turns.ended:
+		if presentation.playing or turns.busy or turns.ended or turns.paused:
 			return
 		if inventory_panel.visible:
 			_close_inventory()
@@ -392,7 +468,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func request_abort() -> void:
-	if presentation.playing or turns.busy or turns.ended or result_panel.visible:
+	if presentation.playing or turns.busy or turns.ended or turns.paused or result_panel.visible:
 		return
 	rapid_move.stop()
 	inventory_panel.hide()
@@ -410,7 +486,7 @@ func _cancel_abort() -> void:
 	_refresh()
 
 
-func finish_run(cleared: bool) -> void:
+func finish_run(cleared: bool, safe_return: bool = false, forced_return: bool = false) -> void:
 	# Idempotence is essential: callbacks and repeated input cannot apply loss twice.
 	if not result.is_empty():
 		return
@@ -424,10 +500,12 @@ func finish_run(cleared: bool) -> void:
 	inventory_panel.hide()
 	ability_choice.dismiss()
 	result = {"gold_lost": 0, "items_lost": {}, "item_count_lost": 0}
-	if not cleared:
+	transition_dialog.hide()
+	transition_kind = ""
+	if not cleared and not safe_return:
 		result = RunLoss.apply(turns.player.inventory, turns.gold, loss_rng)
 	turns.gold -= int(result.gold_lost)
-	result.merge({"cleared": cleared, "floor": floor_number, "earned_gold": turns.earned_gold, "gold": turns.gold})
+	result.merge({"cleared": cleared, "safe_return": safe_return, "forced_return": forced_return, "floor": floor_number, "earned_gold": turns.earned_gold, "gold": turns.gold})
 	carryover.capture(turns.player, turns.gold)
 	_refresh()
 	if presentation.playing:

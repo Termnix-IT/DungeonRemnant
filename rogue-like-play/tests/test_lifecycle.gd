@@ -45,8 +45,8 @@ func run_tests() -> void:
 			var inv := Inventory.new()
 			inv.add(POTION, size)
 			var loss := RunLoss.apply(inv, size, rng)
-			check(count_items(inv) == size - size / 2, "Half units lost, rounded down")
-			check(loss.gold_lost == size / 2 and loss.item_count_lost == size / 2, "Gold and report rounding")
+			check(count_items(inv) == 0, "Single occupied stack is lost in full")
+			check(loss.gold_lost == size / 2 and loss.item_count_lost == size, "Gold and report rounding")
 	var armor_losses := 0
 	for seed_value in range(500):
 		rng.seed = seed_value
@@ -54,9 +54,9 @@ func run_tests() -> void:
 		inv.add(POTION, 9)
 		inv.add(ARMOR)
 		var loss := RunLoss.apply(inv, 101, rng)
-		check(count_items(inv) == 5 and loss.gold_lost == 50, "Mixed gear and stack loss")
+		check(inv.entries.size() == 1 and loss.gold_lost == 50, "Mixed gear and stack loss")
 		armor_losses += int(loss.items_lost.get(ARMOR.display_name, 0))
-	check(armor_losses > 180 and armor_losses < 320, "Gear has individual-unit probability, not slot probability")
+	check(armor_losses > 180 and armor_losses < 320, "Each slot has equal probability")
 	var run := make_run()
 	var player: Node2D = run.turns.player
 	player.inventory.add(POTION, 9)
@@ -77,21 +77,22 @@ func run_tests() -> void:
 	check(not run.turns.submit_inventory("switch") and run.turns.turn_count == 0, "Confirmation blocks actions")
 	run._cancel_abort()
 	check(not run.result_panel.visible and player.input_enabled and run.turns.gold == 101, "Cancel costs nothing")
+	run.loss_rng.seed = 1
 	player.hp = 0
 	run.turns.ended = true
 	run._on_turn_finished()
-	check(run.result_panel.visible and run.turns.gold == 51 and count_items(player.inventory) == 6, "Death applies half loss")
+	check(run.result_panel.visible and run.turns.gold == 51 and player.inventory.entries.size() == 1, "Death applies half loss")
 	check(run.result.floor == 4 and run.result.earned_gold == 41, "Result captures run stats")
 	check(player.equipment.slots == slots, "All five equipped slots protected")
 	run.finish_run(false)
 	run.finish_run(true)
-	check(run.turns.gold == 51 and count_items(player.inventory) == 6 and not run.result.cleared, "Repeated finish cannot change outcome or lose twice")
+	check(run.turns.gold == 51 and player.inventory.entries.size() == 1 and not run.result.cleared, "Repeated finish cannot change outcome or lose twice")
 	run.retry_run()
 	player = run.turns.player
 	check(run.floor_number == 1 and run.turns.turn_count == 0 and run.progression.level == 1 and run.progression.exp == 0, "Retry resets floor, turns, level and EXP")
 	check(run.hud.log_history.size() == 1 and run.hud.log_history[0].contains("1Fに到着"), "Retry clears the previous run log")
 	check(player.abilities.levels.is_empty() and player.stats.attack == 4 and player.stats.max_hp == 32 and player.hp == 32, "Retry resets growth, restores gear bonuses and full HP")
-	check(player.equipment.slots == slots and run.turns.gold == 51 and count_items(player.inventory) == 6, "Retry retains remaining possessions")
+	check(player.equipment.slots == slots and run.turns.gold == 51 and player.inventory.entries.size() == 1, "Retry retains remaining possessions")
 	check(run.turns.earned_gold == 0 and player.input_enabled and run.result.is_empty(), "Retry starts active clean run")
 	run.retry_run()
 	check(run.turns.player == player, "Retry outside results is ignored")
@@ -99,10 +100,10 @@ func run_tests() -> void:
 	run.finish_run(true)
 	check(run.result.cleared and run.result.gold_lost == 0 and run.result.item_count_lost == 0 and run.turns.gold == 51, "Clear preserves everything")
 	run.retry_run()
-	check(count_items(run.turns.player.inventory) == 6 and run.turns.player.equipment.slots == slots, "Clear retry preserves gear and inventory")
+	check(run.turns.player.inventory.entries.size() == 1 and run.turns.player.equipment.slots == slots, "Clear retry preserves gear and inventory")
 	run.request_abort()
 	run.result_panel.accept.pressed.emit()
-	check(not run.result_panel.confirming and run.turns.gold == 26 and count_items(run.turns.player.inventory) == 3, "Confirmed abort shares death result")
+	check(not run.result_panel.confirming and run.turns.gold == 26 and run.turns.player.inventory.entries.is_empty(), "Confirmed abort shares death result")
 	run.result_panel.accept.pressed.emit()
 	check(run.result.is_empty() and run.turns.gold == 26, "Result button retries without second loss")
 	run.free()

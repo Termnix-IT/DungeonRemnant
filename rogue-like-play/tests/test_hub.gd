@@ -71,7 +71,7 @@ func run_tests() -> void:
 	check(run.result_panel.accept.text.contains("拠点") and run.turns.gold == 36, "Result offers Hub return after one loss")
 	run.retry_run()
 	check(main.active_run == null and hub.visible and main.state.gold == 36, "Result returns to Hub with surviving Gold")
-	check(main.state.hp_upgrade_level == 1 and main.state.inventory.entries[0].count == 5 and main.state.equipment.slots[3] != null, "Death preserves upgrade and gear, halves inventory")
+	check(main.state.hp_upgrade_level == 1 and main.state.inventory.entries.is_empty() and main.state.equipment.slots[3] != null, "Death preserves upgrade and gear, halves inventory")
 	check(main.state.storage.entries[0].count == 12, "Death leaves warehouse untouched")
 	main.return_to_hub()
 	check(main.state.gold == 36, "Duplicate Hub return cannot apply loss")
@@ -83,7 +83,7 @@ func run_tests() -> void:
 		check(run.progression.level == 1 and run.progression.exp == 0 and run.turns.earned_gold == 0, "New adventure counters reset")
 		run.finish_run(true)
 		run.retry_run()
-		check(main.state.gold == 36 and main.state.inventory.entries[0].count == 5, "Clear round trip preserves possessions")
+		check(main.state.gold == 36 and main.state.inventory.entries.is_empty(), "Clear round trip preserves possessions")
 	main.state.gold = 150
 	check(main.purchase_upgrade() and main.state.gold == 90 and main.state.hp_upgrade_level == 2, "Next price is 60")
 	check(main.purchase_upgrade() and main.state.gold == 0 and main.state.hp_upgrade_level == 3, "Final price is 90")
