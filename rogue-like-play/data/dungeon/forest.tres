@@ -9,3 +9,4 @@ room_count = 6
 obstacle_chance = 0.13
 enemy_count = 4
 item_count = 7
+monster_house_chance = 0.05

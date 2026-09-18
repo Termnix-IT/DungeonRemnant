@@ -7,6 +7,9 @@ extends Resource
 @export_range(0.0, 1.0) var scroll_drop_chance: float = 0.02
 @export_range(0.0, 1.0) var elite_chance: float = 0.08
 @export_range(0.0, 1.0) var accessory_drop_chance: float = 0.15
+@export_range(0.0, 1.0) var monster_house_chance: float = 0.0
+@export_range(1, 20) var monster_house_enemies: int = 8
+@export_range(1, 20) var monster_house_items: int = 8
 
 @export_range(20, 60) var width: int = 40
 @export_range(20, 60) var height: int = 40

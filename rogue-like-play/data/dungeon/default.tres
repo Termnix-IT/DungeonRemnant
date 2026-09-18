@@ -17,3 +17,4 @@ reinforcement_total_cap = 4
 reinforcement_min_distance = 6
 
 depth_scaling = true
+monster_house_chance = 0.05

@@ -22,6 +22,8 @@ var terrain_theme_index := 0
 var terrain_theme_name := ""
 var has_stairs := true
 var forest := false
+var monster_house := Rect2i()
+var house_discovered := false
 var escape_cell := Vector2i(-1, -1)
 var fog := FogOfWar.new()
 var ground_items: Dictionary = {}
@@ -30,19 +32,22 @@ var decorations: Node2D
 
 func _ready() -> void:
 	decorations = Node2D.new()
-	decorations.z_index = 1
 	add_child(decorations)
+	move_child(decorations, 2)
 	decorations.draw.connect(_draw_decorations)
 
 
 func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenerator, final_floor: bool) -> void:
 	forest = settings.forest
 	escape_cell = Vector2i(-1, -1)
-	var generated := DungeonGenerator.generate(settings, floor_number, rng)
+	var generated := DungeonGenerator.generate(settings, floor_number, rng, final_floor)
 	grid = generated.grid
 	start_cell = generated.start
 	stairs_cell = generated.stairs
 	enemy_cells = generated.enemies
+	enemy_cells.append_array(generated.house_enemies)
+	monster_house = generated.house
+	house_discovered = false
 	layout_name = generated.layout
 	terrain_theme_index = 1 if forest else _terrain_theme_index(floor_number)
 	terrain_theme_name = "Forest" if forest else TERRAIN_THEME_NAMES[terrain_theme_index]
@@ -73,6 +78,16 @@ func spawn_items(settings: DungeonSettings, floor_number: int, rng: RandomNumber
 		var cell := candidates[selected]
 		candidates.remove_at(selected)
 		var item := ItemCatalog.POTION if index % 3 == 2 else ItemCatalog.ground_item((floor_number - 1) * 4 + index - index / 3)
+		ground_items[cell] = InventoryEntry.new(item, 2 if item.stackable() else 1)
+	var house_candidates: Array[Vector2i] = []
+	for cell: Vector2i in distances:
+		if monster_house.has_point(cell) and cell != start_cell and cell != stairs_cell and not grid.occupants.has(cell) and not ground_items.has(cell):
+			house_candidates.append(cell)
+	for index in mini(settings.monster_house_items, house_candidates.size()):
+		var selected := rng.randi_range(0, house_candidates.size() - 1)
+		var cell := house_candidates[selected]
+		house_candidates.remove_at(selected)
+		var item := ItemCatalog.POTION if index % 3 == 0 else ItemCatalog.ground_item(rng.randi_range(0, 1000))
 		ground_items[cell] = InventoryEntry.new(item, 2 if item.stackable() else 1)
 
 
@@ -163,6 +178,11 @@ func _is_connectable_wall(cell: Vector2i) -> bool:
 
 
 func _draw_decorations() -> void:
+	for cell: Vector2i in fog.explored:
+		if monster_house.has_point(cell):
+			var tint := Color(0.6, 0.12, 0.06, 0.22 if fog.visible.has(cell) else 0.09)
+			decorations.draw_rect(Rect2(Vector2(cell * TILE_SIZE), Vector2.ONE * TILE_SIZE), tint)
+			decorations.draw_rect(Rect2(Vector2(cell * TILE_SIZE) + Vector2(4, 4), Vector2.ONE * (TILE_SIZE - 8)), Color(0.8, 0.36, 0.12, tint.a * 2), false, 1)
 	if forest:
 		for cell: Vector2i in fog.explored:
 			if not grid.walls.has(cell):

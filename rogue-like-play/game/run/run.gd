@@ -385,6 +385,8 @@ func _refresh() -> void:
 		if enemy.visible:
 			visible_enemies += 1
 	hud.refresh(turns.player.hp, turns.player.stats.max_hp, turns.turn_count, visible_enemies, turns.last_message, floor_number, dungeon.layout_name, dungeon.terrain_theme_name, final_floor)
+	if dungeon.house_discovered and dungeon.monster_house.has_point(turns.player.cell):
+		hud.area.text = "モンスターハウス"
 	hud.show_progress(progression.level, progression.exp, progression.required_exp())
 	preview.cells.clear()
 	for cell: Vector2i in CombatRules.attack_cells(dungeon.grid, turns.player.cell, turns.player.facing, turns.player.effective_weapon()):
@@ -417,6 +419,13 @@ func _refresh() -> void:
 
 func _record_discoveries() -> void:
 	var found_something := false
+	if not dungeon.house_discovered and dungeon.monster_house.has_area():
+		for cell: Vector2i in dungeon.fog.visible:
+			if dungeon.monster_house.has_point(cell):
+				dungeon.house_discovered = true
+				found_something = true
+				turns.last_message += " モンスターハウスだ！敵とアイテムが密集している。"
+				break
 	for cell: Vector2i in dungeon.ground_items:
 		if dungeon.fog.visible.has(cell) and not discovered_item_cells.has(cell):
 			discovered_item_cells[cell] = true
