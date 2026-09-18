@@ -73,7 +73,7 @@ func show_equipment(equipment: Equipment) -> void:
 	var captions := ["Main", "Sub", "Armor", "Acc 1", "Acc 2"]
 	for index in equipment_rows.size():
 		var item: ItemData = equipment.slots[index]
-		var item_name := item.display_name if item != null else EMPTY_EQUIPMENT
+		var item_name := item.label() if item != null else EMPTY_EQUIPMENT
 		equipment_rows[index].text = "%s    %s" % [captions[index].rpad(6), item_name]
 
 
@@ -159,3 +159,15 @@ func show_effects(text: String) -> void:
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(label)
 	label.text = text
+
+
+func show_mana(current: int, maximum: int) -> void:
+	var label := get_node_or_null("Mana") as Label
+	if label == null:
+		label = Label.new()
+		label.name = "Mana"
+		label.position = Vector2(30, 125)
+		label.add_theme_font_size_override("font_size", 18)
+		label.modulate = Color("acbaff")
+		add_child(label)
+	label.text = "MP  %d / %d" % [current, maximum]

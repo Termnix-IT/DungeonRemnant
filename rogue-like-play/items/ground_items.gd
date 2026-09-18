@@ -22,6 +22,10 @@ func _draw() -> void:
 			ItemData.Kind.WEAPON:
 				draw_line(Vector2(-7, 7), Vector2(7, -7), Color("c9e3e9"), 4)
 				draw_line(Vector2(-7, 0), Vector2(0, 7), Color("c9e3e9"), 3)
+			ItemData.Kind.SCROLL:
+				draw_rect(Rect2(-8, -9, 16, 18), Color("b9a2e8"))
+				draw_line(Vector2(-4, -4), Vector2(4, -4), Color.WHITE, 2)
+				draw_line(Vector2(-4, 2), Vector2(4, 2), Color.WHITE, 2)
 			ItemData.Kind.ARMOR:
 				draw_rect(Rect2(Vector2(-8, -8), Vector2(16, 16)), Color("6ba2c7"), false, 3)
 			ItemData.Kind.ACCESSORY:

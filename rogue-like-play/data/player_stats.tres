@@ -5,3 +5,5 @@ script = ExtResource("1")
 max_hp = 24
 attack = 4
 defense = 0
+
+max_mp = 20

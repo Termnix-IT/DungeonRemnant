@@ -13,6 +13,7 @@ static func shop_items() -> Array[ItemData]:
 		if item.buy_price > 0:
 			result.append(item)
 	result.append_array(talismans())
+	result.append_array(magic_items())
 	return result
 
 
@@ -24,6 +25,9 @@ static func by_id(id: String) -> ItemData:
 		if String(item.id) == id:
 			return item
 	for item in talismans():
+		if String(item.id) == id:
+			return item
+	for item in magic_items():
 		if String(item.id) == id:
 			return item
 	return null
@@ -59,6 +63,14 @@ static func talismans() -> Array[ItemData]:
 static func ground_item(index: int) -> ItemData:
 	var available: Array[ItemData] = []
 	for item in shop_items():
-		if item.kind != ItemData.Kind.ACCESSORY and item.effect_id.is_empty():
+		if item.kind not in [ItemData.Kind.ACCESSORY, ItemData.Kind.SCROLL] and item.effect_id.is_empty():
 			available.append(item)
 	return available[posmod(index, available.size())]
+
+
+static func magic_items() -> Array[ItemData]:
+	return [ItemData.from_weapon(preload("res://data/weapons/staff.tres")),
+		preload("res://data/items/mana_potion.tres"),
+		preload("res://data/items/bolt_scroll.tres"),
+		preload("res://data/items/flame_scroll.tres"),
+		preload("res://data/items/heal_scroll.tres")]

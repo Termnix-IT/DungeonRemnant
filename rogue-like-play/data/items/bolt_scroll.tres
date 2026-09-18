@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3]
+[ext_resource type="Script" path="res://data/definitions/item_data.gd" id="1"]
+[ext_resource type="Script" path="res://data/definitions/weapon_data.gd" id="2"]
+[sub_resource type="Resource" id="Spell"]
+script = ExtResource("2")
+kind = 4
+display_name = "魔弾"
+reach = 5
+damage_bonus = 4
+mana_cost = 3
+spell_heal = 0
+sweeps_sides = false
+pierces = true
+[resource]
+script = ExtResource("1")
+id = &"bolt_scroll"
+display_name = "魔弾の魔導スクロール"
+kind = 4
+weapon = SubResource("Spell")
+buy_price = 100
+sell_price = 20

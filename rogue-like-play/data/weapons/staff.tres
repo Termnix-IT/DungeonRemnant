@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://data/definitions/weapon_data.gd" id="1"]
+[resource]
+script = ExtResource("1")
+display_name = "杖"
+kind = 4
+sweeps_sides = true
+damage_bonus = -3
+buy_price = 60
+sell_price = 10

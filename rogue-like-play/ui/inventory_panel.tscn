@@ -82,4 +82,4 @@ theme_override_font_sizes/font_size = 16
 [node name="Help" type="Label" parent="Panel"]
 offset_left = 24.0
 offset_top = 512.0
-text = "装備変更・取り外し・武器切替はターン消費なし。回復薬の使用は1ターン消費します。\n確認・選択・キャンセルもターン消費なし。Main武器は交換のみ可能です。"
+text = "装備変更・取り外し・武器切替はターン消費なし。アイテムの使用は1ターン消費します。\n確認・選択・キャンセルもターン消費なし。Main武器は交換のみ可能です。"

@@ -121,7 +121,7 @@ func test_files() -> void:
 	var future := SaveStore.new()
 	future.path = test_dir + "/future.json"
 	var data := SaveCodec.encode(state)
-	data.version = 2
+	data.version = SaveCodec.VERSION + 1
 	write_fixture(future.path, JSON.stringify(data))
 	future.load_state()
 	check(future.blocked and not future.save_state(state), "Unsupported version is protected")

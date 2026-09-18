@@ -19,6 +19,7 @@ func _ready() -> void:
 	$Hub.equip_requested.connect(equip_item)
 	$Hub.unequip_requested.connect(unequip_item)
 	$Hub.swap_requested.connect(swap_weapons)
+	$Hub.scroll_remove_requested.connect(unsocket_scroll)
 	$Hub.sell_requested.connect(sell_item)
 	$Hub.buy_requested.connect(buy_item)
 	$Hub.refresh(state)
@@ -65,6 +66,9 @@ func transfer_storage(from_storage: bool, index: int) -> bool:
 
 
 func equip_item(from_storage: bool, index: int, slot: int) -> bool:
+	var source := state.storage if from_storage else state.inventory
+	if index >= 0 and index < source.entries.size() and source.entries[index].item.kind == ItemData.Kind.SCROLL:
+		return _prepare(func() -> bool: return state.equipment.socket(source, index, slot), "魔法を装着しました。")
 	return _prepare(func() -> bool: return state.equipment.equip(state.storage if from_storage else state.inventory, index, slot), "装備を変更しました。交換前の装備は選択元に戻しました。")
 
 
@@ -177,3 +181,7 @@ func _enter_tree() -> void:
 			var event := InputEventKey.new()
 			event.physical_keycode = key
 			InputMap.action_add_event(action, event)
+
+
+func unsocket_scroll(slot: int) -> bool:
+	return _prepare(func() -> bool: return state.equipment.unsocket(state.inventory, slot), "魔法を取り外し、所持品に戻しました。")

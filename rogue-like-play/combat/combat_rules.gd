@@ -8,6 +8,8 @@ const DIRECTIONS: Array[Vector2i] = [
 
 
 static func attack_cells(grid: GridState, origin: Vector2i, direction: Vector2i, weapon: WeaponData = null) -> Array[Vector2i]:
+	if weapon != null and weapon.spell_heal > 0:
+		return [origin]
 	if weapon != null and weapon.sweeps_sides:
 		var cells: Array[Vector2i] = []
 		var direction_index := DIRECTIONS.find(direction)

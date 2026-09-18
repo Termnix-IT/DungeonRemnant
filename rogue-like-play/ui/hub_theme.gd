@@ -76,12 +76,12 @@ static func equipment_text(state: RunCarryover) -> String:
 	var lines := PackedStringArray()
 	for index in state.equipment.slots.size():
 		var item := state.equipment.slots[index]
-		lines.append("%s： %s" % [Equipment.SLOT_NAMES[index], item.display_name if item != null else "なし"])
+		lines.append("%s： %s" % [Equipment.SLOT_NAMES[index], item.label() if item != null else "なし"])
 	return "\n\n".join(lines)
 
 
 static func fill_inventory(list: ItemList, inventory: Inventory) -> void:
 	list.clear()
 	for entry in inventory.entries:
-		list.add_item("%s  ×%d" % [entry.item.display_name, entry.count])
+		list.add_item("%s  ×%d" % [entry.item.label(), entry.count])
 		list.set_item_tooltip(list.item_count - 1, entry.item.description())

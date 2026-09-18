@@ -381,6 +381,7 @@ func _refresh() -> void:
 	preview.queue_redraw()
 	hud.show_aim(turns.player.weapon.display_name, preview.visible)
 	hud.show_inventory(turns.player.inventory.entries.size())
+	hud.show_mana(turns.player.mp, turns.player.stats.max_mp)
 	hud.show_effects(turns.player.active_effects.summary())
 	hud.show_gold(turns.gold)
 	hud.show_equipment(turns.player.equipment)
@@ -576,15 +577,20 @@ func _make_elite(enemy: Node2D) -> void:
 
 
 func _drop_enemy_loot(enemy: Node2D) -> void:
-	if not enemy.stats.elite or rng.randf() >= dungeon_settings.accessory_drop_chance:
+	var item: ItemData
+	if enemy.stats.elite and rng.randf() < dungeon_settings.accessory_drop_chance:
+		var talismans := ItemCatalog.talismans()
+		item = talismans[rng.randi_range(0, talismans.size() - 1)]
+	elif enemy.summoner == null and enemy.stats.behavior != EnemyStats.Behavior.CHARGER and rng.randf() < dungeon_settings.scroll_drop_chance:
+		item = ItemCatalog.magic_items()[rng.randi_range(2, 4)]
+	if item == null:
 		return
 	var candidates: Array[Vector2i] = [enemy.cell]
 	for direction in MOVE_DIRECTIONS:
 		candidates.append(enemy.cell + direction)
 	for cell in candidates:
-		if dungeon.grid.in_bounds(cell) and not dungeon.grid.walls.has(cell) and not dungeon.ground_items.has(cell) and cell != dungeon.stairs_cell:
-			var items := ItemCatalog.talismans()
-			dungeon.ground_items[cell] = InventoryEntry.new(items[rng.randi_range(0, items.size() - 1)])
+		if dungeon.grid.is_floor(cell) and not dungeon.ground_items.has(cell) and cell != dungeon.stairs_cell:
+			dungeon.ground_items[cell] = InventoryEntry.new(item)
 			return
 
 

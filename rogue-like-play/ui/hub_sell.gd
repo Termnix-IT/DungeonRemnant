@@ -82,6 +82,8 @@ func refresh(current: RunCarryover) -> void:
 		var groups := {}
 		for index in _source().entries.size():
 			var entry := _source().entries[index]
+			if entry.item.socketed_scroll != null:
+				continue
 			if groups.has(entry.item.id):
 				rows[groups[entry.item.id]].count += entry.count
 			else:
@@ -97,7 +99,7 @@ func refresh(current: RunCarryover) -> void:
 	heading.text = "次の冒険に備える" if buying else "次の旅の資金に"
 	source_label.text = "購入先" if buying else "売却元"
 	quantity_label.text = "購入数" if buying else "売却数"
-	help_label.text = "購入したアイテムは選んだ購入先へ入ります。" if buying else "同じアイテムをまとめて表示。装備中の品は売却されません。"
+	help_label.text = "購入したアイテムは選んだ購入先へ入ります。" if buying else "同じアイテムをまとめて表示。装備中の品・魔法装着中の杖は売却されません。"
 	sell_all_button.visible = not buying
 	quantity.value = 1
 	_update_quote()

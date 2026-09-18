@@ -42,8 +42,17 @@ func submit(kind: String, direction: Vector2i) -> bool:
 		moved_this_turn = true
 		player_moved.emit()
 	elif kind == "attack":
-		var damage := CombatRules.attack(grid, player, direction, player.effective_weapon())
-		last_message = "敵に %d ダメージ。" % damage if damage > 0 else "攻撃は空振りしました。"
+		var attack: WeaponData = player.effective_weapon()
+		if player.mp < attack.mana_cost or (attack.spell_heal > 0 and player.hp >= player.stats.max_hp):
+			last_message = "MPが足りないか、HPが満タンです。"
+			return false
+		player.mp -= attack.mana_cost
+		if attack.spell_heal > 0:
+			player.hp = mini(player.stats.max_hp, player.hp + attack.spell_heal)
+			last_message = "治癒の魔法を使いました。"
+		else:
+			var damage := CombatRules.attack(grid, player, direction, attack)
+			last_message = "敵に %d ダメージ。" % damage if damage > 0 else "攻撃は空振りしました。"
 	else:
 		return false
 	return _complete_player_action()
@@ -54,6 +63,10 @@ func submit_inventory(kind: String, index: int = -1, slot: int = -1) -> bool:
 		return false
 	var succeeded := false
 	match kind:
+		"socket":
+			succeeded = player.equipment.socket(player.inventory, index, slot)
+		"unsocket":
+			succeeded = player.equipment.unsocket(player.inventory, slot)
 		"equip":
 			succeeded = player.equipment.equip(player.inventory, index, slot)
 		"unequip":
@@ -64,6 +77,10 @@ func submit_inventory(kind: String, index: int = -1, slot: int = -1) -> bool:
 			if index >= 0 and index < player.inventory.entries.size():
 				var item: ItemData = player.inventory.entries[index].item
 				if not item.effect_id.is_empty() and player.active_effects.add(item):
+					player.inventory.remove(index)
+					succeeded = true
+				elif item.kind == ItemData.Kind.CONSUMABLE and item.restore_mp > 0 and player.mp < player.stats.max_mp:
+					player.mp = mini(player.stats.max_mp, player.mp + item.restore_mp)
 					player.inventory.remove(index)
 					succeeded = true
 				elif item.kind == ItemData.Kind.CONSUMABLE and item.heal_amount > 0 and player.hp < player.stats.max_hp:

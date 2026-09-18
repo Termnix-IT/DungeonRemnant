@@ -10,6 +10,7 @@ const MOVE_ANIMATION_DURATION := 0.12
 @export var stats: ActorStats
 @export_range(1, 20) var vision_range: int = 8
 var hp: int
+var mp: int
 var cell := Vector2i.ZERO
 var facing := Vector2i.RIGHT:
 	set(value):
@@ -54,6 +55,7 @@ func _ready() -> void:
 	# Runtime growth must never mutate the shared definition Resource.
 	stats = stats.duplicate()
 	hp = stats.max_hp
+	mp = stats.max_mp
 	sprite.sprite_frames = MioAnimation.build_frame_set()
 	sprite.position = BASE_SPRITE_POSITION
 	combat_visual = Node2D.new()
@@ -111,6 +113,9 @@ func gain_ability(ability: AbilityData) -> bool:
 
 func effective_weapon() -> WeaponData:
 	var result: WeaponData = weapon.duplicate()
+	var main: ItemData = equipment.slots[Equipment.Slot.MAIN]
+	if weapon.kind == WeaponData.Kind.STAFF and main.socketed_scroll != null:
+		result = main.socketed_scroll.weapon.duplicate()
 	result.damage_bonus += int(equipment_effects.damage) + active_effects.amount(&"damage")
 	match weapon.kind:
 		WeaponData.Kind.SWORD:
@@ -203,6 +208,9 @@ func _draw_weapon_silhouette() -> void:
 			weapon_visual.draw_line(anchor - direction * 4.0, anchor + direction * 18.0, handle, 2.0)
 			var tip := anchor + direction * 20.0
 			weapon_visual.draw_colored_polygon(PackedVector2Array([tip, tip - direction * 6.0 + side * 3.0, tip - direction * 6.0 - side * 3.0]), metal)
+		WeaponData.Kind.STAFF:
+			weapon_visual.draw_line(anchor - direction * 5, anchor + direction * 18, handle, 4)
+			weapon_visual.draw_circle(anchor + direction * 18, 4, Color("bd9cff"))
 		WeaponData.Kind.AXE:
 			weapon_visual.draw_line(anchor - direction * 4, anchor + direction * 16, handle, 4)
 			var head := anchor + direction * 12

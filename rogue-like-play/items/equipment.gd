@@ -69,3 +69,37 @@ func bonuses() -> Dictionary:
 		result.vision += item.vision_bonus
 		result.damage += item.damage_bonus
 	return result
+
+
+func can_socket(slot: int) -> bool:
+	return slot in [Slot.MAIN, Slot.SUB] and slots[slot] != null and slots[slot].weapon.kind == WeaponData.Kind.STAFF
+
+
+func socket(inventory: Inventory, index: int, slot: int) -> bool:
+	if not can_socket(slot) or index < 0 or index >= inventory.entries.size():
+		return false
+	var scroll := inventory.entries[index].item
+	if scroll.kind != ItemData.Kind.SCROLL:
+		return false
+	var candidate := inventory.copy()
+	candidate.remove(index)
+	if slots[slot].socketed_scroll != null and candidate.add(slots[slot].socketed_scroll) != 0:
+		return false
+	var staff: ItemData = slots[slot].duplicate()
+	staff.socketed_scroll = scroll
+	inventory.entries = candidate.entries
+	slots[slot] = staff
+	return true
+
+
+func unsocket(inventory: Inventory, slot: int) -> bool:
+	if not can_socket(slot) or slots[slot].socketed_scroll == null:
+		return false
+	var candidate := inventory.copy()
+	if candidate.add(slots[slot].socketed_scroll) != 0:
+		return false
+	var staff: ItemData = slots[slot].duplicate()
+	staff.socketed_scroll = null
+	inventory.entries = candidate.entries
+	slots[slot] = staff
+	return true

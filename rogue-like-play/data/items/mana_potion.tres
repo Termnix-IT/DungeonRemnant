@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://data/definitions/item_data.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"mana_potion"
+display_name = "魔力回復薬"
+restore_mp = 10
+buy_price = 30
+sell_price = 5

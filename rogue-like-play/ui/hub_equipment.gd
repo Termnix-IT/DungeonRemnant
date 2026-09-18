@@ -3,6 +3,7 @@ extends Control
 
 signal equip_requested(from_storage: bool, index: int, slot: int)
 signal unequip_requested(slot: int)
+signal scroll_remove_requested(slot: int)
 signal swap_requested
 signal warehouse_requested
 signal done_requested
@@ -19,6 +20,7 @@ var equip_button: Button
 var unequip_button: Button
 var done_button: Button
 var swap_button: Button
+var scroll_remove_button: Button
 
 
 func _ready() -> void:
@@ -36,6 +38,7 @@ func _ready() -> void:
 		slots.append(control)
 	stats_label = HubTheme.label(self, "", Vector2(20, 411), Vector2(310, 83), 17)
 	swap_button = HubTheme.button(self, "Main / Sub を入れ替え", Vector2(18, 500), Vector2(314, 48), func(): swap_requested.emit())
+	scroll_remove_button = HubTheme.button(self, "選択枠の魔法を外す", Vector2(18, 463), Vector2(314, 32), func(): scroll_remove_requested.emit(selected_slot))
 	HubTheme.panel(self, Vector2(370, 0), Vector2(470, 560))
 	HubTheme.label(self, "装備候補  /  所持品・倉庫", Vector2(390, 14), Vector2(430, 34), 23)
 	candidate_list = ItemList.new()
@@ -58,9 +61,9 @@ func refresh(current: RunCarryover) -> void:
 	swap_button.disabled = state.equipment.slots[Equipment.Slot.SUB] == null
 	for index in slots.size():
 		var item := state.equipment.slots[index]
-		slots[index].text = "%s  %s\n%s" % ["›" if index == selected_slot else " ", Equipment.SLOT_NAMES[index], item.display_name if item != null else "なし"]
+		slots[index].text = "%s  %s\n%s" % ["›" if index == selected_slot else " ", Equipment.SLOT_NAMES[index], item.label() if item != null else "なし"]
 	var stats := state.preparation_stats()
-	stats_label.text = "次のRunのステータス\nHP  %d    ATK  %d\nDEF  %d    Main射程  %d" % [stats.hp, stats.attack, stats.defense, stats.reach]
+	stats_label.text = "次のRun：HP %d / ATK %d\nDEF %d / Main射程 %d" % [stats.hp, stats.attack, stats.defense, stats.reach]
 	HubTheme.fill_inventory(carried_list, state.inventory)
 	if carried_list.item_count == 0:
 		carried_list.add_item("持ち込みアイテムはありません")
@@ -80,7 +83,7 @@ func _fill_candidates() -> void:
 		var source := state.storage if from_storage else state.inventory
 		for index in source.entries.size():
 			var item := source.entries[index].item
-			if state.equipment.accepts(item, selected_slot):
+			if state.equipment.accepts(item, selected_slot) or (item.kind == ItemData.Kind.SCROLL and state.equipment.can_socket(selected_slot)):
 				candidates.append({"from_storage": from_storage, "index": index, "item": item})
 				candidate_list.add_item("[%s]  %s" % ["倉庫" if from_storage else "所持", item.display_name])
 	if candidates.is_empty():
@@ -92,6 +95,8 @@ func _fill_candidates() -> void:
 
 
 func _compare() -> void:
+	scroll_remove_button.visible = state.equipment.can_socket(selected_slot) and state.equipment.slots[selected_slot].socketed_scroll != null
+	equip_button.text = "選択した装備に変更"
 	unequip_button.disabled = selected_slot == Equipment.Slot.MAIN or state.equipment.slots[selected_slot] == null
 	var selected := candidate_list.get_selected_items()
 	equip_button.disabled = selected.is_empty() or candidates.is_empty()
@@ -99,6 +104,10 @@ func _compare() -> void:
 		comparison.text = "候補を選ぶと、変更前後の差分を表示します。\nMain Weaponは外せません。"
 		return
 	var candidate: ItemData = candidates[selected[0]].item
+	if candidate.kind == ItemData.Kind.SCROLL:
+		comparison.text = candidate.description() + "\n交換前の魔法は選択元に戻ります。"
+		equip_button.text = "選択枠の杖に魔法を装着"
+		return
 	var preview := Equipment.new()
 	preview.slots.assign(state.equipment.slots)
 	preview.slots[selected_slot] = candidate

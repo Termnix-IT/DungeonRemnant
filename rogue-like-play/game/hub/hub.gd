@@ -5,6 +5,7 @@ signal purchase_requested
 signal storage_transfer_requested(from_storage: bool, index: int)
 signal equip_requested(from_storage: bool, index: int, slot: int)
 signal unequip_requested(slot: int)
+signal scroll_remove_requested(slot: int)
 signal swap_requested
 signal sell_requested(from_storage: bool, index: int, amount: int)
 signal buy_requested(to_storage: bool, item_id: StringName, amount: int)
@@ -70,6 +71,7 @@ func _ready() -> void:
 	equipment_page = _page(HubEquipment.new()) as HubEquipment
 	equipment_page.equip_requested.connect(func(source: bool, index: int, slot: int): equip_requested.emit(source, index, slot))
 	equipment_page.unequip_requested.connect(func(slot: int): unequip_requested.emit(slot))
+	equipment_page.scroll_remove_requested.connect(func(slot: int): scroll_remove_requested.emit(slot))
 	equipment_page.swap_requested.connect(func(): swap_requested.emit())
 	equipment_page.warehouse_requested.connect(open_warehouse)
 	equipment_page.done_requested.connect(func(): show_page(equipment_return))

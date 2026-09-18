@@ -4,6 +4,7 @@ extends Resource
 @export_range(1, 10000) var floor_turn_limit: int = 5000
 @export_range(0, 1000) var boss_grace_turns: int = 150
 
+@export_range(0.0, 1.0) var scroll_drop_chance: float = 0.02
 @export_range(0.0, 1.0) var elite_chance: float = 0.08
 @export_range(0.0, 1.0) var accessory_drop_chance: float = 0.15
 

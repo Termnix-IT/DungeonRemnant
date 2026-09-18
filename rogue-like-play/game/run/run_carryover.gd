@@ -37,17 +37,19 @@ func sell_item(from_storage: bool, index: int, amount: int) -> bool:
 	if index < 0 or index >= source.entries.size() or amount <= 0:
 		return false
 	var entry := source.entries[index]
+	if entry.item.socketed_scroll != null:
+		return false
 	var value := entry.item.sell_price * amount
 	var owned := 0
 	for matching in source.entries:
-		if matching.item.id == entry.item.id:
+		if matching.item.id == entry.item.id and matching.item.socketed_scroll == null:
 			owned += matching.count
 	if amount > owned or entry.item.sell_price <= 0 or gold + value > SaveCodec.MAX_GOLD:
 		return false
 	var remaining := amount
 	for item_index in range(source.entries.size() - 1, -1, -1):
 		var matching := source.entries[item_index]
-		if matching.item.id == entry.item.id:
+		if matching.item.id == entry.item.id and matching.item.socketed_scroll == null:
 			var removed := mini(remaining, matching.count)
 			source.remove(item_index, removed)
 			remaining -= removed
@@ -77,10 +79,11 @@ func preparation_stats(gear: Equipment = equipment) -> Dictionary:
 	var base: ActorStats = preload("res://data/player_stats.tres")
 	var bonus := gear.bonuses()
 	var main := gear.slots[Equipment.Slot.MAIN]
+	var attack_weapon: WeaponData = (main.socketed_scroll.weapon if main.socketed_scroll != null else main.weapon) if main != null else null
 	return {"hp": base.max_hp + upgrade.hp_bonus(hp_upgrade_level) + bonus.hp,
-		"attack": base.attack + bonus.damage + (main.weapon.damage_bonus if main != null else 0),
+		"attack": base.attack + bonus.damage + (attack_weapon.damage_bonus if attack_weapon != null else 0),
 		"defense": base.defense + bonus.defense,
-		"reach": main.weapon.reach if main != null else 0}
+		"reach": attack_weapon.reach if attack_weapon != null else 0}
 
 
 func capture(player: Node2D, held_gold: int) -> void:
