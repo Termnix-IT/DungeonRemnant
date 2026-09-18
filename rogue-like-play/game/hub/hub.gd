@@ -1,6 +1,8 @@
 extends CanvasLayer
 
 signal start_requested
+signal skill_requested(id: StringName)
+signal entry_requested(stage: StageData, floor_number: int)
 signal purchase_requested
 signal storage_transfer_requested(from_storage: bool, index: int)
 signal equip_requested(from_storage: bool, index: int, slot: int)
@@ -10,7 +12,7 @@ signal swap_requested
 signal sell_requested(from_storage: bool, index: int, amount: int)
 signal buy_requested(to_storage: bool, item_id: StringName, amount: int)
 
-@export var stages: Array[StageData] = [preload("res://data/stages/ancient_ruins.tres")]
+@export var stages: Array[StageData] = [preload("res://data/stages/ancient_ruins.tres"), preload("res://data/stages/forest.tres"), preload("res://data/stages/unknown.tres")]
 var gold_label: Label
 var equipment_label: Label
 var upgrade_label: Label
@@ -83,12 +85,13 @@ func _ready() -> void:
 	departure_page.confirm_requested.connect(func(): show_page("confirm"))
 	departure_page.equipment_requested.connect(func(): equipment_return = "confirm"; show_page("equipment"))
 	departure_page.departure_requested.connect(func(): start_requested.emit())
-	upgrade_page = _page(Control.new())
-	HubTheme.panel(upgrade_page, Vector2(240, 30), Vector2(800, 490))
-	HubTheme.label(upgrade_page, "冒険を重ね、少しずつ強く。", Vector2(278, 60), Vector2(724, 54), 30)
-	upgrade_label = HubTheme.label(upgrade_page, "", Vector2(278, 148), Vector2(724, 146), 25)
-	HubTheme.label(upgrade_page, "強化は次のRunから適用されます。\n死亡・中断しても失われません。", Vector2(278, 300), Vector2(724, 86), 20)
-	purchase_button = HubTheme.button(upgrade_page, "", Vector2(278, 420), Vector2(724, 62), func(): purchase_requested.emit())
+	var tree := SkillTreePanel.new()
+	upgrade_page = _page(tree)
+	tree.hp_requested.connect(func(): purchase_requested.emit())
+	tree.skill_requested.connect(func(id: StringName): skill_requested.emit(id))
+	tree.entry_requested.connect(func(stage: StageData, floor_number: int): entry_requested.emit(stage, floor_number))
+	purchase_button = tree.root_button
+	upgrade_label = tree.root_label
 	back_button = HubTheme.button(_content, "戻る  /  Esc", Vector2(0, 704), Vector2(215, 48), go_back)
 	feedback = HubTheme.label(_content, "", Vector2(238, 700), Vector2(1030, 54), 17)
 	feedback.modulate = HubTheme.GOLD
@@ -152,11 +155,7 @@ func refresh(state: RunCarryover, message: String = "") -> void:
 	_state = state
 	gold_label.text = "Gold   %s" % state.gold
 	equipment_label.text = "Main  %s\n持ち込み  %d / %d枠\n倉庫      %d / %d枠" % [state.equipment.slots[0].display_name, state.inventory.entries.size(), state.inventory.max_entries, state.storage.entries.size(), state.storage.max_entries]
-	var definition := state.upgrade
-	upgrade_label.text = "%s    %d / %d\n\n最大HP ＋%d   /   1段階ごとに＋%d" % [definition.display_name, state.hp_upgrade_level, definition.costs.size(), definition.hp_bonus(state.hp_upgrade_level), definition.hp_per_level]
-	var cost := definition.price(state.hp_upgrade_level)
-	purchase_button.text = "強化上限に到達" if cost < 0 else "最大HPを強化する  /  %d Gold" % cost
-	purchase_button.disabled = cost < 0 or state.gold < cost
+	(upgrade_page as SkillTreePanel).refresh(state)
 	feedback.text = message
 	equipment_page.refresh(state)
 	sell_page.refresh(state)
@@ -168,7 +167,7 @@ func refresh(state: RunCarryover, message: String = "") -> void:
 
 
 func show_page(target: String) -> void:
-	if target == "confirm" and (departure_page.selected_stage == null or not departure_page.selected_stage.available):
+	if target == "confirm" and (departure_page.selected_stage == null or not _state.stage_available(departure_page.selected_stage)):
 		return
 	page = target
 	for control in [home_page, equipment_page, sell_page, departure_page, upgrade_page]:
@@ -198,11 +197,11 @@ func show_page(target: String) -> void:
 			upgrade_page.show()
 			back_button.grab_focus()
 			if purchase_button.disabled:
-				feedback.text = "強化上限に到達しています。" if _state.upgrade.price(_state.hp_upgrade_level) < 0 else "Goldが不足しています。"
+				feedback.text = "基礎HPは習得済みです。各分岐の条件を確認してください。" if _state.upgrade.price(_state.hp_upgrade_level) < 0 else "強化はGoldを消費します。各分岐の条件を確認してください。"
 		"stages":
 			title_label.text = "ステージ選択"
 			departure_page.show()
-			departure_page.present_selection(stages)
+			departure_page.present_selection(stages, _state)
 		"confirm":
 			var stage := departure_page.selected_stage
 			title_label.text = "出撃確認  /  %s・全%d階" % [stage.display_name, stage.floor_count]

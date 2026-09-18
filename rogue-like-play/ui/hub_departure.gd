@@ -6,6 +6,9 @@ signal equipment_requested
 signal departure_requested
 
 var stages: Array[StageData] = []
+var state: RunCarryover
+var start_choice: OptionButton
+var starting_floor := 1
 var selected_stage: StageData
 var stage_list: ItemList
 var stage_details: Label
@@ -49,11 +52,15 @@ func _ready() -> void:
 	HubTheme.label(confirmation_page, "持ち込みアイテム", Vector2(594, 20), Vector2(662, 40), 25)
 	inventory_list = ItemList.new()
 	HubTheme.place(inventory_list, confirmation_page, Vector2(594, 80), Vector2(662, 264))
-	HubTheme.label(confirmation_page, "このダンジョンに挑戦しますか？\n装備と持ち込みを確認してください。", Vector2(594, 367), Vector2(662, 86), 23)
+	HubTheme.label(confirmation_page, "このダンジョンに挑戦しますか？\n装備と持ち込みを確認してください。", Vector2(594, 355), Vector2(662, 78), 23)
+	start_choice = OptionButton.new()
+	HubTheme.place(start_choice, confirmation_page, Vector2(594, 440), Vector2(662, 36))
+	start_choice.item_selected.connect(func(index: int): starting_floor = start_choice.get_item_id(index); _update_start_label())
 	confirm_button = HubTheme.button(confirmation_page, "挑戦する", Vector2(594, 486), Vector2(662, 50), func(): departure_requested.emit())
 
 
-func present_selection(available_stages: Array[StageData]) -> void:
+func present_selection(available_stages: Array[StageData], progress: RunCarryover = null) -> void:
+	state = progress if progress != null else RunCarryover.new()
 	stages = available_stages
 	selection_page.show()
 	confirmation_page.hide()
@@ -61,7 +68,7 @@ func present_selection(available_stages: Array[StageData]) -> void:
 	var selected_index := 0
 	for index in stages.size():
 		var stage := stages[index]
-		stage_list.add_item("%s  /  全%d階  /  %s%s" % [stage.display_name, stage.floor_count, stage.difficulty, "" if stage.available else "  /  未開放"])
+		stage_list.add_item("？？？  /  今後追加予定" if not stage.available else "%s  /  全%d階  /  %s%s" % [stage.display_name, stage.floor_count, stage.difficulty, "" if state.stage_available(stage) else "  /  未開放"])
 		if stage == selected_stage:
 			selected_index = index
 	if not stages.is_empty():
@@ -76,14 +83,19 @@ func present_selection(available_stages: Array[StageData]) -> void:
 
 
 func _select_stage(index: int) -> void:
+	if selected_stage != stages[index]:
+		starting_floor = 1
 	selected_stage = stages[index]
 	var stage := selected_stage
 	stage_art.texture = stage.illustration
 	stage_details.text = "%s\n\n%s\n\n全 %d 階     難易度：%s\n\n%s\n\n主な敵の傾向\n%s" % [stage.display_name, stage.description, stage.floor_count, stage.difficulty, stage.features, stage.enemy_summary]
-	next_button.disabled = not stage.available or stage.settings == null
+	if not stage.available:
+		stage_details.text = stage.display_name + "\n\n" + stage.description
+	next_button.disabled = not state.stage_available(stage) or stage.settings == null
 
 
-func present_confirmation(state: RunCarryover) -> void:
+func present_confirmation(current: RunCarryover) -> void:
+	state = current
 	selection_page.hide()
 	confirmation_page.show()
 	equipment_label.text = "現在の装備\n\n" + HubTheme.equipment_text(state)
@@ -91,6 +103,17 @@ func present_confirmation(state: RunCarryover) -> void:
 	if inventory_list.item_count == 0:
 		inventory_list.add_item("持ち込みなし  /  装備のみで出撃")
 		inventory_list.set_item_disabled(0, true)
-	confirm_button.text = "%s・全%d階に挑戦する" % [selected_stage.display_name, selected_stage.floor_count]
+	start_choice.clear()
+	for floor_number in [1, 11, 21, 31, 41]:
+		if state.can_start(selected_stage, floor_number):
+			start_choice.add_item("%dFから開始（Lv1・永久強化適用）" % floor_number, floor_number)
+			if floor_number == starting_floor:
+				start_choice.select(start_choice.item_count - 1)
+	starting_floor = start_choice.get_selected_id() if start_choice.item_count > 0 else 1
+	_update_start_label()
 	# Focus on review rather than the destructive-to-preparation transition.
 	inventory_list.grab_focus()
+
+
+func _update_start_label() -> void:
+	confirm_button.text = "%s・%dFから挑戦する" % [selected_stage.display_name, starting_floor]

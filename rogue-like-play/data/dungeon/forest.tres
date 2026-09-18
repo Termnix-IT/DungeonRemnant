@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="DungeonSettings" load_steps=2 format=3]
+[ext_resource type="Script" path="res://data/definitions/dungeon_settings.gd" id="1"]
+[resource]
+script = ExtResource("1")
+forest = true
+depth_scaling = true
+difficulty_offset = 1
+room_count = 6
+obstacle_chance = 0.13
+enemy_count = 4
+item_count = 7

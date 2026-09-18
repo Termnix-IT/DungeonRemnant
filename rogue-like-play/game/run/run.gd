@@ -6,7 +6,7 @@ signal result_ready
 const PLAYER_SCENE := preload("res://actors/player/player.tscn")
 const ENEMY_SCENE := preload("res://actors/enemy/enemy.tscn")
 const PREVIEW := preload("res://combat/attack_preview.gd")
-const FINAL_FLOOR := 10
+const FINAL_FLOOR := 50
 @export_range(1, 100) var final_floor: int = FINAL_FLOOR
 const MOVE_DIRECTIONS: Array[Vector2i] = [
 	Vector2i.UP, Vector2i(1, -1), Vector2i.RIGHT, Vector2i(1, 1),
@@ -26,6 +26,8 @@ const ENEMY_TYPES: Array[EnemyStats] = [
 ## Zero selects a fresh random seed. Nonzero seeds reproduce layouts for testing.
 @export var generation_seed: int = 0
 var preview: Node2D
+var stage_data: StageData
+var starting_floor := 1
 var floor_number := 1
 var floor_limit := 5000
 var exit_cell := Vector2i(-1, -1)
@@ -100,6 +102,7 @@ func _ready() -> void:
 	result_panel.return_to_hub = initial_state != null
 	result_panel.abort_confirmed.connect(func(): finish_run(false))
 	result_panel.abort_cancelled.connect(_cancel_abort)
+	floor_number = starting_floor
 	_load_floor()
 	_refresh()
 
@@ -135,7 +138,8 @@ func _load_floor() -> void:
 	dungeon.grid.place(turns.player, dungeon.start_cell)
 	for cell: Vector2i in dungeon.enemy_cells:
 		var enemy := ENEMY_SCENE.instantiate()
-		enemy.stats = ENEMY_TYPES[(floor_number - 1 + turns.enemies.size()) % ENEMY_TYPES.size()]
+		enemy.stats = ENEMY_TYPES[(floor_number - 1 + turns.enemies.size() + (3 if dungeon_settings.forest else 0)) % ENEMY_TYPES.size()]
+		_scale_enemy(enemy)
 		_make_elite(enemy)
 		dungeon.get_node("Actors").add_child(enemy)
 		dungeon.grid.place(enemy, cell)
@@ -144,11 +148,16 @@ func _load_floor() -> void:
 		# The unused exit is the farthest reachable cell, never an enemy spawn.
 		var boss := ENEMY_SCENE.instantiate()
 		boss.stats = preload("res://data/enemies/boss.tres")
+		if stage_data != null and not stage_data.bosses.is_empty():
+			boss.stats = stage_data.bosses[mini((floor_number - 1) / 10, stage_data.bosses.size() - 1)]
+		dungeon.has_stairs = false
 		dungeon.get_node("Actors").add_child(boss)
 		dungeon.grid.place(boss, dungeon.stairs_cell)
 		turns.enemies.append(boss)
 	dungeon.spawn_items(dungeon_settings, floor_number, rng)
 	turns.last_message = "%dFに到着。金色の階段から次の階へ進めます。" % floor_number
+	if floor_number % 10 == 0:
+		turns.last_message = "%dF：中ボスを倒すと階段と帰還用の脱出口が開きます。" % floor_number
 	if floor_number == final_floor:
 		turns.last_message = "%dF：深層の守護者を倒すとクリアです。中断確認はR。" % final_floor
 
@@ -173,9 +182,12 @@ func _on_turn_finished() -> void:
 
 
 func _on_boss_defeated() -> void:
+	if stage_data != null:
+		carryover.record_boss(stage_data.id, floor_number, floor_number == final_floor)
 	if floor_number == final_floor:
 		finish_run(true)
 		return
+	dungeon.has_stairs = true
 	floor_limit += dungeon_settings.boss_grace_turns
 	exit_cell = dungeon.start_cell
 	dungeon.escape_cell = exit_cell
@@ -235,6 +247,7 @@ func _spawn_reinforcement() -> void:
 		return
 	var enemy := ENEMY_SCENE.instantiate()
 	enemy.stats = ENEMY_TYPES[rng.randi_range(0, ENEMY_TYPES.size() - 1)]
+	_scale_enemy(enemy)
 	_make_elite(enemy)
 	dungeon.get_node("Actors").add_child(enemy)
 	dungeon.grid.place(enemy, cell)
@@ -559,7 +572,7 @@ func retry_run() -> void:
 	turns.busy = false
 	turns.paused = false
 	result = {}
-	floor_number = 1
+	floor_number = starting_floor
 	hud.reset_log()
 	_load_floor()
 	_refresh()
@@ -607,9 +620,27 @@ func _summon_enemy(source: Node2D) -> void:
 			continue
 		var enemy := ENEMY_SCENE.instantiate()
 		enemy.stats = preload("res://data/enemies/charge_enemy.tres")
+		_scale_enemy(enemy)
+		if enemy.stats != preload("res://data/enemies/charge_enemy.tres"):
+			enemy.stats.exp_reward = 1
+			enemy.stats.gold_reward = 0
 		enemy.summoner = source
 		dungeon.get_node("Actors").add_child(enemy)
 		dungeon.grid.place(enemy, cell)
 		turns.enemies.append(enemy)
 		turns.last_message += " 突進獣が召喚された！"
 		return
+
+
+func _scale_enemy(enemy: Node2D) -> void:
+	if not dungeon_settings.depth_scaling:
+		return
+	var depth := (floor_number - 1) / 10 + dungeon_settings.difficulty_offset
+	if depth <= 0:
+		return
+	enemy.stats = enemy.stats.duplicate()
+	enemy.stats.max_hp += depth * dungeon_settings.depth_hp_step
+	enemy.stats.attack += depth * dungeon_settings.depth_attack_step
+	enemy.stats.defense += depth * dungeon_settings.depth_defense_step
+	enemy.stats.exp_reward += depth * 4
+	enemy.stats.gold_reward += depth * 5

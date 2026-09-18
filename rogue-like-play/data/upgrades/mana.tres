@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillNode" load_steps=2 format=3]
+[ext_resource type="Script" path="res://data/definitions/skill_node.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"mana"
+display_name = "魔力量"
+effect = &"mp"
+amount = 3
+max_rank = 10
+base_cost = 80
+cost_step = 40
+prerequisite = &"hp"
+prerequisite_rank = 1

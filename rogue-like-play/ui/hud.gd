@@ -132,6 +132,7 @@ func _refresh_meta() -> void:
 
 func _terrain_label(value: String) -> String:
 	match value:
+		"Forest": return "深緑の森林"
 		"Slate Ruins": return "蒼灰の遺跡"
 		"Moss Caverns": return "苔むす洞窟"
 		"Ember Depths": return "熾火の深層"

@@ -18,6 +18,9 @@ func check(ok: bool, label: String) -> void:
 func run_tests() -> void:
 	for seed_value in range(1, 21):
 		var run := preload("res://game/run/run.tscn").instantiate()
+		run.final_floor = 10
+		run.dungeon_settings = run.dungeon_settings.duplicate()
+		run.dungeon_settings.depth_scaling = false
 		run.generation_seed = seed_value
 		root.add_child(run)
 		check(not run.turns.enemies.any(func(enemy): return enemy.stats.is_boss), "No boss before 10F")

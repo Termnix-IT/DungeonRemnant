@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SkillNode" load_steps=2 format=3]
+[ext_resource type="Script" path="res://data/definitions/skill_node.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"defense"
+display_name = "防御力"
+effect = &"defense"
+amount = 1
+max_rank = 10
+base_cost = 150
+cost_step = 90
+prerequisite = &"attack"
+prerequisite_rank = 1

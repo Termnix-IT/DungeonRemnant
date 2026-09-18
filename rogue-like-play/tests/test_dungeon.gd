@@ -88,6 +88,7 @@ func test_generation() -> void:
 
 func new_run(enemy_count: int = 2) -> Node2D:
 	var run := RUN.instantiate()
+	run.final_floor = 10
 	run.generation_seed = 47
 	run.dungeon_settings = DungeonSettings.new()
 	run.dungeon_settings.enemy_count = enemy_count

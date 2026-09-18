@@ -1,14 +1,14 @@
 [gd_resource type="Resource" script_class="StageData" load_steps=10 format=3]
 [ext_resource type="Script" path="res://data/definitions/stage_data.gd" id="1"]
-[ext_resource type="Resource" path="res://data/dungeon/default.tres" id="2"]
-[ext_resource type="Texture2D" path="res://art/hub/ancient_ruins.png" id="3"]
+[ext_resource type="Resource" path="res://data/dungeon/forest.tres" id="2"]
+[ext_resource type="Texture2D" path="res://art/hub/forest.svg" id="3"]
 [ext_resource type="Script" path="res://data/definitions/enemy_stats.gd" id="4"]
 [sub_resource type="Resource" id="Boss0"]
 script = ExtResource("4")
-display_name = "石門の守護者"
+display_name = "根の番人"
 is_boss = true
-max_hp = 48
-attack = 5
+max_hp = 58
+attack = 6
 defense = 1
 exp_reward = 30
 gold_reward = 100
@@ -20,10 +20,10 @@ move_steps = 1
 summon_interval = 5
 [sub_resource type="Resource" id="Boss1"]
 script = ExtResource("4")
-display_name = "疾風の番人"
+display_name = "疾風の狼王"
 is_boss = true
-max_hp = 70
-attack = 7
+max_hp = 80
+attack = 8
 defense = 2
 exp_reward = 45
 gold_reward = 170
@@ -35,10 +35,10 @@ move_steps = 2
 summon_interval = 5
 [sub_resource type="Resource" id="Boss2"]
 script = ExtResource("4")
-display_name = "魔砲の監視者"
+display_name = "胞子の砲台"
 is_boss = true
-max_hp = 92
-attack = 9
+max_hp = 102
+attack = 10
 defense = 3
 exp_reward = 60
 gold_reward = 240
@@ -50,10 +50,10 @@ move_steps = 1
 summon_interval = 5
 [sub_resource type="Resource" id="Boss3"]
 script = ExtResource("4")
-display_name = "召喚の司祭"
+display_name = "群れの主"
 is_boss = true
-max_hp = 114
-attack = 11
+max_hp = 124
+attack = 12
 defense = 4
 exp_reward = 75
 gold_reward = 310
@@ -65,10 +65,10 @@ move_steps = 1
 summon_interval = 5
 [sub_resource type="Resource" id="Boss4"]
 script = ExtResource("4")
-display_name = "遺跡王"
+display_name = "古樹の王"
 is_boss = true
-max_hp = 136
-attack = 13
+max_hp = 146
+attack = 14
 defense = 5
 exp_reward = 90
 gold_reward = 380
@@ -80,14 +80,14 @@ move_steps = 1
 summon_interval = 5
 [resource]
 script = ExtResource("1")
-id = &"ancient_ruins"
-display_name = "古代遺跡"
+id = &"forest"
+display_name = "深緑の森林"
 description = "10階ごとの強敵を越え、50階の主へ挑む。"
 floor_count = 50
-difficulty = "標準"
+difficulty = "上級"
 features = "中ボス撃破後は安全帰還。\n永久強化と途中開始で深層を目指す。"
 enemy_summary = "追跡 / 砲台 / 高速型 / 召喚型 / エリート"
 settings = ExtResource("2")
 illustration = ExtResource("3")
-previous_stage = &""
+previous_stage = &"ancient_ruins"
 bosses = Array[ExtResource("4")]([SubResource("Boss0"), SubResource("Boss1"), SubResource("Boss2"), SubResource("Boss3"), SubResource("Boss4")])

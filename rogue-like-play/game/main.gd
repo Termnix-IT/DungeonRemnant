@@ -15,6 +15,8 @@ func _ready() -> void:
 		state = save_store.load_state()
 	$Hub.start_requested.connect(start_run)
 	$Hub.purchase_requested.connect(purchase_upgrade)
+	$Hub.skill_requested.connect(purchase_skill)
+	$Hub.entry_requested.connect(unlock_entry)
 	$Hub.storage_transfer_requested.connect(transfer_storage)
 	$Hub.equip_requested.connect(equip_item)
 	$Hub.unequip_requested.connect(unequip_item)
@@ -95,6 +97,8 @@ func _prepare(action: Callable, success_message: String) -> bool:
 	var previous_storage := state.storage.copy()
 	var previous_slots := state.equipment.slots.duplicate()
 	var previous_gold := state.gold
+	var previous_skills := state.skill_levels.duplicate(true)
+	var previous_entries := state.unlocked_entries.duplicate(true)
 	var succeeded: bool = action.call()
 	var message := success_message if succeeded else "変更できません。選択した品・Gold・空き容量を確認してください。"
 	if succeeded and saving_enabled and not save_store.save_state(state):
@@ -102,6 +106,8 @@ func _prepare(action: Callable, success_message: String) -> bool:
 		state.storage = previous_storage
 		state.equipment.slots.assign(previous_slots)
 		state.gold = previous_gold
+		state.skill_levels = previous_skills
+		state.unlocked_entries = previous_entries
 		succeeded = false
 		message = "保存に失敗したため、変更を取り消しました。"
 	$Hub.refresh(state, message)
@@ -113,7 +119,10 @@ func start_run() -> void:
 	if active_run != null or not has_node("Hub") or not $Hub.visible:
 		return
 	var stage: StageData = $Hub.departure_page.selected_stage
-	if stage != null and (not stage.available or stage.settings == null or stage.floor_count < 1):
+	if stage == null:
+		stage = preload("res://data/stages/ancient_ruins.tres")
+	var entry_floor: int = $Hub.departure_page.starting_floor
+	if not state.can_start(stage, entry_floor) or stage.settings == null or stage.floor_count < 1:
 		return
 	if saving_enabled and not save_store.save_state(state):
 		_update_save_status()
@@ -124,6 +133,8 @@ func start_run() -> void:
 	active_run.name = "Run"
 	active_run.initial_state = state
 	if stage != null:
+		active_run.stage_data = stage
+		active_run.starting_floor = entry_floor
 		active_run.dungeon_settings = stage.settings
 		active_run.final_floor = stage.floor_count
 	active_run.hub_requested.connect(return_to_hub)
@@ -185,3 +196,11 @@ func _enter_tree() -> void:
 
 func unsocket_scroll(slot: int) -> bool:
 	return _prepare(func() -> bool: return state.equipment.unsocket(state.inventory, slot), "魔法を取り外し、所持品に戻しました。")
+
+
+func purchase_skill(id: StringName) -> bool:
+	return _prepare(func() -> bool: return state.purchase_skill(id), "スキルを強化しました。")
+
+
+func unlock_entry(stage: StageData, floor_number: int) -> bool:
+	return _prepare(func() -> bool: return state.unlock_entry(stage, floor_number), "%dFからの途中開始を解放しました。" % floor_number)

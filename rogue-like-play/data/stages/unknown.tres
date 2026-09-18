@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="StageData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://data/definitions/stage_data.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"unknown"
+display_name = "？？？"
+description = "この先にも、まだ見ぬダンジョンが待っている。今後追加予定。"
+available = false

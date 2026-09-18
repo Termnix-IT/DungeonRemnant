@@ -1,7 +1,7 @@
 class_name SaveCodec
 extends RefCounted
 
-const VERSION := 2
+const VERSION := 3
 const MAX_GOLD := 1000000000
 
 
@@ -9,7 +9,7 @@ static func encode(state: RunCarryover) -> Dictionary:
 	var equipment: Array = []
 	for item in state.equipment.slots:
 		equipment.append(_encode_item(item))
-	return {"version": VERSION, "gold": state.gold, "hp_upgrade_level": state.hp_upgrade_level, "inventory": _encode_inventory(state.inventory), "storage": _encode_inventory(state.storage), "equipment": equipment}
+	return {"version": VERSION, "gold": state.gold, "skills": state.skill_levels.duplicate(true), "bosses": state.defeated_bosses.duplicate(true), "entries": state.unlocked_entries.duplicate(true), "cleared_stages": state.cleared_stages.duplicate(), "hp_upgrade_level": state.hp_upgrade_level, "inventory": _encode_inventory(state.inventory), "storage": _encode_inventory(state.storage), "equipment": equipment}
 
 
 static func _encode_inventory(inventory: Inventory) -> Array:
@@ -48,6 +48,9 @@ static func decode(data: Variant) -> RunCarryover:
 		if item == null or not state.equipment.accepts(item, index):
 			return null
 		state.equipment.slots[index] = item
+	state.hp_upgrade_level = int(data.hp_upgrade_level)
+	if not _decode_campaign(data, state):
+		return null
 	state.gold = int(data.gold)
 	state.hp_upgrade_level = int(data.hp_upgrade_level)
 	return state
@@ -96,3 +99,52 @@ static func _decode_item(data: Variant) -> ItemData:
 	item = item.duplicate()
 	item.socketed_scroll = scroll
 	return item
+
+
+static func _decode_campaign(data: Dictionary, state: RunCarryover) -> bool:
+	var skills: Variant = data.get("skills", {})
+	if not skills is Dictionary:
+		return false
+	for id: Variant in skills:
+		if not id is String:
+			return false
+		var node := SkillCatalog.find(StringName(id))
+		if node == null or not integer(skills[id], 0, node.max_rank):
+			return false
+		state.skill_levels[id] = int(skills[id])
+	for field in ["bosses", "entries"]:
+		var values: Variant = data.get(field, {})
+		if not values is Dictionary:
+			return false
+		for stage: Variant in values:
+			if stage not in ["ancient_ruins", "forest"] or not values[stage] is Array:
+				return false
+			var seen: Array[int] = []
+			for value: Variant in values[stage]:
+				if not integer(value, 1, 50) or value in seen:
+					return false
+				if (field == "bosses" and int(value) not in [10, 20, 30, 40, 50]) or (field == "entries" and int(value) not in [11, 21, 31, 41]):
+					return false
+				seen.append(int(value))
+			if field == "bosses":
+				state.defeated_bosses[stage] = seen
+			else:
+				state.unlocked_entries[stage] = seen
+	var cleared: Variant = data.get("cleared_stages", [])
+	if not cleared is Array:
+		return false
+	for stage: Variant in cleared:
+		if stage not in ["ancient_ruins", "forest"] or stage in state.cleared_stages:
+			return false
+		state.cleared_stages.append(stage)
+	for node in SkillCatalog.NODES:
+		if state.skill_rank(node.id) > 0 and state.skill_rank(node.prerequisite) < node.prerequisite_rank:
+			return false
+	for stage in state.cleared_stages:
+		if 50 not in state.defeated_bosses.get(stage, []):
+			return false
+	for stage in state.unlocked_entries:
+		for floor_number in state.unlocked_entries[stage]:
+			if floor_number - 1 not in state.defeated_bosses.get(stage, []):
+				return false
+	return true

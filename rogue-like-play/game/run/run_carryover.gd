@@ -9,6 +9,10 @@ var inventory := Inventory.new()
 var storage := Inventory.new(STORAGE_MAX_ENTRIES, STORAGE_MAX_STACK)
 var equipment := Equipment.new()
 var hp_upgrade_level := 0
+var skill_levels: Dictionary = {}
+var defeated_bosses: Dictionary = {}
+var unlocked_entries: Dictionary = {}
+var cleared_stages: Array[String] = []
 var upgrade: PermanentUpgrade = preload("res://data/upgrades/max_hp.tres")
 
 
@@ -80,9 +84,9 @@ func preparation_stats(gear: Equipment = equipment) -> Dictionary:
 	var bonus := gear.bonuses()
 	var main := gear.slots[Equipment.Slot.MAIN]
 	var attack_weapon: WeaponData = (main.socketed_scroll.weapon if main.socketed_scroll != null else main.weapon) if main != null else null
-	return {"hp": base.max_hp + upgrade.hp_bonus(hp_upgrade_level) + bonus.hp,
-		"attack": base.attack + bonus.damage + (attack_weapon.damage_bonus if attack_weapon != null else 0),
-		"defense": base.defense + bonus.defense,
+	return {"hp": base.max_hp + upgrade.hp_bonus(hp_upgrade_level) + bonus.hp + skill_bonus(&"hp"),
+		"attack": base.attack + skill_bonus(&"attack") + bonus.damage + (attack_weapon.damage_bonus if attack_weapon != null else 0),
+		"defense": base.defense + skill_bonus(&"defense") + bonus.defense,
 		"reach": attack_weapon.reach if attack_weapon != null else 0}
 
 
@@ -98,5 +102,76 @@ func restore(player: Node2D) -> void:
 	player.equipment = Equipment.new()
 	player.equipment.slots.assign(equipment.slots)
 	player.refresh_equipment_effects()
-	player.apply_permanent_hp(upgrade.hp_bonus(hp_upgrade_level))
+	player.apply_permanent_hp(upgrade.hp_bonus(hp_upgrade_level) + skill_bonus(&"hp"))
+	player.stats.attack += skill_bonus(&"attack")
+	player.stats.defense += skill_bonus(&"defense")
+	player.stats.max_mp += skill_bonus(&"mp")
+	player.mp = player.stats.max_mp
 	player.hp = player.stats.max_hp
+
+
+func skill_rank(id: StringName) -> int:
+	return hp_upgrade_level if id == &"hp" else int(skill_levels.get(String(id), 0))
+
+
+func skill_bonus(effect: StringName) -> int:
+	var value := 0
+	for node in SkillCatalog.NODES:
+		if node.effect == effect:
+			value += node.amount * skill_rank(node.id)
+	return value
+
+
+func can_purchase_skill(id: StringName) -> bool:
+	var node := SkillCatalog.find(id)
+	if node == null:
+		return false
+	var cost := node.price(skill_rank(id))
+	return cost >= 0 and gold >= cost and skill_rank(node.prerequisite) >= node.prerequisite_rank
+
+
+func purchase_skill(id: StringName) -> bool:
+	if not can_purchase_skill(id):
+		return false
+	var node := SkillCatalog.find(id)
+	gold -= node.price(skill_rank(id))
+	skill_levels[String(id)] = skill_rank(id) + 1
+	return true
+
+
+func stage_available(stage: StageData) -> bool:
+	return stage != null and stage.available and (stage.previous_stage.is_empty() or String(stage.previous_stage) in cleared_stages)
+
+
+func record_boss(stage_id: StringName, floor_number: int, final: bool) -> void:
+	var key := String(stage_id)
+	if key.is_empty():
+		return
+	if not defeated_bosses.has(key):
+		defeated_bosses[key] = []
+	if floor_number not in defeated_bosses[key]:
+		defeated_bosses[key].append(floor_number)
+	if final and key not in cleared_stages:
+		cleared_stages.append(key)
+
+
+func can_start(stage: StageData, floor_number: int) -> bool:
+	return stage_available(stage) and (floor_number == 1 or floor_number in unlocked_entries.get(String(stage.id), [])) and floor_number <= stage.floor_count
+
+
+func can_unlock_entry(stage: StageData, floor_number: int) -> bool:
+	if not stage_available(stage) or floor_number not in [11, 21, 31, 41] or floor_number >= stage.floor_count:
+		return false
+	var index := (floor_number - 1) / 10 - 1
+	return index < stage.entry_costs.size() and gold >= stage.entry_costs[index] and floor_number - 1 in defeated_bosses.get(String(stage.id), []) and floor_number not in unlocked_entries.get(String(stage.id), [])
+
+
+func unlock_entry(stage: StageData, floor_number: int) -> bool:
+	if not can_unlock_entry(stage, floor_number):
+		return false
+	gold -= stage.entry_costs[(floor_number - 1) / 10 - 1]
+	var key := String(stage.id)
+	if not unlocked_entries.has(key):
+		unlocked_entries[key] = []
+	unlocked_entries[key].append(floor_number)
+	return true

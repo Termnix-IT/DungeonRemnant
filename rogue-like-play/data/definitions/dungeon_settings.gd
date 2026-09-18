@@ -25,3 +25,10 @@ extends Resource
 
 func map_size() -> Vector2i:
 	return Vector2i(clampi(width, 20, 60), clampi(height, 20, 60))
+
+@export var forest := false
+@export var depth_scaling := false
+@export_range(0, 10) var difficulty_offset: int = 0
+@export var depth_hp_step: int = 5
+@export var depth_attack_step: int = 2
+@export var depth_defense_step: int = 1

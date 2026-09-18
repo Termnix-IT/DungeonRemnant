@@ -103,7 +103,7 @@ func run_tests() -> void:
 	short_stage.settings.item_count = 0
 	hub.stages.append(short_stage)
 	hub.show_page("stages")
-	hub.departure_page._select_stage(1)
+	hub.departure_page._select_stage(hub.stages.size() - 1)
 	hub.departure_page.next_button.pressed.emit()
 	check(hub.title_label.text.contains("全2階"), "Selected stage floor count appears in confirmation")
 	hub.departure_page.equipment_requested.emit()
@@ -135,7 +135,7 @@ func run_tests() -> void:
 	check(hub.page == "stages", "Warehouse preparation continues to stage selection")
 	short_stage.available = false
 	hub.show_page("stages")
-	hub.departure_page._select_stage(1)
+	hub.departure_page._select_stage(hub.stages.size() - 1)
 	check(hub.departure_page.next_button.disabled, "Unavailable stage cannot be confirmed")
 	main.start_run()
 	check(main.active_run == null, "Unavailable stage also rejected at runtime boundary")

@@ -11,3 +11,7 @@ extends Resource
 @export var settings: DungeonSettings
 @export var illustration: Texture2D
 @export var available := true
+
+@export var previous_stage: StringName
+@export var entry_costs: Array[int] = [150, 350, 600, 900]
+@export var bosses: Array[EnemyStats] = []

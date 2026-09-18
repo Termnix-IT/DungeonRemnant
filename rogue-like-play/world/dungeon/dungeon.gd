@@ -21,12 +21,22 @@ var layout_name := ""
 var terrain_theme_index := 0
 var terrain_theme_name := ""
 var has_stairs := true
+var forest := false
 var escape_cell := Vector2i(-1, -1)
 var fog := FogOfWar.new()
 var ground_items: Dictionary = {}
+var decorations: Node2D
+
+
+func _ready() -> void:
+	decorations = Node2D.new()
+	decorations.z_index = 1
+	add_child(decorations)
+	decorations.draw.connect(_draw_decorations)
 
 
 func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenerator, final_floor: bool) -> void:
+	forest = settings.forest
 	escape_cell = Vector2i(-1, -1)
 	var generated := DungeonGenerator.generate(settings, floor_number, rng)
 	grid = generated.grid
@@ -34,8 +44,8 @@ func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenera
 	stairs_cell = generated.stairs
 	enemy_cells = generated.enemies
 	layout_name = generated.layout
-	terrain_theme_index = _terrain_theme_index(floor_number)
-	terrain_theme_name = TERRAIN_THEME_NAMES[terrain_theme_index]
+	terrain_theme_index = 1 if forest else _terrain_theme_index(floor_number)
+	terrain_theme_name = "Forest" if forest else TERRAIN_THEME_NAMES[terrain_theme_index]
 	has_stairs = not final_floor
 	fog.reset()
 	ground_items.clear()
@@ -93,7 +103,7 @@ func update_visibility(origin: Vector2i, radius: int) -> void:
 	$Items.entries = ground_items
 	$Items.visible_cells = fog.visible
 	$Items.queue_redraw()
-	queue_redraw()
+	decorations.queue_redraw()
 
 
 func sync_actors() -> void:
@@ -152,11 +162,22 @@ func _is_connectable_wall(cell: Vector2i) -> bool:
 	return grid.walls.has(cell) and not grid.pillars.has(cell)
 
 
-func _draw() -> void:
+func _draw_decorations() -> void:
+	if forest:
+		for cell: Vector2i in fog.explored:
+			if not grid.walls.has(cell):
+				continue
+			var center := Vector2(cell * TILE_SIZE) + Vector2.ONE * TILE_SIZE / 2.0
+			var visible_now: bool = fog.visible.has(cell)
+			var canopy := Color("376145") if visible_now else Color("14271b")
+			decorations.draw_rect(Rect2(center + Vector2(-4, -4), Vector2(8, 21)), Color("4b4530") if visible_now else Color("201e16"))
+			decorations.draw_circle(center + Vector2(0, -6), 18, canopy)
+			decorations.draw_circle(center + Vector2(-9, 0), 12, canopy)
+			decorations.draw_circle(center + Vector2(9, 0), 12, canopy)
 	if escape_cell.x < 0 or not fog.visible.has(escape_cell):
 		return
 	var center := Vector2(escape_cell * TILE_SIZE) + Vector2.ONE * TILE_SIZE / 2.0
-	draw_circle(center, 19, Color("5df1c3"), false, 4)
-	draw_line(center + Vector2(0, 12), center + Vector2(0, -12), Color.WHITE, 3)
-	draw_line(center + Vector2(0, -12), center + Vector2(-7, -5), Color.WHITE, 3)
-	draw_line(center + Vector2(0, -12), center + Vector2(7, -5), Color.WHITE, 3)
+	decorations.draw_circle(center, 19, Color("5df1c3"), false, 4)
+	decorations.draw_line(center + Vector2(0, 12), center + Vector2(0, -12), Color.WHITE, 3)
+	decorations.draw_line(center + Vector2(0, -12), center + Vector2(-7, -5), Color.WHITE, 3)
+	decorations.draw_line(center + Vector2(0, -12), center + Vector2(7, -5), Color.WHITE, 3)
