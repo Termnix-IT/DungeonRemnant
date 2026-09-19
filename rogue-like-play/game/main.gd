@@ -1,5 +1,6 @@
 extends Node
 
+signal preparation_completed(kind: StringName, gold_delta: int, slots: Array[int])
 @export var run_scene: PackedScene = preload("res://game/run/run.tscn")
 @export var saving_enabled := true
 var save_store := SaveStore.new()
@@ -24,6 +25,7 @@ func _ready() -> void:
 	$Hub.scroll_remove_requested.connect(unsocket_scroll)
 	$Hub.sell_requested.connect(sell_item)
 	$Hub.buy_requested.connect(buy_item)
+	preparation_completed.connect($Hub.present_action)
 	$Hub.refresh(state)
 	_update_save_status()
 
@@ -40,6 +42,9 @@ func purchase_upgrade() -> bool:
 		purchased = false
 	$Hub.refresh(state, "最大HP強化を購入しました。" if purchased else "購入できません。Goldと強化上限を確認してください。")
 	_update_save_status()
+	if purchased:
+		var slots: Array[int] = []
+		preparation_completed.emit(&"upgrade", state.gold - old_gold, slots)
 	return purchased
 
 
@@ -64,33 +69,35 @@ func transfer_storage(from_storage: bool, index: int) -> bool:
 	$Hub.refresh(state)
 	$Hub.warehouse_panel.refresh(state, "%d個%s。" % [moved, action])
 	_update_save_status()
+	var slots: Array[int] = []
+	preparation_completed.emit(&"withdraw" if from_storage else &"deposit", 0, slots)
 	return true
 
 
 func equip_item(from_storage: bool, index: int, slot: int) -> bool:
 	var source := state.storage if from_storage else state.inventory
 	if index >= 0 and index < source.entries.size() and source.entries[index].item.kind == ItemData.Kind.SCROLL:
-		return _prepare(func() -> bool: return state.equipment.socket(source, index, slot), "魔法を装着しました。")
-	return _prepare(func() -> bool: return state.equipment.equip(state.storage if from_storage else state.inventory, index, slot), "装備を変更しました。交換前の装備は選択元に戻しました。")
+		return _prepare(func() -> bool: return state.equipment.socket(source, index, slot), "魔法を装着しました。", &"equip", [slot])
+	return _prepare(func() -> bool: return state.equipment.equip(state.storage if from_storage else state.inventory, index, slot), "装備を変更しました。交換前の装備は選択元に戻しました。", &"equip", [slot])
 
 
 func unequip_item(slot: int) -> bool:
-	return _prepare(func() -> bool: return state.equipment.unequip(state.inventory, slot), "装備を外し、持ち込み所持品に戻しました。")
+	return _prepare(func() -> bool: return state.equipment.unequip(state.inventory, slot), "装備を外し、持ち込み所持品に戻しました。", &"equip", [slot])
 
 
 func sell_item(from_storage: bool, index: int, amount: int) -> bool:
-	return _prepare(func() -> bool: return state.sell_item(from_storage, index, amount), "%d個を売却しました。Goldに反映しました。" % amount)
+	return _prepare(func() -> bool: return state.sell_item(from_storage, index, amount), "%d個を売却しました。Goldに反映しました。" % amount, &"sell")
 
 
 func swap_weapons() -> bool:
-	return _prepare(state.equipment.swap_weapons, "Main / Sub Weaponを入れ替えました。")
+	return _prepare(state.equipment.swap_weapons, "Main / Sub Weaponを入れ替えました。", &"equip", [0, 1])
 
 
 func buy_item(to_storage: bool, item_id: StringName, amount: int) -> bool:
-	return _prepare(func() -> bool: return state.buy_item(to_storage, item_id, amount), "%d個購入し、%sへ入れました。" % [amount, "倉庫" if to_storage else "持ち込み所持品"])
+	return _prepare(func() -> bool: return state.buy_item(to_storage, item_id, amount), "%d個購入し、%sへ入れました。" % [amount, "倉庫" if to_storage else "持ち込み所持品"], &"buy")
 
 
-func _prepare(action: Callable, success_message: String) -> bool:
+func _prepare(action: Callable, success_message: String, kind: StringName = &"", slots: Array[int] = []) -> bool:
 	if active_run != null or not has_node("Hub") or not $Hub.visible:
 		return false
 	var previous_inventory := state.inventory.copy()
@@ -112,6 +119,8 @@ func _prepare(action: Callable, success_message: String) -> bool:
 		message = "保存に失敗したため、変更を取り消しました。"
 	$Hub.refresh(state, message)
 	_update_save_status()
+	if succeeded and not kind.is_empty():
+		preparation_completed.emit(kind, state.gold - previous_gold, slots)
 	return succeeded
 
 
@@ -168,6 +177,13 @@ func _update_save_status() -> void:
 
 
 func _enter_tree() -> void:
+	# Route controller UI navigation through the same native focus/press signals.
+	var ui_buttons := {"ui_accept": JOY_BUTTON_A, "ui_cancel": JOY_BUTTON_B, "ui_up": JOY_BUTTON_DPAD_UP, "ui_down": JOY_BUTTON_DPAD_DOWN, "ui_left": JOY_BUTTON_DPAD_LEFT, "ui_right": JOY_BUTTON_DPAD_RIGHT}
+	for action: String in ui_buttons:
+		var event := InputEventJoypadButton.new()
+		event.button_index = ui_buttons[action]
+		if not InputMap.action_has_event(action, event):
+			InputMap.action_add_event(action, event)
 	# All gameplay keys use InputMap, including keypad diagonals.
 	var bindings := {
 		"move_n": [KEY_UP, KEY_W, KEY_KP_8],
@@ -195,12 +211,12 @@ func _enter_tree() -> void:
 
 
 func unsocket_scroll(slot: int) -> bool:
-	return _prepare(func() -> bool: return state.equipment.unsocket(state.inventory, slot), "魔法を取り外し、所持品に戻しました。")
+	return _prepare(func() -> bool: return state.equipment.unsocket(state.inventory, slot), "魔法を取り外し、所持品に戻しました。", &"equip", [slot])
 
 
 func purchase_skill(id: StringName) -> bool:
-	return _prepare(func() -> bool: return state.purchase_skill(id), "スキルを強化しました。")
+	return _prepare(func() -> bool: return state.purchase_skill(id), "スキルを強化しました。", &"upgrade")
 
 
 func unlock_entry(stage: StageData, floor_number: int) -> bool:
-	return _prepare(func() -> bool: return state.unlock_entry(stage, floor_number), "%dFからの途中開始を解放しました。" % floor_number)
+	return _prepare(func() -> bool: return state.unlock_entry(stage, floor_number), "%dFからの途中開始を解放しました。" % floor_number, &"upgrade")

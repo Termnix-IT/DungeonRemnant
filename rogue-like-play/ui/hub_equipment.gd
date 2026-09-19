@@ -39,7 +39,7 @@ func _ready() -> void:
 	HubTheme.label(self, "装備候補  /  所持品・倉庫", Vector2(390, 14), Vector2(430, 34), &"HeadingLabel")
 	candidate_list = ItemList.new()
 	HubTheme.place(candidate_list, self, Vector2(390, 60), Vector2(430, 266))
-	candidate_list.item_selected.connect(func(_index: int): _compare())
+	candidate_list.item_selected.connect(func(_index: int): _compare(); UIMotion.of(comparison).reveal())
 	comparison = HubTheme.label(self, "", Vector2(390, 344), Vector2(430, 128), &"BodyLabel")
 	equip_button = HubTheme.button(self, "選択した装備に変更", Vector2(390, 490), Vector2(270, 48), _equip)
 	unequip_button = HubTheme.button(self, "外す", Vector2(672, 490), Vector2(148, 48), func(): unequip_requested.emit(selected_slot), &"SecondaryButton")
@@ -71,6 +71,7 @@ func refresh(current: RunCarryover) -> void:
 func select_slot(slot: int) -> void:
 	selected_slot = slot
 	refresh(state)
+	UIMotion.of(comparison).reveal()
 
 
 func _fill_candidates() -> void:

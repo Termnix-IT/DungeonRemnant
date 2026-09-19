@@ -186,6 +186,7 @@ func _select(index: int) -> void:
 	quantity.max_value = maxi(1, _purchase_limit(row.item)) if buying else row.count
 	quantity.value = 1
 	_update_quote()
+	UIMotion.of(details).reveal()
 
 
 func _update_quote() -> void:

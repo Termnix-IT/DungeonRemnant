@@ -39,7 +39,6 @@ var equipment_return := "stages"
 var _state: RunCarryover
 var _content: Control
 var _warehouse_focus: Control
-var _page_tween: Tween
 @onready var warehouse_panel: WarehousePanel = $WarehousePanel
 
 
@@ -100,6 +99,8 @@ func _ready() -> void:
 	warehouse_panel.closed.connect(_warehouse_closed)
 	warehouse_panel.equipment_requested.connect(func(): show_page("equipment"))
 	move_child(warehouse_panel, get_child_count() - 1)
+	UIMotion.bind_buttons(_content)
+	UIMotion.bind_buttons(warehouse_panel)
 
 
 func _page(control: Control) -> Control:
@@ -240,13 +241,31 @@ func show_page(target: String) -> void:
 			title_label.text = "出撃確認  /  %s・全%d階" % [stage.display_name, stage.floor_count]
 			departure_page.show()
 			departure_page.present_confirmation(_state)
-	if _page_tween != null:
-		_page_tween.kill()
-	_page_tween = create_tween()
 	for control in [home_page, equipment_page, sell_page, departure_page, upgrade_page]:
 		if control.visible:
-			control.modulate.a = 0.6
-			_page_tween.tween_property(control, "modulate:a", 1.0, 0.14)
+			UIMotion.of(control).reveal(UIMotion.WINDOW_TIME)
+
+
+func present_action(kind: StringName, gold_delta: int, slots: Array[int]) -> void:
+	# Called only after mutation and persistence succeeded; animation never
+	# owns transaction timing, state, focus or input availability.
+	if gold_delta != 0:
+		feedback.text += "  (%+d Gold)" % gold_delta
+		UIMotion.of(gold_label).pulse(1.08, UIMotion.GOLD_TIME)
+	UIMotion.of(feedback).reveal()
+	match kind:
+		&"buy", &"sell":
+			UIMotion.of(sell_page.total_label).pulse(1.025, UIMotion.GOLD_TIME)
+			UIMotion.of(sell_page.item_list).reveal()
+		&"equip":
+			for slot in slots:
+				UIMotion.of(equipment_page.slots[slot]).pulse()
+		&"upgrade":
+			UIMotion.of(upgrade_label).reveal()
+		&"deposit", &"withdraw":
+			var destination := "InventoryList" if kind == &"withdraw" else "StorageList"
+			UIMotion.of(warehouse_panel.get_node("Panel/" + destination)).reveal()
+			UIMotion.of(warehouse_panel.get_node("Panel/Feedback")).reveal()
 
 
 func open_warehouse() -> void:

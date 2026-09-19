@@ -26,6 +26,7 @@ func present(current_state: RunCarryover) -> void:
 	storage_index = -1
 	refresh()
 	show()
+	UIMotion.of($Panel).reveal(UIMotion.WINDOW_TIME)
 	$Panel/InventoryList.grab_focus()
 
 
@@ -67,6 +68,7 @@ func _select_inventory(index: int) -> void:
 	$Panel/StorageList.deselect_all()
 	$Panel/Deposit.disabled = false
 	$Panel/Withdraw.disabled = true
+	UIMotion.of($Panel/Deposit).pulse(1.025, UIMotion.SELECT_TIME)
 
 
 func _select_storage(index: int) -> void:
@@ -75,6 +77,7 @@ func _select_storage(index: int) -> void:
 	$Panel/InventoryList.deselect_all()
 	$Panel/Deposit.disabled = true
 	$Panel/Withdraw.disabled = false
+	UIMotion.of($Panel/Withdraw).pulse(1.025, UIMotion.SELECT_TIME)
 
 
 func _unhandled_input(event: InputEvent) -> void:
