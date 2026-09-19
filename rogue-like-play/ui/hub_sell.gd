@@ -25,42 +25,98 @@ var rows: Array[Dictionary] = []
 
 
 func _ready() -> void:
-	HubTheme.panel(self, Vector2.ZERO, Vector2(730, 560))
-	sell_tab = HubTheme.button(self, "売却", Vector2(24, 16), Vector2(150, 44), set_buying.bind(false))
-	buy_tab = HubTheme.button(self, "購入", Vector2(188, 16), Vector2(150, 44), set_buying.bind(true))
+	var columns := HBoxContainer.new()
+	add_child(columns)
+	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var catalog := _column(columns, 1.4)
+	var toolbar := HBoxContainer.new()
+	catalog.add_child(toolbar)
+	sell_tab = _button(toolbar, "売却", &"ItemButton", set_buying.bind(false))
+	buy_tab = _button(toolbar, "購入", &"ItemButton", set_buying.bind(true))
 	var tabs := ButtonGroup.new()
 	for button in [sell_tab, buy_tab]:
+		button.custom_minimum_size.x = 100
 		button.toggle_mode = true
 		button.button_group = tabs
 	sell_tab.button_pressed = true
-	source_label = HubTheme.label(self, "売却元", Vector2(362, 18), Vector2(88, 40), 17)
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	toolbar.add_child(spacer)
+	source_label = _label(toolbar, "売却元", &"MutedLabel")
+	source_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	source_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	source_choice = OptionButton.new()
 	source_choice.add_item("倉庫")
 	source_choice.add_item("持ち込み所持品")
-	HubTheme.place(source_choice, self, Vector2(452, 16), Vector2(254, 44))
+	source_choice.custom_minimum_size = Vector2(230, 44)
+	toolbar.add_child(source_choice)
 	source_choice.item_selected.connect(func(_index: int): refresh(state))
 	item_list = ItemList.new()
-	HubTheme.place(item_list, self, Vector2(24, 80), Vector2(682, 396))
+	item_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	catalog.add_child(item_list)
 	item_list.item_selected.connect(_select)
-	help_label = HubTheme.label(self, "", Vector2(24, 495), Vector2(682, 48), 17)
-	HubTheme.panel(self, Vector2(750, 0), Vector2(530, 560))
-	heading = HubTheme.label(self, "", Vector2(774, 20), Vector2(482, 40), 26)
+	help_label = _label(catalog, "", &"MutedLabel")
+	help_label.custom_minimum_size.y = 48
+	var info := _column(columns, 1.0)
+	heading = _label(info, "", &"HeadingLabel")
 	var scroll := ScrollContainer.new()
-	HubTheme.place(scroll, self, Vector2(774, 78), Vector2(482, 138))
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	info.add_child(scroll)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	details = HubTheme.label(scroll, "", Vector2.ZERO, Vector2(458, 138), 18)
+	details = _label(scroll, "", &"BodyLabel")
 	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	quantity_label = HubTheme.label(self, "", Vector2(774, 228), Vector2(180, 42))
+	var quantity_row := HBoxContainer.new()
+	info.add_child(quantity_row)
+	quantity_label = _label(quantity_row, "", &"MutedLabel")
+	quantity_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	quantity_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	quantity = SpinBox.new()
 	quantity.min_value = 1
 	quantity.max_value = 1
 	quantity.step = 1
-	HubTheme.place(quantity, self, Vector2(1010, 226), Vector2(246, 46))
+	quantity.custom_minimum_size = Vector2(180, 44)
+	quantity_row.add_child(quantity)
 	quantity.value_changed.connect(func(_value: float): _update_quote())
-	total_label = HubTheme.label(self, "", Vector2(774, 290), Vector2(482, 120), 21)
-	total_label.modulate = HubTheme.GOLD
-	sell_button = HubTheme.button(self, "売却する", Vector2(774, 423), Vector2(482, 50), _transact)
-	sell_all_button = HubTheme.button(self, "選択アイテムを全部売却", Vector2(774, 486), Vector2(482, 50), _sell_all)
+	var quote := PanelContainer.new()
+	quote.theme_type_variation = &"ItemPanel"
+	info.add_child(quote)
+	total_label = _label(quote, "", &"GoldLabel")
+	total_label.custom_minimum_size.y = 108
+	sell_button = _button(info, "売却する", &"GoldButton", _transact)
+	sell_all_button = _button(info, "選択アイテムを全部売却", &"SecondaryButton", _sell_all)
+
+
+func _column(parent: Container, stretch: float) -> VBoxContainer:
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = &"MainPanel"
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_stretch_ratio = stretch
+	parent.add_child(panel)
+	var margin := MarginContainer.new()
+	panel.add_child(margin)
+	var column := VBoxContainer.new()
+	margin.add_child(column)
+	return column
+
+
+func _label(parent: Node, text: String, role: StringName) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.theme_type_variation = role
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(label)
+	return label
+
+
+func _button(parent: Node, text: String, role: StringName, action: Callable) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.theme_type_variation = role
+	button.custom_minimum_size.y = 44
+	button.pressed.connect(action)
+	parent.add_child(button)
+	return button
 
 
 func set_buying(value: bool) -> void:

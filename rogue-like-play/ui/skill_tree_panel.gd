@@ -15,16 +15,16 @@ var stages: Array[StageData] = [preload("res://data/stages/ancient_ruins.tres"),
 func _ready() -> void:
 	HubTheme.panel(self, Vector2.ZERO, Vector2(620, 560))
 	HubTheme.panel(self, Vector2(640, 0), Vector2(640, 560))
-	HubTheme.label(self, "ステータス強化", Vector2(22, 14), Vector2(580, 36), 25)
-	root_label = HubTheme.label(self, "", Vector2(22, 56), Vector2(580, 34), 17)
-	root_button = HubTheme.button(self, "", Vector2(22, 96), Vector2(576, 44), func(): hp_requested.emit())
+	HubTheme.label(self, "ステータス強化", Vector2(22, 14), Vector2(580, 36), &"HeadingLabel")
+	root_label = HubTheme.label(self, "", Vector2(22, 56), Vector2(580, 34), &"MutedLabel")
+	root_button = HubTheme.button(self, "", Vector2(22, 96), Vector2(576, 44), func(): hp_requested.emit(), &"GoldButton")
 	for index in SkillCatalog.NODES.size():
 		var node := SkillCatalog.NODES[index]
 		var button := HubTheme.button(self, "", Vector2(22, 154 + index * 96), Vector2(576, 84), func(): skill_requested.emit(node.id))
-		button.add_theme_font_size_override("font_size", 17)
+		button.theme_type_variation = &"GoldButton"
 		nodes[node.id] = button
-	HubTheme.label(self, "ダンジョン途中解放", Vector2(662, 14), Vector2(596, 36), 25)
-	HubTheme.label(self, "中ボス撃破後にコインで解放。Lv1と永久強化で開始。", Vector2(662, 57), Vector2(596, 40), 17)
+	HubTheme.label(self, "ダンジョン途中解放", Vector2(662, 14), Vector2(596, 36), &"HeadingLabel")
+	HubTheme.label(self, "中ボス撃破後にコインで解放。Lv1と永久強化で開始。", Vector2(662, 57), Vector2(596, 40), &"MutedLabel")
 	stage_choice = OptionButton.new()
 	for stage in stages:
 		stage_choice.add_item(stage.display_name)
@@ -33,7 +33,7 @@ func _ready() -> void:
 	for index in 4:
 		var floor_number := 11 + index * 10
 		var button := HubTheme.button(self, "", Vector2(662, 161 + index * 94), Vector2(596, 78), func(): entry_requested.emit(stages[stage_choice.selected], floor_number))
-		button.add_theme_font_size_override("font_size", 18)
+		button.theme_type_variation = &"GoldButton"
 		entry_buttons.append(button)
 
 func refresh(current: RunCarryover) -> void:

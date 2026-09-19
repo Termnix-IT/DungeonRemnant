@@ -64,12 +64,10 @@ func _ready() -> void:
 	_resize()
 	get_viewport().size_changed.connect(_resize)
 	HubTheme.panel(_content, Vector2.ZERO, Vector2(1280, 98))
-	title_label = HubTheme.label(_content, "旅支度の間", Vector2(26, 10), Vector2(850, 44), 32)
-	subtitle_label = HubTheme.label(_content, "小さな準備が、大きな冒険につながる。", Vector2(28, 58), Vector2(850, 30), 17)
-	subtitle_label.modulate = HubTheme.MUTED
-	gold_label = HubTheme.label(_content, "", Vector2(970, 24), Vector2(280, 48), 26)
+	title_label = HubTheme.label(_content, "旅支度の間", Vector2(26, 10), Vector2(850, 44), &"TitleLabel")
+	subtitle_label = HubTheme.label(_content, "小さな準備が、大きな冒険につながる。", Vector2(28, 58), Vector2(850, 30), &"MutedLabel")
+	gold_label = HubTheme.label(_content, "", Vector2(970, 24), Vector2(280, 48), &"GoldLabel")
 	gold_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	gold_label.modulate = HubTheme.GOLD
 	home_page = _page(Control.new())
 	_build_home()
 	equipment_page = _page(HubEquipment.new()) as HubEquipment
@@ -94,11 +92,9 @@ func _ready() -> void:
 	tree.entry_requested.connect(func(stage: StageData, floor_number: int): entry_requested.emit(stage, floor_number))
 	purchase_button = tree.root_button
 	upgrade_label = tree.root_label
-	back_button = HubTheme.button(_content, "戻る  /  Esc", Vector2(0, 704), Vector2(215, 48), go_back)
-	feedback = HubTheme.label(_content, "", Vector2(238, 700), Vector2(1030, 54), 17)
-	feedback.modulate = HubTheme.GOLD
-	save_label = HubTheme.label(_content, "", Vector2(0, 762), Vector2(1280, 24), 14)
-	save_label.modulate = HubTheme.MUTED
+	back_button = HubTheme.button(_content, "戻る  /  Esc", Vector2(0, 704), Vector2(215, 48), go_back, &"SecondaryButton")
+	feedback = HubTheme.label(_content, "", Vector2(238, 700), Vector2(1030, 54), &"GoldLabel")
+	save_label = HubTheme.label(_content, "", Vector2(0, 762), Vector2(1280, 24), &"MutedLabel")
 	warehouse_panel.theme = _content.theme
 	warehouse_panel.transfer_requested.connect(func(source: bool, index: int): storage_transfer_requested.emit(source, index))
 	warehouse_panel.closed.connect(_warehouse_closed)
@@ -115,13 +111,13 @@ func _page(control: Control) -> Control:
 
 func _build_home() -> void:
 	start_button = _home_action("出撃", "ステージを選び、次の冒険へ", Vector2(28, 65), func(): show_page("stages"))
-	start_button.add_theme_stylebox_override("normal", HubTheme.box(Color(0.16, 0.13, 0.075, 0.96), HubTheme.GOLD, 2))
+	start_button.theme_type_variation = &"PrimaryButton"
 	equipment_button = _home_action("装備", "装備と持ち込みを整える", Vector2(28, 205), func(): equipment_return = "stages"; show_page("equipment"))
 	warehouse_button = _home_action("倉庫", "使うもの、残すものを選ぶ", Vector2(28, 345), open_warehouse)
 	sell_button = _home_action("ショップ", "アイテムを購入・売却する", Vector2(880, 65), func(): show_page("sell"))
 	upgrade_button = _home_action("永久強化", "冒険の先へ、ずっと残る力", Vector2(880, 205), func(): show_page("upgrade"))
 	var summary := HubTheme.panel(home_page, Vector2(880, 345), Vector2(372, 124))
-	equipment_label = HubTheme.label(summary, "", Vector2(20, 14), Vector2(332, 100), 17)
+	equipment_label = HubTheme.label(summary, "", Vector2(20, 14), Vector2(332, 100), &"MutedLabel")
 	var hero := AnimatedSprite2D.new()
 	hero.name = "Hero"
 	hero.sprite_frames = MioAnimation.build_front_idle_frames()
@@ -151,33 +147,30 @@ func _build_home() -> void:
 	hero_button.name = "HeroButton"
 	hero_button.tooltip_text = "話しかける"
 	hero_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	for style in ["normal", "hover", "pressed", "disabled"]:
-		hero_button.add_theme_stylebox_override(style, StyleBoxEmpty.new())
+	hero_button.theme_type_variation = &"CharacterButton"
 	hero_speech = HubTheme.panel(home_page, Vector2(430, 88), Vector2(420, 64))
 	hero_speech.name = "HeroSpeech"
 	hero_speech.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hero_speech.add_theme_stylebox_override("panel", HubTheme.box(HubTheme.INK, HubTheme.GOLD))
+	hero_speech.theme_type_variation = &"SpeechPanel"
 	var tail := Polygon2D.new()
 	tail.polygon = PackedVector2Array([Vector2(198, 63), Vector2(210, 78), Vector2(222, 63)])
-	tail.color = HubTheme.GOLD
+	tail.color = hero_speech.get_theme_stylebox("panel").border_color
 	hero_speech.add_child(tail)
 	var tail_fill := Polygon2D.new()
 	tail_fill.polygon = PackedVector2Array([Vector2(200, 62), Vector2(210, 76), Vector2(220, 62)])
-	tail_fill.color = HubTheme.INK
+	tail_fill.color = hero_speech.get_theme_stylebox("panel").bg_color
 	hero_speech.add_child(tail_fill)
-	var invitation := HubTheme.label(hero_speech, "準備ができたら、出発しよう。", Vector2(16, 12), Vector2(388, 40), 20)
+	var invitation := HubTheme.label(hero_speech, "準備ができたら、出発しよう。", Vector2(16, 12), Vector2(388, 40), &"GoldLabel")
 	invitation.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	invitation.modulate = HubTheme.GOLD
 	hero_speech.hide()
-	var note := HubTheme.label(home_page, "装備と倉庫は、次の冒険へ引き継がれます。", Vector2(290, 514), Vector2(700, 30), 17)
+	var note := HubTheme.label(home_page, "装備と倉庫は、次の冒険へ引き継がれます。", Vector2(290, 514), Vector2(700, 30), &"MutedLabel")
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
 func _home_action(text: String, description: String, position: Vector2, action: Callable) -> Button:
-	var button := HubTheme.button(home_page, "", position, Vector2(372, 124), action)
-	HubTheme.label(button, text + "    ›", Vector2(24, 17), Vector2(324, 46), 32)
-	var hint := HubTheme.label(button, description, Vector2(26, 75), Vector2(320, 30), 16)
-	hint.modulate = HubTheme.MUTED
+	var button := HubTheme.button(home_page, "", position, Vector2(372, 124), action, &"SecondaryButton")
+	HubTheme.label(button, text + "    ›", Vector2(24, 17), Vector2(324, 46), &"TitleLabel")
+	HubTheme.label(button, description, Vector2(26, 75), Vector2(320, 30), &"MutedLabel")
 	button.tooltip_text = text + "：" + description
 	return button
 

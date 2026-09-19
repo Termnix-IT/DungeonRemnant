@@ -989,6 +989,16 @@ SaveManager
 
 巨大なGameManager一つにすべてを詰め込むことも避ける。
 
+UIは `res://ui/theme/dungeon_theme.tres` をプロジェクト共通Themeとして使用する。暗色の面・明るい本文・控えめな金色を基調とし、常設の枠線を増やさず、面の明度と余白で階層を示す。拠点・ショップ・装備・倉庫・永久強化・出撃準備はこのThemeの役割を使用し、HUDのHP・MPなど意味を持つ専用表示は別途維持する。
+
+- 操作は `PrimaryButton`（主要操作）、`SecondaryButton`（戻る・補助操作）、`ItemButton`（選択）、`GoldButton`（購入・成長）を使い分ける。
+- 文字は `TitleLabel`、`HeadingLabel`、`BodyLabel`、`MutedLabel`、`GoldLabel` を使用する。画面ごとのフォントサイズ・色overrideは追加しない。
+- Containerで構築する領域は `MainPanel` と `ItemPanel` を使用する。既存の固定配置Panelは同じ `MainSurface` を共有する。ショップはPanelContainer・MarginContainer・VBox/HBoxで構築し、外周余白と要素間隔をThemeから取得する。
+- 外観の調整はTheme内の名前付きStyleBox（`MainSurface`、`SurfaceHover`、`FocusOutline`など）を編集する。同一のStyleBoxを共有するControlへ一括反映されるため、画面側で複製しない。文字色・文字サイズは該当するTheme Typeを編集する。Theme内の色項目とStyleBoxの色はGodot上では別プロパティであり、自動連動するパレットではない。
+- `CharacterButton` と `SpeechPanel` は拠点キャラクターの透明なクリック領域と吹き出し専用とする。新規画像を要する装飾は共通UIの前提にしない。
+
+変更時は `tests/test_ui_theme.gd` と `tests/test_ui_layout.gd` に加え、該当する取引・装備・セーブのテストを実行する。描画可能な環境では `tests/capture_shop.gd` と `tests/capture_preparation.gd` で通常サイズ・縮小表示・クリック・キーボード操作を確認する。生成画像は `.godot/` に出力する。
+
 ---
 
 # 41. データ管理

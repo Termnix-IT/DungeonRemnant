@@ -25,33 +25,29 @@ var scroll_remove_button: Button
 
 func _ready() -> void:
 	HubTheme.panel(self, Vector2.ZERO, Vector2(350, 560))
-	HubTheme.label(self, "装備スロット", Vector2(20, 14), Vector2(310, 34), 24)
+	HubTheme.label(self, "装備スロット", Vector2(20, 14), Vector2(310, 34), &"HeadingLabel")
 	for slot in 5:
 		var control := HubTheme.button(self, "", Vector2(18, 60 + slot * 69), Vector2(314, 60), select_slot.bind(slot))
 		control.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		control.add_theme_font_size_override("font_size", 17)
-		for style_name in ["normal", "hover", "pressed", "focus"]:
-			var style := control.get_theme_stylebox(style_name).duplicate() as StyleBoxFlat
-			style.content_margin_top = 5
-			style.content_margin_bottom = 5
-			control.add_theme_stylebox_override(style_name, style)
+		control.theme_type_variation = &"ItemButton"
+		control.toggle_mode = true
 		slots.append(control)
-	stats_label = HubTheme.label(self, "", Vector2(20, 411), Vector2(310, 83), 17)
-	swap_button = HubTheme.button(self, "Main / Sub を入れ替え", Vector2(18, 500), Vector2(314, 48), func(): swap_requested.emit())
-	scroll_remove_button = HubTheme.button(self, "選択枠の魔法を外す", Vector2(18, 463), Vector2(314, 32), func(): scroll_remove_requested.emit(selected_slot))
+	stats_label = HubTheme.label(self, "", Vector2(20, 411), Vector2(310, 83), &"MutedLabel")
+	swap_button = HubTheme.button(self, "Main / Sub を入れ替え", Vector2(18, 500), Vector2(314, 48), func(): swap_requested.emit(), &"SecondaryButton")
+	scroll_remove_button = HubTheme.button(self, "選択枠の魔法を外す", Vector2(18, 463), Vector2(314, 32), func(): scroll_remove_requested.emit(selected_slot), &"SecondaryButton")
 	HubTheme.panel(self, Vector2(370, 0), Vector2(470, 560))
-	HubTheme.label(self, "装備候補  /  所持品・倉庫", Vector2(390, 14), Vector2(430, 34), 23)
+	HubTheme.label(self, "装備候補  /  所持品・倉庫", Vector2(390, 14), Vector2(430, 34), &"HeadingLabel")
 	candidate_list = ItemList.new()
 	HubTheme.place(candidate_list, self, Vector2(390, 60), Vector2(430, 266))
 	candidate_list.item_selected.connect(func(_index: int): _compare())
-	comparison = HubTheme.label(self, "", Vector2(390, 344), Vector2(430, 128), 18)
+	comparison = HubTheme.label(self, "", Vector2(390, 344), Vector2(430, 128), &"BodyLabel")
 	equip_button = HubTheme.button(self, "選択した装備に変更", Vector2(390, 490), Vector2(270, 48), _equip)
-	unequip_button = HubTheme.button(self, "外す", Vector2(672, 490), Vector2(148, 48), func(): unequip_requested.emit(selected_slot))
+	unequip_button = HubTheme.button(self, "外す", Vector2(672, 490), Vector2(148, 48), func(): unequip_requested.emit(selected_slot), &"SecondaryButton")
 	HubTheme.panel(self, Vector2(860, 0), Vector2(420, 560))
-	HubTheme.label(self, "持ち込みアイテム", Vector2(880, 14), Vector2(380, 34), 23)
+	HubTheme.label(self, "持ち込みアイテム", Vector2(880, 14), Vector2(380, 34), &"HeadingLabel")
 	carried_list = ItemList.new()
 	HubTheme.place(carried_list, self, Vector2(880, 60), Vector2(380, 258))
-	HubTheme.label(self, "所持品はすべて次のRunへ持ち込みます。\n持ち込まない品は倉庫へ。", Vector2(880, 338), Vector2(380, 72), 17)
+	HubTheme.label(self, "所持品はすべて次のRunへ持ち込みます。\n持ち込まない品は倉庫へ。", Vector2(880, 338), Vector2(380, 72), &"MutedLabel")
 	HubTheme.button(self, "倉庫で持ち込みを整理", Vector2(880, 422), Vector2(380, 48), func(): warehouse_requested.emit())
 	done_button = HubTheme.button(self, "準備完了・ステージ選択へ", Vector2(880, 490), Vector2(380, 48), func(): done_requested.emit())
 
@@ -60,6 +56,7 @@ func refresh(current: RunCarryover) -> void:
 	state = current
 	swap_button.disabled = state.equipment.slots[Equipment.Slot.SUB] == null
 	for index in slots.size():
+		slots[index].set_pressed_no_signal(index == selected_slot)
 		var item := state.equipment.slots[index]
 		slots[index].text = "%s  %s\n%s" % ["›" if index == selected_slot else " ", Equipment.SLOT_NAMES[index], item.label() if item != null else "なし"]
 	var stats := state.preparation_stats()

@@ -26,7 +26,7 @@ func _ready() -> void:
 	selection_page = Control.new()
 	add_child(selection_page)
 	HubTheme.panel(selection_page, Vector2.ZERO, Vector2(440, 560))
-	HubTheme.label(selection_page, "挑戦する場所", Vector2(24, 20), Vector2(390, 40), 25)
+	HubTheme.label(selection_page, "挑戦する場所", Vector2(24, 20), Vector2(390, 40), &"HeadingLabel")
 	stage_art = TextureRect.new()
 	stage_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	stage_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
@@ -35,24 +35,24 @@ func _ready() -> void:
 	stage_list.max_text_lines = 2
 	HubTheme.place(stage_list, selection_page, Vector2(24, 330), Vector2(392, 142))
 	stage_list.item_selected.connect(_select_stage)
-	HubTheme.label(selection_page, "選択後、装備を確認して出撃します。", Vector2(24, 490), Vector2(392, 48), 17)
+	HubTheme.label(selection_page, "選択後、装備を確認して出撃します。", Vector2(24, 490), Vector2(392, 48), &"MutedLabel")
 	HubTheme.panel(selection_page, Vector2(460, 0), Vector2(820, 560))
 	var detail_scroll := ScrollContainer.new()
 	HubTheme.place(detail_scroll, selection_page, Vector2(492, 24), Vector2(756, 442))
 	detail_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	stage_details = HubTheme.label(detail_scroll, "", Vector2.ZERO, Vector2(732, 442), 20)
+	stage_details = HubTheme.label(detail_scroll, "", Vector2.ZERO, Vector2(732, 442), &"BodyLabel")
 	stage_details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	next_button = HubTheme.button(selection_page, "このステージの出撃準備へ", Vector2(492, 484), Vector2(756, 52), func(): confirm_requested.emit())
 	confirmation_page = Control.new()
 	add_child(confirmation_page)
 	HubTheme.panel(confirmation_page, Vector2.ZERO, Vector2(550, 560))
-	equipment_label = HubTheme.label(confirmation_page, "", Vector2(24, 20), Vector2(502, 436), 21)
+	equipment_label = HubTheme.label(confirmation_page, "", Vector2(24, 20), Vector2(502, 436), &"BodyLabel")
 	review_button = HubTheme.button(confirmation_page, "装備・持ち込みを見直す", Vector2(24, 486), Vector2(502, 50), func(): equipment_requested.emit())
 	HubTheme.panel(confirmation_page, Vector2(570, 0), Vector2(710, 560))
-	HubTheme.label(confirmation_page, "持ち込みアイテム", Vector2(594, 20), Vector2(662, 40), 25)
+	HubTheme.label(confirmation_page, "持ち込みアイテム", Vector2(594, 20), Vector2(662, 40), &"HeadingLabel")
 	inventory_list = ItemList.new()
 	HubTheme.place(inventory_list, confirmation_page, Vector2(594, 80), Vector2(662, 264))
-	HubTheme.label(confirmation_page, "このダンジョンに挑戦しますか？\n装備と持ち込みを確認してください。", Vector2(594, 355), Vector2(662, 78), 23)
+	HubTheme.label(confirmation_page, "このダンジョンに挑戦しますか？\n装備と持ち込みを確認してください。", Vector2(594, 355), Vector2(662, 78), &"HeadingLabel")
 	start_choice = OptionButton.new()
 	HubTheme.place(start_choice, confirmation_page, Vector2(594, 440), Vector2(662, 36))
 	start_choice.item_selected.connect(func(index: int): starting_floor = start_choice.get_item_id(index); _update_start_label())
