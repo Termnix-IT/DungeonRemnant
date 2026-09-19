@@ -10,6 +10,8 @@ const EMPTY_EQUIPMENT := "—"
 @onready var minimap: DungeonMinimap = $TopRight/Minimap
 @onready var hp_value: Label = $BottomLeft/HpValue
 @onready var hp_bar: ProgressBar = $BottomLeft/HpBar
+@onready var mp_value: Label = $BottomLeft/MpValue
+@onready var mp_bar: ProgressBar = $BottomLeft/MpBar
 @onready var level_value: Label = $BottomLeft/Level
 @onready var exp_value: Label = $BottomLeft/ExpValue
 @onready var exp_bar: ProgressBar = $BottomLeft/ExpBar
@@ -163,12 +165,6 @@ func show_effects(text: String) -> void:
 
 
 func show_mana(current: int, maximum: int) -> void:
-	var label := get_node_or_null("Mana") as Label
-	if label == null:
-		label = Label.new()
-		label.name = "Mana"
-		label.position = Vector2(30, 125)
-		label.add_theme_font_size_override("font_size", 18)
-		label.modulate = Color("acbaff")
-		add_child(label)
-	label.text = "MP  %d / %d" % [current, maximum]
+	mp_value.text = "%d / %d" % [current, maximum]
+	mp_bar.max_value = max(maximum, 1)
+	mp_bar.value = max(current, 0)

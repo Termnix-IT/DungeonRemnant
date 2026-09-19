@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://ui/hud.gd" id="1"]
 [ext_resource type="Script" path="res://ui/minimap.gd" id="2"]
@@ -31,6 +31,13 @@ corner_radius_bottom_left = 2
 
 [sub_resource type="StyleBoxFlat" id="HealthFill"]
 bg_color = Color(0.78, 0.19, 0.16, 1)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_right = 1
+corner_radius_bottom_left = 1
+
+[sub_resource type="StyleBoxFlat" id="ManaFill"]
+bg_color = Color(0.48, 0.46, 0.88, 1)
 corner_radius_top_left = 1
 corner_radius_top_right = 1
 corner_radius_bottom_right = 1
@@ -170,7 +177,7 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 16.0
-offset_top = -190.0
+offset_top = -248.0
 offset_right = 292.0
 offset_bottom = -16.0
 grow_vertical = 0
@@ -205,20 +212,48 @@ theme_override_styles/background = SubResource("BarBackground")
 theme_override_styles/fill = SubResource("HealthFill")
 show_percentage = false
 
+[node name="MpCaption" type="Label" parent="BottomLeft"]
+offset_left = 16.0
+offset_top = 70.0
+offset_right = 92.0
+offset_bottom = 97.0
+theme_override_colors/font_color = Color(0.67, 0.73, 1, 1)
+theme_override_font_sizes/font_size = 17
+text = "◆  MP"
+
+[node name="MpValue" type="Label" parent="BottomLeft"]
+offset_left = 90.0
+offset_top = 68.0
+offset_right = 258.0
+offset_bottom = 97.0
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 2
+text = "20 / 20"
+
+[node name="MpBar" type="ProgressBar" parent="BottomLeft"]
+offset_left = 16.0
+offset_top = 100.0
+offset_right = 260.0
+offset_bottom = 115.0
+mouse_filter = 2
+theme_override_styles/background = SubResource("BarBackground")
+theme_override_styles/fill = SubResource("ManaFill")
+show_percentage = false
+
 [node name="Level" type="Label" parent="BottomLeft"]
 offset_left = 16.0
-offset_top = 72.0
+offset_top = 130.0
 offset_right = 112.0
-offset_bottom = 96.0
+offset_bottom = 154.0
 theme_override_colors/font_color = Color(0.79, 0.8, 0.78, 1)
 theme_override_font_sizes/font_size = 15
 text = "Lv 1"
 
 [node name="ExpValue" type="Label" parent="BottomLeft"]
 offset_left = 100.0
-offset_top = 72.0
+offset_top = 130.0
 offset_right = 260.0
-offset_bottom = 96.0
+offset_bottom = 154.0
 theme_override_colors/font_color = Color(0.72, 0.75, 0.77, 1)
 theme_override_font_sizes/font_size = 14
 horizontal_alignment = 2
@@ -226,9 +261,9 @@ text = "EXP 0 / 10"
 
 [node name="ExpBar" type="ProgressBar" parent="BottomLeft"]
 offset_left = 16.0
-offset_top = 101.0
+offset_top = 159.0
 offset_right = 260.0
-offset_bottom = 114.0
+offset_bottom = 172.0
 mouse_filter = 2
 theme_override_styles/background = SubResource("BarBackground")
 theme_override_styles/fill = SubResource("ExperienceFill")
@@ -236,9 +271,9 @@ show_percentage = false
 
 [node name="Meta" type="Label" parent="BottomLeft"]
 offset_left = 16.0
-offset_top = 128.0
+offset_top = 186.0
 offset_right = 260.0
-offset_bottom = 150.0
+offset_bottom = 208.0
 theme_override_colors/font_color = Color(0.58, 0.62, 0.65, 1)
 theme_override_font_sizes/font_size = 13
 text = "TURN 0  ·  所持品 0 / 40"

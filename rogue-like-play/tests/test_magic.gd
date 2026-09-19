@@ -67,6 +67,7 @@ func test_casting() -> void:
 	run.dungeon_settings.reinforcement_total_cap = 0
 	root.add_child(run)
 	var player: Node2D = run.turns.player
+	check(run.hud.mp_bar.value == player.mp and run.hud.mp_bar.max_value == player.stats.max_mp, "HUD starts with full MP gauge")
 	var grid: GridState = run.dungeon.grid
 	grid.walls.clear()
 	grid.pillars.clear()
@@ -84,10 +85,14 @@ func test_casting() -> void:
 	grid.place(enemy, Vector2i(6, 3))
 	run.turns.enemies.append(enemy)
 	check(run.turns.submit("attack", Vector2i.RIGHT) and player.mp == 17 and enemy.hp == 92, "Ranged spell damages and spends MP once")
+	check(run.hud.mp_bar.value == 17 and run.hud.mp_value.text == "17 / 20", "Casting updates MP gauge and number")
 	player.mp = 0
 	check(not run.turns.submit("attack", Vector2i.RIGHT) and run.turns.turn_count == 1 and enemy.hp == 92, "Insufficient MP costs no turn or damage")
+	run._refresh()
+	check(run.hud.mp_bar.value == 0 and run.hud.mp_value.text == "0 / 20", "Empty MP gauge shows zero")
 	player.inventory.add(MANA)
 	check(run.turns.submit_inventory("use", 0) and player.mp == 10, "Mana potion restores MP and spends turn")
+	check(run.hud.mp_bar.value == 10 and run.hud.mp_value.text == "10 / 20", "Mana potion updates MP gauge and number")
 	player.inventory.add(FLAME)
 	run.turns.submit_inventory("socket", 0, 0)
 	check(CombatRules.attack_cells(grid, player.cell, Vector2i.RIGHT, player.effective_weapon()).size() == 6, "Flame attacks three two-cell rays")
