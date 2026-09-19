@@ -33,9 +33,18 @@ func run_tests() -> void:
 	sprite.set_frame_and_progress(2, 0.3)
 	for index in directions.size():
 		player.facing = directions[index]
-		check(sprite.animation == StringName("walk_%s" % names[index]) and sprite.frame == 2,
+		var expected_frame := 4 if directions[index] == Vector2i.DOWN else 2
+		check(sprite.animation == StringName("walk_%s" % names[index]) and sprite.frame == expected_frame,
 			"Eight-way turn preserves walk phase")
 	player.reset_step()
+	player.facing = Vector2i.DOWN
+	check(sprite.sprite_frames.get_frame_texture(&"idle_front", 0).get_size() == Vector2(64, 64), "Dungeon front uses a dedicated 64px sprite")
+	check(player.idle_eyes.visible and player.foot_marker.global_position.is_equal_approx(Vector2(0, 26)), "Front idle keeps blink and floor anchor")
+	player.play_step(Vector2i.DOWN, 48)
+	check(not player.idle_eyes.visible and sprite.sprite_frames.get_frame_count(&"walk_front") == 8, "Walking uses eight frames without idle eye overlay")
+	check(player.weapon_visual.global_scale.is_equal_approx(Vector2(1.5, 1.5)), "High-resolution front keeps weapon size")
+	await create_timer(0.46).timeout
+	check(sprite.animation == &"idle_front" and player.idle_eyes.visible, "Front walk returns to quiet idle in the existing step duration")
 	player.facing = Vector2i.RIGHT
 	var seen: Dictionary = {}
 	sprite.frame_changed.connect(func():
@@ -84,6 +93,10 @@ func run_tests() -> void:
 	player.free()
 	var run = preload("res://game/run/run.tscn").instantiate()
 	run.generation_seed = 47
+	# The fixed fixture has three enemy positions; random houses add more.
+	run.dungeon_settings = run.dungeon_settings.duplicate()
+	run.dungeon_settings.monster_house_chance = 0.0
+	run.dungeon_settings.enemy_count = 3
 	root.add_child(run)
 	preload("res://tests/run_fixture.gd").arrange(run)
 	player = run.turns.player

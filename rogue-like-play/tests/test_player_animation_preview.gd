@@ -25,38 +25,38 @@ func has_binary_alpha(image: Image) -> bool:
 
 
 func has_clear_cell_margins(image: Image, margin: int) -> bool:
-	for row in 4:
+	for row in image.get_height() / 64:
 		for column in 6:
-			var origin := Vector2i(column * 80, row * 80)
-			for offset in 80:
+			var origin := Vector2i(column * 64, row * 64)
+			for offset in 64:
 				for inset in margin:
 					if image.get_pixelv(origin + Vector2i(offset, inset)).a > 0.0:
 						return false
-					if image.get_pixelv(origin + Vector2i(offset, 79 - inset)).a > 0.0:
+					if image.get_pixelv(origin + Vector2i(offset, 63 - inset)).a > 0.0:
 						return false
 					if image.get_pixelv(origin + Vector2i(inset, offset)).a > 0.0:
 						return false
-					if image.get_pixelv(origin + Vector2i(79 - inset, offset)).a > 0.0:
+					if image.get_pixelv(origin + Vector2i(63 - inset, offset)).a > 0.0:
 						return false
 	return true
 
 
 func run_tests() -> void:
-	var texture := load("res://art/characters/shiramine_mio_animation_final.png") as Texture2D
-	check(texture != null and texture.get_size() == Vector2(480, 320), "Animation atlas uses 24 padded 80px frames")
+	var texture := load("res://art/characters/mio_dungeon_chibi_64/cardinal.png") as Texture2D
+	check(texture != null and texture.get_size() == Vector2(384, 192), "Animation atlas uses 18 padded 64px frames")
 	var image := texture.get_image()
 	check(has_binary_alpha(image), "Animation atlas has no semitransparent fringe")
 	check(has_clear_cell_margins(image, 2), "Every animation frame has a two-pixel transparent safety margin")
 	var diagonal := MioAnimation.DIAGONAL_SHEET.get_image()
-	check(diagonal.get_size() == Vector2i(480, 320), "Diagonal atlas has 24 equally sized frames")
+	check(diagonal.get_size() == Vector2i(384, 256), "Diagonal atlas has 24 equally sized frames")
 	check(has_binary_alpha(diagonal), "Diagonal frames have clean binary transparency")
 	check(has_clear_cell_margins(diagonal, 2), "Diagonal frames have safe transparent margins")
 	for row in 4:
 		var previous := PackedByteArray()
 		for column in 6:
-			var cell := diagonal.get_region(Rect2i(column * 80, row * 80, 80, 80))
+			var cell := diagonal.get_region(Rect2i(column * 64, row * 64, 64, 64))
 			var bounds := cell.get_used_rect()
-			check(bounds.size.y >= 64 and bounds.end.y == 78, "Diagonal character scale and foot baseline stay aligned")
+			check(bounds.size.y == 56 and bounds.end.y == 60, "Diagonal character scale and foot baseline stay aligned")
 			if column > 2:
 				check(cell.get_data() != previous, "Walk frames contain distinct poses")
 			previous = cell.get_data()
@@ -69,22 +69,24 @@ func run_tests() -> void:
 		var idle_name := StringName("idle_%s" % direction_name)
 		var walk_name := StringName("walk_%s" % direction_name)
 		check(frame_set.has_animation(idle_name), "%s idle animation exists" % direction_name)
-		check(frame_set.get_frame_count(idle_name) == 2, "%s idle animation has two frames" % direction_name)
+		var front := direction_name == &"front"
+		check(frame_set.get_frame_count(idle_name) == (8 if front else 2), "%s idle frame count" % direction_name)
 		check(frame_set.has_animation(walk_name), "%s walk animation exists" % direction_name)
-		check(frame_set.get_frame_count(walk_name) == 4, "%s walk animation has four frames" % direction_name)
+		check(frame_set.get_frame_count(walk_name) == (8 if front else 4), "%s walk frame count" % direction_name)
 		var first_frame := frame_set.get_frame_texture(idle_name, 0) as AtlasTexture
-		check(first_frame.region.size == Vector2(80, 80), "%s animation reads an 80px padded cell" % direction_name)
+		check(first_frame.region.size == Vector2(64, 64), "%s animation cell size" % direction_name)
 		var index: int = preview.DIRECTIONS.find(direction_name)
-		check(first_frame.atlas == (MioAnimation.SHEET if index < 4 else MioAnimation.DIAGONAL_SHEET), "Direction selects the correct atlas")
-		check(first_frame.region.position == Vector2(0, (index % 4) * 80), "Direction selects its own row")
+		var expected_atlas: Texture2D = preload("res://art/characters/mio_dungeon_chibi_64/idle_front.png") if front else (MioAnimation.SHEET if index < 4 else MioAnimation.DIAGONAL_SHEET)
+		check(first_frame.atlas == expected_atlas, "Direction selects the correct atlas")
+		check(first_frame.region.position == Vector2(0, (0 if front else (index - 1 if index < 4 else index - 4)) * 64), "Direction selects its own row")
 	check(preview.actual_sprite.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST, "Native preview uses nearest filtering")
-	check(preview.actual_sprite.scale == Vector2(0.8, 0.8), "Runtime preview cancels the camera's 1.25 texture scale")
-	check(preview.inspection_sprite.global_scale.is_equal_approx(Vector2(3.0, 3.0)), "Inspection preview exposes pixel detail")
+	check(preview.actual_sprite.scale == Vector2.ONE, "Front preview preserves the dungeon display size")
+	check(preview.inspection_sprite.global_scale.is_equal_approx(Vector2(3.75, 3.75)), "Inspection preview exposes pixel detail")
 	check(not preview.actual_player.input_enabled, "Preview controls cannot submit gameplay actions")
 	preview.auto_cycle = false
 	preview.actual_sprite.set_frame_and_progress(2, 0.4)
 	preview._set_direction(&"left")
-	check(preview.actual_sprite.animation == &"walk_left" and preview.actual_sprite.frame == 2, "Preview turning preserves runtime walk phase")
+	check(preview.actual_sprite.animation == &"walk_left" and preview.actual_sprite.frame == 1, "Preview turning preserves runtime walk phase across frame counts")
 	var event := InputEventKey.new()
 	event.pressed = true
 	var diagonal_keys := [KEY_HOME, KEY_PAGEUP, KEY_END, KEY_PAGEDOWN]

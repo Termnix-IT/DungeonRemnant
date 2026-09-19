@@ -37,6 +37,11 @@ func capture() -> void:
 	var hub = main.get_node("Hub")
 	await settle()
 	var ok := root.get_texture().get_image().save_png("res://.godot/hub_initial.png") == OK
+	await click(hub.hero_button)
+	ok = ok and hub.hero_speech.visible
+	ok = root.get_texture().get_image().save_png("res://.godot/hub_speech.png") == OK and ok
+	await click(hub.hero_button)
+	ok = ok and not hub.hero_speech.visible
 	# Test-only funds make purchase verification repeatable; production starts at 0.
 	main.state.gold = 101
 	main.state.inventory.add(ItemCatalog.POTION, 10)

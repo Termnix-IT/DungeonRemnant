@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>白峰 澪 — 待機・歩行プレビュー</title>
+<style>
+body{margin:32px;background:#171923;color:#eeeaf5;font:16px/1.7 system-ui,sans-serif}main{max-width:960px;margin:auto}h1{font-size:24px}p{color:#bdc0d0}button,select,input{font:inherit}button,select{padding:6px 14px;background:#303344;color:inherit;border:1px solid #6c7088;border-radius:4px}nav{display:flex;align-items:center;gap:16px;flex-wrap:wrap}section{display:flex;gap:32px;align-items:start;flex-wrap:wrap;margin-top:24px}.stage{display:grid;place-items:center;width:256px;height:384px;background-color:#303544;background-image:linear-gradient(45deg,#373e4e 25%,transparent 25%,transparent 75%,#373e4e 75%),linear-gradient(45deg,#373e4e 25%,transparent 25%,transparent 75%,#373e4e 75%);background-size:96px 96px;background-position:0 0,48px 48px}.large{width:384px}.sprite{width:128px;height:128px;background-size:400% 200%;background-repeat:no-repeat;image-rendering:pixelated}.large .sprite{width:384px;height:384px}a{color:#d1c2fa}output{font-variant-numeric:tabular-nums}
+</style>
+<main>
+<h1>白峰 澪 — 正面の待機・歩行</h1>
+<p>整形・修正版。実寸128×128のフレームを、原寸と3倍拡大で同期再生します。</p>
+<nav><label>動作 <select id="action"><option value="idle">待機</option><option value="walk">歩行</option></select></label><button id="pause">一時停止</button><button id="step">1コマ進む</button><label>速度 <input id="speed" type="range" min="2" max="12" value="6"> <output id="fps">6</output> fps</label><output id="frame">1 / 8</output></nav>
+<section><div><div class="stage"><div class="sprite"></div></div><p>128×128表示・背景は48pxマス</p></div><div><div class="stage large"><div class="sprite"></div></div><p>3倍拡大</p></div></section>
+<p>各8コマ・1コマ128×128・共通48色・背景透過。足元の基準位置を統一し、歩行の飾りの左右反転を修正しました。</p>
+<p><a href="../mio_animation_v2/idle_front.png">待機シート</a> · <a href="../mio_animation_v2/walk_front.png">歩行シート</a> · <a href="reference.png">基準デザイン</a></p>
+</main>
+<script>
+const action=document.querySelector('#action'), pause=document.querySelector('#pause'), speed=document.querySelector('#speed');
+let frame=0,playing=true,last=0;
+function draw(){document.querySelectorAll('.sprite').forEach(el=>{el.style.backgroundImage=`url(../mio_animation_v2/${action.value}_front.png)`;el.style.backgroundPosition=`${(frame%4)*100/3}% ${Math.floor(frame/4)*100}%`;});document.querySelector('#frame').textContent=`${frame+1} / 8`;}
+pause.onclick=()=>{playing=!playing;pause.textContent=playing?'一時停止':'再生';last=performance.now();};
+document.querySelector('#step').onclick=()=>{playing=false;pause.textContent='再生';frame=(frame+1)%8;draw();};
+action.onchange=()=>{frame=0;speed.value=action.value==='idle'?6:8;document.querySelector('#fps').value=speed.value;last=performance.now();draw();};
+speed.oninput=()=>{document.querySelector('#fps').value=speed.value;};
+function tick(now){if(playing&&now-last>=1000/Number(speed.value)){frame=(frame+1)%8;last=now;draw();}requestAnimationFrame(tick);}
+draw();requestAnimationFrame(tick);
+</script>
+</html>

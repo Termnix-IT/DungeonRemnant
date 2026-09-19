@@ -31,6 +31,8 @@ var equipment_page: HubEquipment
 var sell_page: HubSell
 var departure_page: HubDeparture
 var home_page: Control
+var hero_button: Button
+var hero_speech: Panel
 var upgrade_page: Control
 var page := "home"
 var equipment_return := "stages"
@@ -121,15 +123,52 @@ func _build_home() -> void:
 	var summary := HubTheme.panel(home_page, Vector2(880, 345), Vector2(372, 124))
 	equipment_label = HubTheme.label(summary, "", Vector2(20, 14), Vector2(332, 100), 17)
 	var hero := AnimatedSprite2D.new()
-	hero.sprite_frames = MioAnimation.build_frame_set()
+	hero.name = "Hero"
+	hero.sprite_frames = MioAnimation.build_front_idle_frames()
 	hero.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	hero.position = Vector2(640, 328)
-	hero.scale = Vector2(2.5, 2.5)
+	# Anchor the 128px frame at its feet.
+	hero.centered = false
+	hero.offset = Vector2(-64, -121)
+	hero.position = Vector2(640, 420)
+	hero.scale = Vector2(2, 2)
 	home_page.add_child(hero)
+	var eyes := AnimatedSprite2D.new()
+	eyes.name = "Eyes"
+	eyes.sprite_frames = MioAnimation.build_front_idle_frames(true)
+	eyes.animation = &"idle_front"
+	eyes.centered = false
+	eyes.position = hero.offset + Vector2(55, 31)
+	hero.add_child(eyes)
+	hero.frame_changed.connect(func(): eyes.set_frame_and_progress(hero.frame, hero.frame_progress))
 	hero.play(&"idle_front")
-	var invitation := HubTheme.label(home_page, "準備ができたら、出発しよう。", Vector2(430, 431), Vector2(420, 40), 20)
+	# Less than one screen pixel of breathing at native UI scale, feet anchored.
+	# Keep X scale fixed so the hair and costume never sway sideways.
+	var breathing := hero.create_tween().set_loops()
+	breathing.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	breathing.tween_property(hero, "scale:y", 1.994, 2.4)
+	breathing.tween_property(hero, "scale:y", 2.0, 2.4)
+	hero_button = HubTheme.button(home_page, "", Vector2(550, 178), Vector2(180, 242), func(): hero_speech.visible = not hero_speech.visible)
+	hero_button.name = "HeroButton"
+	hero_button.tooltip_text = "話しかける"
+	hero_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	for style in ["normal", "hover", "pressed", "disabled"]:
+		hero_button.add_theme_stylebox_override(style, StyleBoxEmpty.new())
+	hero_speech = HubTheme.panel(home_page, Vector2(430, 88), Vector2(420, 64))
+	hero_speech.name = "HeroSpeech"
+	hero_speech.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hero_speech.add_theme_stylebox_override("panel", HubTheme.box(HubTheme.INK, HubTheme.GOLD))
+	var tail := Polygon2D.new()
+	tail.polygon = PackedVector2Array([Vector2(198, 63), Vector2(210, 78), Vector2(222, 63)])
+	tail.color = HubTheme.GOLD
+	hero_speech.add_child(tail)
+	var tail_fill := Polygon2D.new()
+	tail_fill.polygon = PackedVector2Array([Vector2(200, 62), Vector2(210, 76), Vector2(220, 62)])
+	tail_fill.color = HubTheme.INK
+	hero_speech.add_child(tail_fill)
+	var invitation := HubTheme.label(hero_speech, "準備ができたら、出発しよう。", Vector2(16, 12), Vector2(388, 40), 20)
 	invitation.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	invitation.modulate = HubTheme.GOLD
+	hero_speech.hide()
 	var note := HubTheme.label(home_page, "装備と倉庫は、次の冒険へ引き継がれます。", Vector2(290, 514), Vector2(700, 30), 17)
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
@@ -170,6 +209,7 @@ func show_page(target: String) -> void:
 	if target == "confirm" and (departure_page.selected_stage == null or not _state.stage_available(departure_page.selected_stage)):
 		return
 	page = target
+	hero_speech.hide()
 	for control in [home_page, equipment_page, sell_page, departure_page, upgrade_page]:
 		control.hide()
 	back_button.visible = page != "home"
@@ -217,6 +257,7 @@ func show_page(target: String) -> void:
 
 
 func open_warehouse() -> void:
+	hero_speech.hide()
 	if page == "home":
 		equipment_return = "stages"
 	_warehouse_focus = _content.get_viewport().gui_get_focus_owner()

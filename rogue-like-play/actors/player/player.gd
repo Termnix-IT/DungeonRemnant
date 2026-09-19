@@ -32,6 +32,7 @@ var abilities := AbilitySystem.new()
 var permanent_hp_bonus := 0
 var move_tween: Tween
 var combat_visual: Node2D
+var idle_eyes: AnimatedSprite2D
 
 @onready var sprite: AnimatedSprite2D = $Sprite
 @onready var weapon_visual: Node2D = $Sprite/Weapon
@@ -57,6 +58,17 @@ func _ready() -> void:
 	hp = stats.max_hp
 	mp = stats.max_mp
 	sprite.sprite_frames = MioAnimation.build_frame_set()
+	idle_eyes = AnimatedSprite2D.new()
+	idle_eyes.name = "IdleEyes"
+	idle_eyes.sprite_frames = MioAnimation.build_front_idle_frames(true, true)
+	idle_eyes.animation = &"idle_front"
+	idle_eyes.centered = false
+	idle_eyes.position = Vector2(-8, -6)
+	sprite.add_child(idle_eyes)
+	sprite.frame_changed.connect(func():
+		if sprite.animation == &"idle_front":
+			idle_eyes.set_frame_and_progress(sprite.frame, sprite.frame_progress)
+	)
 	sprite.position = BASE_SPRITE_POSITION
 	combat_visual = Node2D.new()
 	add_child(combat_visual)
@@ -77,7 +89,7 @@ func play_step(direction: Vector2i, tile_size: int) -> void:
 	move_tween = create_tween()
 	move_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	move_tween.tween_property(sprite, "position", BASE_SPRITE_POSITION, MOVE_ANIMATION_DURATION)
-	# Let all four walk frames read without delaying logical turns or movement.
+	# Let the full walk cycle read without delaying logical turns or movement.
 	var frames := sprite.sprite_frames
 	var cycle_duration := frames.get_frame_count(sprite.animation) / frames.get_animation_speed(sprite.animation)
 	move_tween.tween_interval(maxf(0.0, cycle_duration - MOVE_ANIMATION_DURATION))
@@ -238,6 +250,20 @@ func _play_animation(motion: StringName) -> void:
 	var preserve_phase := String(sprite.animation).begins_with("%s_" % motion)
 	var previous_frame := sprite.frame
 	var previous_progress := sprite.frame_progress
+	var previous_count := sprite.sprite_frames.get_frame_count(sprite.animation)
 	sprite.play(animation)
 	if preserve_phase:
-		sprite.set_frame_and_progress(previous_frame, previous_progress)
+		var next_count := sprite.sprite_frames.get_frame_count(animation)
+		var next_phase := (previous_frame + previous_progress) * next_count / previous_count
+		sprite.set_frame_and_progress(int(next_phase), fmod(next_phase, 1.0))
+	sprite.scale = Vector2.ONE
+	# The 64px sprite ends at row 60; align it to the existing foot marker.
+	sprite.offset = Vector2(0, 1)
+	# Compensate child transforms so weapons and floor markers keep world size.
+	weapon_visual.position = Vector2(0, 3.0 / sprite.scale.y)
+	weapon_visual.scale = Vector2.ONE * (1.5 / sprite.scale.x)
+	foot_marker.position = Vector2(0, 29.0 / sprite.scale.y)
+	foot_marker.scale = Vector2(1.0, 0.5) / sprite.scale
+	idle_eyes.visible = animation == &"idle_front"
+	if idle_eyes.visible:
+		idle_eyes.set_frame_and_progress(sprite.frame, sprite.frame_progress)
