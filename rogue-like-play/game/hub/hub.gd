@@ -228,8 +228,9 @@ func show_page(target: String) -> void:
 			sell_page.source_choice.grab_focus()
 		"upgrade":
 			title_label.text = "永久強化"
+			subtitle_label.text = "冒険を越えて残る力。前提条件と次の効果を確認。"
 			upgrade_page.show()
-			back_button.grab_focus()
+			(upgrade_page as SkillTreePanel).focus_first_action()
 			if purchase_button.disabled:
 				feedback.text = "基礎HPは習得済みです。各分岐の条件を確認してください。" if _state.upgrade.price(_state.hp_upgrade_level) < 0 else "強化はGoldを消費します。各分岐の条件を確認してください。"
 		"stages":

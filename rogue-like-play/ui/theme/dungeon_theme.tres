@@ -249,6 +249,12 @@ content_margin_right = 6.0
 content_margin_bottom = 6.0
 
 [resource]
+CompactStack/base_type = &"VBoxContainer"
+CompactStack/constants/separation = 2
+UpgradeList/base_type = &"VBoxContainer"
+UpgradeList/constants/separation = 8
+SkillTreePanel/constants/action_width = 148
+SkillTreePanel/constants/action_height = 60
 default_font_size = 16
 BodyLabel/base_type = &"Label"
 BodyLabel/font_sizes/font_size = 18

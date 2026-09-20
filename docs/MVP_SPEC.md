@@ -1001,13 +1001,17 @@ UIは `res://ui/theme/dungeon_theme.tres` をプロジェクト共通Themeとし
 
 ショップ・装備・倉庫の一覧は `ItemTooltipList` で標準Tooltipを共通化する。幅はThemeの `ItemList/tooltip_width`、背景は既存TooltipPanelを使い、長文を折り返す。表示待ち・消去・画面端の位置調整はGodotに任せる。Tooltipは補助表示とし、選択内容の説明は画面内にも表示する。
 
+永久強化は、強化名・現在Lv・その強化による補正の現在値→次回値・前提の必要Lvと現在Lvを、購入ボタンと分けて表示する。前提条件はSkillNodeの定義から取得し、条件未達・Gold不足（不足額）・強化上限を区別する。上部には永久補正の合計を表示する。途中開始の解放は選択ステージごとに、中ボス撃破→開始地点の関係、ステージ未解放・中ボス未撃破・Gold不足・解放済みを表示する。購入可否の判定と保存は既存のRunCarryover／Mainが担う。
+
+永久強化の2列と各項目はContainerで配置し、説明は購入不可でも読める明度を保つ。行間はThemeの `CompactStack` と `UpgradeList`、操作サイズは `SkillTreePanel` の定数で調整する。方向キー・Tabでは無効ボタンを飛ばす。購入によってFocus中のボタンが無効になった場合は、ステージ選択へFocusを移し、連続入力が別の購入へ移らないようにする。
+
 操作の時間変化は `ui/ui_motion.gd` の `UIMotion` で管理する。主要ボタンのHoverとFocusは100ms、押下は70ms、選択詳細は140ms、Gold増減は220ms、装備枠は160ms、画面表示は180msを基準とする。色・枠線はThemeに残し、scaleとalphaだけを動かす。Controlごと・プロパティごとに前のTweenを停止し、非表示・解放時に基準値へ戻す。Containerの位置や最小サイズをアニメーションしない。
 
 取引・装備・倉庫移動・永久強化の成功演出は、保存まで成功した `Main.preparation_completed` 通知で開始する。UIのTween完了をゲーム処理から待たず、残高・一覧・装備は即時更新する。購入は負、売却は正のGold増減を既存のフィードバック欄に表示する。画面を閉じる操作は即時とし、退場演出による入力待ちを設けない。
 
 拠点UIはキーボードの既存操作に加え、ゲームパッドの十字キーでFocus移動、Aで決定、Bで戻る操作を受け付ける。`ui_accept`・`ui_cancel`・方向の標準アクションへ登録し、マウスと同じButton signalで演出する。既存のキーボード割り当ては保持する。
 
-変更時は `tests/test_ui_theme.gd`、`tests/test_ui_layout.gd`、`tests/test_ui_motion.gd` に加え、該当する取引・装備・セーブのテストを実行する。描画可能な環境では `tests/capture_shop.gd`、`tests/capture_preparation.gd`、`tests/capture_ui_motion.gd`、`tests/capture_item_details.gd` で通常サイズ・縮小表示・各入力・ボタン端のクリックを確認する。演出用キャプチャは60 FPS上限でアイドル時と演出中のフレーム時間も比較する。生成画像は `.godot/` に出力する。
+変更時は `tests/test_ui_theme.gd`、`tests/test_ui_layout.gd`、`tests/test_ui_motion.gd`、`tests/test_upgrade_ui.gd` に加え、該当する取引・装備・セーブのテストを実行する。描画可能な環境では `tests/capture_shop.gd`、`tests/capture_preparation.gd`、`tests/capture_ui_motion.gd`、`tests/capture_item_details.gd`、`tests/capture_upgrade_ui.gd` で通常サイズ・縮小表示・各入力・ボタン端のクリックを確認する。演出用キャプチャは60 FPS上限でアイドル時と演出中のフレーム時間も比較する。生成画像は `.godot/` に出力する。
 
 ---
 
