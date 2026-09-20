@@ -49,4 +49,4 @@ static func fill_inventory(list: ItemList, inventory: Inventory) -> void:
 	list.clear()
 	for entry in inventory.entries:
 		list.add_item("%s  ×%d" % [entry.item.label(), entry.count])
-		list.set_item_tooltip(list.item_count - 1, entry.item.description())
+		list.set_item_tooltip(list.item_count - 1, ItemTooltipList.description(entry.item))

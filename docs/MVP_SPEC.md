@@ -997,13 +997,17 @@ UIは `res://ui/theme/dungeon_theme.tres` をプロジェクト共通Themeとし
 - 外観の調整はTheme内の名前付きStyleBox（`MainSurface`、`SurfaceHover`、`FocusOutline`など）を編集する。同一のStyleBoxを共有するControlへ一括反映されるため、画面側で複製しない。文字色・文字サイズは該当するTheme Typeを編集する。Theme内の色項目とStyleBoxの色はGodot上では別プロパティであり、自動連動するパレットではない。
 - `CharacterButton` と `SpeechPanel` は拠点キャラクターの透明なクリック領域と吹き出し専用とする。新規画像を要する装飾は共通UIの前提にしない。
 
+ショップの商品詳細と装備比較、倉庫の選択説明は `ItemDetails`（RichTextLabel）を使用する。商品名・価格・補足は既存LabelのTheme役割から色と文字サイズを取得し、能力差分は変更前→変更後と符号付き数値を併記する。増加はGoldLabelの色、減少はThemeの `ItemDetails/decrease_color` を使用する。長文は枠内でスクロールし、Tabで詳細へFocusを移した後は方向キー・Home/Endで閲覧できる。アイテム名・説明はBBCodeとして解釈せず、選択変更時は先頭へ戻す。
+
+ショップ・装備・倉庫の一覧は `ItemTooltipList` で標準Tooltipを共通化する。幅はThemeの `ItemList/tooltip_width`、背景は既存TooltipPanelを使い、長文を折り返す。表示待ち・消去・画面端の位置調整はGodotに任せる。Tooltipは補助表示とし、選択内容の説明は画面内にも表示する。
+
 操作の時間変化は `ui/ui_motion.gd` の `UIMotion` で管理する。主要ボタンのHoverとFocusは100ms、押下は70ms、選択詳細は140ms、Gold増減は220ms、装備枠は160ms、画面表示は180msを基準とする。色・枠線はThemeに残し、scaleとalphaだけを動かす。Controlごと・プロパティごとに前のTweenを停止し、非表示・解放時に基準値へ戻す。Containerの位置や最小サイズをアニメーションしない。
 
 取引・装備・倉庫移動・永久強化の成功演出は、保存まで成功した `Main.preparation_completed` 通知で開始する。UIのTween完了をゲーム処理から待たず、残高・一覧・装備は即時更新する。購入は負、売却は正のGold増減を既存のフィードバック欄に表示する。画面を閉じる操作は即時とし、退場演出による入力待ちを設けない。
 
 拠点UIはキーボードの既存操作に加え、ゲームパッドの十字キーでFocus移動、Aで決定、Bで戻る操作を受け付ける。`ui_accept`・`ui_cancel`・方向の標準アクションへ登録し、マウスと同じButton signalで演出する。既存のキーボード割り当ては保持する。
 
-変更時は `tests/test_ui_theme.gd`、`tests/test_ui_layout.gd`、`tests/test_ui_motion.gd` に加え、該当する取引・装備・セーブのテストを実行する。描画可能な環境では `tests/capture_shop.gd`、`tests/capture_preparation.gd`、`tests/capture_ui_motion.gd` で通常サイズ・縮小表示・各入力・ボタン端のクリックを確認する。演出用キャプチャは60 FPS上限でアイドル時と演出中のフレーム時間も比較する。生成画像は `.godot/` に出力する。
+変更時は `tests/test_ui_theme.gd`、`tests/test_ui_layout.gd`、`tests/test_ui_motion.gd` に加え、該当する取引・装備・セーブのテストを実行する。描画可能な環境では `tests/capture_shop.gd`、`tests/capture_preparation.gd`、`tests/capture_ui_motion.gd`、`tests/capture_item_details.gd` で通常サイズ・縮小表示・各入力・ボタン端のクリックを確認する。演出用キャプチャは60 FPS上限でアイドル時と演出中のフレーム時間も比較する。生成画像は `.godot/` に出力する。
 
 ---
 

@@ -48,6 +48,7 @@ func refresh(current_state: RunCarryover = state, message: String = "") -> void:
 	$Panel/Deposit.disabled = inventory_index < 0
 	$Panel/Withdraw.disabled = storage_index < 0
 	$Panel/Feedback.text = message
+	_update_details()
 
 
 func close() -> void:
@@ -59,7 +60,7 @@ func _fill_list(list: ItemList, inventory: Inventory) -> void:
 	list.clear()
 	for entry: InventoryEntry in inventory.entries:
 		list.add_item("%s  ×%d" % [entry.item.display_name, entry.count])
-		list.set_item_tooltip(list.item_count - 1, entry.item.description())
+		list.set_item_tooltip(list.item_count - 1, ItemTooltipList.description(entry.item))
 
 
 func _select_inventory(index: int) -> void:
@@ -68,6 +69,7 @@ func _select_inventory(index: int) -> void:
 	$Panel/StorageList.deselect_all()
 	$Panel/Deposit.disabled = false
 	$Panel/Withdraw.disabled = true
+	_update_details()
 	UIMotion.of($Panel/Deposit).pulse(1.025, UIMotion.SELECT_TIME)
 
 
@@ -77,6 +79,7 @@ func _select_storage(index: int) -> void:
 	$Panel/InventoryList.deselect_all()
 	$Panel/Deposit.disabled = true
 	$Panel/Withdraw.disabled = false
+	_update_details()
 	UIMotion.of($Panel/Withdraw).pulse(1.025, UIMotion.SELECT_TIME)
 
 
@@ -84,3 +87,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if visible and event.is_action_pressed("ui_cancel"):
 		close()
 		get_viewport().set_input_as_handled()
+
+
+func _update_details() -> void:
+	var details := $Panel/Help as ItemDetails
+	details.reset()
+	var source := state.storage if storage_index >= 0 else state.inventory
+	var index := storage_index if storage_index >= 0 else inventory_index
+	if index >= 0 and index < source.entries.size():
+		details.line(ItemTooltipList.description(source.entries[index].item))
+	details.line("選択した1スタックを移動します。倉庫内のアイテムは冒険へ持ち込まず、死亡・中断時の損失対象にもなりません。", &"MutedLabel")

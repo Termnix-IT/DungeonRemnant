@@ -15,7 +15,7 @@ var slots: Array[Button] = []
 var candidate_list: ItemList
 var carried_list: ItemList
 var stats_label: Label
-var comparison: Label
+var comparison: ItemDetails
 var equip_button: Button
 var unequip_button: Button
 var done_button: Button
@@ -37,15 +37,16 @@ func _ready() -> void:
 	scroll_remove_button = HubTheme.button(self, "選択枠の魔法を外す", Vector2(18, 463), Vector2(314, 32), func(): scroll_remove_requested.emit(selected_slot), &"SecondaryButton")
 	HubTheme.panel(self, Vector2(370, 0), Vector2(470, 560))
 	HubTheme.label(self, "装備候補  /  所持品・倉庫", Vector2(390, 14), Vector2(430, 34), &"HeadingLabel")
-	candidate_list = ItemList.new()
-	HubTheme.place(candidate_list, self, Vector2(390, 60), Vector2(430, 266))
+	candidate_list = ItemTooltipList.new()
+	HubTheme.place(candidate_list, self, Vector2(390, 60), Vector2(430, 186))
 	candidate_list.item_selected.connect(func(_index: int): _compare(); UIMotion.of(comparison).reveal())
-	comparison = HubTheme.label(self, "", Vector2(390, 344), Vector2(430, 128), &"BodyLabel")
+	comparison = ItemDetails.new()
+	HubTheme.place(comparison, self, Vector2(390, 264), Vector2(430, 208))
 	equip_button = HubTheme.button(self, "選択した装備に変更", Vector2(390, 490), Vector2(270, 48), _equip)
 	unequip_button = HubTheme.button(self, "外す", Vector2(672, 490), Vector2(148, 48), func(): unequip_requested.emit(selected_slot), &"SecondaryButton")
 	HubTheme.panel(self, Vector2(860, 0), Vector2(420, 560))
 	HubTheme.label(self, "持ち込みアイテム", Vector2(880, 14), Vector2(380, 34), &"HeadingLabel")
-	carried_list = ItemList.new()
+	carried_list = ItemTooltipList.new()
 	HubTheme.place(carried_list, self, Vector2(880, 60), Vector2(380, 258))
 	HubTheme.label(self, "所持品はすべて次のRunへ持ち込みます。\n持ち込まない品は倉庫へ。", Vector2(880, 338), Vector2(380, 72), &"MutedLabel")
 	HubTheme.button(self, "倉庫で持ち込みを整理", Vector2(880, 422), Vector2(380, 48), func(): warehouse_requested.emit())
@@ -84,6 +85,7 @@ func _fill_candidates() -> void:
 			if state.equipment.accepts(item, selected_slot) or (item.kind == ItemData.Kind.SCROLL and state.equipment.can_socket(selected_slot)):
 				candidates.append({"from_storage": from_storage, "index": index, "item": item})
 				candidate_list.add_item("[%s]  %s" % ["倉庫" if from_storage else "所持", item.display_name])
+				candidate_list.set_item_tooltip(candidate_list.item_count - 1, ItemTooltipList.description(item))
 	if candidates.is_empty():
 		candidate_list.add_item("この枠に装備できる候補はありません")
 		candidate_list.set_item_disabled(0, true)
@@ -93,6 +95,7 @@ func _fill_candidates() -> void:
 
 
 func _compare() -> void:
+	comparison.reset()
 	scroll_remove_button.visible = state.equipment.can_socket(selected_slot) and state.equipment.slots[selected_slot].socketed_scroll != null
 	equip_button.text = "選択した装備に変更"
 	unequip_button.disabled = selected_slot == Equipment.Slot.MAIN or state.equipment.slots[selected_slot] == null
@@ -103,7 +106,9 @@ func _compare() -> void:
 		return
 	var candidate: ItemData = candidates[selected[0]].item
 	if candidate.kind == ItemData.Kind.SCROLL:
-		comparison.text = candidate.description() + "\n交換前の魔法は選択元に戻ります。"
+		comparison.line(candidate.label(), &"HeadingLabel")
+		comparison.line(candidate.description())
+		comparison.line("交換前の魔法は選択元に戻ります。", &"MutedLabel")
 		equip_button.text = "選択枠の杖に魔法を装着"
 		return
 	var preview := Equipment.new()
@@ -112,10 +117,15 @@ func _compare() -> void:
 	var before := state.preparation_stats()
 	var after := state.preparation_stats(preview)
 	var current := state.equipment.slots[selected_slot]
-	comparison.text = "%s → %s\nHP %+d   ATK %+d   DEF %+d\n%s" % [current.display_name if current != null else "なし", candidate.display_name, after.hp - before.hp, after.attack - before.attack, after.defense - before.defense, candidate.description()]
+	comparison.line(candidate.label(), &"HeadingLabel")
+	comparison.line("現在：%s" % (current.label() if current != null else "なし"), &"MutedLabel")
+	comparison.delta("HP", before.hp, after.hp)
+	comparison.delta("ATK", before.attack, after.attack)
+	comparison.delta("DEF", before.defense, after.defense)
 	if candidate.kind == ItemData.Kind.WEAPON:
 		var old_reach := current.weapon.reach if current != null else 0
-		comparison.text += "\nこの枠の射程：%d → %d (%+d)" % [old_reach, candidate.weapon.reach, candidate.weapon.reach - old_reach]
+		comparison.delta("この枠の射程", old_reach, candidate.weapon.reach)
+	comparison.line(candidate.description())
 
 
 func _equip() -> void:

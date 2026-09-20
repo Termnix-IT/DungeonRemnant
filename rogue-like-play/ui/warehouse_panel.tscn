@@ -1,6 +1,10 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://ui/warehouse_panel.gd" id="1"]
+
+[ext_resource type="Script" path="res://ui/item_tooltip_list.gd" id="2"]
+
+[ext_resource type="Script" path="res://ui/item_details.gd" id="3"]
 
 [node name="WarehousePanel" type="Control"]
 z_index = 10
@@ -84,12 +88,14 @@ offset_right = 876.0
 offset_bottom = 104.0
 
 [node name="InventoryList" type="ItemList" parent="Panel"]
+script = ExtResource("2")
 offset_left = 24.0
 offset_top = 112.0
 offset_right = 390.0
 offset_bottom = 460.0
 
 [node name="StorageList" type="ItemList" parent="Panel"]
+script = ExtResource("2")
 offset_left = 510.0
 offset_top = 112.0
 offset_right = 876.0
@@ -121,11 +127,10 @@ offset_right = 876.0
 offset_bottom = 520.0
 autowrap_mode = 3
 
-[node name="Help" type="Label" parent="Panel"]
-theme_type_variation = &"MutedLabel"
+[node name="Help" type="RichTextLabel" parent="Panel"]
+script = ExtResource("3")
 offset_left = 24.0
 offset_top = 535.0
 offset_right = 876.0
 offset_bottom = 590.0
 autowrap_mode = 3
-text = "選択した1スタックを移動します。倉庫内のアイテムは冒険へ持ち込まず、死亡・中断時の損失対象にもなりません。"

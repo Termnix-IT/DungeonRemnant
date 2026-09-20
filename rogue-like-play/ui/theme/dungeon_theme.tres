@@ -241,6 +241,13 @@ corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
+[sub_resource type="StyleBoxEmpty" id="DetailsInsets"]
+resource_name = "DetailsInsets"
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+
 [resource]
 default_font_size = 16
 BodyLabel/base_type = &"Label"
@@ -278,12 +285,20 @@ HScrollBar/styles/grabber_pressed = SubResource("GoldHover")
 HScrollBar/styles/scroll = SubResource("ScrollTrack")
 HeadingLabel/base_type = &"Label"
 HeadingLabel/font_sizes/font_size = 23
+ItemDetails/base_type = &"RichTextLabel"
+ItemDetails/colors/default_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+ItemDetails/colors/decrease_color = Color(0.86, 0.52, 0.48, 1)
+ItemDetails/constants/line_separation = 3
+ItemDetails/font_sizes/normal_font_size = 18
+ItemDetails/styles/focus = SubResource("FocusOutline")
+ItemDetails/styles/normal = SubResource("DetailsInsets")
 ItemButton/base_type = &"Button"
 ItemButton/font_sizes/font_size = 17
 ItemList/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
 ItemList/colors/font_selected_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
 ItemList/colors/guide_color = Color(1, 1, 1, 0)
 ItemList/constants/v_separation = 16
+ItemList/constants/tooltip_width = 360
 ItemList/font_sizes/font_size = 18
 ItemList/styles/focus = SubResource("FocusOutline")
 ItemList/styles/hovered = SubResource("SurfaceHover")
