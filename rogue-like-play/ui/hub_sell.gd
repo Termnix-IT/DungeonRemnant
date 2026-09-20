@@ -7,7 +7,7 @@ signal mode_changed
 
 var state: RunCarryover
 var source_choice: OptionButton
-var item_list: ItemList
+var item_list: ItemCardList
 var quantity: SpinBox
 var details: ItemDetails
 var total_label: Label
@@ -51,7 +51,7 @@ func _ready() -> void:
 	source_choice.custom_minimum_size = Vector2(230, 44)
 	toolbar.add_child(source_choice)
 	source_choice.item_selected.connect(func(_index: int): refresh(state))
-	item_list = ItemTooltipList.new()
+	item_list = ItemCardList.new()
 	item_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	catalog.add_child(item_list)
 	item_list.item_selected.connect(_select)
@@ -145,8 +145,7 @@ func refresh(current: RunCarryover) -> void:
 				rows.append({"item": entry.item, "count": entry.count, "index": index})
 	for row in rows:
 		var item: ItemData = row.item
-		item_list.add_item("%s  /  %d Gold  /  所持 %d個" % [item.display_name, item.buy_price, row.count] if buying else "%s  ×%d" % [item.display_name, row.count])
-		item_list.set_item_tooltip(item_list.item_count - 1, ItemTooltipList.description(item))
+		item_list.add_card(item, row.count, item.buy_price if buying else item.sell_price)
 	if rows.is_empty():
 		item_list.add_item("購入できるアイテムはありません" if buying else "売却できるアイテムはありません")
 		item_list.set_item_disabled(0, true)
