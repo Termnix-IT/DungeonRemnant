@@ -55,15 +55,15 @@ func capture() -> void:
 	var warehouse: WarehousePanel = hub.warehouse_panel
 	ok = ok and warehouse.visible
 	ok = root.get_texture().get_image().save_png("res://.godot/hub_warehouse.png") == OK and ok
-	var inventory_list: ItemList = warehouse.get_node("Panel/InventoryList")
+	var inventory_list: ItemList = warehouse.get_node("%InventoryList")
 	await click_at(inventory_list.get_global_rect().position + Vector2(24, 20))
-	await click(warehouse.get_node("Panel/Deposit"))
+	await click(warehouse.get_node("%Deposit"))
 	ok = ok and main.state.inventory.entries.is_empty() and main.state.storage.entries[0].count == 10
-	var storage_list: ItemList = warehouse.get_node("Panel/StorageList")
+	var storage_list: ItemList = warehouse.get_node("%StorageList")
 	await click_at(storage_list.get_global_rect().position + Vector2(24, 20))
-	await click(warehouse.get_node("Panel/Withdraw"))
+	await click(warehouse.get_node("%Withdraw"))
 	ok = ok and main.state.inventory.entries[0].count == 10 and main.state.storage.entries.is_empty()
-	await click(warehouse.get_node("Panel/Close"))
+	await click(warehouse.get_node("%Close"))
 	ok = ok and not warehouse.visible
 	await click(hub.warehouse_button)
 	var escape := InputEventKey.new()

@@ -1,10 +1,8 @@
-[gd_scene load_steps=4 format=3]
-
+[gd_scene load_steps=5 format=3]
 [ext_resource type="Script" path="res://ui/warehouse_panel.gd" id="1"]
-
-[ext_resource type="Script" path="res://ui/item_tooltip_list.gd" id="2"]
-
+[ext_resource type="Script" path="res://ui/item_card_list.gd" id="2"]
 [ext_resource type="Script" path="res://ui/item_details.gd" id="3"]
+[ext_resource type="Script" path="res://ui/item_visual.gd" id="4"]
 
 [node name="WarehousePanel" type="Control"]
 z_index = 10
@@ -12,125 +10,135 @@ layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 0
 script = ExtResource("1")
 
 [node name="Shade" type="ColorRect" parent="."]
-layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.01, 0.02, 0.03, 0.94)
+color = Color(0.01, 0.02, 0.03, 0.62)
 
-[node name="Panel" type="Panel" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -450.0
-offset_top = -305.0
-offset_right = 450.0
-offset_bottom = 305.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Panel" type="PanelContainer" parent="."]
+offset_right = 1280.0
+offset_bottom = 650.0
 
-[node name="Title" type="Label" parent="Panel"]
-theme_type_variation = &"TitleLabel"
-offset_left = 24.0
-offset_top = 18.0
-offset_right = 500.0
-offset_bottom = 54.0
+[node name="Margin" type="MarginContainer" parent="Panel"]
+
+
+[node name="Stack" type="VBoxContainer" parent="Panel/Margin"]
+
+
+[node name="Header" type="HBoxContainer" parent="Panel/Margin/Stack"]
+
+
+[node name="Title" type="Label" parent="Panel/Margin/Stack/Header"]
 text = "倉庫"
+theme_type_variation = &"TitleLabel"
+size_flags_horizontal = 3
 
-[node name="Close" type="Button" parent="Panel"]
-theme_type_variation = &"SecondaryButton"
-offset_left = 740.0
-offset_top = 14.0
-offset_right = 876.0
-offset_bottom = 52.0
-focus_mode = 2
-text = "閉じる (Esc)"
-
-[node name="Gold" type="Label" parent="Panel"]
+[node name="Gold" type="Label" parent="Panel/Margin/Stack/Header"]
+unique_name_in_owner = true
 theme_type_variation = &"GoldLabel"
-offset_left = 230.0
-offset_top = 18.0
-offset_right = 490.0
-offset_bottom = 54.0
-horizontal_alignment = 2
+custom_minimum_size = Vector2(180, 0)
 
-[node name="Equipment" type="Button" parent="Panel"]
-theme_type_variation = &"PrimaryButton"
-offset_left = 510.0
-offset_top = 14.0
-offset_right = 724.0
-offset_bottom = 52.0
+[node name="Equipment" type="Button" parent="Panel/Margin/Stack/Header"]
+unique_name_in_owner = true
 text = "装備を変更"
-
-[node name="InventoryTitle" type="Label" parent="Panel"]
-theme_type_variation = &"BodyLabel"
-offset_left = 24.0
-offset_top = 72.0
-offset_right = 390.0
-offset_bottom = 104.0
-
-[node name="StorageTitle" type="Label" parent="Panel"]
-theme_type_variation = &"BodyLabel"
-offset_left = 510.0
-offset_top = 72.0
-offset_right = 876.0
-offset_bottom = 104.0
-
-[node name="InventoryList" type="ItemList" parent="Panel"]
-script = ExtResource("2")
-offset_left = 24.0
-offset_top = 112.0
-offset_right = 390.0
-offset_bottom = 460.0
-
-[node name="StorageList" type="ItemList" parent="Panel"]
-script = ExtResource("2")
-offset_left = 510.0
-offset_top = 112.0
-offset_right = 876.0
-offset_bottom = 460.0
-
-[node name="Deposit" type="Button" parent="Panel"]
 theme_type_variation = &"SecondaryButton"
-offset_left = 405.0
-offset_top = 212.0
-offset_right = 495.0
-offset_bottom = 262.0
-focus_mode = 2
-text = "預ける"
 
-[node name="Withdraw" type="Button" parent="Panel"]
+[node name="Close" type="Button" parent="Panel/Margin/Stack/Header"]
+unique_name_in_owner = true
+text = "閉じる (Esc)"
 theme_type_variation = &"SecondaryButton"
-offset_left = 405.0
-offset_top = 286.0
-offset_right = 495.0
-offset_bottom = 336.0
-focus_mode = 2
-text = "取り出す"
 
-[node name="Feedback" type="Label" parent="Panel"]
-theme_type_variation = &"BodyLabel"
-offset_left = 24.0
-offset_top = 480.0
-offset_right = 876.0
-offset_bottom = 520.0
+[node name="Columns" type="HBoxContainer" parent="Panel/Margin/Stack"]
+size_flags_vertical = 3
+
+[node name="Inventory" type="PanelContainer" parent="Panel/Margin/Stack/Columns"]
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.2
+theme_type_variation = &"ItemPanel"
+
+[node name="Stack" type="VBoxContainer" parent="Panel/Margin/Stack/Columns/Inventory"]
+
+
+[node name="InventoryTitle" type="Label" parent="Panel/Margin/Stack/Columns/Inventory/Stack"]
+unique_name_in_owner = true
+theme_type_variation = &"HeadingLabel"
+
+[node name="Caption" type="Label" parent="Panel/Margin/Stack/Columns/Inventory/Stack"]
+text = "次の冒険へ持っていく"
+theme_type_variation = &"MutedLabel"
+
+[node name="InventoryList" type="ItemList" parent="Panel/Margin/Stack/Columns/Inventory/Stack"]
+unique_name_in_owner = true
+size_flags_vertical = 3
+script = ExtResource("2")
+
+[node name="Transfer" type="PanelContainer" parent="Panel/Margin/Stack/Columns"]
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.85
+theme_type_variation = &"ItemPanel"
+
+[node name="Stack" type="VBoxContainer" parent="Panel/Margin/Stack/Columns/Transfer"]
+
+
+[node name="Direction" type="Label" parent="Panel/Margin/Stack/Columns/Transfer/Stack"]
+unique_name_in_owner = true
+text = "移動するアイテム"
 autowrap_mode = 3
+theme_type_variation = &"GoldLabel"
 
-[node name="Help" type="RichTextLabel" parent="Panel"]
+[node name="Visual" type="Control" parent="Panel/Margin/Stack/Columns/Transfer/Stack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 112)
+script = ExtResource("4")
+
+[node name="Help" type="RichTextLabel" parent="Panel/Margin/Stack/Columns/Transfer/Stack"]
+unique_name_in_owner = true
+size_flags_vertical = 3
 script = ExtResource("3")
-offset_left = 24.0
-offset_top = 535.0
-offset_right = 876.0
-offset_bottom = 590.0
+
+[node name="Deposit" type="Button" parent="Panel/Margin/Stack/Columns/Transfer/Stack"]
+unique_name_in_owner = true
+text = "倉庫へ →"
+custom_minimum_size = Vector2(0, 48)
+theme_type_variation = &"GoldButton"
+
+[node name="Withdraw" type="Button" parent="Panel/Margin/Stack/Columns/Transfer/Stack"]
+unique_name_in_owner = true
+text = "← 所持品へ"
+custom_minimum_size = Vector2(0, 48)
+theme_type_variation = &"GoldButton"
+
+[node name="Hint" type="Label" parent="Panel/Margin/Stack/Columns/Transfer/Stack"]
+text = "選択した1スタックをまとめて移動"
+autowrap_mode = 3
+theme_type_variation = &"MutedLabel"
+
+[node name="Storage" type="PanelContainer" parent="Panel/Margin/Stack/Columns"]
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.2
+theme_type_variation = &"ItemPanel"
+
+[node name="Stack" type="VBoxContainer" parent="Panel/Margin/Stack/Columns/Storage"]
+
+
+[node name="StorageTitle" type="Label" parent="Panel/Margin/Stack/Columns/Storage/Stack"]
+unique_name_in_owner = true
+theme_type_variation = &"HeadingLabel"
+
+[node name="Caption" type="Label" parent="Panel/Margin/Stack/Columns/Storage/Stack"]
+text = "ここに残して、安全に保管"
+theme_type_variation = &"MutedLabel"
+
+[node name="StorageList" type="ItemList" parent="Panel/Margin/Stack/Columns/Storage/Stack"]
+unique_name_in_owner = true
+size_flags_vertical = 3
+script = ExtResource("2")
+
+[node name="Feedback" type="Label" parent="Panel/Margin/Stack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 30)
+theme_type_variation = &"GoldLabel"
 autowrap_mode = 3

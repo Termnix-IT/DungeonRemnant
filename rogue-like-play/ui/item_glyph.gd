@@ -1,6 +1,13 @@
 class_name ItemGlyph
 extends RefCounted
 
+static func main_effect(item: ItemData) -> String:
+	if item.kind == ItemData.Kind.WEAPON:
+		return "ダメージ %+d  /  射程 %d" % [item.weapon.damage_bonus, item.weapon.reach]
+	if item.kind == ItemData.Kind.SCROLL:
+		return "消費MP %d" % item.weapon.mana_cost
+	return item.description().split(" / ")[0]
+
 # Shapes use a 32-unit canvas; size and color belong to the consuming Theme.
 static func category(item: ItemData) -> String:
 	if not item.effect_id.is_empty():

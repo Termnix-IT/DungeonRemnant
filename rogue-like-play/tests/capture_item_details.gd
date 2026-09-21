@@ -18,13 +18,17 @@ func capture() -> void:
 	await click(hub.sell_button)
 	await click(hub.sell_page.item_list, Vector2(35, 25))
 	check(hub.sell_page.details.get_parsed_text().contains(armor.display_name), "BBCode-like names remain literal")
-	check(hub.sell_page.details.get_parsed_text().contains("単価 %d Gold" % armor.sell_price), "Price matches item data")
+	check(hub.sell_page.total_label.text.contains("単価 %d" % armor.sell_price), "Price matches item data")
 	await shot("details_shop")
 	await key(KEY_ESCAPE)
 	await click(hub.equipment_button)
 	await click(hub.equipment_page.slots[Equipment.Slot.ARMOR])
 	var comparison: ItemDetails = hub.equipment_page.comparison
 	check(comparison.get_parsed_text().contains("DEF") and comparison.get_parsed_text().contains("+%d" % armor.defense_bonus), "Comparison preserves numeric bonus")
+	# Exercise actual overflow independently of the available panel height.
+	for index in 24:
+		comparison.line("長文の装備説明と比較値をキーボードで確認します。")
+	await settle()
 	comparison.grab_focus()
 	await key(KEY_END)
 	check(comparison.get_v_scroll_bar().value > 0, "Keyboard can scroll long details")
@@ -34,13 +38,13 @@ func capture() -> void:
 	await shot("details_equipment")
 	hub.open_warehouse()
 	await settle()
-	await click(hub.warehouse_panel.get_node("Panel/StorageList"), Vector2(35, 25))
-	check(hub.warehouse_panel.get_node("Panel/Help").get_parsed_text().contains(armor.display_name), "Warehouse selection exposes description without hover")
+	await click(hub.warehouse_panel.get_node("%StorageList"), Vector2(35, 25))
+	check(hub.warehouse_panel.get_node("%Help").get_parsed_text().contains(armor.display_name), "Warehouse selection exposes description without hover")
 	await shot("details_warehouse")
 	for resolution in [Vector2i(1440, 900), Vector2i(1152, 720)]:
 		root.size = resolution
 		await settle()
-		var list: ItemList = hub.warehouse_panel.get_node("Panel/StorageList")
+		var list: ItemList = hub.warehouse_panel.get_node("%StorageList")
 		var motion := InputEventMouseMotion.new()
 		motion.position = root.get_final_transform() * (list.get_global_rect().position + Vector2(35, 25))
 		Input.parse_input_event(motion)

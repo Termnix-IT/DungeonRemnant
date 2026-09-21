@@ -59,7 +59,7 @@ func run_tests() -> void:
 	var original := theme.get_color("font_color", "GoldLabel")
 	var probe := Color(0.7, 0.8, 0.9)
 	theme.set_color("font_color", "GoldLabel", probe)
-	check(shop.total_label.get_theme_color("font_color") == probe and hub.gold_label.get_theme_color("font_color") == probe and hub.warehouse_panel.get_node("Panel/Gold").get_theme_color("font_color") == probe, "One theme edit reaches shop, home and warehouse")
+	check(shop.total_label.get_theme_color("font_color") == probe and hub.gold_label.get_theme_color("font_color") == probe and hub.warehouse_panel.get_node("%Gold").get_theme_color("font_color") == probe, "One theme edit reaches shop, home and warehouse")
 	theme.set_color("font_color", "GoldLabel", original)
 	main.free()
 	print("UI theme: %d checks, %d failures" % [checks, failures])

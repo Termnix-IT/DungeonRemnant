@@ -37,12 +37,17 @@ content_margin_left = 12.0
 content_margin_top = 6.0
 content_margin_right = 12.0
 content_margin_bottom = 6.0
-bg_color = Color(0.16078432, 0.19607843, 0.21176471, 1)
+bg_color = Color(0.095, 0.119, 0.13, 1)
 border_color = Color(0.27450982, 0.3137255, 0.32156864, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
+
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
 
 [sub_resource type="StyleBoxFlat" id="ButtonPressed"]
 resource_name = "ButtonPressed"
@@ -50,13 +55,17 @@ content_margin_left = 12.0
 content_margin_top = 6.0
 content_margin_right = 12.0
 content_margin_bottom = 6.0
-bg_color = Color(0.20784314, 0.23921569, 0.23921569, 1)
-border_width_left = 3
-border_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+bg_color = Color(0.15, 0.14, 0.102, 1)
+border_color = Color(0.72, 0.59, 0.35, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
+
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
 
 [sub_resource type="StyleBoxFlat" id="Surface"]
 resource_name = "Surface"
@@ -64,12 +73,17 @@ content_margin_left = 12.0
 content_margin_top = 6.0
 content_margin_right = 12.0
 content_margin_bottom = 6.0
-bg_color = Color(0.09019608, 0.11764706, 0.13333334, 1)
+bg_color = Color(0.05, 0.068, 0.078, 1)
 border_color = Color(0.27450982, 0.3137255, 0.32156864, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
+
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
 
 [sub_resource type="StyleBoxEmpty" id="Invisible"]
 resource_name = "Invisible"
@@ -80,13 +94,17 @@ content_margin_left = 12.0
 content_margin_top = 6.0
 content_margin_right = 12.0
 content_margin_bottom = 6.0
-bg_color = Color(0.28627452, 0.2509804, 0.1764706, 1)
-border_width_bottom = 2
+bg_color = Color(0.25, 0.205, 0.12, 1)
 border_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
+
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
 
 [sub_resource type="StyleBoxFlat" id="GoldNormal"]
 resource_name = "GoldNormal"
@@ -94,13 +112,19 @@ content_margin_left = 12.0
 content_margin_top = 6.0
 content_margin_right = 12.0
 content_margin_bottom = 6.0
-bg_color = Color(0.20392157, 0.18039216, 0.13333334, 1)
-border_width_bottom = 2
-border_color = Color(0.52156866, 0.44313726, 0.29803923, 1)
+bg_color = Color(0.18, 0.145, 0.08, 1)
+border_color = Color(0.72, 0.59, 0.35, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
+
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+shadow_color = Color(0.72, 0.52, 0.20, 0.12)
+shadow_size = 4
 
 [sub_resource type="StyleBoxFlat" id="ScrollGrabber"]
 resource_name = "ScrollGrabber"
@@ -147,13 +171,19 @@ content_margin_left = 12.0
 content_margin_top = 6.0
 content_margin_right = 12.0
 content_margin_bottom = 6.0
-bg_color = Color(0.19607843, 0.20784314, 0.17254902, 1)
-border_width_left = 3
-border_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+bg_color = Color(0.15, 0.14, 0.102, 1)
+border_color = Color(0.72, 0.59, 0.35, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
+
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+shadow_color = Color(0.72, 0.52, 0.20, 0.12)
+shadow_size = 4
 
 [sub_resource type="StyleBoxFlat" id="ListBackground"]
 resource_name = "ListBackground"
@@ -161,7 +191,7 @@ content_margin_left = 8.0
 content_margin_top = 6.0
 content_margin_right = 8.0
 content_margin_bottom = 6.0
-bg_color = Color(0.0627451, 0.08235294, 0.09803922, 1)
+bg_color = Color(0.018, 0.028, 0.035, 0.7)
 border_color = Color(0.27450982, 0.3137255, 0.32156864, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
@@ -174,12 +204,17 @@ content_margin_left = 16.0
 content_margin_top = 12.0
 content_margin_right = 16.0
 content_margin_bottom = 12.0
-bg_color = Color(0.09019608, 0.11764706, 0.13333334, 1)
+bg_color = Color(0.06, 0.079, 0.09, 1)
 border_color = Color(0.27450982, 0.3137255, 0.32156864, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
+
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
 
 [sub_resource type="StyleBoxFlat" id="MainSurface"]
 resource_name = "MainSurface"
@@ -187,8 +222,7 @@ content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
 content_margin_bottom = 0.0
-bg_color = Color(0.0627451, 0.09019608, 0.105882354, 0.9607843)
-border_width_top = 1
+bg_color = Color(0.025, 0.039, 0.047, 0.96)
 border_color = Color(0.27450982, 0.3137255, 0.32156864, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
@@ -197,19 +231,30 @@ corner_radius_bottom_left = 3
 shadow_color = Color(0, 0, 0, 0.3)
 shadow_size = 6
 
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+
 [sub_resource type="StyleBoxFlat" id="PrimaryNormal"]
 resource_name = "PrimaryNormal"
 content_margin_left = 12.0
 content_margin_top = 6.0
 content_margin_right = 12.0
 content_margin_bottom = 6.0
-bg_color = Color(0.15686275, 0.19607843, 0.21176471, 1)
-border_width_bottom = 2
-border_color = Color(0.27450982, 0.3137255, 0.32156864, 1)
+bg_color = Color(0.18, 0.145, 0.08, 1)
+border_color = Color(0.72, 0.59, 0.35, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
+
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+shadow_color = Color(0.72, 0.52, 0.20, 0.12)
+shadow_size = 4
 
 [sub_resource type="StyleBoxFlat" id="SecondaryNormal"]
 resource_name = "SecondaryNormal"
@@ -217,12 +262,17 @@ content_margin_left = 12.0
 content_margin_top = 6.0
 content_margin_right = 12.0
 content_margin_bottom = 6.0
-bg_color = Color(0.0627451, 0.08235294, 0.09803922, 1)
+bg_color = Color(0.033, 0.048, 0.058, 0.96)
 border_color = Color(0.27450982, 0.3137255, 0.32156864, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
+
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
 
 [sub_resource type="StyleBoxFlat" id="SpeechSurface"]
 resource_name = "SpeechSurface"
@@ -248,7 +298,17 @@ content_margin_top = 6.0
 content_margin_right = 6.0
 content_margin_bottom = 6.0
 
+[sub_resource type="StyleBoxFlat" id="ProgressTrack"]
+bg_color = Color(0.018, 0.028, 0.035, 1)
+
+[sub_resource type="StyleBoxFlat" id="ProgressFill"]
+bg_color = Color(0.72, 0.59, 0.35, 1)
+
 [resource]
+StageCardList/base_type = &"ItemCardList"
+StageCardList/constants/v_separation = 122
+DetailStack/base_type = &"VBoxContainer"
+DetailStack/constants/separation = 8
 CompactStack/base_type = &"VBoxContainer"
 CompactStack/constants/separation = 2
 UpgradeList/base_type = &"VBoxContainer"
@@ -278,19 +338,19 @@ CharacterButton/styles/normal = SubResource("Invisible")
 CharacterButton/styles/pressed = SubResource("Invisible")
 GoldButton/base_type = &"Button"
 GoldButton/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
-GoldButton/font_sizes/font_size = 17
+GoldButton/font_sizes/font_size = 18
 GoldButton/styles/hover = SubResource("GoldHover")
 GoldButton/styles/normal = SubResource("GoldNormal")
 GoldLabel/base_type = &"Label"
 GoldLabel/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
 GoldLabel/font_sizes/font_size = 21
-HBoxContainer/constants/separation = 12
+HBoxContainer/constants/separation = 20
 HScrollBar/styles/grabber = SubResource("ScrollGrabber")
 HScrollBar/styles/grabber_highlight = SubResource("ScrollHover")
 HScrollBar/styles/grabber_pressed = SubResource("GoldHover")
 HScrollBar/styles/scroll = SubResource("ScrollTrack")
 HeadingLabel/base_type = &"Label"
-HeadingLabel/font_sizes/font_size = 23
+HeadingLabel/font_sizes/font_size = 24
 ItemDetails/base_type = &"RichTextLabel"
 ItemDetails/colors/default_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
 ItemDetails/colors/decrease_color = Color(0.86, 0.52, 0.48, 1)
@@ -305,10 +365,10 @@ ItemCardList/colors/font_color = Color(1, 1, 1, 0)
 ItemCardList/colors/font_selected_color = Color(1, 1, 1, 0)
 ItemCardList/colors/font_hovered_color = Color(1, 1, 1, 0)
 ItemCardList/colors/font_hovered_selected_color = Color(1, 1, 1, 0)
-ItemCardList/constants/v_separation = 38
+ItemCardList/constants/v_separation = 56
 ItemCardList/constants/card_inset = 12
-ItemCardList/constants/card_gap = 8
-ItemCardList/constants/glyph_size = 36
+ItemCardList/constants/card_gap = 10
+ItemCardList/constants/glyph_size = 48
 ItemCardList/constants/price_width = 124
 ItemList/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
 ItemList/colors/font_selected_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
@@ -382,3 +442,43 @@ VScrollBar/styles/grabber = SubResource("ScrollGrabber")
 VScrollBar/styles/grabber_highlight = SubResource("ScrollHover")
 VScrollBar/styles/grabber_pressed = SubResource("GoldHover")
 VScrollBar/styles/scroll = SubResource("ScrollTrack")
+
+DetailPanel/base_type = &"PanelContainer"
+DetailPanel/styles/panel = SubResource("MainSurface")
+InsetPanel/base_type = &"PanelContainer"
+InsetPanel/styles/panel = SubResource("ItemSurface")
+VisualPanel/base_type = &"PanelContainer"
+VisualPanel/styles/panel = SubResource("ItemSurface")
+ItemNameLabel/base_type = &"Label"
+ItemNameLabel/font_sizes/font_size = 20
+ValueLabel/base_type = &"Label"
+ValueLabel/font_sizes/font_size = 26
+ValueLabel/colors/font_color = Color(0.84, 0.72, 0.48, 1)
+PositiveLabel/base_type = &"Label"
+PositiveLabel/colors/font_color = Color(0.57, 0.76, 0.64, 1)
+PositiveLabel/font_sizes/font_size = 18
+DescriptionLabel/base_type = &"Label"
+DescriptionLabel/colors/font_color = Color(0.79, 0.79, 0.75, 1)
+DescriptionLabel/font_sizes/font_size = 18
+ItemCardList/styles/card = SubResource("ItemSurface")
+ItemCardList/styles/card_selected = SubResource("ItemSelected")
+ItemCardList/styles/card_hover = SubResource("SurfaceHover")
+ItemCardList/constants/quantity_width = 54
+ItemCardList/constants/row_gap = 6
+CompactMargin/base_type = &"MarginContainer"
+CompactMargin/constants/margin_left = 12
+CompactMargin/constants/margin_right = 12
+CompactMargin/constants/margin_top = 10
+CompactMargin/constants/margin_bottom = 10
+CompactRow/base_type = &"HBoxContainer"
+CompactRow/constants/separation = 10
+PrimaryButton/styles/hover = SubResource("GoldHover")
+PrimaryButton/colors/font_color = Color(0.91, 0.81, 0.60, 1)
+ProgressBar/styles/background = SubResource("ProgressTrack")
+ProgressBar/styles/fill = SubResource("ProgressFill")
+
+HomeMargin/base_type = &"MarginContainer"
+HomeMargin/constants/margin_left = 0
+HomeMargin/constants/margin_right = 0
+HomeMargin/constants/margin_top = 42
+HomeMargin/constants/margin_bottom = 24

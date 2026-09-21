@@ -66,6 +66,8 @@ func capture() -> void:
 	await key(KEY_ENTER)
 	check(hub.page == "stages", "Initial keyboard focus activates departure")
 	await key(KEY_TAB)
+	check(hub.departure_page.stage_details.has_focus(), "Tab reaches scrollable stage information")
+	await key(KEY_TAB)
 	await key(KEY_ENTER)
 	check(hub.page == "confirm", "Native Tab navigation reaches stage action")
 	await key(KEY_ESCAPE)

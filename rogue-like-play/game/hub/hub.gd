@@ -38,6 +38,8 @@ var page := "home"
 var equipment_return := "stages"
 var _state: RunCarryover
 var _content: Control
+var _page_host: Control
+var _shell: VBoxContainer
 var _warehouse_focus: Control
 @onready var warehouse_panel: WarehousePanel = $WarehousePanel
 
@@ -62,11 +64,35 @@ func _ready() -> void:
 	add_child(_content)
 	_resize()
 	get_viewport().size_changed.connect(_resize)
-	HubTheme.panel(_content, Vector2.ZERO, Vector2(1280, 98))
-	title_label = HubTheme.label(_content, "旅支度の間", Vector2(26, 10), Vector2(850, 44), &"TitleLabel")
-	subtitle_label = HubTheme.label(_content, "小さな準備が、大きな冒険につながる。", Vector2(28, 58), Vector2(850, 30), &"MutedLabel")
-	gold_label = HubTheme.label(_content, "", Vector2(970, 24), Vector2(280, 48), &"GoldLabel")
+	_shell = VBoxContainer.new()
+	_content.add_child(_shell)
+	_shell.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var header := HBoxContainer.new()
+	header.custom_minimum_size.y = 86
+	_shell.add_child(header)
+	var brand := VBoxContainer.new()
+	brand.custom_minimum_size.x = 300
+	header.add_child(brand)
+	HubUI.label(brand, "DungeonRemnant", &"TitleLabel")
+	HubUI.label(brand, "残されたものたちの、もう一度", &"MutedLabel")
+	var heading := VBoxContainer.new()
+	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(heading)
+	title_label = HubUI.label(heading, "旅支度の間", &"TitleLabel")
+	subtitle_label = HubUI.label(heading, "小さな準備が、大きな冒険につながる。", &"MutedLabel")
+	var purse := PanelContainer.new()
+	purse.theme_type_variation = &"ItemPanel"
+	purse.custom_minimum_size.x = 190
+	purse.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	header.add_child(purse)
+	gold_label = HubUI.label(purse, "", &"ValueLabel")
+	# Gold role is shared with quotes and the warehouse balance.
+	gold_label.theme_type_variation = &"GoldLabel"
 	gold_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_page_host = Control.new()
+	_page_host.custom_minimum_size.y = 600
+	_page_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_shell.add_child(_page_host)
 	home_page = _page(Control.new())
 	_build_home()
 	equipment_page = _page(HubEquipment.new()) as HubEquipment
@@ -89,11 +115,16 @@ func _ready() -> void:
 	tree.hp_requested.connect(func(): purchase_requested.emit())
 	tree.skill_requested.connect(func(id: StringName): skill_requested.emit(id))
 	tree.entry_requested.connect(func(stage: StageData, floor_number: int): entry_requested.emit(stage, floor_number))
-	purchase_button = tree.root_button
+	purchase_button = tree.upgrade_button
 	upgrade_label = tree.root_label
-	back_button = HubTheme.button(_content, "戻る  /  Esc", Vector2(0, 704), Vector2(215, 48), go_back, &"SecondaryButton")
-	feedback = HubTheme.label(_content, "", Vector2(238, 700), Vector2(1030, 54), &"GoldLabel")
-	save_label = HubTheme.label(_content, "", Vector2(0, 762), Vector2(1280, 24), &"MutedLabel")
+	var footer := HBoxContainer.new()
+	_shell.add_child(footer)
+	back_button = HubUI.button(footer, "戻る  /  Esc", go_back)
+	back_button.custom_minimum_size = Vector2(215, 44)
+	feedback = HubUI.label(footer, "", &"GoldLabel")
+	feedback.custom_minimum_size.y = 44
+	feedback.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	save_label = HubUI.label(_shell, "", &"MutedLabel")
 	warehouse_panel.theme = _content.theme
 	warehouse_panel.transfer_requested.connect(func(source: bool, index: int): storage_transfer_requested.emit(source, index))
 	warehouse_panel.closed.connect(_warehouse_closed)
@@ -104,21 +135,43 @@ func _ready() -> void:
 
 
 func _page(control: Control) -> Control:
-	HubTheme.place(control, _content, Vector2(0, 122), Vector2(1280, 560))
+	_page_host.add_child(control)
+	control.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	control.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	control.hide()
 	return control
 
 
 func _build_home() -> void:
-	start_button = _home_action("出撃", "ステージを選び、次の冒険へ", Vector2(28, 65), func(): show_page("stages"))
+	var margin := MarginContainer.new()
+	margin.theme_type_variation = &"HomeMargin"
+	home_page.add_child(margin)
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var stack := VBoxContainer.new()
+	margin.add_child(stack)
+	var navigation := HBoxContainer.new()
+	navigation.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	stack.add_child(navigation)
+	var left := VBoxContainer.new()
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	navigation.add_child(left)
+	var center := HubUI.space(navigation)
+	center.size_flags_stretch_ratio = 1.2
+	var right := VBoxContainer.new()
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	navigation.add_child(right)
+	start_button = _home_action(left, "出撃", "ステージを選び、次の冒険へ", func(): show_page("stages"))
 	start_button.theme_type_variation = &"PrimaryButton"
-	equipment_button = _home_action("装備", "装備と持ち込みを整える", Vector2(28, 205), func(): equipment_return = "stages"; show_page("equipment"))
-	warehouse_button = _home_action("倉庫", "使うもの、残すものを選ぶ", Vector2(28, 345), open_warehouse)
-	sell_button = _home_action("ショップ", "アイテムを購入・売却する", Vector2(880, 65), func(): show_page("sell"))
-	upgrade_button = _home_action("永久強化", "冒険の先へ、ずっと残る力", Vector2(880, 205), func(): show_page("upgrade"))
-	var summary := HubTheme.panel(home_page, Vector2(880, 345), Vector2(372, 124))
-	equipment_label = HubTheme.label(summary, "", Vector2(20, 14), Vector2(332, 100), &"MutedLabel")
+	equipment_button = _home_action(left, "装備", "装備と持ち込みを整える", func(): equipment_return = "stages"; show_page("equipment"))
+	warehouse_button = _home_action(left, "倉庫", "使うもの、残すものを選ぶ", open_warehouse)
+	sell_button = _home_action(right, "ショップ", "アイテムを購入・売却する", func(): show_page("sell"))
+	upgrade_button = _home_action(right, "永久強化", "冒険の先へ、ずっと残る力", func(): show_page("upgrade"))
+	var summary := PanelContainer.new()
+	summary.theme_type_variation = &"ItemPanel"
+	right.add_child(summary)
+	equipment_label = HubUI.label(summary, "", &"MutedLabel")
+	var note := HubUI.label(stack, "装備と倉庫は、次の冒険へ引き継がれます。", &"MutedLabel")
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var hero := AnimatedSprite2D.new()
 	hero.name = "Hero"
 	hero.sprite_frames = MioAnimation.build_front_idle_frames()
@@ -126,7 +179,7 @@ func _build_home() -> void:
 	# Anchor the 128px frame at its feet.
 	hero.centered = false
 	hero.offset = Vector2(-64, -121)
-	hero.position = Vector2(640, 420)
+	hero.position = Vector2(640, 448)
 	hero.scale = Vector2(2, 2)
 	home_page.add_child(hero)
 	var eyes := AnimatedSprite2D.new()
@@ -144,7 +197,7 @@ func _build_home() -> void:
 	breathing.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	breathing.tween_property(hero, "scale:y", 1.994, 2.4)
 	breathing.tween_property(hero, "scale:y", 2.0, 2.4)
-	hero_button = HubTheme.button(home_page, "", Vector2(550, 178), Vector2(180, 242), func(): hero_speech.visible = not hero_speech.visible)
+	hero_button = HubTheme.button(home_page, "", Vector2(550, 206), Vector2(180, 242), func(): hero_speech.visible = not hero_speech.visible)
 	hero_button.name = "HeroButton"
 	hero_button.tooltip_text = "話しかける"
 	hero_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -164,22 +217,36 @@ func _build_home() -> void:
 	var invitation := HubTheme.label(hero_speech, "準備ができたら、出発しよう。", Vector2(16, 12), Vector2(388, 40), &"GoldLabel")
 	invitation.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hero_speech.hide()
-	var note := HubTheme.label(home_page, "装備と倉庫は、次の冒険へ引き継がれます。", Vector2(290, 514), Vector2(700, 30), &"MutedLabel")
-	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
-func _home_action(text: String, description: String, position: Vector2, action: Callable) -> Button:
-	var button := HubTheme.button(home_page, "", position, Vector2(372, 124), action, &"SecondaryButton")
-	HubTheme.label(button, text + "    ›", Vector2(24, 17), Vector2(324, 46), &"TitleLabel")
-	HubTheme.label(button, description, Vector2(26, 75), Vector2(320, 30), &"MutedLabel")
+func _home_action(parent: Node, text: String, description: String, action: Callable) -> Button:
+	var button := HubUI.button(parent, "", action)
+	button.custom_minimum_size.y = 124
+	var margin := MarginContainer.new()
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(margin)
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.add_child(row)
+	var icon := NavigationIcon.new()
+	icon.kind = text
+	row.add_child(icon)
+	var copy := VBoxContainer.new()
+	copy.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	copy.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(copy)
+	HubUI.label(copy, text + "  ›", &"HeadingLabel")
+	HubUI.label(copy, description, &"MutedLabel")
 	button.tooltip_text = text + "：" + description
 	return button
 
 
 func _resize() -> void:
 	var viewport := get_viewport().get_visible_rect().size
-	var factor := minf(1.0, minf((viewport.x - 40) / 1280.0, (viewport.y - 36) / 790.0))
-	_content.size = Vector2(1280, 790)
+	var factor := minf(1.0, minf((viewport.x - 40) / 1280.0, (viewport.y - 36) / 810.0))
+	_content.size = Vector2(1280, 810)
 	_content.scale = Vector2.ONE * factor
 	_content.position = (viewport - _content.size * factor) * 0.5
 
@@ -223,6 +290,7 @@ func show_page(target: String) -> void:
 			equipment_page.slots[0].grab_focus()
 		"sell":
 			title_label.text = "ショップ"
+			subtitle_label.text = "品を選び、価格と取引後の所持数を確認。"
 			sell_page.show()
 			sell_page.refresh(_state)
 			sell_page.source_choice.grab_focus()
@@ -231,10 +299,9 @@ func show_page(target: String) -> void:
 			subtitle_label.text = "冒険を越えて残る力。前提条件と次の効果を確認。"
 			upgrade_page.show()
 			(upgrade_page as SkillTreePanel).focus_first_action()
-			if purchase_button.disabled:
-				feedback.text = "基礎HPは習得済みです。各分岐の条件を確認してください。" if _state.upgrade.price(_state.hp_upgrade_level) < 0 else "強化はGoldを消費します。各分岐の条件を確認してください。"
 		"stages":
 			title_label.text = "ステージ選択"
+			subtitle_label.text = "冒険先を選び、出撃に備える。"
 			departure_page.show()
 			departure_page.present_selection(stages, _state)
 		"confirm":
@@ -265,8 +332,8 @@ func present_action(kind: StringName, gold_delta: int, slots: Array[int]) -> voi
 			UIMotion.of(upgrade_label).reveal()
 		&"deposit", &"withdraw":
 			var destination := "InventoryList" if kind == &"withdraw" else "StorageList"
-			UIMotion.of(warehouse_panel.get_node("Panel/" + destination)).reveal()
-			UIMotion.of(warehouse_panel.get_node("Panel/Feedback")).reveal()
+			UIMotion.of(warehouse_panel.get_node("%" + destination)).reveal()
+			UIMotion.of(warehouse_panel.get_node("%Feedback")).reveal()
 
 
 func open_warehouse() -> void:

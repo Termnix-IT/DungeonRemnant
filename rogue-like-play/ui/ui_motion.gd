@@ -13,6 +13,7 @@ const META := &"ui_motion"
 var control: Control
 var scale_tween: Tween
 var alpha_tween: Tween
+var selection_tween: Tween
 var _base_scale := Vector2.ONE
 var _base_alpha := 1.0
 var _hovered := false
@@ -148,6 +149,16 @@ func reveal(duration: float = SELECT_TIME) -> void:
 	alpha_tween.tween_property(control, "modulate:a", _base_alpha, duration)
 
 
+func select_card() -> void:
+	if not control is ItemCardList or not control.is_visible_in_tree():
+		return
+	if selection_tween != null:
+		selection_tween.kill()
+	control.selection_strength = 0.0
+	selection_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	selection_tween.tween_property(control, "selection_strength", 1.0, SELECT_TIME)
+
+
 func _scale_animation() -> Tween:
 	if scale_tween != null:
 		scale_tween.kill()
@@ -164,6 +175,10 @@ func reset_scale() -> void:
 
 func reset() -> void:
 	reset_scale()
+	if selection_tween != null:
+		selection_tween.kill()
+	if control is ItemCardList:
+		control.selection_strength = 1.0
 	if alpha_tween != null:
 		alpha_tween.kill()
 	control.modulate.a = _base_alpha

@@ -10,8 +10,8 @@ var state: RunCarryover
 var start_choice: OptionButton
 var starting_floor := 1
 var selected_stage: StageData
-var stage_list: ItemList
-var stage_details: Label
+var stage_list: StageCardList
+var stage_details: ItemDetails
 var stage_art: TextureRect
 var equipment_label: Label
 var inventory_list: ItemList
@@ -25,38 +25,46 @@ var review_button: Button
 func _ready() -> void:
 	selection_page = Control.new()
 	add_child(selection_page)
-	HubTheme.panel(selection_page, Vector2.ZERO, Vector2(440, 560))
-	HubTheme.label(selection_page, "挑戦する場所", Vector2(24, 20), Vector2(390, 40), &"HeadingLabel")
+	selection_page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var columns := HubUI.columns(selection_page)
+	var destinations := HubUI.section(columns, 1.1)
+	HubUI.label(destinations, "冒険先を選ぶ", &"HeadingLabel")
+	stage_list = StageCardList.new()
+	stage_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	destinations.add_child(stage_list)
+	stage_list.item_selected.connect(_select_stage)
+	HubUI.label(destinations, "選択後、装備を確認して出撃します。", &"MutedLabel")
+	var detail := HubUI.section(columns)
 	stage_art = TextureRect.new()
 	stage_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	stage_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	HubTheme.place(stage_art, selection_page, Vector2(24, 82), Vector2(392, 230))
-	stage_list = ItemList.new()
-	stage_list.max_text_lines = 2
-	HubTheme.place(stage_list, selection_page, Vector2(24, 330), Vector2(392, 142))
-	stage_list.item_selected.connect(_select_stage)
-	HubTheme.label(selection_page, "選択後、装備を確認して出撃します。", Vector2(24, 490), Vector2(392, 48), &"MutedLabel")
-	HubTheme.panel(selection_page, Vector2(460, 0), Vector2(820, 560))
-	var detail_scroll := ScrollContainer.new()
-	HubTheme.place(detail_scroll, selection_page, Vector2(492, 24), Vector2(756, 442))
-	detail_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	stage_details = HubTheme.label(detail_scroll, "", Vector2.ZERO, Vector2(732, 442), &"BodyLabel")
-	stage_details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	next_button = HubTheme.button(selection_page, "このステージの出撃準備へ", Vector2(492, 484), Vector2(756, 52), func(): confirm_requested.emit())
+	stage_art.custom_minimum_size.y = 174
+	detail.add_child(stage_art)
+	stage_details = ItemDetails.new()
+	stage_details.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	detail.add_child(stage_details)
+	next_button = HubUI.button(detail, "このステージの出撃準備へ", func(): confirm_requested.emit(), &"GoldButton")
+	next_button.custom_minimum_size.y = 54
 	confirmation_page = Control.new()
 	add_child(confirmation_page)
-	HubTheme.panel(confirmation_page, Vector2.ZERO, Vector2(550, 560))
-	equipment_label = HubTheme.label(confirmation_page, "", Vector2(24, 20), Vector2(502, 436), &"BodyLabel")
-	review_button = HubTheme.button(confirmation_page, "装備・持ち込みを見直す", Vector2(24, 486), Vector2(502, 50), func(): equipment_requested.emit())
-	HubTheme.panel(confirmation_page, Vector2(570, 0), Vector2(710, 560))
-	HubTheme.label(confirmation_page, "持ち込みアイテム", Vector2(594, 20), Vector2(662, 40), &"HeadingLabel")
-	inventory_list = ItemList.new()
-	HubTheme.place(inventory_list, confirmation_page, Vector2(594, 80), Vector2(662, 264))
-	HubTheme.label(confirmation_page, "このダンジョンに挑戦しますか？\n装備と持ち込みを確認してください。", Vector2(594, 355), Vector2(662, 78), &"HeadingLabel")
+	confirmation_page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var review_columns := HubUI.columns(confirmation_page)
+	var equipment := HubUI.section(review_columns, 0.85)
+	equipment_label = HubUI.label(equipment, "", &"BodyLabel")
+	equipment_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	review_button = HubUI.button(equipment, "装備・持ち込みを見直す", func(): equipment_requested.emit())
+	var departure := HubUI.section(review_columns, 1.15)
+	HubUI.label(departure, "持ち込みアイテム", &"HeadingLabel")
+	inventory_list = ItemCardList.new()
+	inventory_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	departure.add_child(inventory_list)
+	HubUI.label(departure, "装備と持ち込みを確認して、冒険へ。", &"HeadingLabel")
 	start_choice = OptionButton.new()
-	HubTheme.place(start_choice, confirmation_page, Vector2(594, 440), Vector2(662, 36))
+	start_choice.custom_minimum_size.y = 40
+	departure.add_child(start_choice)
 	start_choice.item_selected.connect(func(index: int): starting_floor = start_choice.get_item_id(index); _update_start_label())
-	confirm_button = HubTheme.button(confirmation_page, "挑戦する", Vector2(594, 486), Vector2(662, 50), func(): departure_requested.emit())
+	confirm_button = HubUI.button(departure, "挑戦する", func(): departure_requested.emit(), &"GoldButton")
+	confirm_button.custom_minimum_size.y = 54
 
 
 func present_selection(available_stages: Array[StageData], progress: RunCarryover = null) -> void:
@@ -68,7 +76,7 @@ func present_selection(available_stages: Array[StageData], progress: RunCarryove
 	var selected_index := 0
 	for index in stages.size():
 		var stage := stages[index]
-		stage_list.add_item("？？？  /  今後追加予定" if not stage.available else "%s  /  全%d階  /  %s%s" % [stage.display_name, stage.floor_count, stage.difficulty, "" if state.stage_available(stage) else "  /  未開放"])
+		stage_list.add_stage(stage, state.stage_available(stage))
 		if stage == selected_stage:
 			selected_index = index
 	if not stages.is_empty():
@@ -88,9 +96,21 @@ func _select_stage(index: int) -> void:
 	selected_stage = stages[index]
 	var stage := selected_stage
 	stage_art.texture = stage.illustration
-	stage_details.text = "%s\n\n%s\n\n全 %d 階     難易度：%s\n\n%s\n\n主な敵の傾向\n%s" % [stage.display_name, stage.description, stage.floor_count, stage.difficulty, stage.features, stage.enemy_summary]
-	if not stage.available:
-		stage_details.text = stage.display_name + "\n\n" + stage.description
+	stage_art.visible = stage.illustration != null
+	stage_details.reset()
+	stage_details.line(stage.display_name, &"HeadingLabel")
+	stage_details.line(stage.description)
+	if stage.available:
+		stage_details.line("全 %d 階  /  難易度：%s" % [stage.floor_count, stage.difficulty], &"GoldLabel")
+		if not stage.features.is_empty():
+			stage_details.line("探索の特徴", &"ItemNameLabel")
+			stage_details.line(stage.features)
+		if not stage.enemy_summary.is_empty():
+			stage_details.line("主な敵の傾向", &"ItemNameLabel")
+			stage_details.line(stage.enemy_summary, &"MutedLabel")
+	UIMotion.of(stage_details).reveal()
+	UIMotion.of(stage_art).reveal()
+
 	next_button.disabled = not state.stage_available(stage) or stage.settings == null
 
 
@@ -99,7 +119,9 @@ func present_confirmation(current: RunCarryover) -> void:
 	selection_page.hide()
 	confirmation_page.show()
 	equipment_label.text = "現在の装備\n\n" + HubTheme.equipment_text(state)
-	HubTheme.fill_inventory(inventory_list, state.inventory)
+	inventory_list.clear()
+	for entry in state.inventory.entries:
+		(inventory_list as ItemCardList).add_card(entry.item, entry.count)
 	if inventory_list.item_count == 0:
 		inventory_list.add_item("持ち込みなし  /  装備のみで出撃")
 		inventory_list.set_item_disabled(0, true)

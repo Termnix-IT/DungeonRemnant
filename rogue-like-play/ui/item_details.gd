@@ -28,7 +28,7 @@ func delta(caption: String, before: int, after: int) -> void:
 	var difference := after - before
 	var color := get_theme_color(&"font_color", &"MutedLabel")
 	if difference > 0:
-		color = get_theme_color(&"font_color", &"GoldLabel")
+		color = get_theme_color(&"font_color", &"PositiveLabel")
 	elif difference < 0:
 		color = get_theme_color(&"decrease_color")
 	push_color(color)

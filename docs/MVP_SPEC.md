@@ -989,33 +989,39 @@ SaveManager
 
 巨大なGameManager一つにすべてを詰め込むことも避ける。
 
-UIは `res://ui/theme/dungeon_theme.tres` をプロジェクト共通Themeとして使用する。暗色の面・明るい本文・控えめな金色を基調とし、常設の枠線を増やさず、面の明度と余白で階層を示す。拠点・ショップ・装備・倉庫・永久強化・出撃準備はこのThemeの役割を使用し、HUDのHP・MPなど意味を持つ専用表示は別途維持する。
+UIは `res://ui/theme/dungeon_theme.tres` をプロジェクト共通Themeとして使用する。暗色の面・明るい本文・控えめな金色を基調とし、通常面は低彩度の細い輪郭、選択と主要操作は金色の輪郭を使い、面の明度・余白・控えめな影で階層を示す。参考アートは方向性の基準であり、実行時素材として使用しない。拠点・ショップ・装備・倉庫・永久強化・出撃準備はこのThemeの役割を使用し、HUDのHP・MPなど意味を持つ専用表示は別途維持する。
 
 - 操作は `PrimaryButton`（主要操作）、`SecondaryButton`（戻る・補助操作）、`ItemButton`（選択）、`GoldButton`（購入・成長）を使い分ける。
-- 文字は `TitleLabel`、`HeadingLabel`、`BodyLabel`、`MutedLabel`、`GoldLabel` を使用する。画面ごとのフォントサイズ・色overrideは追加しない。
-- Containerで構築する領域は `MainPanel` と `ItemPanel` を使用する。既存の固定配置Panelは同じ `MainSurface` を共有する。ショップはPanelContainer・MarginContainer・VBox/HBoxで構築し、外周余白と要素間隔をThemeから取得する。
+- 文字は画面名 `TitleLabel`（30px）、見出し `HeadingLabel`（24px）、項目名 `ItemNameLabel`（20px）、主要値 `ValueLabel`（26px）、本文 `BodyLabel`（18px）、説明 `DescriptionLabel`（18px）、補足 `MutedLabel`（16px）、価格 `GoldLabel`（21px）を使用する。ボタンは原則18px、補助操作は16px。画面ごとのフォントサイズ・色overrideは追加しない。
+- 拠点のヘッダー・ページ・フッター、各画面の列はContainerで配置する。`HubUI` は `MainPanel` / `ItemPanel` とMargin・VBox/HBoxの構造だけを共通化する。基準内容幅1280px・高さ810px、画面端は最低20px相当を確保して縮小する。通常のパネル内余白24px、列間20px、縦間隔12px、密な詳細は8px。倉庫は独立した1280×650pxのContainer構成を同様に縮小する。
 - 外観の調整はTheme内の名前付きStyleBox（`MainSurface`、`SurfaceHover`、`FocusOutline`など）を編集する。同一のStyleBoxを共有するControlへ一括反映されるため、画面側で複製しない。文字色・文字サイズは該当するTheme Typeを編集する。Theme内の色項目とStyleBoxの色はGodot上では別プロパティであり、自動連動するパレットではない。
 - `CharacterButton` と `SpeechPanel` は拠点キャラクターの透明なクリック領域と吹き出し専用とする。新規画像を要する装飾は共通UIの前提にしない。
 
-ショップの商品詳細と装備比較、倉庫の選択説明は `ItemDetails`（RichTextLabel）を使用する。商品名・価格・補足は既存LabelのTheme役割から色と文字サイズを取得し、能力差分は変更前→変更後と符号付き数値を併記する。増加はGoldLabelの色、減少はThemeの `ItemDetails/decrease_color` を使用する。長文は枠内でスクロールし、Tabで詳細へFocusを移した後は方向キー・Home/Endで閲覧できる。アイテム名・説明はBBCodeとして解釈せず、選択変更時は先頭へ戻す。
+色の役割は背景 `#020305`、主面 `#060A0C`、浮いた面 `#0F1417`、Hover `#181E21`、選択面 `#26241A`、通常境界 `#465052`、選択境界 `#B89759`、Gold `#D6B77B`、本文 `#EEE9DF`、説明 `#C9C9BF`、補足 `#B2B3AA`、減少 `#DB857A`、増加 `#91C2A3` とする。透過率と影はTheme内のStyleBoxに集約する。一覧／詳細比率はショップ約53:47、出撃約52:48、倉庫は所持品／中央／倉庫が約37:26:37。拠点の左右Navigationは各約390pxで中央のキャラクター空間を残す。
+
+ショップの商品詳細と装備比較、倉庫の選択説明は `ItemDetails`（RichTextLabel）を使用する。商品名・価格・補足は既存LabelのTheme役割から色と文字サイズを取得し、能力差分は変更前→変更後と符号付き数値を併記する。増加は `PositiveLabel` の控えめな緑、減少はThemeの `ItemDetails/decrease_color` を使用する。長文は枠内でスクロールし、Tabで詳細へFocusを移した後は方向キー・Home/Endで閲覧できる。アイテム名・説明はBBCodeとして解釈せず、選択変更時は先頭へ戻す。
 
 ショップ・装備・倉庫の一覧は `ItemTooltipList` で標準Tooltipを共通化する。幅はThemeの `ItemList/tooltip_width`、背景は既存TooltipPanelを使い、長文を折り返す。表示待ち・消去・画面端の位置調整はGodotに任せる。Tooltipは補助表示とし、選択内容の説明は画面内にも表示する。
 
-ショップの一覧は `ItemCardList` を使用し、種類アイコン・名前・種類と所持数・単価を横長の2行表示にする。`ItemGlyph` は武器種、防具、装飾品、護符、巻物、HP／MP回復薬をGodotの図形で描画する。個別アイテムの専用イラストではなく、種類の識別を補助するための共通記号とする。倉庫・装備一覧への展開は別途判断し、ショップのために一覧全体の構造を変更しない。
+ショップ・倉庫・装備・出撃確認の所持品は `ItemCardList` を使用し、48pxの種類アイコン・名前・主効果を約80pxの行に配置する。ショップは右端に価格と所持数、倉庫と装備では個数と所在を表示する。レアリティは現行ItemDataに存在しないため表示しない。`ItemGlyph` は武器種、防具、装飾品、護符、巻物、HP／MP回復薬をGodotの図形で描画する。個別アイテムの専用イラストではなく、種類の識別を補助するための共通記号とする。`ItemVisual` は同じ記号を拡大表示し、`ItemShowcase` が商品名・分類・主効果と組み合わせる。ショップ購入・売却・装備の詳細で共用する。
 
 カードの入力・選択・検索・Tooltip・スクロールは標準ItemListに任せ、描画だけを拡張する。ネイティブの項目文字列は名前検索とアクセシビリティのために保持し、Themeの `ItemCardList/font_*_color` を透明にして二重描画を防ぐ。表示色・文字サイズは既存Labelの役割を参照し、行高・アイコンサイズ・価格領域・余白は `ItemCardList` のTheme定数で調整する。長い名前はTextLineで省略し、全文は詳細欄とTooltipに残す。
 
 永久強化は、強化名・現在Lv・その強化による補正の現在値→次回値・前提の必要Lvと現在Lvを、購入ボタンと分けて表示する。前提条件はSkillNodeの定義から取得し、条件未達・Gold不足（不足額）・強化上限を区別する。上部には永久補正の合計を表示する。途中開始の解放は選択ステージごとに、中ボス撃破→開始地点の関係、ステージ未解放・中ボス未撃破・Gold不足・解放済みを表示する。購入可否の判定と保存は既存のRunCarryover／Mainが担う。
 
-永久強化の2列と各項目はContainerで配置し、説明は購入不可でも読める明度を保つ。行間はThemeの `CompactStack` と `UpgradeList`、操作サイズは `SkillTreePanel` の定数で調整する。方向キー・Tabでは無効ボタンを飛ばす。購入によってFocus中のボタンが無効になった場合は、ステージ選択へFocusを移し、連続入力が別の購入へ移らないようにする。
+永久強化は能力選択カードと選択詳細に分け、現在Lv・上限・進捗と次回効果を表示する。能力強化と途中開始の解放はカテゴリタブで切り替える。条件未達の能力も選択して説明を読める。購入操作は詳細領域のPrimary Actionで行い、可否は既存の状態判定に従う。
 
-操作の時間変化は `ui/ui_motion.gd` の `UIMotion` で管理する。主要ボタンのHoverとFocusは100ms、押下は70ms、選択詳細は140ms、Gold増減は220ms、装備枠は160ms、画面表示は180msを基準とする。色・枠線はThemeに残し、scaleとalphaだけを動かす。Controlごと・プロパティごとに前のTweenを停止し、非表示・解放時に基準値へ戻す。Containerの位置や最小サイズをアニメーションしない。
+ショップは購入価格／売却収入、所持数の現在→取引後、残高の現在→取引後を分けて表示する。売却後の選択解除と、保存成功後だけに出す符号付きGoldフィードバックを維持する。倉庫は所持品・選択品と移動操作・倉庫の3領域とし、中央に移動方向を示す。移動は既存の1スタック単位であり、全種類を一括転送する機能は持たない。
+
+装備は候補／比較／キャラクターと装備枠を隣接させ、既存のMain・Sub・Armor・Accessory 1・Accessory 2の5枠を維持する。`CharacterPreview` は既存の待機アニメーションを使用する。出撃は `StageCardList` でステージの既存画像・階数・難易度・説明を示し、右側に選択先の詳細と準備操作を置く。存在しない推奨Lv・報酬は表示しない。最終出撃確認は引き続き別段階とする。
+
+操作の時間変化は `ui/ui_motion.gd` の `UIMotion` で管理する。主要ボタンのHoverとFocusは100ms、押下は70ms、選択詳細は140ms、Gold増減は220ms、装備枠は160ms、画面表示は180msを基準とする。色・枠線はThemeに残し、scaleとalpha、選択カードの内側金枠の強さだけを動かす。選択枠は140msで強まり、詳細と大型アイコンは同じ時間でFade更新する。Controlごと・プロパティごとに前のTweenを停止し、非表示・解放時に基準値へ戻す。Containerの位置や最小サイズをアニメーションしない。
 
 取引・装備・倉庫移動・永久強化の成功演出は、保存まで成功した `Main.preparation_completed` 通知で開始する。UIのTween完了をゲーム処理から待たず、残高・一覧・装備は即時更新する。購入は負、売却は正のGold増減を既存のフィードバック欄に表示する。画面を閉じる操作は即時とし、退場演出による入力待ちを設けない。
 
 拠点UIはキーボードの既存操作に加え、ゲームパッドの十字キーでFocus移動、Aで決定、Bで戻る操作を受け付ける。`ui_accept`・`ui_cancel`・方向の標準アクションへ登録し、マウスと同じButton signalで演出する。既存のキーボード割り当ては保持する。
 
-変更時は `tests/test_ui_theme.gd`、`tests/test_ui_layout.gd`、`tests/test_ui_motion.gd`、`tests/test_upgrade_ui.gd` に加え、該当する取引・装備・セーブのテストを実行する。描画可能な環境では `tests/capture_shop.gd`、`tests/capture_preparation.gd`、`tests/capture_ui_motion.gd`、`tests/capture_item_details.gd`、`tests/capture_upgrade_ui.gd`、`tests/capture_item_cards.gd` で通常サイズ・縮小表示・各入力・ボタン端のクリックを確認する。演出用キャプチャは60 FPS上限でアイドル時と演出中のフレーム時間も比較する。生成画像は `.godot/` に出力する。
+変更時は `tests/test_ui_theme.gd`、`tests/test_ui_layout.gd`、`tests/test_ui_motion.gd`、`tests/test_upgrade_ui.gd` に加え、該当する取引・装備・セーブのテストを実行する。描画可能な環境では `tests/capture_art_direction.gd`（7画面を1440×900・1152×720・1920×1080で確認）、`tests/capture_shop.gd`、`tests/capture_preparation.gd`、`tests/capture_ui_motion.gd`、`tests/capture_item_details.gd`、`tests/capture_upgrade_ui.gd`、`tests/capture_item_cards.gd` で通常サイズ・縮小表示・各入力・ボタン端のクリックを確認する。演出用キャプチャは60 FPS上限でアイドル時と演出中のフレーム時間も比較する。生成画像は `.godot/` に出力する。
 
 ---
 

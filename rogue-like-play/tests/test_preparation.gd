@@ -129,7 +129,7 @@ func run_tests() -> void:
 	run.retry_run()
 	check(main.active_run == null and hub.visible and hub.page == "home", "Run returns directly to home")
 	hub.open_warehouse()
-	hub.warehouse_panel.get_node("Panel/Equipment").pressed.emit()
+	hub.warehouse_panel.get_node("%Equipment").pressed.emit()
 	check(hub.page == "equipment" and hub.equipment_return == "stages", "Home warehouse equipment shortcut does not return to stale confirmation")
 	hub.equipment_page.done_button.pressed.emit()
 	check(hub.page == "stages", "Warehouse preparation continues to stage selection")

@@ -20,6 +20,8 @@ var source_label: Label
 var quantity_label: Label
 var help_label: Label
 var buying := false
+var showcase: ItemShowcase
+var possession: Label
 # Inventory keeps individual equipment entries; the shop groups only its view.
 var rows: Array[Dictionary] = []
 
@@ -28,8 +30,9 @@ func _ready() -> void:
 	var columns := HBoxContainer.new()
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var catalog := _column(columns, 1.4)
+	var catalog := _column(columns, 1.12)
 	var toolbar := HBoxContainer.new()
+	toolbar.theme_type_variation = &"CompactRow"
 	catalog.add_child(toolbar)
 	sell_tab = _button(toolbar, "売却", &"ItemButton", set_buying.bind(false))
 	buy_tab = _button(toolbar, "購入", &"ItemButton", set_buying.bind(true))
@@ -48,7 +51,7 @@ func _ready() -> void:
 	source_choice = OptionButton.new()
 	source_choice.add_item("倉庫")
 	source_choice.add_item("持ち込み所持品")
-	source_choice.custom_minimum_size = Vector2(230, 44)
+	source_choice.custom_minimum_size = Vector2(180, 44)
 	toolbar.add_child(source_choice)
 	source_choice.item_selected.connect(func(_index: int): refresh(state))
 	item_list = ItemCardList.new()
@@ -58,11 +61,15 @@ func _ready() -> void:
 	help_label = _label(catalog, "", &"MutedLabel")
 	help_label.custom_minimum_size.y = 48
 	var info := _column(columns, 1.0)
-	heading = _label(info, "", &"HeadingLabel")
+	info.theme_type_variation = &"DetailStack"
+	heading = _label(info, "", &"MutedLabel")
+	showcase = ItemShowcase.new()
+	info.add_child(showcase)
 	details = ItemDetails.new()
 	details.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	info.add_child(details)
+	possession = _label(info, "", &"BodyLabel")
 	var quantity_row := HBoxContainer.new()
 	info.add_child(quantity_row)
 	quantity_label = _label(quantity_row, "", &"MutedLabel")
@@ -79,42 +86,22 @@ func _ready() -> void:
 	quote.theme_type_variation = &"ItemPanel"
 	info.add_child(quote)
 	total_label = _label(quote, "", &"GoldLabel")
-	total_label.custom_minimum_size.y = 108
+	total_label.custom_minimum_size.y = 56
 	sell_button = _button(info, "売却する", &"GoldButton", _transact)
+	sell_button.custom_minimum_size.y = 54
 	sell_all_button = _button(info, "選択アイテムを全部売却", &"SecondaryButton", _sell_all)
 
 
 func _column(parent: Container, stretch: float) -> VBoxContainer:
-	var panel := PanelContainer.new()
-	panel.theme_type_variation = &"MainPanel"
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.size_flags_stretch_ratio = stretch
-	parent.add_child(panel)
-	var margin := MarginContainer.new()
-	panel.add_child(margin)
-	var column := VBoxContainer.new()
-	margin.add_child(column)
-	return column
+	return HubUI.section(parent, stretch)
 
 
 func _label(parent: Node, text: String, role: StringName) -> Label:
-	var label := Label.new()
-	label.text = text
-	label.theme_type_variation = role
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	parent.add_child(label)
-	return label
+	return HubUI.label(parent, text, role)
 
 
 func _button(parent: Node, text: String, role: StringName, action: Callable) -> Button:
-	var button := Button.new()
-	button.text = text
-	button.theme_type_variation = role
-	button.custom_minimum_size.y = 44
-	button.pressed.connect(action)
-	parent.add_child(button)
-	return button
+	return HubUI.button(parent, text, action, role)
 
 
 func set_buying(value: bool) -> void:
@@ -155,6 +142,7 @@ func refresh(current: RunCarryover) -> void:
 	help_label.text = "購入したアイテムは選んだ購入先へ入ります。" if buying else "同じアイテムをまとめて表示。装備中の品・魔法装着中の杖は売却されません。"
 	sell_all_button.visible = not buying
 	quantity.value = 1
+	showcase.present(null)
 	_update_quote()
 
 
@@ -182,6 +170,7 @@ func _select(index: int) -> void:
 	var row := rows[index]
 	quantity.max_value = maxi(1, _purchase_limit(row.item)) if buying else row.count
 	quantity.value = 1
+	showcase.present(row.item)
 	_update_quote()
 	UIMotion.of(details).reveal()
 
@@ -190,6 +179,7 @@ func _update_quote() -> void:
 	var selected := item_list.get_selected_items()
 	if selected.is_empty():
 		details.text = "一覧からアイテムを選んでください。"
+		possession.text = "購入先・売却元：" + source_choice.get_item_text(source_choice.selected)
 		total_label.text = "所持Gold  %d" % state.gold
 		sell_button.text = "購入する" if buying else "売却する"
 		sell_button.disabled = true
@@ -203,20 +193,20 @@ func _update_quote() -> void:
 	var total := price * amount
 	quantity.editable = true
 	details.reset()
-	details.line(item.label(), &"HeadingLabel")
-	details.line("所持 %d個" % row.count, &"MutedLabel")
-	details.line("単価 %d Gold" % price, &"GoldLabel")
+	# Keep the full literal name accessible even when the showcase wraps.
+	details.line(item.label(), &"MutedLabel")
 	details.line(item.description())
+	possession.text = "%sの所持数   %d → %d個" % [source_choice.get_item_text(source_choice.selected), row.count, row.count + amount if buying else row.count - amount]
 	if buying:
 		var limit := _purchase_limit(item)
-		total_label.text = "所持Gold     %d\n購入合計     − %d\n購入後       %d" % [state.gold, total, state.gold - total]
+		total_label.text = "購入価格   %d × %d = %d Gold\n残高   %d → %d" % [price, amount, total, state.gold, state.gold - total]
 		sell_button.text = "%d個を購入する  /  %d Gold" % [amount, total]
 		sell_button.disabled = limit < amount
 		quantity.editable = limit > 0
 		if limit == 0:
 			total_label.text = "購入できません。\nGoldまたは購入先の空き容量が不足しています。"
 	else:
-		total_label.text = "所持Gold     %d\n売却合計     + %d\n売却後       %d" % [state.gold, total, state.gold + total]
+		total_label.text = "売却収入   + %d Gold（単価 %d）\n残高   %d → %d" % [total, price, state.gold, state.gold + total]
 		sell_button.text = "%d個を売却する  /  %d Gold" % [amount, total]
 		sell_button.disabled = total <= 0 or state.gold + total > SaveCodec.MAX_GOLD
 		var all_value: int = price * row.count
