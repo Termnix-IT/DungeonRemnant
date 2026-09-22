@@ -37,8 +37,8 @@ static func ray_cells(grid: GridState, origin: Vector2i, direction: Vector2i, re
 
 
 static func attack(grid: GridState, attacker: Node2D, direction: Vector2i, weapon: WeaponData = null) -> int:
-	grid.visual_events.append({"kind": "attack", "actor": attacker, "origin": attacker.cell, "direction": direction, "weapon": weapon})
 	var cells := attack_cells(grid, attacker.cell, direction, weapon)
+	grid.visual_events.append({"kind": "attack", "actor": attacker, "origin": attacker.cell, "direction": direction, "weapon": weapon, "cells": cells.duplicate()})
 	if cells.is_empty():
 		return 0
 	var bonus := weapon.damage_bonus if weapon != null else 0

@@ -124,6 +124,22 @@ func capture() -> void:
 	await create_timer(1.0).timeout
 	await sample_cost(hub.equipment_page.done_button, false)
 	await sample_cost(hub.equipment_page.done_button, true)
+	hub.show_page("upgrade")
+	var tree: SkillTreePanel = hub.upgrade_page
+	for resolution in [Vector2i(1440, 900), Vector2i(1152, 720), Vector2i(1920, 1080)]:
+		root.size = resolution
+		tree.select_upgrade(&"hp")
+		await settle()
+		var rank_before: int = main.state.hp_upgrade_level
+		# Actual purchase signal, not a replayed visual response.
+		mouse_button(tree.upgrade_button.get_global_rect().get_center(), true)
+		mouse_button(tree.upgrade_button.get_global_rect().get_center(), false)
+		check(main.state.hp_upgrade_level == rank_before + 1, "Mouse upgrade is immediate")
+		await wait_motion(0.07)
+		check(tree.root_button.scale.x > 1.015, "Successful upgrade pulses changed card")
+		await frame_shot("upgrade_%d" % resolution.y)
+		await settle()
+	hub.show_page("equipment")
 	await create_timer(0.4).timeout
 	check(get_processed_tweens().size() == 1, "Stress capture leaves only hero breathing")
 	root.size = Vector2i(1152, 720)

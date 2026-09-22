@@ -30,6 +30,7 @@ func run_tests() -> void:
 	grid.pillars.clear()
 	grid.occupants.clear()
 	grid.place(player, Vector2i(10, 10))
+	run._snap_camera = true
 	run.dungeon.has_stairs = false
 	run.dungeon.fog.reset()
 	var pivot: Node2D = player.combat_visual
@@ -51,6 +52,7 @@ func run_tests() -> void:
 		run._on_action("attack", Vector2i.RIGHT)
 		check(enemy.hp == 0 and not grid.occupants.has(enemy.cell), "Lethal damage is applied before playback")
 		check(run.presentation.playing and not player.input_enabled, "Playback locks world input")
+		check(run.camera.get_screen_center_position().distance_to(player.global_position) < 1.0, "Camera snaps immediately after relocating to a floor start")
 		var has_ghost := false
 		for child in run.presentation.get_children():
 			if child is Node2D:
@@ -123,5 +125,54 @@ func run_tests() -> void:
 		var reinforcement: Node2D = run.turns.enemies[0]
 		check(reinforcement.last_seen_cell == Vector2i(-1, -1) and not reinforcement.visible, "New reinforcement is hidden and has not acted")
 	run.free()
+	await check_move_batches()
 	print("Battle presentation tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
+
+
+func check_move_batches() -> void:
+	var presentation := preload("res://combat/battle_presentation.gd").new()
+	root.add_child(presentation)
+	var first := preload("res://actors/enemy/enemy.tscn").instantiate()
+	var second := preload("res://actors/enemy/enemy.tscn").instantiate()
+	root.add_child(first)
+	root.add_child(second)
+	first.cell = Vector2i(2, 1)
+	second.cell = Vector2i(6, 1)
+	var visible := {Vector2i(1, 1): true, Vector2i(5, 1): true, Vector2i(2, 1): true}
+	var events: Array[Dictionary] = [
+		{"kind": "move", "actor": first, "origin": Vector2i(1, 1), "direction": Vector2i.RIGHT},
+		{"kind": "move", "actor": second, "origin": Vector2i(5, 1), "direction": Vector2i.RIGHT},
+	]
+	presentation.present(events, null, visible, 48)
+	check(is_equal_approx(presentation.planned_duration, 0.16), "Independent enemies move in one batch")
+	await presentation.finished
+	check(first.visual_offset.is_zero_approx() and second.visual_offset.is_zero_approx(), "Concurrent moves settle on logical cells")
+	presentation.clear()
+	second.cell = Vector2i(1, 1)
+	events[1].origin = Vector2i(0, 1)
+	visible[Vector2i(0, 1)] = true
+	presentation.present(events, null, visible, 48)
+	check(is_equal_approx(presentation.planned_duration, 0.28), "Following enemy preserves movement order")
+	presentation.clear()
+	events[0].direction = Vector2i(1, 1)
+	events[1].origin = Vector2i(2, 1)
+	events[1].direction = Vector2i(-1, 1)
+	presentation.present(events, null, visible, 48)
+	check(is_equal_approx(presentation.planned_duration, 0.28), "Crossing diagonal paths cannot animate simultaneously")
+	await process_frame
+	presentation.clear()
+	check(first.visual_scale == Vector2.ONE and first.visual_rotation == 0.0 and first.visual_offset == Vector2.ZERO, "Interrupted movement resets pose and offset")
+	check(not presentation.playing and presentation.get_child_count() == 0, "Interrupted playback leaves no effects")
+	var attack: Array[Dictionary] = [{"kind": "attack", "actor": first, "origin": Vector2i(1, 1), "direction": Vector2i.RIGHT, "weapon": preload("res://data/weapons/spear.tres"), "cells": [Vector2i(2, 1), Vector2i(3, 1)]}]
+	presentation.present(attack, null, visible, 48)
+	await create_timer(0.12).timeout
+	var footprints := 0
+	for child in presentation.get_children():
+		if child.get_script() == preload("res://combat/strike_effect.gd"):
+			footprints += child.points.size()
+	check(footprints == 1, "Whiff effect includes visible attack cells without revealing fog")
+	presentation.clear()
+	first.free()
+	second.free()
+	presentation.free()

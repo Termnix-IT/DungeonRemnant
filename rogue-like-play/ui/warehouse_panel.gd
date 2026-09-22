@@ -36,6 +36,8 @@ func present(current_state: RunCarryover) -> void:
 
 func refresh(current_state: RunCarryover = state, message: String = "") -> void:
 	state = current_state
+	for target: Control in [%InventoryList, %StorageList, %Help, %Visual, %Direction]:
+		UIMotion.of(target).reset()
 	%Gold.text = "Gold  %d" % state.gold
 	%InventoryTitle.text = "所持品  %d / %d枠" % [state.inventory.entries.size(), state.inventory.max_entries]
 	%StorageTitle.text = "倉庫  %d / %d枠" % [state.storage.entries.size(), state.storage.max_entries]
@@ -71,20 +73,22 @@ func _select_inventory(index: int) -> void:
 	inventory_index = index
 	storage_index = -1
 	%StorageList.deselect_all()
+	UIMotion.of(%StorageList).reset()
 	%Deposit.disabled = false
 	%Withdraw.disabled = true
 	_update_details()
-	UIMotion.of(%Deposit).pulse(1.025, UIMotion.SELECT_TIME)
+	UIMotion.reveal_selection([%Help, %Visual, %Direction])
 
 
 func _select_storage(index: int) -> void:
 	storage_index = index
 	inventory_index = -1
 	%InventoryList.deselect_all()
+	UIMotion.of(%InventoryList).reset()
 	%Deposit.disabled = true
 	%Withdraw.disabled = false
 	_update_details()
-	UIMotion.of(%Withdraw).pulse(1.025, UIMotion.SELECT_TIME)
+	UIMotion.reveal_selection([%Help, %Visual, %Direction])
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -110,8 +114,6 @@ func _update_details() -> void:
 		%Visual.item = null
 		%Direction.text = "移動するアイテム"
 	details.line("倉庫の品は冒険へ持ち込まず、死亡・中断でも失いません。", &"MutedLabel")
-	UIMotion.of(details).reveal()
-	UIMotion.of(%Visual).reveal()
 
 
 func _resize() -> void:

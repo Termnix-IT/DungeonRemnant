@@ -32,7 +32,7 @@ func _ready() -> void:
 	candidate_list = ItemCardList.new()
 	candidate_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	catalog.add_child(candidate_list)
-	candidate_list.item_selected.connect(func(_index: int): _compare(); UIMotion.of(comparison).reveal())
+	candidate_list.item_selected.connect(_select_candidate)
 	HubUI.label(catalog, "持ち込みアイテム", &"BodyLabel")
 	carried_list = ItemCardList.new()
 	carried_list.custom_minimum_size.y = 112
@@ -81,6 +81,8 @@ func _ready() -> void:
 
 func refresh(current: RunCarryover) -> void:
 	state = current
+	for target: Control in [candidate_list, showcase, comparison]:
+		UIMotion.of(target).reset()
 	swap_button.disabled = state.equipment.slots[Equipment.Slot.SUB] == null
 	for index in slots.size():
 		slots[index].set_pressed_no_signal(index == selected_slot)
@@ -101,7 +103,14 @@ func refresh(current: RunCarryover) -> void:
 func select_slot(slot: int) -> void:
 	selected_slot = slot
 	refresh(state)
-	UIMotion.of(comparison).reveal()
+	if not candidate_list.get_selected_items().is_empty():
+		UIMotion.of(candidate_list).select_card()
+	UIMotion.reveal_selection([showcase, comparison])
+
+
+func _select_candidate(_index: int) -> void:
+	_compare()
+	UIMotion.reveal_selection([showcase, comparison])
 
 
 func _fill_candidates() -> void:

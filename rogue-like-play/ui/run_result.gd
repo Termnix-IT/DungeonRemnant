@@ -11,6 +11,8 @@ var details: Label
 var accept: Button
 var cancel: Button
 var save_label: Label
+var presentation_panel: PanelContainer
+var details_scroll: ScrollContainer
 
 
 func _ready() -> void:
@@ -19,31 +21,39 @@ func _ready() -> void:
 	shade.color = Color(0.01, 0.02, 0.04, 0.9)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(shade)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(center)
+	presentation_panel = PanelContainer.new()
+	presentation_panel.theme = preload("res://ui/theme/dungeon_theme.tres")
+	presentation_panel.theme_type_variation = &"MainPanel"
+	presentation_panel.custom_minimum_size.x = 730
+	center.add_child(presentation_panel)
+	var margin := MarginContainer.new()
+	presentation_panel.add_child(margin)
 	var panel := VBoxContainer.new()
 	panel.name = "Panel"
-	panel.add_theme_constant_override("separation", 20)
-	add_child(panel)
-	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
-	panel.offset_left = -340.0
-	panel.offset_right = 340.0
-	panel.offset_top = -250.0
-	panel.offset_bottom = 250.0
+	margin.add_child(panel)
 	title_label = Label.new()
-	title_label.add_theme_font_size_override("font_size", 30)
+	title_label.theme_type_variation = &"TitleLabel"
 	panel.add_child(title_label)
 	details = Label.new()
-	details.add_theme_font_size_override("font_size", 20)
+	details.theme_type_variation = &"DescriptionLabel"
 	details.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	details.custom_minimum_size = Vector2(680, 300)
-	panel.add_child(details)
+	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	details_scroll = ScrollContainer.new()
+	details_scroll.custom_minimum_size.y = 270
+	details_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	panel.add_child(details_scroll)
+	details_scroll.add_child(details)
 	accept = Button.new()
+	accept.theme_type_variation = &"PrimaryButton"
 	accept.custom_minimum_size.y = 44
 	accept.focus_mode = Control.FOCUS_NONE
 	accept.pressed.connect(_accept)
 	panel.add_child(accept)
 	cancel = Button.new()
+	cancel.theme_type_variation = &"SecondaryButton"
 	cancel.text = "探索に戻る（Esc）"
 	cancel.custom_minimum_size.y = 44
 	cancel.focus_mode = Control.FOCUS_NONE
@@ -51,8 +61,9 @@ func _ready() -> void:
 	panel.add_child(cancel)
 	save_label = Label.new()
 	save_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	save_label.add_theme_font_size_override("font_size", 16)
+	save_label.theme_type_variation = &"MutedLabel"
 	panel.add_child(save_label)
+	UIMotion.bind_buttons(panel)
 	hide()
 
 
@@ -71,6 +82,7 @@ func present(result: Dictionary) -> void:
 	accept.text = "拠点へ戻る（R）" if return_to_hub else "Lv1から再挑戦（R）"
 	cancel.hide()
 	show()
+	_reveal()
 
 
 func confirm_abort() -> void:
@@ -81,6 +93,13 @@ func confirm_abort() -> void:
 	accept.text = "中断してリザルトへ"
 	cancel.show()
 	show()
+	_reveal()
+
+
+func _reveal() -> void:
+	details_scroll.scroll_vertical = 0
+	UIMotion.of(presentation_panel).reveal(UIMotion.WINDOW_TIME)
+	UIMotion.of(title_label).pulse(1.025, UIMotion.WINDOW_TIME)
 
 
 func _accept() -> void:

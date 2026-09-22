@@ -28,6 +28,8 @@ var next_value: Label
 var benefit_label: Label
 var requirement: Label
 var price_label: Label
+var _displayed_ranks: Dictionary = {}
+var _increased_skills: Array[StringName] = []
 
 
 func _ready() -> void:
@@ -144,6 +146,7 @@ func _show_tab(index: int) -> void:
 
 
 func select_upgrade(id: StringName) -> void:
+	UIMotion.of(current_value).reset()
 	selected_id = id
 	_refresh_detail()
 	for key: StringName in skill_rows:
@@ -173,10 +176,14 @@ func _info(id: StringName) -> Dictionary:
 
 func refresh(current: RunCarryover) -> void:
 	var action_had_focus := upgrade_button.has_focus()
+	_increased_skills.clear()
 	state = current
 	root_label.text = "永久補正　HP +%d　ATK +%d　DEF +%d　MP +%d" % [state.upgrade.hp_bonus(state.hp_upgrade_level) + state.skill_bonus(&"hp"), state.skill_bonus(&"attack"), state.skill_bonus(&"defense"), state.skill_bonus(&"mp")]
 	for id: StringName in skill_rows:
 		var data := _info(id)
+		if _displayed_ranks.has(id) and data.rank > _displayed_ranks[id]:
+			_increased_skills.append(id)
+		_displayed_ranks[id] = data.rank
 		var card = skill_rows[id].control
 		card.caption.text = data.name
 		card.rank_label.text = "Lv%d / %d" % [data.rank, data.max]
@@ -191,6 +198,18 @@ func refresh(current: RunCarryover) -> void:
 	_refresh_entries()
 	if upgrade_button.disabled and action_had_focus:
 		skill_rows[selected_id].button.grab_focus()
+
+
+# Refresh observes the finalized state; only Main's persisted-success signal
+# authorizes feedback. Selection alone must never look like a purchase.
+func present_upgrade() -> void:
+	UIMotion.of(root_label).reveal()
+	for id: StringName in _increased_skills:
+		UIMotion.of(skill_rows[id].control).pulse(1.025, UIMotion.GOLD_TIME)
+		if id == selected_id:
+			UIMotion.of(current_value).pulse(1.04, UIMotion.GOLD_TIME)
+			UIMotion.of(detail_rank).reveal()
+	_increased_skills.clear()
 
 
 func _refresh_detail() -> void:
@@ -236,7 +255,7 @@ func _refresh_entries() -> void:
 		if not available:
 			row.condition.text = "条件未達：ステージを解放"
 		_action(row.button, -1 if unlocked else stage.entry_costs[index], defeated and available, state.can_unlock_entry(stage, floor_number), "解放する", "解放済み")
-	if previous_focus in entry_buttons and previous_focus.disabled:
+	if previous_focus is Button and previous_focus in entry_buttons and previous_focus.disabled:
 		stage_choice.grab_focus()
 
 

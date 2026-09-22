@@ -28,9 +28,12 @@ var escape_cell := Vector2i(-1, -1)
 var fog := FogOfWar.new()
 var ground_items: Dictionary = {}
 var decorations: Node2D
+var ambient_details := preload("res://world/dungeon/ambient_details.gd").new()
 
 
 func _ready() -> void:
+	add_child(ambient_details)
+	move_child(ambient_details, 2)
 	decorations = Node2D.new()
 	add_child(decorations)
 	move_child(decorations, 2)
@@ -38,6 +41,7 @@ func _ready() -> void:
 
 
 func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenerator, final_floor: bool) -> void:
+	ambient_details.refresh(null, {}, Vector2i.ZERO, false, Vector2i.ZERO, false)
 	forest = settings.forest
 	escape_cell = Vector2i(-1, -1)
 	var generated := DungeonGenerator.generate(settings, floor_number, rng, final_floor)
@@ -119,6 +123,7 @@ func update_visibility(origin: Vector2i, radius: int) -> void:
 	$Items.visible_cells = fog.visible
 	$Items.queue_redraw()
 	decorations.queue_redraw()
+	ambient_details.refresh(grid, fog.visible, stairs_cell, has_stairs, escape_cell, forest)
 
 
 func sync_actors() -> void:

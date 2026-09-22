@@ -1,5 +1,6 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 [ext_resource type="Script" path="res://ui/inventory_panel.gd" id="1"]
+[ext_resource type="Theme" path="res://ui/theme/dungeon_theme.tres" id="2"]
 [node name="InventoryPanel" type="CanvasLayer"]
 layer = 8
 script = ExtResource("1")
@@ -22,23 +23,25 @@ offset_right = 450.0
 offset_bottom = 285.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("2")
 [node name="Title" type="Label" parent="Panel"]
 offset_left = 24.0
 offset_top = 20.0
-theme_override_font_sizes/font_size = 24
+theme_type_variation = &"HeadingLabel"
 [node name="Close" type="Button" parent="Panel"]
 offset_left = 750.0
 offset_top = 16.0
 offset_right = 876.0
 offset_bottom = 52.0
 focus_mode = 0
+theme_type_variation = &"SecondaryButton"
 text = "閉じる (I / Esc)"
 [node name="List" type="ItemList" parent="Panel"]
 offset_left = 24.0
 offset_top = 72.0
 offset_right = 404.0
 offset_bottom = 442.0
-theme_override_font_sizes/font_size = 18
+
 [node name="Equipment" type="VBoxContainer" parent="Panel"]
 offset_left = 432.0
 offset_top = 72.0
@@ -51,6 +54,7 @@ offset_top = 278.0
 offset_right = 876.0
 offset_bottom = 314.0
 focus_mode = 0
+theme_type_variation = &"SecondaryButton"
 text = "Main / Subを切り替える（ターン消費なし）"
 [node name="Description" type="Label" parent="Panel"]
 offset_left = 432.0
@@ -58,7 +62,7 @@ offset_top = 334.0
 offset_right = 876.0
 offset_bottom = 388.0
 autowrap_mode = 3
-theme_override_font_sizes/font_size = 16
+theme_type_variation = &"MutedLabel"
 [node name="Actions" type="HBoxContainer" parent="Panel"]
 offset_left = 432.0
 offset_top = 400.0
@@ -71,6 +75,7 @@ offset_top = 400.0
 offset_right = 720.0
 offset_bottom = 442.0
 focus_mode = 0
+theme_type_variation = &"SecondaryButton"
 text = "回復薬を使う（1ターン）"
 [node name="Feedback" type="Label" parent="Panel"]
 offset_left = 24.0
@@ -78,7 +83,7 @@ offset_top = 458.0
 offset_right = 876.0
 offset_bottom = 500.0
 autowrap_mode = 3
-theme_override_font_sizes/font_size = 16
+theme_type_variation = &"MutedLabel"
 [node name="Help" type="Label" parent="Panel"]
 offset_left = 24.0
 offset_top = 512.0

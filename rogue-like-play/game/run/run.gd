@@ -6,6 +6,7 @@ signal result_ready
 const PLAYER_SCENE := preload("res://actors/player/player.tscn")
 const ENEMY_SCENE := preload("res://actors/enemy/enemy.tscn")
 const PREVIEW := preload("res://combat/attack_preview.gd")
+const GameAudio := preload("res://audio/game_audio.gd")
 const FINAL_FLOOR := 50
 @export_range(1, 100) var final_floor: int = FINAL_FLOOR
 const MOVE_DIRECTIONS: Array[Vector2i] = [
@@ -46,6 +47,10 @@ var stairs_discovered := false
 var discovery_revision := 0
 var presentation := preload("res://combat/battle_presentation.gd").new()
 var reinforcements := ReinforcementSpawner.new()
+var journey_banner := preload("res://ui/journey_banner.gd").new()
+var ambience := preload("res://audio/dungeon_ambience.gd").new()
+var _snap_camera := true
+var _last_visual_hp := -1
 
 @onready var dungeon = $Dungeon
 @onready var turns = $TurnManager
@@ -58,15 +63,26 @@ var reinforcements := ReinforcementSpawner.new()
 
 
 func _ready() -> void:
+	add_child(journey_banner)
+	add_child(ambience)
+	camera.position_smoothing_enabled = true
+	camera.position_smoothing_speed = 18.0
 	transition_dialog = ConfirmationDialog.new()
+	transition_dialog.theme = preload("res://ui/theme/dungeon_theme.tres")
 	transition_dialog.title = "探索の選択"
 	transition_dialog.ok_button_text = "はい"
 	transition_dialog.cancel_button_text = "いいえ"
 	add_child(transition_dialog)
+	transition_dialog.get_ok_button().theme_type_variation = &"PrimaryButton"
+	UIMotion.bind_buttons(transition_dialog)
 	transition_dialog.confirmed.connect(func(): resolve_transition(true))
 	transition_dialog.canceled.connect(func(): resolve_transition(false))
 	dungeon.add_child(presentation)
 	presentation.finished.connect(_refresh)
+	presentation.impact.connect(func(player_hit: bool):
+		if player_hit:
+			UIMotion.of(hud.hp_value).pulse(1.06, UIMotion.VITAL_PULSE_TIME)
+	)
 	if generation_seed == 0:
 		rng.randomize()
 	else:
@@ -108,6 +124,9 @@ func _ready() -> void:
 
 
 func _load_floor() -> void:
+	journey_banner.clear()
+	_snap_camera = true
+	_last_visual_hp = -1
 	turns.player.active_effects.change_floor()
 	turns.player.refresh_equipment_effects()
 	turns.floor_turn_count = 0
@@ -160,6 +179,9 @@ func _load_floor() -> void:
 		turns.last_message = "%dF：中ボスを倒すと階段と帰還用の脱出口が開きます。" % floor_number
 	if floor_number == final_floor:
 		turns.last_message = "%dF：深層の守護者を倒すとクリアです。中断確認はR。" % final_floor
+	journey_banner.present("%dF  ·  %s" % [floor_number, "守護者の領域" if floor_number % 10 == 0 else "探索開始"], stage_data.display_name if stage_data != null else "古代遺跡")
+	ambience.start(dungeon_settings.forest)
+	GameAudio.play(journey_banner, &"floor", -22.0)
 
 
 func _on_turn_finished() -> void:
@@ -268,6 +290,8 @@ func _show_ability_choice() -> void:
 func _present_ability_choice() -> void:
 	if turns.ended or turns.offered_abilities.is_empty():
 		return
+	journey_banner.clear()
+	GameAudio.play(ability_choice, &"level_up", -18.0)
 	ability_choice.present(turns.offered_abilities, turns.player.abilities, progression.level, progression.pending_choices)
 
 
@@ -287,6 +311,7 @@ func _on_action(kind: String, direction: Vector2i) -> void:
 	if kind == "move" and succeeded:
 		if floor_number == floor_before:
 			turns.player.play_step(direction, dungeon.TILE_SIZE)
+			GameAudio.play(self, &"step", -28.0)
 		if _can_arm_after_move(origin, direction, destination_was_explored, destination_had_item, floor_before, discovery_before):
 			rapid_move.arm(direction)
 	elif kind == "switch" and succeeded:
@@ -311,6 +336,7 @@ func _on_rapid_step(direction: Vector2i) -> void:
 		return
 	if floor_number == floor_before:
 		turns.player.play_step(direction, dungeon.TILE_SIZE)
+		GameAudio.play(self, &"step", -28.0)
 	if not _can_arm_after_move(origin, direction, true, destination_had_item, floor_before, discovery_before):
 		rapid_move.stop()
 
@@ -378,7 +404,15 @@ func _refresh() -> void:
 	turns.player.input_enabled = turns.player.input_enabled and not presentation.playing
 	_record_discoveries()
 	camera.global_position = turns.player.global_position
+	if _snap_camera:
+		camera.force_update_scroll()
+		camera.reset_smoothing()
+		_snap_camera = false
 	camera.force_update_scroll()
+	if _last_visual_hp >= 0 and turns.player.hp > _last_visual_hp:
+		presentation._effect(&"heal", [turns.player.global_position], Vector2.UP)
+		GameAudio.play(presentation, &"magic", -22.0)
+	_last_visual_hp = turns.player.hp
 	var visible_enemies := 0
 	for enemy: Node2D in turns.enemies:
 		enemy.visible = enemy.hp > 0 and dungeon.fog.visible.has(enemy.cell)
@@ -425,6 +459,8 @@ func _record_discoveries() -> void:
 				dungeon.house_discovered = true
 				found_something = true
 				turns.last_message += " モンスターハウスだ！敵とアイテムが密集している。"
+				journey_banner.present("モンスターハウス", "敵が密集している。退路を確認しよう。")
+				GameAudio.play(journey_banner, &"warning", -20.0)
 				break
 	for cell: Vector2i in dungeon.ground_items:
 		if dungeon.fog.visible.has(cell) and not discovered_item_cells.has(cell):
@@ -446,7 +482,7 @@ func _collect_items() -> void:
 		var feedback := message.replace(" 所持上限のため残りは床に置いたままです。", "\n収納がいっぱい（残りは床）").strip_edges()
 		presentation.popup(feedback, center + Vector2(0, 34), Color("9de3c3"), 16)
 		if message.contains("取得"):
-			presentation.sound(880)
+			GameAudio.play(presentation, &"pickup", -20.0)
 
 
 func _inventory_action(kind: String, index: int, slot: int) -> void:
@@ -551,6 +587,10 @@ func finish_run(cleared: bool, safe_return: bool = false, forced_return: bool = 
 
 func _present_result() -> void:
 	if turns.ended and not result.is_empty():
+		journey_banner.clear()
+		ambience.stop()
+		if not result_panel.visible:
+			GameAudio.play(result_panel, &"victory" if result.cleared or result.get("safe_return", false) else &"defeat", -18.0)
 		result_panel.present(result)
 
 

@@ -317,6 +317,7 @@ func show_page(target: String) -> void:
 func present_action(kind: StringName, gold_delta: int, slots: Array[int]) -> void:
 	# Called only after mutation and persistence succeeded; animation never
 	# owns transaction timing, state, focus or input availability.
+	preload("res://audio/game_audio.gd").play(self, &"level_up" if kind == &"upgrade" else &"confirm", -22.0)
 	if gold_delta != 0:
 		feedback.text += "  (%+d Gold)" % gold_delta
 		UIMotion.of(gold_label).pulse(1.08, UIMotion.GOLD_TIME)
@@ -329,7 +330,7 @@ func present_action(kind: StringName, gold_delta: int, slots: Array[int]) -> voi
 			for slot in slots:
 				UIMotion.of(equipment_page.slots[slot]).pulse()
 		&"upgrade":
-			UIMotion.of(upgrade_label).reveal()
+			(upgrade_page as SkillTreePanel).present_upgrade()
 		&"deposit", &"withdraw":
 			var destination := "InventoryList" if kind == &"withdraw" else "StorageList"
 			UIMotion.of(warehouse_panel.get_node("%" + destination)).reveal()

@@ -38,6 +38,7 @@ func refresh(hp: int, max_hp: int, turns: int, visible_enemies: int, log_text: S
 	hp_value.text = "%d / %d" % [hp, max_hp]
 	hp_bar.max_value = max(max_hp, 1)
 	hp_bar.value = max(hp, 0)
+	UIMotion.of($BottomLeft/HpTrail).update_vital(hp, max_hp, hp_value)
 	turn_count = turns
 	_refresh_meta()
 	var message := "死亡しました。リザルト画面を確認してください。" if hp <= 0 else log_text
@@ -97,6 +98,8 @@ func show_boss(text: String) -> void:
 
 
 func reset_log() -> void:
+	for node_name in ["HpTrail", "MpTrail", "HpValue", "MpValue"]:
+		UIMotion.of(get_node("BottomLeft/" + node_name)).reset()
 	log_history.clear()
 	last_log_text = ""
 	_render_log()
@@ -168,3 +171,4 @@ func show_mana(current: int, maximum: int) -> void:
 	mp_value.text = "%d / %d" % [current, maximum]
 	mp_bar.max_value = max(maximum, 1)
 	mp_bar.value = max(current, 0)
+	UIMotion.of($BottomLeft/MpTrail).update_vital(current, maximum, mp_value)

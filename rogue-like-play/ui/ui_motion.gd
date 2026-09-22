@@ -8,12 +8,19 @@ const SELECT_TIME := 0.14
 const WINDOW_TIME := 0.18
 const GOLD_TIME := 0.22
 const EQUIP_TIME := 0.16
+const VITAL_HOLD_TIME := 0.12
+const VITAL_DRAIN_TIME := 0.28
+const VITAL_PULSE_TIME := 0.22
 const META := &"ui_motion"
 
 var control: Control
 var scale_tween: Tween
 var alpha_tween: Tween
 var selection_tween: Tween
+var vital_tween: Tween
+var _vital_initialized := false
+var _vital_value := 0.0
+var _vital_maximum := 1.0
 var _base_scale := Vector2.ONE
 var _base_alpha := 1.0
 var _hovered := false
@@ -40,6 +47,12 @@ static func bind_buttons(root: Node) -> void:
 		of(root)
 	for child in root.get_children():
 		bind_buttons(child)
+
+
+# Call after all selected content is updated, never during ordinary refresh.
+static func reveal_selection(targets: Array[Control]) -> void:
+	for target in targets:
+		of(target).reveal(SELECT_TIME)
 
 
 func _ready() -> void:
@@ -159,6 +172,44 @@ func select_card() -> void:
 	selection_tween.tween_property(control, "selection_strength", 1.0, SELECT_TIME)
 
 
+# The foreground bar and text are updated by HUD synchronously. Only the
+# trailing bar animates, so combat never waits for presentation.
+func update_vital(value: float, maximum: float, label: Label) -> void:
+	var trail := control as ProgressBar
+	var limit := maxf(maximum, 1.0)
+	var current := clampf(value, 0.0, limit)
+	var immediate := not _vital_initialized or not control.is_visible_in_tree() or limit != _vital_maximum
+	var previous := _vital_value
+	_vital_value = current
+	_vital_maximum = limit
+	trail.max_value = limit
+	if immediate:
+		reset_vital()
+		_vital_initialized = control.is_visible_in_tree()
+		UIMotion.of(label).reset()
+		return
+	if current == previous:
+		return
+	if vital_tween != null:
+		vital_tween.kill()
+	UIMotion.of(label).pulse(1.06, VITAL_PULSE_TIME)
+	if current < previous:
+		trail.value = maxf(trail.value, previous)
+		vital_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		vital_tween.tween_interval(VITAL_HOLD_TIME)
+		vital_tween.tween_property(trail, "value", current, VITAL_DRAIN_TIME)
+	else:
+		trail.value = current
+
+
+func reset_vital() -> void:
+	if vital_tween != null:
+		vital_tween.kill()
+	if control is ProgressBar:
+		control.value = _vital_value
+	_vital_initialized = false
+
+
 func _scale_animation() -> Tween:
 	if scale_tween != null:
 		scale_tween.kill()
@@ -175,6 +226,7 @@ func reset_scale() -> void:
 
 func reset() -> void:
 	reset_scale()
+	reset_vital()
 	if selection_tween != null:
 		selection_tween.kill()
 	if control is ItemCardList:

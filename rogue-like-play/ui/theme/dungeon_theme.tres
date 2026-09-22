@@ -304,6 +304,31 @@ bg_color = Color(0.018, 0.028, 0.035, 1)
 [sub_resource type="StyleBoxFlat" id="ProgressFill"]
 bg_color = Color(0.72, 0.59, 0.35, 1)
 
+[sub_resource type="StyleBoxEmpty" id="VitalEmpty"]
+
+[sub_resource type="StyleBoxFlat" id="VitalTrack"]
+bg_color = Color(0.015, 0.022, 0.03, 1)
+
+[sub_resource type="StyleBoxFlat" id="VitalHealth"]
+bg_color = Color(0.78, 0.19, 0.16, 1)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_left = 1
+corner_radius_bottom_right = 1
+
+[sub_resource type="StyleBoxFlat" id="VitalMana"]
+bg_color = Color(0.48, 0.46, 0.88, 1)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_left = 1
+corner_radius_bottom_right = 1
+
+[sub_resource type="StyleBoxFlat" id="VitalHealthTrail"]
+bg_color = Color(0.96, 0.64, 0.37, 1)
+
+[sub_resource type="StyleBoxFlat" id="VitalManaTrail"]
+bg_color = Color(0.77, 0.79, 1, 1)
+
 [resource]
 StageCardList/base_type = &"ItemCardList"
 StageCardList/constants/v_separation = 122
@@ -482,3 +507,15 @@ HomeMargin/constants/margin_left = 0
 HomeMargin/constants/margin_right = 0
 HomeMargin/constants/margin_top = 42
 HomeMargin/constants/margin_bottom = 24
+HpCurrent/base_type = &"ProgressBar"
+HpCurrent/styles/background = SubResource("VitalEmpty")
+HpCurrent/styles/fill = SubResource("VitalHealth")
+MpCurrent/base_type = &"ProgressBar"
+MpCurrent/styles/background = SubResource("VitalEmpty")
+MpCurrent/styles/fill = SubResource("VitalMana")
+HpTrail/base_type = &"ProgressBar"
+HpTrail/styles/background = SubResource("VitalTrack")
+HpTrail/styles/fill = SubResource("VitalHealthTrail")
+MpTrail/base_type = &"ProgressBar"
+MpTrail/styles/background = SubResource("VitalTrack")
+MpTrail/styles/fill = SubResource("VitalManaTrail")

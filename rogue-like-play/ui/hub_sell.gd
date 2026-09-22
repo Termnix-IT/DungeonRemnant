@@ -114,6 +114,8 @@ func set_buying(value: bool) -> void:
 
 func refresh(current: RunCarryover) -> void:
 	state = current
+	for target: Control in [item_list, showcase, details, possession]:
+		UIMotion.of(target).reset()
 	rows.clear()
 	item_list.clear()
 	if buying:
@@ -172,7 +174,7 @@ func _select(index: int) -> void:
 	quantity.value = 1
 	showcase.present(row.item)
 	_update_quote()
-	UIMotion.of(details).reveal()
+	UIMotion.reveal_selection([showcase, details, possession])
 
 
 func _update_quote() -> void:

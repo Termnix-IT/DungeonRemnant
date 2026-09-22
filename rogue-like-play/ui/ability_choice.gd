@@ -10,6 +10,7 @@ func _ready() -> void:
 	hide()
 	for index in buttons.size():
 		buttons[index].pressed.connect(_select.bind(index))
+	UIMotion.bind_buttons($Panel)
 
 
 func present(candidates: Array[AbilityData], abilities: AbilitySystem, level: int, pending: int) -> void:
@@ -22,9 +23,13 @@ func present(candidates: Array[AbilityData], abilities: AbilitySystem, level: in
 			var ability := offers[index]
 			buttons[index].text = "%d  %s  Lv%d → %d / %d\n%s" % [index + 1, ability.display_name, abilities.level_of(ability), abilities.level_of(ability) + 1, ability.max_level, ability.effect_description()]
 	show()
+	UIMotion.of($Panel).reveal(UIMotion.WINDOW_TIME)
+	UIMotion.of($Panel/Title).pulse(1.035, UIMotion.WINDOW_TIME)
 
 
 func dismiss() -> void:
+	UIMotion.of($Panel).reset()
+	UIMotion.of($Panel/Title).reset()
 	hide()
 	offers.clear()
 

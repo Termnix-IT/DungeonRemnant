@@ -28,4 +28,3 @@ func present(item: ItemData) -> void:
 	title.text = item.label() if item != null else "アイテムを選択"
 	category.text = ItemGlyph.category(item) if item != null else "一覧で詳細を確認できます"
 	effect.text = ItemGlyph.main_effect(item) if item != null else ""
-	UIMotion.of(self).reveal()

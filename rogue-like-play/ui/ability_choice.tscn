@@ -1,5 +1,6 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 [ext_resource type="Script" path="res://ui/ability_choice.gd" id="1"]
+[ext_resource type="Theme" path="res://ui/theme/dungeon_theme.tres" id="2"]
 [node name="AbilityChoice" type="CanvasLayer"]
 layer = 10
 script = ExtResource("1")
@@ -22,14 +23,15 @@ offset_right = 320.0
 offset_bottom = 230.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("2")
 [node name="Title" type="Label" parent="Panel"]
 offset_left = 28.0
 offset_top = 22.0
-theme_override_font_sizes/font_size = 26
+theme_type_variation = &"HeadingLabel"
 [node name="Hint" type="Label" parent="Panel"]
 offset_left = 28.0
 offset_top = 66.0
-theme_override_font_sizes/font_size = 16
+theme_type_variation = &"MutedLabel"
 [node name="Choices" type="VBoxContainer" parent="Panel"]
 offset_left = 28.0
 offset_top = 112.0
@@ -40,14 +42,14 @@ theme_override_constants/separation = 14
 custom_minimum_size = Vector2(0, 90)
 layout_mode = 2
 focus_mode = 0
-theme_override_font_sizes/font_size = 18
+theme_type_variation = &"PrimaryButton"
 [node name="Second" type="Button" parent="Panel/Choices"]
 custom_minimum_size = Vector2(0, 90)
 layout_mode = 2
 focus_mode = 0
-theme_override_font_sizes/font_size = 18
+theme_type_variation = &"PrimaryButton"
 [node name="Third" type="Button" parent="Panel/Choices"]
 custom_minimum_size = Vector2(0, 90)
 layout_mode = 2
 focus_mode = 0
-theme_override_font_sizes/font_size = 18
+theme_type_variation = &"PrimaryButton"

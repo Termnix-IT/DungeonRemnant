@@ -28,23 +28,27 @@ func _ready() -> void:
 		slot_labels.append(label)
 		var remove := Button.new()
 		remove.text = "外す"
+		remove.theme_type_variation = &"SecondaryButton"
 		remove.focus_mode = Control.FOCUS_NONE
 		remove.pressed.connect(_remove.bind(slot))
 		row.add_child(remove)
 		remove_buttons.append(remove)
 		var scroll_remove := Button.new()
 		scroll_remove.text = "魔法を外す"
+		scroll_remove.theme_type_variation = &"SecondaryButton"
 		scroll_remove.focus_mode = Control.FOCUS_NONE
 		scroll_remove.pressed.connect(func(): action_requested.emit("unsocket", -1, slot))
 		row.add_child(scroll_remove)
 		scroll_remove_buttons.append(scroll_remove)
 		var equip := Button.new()
 		equip.text = Equipment.SLOT_NAMES[slot] + "に装備"
+		equip.theme_type_variation = &"PrimaryButton"
 		equip.focus_mode = Control.FOCUS_NONE
 		equip.custom_minimum_size = Vector2(175, 42)
 		equip.pressed.connect(_equip.bind(slot))
 		$Panel/Actions.add_child(equip)
 		equip_buttons.append(equip)
+	UIMotion.bind_buttons($Panel)
 
 
 func present(actor: Node2D) -> void:
@@ -52,6 +56,7 @@ func present(actor: Node2D) -> void:
 	selected_index = -1
 	refresh()
 	show()
+	UIMotion.of($Panel).reveal(UIMotion.WINDOW_TIME)
 
 
 func refresh(feedback: String = "") -> void:
@@ -75,8 +80,11 @@ func refresh(feedback: String = "") -> void:
 
 
 func _select_item(index: int) -> void:
+	var changed := selected_index != index
 	selected_index = index
 	_update_actions()
+	if changed:
+		UIMotion.reveal_selection([$Panel/Description])
 
 
 func _update_actions() -> void:
