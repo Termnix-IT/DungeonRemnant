@@ -63,7 +63,7 @@ func _ready() -> void:
 	idle_eyes.sprite_frames = MioAnimation.build_front_idle_frames(true, true)
 	idle_eyes.animation = &"idle_front"
 	idle_eyes.centered = false
-	idle_eyes.position = Vector2(-8, -6)
+	idle_eyes.position = Vector2(-9, -2)
 	sprite.add_child(idle_eyes)
 	sprite.frame_changed.connect(func():
 		if sprite.animation == &"idle_front":

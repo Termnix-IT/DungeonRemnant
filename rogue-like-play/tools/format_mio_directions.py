@@ -2,6 +2,7 @@
 from pathlib import Path
 import numpy as np
 from PIL import Image
+from process_animation_sheet import find_components
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'art/characters/mio_dungeon_chibi_64'
@@ -9,16 +10,17 @@ OUTPUT = ROOT / 'art/characters/mio_dungeon_chibi_64'
 
 def pack(source_name, rows, output_name, palette):
 	source = Image.open(OUTPUT / source_name).convert('RGBA')
+	source.putalpha(source.getchannel('A').point(lambda a:255 if a>=160 else 0))
+	# Generated rows are not guaranteed to align with equal source cells.
+	components = sorted(find_components(source), key=lambda c:len(c.pixels), reverse=True)[:rows*6]
+	assert len(components) == rows*6 and min(len(c.pixels) for c in components) > 1000
+	components.sort(key=lambda c:c.center[1])
 	atlas = Image.new('RGBA', (384, rows * 64))
 	for row in range(rows):
+		row_components = sorted(components[row*6:row*6+6], key=lambda c:c.center[0])
 		for col in range(6):
-			cell = source.crop((round(col*source.width/6), round(row*source.height/rows),
-				round((col+1)*source.width/6), round((row+1)*source.height/rows)))
-			cell.putalpha(cell.getchannel('A').point(lambda a:255 if a>=160 else 0))
-			box = cell.getbbox()
-			assert box, (row,col)
-			cell = cell.crop(box)
-			cell = cell.resize((round(cell.width*56/cell.height),56),Image.Resampling.BOX)
+			cell = source.crop(row_components[col].bbox)
+			cell = cell.resize((min(60,round(cell.width*56/cell.height)),56),Image.Resampling.BOX)
 			alpha = cell.getchannel('A').point(lambda a:255 if a>=128 else 0)
 			color = cell.convert('RGB').quantize(palette=palette,dither=Image.Dither.NONE).convert('RGBA')
 			color.putalpha(alpha)
@@ -43,8 +45,8 @@ def main():
 	palette_source = Image.new('RGB',(len(colors),1))
 	palette_source.putdata([tuple(c) for c in colors])
 	palette = palette_source.quantize(colors=48,method=Image.Quantize.MEDIANCUT)
-	cardinal = pack('cardinal_source.png',3,'cardinal.png',palette)
-	diagonal = pack('diagonal_source.png',4,'diagonal.png',palette)
+	cardinal = pack('cardinal_source_v2.png',3,'cardinal.png',palette)
+	diagonal = pack('diagonal_source_v2.png',4,'diagonal.png',palette)
 	contact = Image.new('RGBA',(8*64,64))
 	contact.alpha_composite(front.crop((0,0,64,64)),(0,0))
 	for i in range(3):

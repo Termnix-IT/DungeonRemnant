@@ -3,23 +3,28 @@ from pathlib import Path
 import json
 import numpy as np
 from PIL import Image
+from process_animation_sheet import find_components
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'art/characters/mio_dungeon_chibi_64'
 
 
 def main():
-	source = Image.open(OUTPUT / 'source.png').convert('RGBA')
+	source = Image.open(OUTPUT / 'source_front_v2.png').convert('RGBA')
+	source.putalpha(source.getchannel('A').point(lambda a:255 if a >=160 else 0))
+	# Generated boards do not guarantee equally spaced cells. Locate figures
+	# before registering them; otherwise a cell boundary can cut off hair/feet.
+	components = sorted(find_components(source), key=lambda c:len(c.pixels), reverse=True)[:16]
+	assert len(components) == 16
+	assert min(len(c.pixels) for c in components) > 1000
+	components.sort(key=lambda c:c.center[1])
+	ordered = []
+	for row in range(4):
+		ordered.extend(sorted(components[row*4:row*4+4],key=lambda c:c.center[0]))
 	frames = []
-	for index in range(16):
-		x, y = index % 4, index // 4
-		cell = source.crop((round(x*source.width/4), round(y*source.height/4),
-			round((x+1)*source.width/4), round((y+1)*source.height/4)))
-		cell.putalpha(cell.getchannel('A').point(lambda a: 255 if a >= 160 else 0))
-		box = cell.getbbox()
-		assert box, f'Empty source cell {index}'
-		cell = cell.crop(box)
-		cell = cell.resize((round(cell.width*56/cell.height),56),Image.Resampling.BOX)
+	for component in ordered:
+		cell = source.crop(component.bbox)
+		cell = cell.resize((min(60, round(cell.width*56/cell.height)),56),Image.Resampling.BOX)
 		cell.putalpha(cell.getchannel('A').point(lambda a:255 if a >=128 else 0))
 		# Register the face, not the asymmetrical outer hair silhouette.
 		face = np.asarray(cell)[10:28].astype(np.int16)
@@ -27,14 +32,14 @@ def main():
 		_, xs = np.where(mask)
 		center = round(float(np.median(xs))) if len(xs) else cell.width//2
 		frame = Image.new('RGBA',(64,64))
-		frame.alpha_composite(cell,(32-center,4))
+		left = max(2,min(62-cell.width,32-center))
+		frame.alpha_composite(cell,(left,4))
 		assert frame.getbbox()[3] == 60
 		assert min(frame.getbbox()[0],64-frame.getbbox()[2]) >= 2
 		frames.append(frame)
-	colors = []
-	for frame in frames:
-		p = np.asarray(frame)
-		colors.extend(p[:,:,:3][p[:,:,3]==255].tolist())
+	# Use the approved side/diagonal colors instead of the hub palette.
+	p = np.asarray(Image.open(OUTPUT/'diagonal.png').convert('RGBA'))
+	colors = p[:,:,:3][p[:,:,3]==255].tolist()
 	palette_source = Image.new('RGB',(len(colors),1))
 	palette_source.putdata([tuple(c) for c in colors])
 	palette = palette_source.quantize(colors=48,method=Image.Quantize.MEDIANCUT)

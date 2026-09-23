@@ -40,6 +40,8 @@ func run_tests() -> void:
 	player.facing = Vector2i.DOWN
 	check(sprite.sprite_frames.get_frame_texture(&"idle_front", 0).get_size() == Vector2(64, 64), "Dungeon front uses a dedicated 64px sprite")
 	check(player.idle_eyes.visible and player.foot_marker.global_position.is_equal_approx(Vector2(0, 26)), "Front idle keeps blink and floor anchor")
+	var blink_texture := player.idle_eyes.sprite_frames.get_frame_texture(&"idle_front", 5) as AtlasTexture
+	check(blink_texture.region == Rect2(87, 93, 22, 9) and player.idle_eyes.position == Vector2(-9, -2), "Redesigned front blink aligns with the new eyes")
 	player.play_step(Vector2i.DOWN, 48)
 	check(not player.idle_eyes.visible and sprite.sprite_frames.get_frame_count(&"walk_front") == 8, "Walking uses eight frames without idle eye overlay")
 	check(player.weapon_visual.global_scale.is_equal_approx(Vector2(1.5, 1.5)), "High-resolution front keeps weapon size")

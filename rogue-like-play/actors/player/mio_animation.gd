@@ -86,7 +86,7 @@ static func build_front_idle_frames(eyes_only := false, dungeon := false) -> Spr
 		frame.region = Rect2i(0, 0, size, size)
 		if eyes_only:
 			var source_index: int = index if index == 4 or index == 5 else 0
-			var eye_rect := Rect2i(24, 25, 20, 8) if dungeon else Rect2i(55, 31, 19, 8)
+			var eye_rect := Rect2i(23, 29, 22, 9) if dungeon else Rect2i(55, 31, 19, 8)
 			frame.region = Rect2i(Vector2i((source_index % 4) * size, (source_index / 4) * size) + eye_rect.position, eye_rect.size)
 		frames.add_frame(&"idle_front", frame, durations[index])
 	return frames
