@@ -65,9 +65,7 @@ func _draw_icon(icon: Control) -> void:
 	var color := get_theme_color(&"font_color", &"GoldLabel")
 	var rect := Rect2(Vector2(2, (icon.size.y - 40) / 2), Vector2(40, 40))
 	if effect == &"hp":
-		icon.draw_set_transform(rect.position, 0, rect.size / 32)
-		icon.draw_colored_polygon(PackedVector2Array([Vector2(16, 29), Vector2(3, 15), Vector2(3, 8), Vector2(8, 4), Vector2(12, 4), Vector2(16, 8), Vector2(20, 4), Vector2(24, 4), Vector2(29, 8), Vector2(29, 15)]), color)
-		icon.draw_set_transform(Vector2.ZERO)
+		ItemGlyph.paint_ability(icon, rect, AbilityData.Effect.MAX_HP, color)
 	else:
 		var item := ItemCatalog.floor_item(6 if effect == &"attack" else 1)
 		if effect == &"mp":

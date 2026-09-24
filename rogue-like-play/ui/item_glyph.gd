@@ -8,6 +8,8 @@ static func main_effect(item: ItemData) -> String:
 		return "消費MP %d" % item.weapon.mana_cost
 	return item.description().split(" / ")[0]
 
+const HEART: Array[Vector2] = [Vector2(16, 29), Vector2(3, 15), Vector2(3, 8), Vector2(8, 4), Vector2(12, 4), Vector2(16, 8), Vector2(20, 4), Vector2(24, 4), Vector2(29, 8), Vector2(29, 15)]
+
 # Shapes use a 32-unit canvas; size and color belong to the consuming Theme.
 static func category(item: ItemData) -> String:
 	if not item.effect_id.is_empty():
@@ -29,8 +31,7 @@ static func paint(canvas: Control, rect: Rect2, item: ItemData, color: Color) ->
 	elif item.kind == ItemData.Kind.WEAPON:
 		_weapon(canvas, item.weapon.kind, color)
 	elif item.kind == ItemData.Kind.ARMOR:
-		_outline(canvas, [Vector2(5, 5), Vector2(16, 8), Vector2(27, 5), Vector2(25, 21), Vector2(16, 29), Vector2(7, 21), Vector2(5, 5)], color)
-		_outline(canvas, [Vector2(16, 10), Vector2(16, 24)], color)
+		_armor(canvas, color)
 	elif item.kind == ItemData.Kind.ACCESSORY:
 		_outline(canvas, [Vector2(9, 3), Vector2(12, 11), Vector2(20, 11), Vector2(23, 3)], color)
 		_outline(canvas, [Vector2(16, 11), Vector2(25, 20), Vector2(16, 29), Vector2(7, 20), Vector2(16, 11)], color)
@@ -48,6 +49,35 @@ static func paint(canvas: Control, rect: Rect2, item: ItemData, color: Color) ->
 			_outline(canvas, [Vector2(11, 21), Vector2(21, 21)], color)
 			_outline(canvas, [Vector2(16, 16), Vector2(16, 26)], color)
 	canvas.draw_set_transform(Vector2.ZERO)
+
+
+# Abilities have no category data; each Effect maps onto the shared symbols.
+static func paint_ability(canvas: Control, rect: Rect2, effect: AbilityData.Effect, color: Color) -> void:
+	canvas.draw_set_transform(rect.position, 0, rect.size / 32.0)
+	match effect:
+		AbilityData.Effect.MAX_HP:
+			canvas.draw_colored_polygon(PackedVector2Array(HEART), color)
+		AbilityData.Effect.KILL_HEAL:
+			_outline(canvas, PackedVector2Array(HEART + [HEART[0]]), color)
+			_outline(canvas, [Vector2(12, 14), Vector2(20, 14)], color)
+			_outline(canvas, [Vector2(16, 10), Vector2(16, 18)], color)
+		AbilityData.Effect.DEFENSE:
+			_armor(canvas, color)
+		AbilityData.Effect.SPEAR_DAMAGE, AbilityData.Effect.SPEAR_RANGE, AbilityData.Effect.SPEAR_PIERCE:
+			_weapon(canvas, WeaponData.Kind.SPEAR, color)
+		AbilityData.Effect.HAMMER_DAMAGE:
+			_weapon(canvas, WeaponData.Kind.HAMMER, color)
+		AbilityData.Effect.VISION:
+			_outline(canvas, [Vector2(3, 16), Vector2(9, 10), Vector2(16, 8), Vector2(23, 10), Vector2(29, 16), Vector2(23, 22), Vector2(16, 24), Vector2(9, 22), Vector2(3, 16)], color)
+			canvas.draw_circle(Vector2(16, 16), 4, color)
+		_:
+			_weapon(canvas, WeaponData.Kind.SWORD, color)
+	canvas.draw_set_transform(Vector2.ZERO)
+
+
+static func _armor(canvas: Control, color: Color) -> void:
+	_outline(canvas, [Vector2(5, 5), Vector2(16, 8), Vector2(27, 5), Vector2(25, 21), Vector2(16, 29), Vector2(7, 21), Vector2(5, 5)], color)
+	_outline(canvas, [Vector2(16, 10), Vector2(16, 24)], color)
 
 
 static func _weapon(canvas: Control, kind: WeaponData.Kind, color: Color) -> void:

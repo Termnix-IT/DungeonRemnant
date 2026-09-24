@@ -19,6 +19,15 @@ func check(ok: bool, message: String) -> void:
 		push_error(message)
 
 
+func ignores_pointer(node: Node) -> bool:
+	if node is Control and node.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+		return false
+	for child in node.get_children():
+		if not ignores_pointer(child):
+			return false
+	return true
+
+
 func snapshot(label: String, size: Vector2i) -> void:
 	await process_frame
 	await process_frame
@@ -51,6 +60,22 @@ func run_tests() -> void:
 	check(abilities.levels.is_empty(), "Choice presentation never changes progression directly")
 	choice._select(0)
 	check(chosen.size() == 1, "Dismissed choice cannot emit twice")
+	check(choice.afterglow != null and choice.afterglow.get_parent() == choice.get_parent(), "Chosen moment plays outside the closed dialog")
+	check(ignores_pointer(choice.afterglow), "Chosen moment never captures pointer input")
+	var first_glow: CanvasLayer = choice.afterglow
+	abilities.levels[offers[0].id] = 1
+	choice.present(offers, abilities, 2, 1)
+	check(not is_instance_valid(first_glow) or first_glow.is_queued_for_deletion(), "A new offer replaces the previous chosen moment")
+	check(choice.cards[0].key_label.text == "1" and choice.cards[0].status_label.text == "Lv 1 → 2", "Owned ability card shows its shortcut and next rank")
+	check(choice.cards[1].status_label.text == "新規習得" and choice.cards[1].name_label.text == offers[1].display_name, "New ability card shows its name and status")
+	choice.dismiss()
+	check(choice.cards[2].position == Vector2.ZERO and choice.cards[2].modulate.a == 1.0, "Dismiss restores card entrance motion")
+	choice.present(offers, abilities, 2, 1)
+	choice._select(2)
+	var second_glow: CanvasLayer = choice.afterglow
+	await create_timer(UIMotion.MOMENT_TIME + 0.15).timeout
+	check(not is_instance_valid(second_glow), "Chosen moment frees itself after playing")
+	abilities.levels.clear()
 	var result := preload("res://ui/run_result.gd").new()
 	root.add_child(result)
 	result.abort_confirmed.connect(func(): accepted += 1)
@@ -95,8 +120,16 @@ func run_tests() -> void:
 			root.size = size
 			root.content_scale_size = size
 			choice.present(offers, abilities, 2, 1)
+			await create_timer(0.08).timeout
+			await snapshot("ability_entering", size)
+			await create_timer(0.4).timeout
+			choice._hover(0, true)
+			await create_timer(0.15).timeout
 			await snapshot("ability", size)
-			choice.dismiss()
+			choice._select(1)
+			await create_timer(0.18).timeout
+			await snapshot("ability_chosen", size)
+			choice.clear_afterglow()
 			result.present(summary)
 			await snapshot("result", size)
 			result.hide()
