@@ -74,6 +74,10 @@ func run_tests() -> void:
 	purchase(panel, &"hp")
 	check(state.hp_upgrade_level == 1 and state.gold == 270, "Primary button retains HP transaction wiring")
 	check(panel.skill_rows[&"hp"].control.progress.value == 1, "Purchase advances growth progress")
+	var gained = panel.skill_rows[&"hp"].control
+	check(UIMotion.of(gained).glow_tween != null and UIMotion.of(gained).flash_tween != null, "Purchase fills the gained pip and brightens its card")
+	check(UIMotion.of(panel.skill_rows[&"attack"].control).glow_tween == null, "Only the upgraded card plays the gain")
+	check(panel._depth(&"defense") == 2 and panel._depth(&"attack") == 1 and panel._depth(&"hp") == 0, "Tree depth follows prerequisites")
 	purchase(panel, &"attack")
 	check(state.skill_rank(&"attack") == 1 and state.gold == 170, "Primary action purchases selected branch")
 	purchase(panel, &"defense")

@@ -29,6 +29,9 @@ var benefit_label: Label
 var requirement: Label
 var price_label: Label
 var _displayed_ranks: Dictionary = {}
+var cards: VBoxContainer
+# Child cards are indented by depth and joined to their prerequisite.
+const TREE_INDENT := 28.0
 var _increased_skills: Array[StringName] = []
 
 
@@ -51,14 +54,28 @@ func _ready() -> void:
 	abilities.add_child(skill_list)
 	HubUI.label(skill_list, "冒険を重ね、力を残す", &"HeadingLabel")
 	root_label = HubUI.label(skill_list, "", &"MutedLabel")
-	var cards := VBoxContainer.new()
+	cards = VBoxContainer.new()
 	cards.theme_type_variation = &"UpgradeList"
 	skill_list.add_child(cards)
+	cards.draw.connect(_draw_tree)
+	cards.sort_children.connect(cards.queue_redraw)
 	for id: StringName in [&"hp", &"vitality", &"attack", &"defense", &"mana"]:
 		var card := UpgradeCard.new()
 		card.effect = &"hp" if id == &"hp" else SkillCatalog.find(id).effect
 		card.pressed.connect(select_upgrade.bind(id))
-		cards.add_child(card)
+		var depth := _depth(id)
+		if depth == 0:
+			cards.add_child(card)
+		else:
+			var row := HBoxContainer.new()
+			row.theme_type_variation = &"CompactRow"
+			cards.add_child(row)
+			var indent := Control.new()
+			indent.custom_minimum_size.x = TREE_INDENT * depth - row.get_theme_constant(&"separation")
+			indent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			row.add_child(indent)
+			card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_child(card)
 		skill_rows[id] = {"control": card, "button": card, "title": card.caption, "effect": card.benefit}
 		if id == &"hp":
 			root_button = card
@@ -67,6 +84,41 @@ func _ready() -> void:
 	_build_detail()
 	_build_entries(layout)
 	_show_tab(0)
+
+
+func _prerequisite(id: StringName) -> StringName:
+	return &"" if id == &"hp" else SkillCatalog.find(id).prerequisite
+
+
+func _depth(id: StringName) -> int:
+	var depth := 0
+	var current := _prerequisite(id)
+	while not current.is_empty():
+		depth += 1
+		current = _prerequisite(current)
+	return depth
+
+
+# Elbow lines from each prerequisite down to its children, drawn behind the
+# cards. A met prerequisite is gold; an unmet one stays muted.
+func _draw_tree() -> void:
+	if state == null:
+		return
+	var gold := cards.get_theme_color(&"font_color", &"GoldLabel")
+	var muted := cards.get_theme_color(&"font_color", &"MutedLabel")
+	muted.a = 0.45
+	for id: StringName in skill_rows:
+		var parent_id := _prerequisite(id)
+		if parent_id.is_empty():
+			continue
+		var parent: Control = skill_rows[parent_id].control
+		var child: Control = skill_rows[id].control
+		var parent_rect := Rect2(parent.global_position - cards.global_position, parent.size)
+		var child_rect := Rect2(child.global_position - cards.global_position, child.size)
+		var x := parent_rect.position.x + TREE_INDENT * 0.5
+		var y := child_rect.get_center().y
+		var color := gold if _info(id).met else muted
+		cards.draw_polyline(PackedVector2Array([Vector2(x, parent_rect.end.y), Vector2(x, y), Vector2(child_rect.position.x, y)]), color, 1.5, true)
 
 
 func _build_detail() -> void:
@@ -194,6 +246,8 @@ func refresh(current: RunCarryover) -> void:
 		card.tooltip_text = data.condition
 		card.set_pressed_no_signal(id == selected_id)
 		card.queue_redraw()
+		card.pips.queue_redraw()
+	cards.queue_redraw()
 	_refresh_detail()
 	_refresh_entries()
 	if upgrade_button.disabled and action_had_focus:
@@ -204,8 +258,14 @@ func refresh(current: RunCarryover) -> void:
 # authorizes feedback. Selection alone must never look like a purchase.
 func present_upgrade() -> void:
 	UIMotion.of(root_label).reveal()
+	if not _increased_skills.is_empty():
+		UIMotion.of(root_label).pulse(1.04, UIMotion.GOLD_TIME)
 	for id: StringName in _increased_skills:
-		UIMotion.of(skill_rows[id].control).pulse(1.025, UIMotion.GOLD_TIME)
+		var card = skill_rows[id].control
+		UIMotion.of(card).pulse(1.025, UIMotion.GOLD_TIME)
+		# The gained pip fills while the card briefly brightens.
+		UIMotion.of(card).glow_in()
+		UIMotion.of(card).flash(1.25)
 		if id == selected_id:
 			UIMotion.of(current_value).pulse(1.04, UIMotion.GOLD_TIME)
 			UIMotion.of(detail_rank).reveal()

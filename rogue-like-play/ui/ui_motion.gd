@@ -39,6 +39,7 @@ var glow_tween: Tween
 var count_tween: Tween
 var flash_tween: Tween
 var _base_color := Color.WHITE
+var _base_glow := 0.0
 var _count_text := ""
 var _vital_initialized := false
 var _vital_value := 0.0
@@ -62,6 +63,7 @@ static func of(target: Control) -> UIMotion:
 	motion._base_alpha = target.modulate.a
 	motion._base_position = target.position
 	motion._base_color = target.modulate
+	motion._base_glow = target.glow if &"glow" in target else 0.0
 	target.set_meta(META, motion)
 	target.add_child(motion)
 	return motion
@@ -309,6 +311,16 @@ static func fly_glyph_at(host: Control, item: ItemData, from: Control, point: Ve
 	return tween
 
 
+# Fills an optional glow property from 0 to 1, e.g. the rank pip just gained.
+func glow_in(duration: float = MOMENT_RISE_TIME) -> void:
+	if not &"glow" in control or not control.is_visible_in_tree():
+		return
+	_stop(glow_tween)
+	control.glow = 0.0
+	glow_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	glow_tween.tween_property(control, "glow", 1.0, duration)
+
+
 # A brief brightening that returns to the base colour; alpha is untouched.
 func flash(strength: float = 1.35, duration: float = GOLD_TIME) -> void:
 	if not control.is_visible_in_tree():
@@ -411,6 +423,8 @@ func reset() -> void:
 		control.position = _base_position
 	if glow_tween != null:
 		glow_tween.kill()
+		if &"glow" in control:
+			control.glow = _base_glow
 	if flash_tween != null and flash_tween.is_valid():
 		flash_tween.kill()
 		control.modulate = Color(_base_color, control.modulate.a)
