@@ -55,9 +55,22 @@ func run_tests() -> void:
 	check(shop.buying and not shop.sell_all_button.visible and shop.rows.size() == ItemCatalog.shop_items().size(), "Purchase tab exposes catalog and hides sell-all")
 	shop.item_list.select(0)
 	shop.item_list.item_selected.emit(0)
+	shop.quantity.plus.pressed.emit()
+	check(shop.quantity.value == 2 and not shop.quantity.minus.disabled, "Plus steps the quantity")
+	shop.quantity.value = 999
+	check(shop.quantity.value == shop.quantity.max_value and shop.quantity.plus.disabled, "Quantity clamps at the purchase limit")
+	check(shop.quantity_label.text.contains("最大 %d" % int(shop.quantity.max_value)), "Quantity caption states the limit")
 	shop.quantity.value = 3
 	shop.sell_button.pressed.emit()
 	check(main.state.gold == 40 and main.state.inventory.entries[0].count == 3, "Purchase charges price times quantity into selected destination")
+	check(shop.item_list.get_selected_items() == PackedInt32Array([0]) and shop.showcase.visual.item == shop.rows[0].item, "Purchase keeps its item selected for another purchase")
+	await create_timer(UIMotion.TRAVEL_TIME + 0.15).timeout
+	check(shop.get_children().filter(func(child: Node): return child is Control and child.top_level).is_empty(), "Travelling glyph frees itself after arriving")
+	for index in shop.rows.size():
+		if shop.rows[index].item.id == ARMOR.id:
+			shop.item_list.select(index)
+			shop.item_list.item_selected.emit(index)
+	check(shop.details.get_parsed_text().contains("防具に装備した場合"), "Equipment in the shop compares against its slot")
 	var before := SaveCodec.encode(main.state)
 	check(not main.buy_item(false, ItemCatalog.POTION.id, 3) and before == SaveCodec.encode(main.state), "Insufficient Gold changes nothing")
 	check(not main.buy_item(false, &"missing", 1) and not main.buy_item(false, ItemCatalog.POTION.id, 0), "Unknown item and zero quantity rejected")

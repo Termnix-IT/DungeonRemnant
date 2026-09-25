@@ -34,6 +34,16 @@ func capture() -> void:
 	await capture_button_states(shop.sell_button)
 	await click(shop.sell_button)
 	check(main.state.gold == 265 and main.state.storage.entries[0].count == 10, "Mouse purchase updates stack and Gold")
+	for index in shop.rows.size():
+		if shop.rows[index].item.id == ItemCatalog.floor_item(1).id:
+			shop.item_list.select(index)
+			shop.item_list.item_selected.emit(index)
+	await create_timer(0.3).timeout
+	await shot("shop_compare")
+	# The travelling glyph lasts UIMotion.TRAVEL_TIME; capture it in flight.
+	shop.sell_button.pressed.emit()
+	await create_timer(UIMotion.TRAVEL_TIME * 0.3).timeout
+	await shot("shop_trade")
 	await key(KEY_ESCAPE)
 	check(hub.page == "home", "Shop returns home with Esc")
 	root.size = Vector2i(1152, 720)

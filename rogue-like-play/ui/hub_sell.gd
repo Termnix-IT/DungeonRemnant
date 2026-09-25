@@ -8,7 +8,7 @@ signal mode_changed
 var state: RunCarryover
 var source_choice: OptionButton
 var item_list: ItemCardList
-var quantity: SpinBox
+var quantity: QuantityStepper
 var details: ItemDetails
 var total_label: Label
 var sell_button: Button
@@ -24,6 +24,9 @@ var showcase: ItemShowcase
 var possession: Label
 # Inventory keeps individual equipment entries; the shop groups only its view.
 var rows: Array[Dictionary] = []
+# The item of the last requested trade, for the success moment after saving.
+var traded_item: ItemData
+const COMPARED_STATS := [["hp", "最大HP"], ["attack", "攻撃"], ["defense", "防御"], ["reach", "射程"]]
 
 
 func _ready() -> void:
@@ -75,11 +78,7 @@ func _ready() -> void:
 	quantity_label = _label(quantity_row, "", &"MutedLabel")
 	quantity_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	quantity_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	quantity = SpinBox.new()
-	quantity.min_value = 1
-	quantity.max_value = 1
-	quantity.step = 1
-	quantity.custom_minimum_size = Vector2(180, 44)
+	quantity = QuantityStepper.new()
 	quantity_row.add_child(quantity)
 	quantity.value_changed.connect(func(_value: float): _update_quote())
 	var quote := PanelContainer.new()
@@ -168,17 +167,19 @@ func _purchase_limit(item: ItemData) -> int:
 	return mini(capacity, int(state.gold / item.buy_price))
 
 
-func _select(index: int) -> void:
+func _select(index: int, animate: bool = true) -> void:
 	var row := rows[index]
 	quantity.max_value = maxi(1, _purchase_limit(row.item)) if buying else row.count
 	quantity.value = 1
 	showcase.present(row.item)
 	_update_quote()
-	UIMotion.reveal_selection([showcase, details, possession])
+	if animate:
+		UIMotion.reveal_selection([showcase, details, possession])
 
 
 func _update_quote() -> void:
 	var selected := item_list.get_selected_items()
+	quantity_label.text = "購入数" if buying else "売却数"
 	if selected.is_empty():
 		details.text = "一覧からアイテムを選んでください。"
 		possession.text = "購入先・売却元：" + source_choice.get_item_text(source_choice.selected)
@@ -196,6 +197,8 @@ func _update_quote() -> void:
 	quantity.editable = true
 	details.reset()
 	details.item_text(item)
+	_compare_equipment(item)
+	quantity_label.text = "%s（最大 %d）" % ["購入数" if buying else "売却数", int(quantity.max_value)]
 	possession.text = "%sの所持数   %d → %d個" % [source_choice.get_item_text(source_choice.selected), row.count, row.count + amount if buying else row.count - amount]
 	if buying:
 		var limit := _purchase_limit(item)
@@ -214,6 +217,65 @@ func _update_quote() -> void:
 		sell_all_button.disabled = price <= 0 or state.gold + all_value > SaveCodec.MAX_GOLD
 
 
+# Equipment shows what equipping it would change for the next run, against an
+# empty compatible slot first, otherwise the first one (Main for weapons).
+func _compare_equipment(item: ItemData) -> void:
+	var slot := -1
+	for candidate in 5:
+		if state.equipment.accepts(item, candidate):
+			if state.equipment.slots[candidate] == null:
+				slot = candidate
+				break
+			if slot < 0:
+				slot = candidate
+	if slot < 0 or item.kind == ItemData.Kind.SCROLL:
+		return
+	var gear := Equipment.new()
+	gear.slots.assign(state.equipment.slots)
+	gear.slots[slot] = item
+	var before := state.preparation_stats()
+	var after := state.preparation_stats(gear)
+	var current: ItemData = state.equipment.slots[slot]
+	details.line("%sに装備した場合（現在：%s）" % [HudEquipment.CAPTIONS[slot], current.label() if current != null else "なし"], &"MutedLabel")
+	var changed := false
+	for stat: Array in COMPARED_STATS:
+		if before[stat[0]] != after[stat[0]]:
+			details.delta(stat[1], before[stat[0]], after[stat[0]])
+			changed = true
+	if not changed:
+		details.line("能力値は変わりません", &"MutedLabel")
+
+
+# Success moment after saving: the traded item's glyph travels from the
+# showcase to where the trade landed, which then acknowledges it.
+func present_trade(target: Control) -> void:
+	if traded_item == null or not is_visible_in_tree():
+		return
+	# A purchase reselects its item so it can be bought again. Ordinary
+	# refreshes and sales still clear the selection.
+	if buying:
+		for index in rows.size():
+			if rows[index].item.id == traded_item.id:
+				item_list.select(index)
+				_select(index, false)
+				break
+	var ghost := Control.new()
+	ghost.top_level = true
+	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ghost.size = showcase.visual.size
+	var item := traded_item
+	ghost.draw.connect(func():
+		var extent := minf(ghost.size.x, ghost.size.y) * 0.68
+		ItemGlyph.paint(ghost, Rect2((ghost.size - Vector2.ONE * extent) / 2, Vector2.ONE * extent), item, ghost.get_theme_color(&"font_color", &"GoldLabel")))
+	add_child(ghost)
+	ghost.global_position = showcase.visual.global_position
+	var destination := target.get_global_rect().get_center() - ghost.size * 0.5
+	UIMotion.of(ghost).travel(destination).finished.connect(func():
+		ghost.queue_free()
+		if is_instance_valid(target) and target.is_visible_in_tree():
+			UIMotion.of(target).pulse(1.06, UIMotion.GOLD_TIME))
+
+
 func _transact() -> void:
 	# Commit typed SpinBox text before reading its value.
 	if quantity.get_line_edit().has_focus():
@@ -222,6 +284,7 @@ func _transact() -> void:
 	if selected.is_empty():
 		return
 	var row := rows[selected[0]]
+	traded_item = row.item
 	if buying:
 		buy_requested.emit(source_choice.selected == 0, row.item.id, int(quantity.value))
 	else:
@@ -232,4 +295,5 @@ func _sell_all() -> void:
 	var selected := item_list.get_selected_items()
 	if not buying and not selected.is_empty():
 		var row := rows[selected[0]]
+		traded_item = row.item
 		sell_requested.emit(source_choice.selected == 0, row.index, row.count)

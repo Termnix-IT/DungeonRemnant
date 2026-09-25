@@ -26,6 +26,7 @@ const MOMENT_TIME := MOMENT_RISE_TIME + MOMENT_HOLD_TIME + EXIT_TIME
 const SEQUENCE_STEP_TIME := 0.12
 const COUNT_MIN_TIME := 0.25
 const COUNT_MAX_TIME := 0.6
+const TRAVEL_TIME := 0.38
 const META := &"ui_motion"
 
 var control: Control
@@ -274,6 +275,18 @@ func count(from: int, to: int, format: Callable, delay: float = 0.0) -> void:
 	count_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	count_tween.tween_interval(delay)
 	count_tween.tween_method(func(value: float): label.text = format.call(roundi(value)), float(from), float(to), duration)
+
+
+# A transient copy flies to a global point, shrinking and fading on arrival.
+# The caller frees the copy when the returned tween finishes.
+func travel(to: Vector2, duration: float = TRAVEL_TIME) -> Tween:
+	_center()
+	_stop(position_tween)
+	position_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	position_tween.tween_property(control, "global_position", to, duration)
+	position_tween.tween_property(control, "scale", _base_scale * 0.45, duration)
+	position_tween.tween_property(control, "modulate:a", 0.0, duration * 0.35).set_delay(duration * 0.65)
+	return position_tween
 
 
 func fade_out(delay: float = 0.0, duration: float = EXIT_TIME) -> Tween:
