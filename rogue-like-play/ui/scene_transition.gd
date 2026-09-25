@@ -2,7 +2,8 @@ class_name SceneTransition
 extends CanvasLayer
 
 # Cover-and-reveal only. Callers switch scenes and settle state first, then
-# play; the cover never receives input and nothing waits for it to finish.
+# play; nothing waits for it to finish. While covering, it swallows input so
+# the player cannot act on a scene they cannot see yet.
 const HOLD_TIME := 0.45
 const REVEAL_TIME := 0.35
 # The heading leaves just before the cover so it never overlaps the scene.
@@ -14,6 +15,7 @@ var column: VBoxContainer
 var art: TextureRect
 var title: Label
 var subtitle: Label
+var covering := false
 
 
 func _ready() -> void:
@@ -71,6 +73,8 @@ func play_return(heading: String, detail: String = "") -> void:
 func _play() -> void:
 	clear()
 	subtitle.visible = not subtitle.text.is_empty()
+	covering = true
+	root.mouse_filter = Control.MOUSE_FILTER_STOP
 	show()
 	UIMotion.of(column).appear(0.0, UIMotion.WINDOW_TIME)
 	UIMotion.of(heading).fade_out(HOLD_TIME - HEADING_EXIT_LEAD, UIMotion.WINDOW_TIME)
@@ -78,5 +82,14 @@ func _play() -> void:
 
 
 func clear() -> void:
+	covering = false
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Hiding the layer resets every UIMotion under it to its base state.
 	hide()
+
+
+# _input runs before GUI and _unhandled_input, so neither Hub buttons nor the
+# run's movement see keys pressed while the cover is up.
+func _input(event: InputEvent) -> void:
+	if covering:
+		get_viewport().set_input_as_handled()

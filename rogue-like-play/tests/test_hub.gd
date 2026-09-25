@@ -92,9 +92,29 @@ func run_tests() -> void:
 	var runs := main.get_children().filter(func(child: Node): return child.has_method("finish_run"))
 	check(main.active_run == run and runs.size() == 1, "Repeated start cannot create duplicate run")
 	check(main.transition.visible and not main.transition.title.text.is_empty() and run.turns.player.input_enabled, "Departure covers the cut while the run is already live")
-	check(ignores_pointer(main.transition.root), "Transition cover never captures pointer input")
+	var cell_before: Vector2i = player.cell
+	var step := InputEventAction.new()
+	step.pressed = true
+	for candidate: Array in [["move_e", Vector2i.RIGHT], ["move_w", Vector2i.LEFT], ["move_s", Vector2i.DOWN], ["move_n", Vector2i.UP]]:
+		if run.dungeon.grid.can_step(cell_before, cell_before + candidate[1]):
+			step.action = candidate[0]
+			break
+	check(not step.action.is_empty(), "Start cell has a walkable neighbour for the input check")
+	root.push_input(step)
+	check(player.cell == cell_before and run.turns.turn_count == 0, "Input is swallowed while the cover is up")
+	check(main.transition.root.mouse_filter == Control.MOUSE_FILTER_STOP, "Cover blocks pointer input while covering")
 	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
-	check(not main.transition.visible and main.transition.root.modulate.a == 1.0, "Transition reveals itself and resets")
+	check(not main.transition.visible and not main.transition.covering and main.transition.root.modulate.a == 1.0, "Transition reveals itself and resets")
+	check(ignores_pointer(main.transition.root), "Revealed transition releases pointer input")
+	# Control case: the same input moves the player once the cover is gone.
+	root.push_input(step)
+	var release := InputEventAction.new()
+	release.action = step.action
+	root.push_input(release)
+	check(player.cell != cell_before, "The swallowed input would have moved the player")
+	if run.presentation.playing:
+		await run.presentation.finished
+	await process_frame
 	check(not main.purchase_upgrade() and main.state.gold == 71, "Purchases blocked during adventure")
 	main.return_to_hub()
 	check(main.active_run == run, "Cannot return without finishing run")
