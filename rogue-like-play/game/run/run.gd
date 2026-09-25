@@ -609,6 +609,7 @@ func retry_run() -> void:
 		hub_requested.emit()
 		return
 	rapid_move.stop()
+	result_panel.show_save_status("")
 	result_panel.hide()
 	var old_player: Node2D = turns.player
 	old_player.get_parent().remove_child(old_player)

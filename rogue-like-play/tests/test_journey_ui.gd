@@ -102,6 +102,9 @@ func run_tests() -> void:
 	check(not result.confirming and not result.cancel.visible and result.save_label.text.contains("失敗"), "Result preserves save failure status and hides abort cancel")
 	result.accept.pressed.emit()
 	check(retried == 1, "Result action is immediate")
+	result.show_save_status("保存済み。")
+	result.present(summary)
+	check(result.save_label.text == "保存済み。", "A result presented after its save keeps the save status")
 	result.details.text = "長い損失明細\n".repeat(60)
 	await process_frame
 	await process_frame

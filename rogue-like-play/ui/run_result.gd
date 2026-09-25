@@ -129,7 +129,8 @@ func show_save_status(message: String) -> void:
 
 
 func present(result: Dictionary) -> void:
-	save_label.text = ""
+	# The save status may arrive before a deferred present (after a defeat
+	# presentation); keep it. retry_run clears it for the next result.
 	confirming = false
 	var returned_well: bool = result.cleared or result.get("safe_return", false)
 	title_label.text = "冒険クリア" if result.cleared else ("無事に帰還" if result.get("safe_return", false) else ("滞在上限：強制帰還" if result.get("forced_return", false) else "冒険終了"))
