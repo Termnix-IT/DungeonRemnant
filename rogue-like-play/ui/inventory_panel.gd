@@ -152,11 +152,9 @@ func _describe(item: ItemData) -> void:
 		details.line(EMPTY_HINT, &"MutedLabel")
 		return
 	var slot := preview_slot if preview_slot >= 0 else _default_slot(item)
+	details.item_text(item)
 	if slot >= 0 and item.kind != ItemData.Kind.SCROLL and player.equipment.accepts(item, slot):
 		_compare(item, slot)
-	# The showcase already states the main effect; repeat only extra detail.
-	if item.description() != ItemGlyph.main_effect(item):
-		details.line(item.description(), &"DescriptionLabel")
 
 
 # An empty compatible slot first; otherwise the first one, so weapons

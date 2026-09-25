@@ -63,16 +63,42 @@ static func paint_ability(canvas: Control, rect: Rect2, effect: AbilityData.Effe
 			_outline(canvas, [Vector2(16, 10), Vector2(16, 18)], color)
 		AbilityData.Effect.DEFENSE:
 			_armor(canvas, color)
-		AbilityData.Effect.SPEAR_DAMAGE, AbilityData.Effect.SPEAR_RANGE, AbilityData.Effect.SPEAR_PIERCE:
+		AbilityData.Effect.SPEAR_DAMAGE:
 			_weapon(canvas, WeaponData.Kind.SPEAR, color)
+			_power(canvas, color)
+		AbilityData.Effect.SPEAR_RANGE:
+			_weapon(canvas, WeaponData.Kind.SPEAR, color)
+			_outline(canvas, [Vector2(3, 15), Vector2(7, 11), Vector2(11, 15)], color)
+			_outline(canvas, [Vector2(3, 21), Vector2(7, 17), Vector2(11, 21)], color)
+		AbilityData.Effect.SPEAR_PIERCE:
+			_weapon(canvas, WeaponData.Kind.SPEAR, color)
+			canvas.draw_arc(Vector2(16, 20), 5, 0, TAU, 20, color, 2, true)
 		AbilityData.Effect.HAMMER_DAMAGE:
 			_weapon(canvas, WeaponData.Kind.HAMMER, color)
+			_power(canvas, color)
+		AbilityData.Effect.SWORD_DAMAGE:
+			_weapon(canvas, WeaponData.Kind.SWORD, color)
+			_power(canvas, color)
+		AbilityData.Effect.ATTACK:
+			# Every weapon: a burst rather than any one weapon's silhouette.
+			var burst := PackedVector2Array()
+			for index in 17:
+				var radius := 13.0 if index % 2 == 0 else 6.0
+				burst.append(Vector2(16, 16) + Vector2.from_angle(index * TAU / 16 - PI / 2) * radius)
+			_outline(canvas, burst, color)
 		AbilityData.Effect.VISION:
 			_outline(canvas, [Vector2(3, 16), Vector2(9, 10), Vector2(16, 8), Vector2(23, 10), Vector2(29, 16), Vector2(23, 22), Vector2(16, 24), Vector2(9, 22), Vector2(3, 16)], color)
 			canvas.draw_circle(Vector2(16, 16), 4, color)
 		_:
 			_weapon(canvas, WeaponData.Kind.SWORD, color)
 	canvas.draw_set_transform(Vector2.ZERO)
+
+
+# Three short rays on the free right side mark "more damage" on a weapon.
+static func _power(canvas: Control, color: Color) -> void:
+	_outline(canvas, [Vector2(27, 15), Vector2(31, 12)], color)
+	_outline(canvas, [Vector2(27, 19), Vector2(32, 19)], color)
+	_outline(canvas, [Vector2(27, 23), Vector2(31, 26)], color)
 
 
 static func _armor(canvas: Control, color: Color) -> void:

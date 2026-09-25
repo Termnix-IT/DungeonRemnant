@@ -24,6 +24,14 @@ func line(value: String, role: StringName = &"BodyLabel") -> void:
 	pop()
 
 
+# Full name for truncated cards, then only what the showcase does not
+# already say: its main effect is never repeated here.
+func item_text(item: ItemData) -> void:
+	line(item.label(), &"MutedLabel")
+	if item.description() != ItemGlyph.main_effect(item):
+		line(item.description(), &"DescriptionLabel")
+
+
 func delta(caption: String, before: int, after: int) -> void:
 	var difference := after - before
 	var color := get_theme_color(&"font_color", &"MutedLabel")

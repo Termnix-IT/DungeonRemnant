@@ -140,6 +140,7 @@ func run_tests() -> void:
 	inventory.list.select(1)
 	inventory._select_item(1)
 	check(not inventory.details.get_parsed_text().contains(ItemGlyph.main_effect(charm)), "Details do not repeat the showcased main effect")
+	check(inventory.details.get_parsed_text().contains(charm.label()), "Details keep the full item name for truncated cards")
 	check(not inventory.remove_buttons[Equipment.Slot.ARMOR].visible and inventory.remove_buttons[Equipment.Slot.MAIN].disabled, "Empty slots hide removal and Main stays non-removable")
 	check(inventory.details.get_parsed_text().contains("装飾 1に装備した場合") and inventory.details.get_parsed_text().contains("最大HP"), "Accessory compares against the first empty slot")
 	inventory._preview(Equipment.Slot.ACCESSORY_2)

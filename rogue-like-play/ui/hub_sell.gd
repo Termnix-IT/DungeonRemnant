@@ -195,9 +195,7 @@ func _update_quote() -> void:
 	var total := price * amount
 	quantity.editable = true
 	details.reset()
-	# Keep the full literal name accessible even when the showcase wraps.
-	details.line(item.label(), &"MutedLabel")
-	details.line(item.description())
+	details.item_text(item)
 	possession.text = "%sの所持数   %d → %d個" % [source_choice.get_item_text(source_choice.selected), row.count, row.count + amount if buying else row.count - amount]
 	if buying:
 		var limit := _purchase_limit(item)

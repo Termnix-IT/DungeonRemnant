@@ -2,10 +2,12 @@ class_name DungeonMinimap
 extends Control
 
 const UNKNOWN_CELL := Vector2i(-1, -1)
-const FLOOR_COLOR := Color("46515b")
-const VISIBLE_FLOOR_COLOR := Color("77838d")
-const WALL_COLOR := Color("252d34")
-const VISIBLE_WALL_COLOR := Color("59636c")
+# Walls stay darker than any floor, so a lit room reads as an outlined shape
+# instead of one pale block.
+const FLOOR_COLOR := Color("3a434b")
+const VISIBLE_FLOOR_COLOR := Color("56626c")
+const WALL_COLOR := Color("1a2025")
+const VISIBLE_WALL_COLOR := Color("2b333a")
 const PLAYER_COLOR := Color("6aa6ff")
 const ENEMY_COLOR := Color("ef615b")
 const STAIRS_COLOR := Color("e8bd55")
