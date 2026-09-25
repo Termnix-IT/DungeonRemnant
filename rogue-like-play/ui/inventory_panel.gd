@@ -4,6 +4,7 @@ signal action_requested(kind: String, index: int, slot: int)
 signal close_requested
 
 const EMPTY_HINT := "左の所持品を選択してください。装備中の5枠は所持品の上限に含みません。"
+const COMPARED_STATS := [["hp", "最大HP"], ["attack", "攻撃"], ["defense", "防御"], ["reach", "射程"], ["vision", "視界"]]
 
 var player: Node2D
 var selected_index := -1
@@ -12,6 +13,8 @@ var slot_labels: Array[Label] = []
 var slot_glyphs: Array[Control] = []
 var remove_buttons: Array[Button] = []
 var scroll_remove_buttons: Array[Button] = []
+# Slot the comparison describes; hovering an equip action previews that slot.
+var preview_slot := -1
 @onready var list: ItemCardList = $Panel/List
 @onready var showcase: ItemShowcase = $Panel/Showcase
 @onready var details: ItemDetails = $Panel/Description
@@ -26,7 +29,7 @@ func _ready() -> void:
 	for slot in 5:
 		var row := HBoxContainer.new()
 		row.theme_type_variation = &"CompactRow"
-		row.custom_minimum_size.y = 34
+		row.custom_minimum_size.y = 32
 		$Panel/Equipment.add_child(row)
 		var glyph := Control.new()
 		glyph.custom_minimum_size = Vector2(24, 24)
@@ -65,6 +68,8 @@ func _ready() -> void:
 		equip.custom_minimum_size = Vector2(0, 44)
 		equip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		equip.pressed.connect(_equip.bind(slot))
+		equip.mouse_entered.connect(_preview.bind(slot))
+		equip.mouse_exited.connect(_preview.bind(-1))
 		$Panel/Actions.add_child(equip)
 		equip_buttons.append(equip)
 	UIMotion.bind_buttons($Panel)
@@ -117,16 +122,8 @@ func _selected_item() -> ItemData:
 func _update_actions() -> void:
 	var item := _selected_item()
 	showcase.present(item)
-	details.reset()
-	if item == null:
-		details.line(EMPTY_HINT, &"MutedLabel")
-	else:
-		# The showcase already states the main effect; repeat only extra detail.
-		if item.description() != ItemGlyph.main_effect(item):
-			details.line(item.description(), &"DescriptionLabel")
-		var equipped := _equipped_in_target_slot(item)
-		if equipped != null:
-			details.line("交換対象：%s" % equipped.label(), &"MutedLabel")
+	preview_slot = -1
+	_describe(item)
 	for slot in 5:
 		var socket: bool = item != null and item.kind == ItemData.Kind.SCROLL and player.equipment.can_socket(slot)
 		equip_buttons[slot].visible = item != null and (socket or player.equipment.accepts(item, slot))
@@ -142,13 +139,54 @@ func _update_actions() -> void:
 			$Panel/Use.disabled = player.hp >= player.stats.max_hp
 
 
-# Only for a single compatible slot; weapons and accessories offer a choice.
-func _equipped_in_target_slot(item: ItemData) -> ItemData:
-	var slots: Array[int] = []
+func _preview(slot: int) -> void:
+	if not visible or player == null or slot == preview_slot:
+		return
+	preview_slot = slot
+	_describe(_selected_item())
+
+
+func _describe(item: ItemData) -> void:
+	details.reset()
+	if item == null:
+		details.line(EMPTY_HINT, &"MutedLabel")
+		return
+	var slot := preview_slot if preview_slot >= 0 else _default_slot(item)
+	if slot >= 0 and item.kind != ItemData.Kind.SCROLL and player.equipment.accepts(item, slot):
+		_compare(item, slot)
+	# The showcase already states the main effect; repeat only extra detail.
+	if item.description() != ItemGlyph.main_effect(item):
+		details.line(item.description(), &"DescriptionLabel")
+
+
+# An empty compatible slot first; otherwise the first one, so weapons
+# compare against Main, which is the slot that decides the attack.
+func _default_slot(item: ItemData) -> int:
+	var first := -1
 	for slot in 5:
 		if player.equipment.accepts(item, slot):
-			slots.append(slot)
-	return player.equipment.slots[slots[0]] if slots.size() == 1 else null
+			if player.equipment.slots[slot] == null:
+				return slot
+			if first < 0:
+				first = slot
+	return first
+
+
+func _compare(item: ItemData, slot: int) -> void:
+	var current: ItemData = player.equipment.slots[slot]
+	var gear := Equipment.new()
+	gear.slots.assign(player.equipment.slots)
+	gear.slots[slot] = item
+	var before: Dictionary = player.stats_with(player.equipment)
+	var after: Dictionary = player.stats_with(gear)
+	details.line("%sに装備した場合（現在：%s）" % [HudEquipment.CAPTIONS[slot], current.label() if current != null else "なし"], &"MutedLabel")
+	var changed := false
+	for stat: Array in COMPARED_STATS:
+		if before[stat[0]] != after[stat[0]]:
+			details.delta(stat[1], before[stat[0]], after[stat[0]])
+			changed = true
+	if not changed:
+		details.line("能力値は変わりません", &"MutedLabel")
 
 
 func _draw_slot(slot: int, glyph: Control) -> void:

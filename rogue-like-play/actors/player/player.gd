@@ -124,12 +124,18 @@ func gain_ability(ability: AbilityData) -> bool:
 
 
 func effective_weapon() -> WeaponData:
-	var result: WeaponData = weapon.duplicate()
-	var main: ItemData = equipment.slots[Equipment.Slot.MAIN]
-	if weapon.kind == WeaponData.Kind.STAFF and main.socketed_scroll != null:
+	return weapon_with(equipment.slots[Equipment.Slot.MAIN], int(equipment_effects.damage))
+
+
+# The attack the player would have with this Main item and equipment damage
+# total; effective_weapon() is the current case, previews ask about others.
+func weapon_with(main: ItemData, equipment_damage: int) -> WeaponData:
+	var base: WeaponData = main.weapon
+	var result: WeaponData = base.duplicate()
+	if base.kind == WeaponData.Kind.STAFF and main.socketed_scroll != null:
 		result = main.socketed_scroll.weapon.duplicate()
-	result.damage_bonus += int(equipment_effects.damage) + active_effects.amount(&"damage")
-	match weapon.kind:
+	result.damage_bonus += equipment_damage + active_effects.amount(&"damage")
+	match base.kind:
 		WeaponData.Kind.SWORD:
 			result.damage_bonus += abilities.total(AbilityData.Effect.SWORD_DAMAGE)
 		WeaponData.Kind.SPEAR:
@@ -139,6 +145,20 @@ func effective_weapon() -> WeaponData:
 		WeaponData.Kind.HAMMER:
 			result.damage_bonus += abilities.total(AbilityData.Effect.HAMMER_DAMAGE)
 	return result
+
+
+# Read-only preview of the values equipment changes, for a hypothetical gear
+# set. Level-up abilities and active effects are kept exactly as they are now.
+func stats_with(gear: Equipment) -> Dictionary:
+	var bonus := gear.bonuses()
+	var attack_weapon := weapon_with(gear.slots[Equipment.Slot.MAIN], int(bonus.damage))
+	return {
+		"hp": stats.max_hp - int(equipment_effects.hp) + int(bonus.hp),
+		"attack": stats.attack + attack_weapon.damage_bonus,
+		"defense": stats.defense - int(equipment_effects.defense) + int(bonus.defense) + active_effects.amount(&"defense"),
+		"reach": attack_weapon.reach,
+		"vision": vision_range - int(equipment_effects.vision) + int(bonus.vision) + active_effects.amount(&"vision"),
+	}
 
 
 func refresh_equipment_effects() -> void:
