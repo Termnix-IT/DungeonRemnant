@@ -3,36 +3,47 @@ extends CanvasLayer
 signal action_requested(kind: String, index: int, slot: int)
 signal close_requested
 
+const EMPTY_HINT := "左の所持品を選択してください。装備中の5枠は所持品の上限に含みません。"
+
 var player: Node2D
 var selected_index := -1
 var equip_buttons: Array[Button] = []
 var slot_labels: Array[Label] = []
+var slot_glyphs: Array[Control] = []
 var remove_buttons: Array[Button] = []
 var scroll_remove_buttons: Array[Button] = []
+@onready var list: ItemCardList = $Panel/List
+@onready var showcase: ItemShowcase = $Panel/Showcase
+@onready var details: ItemDetails = $Panel/Description
 
 
 func _ready() -> void:
 	hide()
-	$Panel/List.item_selected.connect(_select_item)
+	list.item_selected.connect(_select_item)
 	$Panel/Close.pressed.connect(func(): close_requested.emit())
 	$Panel/Switch.pressed.connect(func(): action_requested.emit("switch", -1, -1))
 	$Panel/Use.pressed.connect(func(): action_requested.emit("use", selected_index, -1))
 	for slot in 5:
 		var row := HBoxContainer.new()
+		row.theme_type_variation = &"CompactRow"
 		row.custom_minimum_size.y = 34
 		$Panel/Equipment.add_child(row)
-		var label := Label.new()
+		var glyph := Control.new()
+		glyph.custom_minimum_size = Vector2(24, 24)
+		glyph.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		glyph.draw.connect(_draw_slot.bind(slot, glyph))
+		row.add_child(glyph)
+		slot_glyphs.append(glyph)
+		var caption := HubUI.label(row, HudEquipment.CAPTIONS[slot], &"MutedLabel")
+		caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+		caption.custom_minimum_size.x = 64
+		var label := HubUI.label(row, "", &"BodyLabel")
+		label.autowrap_mode = TextServer.AUTOWRAP_OFF
 		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		label.clip_text = true
-		row.add_child(label)
+		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		label.mouse_filter = Control.MOUSE_FILTER_PASS
 		slot_labels.append(label)
-		var remove := Button.new()
-		remove.text = "外す"
-		remove.theme_type_variation = &"SecondaryButton"
-		remove.focus_mode = Control.FOCUS_NONE
-		remove.pressed.connect(_remove.bind(slot))
-		row.add_child(remove)
-		remove_buttons.append(remove)
 		var scroll_remove := Button.new()
 		scroll_remove.text = "魔法を外す"
 		scroll_remove.theme_type_variation = &"SecondaryButton"
@@ -40,11 +51,19 @@ func _ready() -> void:
 		scroll_remove.pressed.connect(func(): action_requested.emit("unsocket", -1, slot))
 		row.add_child(scroll_remove)
 		scroll_remove_buttons.append(scroll_remove)
+		var remove := Button.new()
+		remove.text = "外す"
+		remove.theme_type_variation = &"SecondaryButton"
+		remove.focus_mode = Control.FOCUS_NONE
+		remove.custom_minimum_size.x = 64
+		remove.pressed.connect(_remove.bind(slot))
+		row.add_child(remove)
+		remove_buttons.append(remove)
 		var equip := Button.new()
-		equip.text = Equipment.SLOT_NAMES[slot] + "に装備"
 		equip.theme_type_variation = &"PrimaryButton"
 		equip.focus_mode = Control.FOCUS_NONE
-		equip.custom_minimum_size = Vector2(175, 42)
+		equip.custom_minimum_size = Vector2(0, 44)
+		equip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		equip.pressed.connect(_equip.bind(slot))
 		$Panel/Actions.add_child(equip)
 		equip_buttons.append(equip)
@@ -60,22 +79,24 @@ func present(actor: Node2D) -> void:
 
 
 func refresh(feedback: String = "") -> void:
-	$Panel/Title.text = "Inventory  %d / 40種類枠" % player.inventory.entries.size()
-	$Panel/List.clear()
+	$Panel/Title.text = "所持品  %d / 40種類枠" % player.inventory.entries.size()
+	list.clear()
 	for entry: InventoryEntry in player.inventory.entries:
-		$Panel/List.add_item("%s  ×%d" % [entry.item.label(), entry.count])
+		list.add_card(entry.item, entry.count, -1, ItemGlyph.category(entry.item))
 	for slot in 5:
 		var item: ItemData = player.equipment.slots[slot]
-		slot_labels[slot].text = "%s：%s" % [Equipment.SLOT_NAMES[slot], item.label() if item != null else "なし"]
-		slot_labels[slot].tooltip_text = slot_labels[slot].text
+		slot_labels[slot].text = item.label() if item != null else "—"
+		slot_labels[slot].tooltip_text = "%s：%s" % [HudEquipment.CAPTIONS[slot], item.label() if item != null else "なし"]
+		slot_glyphs[slot].queue_redraw()
 		scroll_remove_buttons[slot].visible = item != null and item.socketed_scroll != null
-		remove_buttons[slot].disabled = slot == Equipment.Slot.MAIN or item == null
+		remove_buttons[slot].visible = item != null
+		remove_buttons[slot].disabled = slot == Equipment.Slot.MAIN
 	$Panel/Switch.disabled = player.equipment.slots[Equipment.Slot.SUB] == null
 	$Panel/Feedback.text = feedback
 	if selected_index >= player.inventory.entries.size():
 		selected_index = -1
 	if selected_index >= 0:
-		$Panel/List.select(selected_index)
+		list.select(selected_index)
 	_update_actions()
 
 
@@ -84,20 +105,33 @@ func _select_item(index: int) -> void:
 	selected_index = index
 	_update_actions()
 	if changed:
-		UIMotion.reveal_selection([$Panel/Description])
+		UIMotion.reveal_selection([details, showcase])
+
+
+func _selected_item() -> ItemData:
+	if selected_index >= 0 and selected_index < player.inventory.entries.size():
+		return player.inventory.entries[selected_index].item
+	return null
 
 
 func _update_actions() -> void:
-	var item: ItemData = null
-	if selected_index >= 0 and selected_index < player.inventory.entries.size():
-		item = player.inventory.entries[selected_index].item
-	$Panel/Description.text = item.description() if item != null else "左の所持品を選択してください。\n装備中の5枠はInventory上限に含みません。"
+	var item := _selected_item()
+	showcase.present(item)
+	details.reset()
+	if item == null:
+		details.line(EMPTY_HINT, &"MutedLabel")
+	else:
+		# The showcase already states the main effect; repeat only extra detail.
+		if item.description() != ItemGlyph.main_effect(item):
+			details.line(item.description(), &"DescriptionLabel")
+		var equipped := _equipped_in_target_slot(item)
+		if equipped != null:
+			details.line("交換対象：%s" % equipped.label(), &"MutedLabel")
 	for slot in 5:
 		var socket: bool = item != null and item.kind == ItemData.Kind.SCROLL and player.equipment.can_socket(slot)
 		equip_buttons[slot].visible = item != null and (socket or player.equipment.accepts(item, slot))
-		equip_buttons[slot].text = Equipment.SLOT_NAMES[slot] + ("に魔法装着" if socket else "に装備")
+		equip_buttons[slot].text = HudEquipment.CAPTIONS[slot] + ("に魔法装着" if socket else "に装備")
 	$Panel/Use.visible = item != null and item.kind == ItemData.Kind.CONSUMABLE
-	$Panel/Use.text = "使用する（1ターン）"
 	$Panel/Use.disabled = true
 	if item != null:
 		if not item.effect_id.is_empty():
@@ -107,6 +141,23 @@ func _update_actions() -> void:
 		else:
 			$Panel/Use.disabled = player.hp >= player.stats.max_hp
 
+
+# Only for a single compatible slot; weapons and accessories offer a choice.
+func _equipped_in_target_slot(item: ItemData) -> ItemData:
+	var slots: Array[int] = []
+	for slot in 5:
+		if player.equipment.accepts(item, slot):
+			slots.append(slot)
+	return player.equipment.slots[slots[0]] if slots.size() == 1 else null
+
+
+func _draw_slot(slot: int, glyph: Control) -> void:
+	if player == null:
+		return
+	var item: ItemData = player.equipment.slots[slot]
+	if item != null:
+		var role := &"GoldLabel" if slot == Equipment.Slot.MAIN else &"MutedLabel"
+		ItemGlyph.paint(glyph, Rect2(Vector2.ZERO, glyph.size), item, glyph.get_theme_color(&"font_color", role))
 
 
 func _equip(slot: int) -> void:
