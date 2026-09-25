@@ -8,6 +8,11 @@ const ENEMY_SCENE := preload("res://actors/enemy/enemy.tscn")
 const PREVIEW := preload("res://combat/attack_preview.gd")
 const GameAudio := preload("res://audio/game_audio.gd")
 const FINAL_FLOOR := 50
+# Player-hit shake in screen pixels. A fixed pattern keeps gameplay RNG intact;
+# one strength value so a future setting can soften or disable it.
+const SHAKE_STRENGTH := 5.0
+const SHAKE_PATTERN: Array[Vector2] = [Vector2(1, -0.6), Vector2(-0.8, 0.5), Vector2(0.45, 0.3), Vector2.ZERO]
+const SHAKE_STEP_TIME := 0.035
 @export_range(1, 100) var final_floor: int = FINAL_FLOOR
 const MOVE_DIRECTIONS: Array[Vector2i] = [
 	Vector2i.UP, Vector2i(1, -1), Vector2i.RIGHT, Vector2i(1, 1),
@@ -49,6 +54,7 @@ var presentation := preload("res://combat/battle_presentation.gd").new()
 var reinforcements := ReinforcementSpawner.new()
 var journey_banner := preload("res://ui/journey_banner.gd").new()
 var ambience := preload("res://audio/dungeon_ambience.gd").new()
+var shake_tween: Tween
 var _snap_camera := true
 var _last_visual_hp := -1
 
@@ -82,6 +88,7 @@ func _ready() -> void:
 	presentation.impact.connect(func(player_hit: bool):
 		if player_hit:
 			UIMotion.of(hud.hp_value).pulse(1.06, UIMotion.VITAL_PULSE_TIME)
+			shake_camera()
 	)
 	if generation_seed == 0:
 		rng.randomize()
@@ -126,6 +133,7 @@ func _ready() -> void:
 func _load_floor() -> void:
 	journey_banner.clear()
 	_snap_camera = true
+	stop_shake()
 	_last_visual_hp = -1
 	turns.player.active_effects.change_floor()
 	turns.player.refresh_equipment_effects()
@@ -693,3 +701,19 @@ func _scale_enemy(enemy: Node2D) -> void:
 	enemy.stats.defense += depth * dungeon_settings.depth_defense_step
 	enemy.stats.exp_reward += depth * 4
 	enemy.stats.gold_reward += depth * 5
+
+
+func shake_camera(strength: float = SHAKE_STRENGTH) -> void:
+	stop_shake()
+	if strength <= 0.0:
+		return
+	shake_tween = create_tween()
+	for index in SHAKE_PATTERN.size():
+		var falloff := 1.0 - float(index) / SHAKE_PATTERN.size()
+		shake_tween.tween_property(camera, "offset", SHAKE_PATTERN[index] * strength * falloff, SHAKE_STEP_TIME)
+
+
+func stop_shake() -> void:
+	if shake_tween != null:
+		shake_tween.kill()
+	camera.offset = Vector2.ZERO

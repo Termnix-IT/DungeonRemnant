@@ -329,6 +329,50 @@ bg_color = Color(0.96, 0.64, 0.37, 1)
 [sub_resource type="StyleBoxFlat" id="VitalManaTrail"]
 bg_color = Color(0.77, 0.79, 1, 1)
 
+[sub_resource type="StyleBoxFlat" id="HudSurface"]
+resource_name = "HudSurface"
+bg_color = Color(0.11, 0.11, 0.11, 0.9)
+border_color = Color(0.32, 0.32, 0.32, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="BannerBand"]
+resource_name = "BannerBand"
+content_margin_left = 48.0
+content_margin_top = 14.0
+content_margin_right = 48.0
+content_margin_bottom = 14.0
+bg_color = Color(0.07, 0.07, 0.07, 0.82)
+border_color = Color(0.72, 0.59, 0.35, 0.75)
+border_width_top = 1
+border_width_bottom = 1
+
+[sub_resource type="StyleBoxFlat" id="BossSurface"]
+resource_name = "BossSurface"
+bg_color = Color(0.08, 0.035, 0.025, 0.92)
+border_color = Color(0.68, 0.32, 0.19, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="ExperienceFill"]
+bg_color = Color(0.3, 0.48, 0.82, 1)
+
+[sub_resource type="StyleBoxEmpty" id="HudLogInsets"]
+
 [resource]
 StageCardList/base_type = &"ItemCardList"
 StageCardList/constants/v_separation = 122
@@ -519,3 +563,41 @@ HpTrail/styles/fill = SubResource("VitalHealthTrail")
 MpTrail/base_type = &"ProgressBar"
 MpTrail/styles/background = SubResource("VitalTrack")
 MpTrail/styles/fill = SubResource("VitalManaTrail")
+
+HudPanel/base_type = &"Panel"
+HudPanel/styles/panel = SubResource("HudSurface")
+HudCaption/base_type = &"Label"
+HudCaption/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
+HudCaption/font_sizes/font_size = 14
+HudValue/base_type = &"Label"
+HudValue/font_sizes/font_size = 22
+HudSmall/base_type = &"Label"
+HudSmall/colors/font_color = Color(0.6, 0.6, 0.57, 1)
+HudSmall/font_sizes/font_size = 13
+HudGoldCaption/base_type = &"Label"
+HudGoldCaption/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+HudGoldCaption/font_sizes/font_size = 15
+HpCaption/base_type = &"Label"
+HpCaption/colors/font_color = Color(0.92, 0.35, 0.3, 1)
+HpCaption/font_sizes/font_size = 16
+MpCaption/base_type = &"Label"
+MpCaption/colors/font_color = Color(0.67, 0.73, 1, 1)
+MpCaption/font_sizes/font_size = 16
+ExpBar/base_type = &"ProgressBar"
+ExpBar/styles/background = SubResource("VitalTrack")
+ExpBar/styles/fill = SubResource("ExperienceFill")
+HudLog/base_type = &"RichTextLabel"
+HudLog/colors/default_color = Color(0.79, 0.79, 0.75, 1)
+HudLog/font_sizes/normal_font_size = 15
+HudLog/styles/normal = SubResource("HudLogInsets")
+HudEquipment/base_type = &"Control"
+HudEquipment/constants/row_height = 30
+HudEquipment/constants/glyph_size = 20
+HudEquipment/constants/caption_width = 64
+HudEquipment/font_sizes/font_size = 15
+BossLabel/base_type = &"Label"
+BossLabel/colors/font_color = Color(0.94, 0.7, 0.46, 1)
+BossLabel/font_sizes/font_size = 18
+BossLabel/styles/normal = SubResource("BossSurface")
+BannerBand/base_type = &"PanelContainer"
+BannerBand/styles/panel = SubResource("BannerBand")

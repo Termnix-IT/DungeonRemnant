@@ -6,6 +6,10 @@ signal impact(player_hit: bool)
 const ENEMY := preload("res://actors/enemy/enemy.tscn")
 const GameAudio := preload("res://audio/game_audio.gd")
 const StrikeEffect := preload("res://combat/strike_effect.gd")
+# Presentation-only freeze on heavy moments. Logic is already resolved, and
+# Engine.time_scale is untouched so audio, UI and timers keep running.
+const HIT_STOP_TIME := 0.05
+const DAMAGE_FONT_SIZE := 30
 var playing := false
 var timeline: Tween
 var tweens: Array[Tween] = []
@@ -221,7 +225,12 @@ func _hit(event: Dictionary, player: Node2D, tile_size: int) -> void:
 	GameAudio.play(self, &"hit")
 	impact.emit(actor == player)
 	var center := Vector2(event.origin * tile_size) + Vector2.ONE * tile_size / 2.0
-	popup(str(event.damage), center + Vector2(0, -48), Color("ff8c8c") if actor == player else Color("fff0be"))
+	var damage := popup(str(event.damage), center + Vector2(0, -48), Color("ff8c8c") if actor == player else Color("fff0be"), DAMAGE_FONT_SIZE)
+	damage.pivot_offset = damage.size * 0.5
+	damage.scale = Vector2.ONE * 1.35
+	var punch := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tweens.append(punch)
+	punch.tween_property(damage, "scale", Vector2.ONE, 0.14)
 	if event.dead and actor != player:
 		GameAudio.play(self, &"death", -20.0)
 		popup("EXP +%d  Gold +%d" % [actor.stats.exp_reward, actor.stats.gold_reward], center + Vector2(0, 48), Color("f1d581"), 16)
@@ -243,6 +252,24 @@ func _hit(event: Dictionary, player: Node2D, tile_size: int) -> void:
 	if event.dead and actor != player:
 		flash.tween_property(actor, "modulate:a", 0.0, 0.18)
 		flash.tween_callback(actor.queue_free)
+	if actor == player or event.dead:
+		hit_stop()
+
+
+# Pauses every running presentation tween, including the ones this hit just
+# started, so the flash and damage number hold for a beat.
+func hit_stop(duration: float = HIT_STOP_TIME) -> void:
+	var frozen: Array[Tween] = []
+	for tween: Tween in [timeline] + tweens:
+		if tween != null and tween.is_valid() and tween.is_running():
+			tween.pause()
+			frozen.append(tween)
+	if frozen.is_empty() or not is_inside_tree():
+		return
+	get_tree().create_timer(duration).timeout.connect(func():
+		for tween in frozen:
+			if tween.is_valid():
+				tween.play())
 
 
 func popup(text: String, center: Vector2, color: Color, font_size: int = 24) -> Label:
@@ -251,12 +278,12 @@ func popup(text: String, center: Vector2, color: Color, font_size: int = 24) -> 
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_outline_color", Color("12141e"))
-	label.add_theme_constant_override("outline_size", 5)
+	label.add_theme_constant_override("outline_size", 6 if font_size >= DAMAGE_FONT_SIZE else 5)
 	label.add_theme_font_size_override("font_size", font_size)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.size = Vector2(320, 36)
+	label.size = Vector2(320, font_size + 12)
 	popup_serial += 1
-	label.position = center - Vector2(160, 18) + Vector2((popup_serial % 3 - 1) * 8, 0)
+	label.position = center - label.size * 0.5 + Vector2((popup_serial % 3 - 1) * 8, 0)
 	label.z_index = 30
 	add_child(label)
 	var tween := create_tween()

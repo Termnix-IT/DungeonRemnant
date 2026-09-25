@@ -1,7 +1,8 @@
 extends CanvasLayer
 
 const MAX_LOG_ENTRIES := 3
-const EMPTY_EQUIPMENT := "—"
+# The newest entries stay at full strength; older ones recede.
+const EMPHASIZED_LOG_ENTRIES := 2
 
 @onready var status: Label = $Status
 @onready var floor_value: Label = $TopLeft/Floor
@@ -16,14 +17,8 @@ const EMPTY_EQUIPMENT := "—"
 @onready var exp_value: Label = $BottomLeft/ExpValue
 @onready var exp_bar: ProgressBar = $BottomLeft/ExpBar
 @onready var meta: Label = $BottomLeft/Meta
-@onready var log_entries: Label = $Log/Entries
-@onready var equipment_rows: Array[Label] = [
-	$BottomRight/Rows/Main,
-	$BottomRight/Rows/Sub,
-	$BottomRight/Rows/Armor,
-	$BottomRight/Rows/Accessory1,
-	$BottomRight/Rows/Accessory2,
-]
+@onready var log_entries: RichTextLabel = $Log/Entries
+@onready var equipment_rows: HudEquipment = $BottomRight/Rows
 
 var log_history: Array[String] = []
 var last_log_text := ""
@@ -48,7 +43,7 @@ func refresh(hp: int, max_hp: int, turns: int, visible_enemies: int, log_text: S
 func show_aim(weapon_name: String, aiming: bool) -> void:
 	if aiming:
 		_render_log("攻撃方向を選択中：方向キーで変更 / Spaceで確定 / Escでキャンセル")
-	$BottomRight/Title.text = "EQUIPMENT  ·  %s" % weapon_name
+	$BottomRight/Title.text = "装備  ·  %s" % weapon_name
 
 
 func show_progress(level: int, exp: int, required: int) -> void:
@@ -73,11 +68,7 @@ func show_gold(gold: int) -> void:
 
 
 func show_equipment(equipment: Equipment) -> void:
-	var captions := ["Main", "Sub", "Armor", "Acc 1", "Acc 2"]
-	for index in equipment_rows.size():
-		var item: ItemData = equipment.slots[index]
-		var item_name := item.label() if item != null else EMPTY_EQUIPMENT
-		equipment_rows[index].text = "%s    %s" % [captions[index].rpad(6), item_name]
+	equipment_rows.show_equipment(equipment)
 
 
 func show_minimap(
@@ -118,6 +109,7 @@ func _record_log(text: String) -> void:
 	while log_history.size() > MAX_LOG_ENTRIES:
 		log_history.pop_front()
 	_render_log()
+	UIMotion.of(log_entries).reveal()
 
 
 func _render_log(temporary_message: String = "") -> void:
@@ -128,7 +120,20 @@ func _render_log(temporary_message: String = "") -> void:
 		if lines.size() >= MAX_LOG_ENTRIES:
 			lines.pop_front()
 		lines.append("◆ %s" % temporary_message)
-	log_entries.text = "\n".join(lines)
+	# Text is appended, never parsed as BBCode, so messages stay literal.
+	var recent := _log_color(&"Label")
+	var older := _log_color(&"HudSmall")
+	log_entries.clear()
+	for index in lines.size():
+		if index > 0:
+			log_entries.newline()
+		log_entries.push_color(recent if index >= lines.size() - EMPHASIZED_LOG_ENTRIES else older)
+		log_entries.add_text(lines[index])
+		log_entries.pop()
+
+
+func _log_color(role: StringName) -> Color:
+	return log_entries.get_theme_color(&"font_color", role)
 
 
 func _refresh_meta() -> void:
@@ -161,7 +166,8 @@ func show_effects(text: String) -> void:
 		label.position = Vector2(310, 64)
 		label.size = Vector2(770, 90)
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		label.add_theme_font_size_override("font_size", 16)
+		label.theme = $TopLeft.theme
+		label.theme_type_variation = &"HudCaption"
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(label)
 	label.text = text
