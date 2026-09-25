@@ -19,6 +19,15 @@ func check(ok: bool, message: String) -> void:
 		push_error(message)
 
 
+func defeat_summary() -> Dictionary:
+	var sword := ItemCatalog.floor_item(6)
+	var armor := ItemCatalog.floor_item(1)
+	return {"cleared": false, "floor": 7, "earned_gold": 30, "gold_lost": 50, "gold": 50, "item_count_lost": 4,
+		"items_lost": {ItemCatalog.POTION.display_name: 3, armor.display_name: 1},
+		"lost_entries": [{"item": ItemCatalog.POTION, "count": 3}, {"item": armor, "count": 1}],
+		"equipment": [sword, null, null, preload("res://data/items/vital_charm.tres"), null]}
+
+
 func ignores_pointer(node: Node) -> bool:
 	if node is Control and node.mouse_filter != Control.MOUSE_FILTER_IGNORE:
 		return false
@@ -102,6 +111,19 @@ func run_tests() -> void:
 	check(result.details_scroll.scroll_vertical == 0, "Repeated presentation starts details at the beginning")
 	result.hide()
 	check(result.presentation_panel.modulate.a == 1.0 and result.title_label.scale == Vector2.ONE, "CanvasLayer result hide resets motion immediately")
+	result.present(summary)
+	check(result.title_label.theme_type_variation == &"VictoryTitle" and result.lost_none.visible and result.lost_none.text == "なし", "Clear result uses victory tone and reports no losses")
+	check(not result.kept_box.visible, "Kept equipment hides when the result carries none")
+	var defeat := defeat_summary()
+	result.present(defeat)
+	check(result.title_label.theme_type_variation == &"DefeatTitle" and result.lost_value.text == "−50 G", "Defeat result uses loss tone and signed Gold loss")
+	check(result.lost_list.item_count == 2 and not result.lost_none.visible and result.kept_box.visible, "Lost items are listed as cards beside kept equipment")
+	check(result.balance_value.text == "70 G", "Balance replays from the run's starting Gold")
+	result.hide()
+	check(result.balance_value.text == "50 G" and result.stat_rows[3].modulate.a == 1.0, "Hiding mid-sequence settles final values and visibility")
+	result.confirm_abort()
+	check(not result.summary.visible and not result.lost_box.visible and result.details.visible, "Abort confirmation shows only its explanation")
+	result.hide()
 	var player := preload("res://actors/player/player.tscn").instantiate()
 	root.add_child(player)
 	player.inventory.add(ItemCatalog.POTION, 3)
@@ -131,7 +153,13 @@ func run_tests() -> void:
 			await snapshot("ability_chosen", size)
 			choice.clear_afterglow()
 			result.present(summary)
+			await create_timer(1.0).timeout
 			await snapshot("result", size)
+			result.present(defeat_summary())
+			await create_timer(0.2).timeout
+			await snapshot("result_defeat_sequence", size)
+			await create_timer(0.9).timeout
+			await snapshot("result_defeat", size)
 			result.hide()
 			inventory.present(player)
 			inventory.get_node("Panel/List").select(0)

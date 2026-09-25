@@ -575,13 +575,13 @@ func finish_run(cleared: bool, safe_return: bool = false, forced_return: bool = 
 	turns.offered_abilities.clear()
 	inventory_panel.hide()
 	ability_choice.dismiss()
-	result = {"gold_lost": 0, "items_lost": {}, "item_count_lost": 0}
+	result = {"gold_lost": 0, "items_lost": {}, "item_count_lost": 0, "lost_entries": []}
 	transition_dialog.hide()
 	transition_kind = ""
 	if not cleared and not safe_return:
 		result = RunLoss.apply(turns.player.inventory, turns.gold, loss_rng)
 	turns.gold -= int(result.gold_lost)
-	result.merge({"cleared": cleared, "safe_return": safe_return, "forced_return": forced_return, "floor": floor_number, "earned_gold": turns.earned_gold, "gold": turns.gold})
+	result.merge({"cleared": cleared, "safe_return": safe_return, "forced_return": forced_return, "floor": floor_number, "earned_gold": turns.earned_gold, "gold": turns.gold, "equipment": turns.player.equipment.slots.duplicate()})
 	turns.player.active_effects.effects.clear()
 	turns.player.refresh_equipment_effects()
 	carryover.capture(turns.player, turns.gold)

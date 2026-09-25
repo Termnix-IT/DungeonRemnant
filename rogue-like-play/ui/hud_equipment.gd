@@ -15,7 +15,11 @@ func _init() -> void:
 
 
 func show_equipment(equipment: Equipment) -> void:
-	items.assign(equipment.slots)
+	show_slots(equipment.slots)
+
+
+func show_slots(slots: Array) -> void:
+	items.assign(slots)
 	var lines: Array[String] = []
 	for index in CAPTIONS.size():
 		lines.append("%s: %s" % [CAPTIONS[index], _name(index)])

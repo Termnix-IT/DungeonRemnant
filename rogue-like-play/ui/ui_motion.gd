@@ -21,6 +21,10 @@ const EXIT_TIME := 0.12
 const MOMENT_RISE_TIME := 0.21
 const MOMENT_HOLD_TIME := 0.07
 const MOMENT_TIME := MOMENT_RISE_TIME + MOMENT_HOLD_TIME + EXIT_TIME
+# Result rows appear one after another; numbers count for at most COUNT_MAX_TIME.
+const SEQUENCE_STEP_TIME := 0.12
+const COUNT_MIN_TIME := 0.25
+const COUNT_MAX_TIME := 0.6
 const META := &"ui_motion"
 
 var control: Control
@@ -30,6 +34,8 @@ var selection_tween: Tween
 var vital_tween: Tween
 var position_tween: Tween
 var glow_tween: Tween
+var count_tween: Tween
+var _count_text := ""
 var _vital_initialized := false
 var _vital_value := 0.0
 var _vital_maximum := 1.0
@@ -243,6 +249,32 @@ func recede() -> void:
 	alpha_tween.tween_property(control, "modulate:a", 0.0, EXIT_TIME * 1.5)
 
 
+# Alpha only, so it is safe for Controls positioned by a Container.
+func appear(delay: float = 0.0, duration: float = ENTER_TIME) -> void:
+	if not control.is_visible_in_tree():
+		return
+	_stop(alpha_tween)
+	control.modulate.a = 0.0
+	alpha_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	alpha_tween.tween_interval(delay)
+	alpha_tween.tween_property(control, "modulate:a", _base_alpha, duration)
+
+
+# Shows a number counting toward an already settled value. The caller has
+# written the final text first; this only replays the change for the eye.
+func count(from: int, to: int, format: Callable, delay: float = 0.0) -> void:
+	if not control is Label or not control.is_visible_in_tree() or from == to:
+		return
+	_stop(count_tween)
+	var label := control as Label
+	var duration := clampf(COUNT_MIN_TIME + absi(to - from) * 0.004, COUNT_MIN_TIME, COUNT_MAX_TIME)
+	_count_text = format.call(to)
+	label.text = format.call(from)
+	count_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	count_tween.tween_interval(delay)
+	count_tween.tween_method(func(value: float): label.text = format.call(roundi(value)), float(from), float(to), duration)
+
+
 func fade_out(delay: float = 0.0, duration: float = EXIT_TIME) -> Tween:
 	_stop(alpha_tween)
 	alpha_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
@@ -323,6 +355,9 @@ func reset() -> void:
 		control.position = _base_position
 	if glow_tween != null:
 		glow_tween.kill()
+	if count_tween != null and count_tween.is_valid():
+		count_tween.kill()
+		(control as Label).text = _count_text
 	_down = false
 	_press_animating = false
 	_pulsing = false
