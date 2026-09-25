@@ -12,6 +12,8 @@ var state: RunCarryover
 var selected_slot := 0
 var candidates: Array[Dictionary] = []
 var slots: Array[Button] = []
+var slot_names: Array[Label] = []
+var slot_glyphs: Array[Control] = []
 var candidate_list: ItemCardList
 var carried_list: ItemCardList
 var stats_label: Label
@@ -22,6 +24,10 @@ var done_button: Button
 var swap_button: Button
 var scroll_remove_button: Button
 var showcase: ItemShowcase
+var portrait: CharacterPreview
+# The candidate of the last equip request, for the success moment after saving.
+var equipped_item: ItemData
+const SLOT_CAPTIONS := ["主武器", "副武器", "防具", "装飾 1", "装飾 2"]
 
 
 func _ready() -> void:
@@ -45,7 +51,9 @@ func _ready() -> void:
 	comparison.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	detail.add_child(comparison)
 	equip_button = HubUI.button(detail, "選択した装備に変更", _equip, &"GoldButton")
-	unequip_button = HubUI.button(detail, "選択枠の装備を外す", func(): unequip_requested.emit(selected_slot))
+	unequip_button = HubUI.button(detail, "選択枠の装備を外す", func():
+		equipped_item = null
+		unequip_requested.emit(selected_slot))
 	var build := HubUI.section(columns, 1.25)
 	build.theme_type_variation = &"DetailStack"
 	HubUI.label(build, "冒険者の装備", &"HeadingLabel")
@@ -57,7 +65,7 @@ func _ready() -> void:
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	body.add_child(left)
-	var portrait := CharacterPreview.new()
+	portrait = CharacterPreview.new()
 	portrait.custom_minimum_size = Vector2(120, 180)
 	portrait.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	portrait.size_flags_stretch_ratio = 2.0
@@ -70,11 +78,13 @@ func _ready() -> void:
 		var parent := left if slot < 2 else right
 		var control := HubUI.button(parent, "", select_slot.bind(slot), &"ItemButton")
 		control.custom_minimum_size = Vector2(98, 70)
-		control.clip_text = true
 		control.toggle_mode = true
 		slots.append(control)
+		_build_slot(control, slot)
 	stats_label = HubUI.label(build, "", &"BodyLabel")
-	scroll_remove_button = HubUI.button(build, "選択枠の魔法を外す", func(): scroll_remove_requested.emit(selected_slot))
+	scroll_remove_button = HubUI.button(build, "選択枠の魔法を外す", func():
+		equipped_item = null
+		scroll_remove_requested.emit(selected_slot))
 	swap_button = HubUI.button(build, "Main / Sub を入れ替え", func(): swap_requested.emit())
 	done_button = HubUI.button(build, "準備完了・ステージ選択へ", func(): done_requested.emit())
 
@@ -87,7 +97,8 @@ func refresh(current: RunCarryover) -> void:
 	for index in slots.size():
 		slots[index].set_pressed_no_signal(index == selected_slot)
 		var item := state.equipment.slots[index]
-		slots[index].text = "%s\n%s" % [["主武器", "副武器", "防具", "装飾 1", "装飾 2"][index], item.label() if item != null else "未装備"]
+		slot_names[index].text = item.label() if item != null else "未装備"
+		slot_glyphs[index].queue_redraw()
 		slots[index].tooltip_text = Equipment.SLOT_NAMES[index] + "：" + (ItemTooltipList.description(item) if item != null else "未装備")
 	var stats := state.preparation_stats()
 	stats_label.text = "次のRun：HP %d / ATK %d\nDEF %d / Main射程 %d" % [stats.hp, stats.attack, stats.defense, stats.reach]
@@ -98,6 +109,68 @@ func refresh(current: RunCarryover) -> void:
 		carried_list.add_item("持ち込みアイテムはありません")
 		carried_list.set_item_disabled(0, true)
 	_fill_candidates()
+
+
+# A slot shows the equipped item's glyph beside its caption and name, laid
+# out by Containers inside the Button; the Button keeps input and focus.
+func _build_slot(button: Button, slot: int) -> void:
+	var margin := MarginContainer.new()
+	margin.theme_type_variation = &"CompactMargin"
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(margin)
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# Glyph and caption share the top line; the name gets the full width below.
+	var stack := VBoxContainer.new()
+	stack.theme_type_variation = &"CompactStack"
+	stack.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.add_child(stack)
+	var header := HBoxContainer.new()
+	header.theme_type_variation = &"CompactRow"
+	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stack.add_child(header)
+	var glyph := Control.new()
+	glyph.custom_minimum_size = Vector2(16, 16)
+	glyph.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	glyph.draw.connect(_draw_slot_glyph.bind(slot, glyph))
+	header.add_child(glyph)
+	slot_glyphs.append(glyph)
+	var caption := HubUI.label(header, SLOT_CAPTIONS[slot], &"HudSmall")
+	caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+	var name_label := HubUI.label(stack, "", &"")
+	name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name_label.clip_text = true
+	slot_names.append(name_label)
+	button.toggled.connect(func(_on: bool): glyph.queue_redraw())
+
+
+func _draw_slot_glyph(slot: int, glyph: Control) -> void:
+	if state == null:
+		return
+	var item: ItemData = state.equipment.slots[slot]
+	if item == null:
+		return
+	var role := &"GoldLabel" if slots[slot].button_pressed or slot == Equipment.Slot.MAIN else &"MutedLabel"
+	ItemGlyph.paint(glyph, Rect2(Vector2.ZERO, glyph.size), item, glyph.get_theme_color(&"font_color", role))
+
+
+# Success moment after saving: the chosen candidate flies into its slot, which
+# then acknowledges it while the adventurer brightens. Swaps and removals
+# have no single item to carry and only pulse their slots.
+func present_equip(changed: Array[int]) -> void:
+	if equipped_item != null and changed.size() == 1 and is_visible_in_tree():
+		var slot := slots[changed[0]]
+		UIMotion.fly_glyph(self, equipped_item, showcase.visual, slot).finished.connect(func():
+			if is_instance_valid(slot) and slot.is_visible_in_tree():
+				UIMotion.of(slot).pulse()
+				UIMotion.of(portrait).flash()
+				UIMotion.of(stats_label).pulse(1.04, UIMotion.GOLD_TIME))
+	else:
+		for index in changed:
+			UIMotion.of(slots[index]).pulse()
+	equipped_item = null
 
 
 func select_slot(slot: int) -> void:
@@ -157,15 +230,21 @@ func _compare() -> void:
 	var before := state.preparation_stats()
 	var after := state.preparation_stats(preview)
 	var current := state.equipment.slots[selected_slot]
-	comparison.line(candidate.label(), &"HeadingLabel")
-	comparison.line("現在：%s" % (current.label() if current != null else "なし"), &"MutedLabel")
-	comparison.delta("HP", before.hp, after.hp)
-	comparison.delta("ATK", before.attack, after.attack)
-	comparison.delta("DEF", before.defense, after.defense)
+	comparison.line("%sに装備した場合（現在：%s）" % [SLOT_CAPTIONS[selected_slot], current.label() if current != null else "なし"], &"MutedLabel")
+	# Only values that change; an unchanged list hides the one that matters.
+	var changed := false
+	for stat: Array in [["HP", "hp"], ["ATK", "attack"], ["DEF", "defense"]]:
+		if before[stat[1]] != after[stat[1]]:
+			comparison.delta(stat[0], before[stat[1]], after[stat[1]])
+			changed = true
 	if candidate.kind == ItemData.Kind.WEAPON:
 		var old_reach := current.weapon.reach if current != null else 0
-		comparison.delta("この枠の射程", old_reach, candidate.weapon.reach)
-	comparison.line(candidate.description())
+		if old_reach != candidate.weapon.reach:
+			comparison.delta("この枠の射程", old_reach, candidate.weapon.reach)
+			changed = true
+	if not changed:
+		comparison.line("能力値は変わりません", &"MutedLabel")
+	comparison.item_text(candidate)
 
 
 func _equip() -> void:
@@ -173,4 +252,5 @@ func _equip() -> void:
 	if selected.is_empty() or candidates.is_empty():
 		return
 	var candidate := candidates[selected[0]]
+	equipped_item = candidate.item
 	equip_requested.emit(candidate.from_storage, candidate.index, selected_slot)

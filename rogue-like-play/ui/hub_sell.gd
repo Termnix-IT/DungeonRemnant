@@ -259,19 +259,7 @@ func present_trade(target: Control) -> void:
 				item_list.select(index)
 				_select(index, false)
 				break
-	var ghost := Control.new()
-	ghost.top_level = true
-	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ghost.size = showcase.visual.size
-	var item := traded_item
-	ghost.draw.connect(func():
-		var extent := minf(ghost.size.x, ghost.size.y) * 0.68
-		ItemGlyph.paint(ghost, Rect2((ghost.size - Vector2.ONE * extent) / 2, Vector2.ONE * extent), item, ghost.get_theme_color(&"font_color", &"GoldLabel")))
-	add_child(ghost)
-	ghost.global_position = showcase.visual.global_position
-	var destination := target.get_global_rect().get_center() - ghost.size * 0.5
-	UIMotion.of(ghost).travel(destination).finished.connect(func():
-		ghost.queue_free()
+	UIMotion.fly_glyph(self, traded_item, showcase.visual, target).finished.connect(func():
 		if is_instance_valid(target) and target.is_visible_in_tree():
 			UIMotion.of(target).pulse(1.06, UIMotion.GOLD_TIME))
 

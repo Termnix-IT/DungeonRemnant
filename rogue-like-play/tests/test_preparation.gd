@@ -42,7 +42,15 @@ func run_tests() -> void:
 	hub.equipment_button.pressed.emit()
 	hub.equipment_page.select_slot(Equipment.Slot.ARMOR)
 	check(hub.equipment_page.candidates.size() == 1 and hub.equipment_page.candidates[0].from_storage, "Equipment candidates include matching warehouse gear")
+	var preview_text: String = hub.equipment_page.comparison.get_parsed_text()
+	check(preview_text.contains("DEF") and not preview_text.contains("ATK") and preview_text.contains(ARMOR.label()), "Equipment comparison lists changed values and keeps the full name")
 	hub.equipment_page.equip_button.pressed.emit()
+	var flying: Array = hub.equipment_page.get_children().filter(func(child: Node): return child is Control and child.top_level)
+	check(flying.size() == 1 and hub.equipment_page.equipped_item == null, "Equipping sends one glyph to its slot and clears the pending item")
+	await create_timer(UIMotion.TRAVEL_TIME + 0.1).timeout
+	check(hub.equipment_page.get_children().filter(func(child: Node): return child is Control and child.top_level).is_empty(), "Equip glyph frees itself on landing")
+	# Check that the acknowledgement started, not a timing-dependent sample.
+	check(UIMotion.of(hub.equipment_page.portrait).flash_tween != null, "Landing brightens the adventurer")
 	check(main.state.equipment.slots[2] == ARMOR and main.state.storage.entries.size() == 1, "Equip directly from warehouse without transfer detour")
 	check(hub.equipment_page.stats_label.text.contains(str(ARMOR.defense_bonus)), "Equipment preview reflects defense")
 	check(not main.unequip_item(0), "Main weapon cannot be removed")
@@ -139,6 +147,20 @@ func run_tests() -> void:
 	check(hub.departure_page.next_button.disabled, "Unavailable stage cannot be confirmed")
 	main.start_run()
 	check(main.active_run == null, "Unavailable stage also rejected at runtime boundary")
+	# Moving items mutates the warehouse, so this runs after every other check.
+	main.state.inventory.add(ItemCatalog.POTION, 1)
+	hub.show_page("home")
+	hub.open_warehouse()
+	await create_timer(0.1).timeout
+	var shelf = hub.warehouse_panel
+	shelf.get_node("%InventoryList").select(0)
+	shelf.get_node("%InventoryList").item_selected.emit(0)
+	var stored_before: int = main.state.storage.entries.size()
+	shelf.get_node("%Deposit").pressed.emit()
+	var moving: Array = shelf.get_children().filter(func(child: Node): return child is Control and child.top_level)
+	check(main.state.storage.entries.size() >= stored_before and moving.size() == 1 and shelf.moved_item == null, "Deposit sends one glyph toward the storage list")
+	await create_timer(UIMotion.TRAVEL_TIME + 0.1).timeout
+	check(shelf.get_children().filter(func(child: Node): return child is Control and child.top_level).is_empty(), "Moved glyph frees itself on landing")
 	main.free()
 	print("Preparation tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)

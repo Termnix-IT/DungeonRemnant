@@ -8,6 +8,8 @@ signal equipment_requested
 var state: RunCarryover
 var inventory_index := -1
 var storage_index := -1
+# The item of the last requested move, for the success moment after saving.
+var moved_item: ItemData
 
 
 func _ready() -> void:
@@ -17,8 +19,12 @@ func _ready() -> void:
 	hide()
 	%InventoryList.item_selected.connect(_select_inventory)
 	%StorageList.item_selected.connect(_select_storage)
-	%Deposit.pressed.connect(func(): transfer_requested.emit(false, inventory_index))
-	%Withdraw.pressed.connect(func(): transfer_requested.emit(true, storage_index))
+	%Deposit.pressed.connect(func():
+		moved_item = _entry_item(state.inventory, inventory_index)
+		transfer_requested.emit(false, inventory_index))
+	%Withdraw.pressed.connect(func():
+		moved_item = _entry_item(state.storage, storage_index)
+		transfer_requested.emit(true, storage_index))
 	%Close.pressed.connect(close)
 	%Equipment.pressed.connect(func(): close(); equipment_requested.emit())
 
@@ -55,6 +61,34 @@ func refresh(current_state: RunCarryover = state, message: String = "") -> void:
 	%Withdraw.disabled = storage_index < 0
 	%Feedback.text = message
 	_update_details()
+
+
+func _entry_item(source: Inventory, index: int) -> ItemData:
+	return source.entries[index].item if index >= 0 and index < source.entries.size() else null
+
+
+# Success moment after saving: the moved item's glyph flies from the centre
+# to its row in the destination list, which then acknowledges the arrival.
+func present_move(to_storage: bool) -> void:
+	var item := moved_item
+	moved_item = null
+	var list: ItemCardList = %StorageList if to_storage else %InventoryList
+	if item == null or not is_visible_in_tree():
+		UIMotion.of(list).reveal()
+		return
+	var destination := state.storage if to_storage else state.inventory
+	var point := list.get_global_rect().get_center()
+	for index in destination.entries.size():
+		if destination.entries[index].item.id == item.id:
+			var row := list.card_rect(index)
+			# A row scrolled out of view, or not laid out yet, lands on the
+			# list's centre instead.
+			if row.size.x > 0 and row.size.y > 0 and Rect2(Vector2.ZERO, list.size).encloses(row):
+				point = list.global_position + row.get_center()
+			break
+	UIMotion.fly_glyph_at(self, item, %Visual, point).finished.connect(func():
+		if is_instance_valid(list) and list.is_visible_in_tree():
+			UIMotion.of(list).reveal())
 
 
 func close() -> void:

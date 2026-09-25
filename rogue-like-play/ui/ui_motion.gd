@@ -37,6 +37,8 @@ var vital_tween: Tween
 var position_tween: Tween
 var glow_tween: Tween
 var count_tween: Tween
+var flash_tween: Tween
+var _base_color := Color.WHITE
 var _count_text := ""
 var _vital_initialized := false
 var _vital_value := 0.0
@@ -59,6 +61,7 @@ static func of(target: Control) -> UIMotion:
 	motion._base_scale = target.scale
 	motion._base_alpha = target.modulate.a
 	motion._base_position = target.position
+	motion._base_color = target.modulate
 	target.set_meta(META, motion)
 	target.add_child(motion)
 	return motion
@@ -277,6 +280,45 @@ func count(from: int, to: int, format: Callable, delay: float = 0.0) -> void:
 	count_tween.tween_method(func(value: float): label.text = format.call(roundi(value)), float(from), float(to), duration)
 
 
+# Success moment for a trade or move: the item's glyph flies from one Control
+# to another on a pointer-transparent copy owned by host, then frees itself.
+# Connect to the returned tween's finished signal to acknowledge the landing.
+static func fly_glyph(host: Control, item: ItemData, from: Control, to: Control) -> Tween:
+	return fly_glyph_at(host, item, from, to.get_global_rect().get_center())
+
+
+# Same as fly_glyph, landing on a global point such as one list row.
+static func fly_glyph_at(host: Control, item: ItemData, from: Control, point: Vector2) -> Tween:
+	var ghost := Control.new()
+	ghost.top_level = true
+	# Top-level copies do not inherit a raised parent z (the warehouse uses
+	# one), so draw above any panel explicitly.
+	ghost.z_as_relative = false
+	ghost.z_index = 100
+	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ghost.size = from.size
+	# A top-level copy may not inherit the host's Theme; resolve colour first.
+	var color := from.get_theme_color(&"font_color", &"GoldLabel")
+	ghost.draw.connect(func():
+		var extent := minf(ghost.size.x, ghost.size.y) * 0.68
+		ItemGlyph.paint(ghost, Rect2((ghost.size - Vector2.ONE * extent) / 2, Vector2.ONE * extent), item, color))
+	host.add_child(ghost)
+	ghost.global_position = from.global_position
+	var tween := of(ghost).travel(point - ghost.size * 0.5)
+	tween.finished.connect(ghost.queue_free)
+	return tween
+
+
+# A brief brightening that returns to the base colour; alpha is untouched.
+func flash(strength: float = 1.35, duration: float = GOLD_TIME) -> void:
+	if not control.is_visible_in_tree():
+		return
+	_stop(flash_tween)
+	control.modulate = Color(_base_color.r * strength, _base_color.g * strength, _base_color.b * strength, control.modulate.a)
+	flash_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	flash_tween.tween_property(control, "modulate", Color(_base_color, control.modulate.a), duration)
+
+
 # A transient copy flies to a global point, shrinking and fading on arrival.
 # The caller frees the copy when the returned tween finishes.
 func travel(to: Vector2, duration: float = TRAVEL_TIME) -> Tween:
@@ -369,6 +411,9 @@ func reset() -> void:
 		control.position = _base_position
 	if glow_tween != null:
 		glow_tween.kill()
+	if flash_tween != null and flash_tween.is_valid():
+		flash_tween.kill()
+		control.modulate = Color(_base_color, control.modulate.a)
 	if count_tween != null and count_tween.is_valid():
 		count_tween.kill()
 		(control as Label).text = _count_text

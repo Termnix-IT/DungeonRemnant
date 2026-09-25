@@ -331,13 +331,11 @@ func present_action(kind: StringName, gold_delta: int, slots: Array[int]) -> voi
 			UIMotion.of(sell_page.item_list).reveal()
 			sell_page.present_trade(sell_page.possession if kind == &"buy" else gold_label)
 		&"equip":
-			for slot in slots:
-				UIMotion.of(equipment_page.slots[slot]).pulse()
+			equipment_page.present_equip(slots)
 		&"upgrade":
 			(upgrade_page as SkillTreePanel).present_upgrade()
 		&"deposit", &"withdraw":
-			var destination := "InventoryList" if kind == &"withdraw" else "StorageList"
-			UIMotion.of(warehouse_panel.get_node("%" + destination)).reveal()
+			warehouse_panel.present_move(kind == &"deposit")
 			UIMotion.of(warehouse_panel.get_node("%Feedback")).reveal()
 
 
