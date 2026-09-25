@@ -105,11 +105,14 @@ func capture() -> void:
 	hub.departure_page.confirm_button.grab_focus()
 	await key(KEY_ENTER)
 	check(main.active_run != null and not hub.visible, "Keyboard confirms departure")
+	# The departure cover swallows input until it reveals the dungeon.
+	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
 	await shot("dungeon")
 	main.active_run.finish_run(true)
 	await settle()
 	await click(main.active_run.result_panel.accept)
 	check(hub.visible and hub.page == "home", "Mouse result returns home")
+	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
 	# Check scaled hub layout and native input at a smaller window.
 	root.size = Vector2i(1152, 720)
 	await shot("home_720")

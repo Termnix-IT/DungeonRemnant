@@ -20,8 +20,11 @@ func capture() -> void:
 	main.save_store.path = save_path
 	root.add_child(main)
 	main.start_run()
+	# The departure cover swallows input until it reveals the dungeon.
+	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
 	var run: Node2D = main.active_run
-	run.floor_number = 10
+	# Only the final floor's boss clears the run; stages have fifty floors.
+	run.floor_number = run.final_floor
 	run.rng.seed = 47
 	run._load_floor()
 	var boss: Node2D = run.turns.enemies.back()
@@ -50,6 +53,10 @@ func capture() -> void:
 		release.pressed = false
 		Input.parse_input_event(release)
 		await settle()
+	# The defeat presentation (including hit stop) finishes before the result.
+	while run.presentation.playing:
+		await run.presentation.finished
+	await settle()
 	ok = ok and run.result.get("cleared", false) and run.result_panel.save_label.text.contains("保存済み")
 	ok = root.get_texture().get_image().save_png("res://.godot/completion_clear.png") == OK and ok
 	var saved_gold: int = run.turns.gold
