@@ -309,9 +309,12 @@ func show_page(target: String) -> void:
 			title_label.text = "出撃確認  /  %s・全%d階" % [stage.display_name, stage.floor_count]
 			departure_page.show()
 			departure_page.present_confirmation(_state)
+	# Pages are anchored in a plain host, not laid out by a Container, so the
+	# whole page can slide: forward pages from the right, home from the left.
+	var side := -1.0 if page == "home" else 1.0
 	for control in [home_page, equipment_page, sell_page, departure_page, upgrade_page]:
 		if control.visible:
-			UIMotion.of(control).reveal(UIMotion.WINDOW_TIME)
+			UIMotion.of(control).enter(0.0, Vector2(side * UIMotion.PAGE_DISTANCE, 0), UIMotion.WINDOW_TIME)
 
 
 func present_action(kind: StringName, gold_delta: int, slots: Array[int]) -> void:

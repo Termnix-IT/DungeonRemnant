@@ -6,6 +6,7 @@ signal preparation_completed(kind: StringName, gold_delta: int, slots: Array[int
 var save_store := SaveStore.new()
 var state := RunCarryover.new()
 var active_run: Node2D
+var transition: SceneTransition
 
 
 func _ready() -> void:
@@ -14,6 +15,8 @@ func _ready() -> void:
 		return
 	if saving_enabled:
 		state = save_store.load_state()
+	transition = SceneTransition.new()
+	add_child(transition)
 	$Hub.start_requested.connect(start_run)
 	$Hub.purchase_requested.connect(purchase_upgrade)
 	$Hub.skill_requested.connect(purchase_skill)
@@ -149,6 +152,8 @@ func start_run() -> void:
 	active_run.hub_requested.connect(return_to_hub)
 	active_run.result_ready.connect(_save_result)
 	add_child(active_run)
+	# The run is already live underneath; the cover only eases the cut.
+	transition.play_departure(stage, entry_floor)
 
 
 func return_to_hub() -> void:
@@ -164,6 +169,7 @@ func return_to_hub() -> void:
 	$Hub.show()
 	$Hub.show_page("home")
 	_update_save_status()
+	transition.play_return("旅支度の間", "装備と倉庫は次の冒険へ引き継がれます。")
 
 
 func _save_result() -> void:

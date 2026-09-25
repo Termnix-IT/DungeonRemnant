@@ -34,6 +34,8 @@ func run_tests() -> void:
 	centered(hub.get_node("Content"))
 	for page in ["equipment", "sell", "upgrade", "stages", "confirm"]:
 		hub.show_page(page)
+		# Measure the resting layout, after the page has slid into place.
+		await create_timer(UIMotion.WINDOW_TIME + 0.05).timeout
 		await settle()
 		var content: Control = hub.get_node("Content")
 		for control: Control in [hub.equipment_page, hub.sell_page, hub.departure_page, hub.upgrade_page]:

@@ -8,6 +8,15 @@ func _initialize() -> void:
 	call_deferred("run_tests")
 
 
+func ignores_pointer(node: Node) -> bool:
+	if node is Control and node.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+		return false
+	for child in node.get_children():
+		if not ignores_pointer(child):
+			return false
+	return true
+
+
 func check(ok: bool, label: String) -> void:
 	checks += 1
 	if not ok:
@@ -80,7 +89,12 @@ func run_tests() -> void:
 	check(not hub.visible and run.turns.gold == 71 and run.progression.level == 1, "Start initializes new run with remaining Gold")
 	check(player.stats.max_hp == 29 and player.hp == 29, "Base HP plus permanent upgrade plus equipment")
 	main.start_run()
-	check(main.active_run == run and main.get_child_count() == 2, "Repeated start cannot create duplicate run")
+	var runs := main.get_children().filter(func(child: Node): return child.has_method("finish_run"))
+	check(main.active_run == run and runs.size() == 1, "Repeated start cannot create duplicate run")
+	check(main.transition.visible and not main.transition.title.text.is_empty() and run.turns.player.input_enabled, "Departure covers the cut while the run is already live")
+	check(ignores_pointer(main.transition.root), "Transition cover never captures pointer input")
+	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
+	check(not main.transition.visible and main.transition.root.modulate.a == 1.0, "Transition reveals itself and resets")
 	check(not main.purchase_upgrade() and main.state.gold == 71, "Purchases blocked during adventure")
 	main.return_to_hub()
 	check(main.active_run == run, "Cannot return without finishing run")
@@ -95,6 +109,7 @@ func run_tests() -> void:
 	check(run.result_panel.accept.text.contains("拠点") and run.turns.gold == 36, "Result offers Hub return after one loss")
 	run.retry_run()
 	check(main.active_run == null and hub.visible and main.state.gold == 36, "Result returns to Hub with surviving Gold")
+	check(main.transition.visible and main.transition.title.text == "旅支度の間" and not main.transition.art.visible, "Return to Hub is covered by its own heading")
 	check(main.state.hp_upgrade_level == 1 and main.state.inventory.entries.is_empty() and main.state.equipment.slots[3] != null, "Death preserves upgrade and gear, halves inventory")
 	check(main.state.storage.entries[0].count == 12, "Death leaves warehouse untouched")
 	main.return_to_hub()

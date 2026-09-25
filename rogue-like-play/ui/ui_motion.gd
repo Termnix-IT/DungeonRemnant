@@ -15,6 +15,7 @@ const VITAL_PULSE_TIME := 0.22
 const ENTER_TIME := 0.24
 const STAGGER_TIME := 0.06
 const ENTER_DISTANCE := 24.0
+const PAGE_DISTANCE := 16.0
 const LIFT_DISTANCE := 6.0
 const EXIT_TIME := 0.12
 # A chosen moment rises, holds briefly, then leaves; 0.40s in total.
@@ -194,19 +195,19 @@ func select_card() -> void:
 
 # Display layers only: the Control must not be positioned by a Container.
 # Input and selection stay usable while the layer is still arriving.
-func enter(delay: float = 0.0) -> void:
+func enter(delay: float = 0.0, offset := Vector2(0, ENTER_DISTANCE), duration: float = ENTER_TIME) -> void:
 	if not control.is_visible_in_tree():
 		return
 	_stop(position_tween)
 	_stop(alpha_tween)
-	control.position = _base_position + Vector2(0, ENTER_DISTANCE)
+	control.position = _base_position + offset
 	control.modulate.a = 0.0
 	position_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	position_tween.tween_interval(delay)
-	position_tween.tween_property(control, "position", _base_position, ENTER_TIME)
+	position_tween.tween_property(control, "position", _base_position, duration)
 	alpha_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	alpha_tween.tween_interval(delay)
-	alpha_tween.tween_property(control, "modulate:a", _base_alpha, ENTER_TIME)
+	alpha_tween.tween_property(control, "modulate:a", _base_alpha, duration)
 
 
 func lift(value: bool) -> void:
