@@ -57,6 +57,8 @@ func _ready() -> void:
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(shade)
+	# Flickering light and dust over the painting, beneath every panel.
+	add_child(HubAmbience.new())
 	_content = Control.new()
 	_content.name = "Content"
 	_content.theme = HubTheme.create()

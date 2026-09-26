@@ -43,6 +43,13 @@ func run_tests() -> void:
 	var hero: AnimatedSprite2D = hub.home_page.get_node("Hero")
 	check(hero.is_playing() and hero.animation == &"idle_front", "Home hero starts idle animation")
 	check(hero.sprite_frames.get_frame_count(&"idle_front") == 8, "Home uses all eight high-resolution idle frames")
+	var ambience: HubAmbience = hub.get_children().filter(func(child: Node): return child is HubAmbience)[0]
+	check(ambience.get_index() < hub.get_node("Content").get_index() and ambience.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Ambience sits beneath the panels and ignores the pointer")
+	ambience.size = Vector2(1440, 900)
+	check(ambience.light_rect(Vector2(0.5, 0.5), 10.0).get_center().is_equal_approx(Vector2(720, 450)), "Lights follow the covered background")
+	hub.hide()
+	check(not ambience.dust.emitting, "Hidden hub stops the dust")
+	hub.show()
 	var last_frame := hero.sprite_frames.get_frame_texture(&"idle_front", 7) as AtlasTexture
 	check(last_frame.region == Rect2(0, 0, 128, 128), "Idle keeps the same body silhouette through the loop")
 	var eyes: AnimatedSprite2D = hero.get_node("Eyes")
