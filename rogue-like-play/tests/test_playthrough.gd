@@ -2,6 +2,10 @@ extends SceneTree
 
 # Omniscient deterministic test driver, not gameplay AI or a difficulty estimate.
 var failures := 0
+# The reference loop covers 1F to 10F: defeat the tenth floor guardian, the
+# first checkpoint of a fifty floor stage, then leave through its exit.
+const LOOP_FLOOR := 10
+const DETOUR_STEPS := 8
 
 
 func _initialize() -> void:
@@ -19,7 +23,24 @@ func path_to(run: Node2D, target: Vector2i, fight_through: bool = false) -> Arra
 	for cell: Vector2i in grid.occupants:
 		if not fight_through and cell != run.turns.player.cell and cell != target:
 			finder.set_point_solid(cell)
+	# A discovered monster house is avoided, as the spec expects of players,
+	# unless the route starts inside it.
+	if _avoids_house(run):
+		var house: Rect2i = run.dungeon.monster_house
+		for x in range(house.position.x, house.end.x):
+			for y in range(house.position.y, house.end.y):
+				var cell := Vector2i(x, y)
+				if cell != target and grid.in_bounds(cell):
+					finder.set_point_solid(cell)
 	return finder.get_id_path(run.turns.player.cell, target)
+
+
+func _avoids_house(run: Node2D) -> bool:
+	return run.dungeon.house_discovered and not run.dungeon.monster_house.has_point(run.turns.player.cell)
+
+
+func _in_house(run: Node2D, cell: Vector2i) -> bool:
+	return _avoids_house(run) and run.dungeon.monster_house.has_point(cell)
 
 
 func act(run: Node2D) -> bool:
@@ -64,23 +85,37 @@ func act(run: Node2D) -> bool:
 			var delta: Vector2i = enemy.cell - player.cell
 			if delta.x == 0 or delta.y == 0 or absi(delta.x) == absi(delta.y):
 				return run.turns.submit("attack", Vector2i(signi(delta.x), signi(delta.y)))
-	var destinations: Array[Vector2i] = []
-	for cell: Vector2i in run.dungeon.ground_items:
-		if player.inventory.entries.size() < 40:
-			destinations.append(cell)
-	for enemy: Node2D in run.turns.enemies:
-		if enemy.hp > 0:
-			destinations.append(enemy.cell)
-	if destinations.is_empty():
-		destinations.append(run.dungeon.stairs_cell)
+	# After the guardian falls, the loop ends by walking out of the exit.
+	if run.floor_number == LOOP_FLOOR and run.exit_cell != Vector2i(-1, -1):
+		var out := path_to(run, run.exit_cell, true)
+		if out.size() > 1:
+			if run.dungeon.grid.occupants.has(out[1]):
+				return run.turns.submit("attack", out[1] - player.cell)
+			return run.turns.submit("move", out[1] - player.cell)
+	# Reinforcements keep arriving, so chasing every enemy never ends. Detour
+	# only for nearby items and enemies; otherwise take the stairs. Boss floors
+	# have no stairs until the boss falls, so they still hunt every enemy.
 	var best: Array[Vector2i] = []
-	for target in destinations:
-		var path := path_to(run, target)
-		if path.size() > 1 and (best.is_empty() or path.size() < best.size()):
-			best = path
+	for cell: Vector2i in run.dungeon.ground_items:
+		if player.inventory.entries.size() < 40 and not _in_house(run, cell):
+			best = _shorter(best, path_to(run, cell), DETOUR_STEPS)
+	for enemy: Node2D in run.turns.enemies:
+		if enemy.hp > 0 and not _in_house(run, enemy.cell):
+			best = _shorter(best, path_to(run, enemy.cell), DETOUR_STEPS if run.dungeon.has_stairs else 100000)
+	if best.is_empty() and run.dungeon.has_stairs:
+		# Enemies in a corridor would block the route; walk into them instead.
+		best = _shorter(best, path_to(run, run.dungeon.stairs_cell, true), 100000)
 	if best.is_empty():
 		return false
+	if run.dungeon.grid.occupants.has(best[1]):
+		return run.turns.submit("attack", best[1] - player.cell)
 	return run.turns.submit("move", best[1] - player.cell)
+
+
+func _shorter(best: Array[Vector2i], path: Array[Vector2i], limit: int) -> Array[Vector2i]:
+	if path.size() > 1 and path.size() <= limit and (best.is_empty() or path.size() < best.size()):
+		return path
+	return best
 
 
 func run_tests() -> void:
@@ -99,11 +134,11 @@ func run_tests() -> void:
 			if not act(run):
 				break
 			actions += 1
-		var cleared: bool = run.result.get("cleared", false)
-		print("Playthrough seed %d: cleared=%s floor=%d level=%d HP=%d turns=%d Gold=%d" % [seed_value, cleared, run.floor_number, run.progression.level, run.turns.player.hp, run.turns.turn_count, run.turns.gold])
+		var cleared: bool = run.result.get("safe_return", false) and run.result.get("floor", 0) == LOOP_FLOOR
+		print("Playthrough seed %d: returned from 10F=%s floor=%d level=%d HP=%d turns=%d Gold=%d" % [seed_value, cleared, run.floor_number, run.progression.level, run.turns.player.hp, run.turns.turn_count, run.turns.gold])
 		if not cleared:
 			failures += 1
-			push_error("Reference playthrough did not clear")
+			push_error("Reference playthrough did not defeat the 10F guardian and return")
 		if cleared:
 			var expected := SaveCodec.encode(run.carryover)
 			run.retry_run()
