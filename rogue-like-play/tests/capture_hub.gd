@@ -95,9 +95,12 @@ func capture() -> void:
 	await settle()
 	ok = ok and main.active_run == null and hub.visible and main.state.gold == 36
 	ok = root.get_texture().get_image().save_png("res://.godot/hub_returned.png") == OK and ok
+	# The return cover swallows input until it reveals the hub.
+	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
 	await click(hub.start_button)
 	await click(hub.departure_page.next_button)
 	await click(hub.departure_page.confirm_button)
+	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
 	ok = ok and main.active_run.turns.player.hp == 25 and main.active_run.turns.gold == 36
 	main.active_run.finish_run(true)
 	await settle()

@@ -40,6 +40,10 @@ func capture() -> void:
 		run.turns.enemies.append(enemy)
 	run.turns.enemies[0].hp = 4
 	run.turns.submit("attack", Vector2i.RIGHT)
+	# The choice opens once the defeat presentation has finished.
+	while run.presentation.playing:
+		await run.presentation.finished
+	await process_frame
 	if not run.ability_choice.visible or not await snapshot("res://.godot/progression_choice.png"):
 		quit(1)
 		return
