@@ -26,6 +26,7 @@ var offered_abilities: Array[AbilityData] = []
 var last_message := ""
 var message_serial := 0
 var defeated_by := ""
+var kills_total := 0
 
 
 func begin_message(text: String) -> void:
@@ -139,6 +140,7 @@ func _complete_player_action() -> bool:
 				earned_gold += enemy.stats.gold_reward
 				action_gold += enemy.stats.gold_reward
 				kills += 1
+		kills_total += kills
 		if kills > 0:
 			player.hp = mini(player.stats.max_hp, player.hp + kills * (player.abilities.total(AbilityData.Effect.KILL_HEAL) + player.active_effects.amount(&"kill_heal")))
 			earned_exp += earned_exp * player.active_effects.amount(&"exp") / 100

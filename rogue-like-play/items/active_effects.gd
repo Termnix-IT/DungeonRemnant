@@ -45,6 +45,12 @@ func change_floor() -> void:
 			effects.erase(id)
 
 
+func entries() -> Array[Dictionary]:
+	var list: Array[Dictionary] = []
+	list.assign(effects.values())
+	return list
+
+
 func summary() -> String:
 	var labels: PackedStringArray = []
 	for effect: Dictionary in effects.values():

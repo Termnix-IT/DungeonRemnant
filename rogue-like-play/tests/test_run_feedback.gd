@@ -59,6 +59,7 @@ func run_tests() -> void:
 	check_floor_messages()
 	await check_stair_prompt()
 	await check_confirmation_page()
+	await check_combat_readability()
 	print("Run feedback tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
 
@@ -99,8 +100,45 @@ func check_defeat_log() -> void:
 	run._refresh()
 	run._on_action("attack", Vector2i.LEFT)
 	check(run.turns.ended and run.turns.defeated_by == BASIC.display_name, "Defeat records the attacker")
+	check(run.danger.target > 0.0, "Low HP raises the danger vignette")
 	await wait_presentation(run)
 	check(run.hud.log_history[-1].contains("%sに倒された" % BASIC.display_name), "Defeat line names the attacker")
+	var result: Dictionary = run.result
+	check(result.defeated and result.defeated_by == BASIC.display_name and result.level == 1 and result.turns == 1, "Result records cause, level and turns")
+	var panel = run.result_panel
+	check(panel.visible and not panel.ready_for_input(), "Defeat result holds input during the beat")
+	check(panel.cause_label.text.contains("%sに倒された" % BASIC.display_name) and panel.turns_value.text == "1", "Result panel shows the cause and turn count")
+	check(player.combat_visual.rotation != 0.0, "The hero collapses after the killing blow")
+	await create_timer(panel.DEFEAT_BEAT + 0.05).timeout
+	check(panel.ready_for_input(), "Result accepts input after the beat")
+	run.free()
+
+
+func check_combat_readability() -> void:
+	var run := make_run()
+	var player: Node2D = run.turns.player
+	var enemy := add_enemy(run, BASIC, player.cell + Vector2i.RIGHT, 100)
+	player.aiming = true
+	player.facing = Vector2i.RIGHT
+	run._refresh()
+	check(run.preview.visible and enemy.cell in run.preview.target_cells, "Aim preview marks the cell holding a target")
+	player.facing = Vector2i.LEFT
+	run._refresh()
+	check(run.preview.target_cells.is_empty() and not run.preview.cells.is_empty(), "Empty range shows brackets without a reticle")
+	player.aiming = false
+	var effects = run.hud.get_node("ActiveEffects")
+	check(not effects.visible, "No active effects hides the effects panel")
+	for item in ItemCatalog.talismans():
+		player.active_effects.add(item)
+	run._refresh()
+	check(effects.visible and effects.entries.size() == player.active_effects.effects.size() and effects.entries.size() > 1, "Each active effect gets its own row")
+	check(not effects.get_global_rect().intersects(run.hud.get_node("TopLeft").get_global_rect()), "Effects panel sits below the floor panel")
+	check(run.danger.target == 0.0, "Full HP keeps the vignette off")
+	var kills: int = run.turns.kills_total
+	enemy.hp = 1
+	run._on_action("attack", Vector2i.RIGHT)
+	check(run.turns.kills_total == kills + 1, "Kills are counted for the result")
+	await wait_presentation(run)
 	run.free()
 
 

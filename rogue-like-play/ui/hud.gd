@@ -170,19 +170,17 @@ func _layout_label(value: String) -> String:
 	return value
 
 
-func show_effects(text: String) -> void:
-	var label := get_node_or_null("ActiveEffects") as Label
-	if label == null:
-		label = Label.new()
-		label.name = "ActiveEffects"
-		label.position = Vector2(310, 64)
-		label.size = Vector2(770, 90)
-		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		label.theme = $TopLeft.theme
-		label.theme_type_variation = &"HudCaption"
-		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(label)
-	label.text = text
+# Sits under the floor/Gold panel, matching its width.
+func show_effects(active: Array[Dictionary]) -> void:
+	var panel := get_node_or_null("ActiveEffects") as HudEffects
+	if panel == null:
+		panel = HudEffects.new()
+		panel.name = "ActiveEffects"
+		panel.theme = $TopLeft.theme
+		add_child(panel)
+		panel.position = Vector2($TopLeft.position.x, $TopLeft.position.y + $TopLeft.size.y + 8)
+		panel.size.x = $TopLeft.size.x
+	panel.show_entries(active)
 
 
 func show_mana(current: int, maximum: int) -> void:

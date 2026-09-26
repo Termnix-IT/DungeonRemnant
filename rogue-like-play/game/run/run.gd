@@ -57,6 +57,7 @@ var presentation := preload("res://combat/battle_presentation.gd").new()
 var reinforcements := ReinforcementSpawner.new()
 var journey_banner := preload("res://ui/journey_banner.gd").new()
 var ambience := preload("res://audio/dungeon_ambience.gd").new()
+var danger := DangerVignette.new()
 var shake_tween: Tween
 var _snap_camera := true
 var _last_visual_hp := -1
@@ -80,6 +81,7 @@ var _summon_count := 0
 func _ready() -> void:
 	add_child(journey_banner)
 	add_child(ambience)
+	add_child(danger)
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = 18.0
 	transition_dialog = ChoicePrompt.new()
@@ -465,15 +467,22 @@ func _refresh() -> void:
 		hud.area.text = "モンスターハウス"
 	hud.show_progress(progression.level, progression.exp, progression.required_exp())
 	preview.cells.clear()
+	preview.target_cells.clear()
 	for cell: Vector2i in CombatRules.attack_cells(dungeon.grid, turns.player.cell, turns.player.facing, turns.player.effective_weapon()):
 		if dungeon.fog.visible.has(cell):
 			preview.cells.append(cell)
+			var occupant: Node2D = dungeon.grid.occupants.get(cell)
+			if occupant != null and occupant != turns.player and occupant.hp > 0:
+				preview.target_cells.append(cell)
 	preview.visible = turns.player.aiming and not turns.ended and not turns.busy
 	preview.queue_redraw()
 	hud.show_aim(turns.player.weapon.display_name, preview.visible)
 	hud.show_inventory(turns.player.inventory.entries.size())
 	hud.show_mana(turns.player.mp, turns.player.stats.max_mp)
-	hud.show_effects(turns.player.active_effects.summary())
+	# finish_run clears effects in rules; keep the last list on screen through
+	# the defeat and result instead of emptying it before the killing blow shows.
+	if not turns.ended:
+		hud.show_effects(turns.player.active_effects.entries())
 	hud.show_gold(turns.gold)
 	hud.show_equipment(turns.player.equipment)
 	var visible_enemy_cells: Array[Vector2i] = []
@@ -499,6 +508,7 @@ func _displayed_hp() -> int:
 		# Healing earlier in the same action must not show before the hits.
 		hp = mini(hp + presentation.pending_player_damage, _hud_hp)
 	_hud_hp = hp
+	danger.set_health(hp, turns.player.stats.max_hp)
 	return hp
 
 
@@ -563,6 +573,8 @@ func _input(event: InputEvent) -> void:
 		# Handle input before Hub navigation can remove this Run from the tree.
 		if event is InputEventKey or event is InputEventAction:
 			get_viewport().set_input_as_handled()
+		if not result_panel.ready_for_input():
+			return
 		if result_panel.confirming and event.is_action_pressed("cancel_attack"):
 			_cancel_abort()
 		elif result_panel.confirming and event.is_action_pressed("ui_accept"):
@@ -636,7 +648,8 @@ func finish_run(cleared: bool, safe_return: bool = false, forced_return: bool = 
 	if not cleared and not safe_return:
 		result = RunLoss.apply(turns.player.inventory, turns.gold, loss_rng)
 	turns.gold -= int(result.gold_lost)
-	result.merge({"cleared": cleared, "safe_return": safe_return, "forced_return": forced_return, "floor": floor_number, "earned_gold": turns.earned_gold, "gold": turns.gold, "equipment": turns.player.equipment.slots.duplicate()})
+	result.merge({"cleared": cleared, "safe_return": safe_return, "forced_return": forced_return, "floor": floor_number, "earned_gold": turns.earned_gold, "gold": turns.gold, "equipment": turns.player.equipment.slots.duplicate(),
+		"defeated": turns.player.hp <= 0, "defeated_by": turns.defeated_by, "level": progression.level, "kills": turns.kills_total, "turns": turns.turn_count})
 	turns.player.active_effects.effects.clear()
 	turns.player.refresh_equipment_effects()
 	carryover.capture(turns.player, turns.gold)
@@ -654,6 +667,8 @@ func _present_result() -> void:
 		ambience.stop()
 		if not result_panel.visible:
 			GameAudio.play(result_panel, &"victory" if result.cleared or result.get("safe_return", false) else &"defeat", -18.0)
+			if result.get("defeated", false):
+				presentation.collapse(turns.player)
 		result_panel.present(result)
 
 
@@ -680,6 +695,8 @@ func retry_run() -> void:
 	turns.progression = progression
 	turns.gold = carryover.gold
 	turns.earned_gold = 0
+	turns.kills_total = 0
+	turns.defeated_by = ""
 	turns.turn_count = 0
 	turns.ended = false
 	turns.busy = false
@@ -687,6 +704,7 @@ func retry_run() -> void:
 	result = {}
 	floor_number = starting_floor
 	hud.reset_log()
+	danger.clear()
 	_load_floor()
 	_refresh()
 

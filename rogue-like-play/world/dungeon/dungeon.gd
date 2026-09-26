@@ -183,11 +183,27 @@ func _is_connectable_wall(cell: Vector2i) -> bool:
 
 
 func _draw_decorations() -> void:
+	# The monster house reads as a stained, scarred room rather than a grid
+	# highlight: a low warm stain, scratches on some tiles, and an ember seam
+	# only along the room's edge.
 	for cell: Vector2i in fog.explored:
-		if monster_house.has_point(cell):
-			var tint := Color(0.6, 0.12, 0.06, 0.22 if fog.visible.has(cell) else 0.09)
-			decorations.draw_rect(Rect2(Vector2(cell * TILE_SIZE), Vector2.ONE * TILE_SIZE), tint)
-			decorations.draw_rect(Rect2(Vector2(cell * TILE_SIZE) + Vector2(4, 4), Vector2.ONE * (TILE_SIZE - 8)), Color(0.8, 0.36, 0.12, tint.a * 2), false, 1)
+		if not monster_house.has_point(cell):
+			continue
+		var lit: bool = fog.visible.has(cell)
+		var origin := Vector2(cell * TILE_SIZE)
+		decorations.draw_rect(Rect2(origin, Vector2.ONE * TILE_SIZE), Color(0.42, 0.08, 0.05, 0.16 if lit else 0.07))
+		var mark := absi(cell.x * 73856093 ^ cell.y * 19349663)
+		if mark % 3 == 0:
+			var scratch := Color(0.2, 0.08, 0.06, 0.55 if lit else 0.25)
+			var start := origin + Vector2(12 + mark % 17, 14 + (mark / 7) % 15)
+			for claw in 3:
+				decorations.draw_line(start + Vector2(claw * 5, 0), start + Vector2(claw * 5 + 9, 13), scratch, 2.0)
+		var seam := Color(0.86, 0.36, 0.16, 0.5 if lit else 0.2)
+		for side: Vector2i in [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]:
+			if monster_house.has_point(cell + side):
+				continue
+			var from := origin + Vector2.ONE * TILE_SIZE / 2.0 + Vector2(side) * (TILE_SIZE / 2.0 - 3) - Vector2(side).orthogonal() * TILE_SIZE / 2.0
+			decorations.draw_line(from, from + Vector2(side).orthogonal() * TILE_SIZE, seam, 2.0)
 	if forest:
 		for cell: Vector2i in fog.explored:
 			if not grid.walls.has(cell):

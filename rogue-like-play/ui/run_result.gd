@@ -5,10 +5,16 @@ signal abort_confirmed
 signal abort_cancelled
 
 const KEPT_NOTE := "装備中の5枠は保持されます。"
+# After a defeat the dungeon darkens slowly before the panel rises, so the
+# fall registers. Input waits for the panel; the result is already saved.
+const DEFEAT_BEAT := 0.7
 
 var confirming := false
 var return_to_hub := false
 var title_label: Label
+var cause_label: Label
+var shade: ColorRect
+var _accept_after_msec := 0
 var details: Label
 var accept: Button
 var cancel: Button
@@ -22,6 +28,9 @@ var floor_value: Label
 var earned_value: Label
 var lost_value: Label
 var balance_value: Label
+var level_value: Label
+var kills_value: Label
+var turns_value: Label
 var kept_box: VBoxContainer
 var kept_equipment: HudEquipment
 var lost_box: VBoxContainer
@@ -31,7 +40,7 @@ var lost_none: Label
 
 func _ready() -> void:
 	layer = 12
-	var shade := ColorRect.new()
+	shade = ColorRect.new()
 	shade.color = Color(0.01, 0.02, 0.04, 0.9)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(shade)
@@ -51,6 +60,7 @@ func _ready() -> void:
 	title_label = Label.new()
 	title_label.theme_type_variation = &"TitleLabel"
 	panel.add_child(title_label)
+	cause_label = HubUI.label(panel, "", &"DescriptionLabel")
 	details_scroll = ScrollContainer.new()
 	# Tall enough for the stats, kept slots and two lost cards without scrolling.
 	details_scroll.custom_minimum_size.y = 440
@@ -69,6 +79,9 @@ func _ready() -> void:
 	earned_value = _stat(stats, "今回獲得")
 	lost_value = _stat(stats, "失ったGold")
 	balance_value = _stat(stats, "残高")
+	level_value = _stat(stats, "到達Lv")
+	kills_value = _stat(stats, "倒した敵")
+	turns_value = _stat(stats, "経過ターン")
 	kept_box = VBoxContainer.new()
 	kept_box.theme_type_variation = &"DetailStack"
 	summary.add_child(kept_box)
@@ -141,6 +154,11 @@ func present(result: Dictionary) -> void:
 	lost_value.text = _gold(gold_lost, "−") if gold_lost > 0 else "なし"
 	lost_value.theme_type_variation = &"LossValueLabel" if gold_lost > 0 else &"ValueLabel"
 	balance_value.text = _gold(result.gold)
+	level_value.text = "Lv %d" % int(result.get("level", 1))
+	kills_value.text = "%d体" % int(result.get("kills", 0))
+	turns_value.text = str(int(result.get("turns", 0)))
+	cause_label.text = _cause(result)
+	cause_label.visible = not cause_label.text.is_empty()
 	var equipment: Array = result.get("equipment", [])
 	kept_box.visible = not equipment.is_empty()
 	kept_equipment.show_slots(equipment)
@@ -150,9 +168,34 @@ func present(result: Dictionary) -> void:
 	lost_box.show()
 	accept.text = "拠点へ戻る（R）" if return_to_hub else "Lv1から再挑戦（R）"
 	cancel.hide()
+	var beat := DEFEAT_BEAT if result.get("defeated", false) else 0.0
+	_accept_after_msec = Time.get_ticks_msec() + int(beat * 1000)
 	show()
-	_reveal()
-	_play_sequence(result)
+	if beat > 0.0:
+		details_scroll.scroll_vertical = 0
+		UIMotion.of(shade).appear(0.0, beat)
+		UIMotion.of(presentation_panel).appear(beat, UIMotion.WINDOW_TIME)
+	else:
+		_reveal()
+	_play_sequence(result, beat)
+
+
+# Whether confirm keys and the accept button act yet (false during the beat).
+func ready_for_input() -> bool:
+	return Time.get_ticks_msec() >= _accept_after_msec
+
+
+func _cause(result: Dictionary) -> String:
+	if result.cleared:
+		return "最深部の主を討ち果たした。"
+	if result.get("safe_return", false):
+		return "%dFの脱出口から拠点へ帰還した。" % result.floor
+	if result.get("forced_return", false):
+		return "%dFで滞在の限界を迎え、拠点へ引き戻された。" % result.floor
+	if result.get("defeated", false):
+		var by: String = result.get("defeated_by", "")
+		return "%dFで%sに倒された。" % [result.floor, by] if not by.is_empty() else "%dFで力尽きた。" % result.floor
+	return "%dFで冒険を中断した。" % result.floor if result.has("level") else ""
 
 
 func _show_losses(result: Dictionary) -> void:
@@ -171,19 +214,19 @@ func _show_losses(result: Dictionary) -> void:
 
 
 # Values are final before this runs; the sequence only replays them in order.
-func _play_sequence(result: Dictionary) -> void:
+func _play_sequence(result: Dictionary, delay: float = 0.0) -> void:
 	var steps: Array[Control] = []
 	steps.append_array(stat_rows)
 	if kept_box.visible:
 		steps.append(kept_box)
 	steps.append(lost_box)
 	for index in steps.size():
-		UIMotion.of(steps[index]).appear(index * UIMotion.SEQUENCE_STEP_TIME)
+		UIMotion.of(steps[index]).appear(delay + index * UIMotion.SEQUENCE_STEP_TIME)
 	var earned := int(result.earned_gold)
 	var gold := int(result.gold)
-	UIMotion.of(earned_value).count(0, earned, _gold.bind("+"), UIMotion.SEQUENCE_STEP_TIME)
+	UIMotion.of(earned_value).count(0, earned, _gold.bind("+"), delay + UIMotion.SEQUENCE_STEP_TIME)
 	var starting_gold := gold + int(result.gold_lost) - earned
-	UIMotion.of(balance_value).count(starting_gold, gold, _gold.bind(""), UIMotion.SEQUENCE_STEP_TIME * 3)
+	UIMotion.of(balance_value).count(starting_gold, gold, _gold.bind(""), delay + UIMotion.SEQUENCE_STEP_TIME * 3)
 
 
 func _gold(amount: int, prefix: String = "") -> String:
@@ -193,6 +236,8 @@ func _gold(amount: int, prefix: String = "") -> String:
 func confirm_abort() -> void:
 	save_label.text = ""
 	confirming = true
+	_accept_after_msec = 0
+	cause_label.hide()
 	title_label.text = "冒険を中断しますか？"
 	title_label.theme_type_variation = &"TitleLabel"
 	summary.hide()
@@ -211,6 +256,8 @@ func _reveal() -> void:
 
 
 func _accept() -> void:
+	if not ready_for_input():
+		return
 	if confirming:
 		abort_confirmed.emit()
 	else:

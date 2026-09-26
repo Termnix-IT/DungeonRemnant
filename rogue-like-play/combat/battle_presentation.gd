@@ -10,6 +10,13 @@ const StrikeEffect := preload("res://combat/strike_effect.gd")
 # Engine.time_scale is untouched so audio, UI and timers keep running.
 const HIT_STOP_TIME := 0.05
 const DAMAGE_FONT_SIZE := 30
+# Damage the hero takes reads hotter and larger than damage dealt; a killing
+# blow is the largest. Each keeps a dark outline in its own hue.
+const DEALT_COLOR := Color("ffe9b0")
+const DEALT_OUTLINE := Color("241606")
+const KILL_COLOR := Color("ffc94d")
+const TAKEN_COLOR := Color("ff5a4e")
+const TAKEN_OUTLINE := Color("2e0707")
 var playing := false
 var timeline: Tween
 var tweens: Array[Tween] = []
@@ -239,9 +246,12 @@ func _hit(event: Dictionary, player: Node2D, tile_size: int) -> void:
 		pending_player_damage = maxi(0, pending_player_damage - int(event.damage))
 	impact.emit(actor == player)
 	var center := Vector2(event.origin * tile_size) + Vector2.ONE * tile_size / 2.0
-	var damage := popup(str(event.damage), center + Vector2(0, -48), Color("ff8c8c") if actor == player else Color("fff0be"), DAMAGE_FONT_SIZE)
+	var taken: bool = actor == player
+	var color := TAKEN_COLOR if taken else (KILL_COLOR if event.dead else DEALT_COLOR)
+	var font_size := DAMAGE_FONT_SIZE + (4 if taken or event.dead else 0)
+	var damage := popup(str(event.damage), center + Vector2(0, -48), color, font_size, TAKEN_OUTLINE if taken else DEALT_OUTLINE)
 	damage.pivot_offset = damage.size * 0.5
-	damage.scale = Vector2.ONE * 1.35
+	damage.scale = Vector2.ONE * (1.55 if taken else 1.35)
 	var punch := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tweens.append(punch)
 	punch.tween_property(damage, "scale", Vector2.ONE, 0.14)
@@ -286,13 +296,16 @@ func hit_stop(duration: float = HIT_STOP_TIME) -> void:
 				tween.play())
 
 
-func popup(text: String, center: Vector2, color: Color, font_size: int = 24) -> Label:
+func popup(text: String, center: Vector2, color: Color, font_size: int = 24, outline: Color = Color("12141e")) -> Label:
 	var label := Label.new()
 	label.text = text
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_color_override("font_color", color)
-	label.add_theme_color_override("font_outline_color", Color("12141e"))
-	label.add_theme_constant_override("outline_size", 6 if font_size >= DAMAGE_FONT_SIZE else 5)
+	label.add_theme_color_override("font_outline_color", outline)
+	label.add_theme_constant_override("outline_size", 8 if font_size >= DAMAGE_FONT_SIZE else 5)
+	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.55))
+	label.add_theme_constant_override("shadow_offset_x", 0)
+	label.add_theme_constant_override("shadow_offset_y", 3)
 	label.add_theme_font_size_override("font_size", font_size)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.size = Vector2(320, font_size + 12)
@@ -306,6 +319,23 @@ func popup(text: String, center: Vector2, color: Color, font_size: int = 24) -> 
 	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.25).set_delay(0.4)
 	tween.tween_callback(label.queue_free)
 	return label
+
+
+# The hero sinks to the floor and dims after the killing blow. Presentation
+# only: the run has already ended and the result is saved.
+func collapse(actor: Node2D) -> void:
+	if not is_instance_valid(actor) or actor.get("combat_visual") == null:
+		return
+	var old: Tween = poses.get(actor)
+	if old != null and old.is_valid():
+		old.kill()
+	_track(actor)
+	var visual: Node2D = actor.combat_visual
+	var tween := create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tweens.append(tween)
+	tween.tween_property(visual, "rotation", -1.35 * (1.0 if actor.facing.x <= 0 else -1.0), 0.45)
+	tween.tween_property(visual, "position", Vector2(0, 10), 0.45)
+	tween.tween_property(actor, "modulate", Color(0.62, 0.52, 0.58), 0.6)
 
 
 func _track(actor: Node2D) -> void:

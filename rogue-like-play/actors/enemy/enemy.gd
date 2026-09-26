@@ -198,9 +198,19 @@ func _draw() -> void:
 	if stats.behavior == EnemyStats.Behavior.SUMMONER:
 		draw_arc(Vector2.ZERO, 18, -PI / 2, -PI / 2 + TAU * (summon_clock + 1) / stats.summon_interval, 24, Color("b7c78c"), 2)
 	if hp < stats.max_hp:
-		draw_rect(Rect2(-12, -20, 24, 3), Color("45383c"))
-		draw_rect(Rect2(-12, -20, 24.0 * maxi(0, hp) / stats.max_hp, 3), Color("efbb81"))
+		_draw_health()
 	draw_set_transform(Vector2.ZERO)
+
+
+# Framed bar whose fill warms from gold to red as the enemy weakens.
+func _draw_health() -> void:
+	var ratio := clampf(float(hp) / stats.max_hp, 0.0, 1.0)
+	var frame := Rect2(-14, -23, 28, 5)
+	draw_rect(frame.grow(1), Color("12141e"))
+	draw_rect(frame, Color("3b2e31"))
+	var fill := Color("e8c26f") if ratio > 0.5 else (Color("e98a4a") if ratio > 0.25 else Color("e0483f"))
+	draw_rect(Rect2(frame.position, Vector2(frame.size.x * ratio, frame.size.y)), fill)
+	draw_rect(Rect2(frame.position, Vector2(frame.size.x * ratio, 1)), fill.lightened(0.35))
 
 
 func draw_ellipse_shadow() -> void:
