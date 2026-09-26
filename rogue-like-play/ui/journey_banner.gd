@@ -39,14 +39,16 @@ func _ready() -> void:
 	hide()
 
 
-func present(title: String, subtitle: String = "") -> void:
+# delay holds the entrance while something covers the screen (a floor change).
+func present(title: String, subtitle: String = "", delay: float = 0.0) -> void:
 	title_label.text = title
 	subtitle_label.text = subtitle
 	subtitle_label.visible = not subtitle.is_empty()
 	show()
-	UIMotion.of(panel).enter()
-	UIMotion.of(title_label).pulse(1.025, UIMotion.WINDOW_TIME)
-	lifetime.start(DISPLAY_TIME)
+	UIMotion.of(panel).enter(delay)
+	if delay <= 0.0:
+		UIMotion.of(title_label).pulse(1.025, UIMotion.WINDOW_TIME)
+	lifetime.start(DISPLAY_TIME + delay)
 
 
 func clear() -> void:

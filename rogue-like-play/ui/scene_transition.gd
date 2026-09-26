@@ -8,8 +8,15 @@ const HOLD_TIME := 0.45
 const REVEAL_TIME := 0.35
 # The heading leaves just before the cover so it never overlaps the scene.
 const HEADING_EXIT_LEAD := 0.1
+# Floor changes: the last frame darkens, holds briefly in black, then the new
+# floor is revealed. Rules have already moved to the new floor underneath.
+const DESCENT_FADE_TIME := 0.22
+const DESCENT_HOLD_TIME := 0.34
+const DESCENT_REVEAL_DELAY := DESCENT_HOLD_TIME + REVEAL_TIME * 0.5
 
 var root: Control
+var still: TextureRect
+var veil: ColorRect
 var heading: Control
 var column: VBoxContainer
 var art: TextureRect
@@ -25,11 +32,17 @@ func _ready() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var cover := ColorRect.new()
-	cover.color = Color(0.01, 0.012, 0.016, 1)
-	cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(cover)
-	cover.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	still = TextureRect.new()
+	still.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	still.stretch_mode = TextureRect.STRETCH_SCALE
+	still.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(still)
+	still.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	veil = ColorRect.new()
+	veil.color = Color(0.01, 0.012, 0.016, 1)
+	veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(veil)
+	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var center := CenterContainer.new()
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(center)
@@ -70,19 +83,39 @@ func play_return(heading: String, detail: String = "") -> void:
 	_play()
 
 
-func _play() -> void:
+# frame is the last picture of the old floor; without one (headless) the
+# cover simply starts black.
+func play_descent(frame: Texture2D) -> void:
+	art.texture = null
+	art.visible = false
+	title.text = ""
+	subtitle.text = ""
+	_play(DESCENT_HOLD_TIME)
+	heading.hide()
+	still.texture = frame
+	still.visible = frame != null
+	if still.visible:
+		UIMotion.of(veil).appear(0.0, DESCENT_FADE_TIME)
+		# Drop the old frame once black, or it ghosts through the reveal.
+		UIMotion.of(still).fade_out(DESCENT_FADE_TIME, 0.01)
+
+
+func _play(hold: float = HOLD_TIME) -> void:
 	clear()
+	heading.show()
 	subtitle.visible = not subtitle.text.is_empty()
 	covering = true
 	root.mouse_filter = Control.MOUSE_FILTER_STOP
 	show()
 	UIMotion.of(column).appear(0.0, UIMotion.WINDOW_TIME)
-	UIMotion.of(heading).fade_out(HOLD_TIME - HEADING_EXIT_LEAD, UIMotion.WINDOW_TIME)
-	UIMotion.of(root).fade_out(HOLD_TIME, REVEAL_TIME).finished.connect(clear)
+	UIMotion.of(heading).fade_out(hold - HEADING_EXIT_LEAD, UIMotion.WINDOW_TIME)
+	UIMotion.of(root).fade_out(hold, REVEAL_TIME).finished.connect(clear)
 
 
 func clear() -> void:
 	covering = false
+	still.texture = null
+	still.hide()
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Hiding the layer resets every UIMotion under it to its base state.
 	hide()

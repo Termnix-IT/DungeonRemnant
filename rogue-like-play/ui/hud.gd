@@ -22,22 +22,28 @@ const EMPHASIZED_LOG_ENTRIES := 2
 
 var log_history: Array[String] = []
 var last_log_text := ""
+var last_log_key := -1
 var turn_count := 0
 var inventory_count := 0
 
 
-func refresh(hp: int, max_hp: int, turns: int, visible_enemies: int, log_text: String, floor_number: int, layout_name: String, terrain_name: String = "", total_floors: int = 10) -> void:
+# log_key identifies the action the text belongs to: text that grows within one
+# action replaces its entry, and a repeated line from a new action is kept.
+func refresh(hp: int, max_hp: int, turns: int, visible_enemies: int, log_text: String, floor_number: int, layout_name: String, terrain_name: String = "", total_floors: int = 10, log_key: int = -1) -> void:
 	status.text = "%d / %dF  %s     HP %d / %d     TURN %d     視界内の敵 %d" % [floor_number, total_floors, layout_name, hp, max_hp, turns, visible_enemies]
 	floor_value.text = "%d / %d" % [floor_number, total_floors]
 	area.text = "%s・%s" % [_terrain_label(terrain_name), _layout_label(layout_name)]
+	show_health(hp, max_hp)
+	turn_count = turns
+	_refresh_meta()
+	_record_log(log_text, log_key)
+
+
+func show_health(hp: int, max_hp: int) -> void:
 	hp_value.text = "%d / %d" % [hp, max_hp]
 	hp_bar.max_value = max(max_hp, 1)
 	hp_bar.value = max(hp, 0)
 	UIMotion.of($BottomLeft/HpTrail).update_vital(hp, max_hp, hp_value)
-	turn_count = turns
-	_refresh_meta()
-	var message := "死亡しました。リザルト画面を確認してください。" if hp <= 0 else log_text
-	_record_log(message)
 
 
 func show_aim(weapon_name: String, aiming: bool) -> void:
@@ -93,18 +99,24 @@ func reset_log() -> void:
 		UIMotion.of(get_node("BottomLeft/" + node_name)).reset()
 	log_history.clear()
 	last_log_text = ""
+	last_log_key = -1
 	_render_log()
 
 
-func _record_log(text: String) -> void:
-	# Routine footsteps must not push damage and pickup feedback out of history.
-	if text == "移動しました。":
-		_render_log()
-		return
-	if text.is_empty() or text == last_log_text:
+func _record_log(value: String, key: int = -1) -> void:
+	# Silent actions (plain footsteps) must not push damage and pickup
+	# feedback out of history.
+	var text := value.strip_edges()
+	var same_action := key >= 0 and key == last_log_key and not log_history.is_empty()
+	if text.is_empty() or (text == last_log_text and (key < 0 or same_action)):
 		_render_log()
 		return
 	last_log_text = text
+	last_log_key = key
+	if same_action:
+		log_history[-1] = text
+		_render_log()
+		return
 	log_history.append(text)
 	while log_history.size() > MAX_LOG_ENTRIES:
 		log_history.pop_front()

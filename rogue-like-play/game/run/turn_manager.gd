@@ -21,7 +21,16 @@ var earned_gold := 0
 var paused := false
 var progression: RunProgression
 var offered_abilities: Array[AbilityData] = []
-var last_message := "探索開始。水色がプレイヤー、赤色が敵です。"
+# One log entry per action. Later notes in the same action (pickups, EXP,
+# enemy replies) extend it; a new serial starts the next entry.
+var last_message := ""
+var message_serial := 0
+var defeated_by := ""
+
+
+func begin_message(text: String) -> void:
+	last_message = text
+	message_serial += 1
 
 
 func submit(kind: String, direction: Vector2i) -> bool:
@@ -36,23 +45,29 @@ func submit(kind: String, direction: Vector2i) -> bool:
 	player.queue_redraw()
 	if kind == "move":
 		if not grid.move_actor(player, player.cell + direction):
-			last_message = "進めません。向きだけ変更しました。"
+			begin_message("その方向には進めない。向きだけ変えた。")
 			return false
-		last_message = "移動しました。"
+		# Footsteps are routine; only what happens on arrival is logged.
+		begin_message("")
 		moved_this_turn = true
 		player_moved.emit()
 	elif kind == "attack":
 		var attack: WeaponData = player.effective_weapon()
-		if player.mp < attack.mana_cost or (attack.spell_heal > 0 and player.hp >= player.stats.max_hp):
-			last_message = "MPが足りないか、HPが満タンです。"
+		if player.mp < attack.mana_cost:
+			begin_message("MPが足りない。")
+			return false
+		if attack.spell_heal > 0 and player.hp >= player.stats.max_hp:
+			begin_message("HPは満タンだ。")
 			return false
 		player.mp -= attack.mana_cost
 		if attack.spell_heal > 0:
+			var before: int = player.hp
 			player.hp = mini(player.stats.max_hp, player.hp + attack.spell_heal)
-			last_message = "治癒の魔法を使いました。"
+			begin_message("治癒の魔法でHPが%d回復した。" % (player.hp - before))
 		else:
-			var damage := CombatRules.attack(grid, player, direction, attack)
-			last_message = "敵に %d ダメージ。" % damage if damage > 0 else "攻撃は空振りしました。"
+			var first_event := grid.visual_events.size()
+			CombatRules.attack(grid, player, direction, attack)
+			begin_message(_attack_report(first_event))
 	else:
 		return false
 	return _complete_player_action()
@@ -62,6 +77,7 @@ func submit_inventory(kind: String, index: int = -1, slot: int = -1) -> bool:
 	if busy or ended or paused or player.hp <= 0:
 		return false
 	var succeeded := false
+	var used_note := ""
 	match kind:
 		"socket":
 			succeeded = player.equipment.socket(player.inventory, index, slot)
@@ -79,20 +95,25 @@ func submit_inventory(kind: String, index: int = -1, slot: int = -1) -> bool:
 				if not item.effect_id.is_empty() and player.active_effects.add(item):
 					player.inventory.remove(index)
 					succeeded = true
+					used_note = "%sを使った。" % item.display_name
 				elif item.kind == ItemData.Kind.CONSUMABLE and item.restore_mp > 0 and player.mp < player.stats.max_mp:
+					var before_mp: int = player.mp
 					player.mp = mini(player.stats.max_mp, player.mp + item.restore_mp)
 					player.inventory.remove(index)
 					succeeded = true
+					used_note = "%sを使った。MPが%d回復。" % [item.display_name, player.mp - before_mp]
 				elif item.kind == ItemData.Kind.CONSUMABLE and item.heal_amount > 0 and player.hp < player.stats.max_hp:
+					var before_hp: int = player.hp
 					player.hp = mini(player.stats.max_hp, player.hp + item.heal_amount)
 					player.inventory.remove(index)
 					succeeded = true
+					used_note = "%sを使った。HPが%d回復。" % [item.display_name, player.hp - before_hp]
 	if not succeeded:
-		last_message = "実行できません。収納の空き・装備先・HPを確認してください。"
+		begin_message("実行できません。収納の空き・装備先・HPを確認してください。")
 		return false
 	player.refresh_equipment_effects()
 	player.aiming = false
-	last_message = "アイテムを使用しました。" if kind == "use" else "装備を変更しました。"
+	begin_message(used_note if kind == "use" else "装備を変更した。")
 	if kind == "use":
 		moved_this_turn = false
 		return _complete_player_action()
@@ -180,7 +201,10 @@ func _finish_enemy_phase() -> void:
 			enemy.summon_due = false
 			summon_requested.emit(enemy)
 		if damage > 0:
-			last_message += " 敵の攻撃 %d。" % damage
+			last_message += " %sの攻撃で%dダメージ。" % [enemy.stats.display_name, damage]
+			if player.hp <= 0:
+				defeated_by = enemy.stats.display_name
+				last_message += " %sに倒された……" % defeated_by
 	if player.hp > 0:
 		player.hp = mini(player.stats.max_hp, player.hp + player.active_effects.amount(&"regen"))
 	player.active_effects.tick()
@@ -189,3 +213,15 @@ func _finish_enemy_phase() -> void:
 	player.input_enabled = not ended
 	busy = false
 	turn_finished.emit()
+
+
+# Names each target the player's attack reached, from this action's hit events.
+func _attack_report(first_event: int) -> String:
+	var parts: Array[String] = []
+	for index in range(first_event, grid.visual_events.size()):
+		var event: Dictionary = grid.visual_events[index]
+		if event.kind != "hit" or event.source != player:
+			continue
+		var target_name: String = event.actor.stats.display_name
+		parts.append("%sを倒した" % target_name if event.dead else "%sに%dダメージ" % [target_name, event.damage])
+	return "攻撃は空を切った。" if parts.is_empty() else "、".join(parts) + "。"

@@ -18,6 +18,9 @@ var popup_serial := 0
 var pending_events: Array[Dictionary] = []
 var planned_duration := 0.0
 var poses: Dictionary = {}
+# Damage the player has taken in rules but not yet seen land. The HUD adds it
+# back so HP drops together with each hit.
+var pending_player_damage := 0
 
 
 func _exit_tree() -> void:
@@ -49,6 +52,7 @@ func clear() -> void:
 		child.queue_free()
 	playing = false
 	pending_events.clear()
+	pending_player_damage = 0
 	planned_duration = 0.0
 
 
@@ -69,6 +73,9 @@ func _reset_actor(actor: Node2D) -> void:
 func present(events: Array[Dictionary], player: Node2D, visible_cells: Dictionary, tile_size: int) -> void:
 	if events.is_empty():
 		return
+	for event in events:
+		if event.kind == "hit" and event.actor == player:
+			pending_player_damage += int(event.damage)
 	if playing:
 		pending_events.append_array(events)
 		return
@@ -154,6 +161,7 @@ func present(events: Array[Dictionary], player: Node2D, visible_cells: Dictionar
 		scheduled = true
 	if not scheduled:
 		timeline.kill()
+		pending_player_damage = 0
 		return
 	playing = true
 	if not move_actors.is_empty():
@@ -165,9 +173,13 @@ func present(events: Array[Dictionary], player: Node2D, visible_cells: Dictionar
 		if not pending_events.is_empty():
 			var next := pending_events.duplicate()
 			pending_events.clear()
+			# Already counted when the events were queued.
+			var queued_damage := pending_player_damage
 			present(next, player, visible_cells, tile_size)
+			pending_player_damage = queued_damage if playing else 0
 			if playing:
 				return
+		pending_player_damage = 0
 		finished.emit()
 	)
 
@@ -223,6 +235,8 @@ func _hit(event: Dictionary, player: Node2D, tile_size: int) -> void:
 	if not is_instance_valid(actor):
 		return
 	GameAudio.play(self, &"hit")
+	if actor == player:
+		pending_player_damage = maxi(0, pending_player_damage - int(event.damage))
 	impact.emit(actor == player)
 	var center := Vector2(event.origin * tile_size) + Vector2.ONE * tile_size / 2.0
 	var damage := popup(str(event.damage), center + Vector2(0, -48), Color("ff8c8c") if actor == player else Color("fff0be"), DAMAGE_FONT_SIZE)

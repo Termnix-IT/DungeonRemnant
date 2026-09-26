@@ -37,14 +37,6 @@ static func panel(parent: Node, position: Vector2, extent: Vector2) -> Panel:
 	return control
 
 
-static func equipment_text(state: RunCarryover) -> String:
-	var lines := PackedStringArray()
-	for index in state.equipment.slots.size():
-		var item := state.equipment.slots[index]
-		lines.append("%s： %s" % [Equipment.SLOT_NAMES[index], item.label() if item != null else "なし"])
-	return "\n\n".join(lines)
-
-
 static func fill_inventory(list: ItemList, inventory: Inventory) -> void:
 	list.clear()
 	for entry in inventory.entries:

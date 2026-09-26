@@ -14,6 +14,10 @@ var stage_list: StageCardList
 var stage_details: ItemDetails
 var stage_art: TextureRect
 var equipment_label: Label
+var equipment_rows: HudEquipment
+var stage_banner: TextureRect
+var carried_count: Label
+var empty_carried: PanelContainer
 var inventory_list: ItemList
 var selection_page: Control
 var confirmation_page: Control
@@ -50,15 +54,55 @@ func _ready() -> void:
 	confirmation_page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var review_columns := HubUI.columns(confirmation_page)
 	var equipment := HubUI.section(review_columns, 0.85)
-	equipment_label = HubUI.label(equipment, "", &"BodyLabel")
-	equipment_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	HubUI.label(equipment, "出撃する冒険者", &"HeadingLabel")
+	var party := HBoxContainer.new()
+	party.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	party.alignment = BoxContainer.ALIGNMENT_CENTER
+	equipment.add_child(party)
+	var portrait := CharacterPreview.new()
+	portrait.custom_minimum_size = Vector2(150, 230)
+	portrait.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	party.add_child(portrait)
+	var loadout := VBoxContainer.new()
+	loadout.theme_type_variation = &"DetailStack"
+	loadout.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	party.add_child(loadout)
+	# Short fixed lines: wrapping would let a zero-width first layout grow them tall.
+	HubUI.label(loadout, "装備", &"MutedLabel").autowrap_mode = TextServer.AUTOWRAP_OFF
+	equipment_rows = HudEquipment.new()
+	equipment_rows.custom_minimum_size = Vector2(220, 150)
+	loadout.add_child(equipment_rows)
+	HubUI.label(loadout, "出発時の能力", &"MutedLabel").autowrap_mode = TextServer.AUTOWRAP_OFF
+	equipment_label = HubUI.label(loadout, "", &"ValueLabel")
+	equipment_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	review_button = HubUI.button(equipment, "装備・持ち込みを見直す", func(): equipment_requested.emit())
 	var departure := HubUI.section(review_columns, 1.15)
-	HubUI.label(departure, "持ち込みアイテム", &"HeadingLabel")
+	stage_banner = TextureRect.new()
+	stage_banner.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	stage_banner.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	stage_banner.custom_minimum_size.y = 96
+	departure.add_child(stage_banner)
+	var carried_heading := HBoxContainer.new()
+	departure.add_child(carried_heading)
+	var carried_title := HubUI.label(carried_heading, "持ち込みアイテム", &"HeadingLabel")
+	carried_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	carried_count = HubUI.label(carried_heading, "", &"MutedLabel")
+	carried_count.autowrap_mode = TextServer.AUTOWRAP_OFF
+	carried_count.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	inventory_list = ItemCardList.new()
 	inventory_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	departure.add_child(inventory_list)
-	HubUI.label(departure, "装備と持ち込みを確認して、冒険へ。", &"HeadingLabel")
+	# An empty loadout is a valid choice, so it reads as a note rather than a
+	# disabled row in an otherwise blank list.
+	empty_carried = PanelContainer.new()
+	empty_carried.theme_type_variation = &"InsetPanel"
+	empty_carried.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	departure.add_child(empty_carried)
+	var empty_text := VBoxContainer.new()
+	empty_text.alignment = BoxContainer.ALIGNMENT_CENTER
+	empty_carried.add_child(empty_text)
+	for line: Array in [["持ち込みアイテムはありません", &"ItemNameLabel"], ["装備のみで出撃します。回復薬は倉庫・ショップから用意できます。", &"MutedLabel"]]:
+		HubUI.label(empty_text, line[0], line[1]).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	start_choice = OptionButton.new()
 	start_choice.custom_minimum_size.y = 40
 	departure.add_child(start_choice)
@@ -118,13 +162,18 @@ func present_confirmation(current: RunCarryover) -> void:
 	state = current
 	selection_page.hide()
 	confirmation_page.show()
-	equipment_label.text = "現在の装備\n\n" + HubTheme.equipment_text(state)
+	equipment_rows.show_equipment(state.equipment)
+	var stats := state.preparation_stats()
+	equipment_label.text = "HP %d  /  ATK %d\nDEF %d  /  射程 %d" % [stats.hp, stats.attack, stats.defense, stats.reach]
+	stage_banner.texture = selected_stage.illustration
+	stage_banner.visible = stage_banner.texture != null
 	inventory_list.clear()
 	for entry in state.inventory.entries:
 		(inventory_list as ItemCardList).add_card(entry.item, entry.count)
-	if inventory_list.item_count == 0:
-		inventory_list.add_item("持ち込みなし  /  装備のみで出撃")
-		inventory_list.set_item_disabled(0, true)
+	var carried := inventory_list.item_count > 0
+	inventory_list.visible = carried
+	empty_carried.visible = not carried
+	carried_count.text = "%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries] if carried else ""
 	start_choice.clear()
 	for floor_number in [1, 11, 21, 31, 41]:
 		if state.can_start(selected_stage, floor_number):
@@ -134,7 +183,10 @@ func present_confirmation(current: RunCarryover) -> void:
 	starting_floor = start_choice.get_selected_id() if start_choice.item_count > 0 else 1
 	_update_start_label()
 	# Focus on review rather than the destructive-to-preparation transition.
-	inventory_list.grab_focus()
+	if carried:
+		inventory_list.grab_focus()
+	else:
+		review_button.grab_focus()
 
 
 func _update_start_label() -> void:

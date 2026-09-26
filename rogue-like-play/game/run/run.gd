@@ -38,7 +38,10 @@ var floor_number := 1
 var floor_limit := 5000
 var exit_cell := Vector2i(-1, -1)
 var transition_kind := ""
-var transition_dialog: ConfirmationDialog
+var transition_dialog: ChoicePrompt
+# Covers the cut between floors; the floor itself loads immediately beneath it.
+var floor_cover: SceneTransition
+var arrival_banner_delay := 0.0
 var last_prompt_cell := Vector2i(-1, -1)
 var warning_marks: Array[int] = []
 var rng := RandomNumberGenerator.new()
@@ -57,6 +60,12 @@ var ambience := preload("res://audio/dungeon_ambience.gd").new()
 var shake_tween: Tween
 var _snap_camera := true
 var _last_visual_hp := -1
+# HP the HUD showed last. While hits are still playing, the HUD stays on the
+# pre-hit value and drops as each hit lands.
+var _hud_hp := -1
+var _logged_serial := -1
+var _summon_serial := -1
+var _summon_count := 0
 
 @onready var dungeon = $Dungeon
 @onready var turns = $TurnManager
@@ -73,21 +82,17 @@ func _ready() -> void:
 	add_child(ambience)
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = 18.0
-	transition_dialog = ConfirmationDialog.new()
-	transition_dialog.theme = preload("res://ui/theme/dungeon_theme.tres")
-	transition_dialog.title = "探索の選択"
-	transition_dialog.ok_button_text = "はい"
-	transition_dialog.cancel_button_text = "いいえ"
+	transition_dialog = ChoicePrompt.new()
 	add_child(transition_dialog)
-	transition_dialog.get_ok_button().theme_type_variation = &"PrimaryButton"
-	UIMotion.bind_buttons(transition_dialog)
-	transition_dialog.confirmed.connect(func(): resolve_transition(true))
+	transition_dialog.confirmed.connect(_confirm_transition)
 	transition_dialog.canceled.connect(func(): resolve_transition(false))
+	floor_cover = SceneTransition.new()
+	add_child(floor_cover)
 	dungeon.add_child(presentation)
 	presentation.finished.connect(_refresh)
 	presentation.impact.connect(func(player_hit: bool):
 		if player_hit:
-			UIMotion.of(hud.hp_value).pulse(1.06, UIMotion.VITAL_PULSE_TIME)
+			_show_vitals()
 			shake_camera()
 	)
 	if generation_seed == 0:
@@ -135,6 +140,7 @@ func _load_floor() -> void:
 	_snap_camera = true
 	stop_shake()
 	_last_visual_hp = -1
+	_hud_hp = -1
 	turns.player.active_effects.change_floor()
 	turns.player.refresh_equipment_effects()
 	turns.floor_turn_count = 0
@@ -182,12 +188,16 @@ func _load_floor() -> void:
 		dungeon.grid.place(boss, dungeon.stairs_cell)
 		turns.enemies.append(boss)
 	dungeon.spawn_items(dungeon_settings, floor_number, rng)
-	turns.last_message = "%dFに到着。金色の階段から次の階へ進めます。" % floor_number
+	# The stair hint is for the first floor of a run; later floors just arrive.
+	if floor_number == starting_floor:
+		turns.begin_message("%dFに到着。金色の階段から次の階へ進めます。" % floor_number)
+	else:
+		turns.begin_message("%dFに到着した。" % floor_number)
 	if floor_number % 10 == 0:
-		turns.last_message = "%dF：中ボスを倒すと階段と帰還用の脱出口が開きます。" % floor_number
+		turns.begin_message("%dF：中ボスを倒すと階段と帰還用の脱出口が開きます。" % floor_number)
 	if floor_number == final_floor:
-		turns.last_message = "%dF：深層の守護者を倒すとクリアです。中断確認はR。" % final_floor
-	journey_banner.present("%dF  ·  %s" % [floor_number, "守護者の領域" if floor_number % 10 == 0 else "探索開始"], stage_data.display_name if stage_data != null else "古代遺跡")
+		turns.begin_message("%dF：最深部の主を倒すとクリアです。中断確認はR。" % final_floor)
+	journey_banner.present("%dF  ·  %s" % [floor_number, "守護者の領域" if floor_number % 10 == 0 else "探索開始"], stage_data.display_name if stage_data != null else "古代遺跡", arrival_banner_delay)
 	ambience.start(dungeon_settings.forest)
 	GameAudio.play(journey_banner, &"floor", -22.0)
 
@@ -229,8 +239,31 @@ func _request_transition(kind: String) -> void:
 	transition_kind = kind
 	last_prompt_cell = turns.player.cell
 	turns.paused = true
-	transition_dialog.dialog_text = "次の階へ降りますか？" if kind == "stairs" else "アイテムを失わずに帰還しますか？"
-	transition_dialog.popup_centered(Vector2i(460, 160))
+	var place := "%s  ·  %dF" % [stage_data.display_name if stage_data != null else "古代遺跡", floor_number]
+	if kind == "stairs":
+		transition_dialog.ask(place, "下り階段", "%dFへ降りますか？  この階には戻れません。" % (floor_number + 1), "降りる", "とどまる（Esc）")
+	else:
+		transition_dialog.ask(place, "脱出口", "拠点へ帰還しますか？  所持品とGoldは失いません。", "帰還する", "探索を続ける（Esc）")
+
+
+# The prompt's accept path darkens the last frame before the floor changes.
+# Rule code and tests call resolve_transition directly and skip the cover.
+func _confirm_transition() -> void:
+	if transition_kind != "stairs" or turns.ended:
+		resolve_transition(true)
+		return
+	var still := _snapshot()
+	arrival_banner_delay = SceneTransition.DESCENT_REVEAL_DELAY
+	resolve_transition(true)
+	arrival_banner_delay = 0.0
+	floor_cover.play_descent(still)
+
+
+func _snapshot() -> Texture2D:
+	if DisplayServer.get_name() == "headless":
+		return null
+	var image := get_viewport().get_texture().get_image()
+	return ImageTexture.create_from_image(image) if image != null and not image.is_empty() else null
 
 
 func resolve_transition(accepted: bool) -> void:
@@ -371,7 +404,7 @@ func _can_arm_after_move(origin: Vector2i, direction: Vector2i, destination_was_
 
 
 func _world_input_available() -> bool:
-	return not presentation.playing and not turns.busy and not turns.ended and not turns.paused and turns.player.hp > 0 \
+	return not presentation.playing and not floor_cover.covering and not turns.busy and not turns.ended and not turns.paused and turns.player.hp > 0 \
 		and not inventory_panel.visible and not ability_choice.visible and not result_panel.visible \
 		and not turns.player.aiming
 
@@ -426,7 +459,8 @@ func _refresh() -> void:
 		enemy.visible = enemy.hp > 0 and dungeon.fog.visible.has(enemy.cell)
 		if enemy.visible:
 			visible_enemies += 1
-	hud.refresh(turns.player.hp, turns.player.stats.max_hp, turns.turn_count, visible_enemies, turns.last_message, floor_number, dungeon.layout_name, dungeon.terrain_theme_name, final_floor)
+	# The log line describes the whole action, so it waits for the playback.
+	hud.refresh(_displayed_hp(), turns.player.stats.max_hp, turns.turn_count, visible_enemies, "" if presentation.playing else turns.last_message, floor_number, dungeon.layout_name, dungeon.terrain_theme_name, final_floor, turns.message_serial)
 	if dungeon.house_discovered and dungeon.monster_house.has_point(turns.player.cell):
 		hud.area.text = "モンスターハウス"
 	hud.show_progress(progression.level, progression.exp, progression.required_exp())
@@ -457,6 +491,19 @@ func _refresh() -> void:
 		if enemy.stats.is_boss and enemy.visible:
 			boss_text = "%s  HP %d / %d" % [enemy.stats.display_name, enemy.hp, enemy.stats.max_hp]
 	hud.show_boss(boss_text)
+
+
+func _displayed_hp() -> int:
+	var hp: int = turns.player.hp
+	if presentation.pending_player_damage > 0 and _hud_hp >= 0:
+		# Healing earlier in the same action must not show before the hits.
+		hp = mini(hp + presentation.pending_player_damage, _hud_hp)
+	_hud_hp = hp
+	return hp
+
+
+func _show_vitals() -> void:
+	hud.show_health(_displayed_hp(), turns.player.stats.max_hp)
 
 
 func _record_discoveries() -> void:
@@ -694,8 +741,20 @@ func _summon_enemy(source: Node2D) -> void:
 		dungeon.get_node("Actors").add_child(enemy)
 		dungeon.grid.place(enemy, cell)
 		turns.enemies.append(enemy)
-		turns.last_message += " 突進獣が召喚された！"
+		# Several summons in one action read as one line with a count.
+		var summon_name: String = enemy.stats.display_name
+		if _summon_serial == turns.message_serial:
+			turns.last_message = turns.last_message.replace(_summon_note(summon_name, _summon_count), _summon_note(summon_name, _summon_count + 1))
+			_summon_count += 1
+		else:
+			_summon_serial = turns.message_serial
+			_summon_count = 1
+			turns.last_message += _summon_note(summon_name, 1)
 		return
+
+
+func _summon_note(summon_name: String, count: int) -> String:
+	return " %sが召喚された！" % summon_name if count == 1 else " %sが%d体召喚された！" % [summon_name, count]
 
 
 func _scale_enemy(enemy: Node2D) -> void:

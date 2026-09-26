@@ -110,7 +110,7 @@ func run_tests() -> void:
 			pickup_seen = true
 	check(pickup_seen, "Pickup feedback includes accepted quantity")
 	var log_before: Array = run.hud.log_history.duplicate()
-	run.hud._record_log("移動しました。")
+	run.hud._record_log("")
 	check(run.hud.log_history == log_before, "Routine movement preserves useful log entries")
 	run._load_floor()
 	check(not run.presentation.playing and run.presentation.get_child_count() == 0, "Floor transition clears all transient effects")
