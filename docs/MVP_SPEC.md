@@ -1069,7 +1069,7 @@ Gold・EXP・到達階など結果の数値は、状態と保存上の値を即�
 
 **B3. 拠点ホーム。** 左右のナビゲーションカードは、出撃を他より大きく扱い、表示書体の見出し、装飾枠、カードごとの挿絵を差し替え口で受け付ける。挿絵がない間は現行の記号とする。右下の「Main 剣／持ち込み／倉庫」の情報欄は、文章の羅列をやめ、記号と数値で次の冒険の準備状況を示す。ロゴ「DungeonRemnant」は表示書体で描き、本文と同じ格に見えないようにする。
 
-**B4. 書体と枠素材の導入。** 共通方針で定めた表示書体と `StyleBoxTexture` の差し替え口をThemeに用意する。B3と優先度Cの画面は、この差し替え口を前提に作業する。
+**B4. 書体と枠素材の導入。** 表示書体はSIL Open Font Licenseのしっぽり明朝（Bold・Medium）とし、`ui/fonts/` に同梱して、`TitleLabel`・`HeadingLabel`・`ValueLabel`・結果の見出し・HUDの数値・ロゴに当てる。ライセンス文は書き出しに含め、配布物にも同梱する（`THIRD_PARTY_NOTICES.md` と `docs/Windows配布手順.md`）。大きなパネルの地（`Panel`・`PanelContainer`・`MainPanel`・`DetailPanel`）と拠点ホームのカードは、`art/ui/` の9-slice装飾枠（四隅の飾り、余白16px）を使う `StyleBoxTexture` とし、内容の余白は従来の値を保つ。枠画像は `tools/generate_ui_frames.gd` で生成した仮素材で、同じ大きさと余白の画像に置き換えればThemeがそのまま使う。
 
 ### 優先度C：拠点の各画面
 

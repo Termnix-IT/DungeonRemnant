@@ -1,5 +1,47 @@
 [gd_resource type="Theme" format=3]
 
+[ext_resource type="FontFile" path="res://ui/fonts/ShipporiMincho-Bold.ttf" id="DisplayBold"]
+[ext_resource type="FontFile" path="res://ui/fonts/ShipporiMincho-Medium.ttf" id="DisplayMedium"]
+[ext_resource type="Texture2D" path="res://art/ui/frame_panel.png" id="FramePanelTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/frame_card.png" id="FrameCardTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/frame_card_active.png" id="FrameCardActiveTexture"]
+
+[sub_resource type="StyleBoxTexture" id="FramePanel"]
+resource_name = "FramePanel"
+texture = ExtResource("FramePanelTexture")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+
+[sub_resource type="StyleBoxTexture" id="FrameCard"]
+resource_name = "FrameCard"
+texture = ExtResource("FrameCardTexture")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+
+[sub_resource type="StyleBoxTexture" id="FrameCardActive"]
+resource_name = "FrameCardActive"
+texture = ExtResource("FrameCardActiveTexture")
+texture_margin_left = 16.0
+texture_margin_top = 16.0
+texture_margin_right = 16.0
+texture_margin_bottom = 16.0
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+
 [sub_resource type="StyleBoxFlat" id="ButtonDisabled"]
 resource_name = "ButtonDisabled"
 content_margin_left = 12.0
@@ -465,7 +507,7 @@ LineEdit/styles/focus = SubResource("FocusOutline")
 LineEdit/styles/normal = SubResource("Surface")
 LineEdit/styles/read_only = SubResource("ButtonDisabled")
 MainPanel/base_type = &"PanelContainer"
-MainPanel/styles/panel = SubResource("MainSurface")
+MainPanel/styles/panel = SubResource("FramePanel")
 MarginContainer/constants/margin_bottom = 24
 MarginContainer/constants/margin_left = 24
 MarginContainer/constants/margin_right = 24
@@ -486,8 +528,8 @@ OptionButton/styles/hover = SubResource("SurfaceHover")
 OptionButton/styles/hover_pressed = SubResource("ButtonPressed")
 OptionButton/styles/normal = SubResource("Surface")
 OptionButton/styles/pressed = SubResource("ButtonPressed")
-Panel/styles/panel = SubResource("MainSurface")
-PanelContainer/styles/panel = SubResource("MainSurface")
+Panel/styles/panel = SubResource("FramePanel")
+PanelContainer/styles/panel = SubResource("FramePanel")
 PopupMenu/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
 PopupMenu/colors/font_hover_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
 PopupMenu/constants/v_separation = 12
@@ -513,7 +555,7 @@ VScrollBar/styles/grabber_pressed = SubResource("GoldHover")
 VScrollBar/styles/scroll = SubResource("ScrollTrack")
 
 DetailPanel/base_type = &"PanelContainer"
-DetailPanel/styles/panel = SubResource("MainSurface")
+DetailPanel/styles/panel = SubResource("FramePanel")
 InsetPanel/base_type = &"PanelContainer"
 InsetPanel/styles/panel = SubResource("ItemSurface")
 VisualPanel/base_type = &"PanelContainer"
@@ -610,3 +652,11 @@ DefeatTitle/font_sizes/font_size = 34
 LossValueLabel/base_type = &"Label"
 LossValueLabel/colors/font_color = Color(0.86, 0.52, 0.48, 1)
 LossValueLabel/font_sizes/font_size = 26
+TitleLabel/fonts/font = ExtResource("DisplayBold")
+HeadingLabel/fonts/font = ExtResource("DisplayBold")
+ValueLabel/fonts/font = ExtResource("DisplayBold")
+VictoryTitle/fonts/font = ExtResource("DisplayBold")
+DefeatTitle/fonts/font = ExtResource("DisplayBold")
+HudValue/fonts/font = ExtResource("DisplayMedium")
+AbilityCardButton/base_type = &"Button"
+AbilityCardButton/styles/focus = SubResource("Invisible")

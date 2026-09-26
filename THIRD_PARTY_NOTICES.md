@@ -42,3 +42,12 @@ Copyright (c) 2017 Andrea Calabró
 Licensed under the Creative Commons Attribution 4.0 International license (CC BY 4.0 International): <https://creativecommons.org/licenses/by/4.0/>
 
 Godot logo and icon usage guidance: <https://godotengine.org/press/>
+
+## Shippori Mincho
+
+`rogue-like-play/ui/fonts/ShipporiMincho-Bold.ttf` and `ShipporiMincho-Medium.ttf` are the Shippori Mincho typeface, used for headings, the logo and emphasised numbers.
+
+Copyright 2021 The Shippori Mincho Project Authors (https://github.com/fontdasu/ShipporiMincho)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1. The full license text is `rogue-like-play/ui/fonts/OFL.txt`, which is distributed with the game as `SHIPPORI_MINCHO_OFL.txt`.
+

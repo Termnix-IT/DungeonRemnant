@@ -39,14 +39,17 @@ layout_mode = 2
 custom_minimum_size = Vector2(248, 300)
 layout_mode = 2
 focus_mode = 0
+theme_type_variation = &"AbilityCardButton"
 flat = true
 [node name="Second" type="Button" parent="Panel/Margin/Stack/Choices"]
 custom_minimum_size = Vector2(248, 300)
 layout_mode = 2
 focus_mode = 0
+theme_type_variation = &"AbilityCardButton"
 flat = true
 [node name="Third" type="Button" parent="Panel/Margin/Stack/Choices"]
 custom_minimum_size = Vector2(248, 300)
 layout_mode = 2
 focus_mode = 0
+theme_type_variation = &"AbilityCardButton"
 flat = true

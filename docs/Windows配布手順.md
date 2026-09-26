@@ -48,21 +48,23 @@ Windows版へ同梱する通知文書を、`rogue-like-play/`から次のコマ�
 
 ```powershell
 Copy-Item ..\THIRD_PARTY_NOTICES.md build\windows\THIRD_PARTY_NOTICES.md
+Copy-Item ui\fonts\OFL.txt build\windows\SHIPPORI_MINCHO_OFL.txt
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/godotengine/godot/4.6.2-stable/COPYRIGHT.txt" -OutFile "build\windows\GODOT_COPYRIGHT.txt"
 ```
 
-`THIRD_PARTY_NOTICES.md`にはGodot EngineのMIT Licenseと既定アイコンのCC BY 4.0表記、`GODOT_COPYRIGHT.txt`にはGodot Engineが含む第三者コンポーネントの著作権・ライセンス情報が記載されています。
+`THIRD_PARTY_NOTICES.md`にはGodot EngineのMIT License、既定アイコンのCC BY 4.0表記と、見出しに使う書体しっぽり明朝の表記、`SHIPPORI_MINCHO_OFL.txt`には書体に同梱が義務づけられているSIL Open Font Licenseの全文、`GODOT_COPYRIGHT.txt`にはGodot Engineが含む第三者コンポーネントの著作権・ライセンス情報が記載されています。
 
 ## 配布物
 
-`build/windows/` の次の4ファイルを同じフォルダーに置いたまま配布します。
+`build/windows/` の次の5ファイルを同じフォルダーに置いたまま配布します。
 
 - `RogueLike_play.exe`
 - `RogueLike_play.pck`
 - `THIRD_PARTY_NOTICES.md`
 - `GODOT_COPYRIGHT.txt`
+- `SHIPPORI_MINCHO_OFL.txt`
 
-`.exe`と`.pck`の片方だけでは起動できません。配布時は4ファイルをZIPにまとめ、展開後に `RogueLike_play.exe` を起動してもらいます。`progress.json` などの保存データは配布物に含めません。
+`.exe`と`.pck`の片方だけでは起動できません。配布時は5ファイルをZIPにまとめ、展開後に `RogueLike_play.exe` を起動してもらいます。`progress.json` などの保存データは配布物に含めません。
 
 このMVP用プリセットはコード署名を行いません。そのため、別のPCではWindowsの警告やセキュリティ製品の確認が表示されることがあります。不特定多数への公開前には、配布元を明示し、必要に応じて正規のコード署名証明書を使う別のリリース工程を用意してください。署名用パスワードや証明書は `export_presets.cfg` に保存・コミットしません。
 
