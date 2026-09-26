@@ -3,6 +3,10 @@ extends CanvasLayer
 signal selected(id: StringName)
 
 const GameAudio := preload("res://audio/game_audio.gd")
+# Focus (and so Enter / gamepad A) arrives a beat after opening, so a
+# confirm pressed for the attack that levelled up cannot pick a card.
+# Mouse and the 1-3 keys work immediately.
+const FOCUS_DELAY := 0.3
 
 var offers: Array[AbilityData] = []
 var cards: Array[AbilityCard] = []
@@ -24,6 +28,9 @@ func _ready() -> void:
 		buttons[index].pressed.connect(_select.bind(index))
 		buttons[index].mouse_entered.connect(_hover.bind(index, true))
 		buttons[index].mouse_exited.connect(_hover.bind(index, false))
+		buttons[index].focus_mode = Control.FOCUS_ALL
+		buttons[index].focus_entered.connect(_hover.bind(index, true))
+		buttons[index].focus_exited.connect(_hover.bind(index, false))
 
 
 func present(candidates: Array[AbilityData], abilities: AbilitySystem, level: int, pending: int) -> void:
@@ -39,9 +46,19 @@ func present(candidates: Array[AbilityData], abilities: AbilitySystem, level: in
 	UIMotion.of(panel).reveal(UIMotion.WINDOW_TIME)
 	for index in offers.size():
 		UIMotion.of(cards[index]).enter(index * UIMotion.STAGGER_TIME)
+	# A method callable is dropped automatically if this dialog is freed.
+	get_tree().create_timer(FOCUS_DELAY).timeout.connect(_focus_first.bind(offers.duplicate()))
+
+
+# Only the same offer, still open and unanswered, takes focus.
+func _focus_first(opened: Array[AbilityData]) -> void:
+	if visible and offers == opened and not buttons.is_empty():
+		buttons[0].grab_focus()
 
 
 func dismiss() -> void:
+	for button in buttons:
+		button.release_focus()
 	UIMotion.of(panel).reset()
 	for card in cards:
 		UIMotion.of(card).reset()

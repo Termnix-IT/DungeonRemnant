@@ -182,6 +182,25 @@ func test_turns_and_ui() -> void:
 	check(not run.inventory_panel.visible and player.input_enabled and run.turns.turn_count == 1, "Closing inventory is free")
 	run.turns.submit("switch", Vector2i.RIGHT)
 	check(player.weapon.kind == WeaponData.Kind.SPEAR and player.hp == 24 and run.turns.turn_count == 1, "Quick switch is free")
+	player.inventory.add(POTION, 2)
+	press_inventory(run)
+	run.inventory_panel.list.select(0)
+	run.inventory_panel._select_item(0)
+	check(run.inventory_panel.get_node("Panel/Use").disabled and run.inventory_panel.get_node("Panel/Use").text.contains("満タン"), "Full HP explains why the potion cannot be used")
+	player.hp = 10
+	run.inventory_panel.refresh()
+	run.inventory_panel._select_item(0)
+	var potions_before: int = player.inventory.entries[0].count
+	var space := InputEventAction.new()
+	space.action = "attack"
+	space.pressed = true
+	run._input(space)
+	if run.presentation.playing:
+		await run.presentation.finished
+		await process_frame
+	check(player.inventory.entries[0].count == potions_before - 1 and player.hp > 10, "Space uses the selected consumable")
+	if run.inventory_panel.visible:
+		press_inventory(run)
 	run.turns.busy = true
 	press_inventory(run)
 	check(not run.inventory_panel.visible and not run.turns.submit_inventory("switch"), "No inventory actions during ability/enemy phase")

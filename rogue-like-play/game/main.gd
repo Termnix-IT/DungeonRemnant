@@ -13,6 +13,7 @@ func _ready() -> void:
 	# Script-only instances in rule tests only register input bindings.
 	if not has_node("Hub"):
 		return
+	add_child(StickDirections.new())
 	if saving_enabled:
 		state = save_store.load_state()
 	transition = SceneTransition.new()
@@ -214,6 +215,25 @@ func _enter_tree() -> void:
 			var event := InputEventKey.new()
 			event.physical_keycode = key
 			InputMap.action_add_event(action, event)
+	# Gamepad: D-pad moves on the cardinals (the left stick adds diagonals via
+	# StickDirections), A attacks and confirms, B cancels, X opens the
+	# inventory, Y switches weapons and Start aborts or leaves the result.
+	var pad := {
+		"move_n": JOY_BUTTON_DPAD_UP,
+		"move_e": JOY_BUTTON_DPAD_RIGHT,
+		"move_s": JOY_BUTTON_DPAD_DOWN,
+		"move_w": JOY_BUTTON_DPAD_LEFT,
+		"attack": JOY_BUTTON_A,
+		"cancel_attack": JOY_BUTTON_B,
+		"inventory": JOY_BUTTON_X,
+		"switch_weapon": JOY_BUTTON_Y,
+		"restart": JOY_BUTTON_START,
+	}
+	for action: String in pad:
+		var button := InputEventJoypadButton.new()
+		button.button_index = pad[action]
+		if not InputMap.action_has_event(action, button):
+			InputMap.action_add_event(action, button)
 
 
 func unsocket_scroll(slot: int) -> bool:

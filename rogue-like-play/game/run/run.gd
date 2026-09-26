@@ -518,6 +518,8 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		if result_panel.confirming and event.is_action_pressed("cancel_attack"):
 			_cancel_abort()
+		elif result_panel.confirming and event.is_action_pressed("ui_accept"):
+			result_panel.abort_confirmed.emit()
 		elif not result_panel.confirming and event.is_action_pressed("restart"):
 			retry_run()
 		return
@@ -535,6 +537,12 @@ func _input(event: InputEvent) -> void:
 	elif inventory_panel.visible and event.is_action_pressed("cancel_attack"):
 		get_viewport().set_input_as_handled()
 		_close_inventory()
+	elif inventory_panel.visible and (event.is_action_pressed("attack") or event.is_action_pressed("ui_accept")):
+		get_viewport().set_input_as_handled()
+		inventory_panel.activate_selected()
+	elif inventory_panel.visible and event.is_action_pressed("switch_weapon"):
+		get_viewport().set_input_as_handled()
+		inventory_panel.switch_weapons()
 
 
 func _unhandled_input(event: InputEvent) -> void:

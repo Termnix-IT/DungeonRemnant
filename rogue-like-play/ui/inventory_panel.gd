@@ -81,6 +81,9 @@ func present(actor: Node2D) -> void:
 	refresh()
 	show()
 	UIMotion.of($Panel).reveal(UIMotion.WINDOW_TIME)
+	# Arrow keys and the D-pad move through the list; the inventory and close
+	# keys are handled by Run in _input before the list can see them.
+	list.grab_focus()
 
 
 func refresh(feedback: String = "") -> void:
@@ -130,21 +133,21 @@ func _update_actions() -> void:
 		equip_buttons[slot].text = HudEquipment.CAPTIONS[slot] + ("に魔法装着" if socket else "に装備")
 	$Panel/Use.visible = item != null and item.kind == ItemData.Kind.CONSUMABLE
 	$Panel/Use.disabled = true
+	$Panel/Use.text = "使用する（1ターン）"
 	if item != null:
 		if not item.effect_id.is_empty():
 			$Panel/Use.disabled = not player.active_effects.can_use(item)
-	$Panel/Use.text = "使用する（1ターン）"
 		elif item.restore_mp > 0:
 			$Panel/Use.disabled = player.mp >= player.stats.max_mp
-		else:
-			$Panel/Use.disabled = player.hp >= player.stats.max_hp
-
 			if $Panel/Use.disabled:
 				$Panel/Use.text = "MPは満タンです"
-
-func _preview(slot: int) -> void:
+		else:
+			$Panel/Use.disabled = player.hp >= player.stats.max_hp
 			if $Panel/Use.disabled:
 				$Panel/Use.text = "HPは満タンです"
+
+
+func _preview(slot: int) -> void:
 	if not visible or player == null or slot == preview_slot:
 		return
 	preview_slot = slot
@@ -199,6 +202,35 @@ func _draw_slot(slot: int, glyph: Control) -> void:
 	if item != null:
 		var role := &"GoldLabel" if slot == Equipment.Slot.MAIN else &"MutedLabel"
 		ItemGlyph.paint(glyph, Rect2(Vector2.ZERO, glyph.size), item, glyph.get_theme_color(&"font_color", role))
+
+
+# Space, Enter and gamepad A: use a consumable, or equip into the slot the
+# comparison describes. Other slots stay on their buttons.
+func activate_selected() -> bool:
+	var use: Button = $Panel/Use
+	if not visible:
+		return false
+	if use.visible:
+		if use.disabled:
+			return false
+		use.pressed.emit()
+		return true
+	var item := _selected_item()
+	if item == null or item.kind == ItemData.Kind.SCROLL:
+		return false
+	var slot := _default_slot(item)
+	if slot < 0 or not equip_buttons[slot].visible:
+		return false
+	equip_buttons[slot].pressed.emit()
+	return true
+
+
+func switch_weapons() -> bool:
+	var switch: Button = $Panel/Switch
+	if not visible or switch.disabled:
+		return false
+	switch.pressed.emit()
+	return true
 
 
 func _equip(slot: int) -> void:

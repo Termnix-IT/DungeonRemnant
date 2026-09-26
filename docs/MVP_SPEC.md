@@ -1029,6 +1029,8 @@ HUDのHP・MPは数値と実ゲージを即時更新し、減少時は明るい�
 
 拠点UIはキーボードの既存操作に加え、ゲームパッドの十字キーでFocus移動、Aで決定、Bで戻る操作を受け付ける。`ui_accept`・`ui_cancel`・方向の標準アクションへ登録し、マウスと同じButton signalで演出する。既存のキーボード割り当ては保持する。
 
+ダンジョンでは、ゲームパッドの十字キーを上下左右の移動、左スティックを8方向の移動（`StickDirections` がスティックの向きを移動アクションの押下と解放に変換し、押し続けによる連続移動もキーボードと同じ仕組みで行う）、Aを攻撃、Bをキャンセル、Xを所持品、Yを武器切替、Startを中断と結果画面からの再挑戦・帰還に割り当てる。所持品画面は開くと一覧にFocusを置き、Space・Enter・Aで選択中の消耗品を使うか、装備品を比較中の枠へ装備し、Yで武器を切り替える。能力選択は1〜3キーとマウスを開いた直後から受け付け、Focusは攻撃の連打で誤選択しないよう0.3秒後に最初のカードへ置く。中断の確認はEnter・Aで確定し、Esc・Bで取り消す。所持品の取り外しと魔法の装着先の選択は、現状マウス操作だけとする。
+
 変更時は `tests/test_ui_theme.gd`、`tests/test_ui_layout.gd`、`tests/test_ui_motion.gd`、`tests/test_upgrade_ui.gd` に加え、該当する取引・装備・セーブのテストを実行する。描画可能な環境では `tests/capture_art_direction.gd`（7画面を1440×900・1152×720・1920×1080で確認）、`tests/capture_shop.gd`、`tests/capture_preparation.gd`、`tests/capture_ui_motion.gd`、`tests/capture_item_details.gd`、`tests/capture_upgrade_ui.gd`、`tests/capture_item_cards.gd` で通常サイズ・縮小表示・各入力・ボタン端のクリックを確認する。演出用キャプチャは60 FPS上限でアイドル時と演出中のフレーム時間も比較する。生成画像は `.godot/` に出力する。
 
 ## UI体験の改善（優先度順）
