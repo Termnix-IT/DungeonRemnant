@@ -80,6 +80,7 @@ offset_left = 468.0
 offset_top = 318.0
 offset_right = 1016.0
 offset_bottom = 362.0
+mouse_filter = 2
 theme_type_variation = &"CompactRow"
 [node name="EquipmentHeading" type="Label" parent="Panel"]
 offset_left = 468.0

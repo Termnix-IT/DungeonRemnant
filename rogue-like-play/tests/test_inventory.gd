@@ -23,6 +23,18 @@ func check(ok: bool, label: String) -> void:
 		push_error(label)
 
 
+func click(control: Control) -> void:
+	var at: Vector2 = root.get_final_transform() * control.get_global_rect().get_center()
+	for pressed in [true, false]:
+		var event := InputEventMouseButton.new()
+		event.button_index = MOUSE_BUTTON_LEFT
+		event.pressed = pressed
+		event.position = at
+		event.global_position = at
+		root.push_input(event)
+		await process_frame
+
+
 func press_inventory(run: Node2D) -> void:
 	var event := InputEventAction.new()
 	event.action = "inventory"
@@ -153,7 +165,9 @@ func test_turns_and_ui() -> void:
 	check(run.inventory_panel.visible and not player.input_enabled and run.turns.turn_count == 0 and player.hp == 24, "Equip refreshes the open UI without spending a turn")
 	player.hp = 10
 	run.inventory_panel._select_item(0)
-	run.inventory_panel.get_node("Panel/Use").pressed.emit()
+	# A real click at the button's position: overlapping rows must not eat it.
+	await process_frame
+	await click(run.inventory_panel.get_node("Panel/Use"))
 	if run.presentation.playing:
 		await run.presentation.finished
 		await process_frame

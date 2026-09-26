@@ -133,13 +133,18 @@ func _update_actions() -> void:
 	if item != null:
 		if not item.effect_id.is_empty():
 			$Panel/Use.disabled = not player.active_effects.can_use(item)
+	$Panel/Use.text = "使用する（1ターン）"
 		elif item.restore_mp > 0:
 			$Panel/Use.disabled = player.mp >= player.stats.max_mp
 		else:
 			$Panel/Use.disabled = player.hp >= player.stats.max_hp
 
+			if $Panel/Use.disabled:
+				$Panel/Use.text = "MPは満タンです"
 
 func _preview(slot: int) -> void:
+			if $Panel/Use.disabled:
+				$Panel/Use.text = "HPは満タンです"
 	if not visible or player == null or slot == preview_slot:
 		return
 	preview_slot = slot
