@@ -15,6 +15,9 @@ signal buy_requested(to_storage: bool, item_id: StringName, amount: int)
 @export var stages: Array[StageData] = [preload("res://data/stages/ancient_ruins.tres"), preload("res://data/stages/forest.tres"), preload("res://data/stages/unknown.tres")]
 var gold_label: Label
 var equipment_label: Label
+var carried_label: Label
+var stored_label: Label
+var main_glyph: Control
 var upgrade_label: Label
 var feedback: Label
 var purchase_button: Button
@@ -73,9 +76,10 @@ func _ready() -> void:
 	header.custom_minimum_size.y = 86
 	_shell.add_child(header)
 	var brand := VBoxContainer.new()
-	brand.custom_minimum_size.x = 300
+	brand.custom_minimum_size.x = 330
 	header.add_child(brand)
-	HubUI.label(brand, "DungeonRemnant", &"TitleLabel")
+	var logo := HubUI.label(brand, "DungeonRemnant", &"LogoLabel")
+	logo.autowrap_mode = TextServer.AUTOWRAP_OFF
 	HubUI.label(brand, "残されたものたちの、もう一度", &"MutedLabel")
 	var heading := VBoxContainer.new()
 	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -162,16 +166,37 @@ func _build_home() -> void:
 	var right := VBoxContainer.new()
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	navigation.add_child(right)
-	start_button = _home_action(left, "出撃", "ステージを選び、次の冒険へ", func(): show_page("stages"))
-	start_button.theme_type_variation = &"PrimaryButton"
-	equipment_button = _home_action(left, "装備", "装備と持ち込みを整える", func(): equipment_return = "stages"; show_page("equipment"))
-	warehouse_button = _home_action(left, "倉庫", "使うもの、残すものを選ぶ", open_warehouse)
-	sell_button = _home_action(right, "ショップ", "アイテムを購入・売却する", func(): show_page("sell"))
-	upgrade_button = _home_action(right, "永久強化", "冒険の先へ、ずっと残る力", func(): show_page("upgrade"))
+	start_button = _home_action(left, "出撃", "ステージを選び、次の冒険へ", func(): show_page("stages"), HOME_ART.stairs)
+	# Departure is the main path: always gold-framed and taller than the rest.
+	start_button.theme_type_variation = &"HomeCardPrimary"
+	start_button.custom_minimum_size.y = 150
+	equipment_button = _home_action(left, "装備", "装備と持ち込みを整える", func(): equipment_return = "stages"; show_page("equipment"), HOME_ART.weapons)
+	warehouse_button = _home_action(left, "倉庫", "使うもの、残すものを選ぶ", open_warehouse, HOME_ART.chests)
+	sell_button = _home_action(right, "ショップ", "アイテムを購入・売却する", func(): show_page("sell"), HOME_ART.lantern)
+	upgrade_button = _home_action(right, "永久強化", "冒険の先へ、ずっと残る力", func(): show_page("upgrade"), HOME_ART.books)
 	var summary := PanelContainer.new()
 	summary.theme_type_variation = &"ItemPanel"
 	right.add_child(summary)
-	equipment_label = HubUI.label(summary, "", &"MutedLabel")
+	# Readiness at a glance: the Main weapon's glyph and name, then capacities.
+	var readiness := VBoxContainer.new()
+	readiness.theme_type_variation = &"CompactStack"
+	summary.add_child(readiness)
+	HubUI.label(readiness, "次の冒険の準備", &"MutedLabel")
+	var weapon_row := HBoxContainer.new()
+	weapon_row.theme_type_variation = &"CompactRow"
+	readiness.add_child(weapon_row)
+	main_glyph = Control.new()
+	main_glyph.custom_minimum_size = Vector2(26, 26)
+	main_glyph.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	main_glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	main_glyph.draw.connect(func():
+		if _state != null and _state.equipment.slots[Equipment.Slot.MAIN] != null:
+			ItemGlyph.paint(main_glyph, Rect2(Vector2.ZERO, main_glyph.size), _state.equipment.slots[Equipment.Slot.MAIN], main_glyph.get_theme_color(&"font_color", &"GoldLabel")))
+	weapon_row.add_child(main_glyph)
+	equipment_label = HubUI.label(weapon_row, "", &"ItemNameLabel")
+	equipment_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	carried_label = _readiness_row(readiness, "持ち込み")
+	stored_label = _readiness_row(readiness, "倉庫")
 	var note := HubUI.label(stack, "装備と倉庫は、次の冒険へ引き継がれます。", &"MutedLabel")
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var hero := AnimatedSprite2D.new()
@@ -221,9 +246,36 @@ func _build_home() -> void:
 	hero_speech.hide()
 
 
-func _home_action(parent: Node, text: String, description: String, action: Callable) -> Button:
-	var button := HubUI.button(parent, "", action)
-	button.custom_minimum_size.y = 124
+# Card art is cut from the hall painting behind the hub, so the cards belong to
+# the room. Regions are in guild_hall.png pixels; replace them with dedicated
+# illustrations later by pointing the card at another texture.
+const HOME_ART := {
+	"stairs": Rect2(600, 90, 390, 260),
+	"weapons": Rect2(280, 260, 190, 200),
+	"chests": Rect2(1300, 680, 286, 200),
+	"lantern": Rect2(1380, 560, 206, 330),
+	"books": Rect2(0, 220, 250, 250),
+}
+
+
+func _readiness_row(parent: Node, caption: String) -> Label:
+	var row := HBoxContainer.new()
+	row.theme_type_variation = &"CompactRow"
+	parent.add_child(row)
+	var caption_label := HubUI.label(row, caption, &"MutedLabel")
+	caption_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	caption_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var value := HubUI.label(row, "", &"BodyLabel")
+	value.autowrap_mode = TextServer.AUTOWRAP_OFF
+	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	return value
+
+
+func _home_action(parent: Node, text: String, description: String, action: Callable, art_region: Rect2 = Rect2()) -> Button:
+	var button := HubUI.button(parent, "", action, &"HomeCard")
+	button.custom_minimum_size.y = 116
+	if art_region.has_area():
+		_card_art(button, art_region)
 	var margin := MarginContainer.new()
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	button.add_child(margin)
@@ -245,6 +297,48 @@ func _home_action(parent: Node, text: String, description: String, action: Calla
 	return button
 
 
+# The art sits on the card's right, fading into the card colour towards the
+# text so captions keep their contrast. It never takes input.
+func _card_art(button: Button, region: Rect2) -> void:
+	var cut := AtlasTexture.new()
+	cut.atlas = preload("res://art/hub/guild_hall.png")
+	cut.region = region
+	var art := TextureRect.new()
+	art.texture = cut
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# The hall is dark; lift the cut slightly so it reads inside the card.
+	art.modulate = Color(1.25, 1.15, 1.0, 0.9)
+	button.add_child(art)
+	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	art.anchor_left = 0.4
+	# Stay inside the frame's border and corner ornaments.
+	art.offset_left = 0
+	art.offset_top = 3
+	art.offset_right = -3
+	art.offset_bottom = -3
+	var fade := Gradient.new()
+	var ground := Color(0.12, 0.12, 0.12, 1.0)
+	fade.set_color(0, ground)
+	fade.set_color(1, Color(ground, 0.0))
+	var veil_texture := GradientTexture2D.new()
+	veil_texture.gradient = fade
+	veil_texture.fill_from = Vector2(0, 0.5)
+	veil_texture.fill_to = Vector2(0.55, 0.5)
+	var veil := TextureRect.new()
+	veil.texture = veil_texture
+	veil.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	veil.stretch_mode = TextureRect.STRETCH_SCALE
+	veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(veil)
+	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	veil.anchor_left = 0.4
+	veil.offset_top = 3
+	veil.offset_right = -3
+	veil.offset_bottom = -3
+
+
 func _resize() -> void:
 	var viewport := get_viewport().get_visible_rect().size
 	var factor := minf(1.0, minf((viewport.x - 40) / 1280.0, (viewport.y - 36) / 810.0))
@@ -256,7 +350,10 @@ func _resize() -> void:
 func refresh(state: RunCarryover, message: String = "") -> void:
 	_state = state
 	gold_label.text = "Gold   %s" % state.gold
-	equipment_label.text = "Main  %s\n持ち込み  %d / %d枠\n倉庫      %d / %d枠" % [state.equipment.slots[0].display_name, state.inventory.entries.size(), state.inventory.max_entries, state.storage.entries.size(), state.storage.max_entries]
+	equipment_label.text = state.equipment.slots[0].display_name
+	carried_label.text = "%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries]
+	stored_label.text = "%d / %d 枠" % [state.storage.entries.size(), state.storage.max_entries]
+	main_glyph.queue_redraw()
 	(upgrade_page as SkillTreePanel).refresh(state)
 	feedback.text = message
 	equipment_page.refresh(state)
