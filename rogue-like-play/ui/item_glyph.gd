@@ -3,7 +3,9 @@ extends RefCounted
 
 static func main_effect(item: ItemData) -> String:
 	if item.kind == ItemData.Kind.WEAPON:
-		return "ダメージ %+d  /  射程 %d" % [item.weapon.damage_bonus, item.weapon.reach]
+		# A zero bonus is noise on a card; the details still list every trait.
+		var reach := "射程 %d" % item.weapon.reach
+		return reach if item.weapon.damage_bonus == 0 else "ダメージ %+d  /  %s" % [item.weapon.damage_bonus, reach]
 	if item.kind == ItemData.Kind.SCROLL:
 		return "消費MP %d" % item.weapon.mana_cost
 	return item.description().split(" / ")[0]

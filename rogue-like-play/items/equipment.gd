@@ -2,7 +2,7 @@ class_name Equipment
 extends RefCounted
 
 enum Slot { MAIN, SUB, ARMOR, ACCESSORY_1, ACCESSORY_2 }
-const SLOT_NAMES := ["Main", "Sub", "Armor", "Accessory 1", "Accessory 2"]
+const SLOT_NAMES := ["主武器", "副武器", "防具", "装飾 1", "装飾 2"]
 var slots: Array[ItemData] = []
 
 

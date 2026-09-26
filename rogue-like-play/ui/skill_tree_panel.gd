@@ -62,6 +62,7 @@ func _ready() -> void:
 	for id: StringName in [&"hp", &"vitality", &"attack", &"defense", &"mana"]:
 		var card := UpgradeCard.new()
 		card.effect = &"hp" if id == &"hp" else SkillCatalog.find(id).effect
+		card.branch = id != &"hp"
 		card.pressed.connect(select_upgrade.bind(id))
 		var depth := _depth(id)
 		if depth == 0:
@@ -131,7 +132,13 @@ func _build_detail() -> void:
 	change.theme_type_variation = &"CompactStack"
 	HubUI.label(change, "この能力による永久補正", &"MutedLabel")
 	current_value = HubUI.label(change, "", &"BodyLabel")
-	HubUI.label(change, "↓", &"GoldLabel")
+	var arrow := Control.new()
+	arrow.custom_minimum_size = Vector2(24, 18)
+	arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	arrow.draw.connect(func():
+		var gold := arrow.get_theme_color(&"font_color", &"GoldLabel")
+		arrow.draw_polyline(PackedVector2Array([Vector2(4, 5), Vector2(12, 13), Vector2(20, 5)]), gold, 2.0, true))
+	change.add_child(arrow)
 	next_value = HubUI.label(change, "", &"ValueLabel")
 	benefit_label = HubUI.label(change, "", &"PositiveLabel")
 	requirement = HubUI.label(detail, "", &"MutedLabel")
@@ -223,14 +230,14 @@ func _info(id: StringName) -> Dictionary:
 	var prerequisite := "基礎HP" if node.prerequisite == &"hp" else SkillCatalog.find(node.prerequisite).display_name
 	var prerequisite_rank := state.skill_rank(node.prerequisite)
 	var met := prerequisite_rank >= node.prerequisite_rank
-	return {"name": node.display_name, "rank": rank, "max": node.max_rank, "amount": node.amount, "effect": {&"hp": "最大HP", &"attack": "ATK", &"defense": "DEF", &"mp": "最大MP"}[node.effect], "cost": node.price(rank), "met": met, "condition": "条件%s：%s Lv%d（現在Lv%d）" % ["達成" if met else "未達", prerequisite, node.prerequisite_rank, prerequisite_rank]}
+	return {"name": node.display_name, "rank": rank, "max": node.max_rank, "amount": node.amount, "effect": {&"hp": "最大HP", &"attack": "攻撃力", &"defense": "防御力", &"mp": "最大MP"}[node.effect], "cost": node.price(rank), "met": met, "condition": "条件%s：%s Lv %d（現在 Lv %d）" % ["達成" if met else "未達", prerequisite, node.prerequisite_rank, prerequisite_rank]}
 
 
 func refresh(current: RunCarryover) -> void:
 	var action_had_focus := upgrade_button.has_focus()
 	_increased_skills.clear()
 	state = current
-	root_label.text = "永久補正　HP +%d　ATK +%d　DEF +%d　MP +%d" % [state.upgrade.hp_bonus(state.hp_upgrade_level) + state.skill_bonus(&"hp"), state.skill_bonus(&"attack"), state.skill_bonus(&"defense"), state.skill_bonus(&"mp")]
+	root_label.text = "永久補正　HP +%d　攻撃力 +%d　防御力 +%d　MP +%d" % [state.upgrade.hp_bonus(state.hp_upgrade_level) + state.skill_bonus(&"hp"), state.skill_bonus(&"attack"), state.skill_bonus(&"defense"), state.skill_bonus(&"mp")]
 	for id: StringName in skill_rows:
 		var data := _info(id)
 		if _displayed_ranks.has(id) and data.rank > _displayed_ranks[id]:
@@ -238,9 +245,11 @@ func refresh(current: RunCarryover) -> void:
 		_displayed_ranks[id] = data.rank
 		var card = skill_rows[id].control
 		card.caption.text = data.name
-		card.rank_label.text = "Lv%d / %d" % [data.rank, data.max]
+		card.rank_label.text = "Lv %d / %d" % [data.rank, data.max]
 		card.benefit.text = "%s +%d" % [data.effect, data.rank * data.amount]
-		card.cost_label.text = "上限" if data.cost < 0 else ("%d G / 条件未達" % data.cost if not data.met else "%d G" % data.cost)
+		card.cost_label.text = "上限" if data.cost < 0 else ("条件未達  ·  %d G" % data.cost if not data.met else "%d G" % data.cost)
+		# A locked price must not look purchasable, so it drops the gold tone.
+		card.cost_label.theme_type_variation = &"MutedLabel" if data.cost >= 0 and not data.met else &"GoldLabel"
 		card.progress.max_value = data.max
 		card.progress.value = data.rank
 		card.tooltip_text = data.condition
@@ -276,11 +285,11 @@ func _refresh_detail() -> void:
 	var data := _info(selected_id)
 	detail_title.text = data.name
 	detail_rank.text = "Lv %d / %d" % [data.rank, data.max]
-	current_value.text = "現在　Lv%d　%s +%d" % [data.rank, data.effect, data.rank * data.amount]
+	current_value.text = "現在　Lv %d　%s +%d" % [data.rank, data.effect, data.rank * data.amount]
 	next_value.text = "%s +%d" % [data.effect, (data.rank + 1) * data.amount] if data.cost >= 0 else "%s +%d" % [data.effect, data.rank * data.amount]
-	benefit_label.text = "次は Lv%d　（+%d）" % [data.rank + 1, data.amount] if data.cost >= 0 else "この能力は最大まで成長しています"
+	benefit_label.text = "次は Lv %d　（+%d）" % [data.rank + 1, data.amount] if data.cost >= 0 else "この能力は最大まで成長しています"
 	requirement.text = data.condition
-	price_label.text = "%d Gold" % data.cost if data.cost >= 0 else "強化上限"
+	price_label.text = "%d G" % data.cost if data.cost >= 0 else "強化上限"
 	var allowed: bool = data.cost >= 0 and data.met and state.gold >= data.cost
 	if selected_id != &"hp":
 		allowed = state.can_purchase_skill(selected_id)
@@ -295,7 +304,7 @@ func _action(button: Button, cost: int, prerequisite_met: bool, allowed: bool, v
 	elif not prerequisite_met:
 		button.text = "条件未達"
 	elif state.gold < cost:
-		button.text = "あと%d Gold" % (cost - state.gold)
+		button.text = "あと%d G" % (cost - state.gold)
 	else:
 		button.text = verb
 
@@ -304,13 +313,13 @@ func _refresh_entries() -> void:
 	var previous_focus := get_viewport().gui_get_focus_owner()
 	var stage := stages[stage_choice.selected]
 	var available := state.stage_available(stage)
-	stage_status.text = "開始時はLv1。\n永久強化は引き継がれます。" if available else "ステージ未解放：%sをクリア" % _stage_name(stage.previous_stage)
+	stage_status.text = "開始時はLv 1。\n永久強化は引き継がれます。" if available else "ステージ未解放：%sをクリア" % _stage_name(stage.previous_stage)
 	for index in entry_rows.size():
 		var row := entry_rows[index]
 		var floor_number := 11 + index * 10
 		var unlocked: bool = floor_number in state.unlocked_entries.get(String(stage.id), [])
 		var defeated: bool = floor_number - 1 in state.defeated_bosses.get(String(stage.id), [])
-		row.title.text = "%dFから開始　%s" % [floor_number, "解放済み" if unlocked else "%d Gold" % stage.entry_costs[index]]
+		row.title.text = "%dFから開始　%s" % [floor_number, "解放済み" if unlocked else "%d G" % stage.entry_costs[index]]
 		row.condition.text = "中ボス撃破済み" if defeated else "条件未達：%dFの中ボスを撃破" % (floor_number - 1)
 		if not available:
 			row.condition.text = "条件未達：ステージを解放"

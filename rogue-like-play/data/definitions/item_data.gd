@@ -55,7 +55,7 @@ func description() -> String:
 			traits.append(socketed_scroll.description())
 		return "武器：%s / %s" % [label(), " / ".join(traits)]
 	if not effect_id.is_empty():
-		var labels := {&"damage": "攻撃ダメージ +%d", &"defense": "防御 +%d", &"vision": "視界 +%d", &"regen": "毎ターンHP +%d", &"kill_heal": "撃破時HP +%d", &"gold": "獲得Gold +%d%%", &"exp": "獲得EXP +%d%%"}
+		var labels := {&"damage": "攻撃ダメージ +%d", &"defense": "防御力 +%d", &"vision": "視界 +%d", &"regen": "毎ターンHP +%d", &"kill_heal": "撃破時HP +%d", &"gold": "獲得Gold +%d%%", &"exp": "獲得EXP +%d%%"}
 		return "消費型アクセサリー：%s / %s / 同効果は重複不可" % [String(labels.get(effect_id, "%d")) % effect_amount, ("%dターン継続" % effect_turns) if effect_turns > 0 else "次の階まで継続"]
 	if kind == Kind.CONSUMABLE:
 		return "MPを%d回復（最大MPまで）" % restore_mp if restore_mp > 0 else "HPを%d回復（最大HPまで）" % heal_amount
@@ -63,7 +63,7 @@ func description() -> String:
 	if max_hp_bonus != 0:
 		effects.append("最大HP +%d" % max_hp_bonus)
 	if defense_bonus != 0:
-		effects.append("防御 +%d" % defense_bonus)
+		effects.append("防御力 +%d" % defense_bonus)
 	if vision_bonus != 0:
 		effects.append("視界 +%d" % vision_bonus)
 	if damage_bonus != 0:

@@ -12,6 +12,8 @@ var storage_index := -1
 var moved_item: ItemData
 
 
+const STORAGE_NOTE := "倉庫の品は冒険へ持ち込まず、死亡・中断でも失いません。"
+
 func _ready() -> void:
 	_resize()
 	get_viewport().size_changed.connect(_resize)
@@ -59,7 +61,7 @@ func refresh(current_state: RunCarryover = state, message: String = "") -> void:
 		%StorageList.select(storage_index)
 	%Deposit.disabled = inventory_index < 0
 	%Withdraw.disabled = storage_index < 0
-	%Feedback.text = message
+	%Feedback.text = message if not message.is_empty() else STORAGE_NOTE
 	_update_details()
 
 
@@ -147,7 +149,6 @@ func _update_details() -> void:
 	else:
 		%Visual.item = null
 		%Direction.text = "移動するアイテム"
-	details.line("倉庫の品は冒険へ持ち込まず、死亡・中断でも失いません。", &"MutedLabel")
 
 
 func _resize() -> void:

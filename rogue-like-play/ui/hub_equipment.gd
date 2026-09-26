@@ -27,7 +27,7 @@ var showcase: ItemShowcase
 var portrait: CharacterPreview
 # The candidate of the last equip request, for the success moment after saving.
 var equipped_item: ItemData
-const SLOT_CAPTIONS := ["主武器", "副武器", "防具", "装飾 1", "装飾 2"]
+const SLOT_CAPTIONS := Equipment.SLOT_NAMES
 
 
 func _ready() -> void:
@@ -47,9 +47,13 @@ func _ready() -> void:
 	var detail := HubUI.section(columns, 1.0)
 	showcase = ItemShowcase.new()
 	detail.add_child(showcase)
+	var compare_box := PanelContainer.new()
+	compare_box.theme_type_variation = &"InsetPanel"
+	compare_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	detail.add_child(compare_box)
 	comparison = ItemDetails.new()
 	comparison.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	detail.add_child(comparison)
+	compare_box.add_child(comparison)
 	equip_button = HubUI.button(detail, "選択した装備に変更", _equip, &"GoldButton")
 	unequip_button = HubUI.button(detail, "選択枠の装備を外す", func():
 		equipped_item = null
@@ -85,7 +89,7 @@ func _ready() -> void:
 	scroll_remove_button = HubUI.button(build, "選択枠の魔法を外す", func():
 		equipped_item = null
 		scroll_remove_requested.emit(selected_slot))
-	swap_button = HubUI.button(build, "Main / Sub を入れ替え", func(): swap_requested.emit())
+	swap_button = HubUI.button(build, "主武器と副武器を入れ替え", func(): swap_requested.emit())
 	done_button = HubUI.button(build, "準備完了・ステージ選択へ", func(): done_requested.emit())
 
 
@@ -101,7 +105,7 @@ func refresh(current: RunCarryover) -> void:
 		slot_glyphs[index].queue_redraw()
 		slots[index].tooltip_text = Equipment.SLOT_NAMES[index] + "：" + (ItemTooltipList.description(item) if item != null else "未装備")
 	var stats := state.preparation_stats()
-	stats_label.text = "次のRun：HP %d / ATK %d\nDEF %d / Main射程 %d" % [stats.hp, stats.attack, stats.defense, stats.reach]
+	stats_label.text = "次の冒険：HP %d / 攻撃力 %d\n防御力 %d / 主武器の射程 %d" % [stats.hp, stats.attack, stats.defense, stats.reach]
 	carried_list.clear()
 	for entry in state.inventory.entries:
 		carried_list.add_card(entry.item, entry.count)
@@ -214,7 +218,7 @@ func _compare() -> void:
 	equip_button.disabled = selected.is_empty() or candidates.is_empty()
 	if equip_button.disabled:
 		showcase.present(state.equipment.slots[selected_slot])
-		comparison.text = "候補を選ぶと、変更前後の差分を表示します。\nMain Weaponは外せません。"
+		comparison.text = "候補を選ぶと、変更前後の差分を表示します。\n主武器は外せません。"
 		return
 	var candidate: ItemData = candidates[selected[0]].item
 	showcase.present(candidate)
@@ -233,7 +237,7 @@ func _compare() -> void:
 	comparison.line("%sに装備した場合（現在：%s）" % [SLOT_CAPTIONS[selected_slot], current.label() if current != null else "なし"], &"MutedLabel")
 	# Only values that change; an unchanged list hides the one that matters.
 	var changed := false
-	for stat: Array in [["HP", "hp"], ["ATK", "attack"], ["DEF", "defense"]]:
+	for stat: Array in [["HP", "hp"], ["攻撃力", "attack"], ["防御力", "defense"]]:
 		if before[stat[1]] != after[stat[1]]:
 			comparison.delta(stat[0], before[stat[1]], after[stat[1]])
 			changed = true
@@ -245,6 +249,9 @@ func _compare() -> void:
 	if not changed:
 		comparison.line("能力値は変わりません", &"MutedLabel")
 	comparison.item_text(candidate)
+	if current != null:
+		comparison.line("外す装備", &"ItemNameLabel")
+		comparison.line("%s　%s" % [current.label(), ItemGlyph.main_effect(current)], &"MutedLabel")
 
 
 func _equip() -> void:

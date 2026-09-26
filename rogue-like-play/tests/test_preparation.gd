@@ -43,7 +43,7 @@ func run_tests() -> void:
 	hub.equipment_page.select_slot(Equipment.Slot.ARMOR)
 	check(hub.equipment_page.candidates.size() == 1 and hub.equipment_page.candidates[0].from_storage, "Equipment candidates include matching warehouse gear")
 	var preview_text: String = hub.equipment_page.comparison.get_parsed_text()
-	check(preview_text.contains("DEF") and not preview_text.contains("ATK") and preview_text.contains(ARMOR.label()), "Equipment comparison lists changed values and keeps the full name")
+	check(preview_text.contains("防御力") and not preview_text.contains("攻撃力") and preview_text.contains(ARMOR.label()), "Equipment comparison lists changed values and keeps the full name")
 	hub.equipment_page.equip_button.pressed.emit()
 	var flying: Array = hub.equipment_page.get_children().filter(func(child: Node): return child is Control and child.top_level)
 	check(flying.size() == 1 and hub.equipment_page.equipped_item == null, "Equipping sends one glyph to its slot and clears the pending item")

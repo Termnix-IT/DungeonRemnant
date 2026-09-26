@@ -3,7 +3,7 @@ extends Control
 
 # Five equipped slots drawn as glyph, slot caption and item name. Row metrics
 # and text size live in the Theme type HudEquipment.
-const CAPTIONS := ["Main", "Sub", "防具", "装飾 1", "装飾 2"]
+const CAPTIONS := Equipment.SLOT_NAMES
 const EMPTY := "—"
 
 var items: Array[ItemData] = []

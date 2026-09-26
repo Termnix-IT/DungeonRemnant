@@ -6,6 +6,9 @@ var benefit: Label
 var cost_label: Label
 var progress: ProgressBar
 var effect: StringName = &"hp"
+# The tree root (基礎HP) and the 生命力 branch share the HP effect; the branch
+# adds a small plus so the two cards do not read as duplicates.
+var branch := false
 var pips: Control
 # 0..1 brightness of the most recently gained rank pip; 1 when settled.
 var glow := 1.0:
@@ -74,24 +77,43 @@ func _draw() -> void:
 	draw_style_box(get_theme_stylebox(style, &"ItemCardList"), Rect2(Vector2.ZERO, size))
 
 
-# One pip per rank up to the maximum; the newest owned pip fades in on gain.
+# Short tracks (up to 10 ranks) draw one pip per rank. Long tracks read as a
+# single gauge with a notch every 5 ranks instead of a row of tiny dashes.
+# The newest owned rank fades in on gain either way.
+const PIP_LIMIT := 10
+const TRACK_WIDTH := 220.0
+
+
 func _draw_pips() -> void:
 	var count := int(progress.max_value)
 	if count <= 0:
 		return
 	var owned := int(progress.value)
-	var gap := 3.0
-	var width := minf(18.0, (pips.size.x - gap * (count - 1)) / count)
 	var gold := get_theme_color(&"font_color", &"GoldLabel")
 	var empty := get_theme_color(&"font_color", &"MutedLabel")
 	empty.a = 0.25
+	var height := pips.size.y
+	if count > PIP_LIMIT:
+		var width := minf(TRACK_WIDTH, pips.size.x)
+		pips.draw_rect(Rect2(0, 0, width, height), empty)
+		var step := width / count
+		pips.draw_rect(Rect2(0, 0, step * maxi(owned - 1, 0), height), gold)
+		if owned > 0:
+			pips.draw_rect(Rect2(step * (owned - 1), 0, step, height), Color(gold, lerpf(0.3, 1.0, glow)))
+		var notch := get_theme_color(&"font_color", &"Label")
+		notch.a = 0.35
+		for mark in range(5, count, 5):
+			pips.draw_rect(Rect2(step * mark - 0.5, -2, 1, height + 4), notch)
+		return
+	var gap := 4.0
+	var pip := minf(18.0, (pips.size.x - gap * (count - 1)) / count)
 	for index in count:
 		var color := empty
 		if index < owned:
 			color = gold
 			if index == owned - 1:
 				color.a = lerpf(0.3, 1.0, glow)
-		pips.draw_rect(Rect2(index * (width + gap), 0, width, pips.size.y), color)
+		pips.draw_rect(Rect2(index * (pip + gap), 0, pip, height), color)
 
 
 func _draw_icon(icon: Control) -> void:
@@ -99,6 +121,11 @@ func _draw_icon(icon: Control) -> void:
 	var rect := Rect2(Vector2(2, (icon.size.y - 40) / 2), Vector2(40, 40))
 	if effect == &"hp":
 		ItemGlyph.paint_ability(icon, rect, AbilityData.Effect.MAX_HP, color)
+		if branch:
+			var plus := rect.position + Vector2(33, 7)
+			icon.draw_circle(plus, 7.5, get_theme_color(&"font_color", &"ItemNameLabel").darkened(0.8))
+			icon.draw_line(plus - Vector2(4, 0), plus + Vector2(4, 0), color, 2.0)
+			icon.draw_line(plus - Vector2(0, 4), plus + Vector2(0, 4), color, 2.0)
 	else:
 		var item := ItemCatalog.floor_item(6 if effect == &"attack" else 1)
 		if effect == &"mp":

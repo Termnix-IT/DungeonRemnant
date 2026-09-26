@@ -415,6 +415,18 @@ bg_color = Color(0.3, 0.48, 0.82, 1)
 
 [sub_resource type="StyleBoxEmpty" id="HudLogInsets"]
 
+[sub_resource type="FontVariation" id="DisplayBoldKana"]
+base_font = ExtResource("DisplayBold")
+opentype_features = {
+1885432948: 1
+}
+
+[sub_resource type="FontVariation" id="DisplayMediumKana"]
+base_font = ExtResource("DisplayMedium")
+opentype_features = {
+1885432948: 1
+}
+
 [resource]
 StageCardList/base_type = &"ItemCardList"
 StageCardList/constants/v_separation = 122
@@ -652,15 +664,15 @@ DefeatTitle/font_sizes/font_size = 34
 LossValueLabel/base_type = &"Label"
 LossValueLabel/colors/font_color = Color(0.86, 0.52, 0.48, 1)
 LossValueLabel/font_sizes/font_size = 26
-TitleLabel/fonts/font = ExtResource("DisplayBold")
-HeadingLabel/fonts/font = ExtResource("DisplayBold")
-ValueLabel/fonts/font = ExtResource("DisplayBold")
-VictoryTitle/fonts/font = ExtResource("DisplayBold")
-DefeatTitle/fonts/font = ExtResource("DisplayBold")
-HudValue/fonts/font = ExtResource("DisplayMedium")
+TitleLabel/fonts/font = SubResource("DisplayBoldKana")
+HeadingLabel/fonts/font = SubResource("DisplayBoldKana")
+ValueLabel/fonts/font = SubResource("DisplayBoldKana")
+VictoryTitle/fonts/font = SubResource("DisplayBoldKana")
+DefeatTitle/fonts/font = SubResource("DisplayBoldKana")
+HudValue/fonts/font = SubResource("DisplayMediumKana")
 LogoLabel/base_type = &"Label"
 LogoLabel/colors/font_color = Color(0.93, 0.85, 0.68, 1)
-LogoLabel/fonts/font = ExtResource("DisplayBold")
+LogoLabel/fonts/font = SubResource("DisplayBoldKana")
 LogoLabel/font_sizes/font_size = 32
 HomeCard/base_type = &"Button"
 HomeCard/styles/normal = SubResource("FrameCard")

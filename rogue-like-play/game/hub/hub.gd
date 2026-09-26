@@ -78,7 +78,7 @@ func _ready() -> void:
 	var brand := VBoxContainer.new()
 	brand.custom_minimum_size.x = 330
 	header.add_child(brand)
-	var logo := HubUI.label(brand, "DungeonRemnant", &"LogoLabel")
+	var logo := HubUI.label(brand, "Dungeon Remnant", &"LogoLabel")
 	logo.autowrap_mode = TextServer.AUTOWRAP_OFF
 	HubUI.label(brand, "残されたものたちの、もう一度", &"MutedLabel")
 	var heading := VBoxContainer.new()
@@ -374,7 +374,7 @@ func show_page(target: String) -> void:
 		control.hide()
 	back_button.visible = page != "home"
 	feedback.text = ""
-	subtitle_label.text = "装備と持ち込みを整え、次のRunへ。"
+	subtitle_label.text = "装備と持ち込みを整え、次の冒険へ。"
 	match page:
 		"home":
 			title_label.text = "旅支度の間"
@@ -421,7 +421,7 @@ func present_action(kind: StringName, gold_delta: int, slots: Array[int]) -> voi
 	# owns transaction timing, state, focus or input availability.
 	preload("res://audio/game_audio.gd").play(self, &"level_up" if kind == &"upgrade" else &"confirm", -22.0)
 	if gold_delta != 0:
-		feedback.text += "  (%+d Gold)" % gold_delta
+		feedback.text += "  (%+d G)" % gold_delta
 		UIMotion.of(gold_label).pulse(1.08, UIMotion.GOLD_TIME)
 	UIMotion.of(feedback).reveal()
 	match kind:

@@ -37,12 +37,16 @@ func _ready() -> void:
 	stage_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	destinations.add_child(stage_list)
 	stage_list.item_selected.connect(_select_stage)
+	# Enter or double-click on a stage goes straight to its sortie check.
+	stage_list.item_activated.connect(func(_index: int):
+		if not next_button.disabled:
+			confirm_requested.emit())
 	HubUI.label(destinations, "選択後、装備を確認して出撃します。", &"MutedLabel")
 	var detail := HubUI.section(columns)
 	stage_art = TextureRect.new()
 	stage_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	stage_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	stage_art.custom_minimum_size.y = 174
+	stage_art.custom_minimum_size.y = 150
 	detail.add_child(stage_art)
 	stage_details = ItemDetails.new()
 	stage_details.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -120,7 +124,7 @@ func present_selection(available_stages: Array[StageData], progress: RunCarryove
 	var selected_index := 0
 	for index in stages.size():
 		var stage := stages[index]
-		stage_list.add_stage(stage, state.stage_available(stage))
+		stage_list.add_stage(stage, state.stage_available(stage), _unlock_hint(stage))
 		if stage == selected_stage:
 			selected_index = index
 	if not stages.is_empty():
@@ -134,6 +138,13 @@ func present_selection(available_stages: Array[StageData], progress: RunCarryove
 	stage_list.grab_focus()
 
 
+func _unlock_hint(stage: StageData) -> String:
+	for other in stages:
+		if other.id == stage.previous_stage:
+			return "%sを踏破で解放" % other.display_name
+	return ""
+
+
 func _select_stage(index: int) -> void:
 	if selected_stage != stages[index]:
 		starting_floor = 1
@@ -145,13 +156,20 @@ func _select_stage(index: int) -> void:
 	stage_details.line(stage.display_name, &"HeadingLabel")
 	stage_details.line(stage.description)
 	if stage.available:
-		stage_details.line("全 %d 階  /  難易度：%s" % [stage.floor_count, stage.difficulty], &"GoldLabel")
+		stage_details.line("全%d階  /  難易度：%s" % [stage.floor_count, stage.difficulty], &"GoldLabel")
 		if not stage.features.is_empty():
 			stage_details.line("探索の特徴", &"ItemNameLabel")
 			stage_details.line(stage.features)
 		if not stage.enemy_summary.is_empty():
 			stage_details.line("主な敵の傾向", &"ItemNameLabel")
 			stage_details.line(stage.enemy_summary, &"MutedLabel")
+		if not stage.bosses.is_empty():
+			var defeated: Array = state.defeated_bosses.get(String(stage.id), [])
+			var guardians: Array[String] = []
+			for guardian in stage.bosses.size():
+				var floor_number := mini((guardian + 1) * 10, stage.floor_count)
+				guardians.append("%dF %s" % [floor_number, stage.bosses[guardian].display_name if floor_number in defeated else "？？？"])
+			stage_details.line("守護者　" + "　／　".join(guardians), &"MutedLabel")
 	UIMotion.of(stage_details).reveal()
 	UIMotion.of(stage_art).reveal()
 
@@ -164,7 +182,7 @@ func present_confirmation(current: RunCarryover) -> void:
 	confirmation_page.show()
 	equipment_rows.show_equipment(state.equipment)
 	var stats := state.preparation_stats()
-	equipment_label.text = "HP %d  /  ATK %d\nDEF %d  /  射程 %d" % [stats.hp, stats.attack, stats.defense, stats.reach]
+	equipment_label.text = "HP %d  /  攻撃力 %d\n防御力 %d  /  射程 %d" % [stats.hp, stats.attack, stats.defense, stats.reach]
 	stage_banner.texture = selected_stage.illustration
 	stage_banner.visible = stage_banner.texture != null
 	inventory_list.clear()

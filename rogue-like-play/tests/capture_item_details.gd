@@ -24,7 +24,7 @@ func capture() -> void:
 	await click(hub.equipment_button)
 	await click(hub.equipment_page.slots[Equipment.Slot.ARMOR])
 	var comparison: ItemDetails = hub.equipment_page.comparison
-	check(comparison.get_parsed_text().contains("DEF") and comparison.get_parsed_text().contains("+%d" % armor.defense_bonus), "Comparison preserves numeric bonus")
+	check(comparison.get_parsed_text().contains("防御力") and comparison.get_parsed_text().contains("+%d" % armor.defense_bonus), "Comparison preserves numeric bonus")
 	# Exercise actual overflow independently of the available panel height.
 	for index in 24:
 		comparison.line("長文の装備説明と比較値をキーボードで確認します。")

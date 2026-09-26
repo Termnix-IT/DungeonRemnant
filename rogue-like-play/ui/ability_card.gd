@@ -63,7 +63,7 @@ func setup(data: AbilityData, current_level: int, shortcut: int) -> void:
 	status_label.text = "新規習得" if level == 0 else "Lv %d → %d" % [level, level + 1]
 	name_label.text = data.display_name
 	name_label.tooltip_text = data.display_name
-	effect_label.text = data.effect_description()
+	TextWrap.set_text(effect_label, data.effect_description())
 	symbol.queue_redraw()
 
 

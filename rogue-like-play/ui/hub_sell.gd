@@ -26,7 +26,7 @@ var possession: Label
 var rows: Array[Dictionary] = []
 # The item of the last requested trade, for the success moment after saving.
 var traded_item: ItemData
-const COMPARED_STATS := [["hp", "最大HP"], ["attack", "攻撃"], ["defense", "防御"], ["reach", "射程"]]
+const COMPARED_STATS := [["hp", "最大HP"], ["attack", "攻撃力"], ["defense", "防御力"], ["reach", "射程"]]
 
 
 func _ready() -> void:
@@ -198,23 +198,41 @@ func _update_quote() -> void:
 	details.reset()
 	details.item_text(item)
 	_compare_equipment(item)
+	_holdings(item)
 	quantity_label.text = "%s（最大 %d）" % ["購入数" if buying else "売却数", int(quantity.max_value)]
 	possession.text = "%sの所持数   %d → %d個" % [source_choice.get_item_text(source_choice.selected), row.count, row.count + amount if buying else row.count - amount]
 	if buying:
 		var limit := _purchase_limit(item)
-		total_label.text = "購入価格   %d × %d = %d Gold\n残高   %d → %d" % [price, amount, total, state.gold, state.gold - total]
-		sell_button.text = "%d個を購入する  /  %d Gold" % [amount, total]
+		total_label.text = "購入価格   %d G × %d = %d G\n残高   %d G → %d G" % [price, amount, total, state.gold, state.gold - total]
+		sell_button.text = "%d個を購入する  /  %d G" % [amount, total]
 		sell_button.disabled = limit < amount
 		quantity.editable = limit > 0
 		if limit == 0:
 			total_label.text = "購入できません。\nGoldまたは購入先の空き容量が不足しています。"
 	else:
-		total_label.text = "売却収入   + %d Gold（単価 %d）\n残高   %d → %d" % [total, price, state.gold, state.gold + total]
-		sell_button.text = "%d個を売却する  /  %d Gold" % [amount, total]
+		total_label.text = "売却収入   +%d G（単価 %d G）\n残高   %d G → %d G" % [total, price, state.gold, state.gold + total]
+		sell_button.text = "%d個を売却する  /  %d G" % [amount, total]
 		sell_button.disabled = total <= 0 or state.gold + total > SaveCodec.MAX_GOLD
 		var all_value: int = price * row.count
-		sell_all_button.text = "選択品を全部売却  /  %d個・%d Gold" % [row.count, all_value]
+		sell_all_button.text = "選択品を全部売却  /  %d個・%d G" % [row.count, all_value]
 		sell_all_button.disabled = price <= 0 or state.gold + all_value > SaveCodec.MAX_GOLD
+
+
+func _holdings(item: ItemData) -> void:
+	var equipped := 0
+	for slot_item in state.equipment.slots:
+		if slot_item != null and slot_item.id == item.id:
+			equipped += 1
+	details.line("所持状況", &"ItemNameLabel")
+	details.line("倉庫 %d個　／　持ち込み %d個　／　装備中 %d" % [_count_in(state.storage, item), _count_in(state.inventory, item), equipped], &"MutedLabel")
+
+
+func _count_in(inventory: Inventory, item: ItemData) -> int:
+	var total := 0
+	for entry in inventory.entries:
+		if entry.item.id == item.id:
+			total += entry.count
+	return total
 
 
 # Equipment shows what equipping it would change for the next run, against an

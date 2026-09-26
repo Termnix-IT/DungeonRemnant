@@ -60,17 +60,17 @@ func run_tests() -> void:
 	var state: RunCarryover = main.state
 	hub.show_page("upgrade")
 	await settle()
-	check(panel.upgrade_button.text.contains("あと30 Gold"), "Base upgrade explains exact Gold shortage")
+	check(panel.upgrade_button.text.contains("あと30 G"), "Base upgrade explains exact Gold shortage")
 	panel.select_upgrade(&"vitality")
-	check(panel.requirement.text.contains("基礎HP Lv3"), "Vitality shows actual HP prerequisite")
+	check(panel.requirement.text.contains("基礎HP Lv 3"), "Vitality shows actual HP prerequisite")
 	panel.select_upgrade(&"defense")
-	check(panel.requirement.text.contains("攻撃力 Lv1"), "Defense shows actual attack prerequisite")
+	check(panel.requirement.text.contains("攻撃力 Lv 1"), "Defense shows actual attack prerequisite")
 	check_actions(panel)
 	state.gold = 300
 	hub.refresh(state)
 	panel.root_button.pressed.emit()
 	check(state.hp_upgrade_level == 0 and state.gold == 300, "Selecting a card never purchases")
-	check(panel.current_value.text.contains("Lv0") and panel.next_value.text.contains("+1"), "Selected detail shows actual current and next benefit")
+	check(panel.current_value.text.contains("Lv 0") and panel.next_value.text.contains("+1"), "Selected detail shows actual current and next benefit")
 	purchase(panel, &"hp")
 	check(state.hp_upgrade_level == 1 and state.gold == 270, "Primary button retains HP transaction wiring")
 	check(panel.skill_rows[&"hp"].control.progress.value == 1, "Purchase advances growth progress")
@@ -83,8 +83,8 @@ func run_tests() -> void:
 	purchase(panel, &"defense")
 	check(state.skill_rank(&"defense") == 1 and state.gold == 20, "Defense purchase updates rank and Gold")
 	panel.select_upgrade(&"mana")
-	check(panel.upgrade_button.text.contains("あと60 Gold"), "Unlocked mana reports exact shortfall")
-	check(panel.root_label.text.contains("ATK +1") and panel.root_label.text.contains("DEF +1"), "Permanent summary updates after purchase")
+	check(panel.upgrade_button.text.contains("あと60 G"), "Unlocked mana reports exact shortfall")
+	check(panel.root_label.text.contains("攻撃力 +1") and panel.root_label.text.contains("防御力 +1"), "Permanent summary updates after purchase")
 	state.gold = 1000
 	state.record_boss(RUINS.id, 10, false)
 	hub.refresh(state)
@@ -103,7 +103,7 @@ func run_tests() -> void:
 	state.record_boss(FOREST.id, 10, false)
 	state.gold = 149
 	hub.refresh(state)
-	check(panel.entry_buttons[0].text.contains("あと1 Gold"), "Stage switch uses independent unlock and price")
+	check(panel.entry_buttons[0].text.contains("あと1 G"), "Stage switch uses independent unlock and price")
 	state.gold = 150
 	hub.refresh(state)
 	panel.entry_buttons[0].pressed.emit()

@@ -40,7 +40,7 @@ offset_right = 872.0
 offset_bottom = 56.0
 focus_mode = 0
 theme_type_variation = &"SecondaryButton"
-text = "Main / Sub 切替（Tab）"
+text = "主武器・副武器を切替（Tab）"
 [node name="Close" type="Button" parent="Panel"]
 offset_left = 884.0
 offset_top = 16.0
@@ -108,5 +108,5 @@ offset_top = 614.0
 offset_right = 1016.0
 offset_bottom = 640.0
 theme_type_variation = &"MutedLabel"
-text = "アイテムの使用は1ターン消費します。装備の変更・取り外し・武器切替、確認・選択はターンを消費しません。Main武器は交換のみ可能です。"
+text = "アイテムの使用は1ターン消費します。装備の変更・取り外し・武器切替、確認・選択はターンを消費しません。主武器は交換のみ可能です。"
 text_overrun_behavior = 3

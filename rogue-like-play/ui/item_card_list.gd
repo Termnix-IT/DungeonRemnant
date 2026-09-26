@@ -24,7 +24,7 @@ func _init() -> void:
 func add_card(item: ItemData, count: int, price: int = -1, context: String = "") -> void:
 	# Keep native text for incremental search and accessibility. Theme hides only
 	# its drawing; ItemList still owns selection, focus, tooltips and scrolling.
-	var index := add_item("%s  ×%d / %s / %d Gold" % [item.label(), count, ItemGlyph.category(item), price])
+	var index := add_item("%s  ×%d / %s / %d G" % [item.label(), count, ItemGlyph.category(item), price])
 	set_item_metadata(index, {"item": item, "count": count, "price": price, "context": context})
 	set_item_tooltip(index, description(item))
 
@@ -72,7 +72,8 @@ func _draw() -> void:
 		draw_style_box(get_theme_stylebox(&"focus"), Rect2(Vector2.ZERO, size))
 
 
-func _line(value: String, at: Vector2, width: float, role: StringName, alignment: HorizontalAlignment = HORIZONTAL_ALIGNMENT_LEFT) -> void:
+# color_role, when set, keeps the role's size but borrows another role's colour.
+func _line(value: String, at: Vector2, width: float, role: StringName, alignment: HorizontalAlignment = HORIZONTAL_ALIGNMENT_LEFT, color_role: StringName = &"") -> void:
 	if width <= 0:
 		return
 	var line := TextLine.new()
@@ -80,5 +81,6 @@ func _line(value: String, at: Vector2, width: float, role: StringName, alignment
 	line.width = width
 	line.alignment = alignment
 	line.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	var color_role := role if has_theme_color(&"font_color", role) else &"Label"
+	if color_role.is_empty():
+		color_role = role if has_theme_color(&"font_color", role) else &"Label"
 	line.draw(get_canvas_item(), at, get_theme_color(&"font_color", color_role))
