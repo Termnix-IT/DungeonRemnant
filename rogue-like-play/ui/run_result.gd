@@ -8,12 +8,19 @@ const KEPT_NOTE := "装備中の5枠は保持されます。"
 # After a defeat the dungeon darkens slowly before the panel rises, so the
 # fall registers. Input waits for the panel; the result is already saved.
 const DEFEAT_BEAT := 0.7
+# Results sit on an illustration of how the run ended; the shade over it is
+# lighter than the plain veil so the scene shows around the panel.
+const CLEAR_ART := preload("res://art/results/clear.png")
+const DEFEAT_ART := preload("res://art/results/defeat.png")
+const VEIL := Color(0.01, 0.02, 0.04, 0.9)
+const SCENE_VEIL := Color(0.01, 0.02, 0.04, 0.42)
 
 var confirming := false
 var return_to_hub := false
 var title_label: Label
 var cause_label: Label
 var shade: ColorRect
+var backdrop: TextureRect
 var _accept_after_msec := 0
 var details: Label
 var accept: Button
@@ -40,8 +47,14 @@ var lost_none: Label
 
 func _ready() -> void:
 	layer = 12
+	backdrop = TextureRect.new()
+	backdrop.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	backdrop.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(backdrop)
 	shade = ColorRect.new()
-	shade.color = Color(0.01, 0.02, 0.04, 0.9)
+	shade.color = VEIL
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(shade)
 	var center := CenterContainer.new()
@@ -148,6 +161,9 @@ func present(result: Dictionary) -> void:
 	var returned_well: bool = result.cleared or result.get("safe_return", false)
 	title_label.text = "冒険クリア" if result.cleared else ("無事に帰還" if result.get("safe_return", false) else ("滞在上限：強制帰還" if result.get("forced_return", false) else "冒険終了"))
 	title_label.theme_type_variation = &"VictoryTitle" if returned_well else &"DefeatTitle"
+	backdrop.texture = CLEAR_ART if returned_well else DEFEAT_ART
+	backdrop.show()
+	shade.color = SCENE_VEIL
 	var gold_lost := int(result.gold_lost)
 	floor_value.text = "%dF" % result.floor
 	earned_value.text = _gold(result.earned_gold, "+")
@@ -174,6 +190,7 @@ func present(result: Dictionary) -> void:
 	if beat > 0.0:
 		details_scroll.scroll_vertical = 0
 		UIMotion.of(shade).appear(0.0, beat)
+		UIMotion.of(backdrop).appear(0.0, beat)
 		UIMotion.of(presentation_panel).appear(beat, UIMotion.WINDOW_TIME)
 	else:
 		_reveal()
@@ -239,6 +256,9 @@ func confirm_abort() -> void:
 	_accept_after_msec = 0
 	cause_label.hide()
 	title_label.text = "冒険を中断しますか？"
+	# The question is not an outcome yet: no scene, the plain dark veil.
+	backdrop.hide()
+	shade.color = VEIL
 	title_label.theme_type_variation = &"TitleLabel"
 	summary.hide()
 	lost_box.hide()

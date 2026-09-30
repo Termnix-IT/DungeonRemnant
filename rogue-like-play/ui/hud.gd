@@ -3,6 +3,7 @@ extends CanvasLayer
 const MAX_LOG_ENTRIES := 3
 # The newest entries stay at full strength; older ones recede.
 const EMPHASIZED_LOG_ENTRIES := 2
+const PORTRAIT_SIZE := 112
 
 @onready var status: Label = $Status
 @onready var floor_value: Label = $TopLeft/Floor
@@ -20,11 +21,27 @@ const EMPHASIZED_LOG_ENTRIES := 2
 @onready var log_entries: RichTextLabel = $Log/Entries
 @onready var equipment_rows: HudEquipment = $BottomRight/Rows
 
+var portrait: HudPortrait
 var log_history: Array[String] = []
 var last_log_text := ""
 var last_log_key := -1
 var turn_count := 0
 var inventory_count := 0
+
+
+func _ready() -> void:
+	# The face sits just above the vitals panel, anchored to the same corner.
+	portrait = HudPortrait.new()
+	portrait.name = "Portrait"
+	portrait.theme = $BottomLeft.theme
+	add_child(portrait)
+	portrait.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	var vitals: Panel = $BottomLeft
+	portrait.offset_left = vitals.offset_left
+	portrait.offset_right = vitals.offset_left + PORTRAIT_SIZE
+	portrait.offset_bottom = vitals.offset_top - 8
+	portrait.offset_top = portrait.offset_bottom - PORTRAIT_SIZE
+	portrait.grow_vertical = Control.GROW_DIRECTION_BEGIN
 
 
 # log_key identifies the action the text belongs to: text that grows within one
@@ -44,6 +61,7 @@ func show_health(hp: int, max_hp: int) -> void:
 	hp_bar.max_value = max(max_hp, 1)
 	hp_bar.value = max(hp, 0)
 	UIMotion.of($BottomLeft/HpTrail).update_vital(hp, max_hp, hp_value)
+	portrait.show_health(hp, max_hp)
 
 
 func show_aim(weapon_name: String, aiming: bool) -> void:
@@ -97,6 +115,8 @@ func show_boss(text: String) -> void:
 func reset_log() -> void:
 	for node_name in ["HpTrail", "MpTrail", "HpValue", "MpValue"]:
 		UIMotion.of(get_node("BottomLeft/" + node_name)).reset()
+	UIMotion.of(portrait).reset()
+	portrait.reset()
 	log_history.clear()
 	last_log_text = ""
 	last_log_key = -1

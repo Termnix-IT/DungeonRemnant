@@ -1,0 +1,58 @@
+extends SceneTree
+
+var checks := 0
+var failures := 0
+
+
+func _initialize() -> void:
+	call_deferred("run_tests")
+
+
+func check(ok: bool, message: String) -> void:
+	checks += 1
+	if not ok:
+		failures += 1
+		push_error(message)
+
+
+func run_tests() -> void:
+	check(HudPortrait.SHEET.get_size() == Vector2(96 * 4, 96), "The portrait sheet holds four 96px faces")
+	var hud = preload("res://ui/hud.tscn").instantiate()
+	root.add_child(hud)
+	await process_frame
+	var portrait: HudPortrait = hud.portrait
+	var vitals: Control = hud.get_node("BottomLeft")
+	check(portrait != null and portrait.get_parent() == hud, "The HUD adds the portrait")
+	check(portrait.get_global_rect().end.y <= vitals.get_global_rect().position.y and is_equal_approx(portrait.get_global_rect().position.x, vitals.get_global_rect().position.x), "The portrait sits just above the vitals panel")
+	check(not portrait.get_global_rect().intersects(hud.get_node("TopLeft").get_global_rect()), "The portrait leaves the floor panel clear")
+
+	hud.show_health(24, 24)
+	check(portrait.face == HudPortrait.Face.NORMAL, "Full health shows the calm face")
+	hud.show_health(24, 24)
+	check(portrait.face == HudPortrait.Face.NORMAL, "An unchanged value is not a hit")
+	hud.show_health(18, 24)
+	check(portrait.face == HudPortrait.Face.HURT, "A landed hit shows the wince")
+	await create_timer(HudPortrait.HURT_TIME + 0.1).timeout
+	check(portrait.face == HudPortrait.Face.NORMAL, "The wince passes back to the calm face")
+	hud.show_health(24, 24)
+	check(portrait.face == HudPortrait.Face.NORMAL, "Recovery is not a hit")
+	hud.show_health(7, 24)
+	await create_timer(HudPortrait.HURT_TIME + 0.1).timeout
+	check(portrait.face == HudPortrait.Face.WEARY, "Danger-range health shows the worn-out face")
+	check(portrait.weary() == (7.0 / 24.0 <= DangerVignette.THRESHOLD), "The face agrees with the danger vignette's threshold")
+	hud.show_health(0, 24)
+	check(portrait.face == HudPortrait.Face.WEARY, "A killing blow keeps the worn-out face rather than a wince")
+
+	hud.reset_log()
+	hud.show_health(24, 24)
+	var blinked := false
+	portrait._blink_clock = HudPortrait.BLINK_INTERVAL - HudPortrait.BLINK_TIME * 0.5
+	portrait._update_face()
+	blinked = portrait.face == HudPortrait.Face.BLINK
+	check(blinked, "The calm face blinks at the end of each interval")
+	await create_timer(HudPortrait.BLINK_TIME + 0.05).timeout
+	check(portrait.face == HudPortrait.Face.NORMAL, "The blink is brief")
+	hud.queue_free()
+	await process_frame
+	print("HUD portrait: %d checks, %d failures" % [checks, failures])
+	quit(1 if failures else 0)

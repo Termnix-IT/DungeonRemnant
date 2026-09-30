@@ -44,6 +44,8 @@ FRAME_SIZES = {
 	"turret": (96, 56),
 	"boss": (176, 112),
 	"torch": (48, 36),
+	# HUD face graphics: normal, blink, hurt, near collapse (art/ui/).
+	"hud_portrait": (96, 90),
 }
 DEFAULT_FRAME = (96, 52)
 
