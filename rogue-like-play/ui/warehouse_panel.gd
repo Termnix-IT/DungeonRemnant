@@ -12,9 +12,20 @@ var storage_index := -1
 var moved_item: ItemData
 
 
+# The transfer column's art box; the 48px icon draws at 3x (144px) inside.
+const VISUAL_SIZE := 176.0
 const STORAGE_NOTE := "倉庫の品は冒険へ持ち込まず、死亡・中断でも失いません。"
 
 func _ready() -> void:
+	# The transfer column matches the equipment page: the item at 3x its icon,
+	# centred, with its name and count beneath.
+	(%Help as ItemDetails).centered = true
+	# Set here: ItemVisual's own _init would override a size from the scene.
+	%Visual.custom_minimum_size = Vector2.ONE * VISUAL_SIZE
+	# The one-stack rule sits on the buttons, leaving the column's height to
+	# the item; the list rows already name each item's kind.
+	for button: Button in [%Deposit, %Withdraw]:
+		button.tooltip_text = "選択した1スタックをまとめて移動"
 	_resize()
 	get_viewport().size_changed.connect(_resize)
 	$Panel.minimum_size_changed.connect(_resize.call_deferred)
@@ -145,7 +156,6 @@ func _update_details() -> void:
 		%Visual.item = item
 		%Direction.text = "倉庫 → 所持品" if storage_index >= 0 else "所持品 → 倉庫"
 		details.line(item.label(), &"HeadingLabel")
-		details.line(ItemGlyph.category(item), &"MutedLabel")
 		details.line(item.description())
 		details.line("選択数 ×%d" % source.entries[index].count, &"BodyLabel")
 	else:

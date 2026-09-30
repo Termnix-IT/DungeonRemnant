@@ -1,6 +1,10 @@
 class_name ItemDetails
 extends RichTextLabel
 
+# Lines added by line() are centred when set, for a column that stacks the
+# item's art above its text (the warehouse's transfer column).
+var centered := false
+
 
 func _init() -> void:
 	theme_type_variation = &"ItemDetails"
@@ -16,12 +20,16 @@ func reset() -> void:
 
 func line(value: String, role: StringName = &"BodyLabel") -> void:
 	var color_role := role if has_theme_color(&"font_color", role) else &"Label"
+	if centered:
+		push_paragraph(HORIZONTAL_ALIGNMENT_CENTER)
 	push_color(get_theme_color(&"font_color", color_role))
 	push_font_size(get_theme_font_size(&"font_size", role))
 	# Item names/descriptions are plain text, never executable BBCode.
 	add_text(value + "\n")
 	pop()
 	pop()
+	if centered:
+		pop()
 
 
 # Only what the showcase does not already say. Its title always holds the full

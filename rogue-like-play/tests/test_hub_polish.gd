@@ -123,4 +123,8 @@ func check_details(hub, main) -> void:
 	check(shop.details.get_parsed_text().contains("手元に") and shop.details.get_parsed_text().contains("倉庫"), "Shop details say where copies already are")
 	hub.open_warehouse()
 	check(hub.warehouse_panel.get_node("%Feedback").text == WarehousePanel.STORAGE_NOTE, "Warehouse rule note sits on the feedback line")
+	var visual: ItemVisual = hub.warehouse_panel.get_node("%Visual")
+	check(visual.custom_minimum_size == Vector2.ONE * WarehousePanel.VISUAL_SIZE and visual.size_flags_horizontal == Control.SIZE_SHRINK_CENTER, "The transfer column shows the item at 3x, centred")
+	check((hub.warehouse_panel.get_node("%Help") as ItemDetails).centered, "The transfer column centres the item's lines under its art")
+	check((hub.warehouse_panel.get_node("%Deposit") as Button).tooltip_text.contains("1"), "The one-stack rule stays on the move buttons")
 	hub.warehouse_panel.close()

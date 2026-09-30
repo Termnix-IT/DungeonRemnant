@@ -86,12 +86,14 @@ theme_type_variation = &"ItemPanel"
 [node name="Direction" type="Label" parent="Panel/Margin/Stack/Columns/Transfer/Stack"]
 unique_name_in_owner = true
 text = "移動するアイテム"
+horizontal_alignment = 1
 autowrap_mode = 3
 theme_type_variation = &"ItemNameLabel"
 
 [node name="Visual" type="Control" parent="Panel/Margin/Stack/Columns/Transfer/Stack"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(112, 112)
+size_flags_horizontal = 4
 script = ExtResource("4")
 
 [node name="Help" type="RichTextLabel" parent="Panel/Margin/Stack/Columns/Transfer/Stack"]
@@ -110,11 +112,6 @@ unique_name_in_owner = true
 text = "← 所持品へ"
 custom_minimum_size = Vector2(0, 48)
 theme_type_variation = &"GoldButton"
-
-[node name="Hint" type="Label" parent="Panel/Margin/Stack/Columns/Transfer/Stack"]
-text = "選択した1スタックをまとめて移動"
-autowrap_mode = 3
-theme_type_variation = &"MutedLabel"
 
 [node name="Storage" type="PanelContainer" parent="Panel/Margin/Stack/Columns"]
 size_flags_horizontal = 3
