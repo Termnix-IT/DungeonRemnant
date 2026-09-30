@@ -26,7 +26,15 @@ const BOSS_IDS := {
 	"古樹の王": "boss_ancient_tree_king",
 }
 
+# Sprites whose colours sit close to their stage's floor (the green Ancient
+# Tree King on the moss floor) get a footprint-sized, darker ground shadow and
+# a faint dark halo, so they stand clear of the floor.
+const STANDOUT: Array[String] = ["boss_ancient_tree_king"]
+const STANDOUT_SHADOW_ALPHA := 0.78
+const STANDOUT_HALO := Color(0.0, 0.0, 0.0, 0.42)
+
 static var _cache: Dictionary = {}
+static var _foot_widths: Dictionary = {}
 static var _body_heights: Dictionary = {}
 
 
@@ -68,6 +76,20 @@ static func set_override(id: String, texture: Texture2D) -> void:
 
 static func frame_count(texture: Texture2D) -> int:
 	return maxi(1, texture.get_width() / maxi(1, texture.get_height()))
+
+
+static func stands_out(stats: EnemyStats) -> bool:
+	return stats != null and visual_id(stats) in STANDOUT and sheet_for(stats) != null
+
+
+# Width in pixels of the first idle frame's lowest sixth, where it meets the floor.
+static func foot_width(texture: Texture2D) -> int:
+	if not _foot_widths.has(texture):
+		var size := texture.get_height()
+		var band := maxi(1, size / 6)
+		var used := texture.get_image().get_region(Rect2i(0, size - band, size, band)).get_used_rect()
+		_foot_widths[texture] = used.size.x if used.has_area() else size / 2
+	return _foot_widths[texture]
 
 
 # Pixels from the frame's bottom edge to the top of the first idle frame's body,

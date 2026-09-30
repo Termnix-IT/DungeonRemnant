@@ -44,6 +44,7 @@ func run_tests() -> void:
 	enemy.queue_free()
 	await process_frame
 	await test_sprite_strips()
+	test_standout()
 	print("Enemy visuals: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures else 0)
 
@@ -149,3 +150,17 @@ func test_sprite_strips() -> void:
 	hero.queue_free()
 	presentation.queue_free()
 	await process_frame
+
+
+func test_standout() -> void:
+	var king := EnemyStats.new()
+	king.is_boss = true
+	king.display_name = "古樹の王"
+	var stone := EnemyStats.new()
+	stone.is_boss = true
+	stone.display_name = "石門の守護者"
+	check(EnemySprites.stands_out(king) == (EnemySprites.sheet("boss_ancient_tree_king") != null), "The Ancient Tree King stands out from the moss floor")
+	check(not EnemySprites.stands_out(stone), "Other bosses keep the plain shadow")
+	var sheet := EnemySprites.sheet("boss_ancient_tree_king")
+	if sheet != null:
+		check(EnemySprites.foot_width(sheet) > 40, "The standout shadow follows the boss's footprint")

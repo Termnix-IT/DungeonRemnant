@@ -241,7 +241,13 @@ func _draw_sprite(sheet: Texture2D) -> void:
 		body_scale.x *= -1.0
 	draw_set_transform(visual_offset + Vector2(0, 13), visual_rotation, body_scale)
 	var region := Rect2(sprite_frame() * frame_size, 0, frame_size, frame_size)
-	draw_texture_rect_region(sheet, Rect2(Vector2(-size.x * 0.5, -size.y), size), region)
+	var body := Rect2(Vector2(-size.x * 0.5, -size.y), size)
+	if EnemySprites.stands_out(stats):
+		# A dark silhouette one pixel out on each side reads as a soft halo.
+		var step := 1.0 / scale.x
+		for offset: Vector2 in [Vector2(-step, 0), Vector2(step, 0), Vector2(0, -step), Vector2(0, step)]:
+			draw_texture_rect_region(sheet, Rect2(body.position + offset, body.size), region, EnemySprites.STANDOUT_HALO)
+	draw_texture_rect_region(sheet, body, region)
 
 
 func _draw_procedural_body() -> void:
@@ -278,8 +284,14 @@ func _draw_health(top: float) -> void:
 
 
 func draw_ellipse_shadow() -> void:
+	var radius := 12.0
+	var alpha := 0.5
+	if EnemySprites.stands_out(stats):
+		var sheet := EnemySprites.sheet_for(stats)
+		radius = maxf(radius, EnemySprites.foot_width(sheet) * EnemySprites.WORLD_SCALE / scale.x * 0.55)
+		alpha = EnemySprites.STANDOUT_SHADOW_ALPHA
 	draw_set_transform(visual_offset + Vector2(0, 11), 0, Vector2(1, 0.3))
-	draw_circle(Vector2.ZERO, 12, Color(0.04, 0.045, 0.05, 0.5))
+	draw_circle(Vector2.ZERO, radius, Color(0.04, 0.045, 0.05, alpha))
 	draw_set_transform(visual_offset)
 
 
