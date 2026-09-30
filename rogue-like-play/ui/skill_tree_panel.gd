@@ -199,7 +199,8 @@ func _show_tab(index: int) -> void:
 	entries.visible = index == 1
 	for i in tabs.size():
 		tabs[i].set_pressed_no_signal(i == index)
-		tabs[i].theme_type_variation = &"PrimaryButton" if i == index else &"SecondaryButton"
+		# Tabs stay flat; the ornate plate is kept for actions.
+		tabs[i].theme_type_variation = &"TabActive" if i == index else &"SecondaryButton"
 	if state != null:
 		UIMotion.of(abilities if index == 0 else entries).reveal()
 

@@ -5,6 +5,9 @@
 [ext_resource type="Texture2D" path="res://art/ui/frame_panel.png" id="FramePanelTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/frame_card.png" id="FrameCardTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/frame_card_active.png" id="FrameCardActiveTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/button_gold.png" id="ButtonGoldTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/button_gold_hover.png" id="ButtonGoldHoverTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/button_gold_pressed.png" id="ButtonGoldPressedTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/vital_frame.png" id="VitalFrameTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/vital_frame_thin.png" id="VitalFrameThinTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/vital_health.png" id="VitalHealthTexture"]
@@ -16,10 +19,10 @@
 [sub_resource type="StyleBoxTexture" id="FramePanel"]
 resource_name = "FramePanel"
 texture = ExtResource("FramePanelTexture")
-texture_margin_left = 16.0
-texture_margin_top = 16.0
-texture_margin_right = 16.0
-texture_margin_bottom = 16.0
+texture_margin_left = 42.0
+texture_margin_top = 42.0
+texture_margin_right = 42.0
+texture_margin_bottom = 42.0
 content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
@@ -28,10 +31,10 @@ content_margin_bottom = 0.0
 [sub_resource type="StyleBoxTexture" id="FrameCard"]
 resource_name = "FrameCard"
 texture = ExtResource("FrameCardTexture")
-texture_margin_left = 16.0
-texture_margin_top = 16.0
-texture_margin_right = 16.0
-texture_margin_bottom = 16.0
+texture_margin_left = 42.0
+texture_margin_top = 42.0
+texture_margin_right = 42.0
+texture_margin_bottom = 42.0
 content_margin_left = 12.0
 content_margin_top = 12.0
 content_margin_right = 12.0
@@ -40,10 +43,10 @@ content_margin_bottom = 12.0
 [sub_resource type="StyleBoxTexture" id="FrameCardActive"]
 resource_name = "FrameCardActive"
 texture = ExtResource("FrameCardActiveTexture")
-texture_margin_left = 16.0
-texture_margin_top = 16.0
-texture_margin_right = 16.0
-texture_margin_bottom = 16.0
+texture_margin_left = 42.0
+texture_margin_top = 42.0
+texture_margin_right = 42.0
+texture_margin_bottom = 42.0
 content_margin_left = 12.0
 content_margin_top = 12.0
 content_margin_right = 12.0
@@ -137,6 +140,42 @@ border_width_bottom = 1
 [sub_resource type="StyleBoxEmpty" id="Invisible"]
 resource_name = "Invisible"
 
+[sub_resource type="StyleBoxTexture" id="PlateGold"]
+resource_name = "PlateGold"
+texture = ExtResource("ButtonGoldTexture")
+texture_margin_left = 19.0
+texture_margin_top = 21.0
+texture_margin_right = 19.0
+texture_margin_bottom = 21.0
+content_margin_left = 24.0
+content_margin_top = 6.0
+content_margin_right = 24.0
+content_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxTexture" id="PlateGoldHover"]
+resource_name = "PlateGoldHover"
+texture = ExtResource("ButtonGoldHoverTexture")
+texture_margin_left = 19.0
+texture_margin_top = 21.0
+texture_margin_right = 19.0
+texture_margin_bottom = 21.0
+content_margin_left = 24.0
+content_margin_top = 6.0
+content_margin_right = 24.0
+content_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxTexture" id="PlateGoldPressed"]
+resource_name = "PlateGoldPressed"
+texture = ExtResource("ButtonGoldPressedTexture")
+texture_margin_left = 19.0
+texture_margin_top = 21.0
+texture_margin_right = 19.0
+texture_margin_bottom = 21.0
+content_margin_left = 24.0
+content_margin_top = 6.0
+content_margin_right = 24.0
+content_margin_bottom = 6.0
+
 [sub_resource type="StyleBoxFlat" id="GoldHover"]
 resource_name = "GoldHover"
 content_margin_left = 12.0
@@ -154,19 +193,6 @@ border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-
-[sub_resource type="StyleBoxFlat" id="GoldNormal"]
-resource_name = "GoldNormal"
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-bg_color = Color(0.18, 0.145, 0.08, 1)
-border_color = Color(0.72, 0.59, 0.35, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
 
 border_width_left = 1
 border_width_top = 1
@@ -284,19 +310,6 @@ border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-
-[sub_resource type="StyleBoxFlat" id="PrimaryNormal"]
-resource_name = "PrimaryNormal"
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-bg_color = Color(0.18, 0.145, 0.08, 1)
-border_color = Color(0.72, 0.59, 0.35, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
 
 border_width_left = 1
 border_width_top = 1
@@ -480,8 +493,10 @@ CharacterButton/styles/pressed = SubResource("Invisible")
 GoldButton/base_type = &"Button"
 GoldButton/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
 GoldButton/font_sizes/font_size = 18
-GoldButton/styles/hover = SubResource("GoldHover")
-GoldButton/styles/normal = SubResource("GoldNormal")
+GoldButton/styles/hover = SubResource("PlateGoldHover")
+GoldButton/styles/normal = SubResource("PlateGold")
+GoldButton/styles/pressed = SubResource("PlateGoldPressed")
+GoldButton/styles/hover_pressed = SubResource("PlateGoldPressed")
 GoldLabel/base_type = &"Label"
 GoldLabel/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
 GoldLabel/font_sizes/font_size = 21
@@ -567,7 +582,13 @@ PopupMenu/font_sizes/font_size = 18
 PopupMenu/styles/hover = SubResource("SurfaceHover")
 PopupMenu/styles/panel = SubResource("ItemSurface")
 PrimaryButton/base_type = &"Button"
-PrimaryButton/styles/normal = SubResource("PrimaryNormal")
+PrimaryButton/styles/normal = SubResource("PlateGold")
+PrimaryButton/styles/pressed = SubResource("PlateGoldPressed")
+PrimaryButton/styles/hover_pressed = SubResource("PlateGoldPressed")
+TabActive/base_type = &"Button"
+TabActive/colors/font_color = Color(0.91, 0.81, 0.6, 1)
+TabActive/styles/normal = SubResource("ButtonPressed")
+TabActive/styles/hover = SubResource("GoldHover")
 SecondaryButton/base_type = &"Button"
 SecondaryButton/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
 SecondaryButton/font_sizes/font_size = 16
@@ -613,7 +634,7 @@ CompactMargin/constants/margin_top = 10
 CompactMargin/constants/margin_bottom = 10
 CompactRow/base_type = &"HBoxContainer"
 CompactRow/constants/separation = 10
-PrimaryButton/styles/hover = SubResource("GoldHover")
+PrimaryButton/styles/hover = SubResource("PlateGoldHover")
 PrimaryButton/colors/font_color = Color(0.91, 0.81, 0.60, 1)
 ProgressBar/styles/background = SubResource("ProgressTrack")
 ProgressBar/styles/fill = SubResource("ProgressFill")

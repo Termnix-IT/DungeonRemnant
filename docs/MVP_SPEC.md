@@ -1079,7 +1079,7 @@ Gold・EXP・到達階など結果の数値は、状態と保存上の値を即�
 
 **B3. 拠点ホーム。** 左右のナビゲーションカードは装飾枠の `HomeCard` とし、出撃だけを常に金枠の `HomeCardPrimary` で他より高く扱う。各カードの右側には、拠点の背景画像から階段・武器棚・宝箱・巻物と木箱・書棚をそれぞれ切り出した挿絵を重ね、見出し側へ向かって地の色へ溶かして文字のコントラストを保つ。切り出し位置は `hub.gd` の `HOME_ART` に背景画像の画素座標で持ち、専用の挿絵ができたら差し替える。右下の情報欄は、文章の羅列をやめ、Main武器の記号と名前、持ち込みと倉庫の使用枠を項目と数値で示す。ロゴ「DungeonRemnant」は表示書体の `LogoLabel` で1行に描き、本文と同じ格に見えないようにする。
 
-**B4. 書体と枠素材の導入。** 表示書体はSIL Open Font Licenseのしっぽり明朝（Bold・Medium）とし、`ui/fonts/` に同梱して、`TitleLabel`・`HeadingLabel`・`ValueLabel`・結果の見出し・HUDの数値・ロゴに当てる。ライセンス文は書き出しに含め、配布物にも同梱する（`THIRD_PARTY_NOTICES.md` と `docs/Windows配布手順.md`）。大きなパネルの地（`Panel`・`PanelContainer`・`MainPanel`・`DetailPanel`）と拠点ホームのカードは、`art/ui/` の9-slice装飾枠（四隅の飾り、余白16px）を使う `StyleBoxTexture` とし、内容の余白は従来の値を保つ。枠画像は `tools/generate_ui_frames.gd` で生成した仮素材で、同じ大きさと余白の画像に置き換えればThemeがそのまま使う。
+**B4. 書体と枠素材の導入。** 表示書体はSIL Open Font Licenseのしっぽり明朝（Bold・Medium）とし、`ui/fonts/` に同梱して、`TitleLabel`・`HeadingLabel`・`ValueLabel`・結果の見出し・HUDの数値・ロゴに当てる。ライセンス文は書き出しに含め、配布物にも同梱する（`THIRD_PARTY_NOTICES.md` と `docs/Windows配布手順.md`）。大きなパネルの地（`Panel`・`PanelContainer`・`MainPanel`・`DetailPanel`）と拠点ホームのカードは、`art/ui/` の9-slice装飾枠を使う `StyleBoxTexture` とし、内容の余白は従来の値を保つ。枠は96pxの画像の四隅に、生成したブロンズ（選択中は金）の角金具を42pxの余白で置き、細いレールでつなぐ。主な操作（`GoldButton`・`PrimaryButton`）は、両端に宝石付きの端飾りを持つ金のプレート（高さ44px、余白は左右19px・上下21px）とし、44pxより高いボタンでは宝石の中央2行だけが伸びて縦長の宝石になる。タブの選択中は操作と区別するため平らな `TabActive` とする。これらの画像は `art/ui/source/ornaments.png`（角金具と端飾りの2×2の生成画像）から `tools/build_ui_frames.py` が作り、余白を変えるときはThemeの `texture_margin` も合わせる。
 
 ### 優先度C：拠点の各画面
 

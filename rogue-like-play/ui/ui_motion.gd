@@ -70,7 +70,7 @@ static func of(target: Control) -> UIMotion:
 
 
 static func bind_buttons(root: Node) -> void:
-	if root is Button and root.theme_type_variation in [&"PrimaryButton", &"GoldButton", &"ItemButton", &"SecondaryButton", &"HomeCard", &"HomeCardPrimary"]:
+	if root is Button and root.theme_type_variation in [&"PrimaryButton", &"GoldButton", &"ItemButton", &"SecondaryButton", &"TabActive", &"HomeCard", &"HomeCardPrimary"]:
 		of(root)
 	for child in root.get_children():
 		bind_buttons(child)
