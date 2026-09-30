@@ -43,6 +43,12 @@ func check_layout(panel: SkillTreePanel) -> void:
 		check(panel.get_global_rect().grow(1).encloses(row.control.get_global_rect()), "Ability card fits panel")
 		check(row.control.get_global_rect().grow(1).encloses(row.control.cost_label.get_global_rect()), "Card price fits card")
 	check(panel.get_global_rect().grow(1).encloses(panel.upgrade_button.get_global_rect()), "Primary action fits panel")
+	var frame := panel.cards.get_parent().get_parent().get_parent() as PanelContainer
+	check(frame != null and frame.theme_type_variation == &"MainPanel", "The upgrade tree sits in a framed panel")
+	if frame != null:
+		for row: Dictionary in panel.skill_rows.values():
+			check(frame.get_global_rect().grow(1).encloses(row.control.get_global_rect()), "Upgrade cards stay inside the tree panel")
+		check(frame.get_global_rect().encloses(panel.root_label.get_global_rect()), "The permanent total stays inside the tree panel")
 	panel._show_tab(1)
 	await settle()
 	for row: Dictionary in panel.entry_rows:

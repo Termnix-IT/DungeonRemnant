@@ -49,12 +49,24 @@ func _ready() -> void:
 	abilities = HBoxContainer.new()
 	abilities.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	layout.add_child(abilities)
-	var skill_list := VBoxContainer.new()
-	skill_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	skill_list.size_flags_stretch_ratio = 1.15
-	abilities.add_child(skill_list)
-	HubUI.label(skill_list, "冒険を重ね、力を残す", &"HeadingLabel")
-	root_label = HubUI.label(skill_list, "", &"MutedLabel")
+	# The tree sits in the same framed panel as the detail, so its summary and
+	# cards read over a surface instead of the hall background.
+	var skill_list := HubUI.section(abilities, 1.15, &"MainPanel")
+	# Heading and the permanent total share one line, leaving the height to
+	# the five cards inside the frame.
+	var header := HBoxContainer.new()
+	header.theme_type_variation = &"CompactRow"
+	skill_list.add_child(header)
+	HubUI.label(header, "冒険を重ね、力を残す", &"HeadingLabel").autowrap_mode = TextServer.AUTOWRAP_OFF
+	root_label = HubUI.label(header, "", &"MutedLabel")
+	root_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	root_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	root_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	root_label.size_flags_vertical = Control.SIZE_SHRINK_END
+	# Should a narrow window run out of room, the total trims and keeps its
+	# full text in the tooltip.
+	root_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	root_label.mouse_filter = Control.MOUSE_FILTER_PASS
 	cards = VBoxContainer.new()
 	cards.theme_type_variation = &"UpgradeList"
 	skill_list.add_child(cards)
@@ -254,6 +266,7 @@ func refresh(current: RunCarryover) -> void:
 	_increased_skills.clear()
 	state = current
 	root_label.text = "永久補正　HP +%d　攻撃力 +%d　防御力 +%d　MP +%d" % [state.upgrade.hp_bonus(state.hp_upgrade_level) + state.skill_bonus(&"hp"), state.skill_bonus(&"attack"), state.skill_bonus(&"defense"), state.skill_bonus(&"mp")]
+	root_label.tooltip_text = root_label.text
 	for id: StringName in skill_rows:
 		var data := _info(id)
 		if _displayed_ranks.has(id) and data.rank > _displayed_ranks[id]:
