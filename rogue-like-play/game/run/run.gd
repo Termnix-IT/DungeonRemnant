@@ -56,6 +56,9 @@ var discovery_revision := 0
 var presentation := preload("res://combat/battle_presentation.gd").new()
 var reinforcements := ReinforcementSpawner.new()
 var journey_banner := preload("res://ui/journey_banner.gd").new()
+var boss_cut_in := BossCutIn.new()
+# The cut-in plays once per floor, the first time the boss comes into view.
+var boss_revealed := false
 var ambience := preload("res://audio/dungeon_ambience.gd").new()
 var danger := DangerVignette.new()
 var vignette := DungeonVignette.new()
@@ -81,6 +84,7 @@ var _summon_count := 0
 
 func _ready() -> void:
 	add_child(journey_banner)
+	add_child(boss_cut_in)
 	add_child(ambience)
 	add_child(vignette)
 	add_child(danger)
@@ -141,6 +145,8 @@ func _ready() -> void:
 
 func _load_floor() -> void:
 	journey_banner.clear()
+	boss_cut_in.clear()
+	boss_revealed = false
 	_snap_camera = true
 	stop_shake()
 	_last_visual_hp = -1
@@ -336,6 +342,7 @@ func _present_ability_choice() -> void:
 	if turns.ended or turns.offered_abilities.is_empty():
 		return
 	journey_banner.clear()
+	boss_cut_in.clear()
 	GameAudio.play(ability_choice, &"level_up", -18.0)
 	ability_choice.present(turns.offered_abilities, turns.player.abilities, progression.level, progression.pending_choices)
 
@@ -529,6 +536,17 @@ func _record_discoveries() -> void:
 				journey_banner.present("モンスターハウス", "敵が密集している。退路を確認しよう。")
 				GameAudio.play(journey_banner, &"warning", -20.0)
 				break
+	# Enemy visibility is synced after this, so the boss's cell is read directly.
+	if not boss_revealed:
+		for enemy: Node2D in turns.enemies:
+			if enemy.stats.is_boss and enemy.hp > 0 and dungeon.fog.visible.has(enemy.cell):
+				boss_revealed = true
+				found_something = true
+				turns.last_message += " %sが姿を現した。" % enemy.stats.display_name
+				journey_banner.clear()
+				boss_cut_in.present(enemy.stats, "%dF  ·  %s" % [floor_number, "最深部の主" if floor_number == final_floor else "守護者"])
+				GameAudio.play(boss_cut_in, &"boss", -18.0)
+				break
 	for cell: Vector2i in dungeon.ground_items:
 		if dungeon.fog.visible.has(cell) and not discovered_item_cells.has(cell):
 			discovered_item_cells[cell] = true
@@ -666,6 +684,7 @@ func finish_run(cleared: bool, safe_return: bool = false, forced_return: bool = 
 func _present_result() -> void:
 	if turns.ended and not result.is_empty():
 		journey_banner.clear()
+		boss_cut_in.clear()
 		ambience.stop()
 		if not result_panel.visible:
 			GameAudio.play(result_panel, &"victory" if result.cleared or result.get("safe_return", false) else &"defeat", -18.0)

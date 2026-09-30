@@ -441,6 +441,15 @@ border_color = Color(0.72, 0.59, 0.35, 0.75)
 border_width_top = 1
 border_width_bottom = 1
 
+[sub_resource type="StyleBoxFlat" id="BossBand"]
+resource_name = "BossBand"
+bg_color = Color(0.05, 0.022, 0.018, 0.86)
+border_color = Color(0.68, 0.32, 0.19, 0.95)
+border_width_top = 2
+border_width_bottom = 2
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 12
+
 [sub_resource type="StyleBoxFlat" id="BossSurface"]
 resource_name = "BossSurface"
 bg_color = Color(0.08, 0.035, 0.025, 0.92)
@@ -707,6 +716,14 @@ BossLabel/base_type = &"Label"
 BossLabel/colors/font_color = Color(0.94, 0.7, 0.46, 1)
 BossLabel/font_sizes/font_size = 18
 BossLabel/styles/normal = SubResource("BossSurface")
+BossBand/base_type = &"PanelContainer"
+BossBand/styles/panel = SubResource("BossBand")
+BossCutInTitle/base_type = &"Label"
+BossCutInTitle/colors/font_color = Color(0.94, 0.7, 0.46, 1)
+BossCutInTitle/colors/font_outline_color = Color(0.03, 0.015, 0.01, 1)
+BossCutInTitle/constants/outline_size = 6
+BossCutInTitle/font_sizes/font_size = 46
+BossCutInTitle/fonts/font = SubResource("DisplayBoldKana")
 BannerBand/base_type = &"PanelContainer"
 BannerBand/styles/panel = SubResource("BannerBand")
 VictoryTitle/base_type = &"Label"
