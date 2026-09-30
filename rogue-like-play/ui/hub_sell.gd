@@ -26,6 +26,7 @@ var possession: Label
 var rows: Array[Dictionary] = []
 # The item of the last requested trade, for the success moment after saving.
 var traded_item: ItemData
+const SHOWCASE_SIZE := 192.0
 const COMPARED_STATS := [["hp", "最大HP"], ["attack", "攻撃力"], ["defense", "防御力"], ["reach", "射程"]]
 
 
@@ -66,32 +67,45 @@ func _ready() -> void:
 	var info := _column(columns, 1.0)
 	info.theme_type_variation = &"DetailStack"
 	heading = _label(info, "", &"MutedLabel")
+	# The goods are the focus: the showcase draws the item at 3x its icon.
 	showcase = ItemShowcase.new()
+	showcase.visual.custom_minimum_size = Vector2.ONE * SHOWCASE_SIZE
 	info.add_child(showcase)
-	# The record sits in the same inset frame as the equipment comparison, so
-	# its spare height reads as part of the card rather than a gap.
+	# The record keeps to its lines instead of stretching into an empty well;
+	# the spare height sits above the counter, which stays by the button.
 	var record := PanelContainer.new()
 	record.theme_type_variation = &"InsetPanel"
-	record.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	info.add_child(record)
 	details = ItemDetails.new()
-	details.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	details.fit_content = true
+	# Room for a comparison of two or three lines without shifting the counter.
+	details.custom_minimum_size.y = 64
 	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	record.add_child(details)
-	possession = _label(info, "", &"BodyLabel")
+	var gap := Control.new()
+	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	info.add_child(gap)
+	# The counter: quantity, the price as one large figure, and a quiet line
+	# of what changes, on one raised plate instead of a form and a formula.
+	var counter := PanelContainer.new()
+	counter.theme_type_variation = &"ItemPanel"
+	info.add_child(counter)
+	var counter_stack := VBoxContainer.new()
+	counter_stack.theme_type_variation = &"CompactStack"
+	counter.add_child(counter_stack)
 	var quantity_row := HBoxContainer.new()
-	info.add_child(quantity_row)
+	counter_stack.add_child(quantity_row)
 	quantity_label = _label(quantity_row, "", &"MutedLabel")
 	quantity_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	quantity_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	quantity = QuantityStepper.new()
 	quantity_row.add_child(quantity)
 	quantity.value_changed.connect(func(_value: float): _update_quote())
-	var quote := PanelContainer.new()
-	quote.theme_type_variation = &"ItemPanel"
-	info.add_child(quote)
-	total_label = _label(quote, "", &"GoldLabel")
-	total_label.custom_minimum_size.y = 56
+	total_label = _label(counter_stack, "", &"PriceLabel")
+	total_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	possession = _label(counter_stack, "", &"MutedLabel")
+	possession.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	sell_button = _button(info, "売却する", &"GoldButton", _transact)
 	sell_button.custom_minimum_size.y = 54
 	sell_all_button = _button(info, "選択アイテムを全部売却", &"SecondaryButton", _sell_all)
@@ -146,7 +160,7 @@ func refresh(current: RunCarryover) -> void:
 	heading.text = "次の冒険に備える" if buying else "次の旅の資金に"
 	source_label.text = "購入先" if buying else "売却元"
 	quantity_label.text = "購入数" if buying else "売却数"
-	help_label.text = "購入したアイテムは選んだ購入先へ入ります。" if buying else "同じアイテムをまとめて表示。装備中の品・魔法装着中の杖は売却されません。"
+	help_label.text = "" if buying else "装備中の品と、魔法を込めた杖は売れません。"
 	sell_all_button.visible = not buying
 	quantity.value = 1
 	showcase.present(null)
@@ -187,9 +201,9 @@ func _update_quote() -> void:
 	var selected := item_list.get_selected_items()
 	quantity_label.text = "購入数" if buying else "売却数"
 	if selected.is_empty():
-		details.text = "一覧からアイテムを選んでください。"
-		possession.text = "購入先・売却元：" + source_choice.get_item_text(source_choice.selected)
-		total_label.text = "所持Gold  %d" % state.gold
+		details.text = "品を選んでください。"
+		possession.text = "所持金  %d G" % state.gold
+		total_label.text = "—"
 		sell_button.text = "購入する" if buying else "売却する"
 		sell_button.disabled = true
 		sell_all_button.disabled = true
@@ -205,19 +219,23 @@ func _update_quote() -> void:
 	details.item_text(item, showcase)
 	_compare_equipment(item)
 	_holdings(item)
-	quantity_label.text = "%s（最大 %d）" % ["購入数" if buying else "売却数", int(quantity.max_value)]
-	possession.text = "%sの所持数   %d → %d個" % [source_choice.get_item_text(source_choice.selected), row.count, row.count + amount if buying else row.count - amount]
+	quantity_label.text = "%s　最大 %d" % ["数量" if buying else "売る数", int(quantity.max_value)]
+	var place := source_choice.get_item_text(source_choice.selected)
+	var after: int = row.count + amount if buying else row.count - amount
 	if buying:
 		var limit := _purchase_limit(item)
-		total_label.text = "購入価格   %d G × %d = %d G\n残高   %d G → %d G" % [price, amount, total, state.gold, state.gold - total]
-		sell_button.text = "%d個を購入する  /  %d G" % [amount, total]
+		total_label.text = "%d G" % total
+		possession.text = "%s %d → %d個　·　所持金 %d → %d G" % [place, row.count, after, state.gold, state.gold - total]
+		sell_button.text = "%d個を購入する" % amount
 		sell_button.disabled = limit < amount
 		quantity.editable = limit > 0
 		if limit == 0:
-			total_label.text = "購入できません。\nGoldまたは購入先の空き容量が不足しています。"
+			total_label.text = "買えません"
+			possession.text = "所持金か、%sの空きが足りません" % place
 	else:
-		total_label.text = "売却収入   +%d G（単価 %d G）\n残高   %d G → %d G" % [total, price, state.gold, state.gold + total]
-		sell_button.text = "%d個を売却する  /  %d G" % [amount, total]
+		total_label.text = "+%d G" % total
+		possession.text = "%s %d → %d個　·　所持金 %d → %d G" % [place, row.count, after, state.gold, state.gold + total]
+		sell_button.text = "%d個を売却する" % amount
 		sell_button.disabled = total <= 0 or state.gold + total > SaveCodec.MAX_GOLD
 		var all_value: int = price * row.count
 		sell_all_button.text = "選択品を全部売却  /  %d個・%d G" % [row.count, all_value]
@@ -229,8 +247,7 @@ func _holdings(item: ItemData) -> void:
 	for slot_item in state.equipment.slots:
 		if slot_item != null and slot_item.id == item.id:
 			equipped += 1
-	details.line("所持状況", &"ItemNameLabel")
-	details.line("倉庫 %d個　／　持ち込み %d個　／　装備中 %d" % [_count_in(state.storage, item), _count_in(state.inventory, item), equipped], &"MutedLabel")
+	details.line("手元に　倉庫 %d　·　持ち込み %d　·　装備 %d" % [_count_in(state.storage, item), _count_in(state.inventory, item), equipped], &"MutedLabel")
 
 
 func _count_in(inventory: Inventory, item: ItemData) -> int:

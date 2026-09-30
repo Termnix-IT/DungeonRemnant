@@ -373,7 +373,7 @@ func show_page(target: String) -> void:
 		control.hide()
 	back_button.visible = page != "home"
 	feedback.text = ""
-	subtitle_label.text = "装備と持ち込みを整え、次の冒険へ。"
+	subtitle_label.text = "身につけるもの、背負っていくもの。"
 	match page:
 		"home":
 			title_label.text = "旅支度の間"
@@ -388,23 +388,24 @@ func show_page(target: String) -> void:
 			equipment_page.slots[0].grab_focus()
 		"sell":
 			title_label.text = "ショップ"
-			subtitle_label.text = "品を選び、価格と取引後の所持数を確認。"
+			subtitle_label.text = "薬も武具も、金次第。"
 			sell_page.show()
 			sell_page.refresh(_state)
 			sell_page.source_choice.grab_focus()
 		"upgrade":
 			title_label.text = "永久強化"
-			subtitle_label.text = "冒険を越えて残る力。前提条件と次の効果を確認。"
+			subtitle_label.text = "冒険の記憶は、この身に残る。"
 			upgrade_page.show()
 			(upgrade_page as SkillTreePanel).focus_first_action()
 		"stages":
 			title_label.text = "ステージ選択"
-			subtitle_label.text = "冒険先を選び、出撃に備える。"
+			subtitle_label.text = "次は、どこへ潜ろうか。"
 			departure_page.show()
 			departure_page.present_selection(stages, _state)
 		"confirm":
 			var stage := departure_page.selected_stage
 			title_label.text = "出撃確認  /  %s・全%d階" % [stage.display_name, stage.floor_count]
+			subtitle_label.text = "持ち物を確かめたら、出発だ。"
 			departure_page.show()
 			departure_page.present_confirmation(_state)
 	# Pages are anchored in a plain host, not laid out by a Container, so the

@@ -120,7 +120,7 @@ func check_details(hub, main) -> void:
 	shop.set_buying(true)
 	shop.item_list.select(0)
 	shop.item_list.item_selected.emit(0)
-	check(shop.details.get_parsed_text().contains("所持状況"), "Shop details say where copies already are")
+	check(shop.details.get_parsed_text().contains("手元に") and shop.details.get_parsed_text().contains("倉庫"), "Shop details say where copies already are")
 	hub.open_warehouse()
 	check(hub.warehouse_panel.get_node("%Feedback").text == WarehousePanel.STORAGE_NOTE, "Warehouse rule note sits on the feedback line")
 	hub.warehouse_panel.close()
