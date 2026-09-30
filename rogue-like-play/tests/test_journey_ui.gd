@@ -143,7 +143,7 @@ func run_tests() -> void:
 	inventory.list.select(1)
 	inventory._select_item(1)
 	check(not inventory.details.get_parsed_text().contains(ItemGlyph.main_effect(charm)), "Details do not repeat the showcased main effect")
-	check(inventory.details.get_parsed_text().contains(charm.label()), "Details keep the full item name for truncated cards")
+	check(shows_name(inventory.showcase, inventory.details, charm) and not inventory.details.get_parsed_text().contains(charm.label()), "The full item name shows once in the detail area")
 	check(not inventory.remove_buttons[Equipment.Slot.ARMOR].visible and inventory.remove_buttons[Equipment.Slot.MAIN].disabled, "Empty slots hide removal and Main stays non-removable")
 	check(inventory.details.get_parsed_text().contains("装飾 1に装備した場合") and inventory.details.get_parsed_text().contains("最大HP"), "Accessory compares against the first empty slot")
 	inventory._preview(Equipment.Slot.ACCESSORY_2)
@@ -217,3 +217,9 @@ func run_tests() -> void:
 	await process_frame
 	print("Journey UI: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures else 0)
+
+
+# The full name must be readable in the detail area: the showcase title wraps
+# without a limit, and details name the item when there is no showcase.
+func shows_name(showcase: ItemShowcase, details: ItemDetails, item: ItemData) -> bool:
+	return showcase.title.text == item.label() or details.get_parsed_text().contains(item.label())

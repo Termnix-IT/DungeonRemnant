@@ -17,7 +17,7 @@ func capture() -> void:
 	await settle()
 	await click(hub.sell_button)
 	await click(hub.sell_page.item_list, Vector2(35, 25))
-	check(hub.sell_page.details.get_parsed_text().contains(armor.display_name), "BBCode-like names remain literal")
+	check(shows_name(hub.sell_page.showcase, hub.sell_page.details, armor), "BBCode-like names remain literal")
 	check(hub.sell_page.total_label.text.contains("単価 %d" % armor.sell_price), "Price matches item data")
 	await shot("details_shop")
 	await key(KEY_ESCAPE)
@@ -75,3 +75,9 @@ func find_tooltip(node: Node, content: String) -> Label:
 		if found != null:
 			return found
 	return null
+
+
+# The full name must be readable in the detail area: the showcase title wraps
+# without a limit, and details name the item when there is no showcase.
+func shows_name(showcase: ItemShowcase, details: ItemDetails, item: ItemData) -> bool:
+	return showcase.title.text == item.label() or details.get_parsed_text().contains(item.label())

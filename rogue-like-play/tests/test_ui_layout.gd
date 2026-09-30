@@ -45,7 +45,7 @@ func run_tests() -> void:
 			check(not hub.departure_page.equipment_label.get_global_rect().intersects(hub.departure_page.review_button.get_global_rect()), "Confirmation equipment does not overlap review button")
 		if page == "equipment":
 			check(not hub.equipment_page.comparison.get_global_rect().intersects(hub.equipment_page.equip_button.get_global_rect()), "Equipment comparison leaves action visible")
-			check(not hub.equipment_page.stats_label.get_global_rect().intersects(hub.equipment_page.swap_button.get_global_rect()), "Equipment stats leave swap visible")
+			check(not hub.equipment_page.stat_sheet.get_global_rect().intersects(hub.equipment_page.swap_button.get_global_rect()), "Equipment stats leave swap visible")
 	hub.show_page("home")
 	hub.warehouse_button.pressed.emit()
 	await settle()

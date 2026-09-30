@@ -26,6 +26,11 @@ static func category(item: ItemData) -> String:
 
 
 static func paint(canvas: Control, rect: Rect2, item: ItemData, color: Color) -> void:
+	var texture := ItemIcons.icon(item)
+	if texture != null:
+		# Snap to whole pixels so a 48px card shows the 2x icon without blur.
+		canvas.draw_texture_rect(texture, Rect2(rect.position.round(), rect.size.round()), false, ItemIcons.tint(color))
+		return
 	canvas.draw_set_transform(rect.position, 0, rect.size / 32.0)
 	if not item.effect_id.is_empty():
 		_outline(canvas, [Vector2(9, 3), Vector2(23, 3), Vector2(23, 29), Vector2(16, 25), Vector2(9, 29), Vector2(9, 3)], color)

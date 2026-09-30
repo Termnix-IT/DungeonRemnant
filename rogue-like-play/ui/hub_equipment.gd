@@ -16,7 +16,9 @@ var slot_names: Array[Label] = []
 var slot_glyphs: Array[Control] = []
 var candidate_list: ItemCardList
 var carried_list: ItemCardList
-var stats_label: Label
+var stat_caption: Label
+var stat_sheet: GridContainer
+var stat_values: Array[Label] = []
 var comparison: ItemDetails
 var equip_button: Button
 var unequip_button: Button
@@ -28,6 +30,9 @@ var portrait: CharacterPreview
 # The candidate of the last equip request, for the success moment after saving.
 var equipped_item: ItemData
 const SLOT_CAPTIONS := Equipment.SLOT_NAMES
+const STAT_ROWS: Array = [["HP", "hp"], ["攻撃力", "attack"], ["防御力", "defense"], ["主武器の射程", "reach"]]
+# Slot art is the 48px item icon at its native size, so it is never blurred.
+const SLOT_ICON := 48
 
 
 func _ready() -> void:
@@ -72,7 +77,7 @@ func _ready() -> void:
 	portrait = CharacterPreview.new()
 	portrait.custom_minimum_size = Vector2(120, 180)
 	portrait.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	portrait.size_flags_stretch_ratio = 2.0
+	portrait.size_flags_stretch_ratio = 1.2
 	body.add_child(portrait)
 	var right := VBoxContainer.new()
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -81,11 +86,26 @@ func _ready() -> void:
 	for slot in 5:
 		var parent := left if slot < 2 else right
 		var control := HubUI.button(parent, "", select_slot.bind(slot), &"ItemButton")
-		control.custom_minimum_size = Vector2(98, 70)
+		control.custom_minimum_size = Vector2(112, 88)
 		control.toggle_mode = true
 		slots.append(control)
 		_build_slot(control, slot)
-	stats_label = HubUI.label(build, "", &"BodyLabel")
+	# The next run's four numbers, shown as a sheet; a selected candidate
+	# previews its change in place, coloured by rise or fall.
+	stat_caption = HubUI.label(build, "", &"MutedLabel")
+	stat_sheet = GridContainer.new()
+	stat_sheet.theme_type_variation = &"StatSheet"
+	stat_sheet.columns = 2
+	build.add_child(stat_sheet)
+	for row: Array in STAT_ROWS:
+		var cell := VBoxContainer.new()
+		cell.theme_type_variation = &"CompactStack"
+		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		stat_sheet.add_child(cell)
+		HubUI.label(cell, row[0], &"HudSmall")
+		var value := HubUI.label(cell, "", &"StatValue")
+		value.autowrap_mode = TextServer.AUTOWRAP_OFF
+		stat_values.append(value)
 	scroll_remove_button = HubUI.button(build, "選択枠の魔法を外す", func():
 		equipped_item = null
 		scroll_remove_requested.emit(selected_slot))
@@ -104,8 +124,7 @@ func refresh(current: RunCarryover) -> void:
 		slot_names[index].text = item.label() if item != null else "未装備"
 		slot_glyphs[index].queue_redraw()
 		slots[index].tooltip_text = Equipment.SLOT_NAMES[index] + "：" + (ItemTooltipList.description(item) if item != null else "未装備")
-	var stats := state.preparation_stats()
-	stats_label.text = "次の冒険：HP %d / 攻撃力 %d\n防御力 %d / 主武器の射程 %d" % [stats.hp, stats.attack, stats.defense, stats.reach]
+	_show_stats(state.preparation_stats())
 	carried_list.clear()
 	for entry in state.inventory.entries:
 		carried_list.add_card(entry.item, entry.count)
@@ -115,8 +134,31 @@ func refresh(current: RunCarryover) -> void:
 	_fill_candidates()
 
 
-# A slot shows the equipped item's glyph beside its caption and name, laid
-# out by Containers inside the Button; the Button keeps input and focus.
+# Before and after for the next run; without an after, the current values.
+func _show_stats(before: Dictionary, after: Dictionary = {}) -> void:
+	var changes := false
+	for row: Array in STAT_ROWS:
+		changes = changes or after.get(row[1], before[row[1]]) != before[row[1]]
+	stat_caption.text = "次の冒険（変更後）" if changes else "次の冒険"
+	for index in STAT_ROWS.size():
+		var key: String = STAT_ROWS[index][1]
+		var value := stat_values[index]
+		var next: int = after.get(key, before[key])
+		value.text = "%d" % before[key] if next == before[key] else "%d → %d" % [before[key], next]
+		value.theme_type_variation = &"StatValue" if next == before[key] else (&"StatUp" if next > before[key] else &"StatDown")
+
+
+# The sheet as plain text, for tests and accessibility checks.
+func stat_text() -> String:
+	var parts: Array[String] = []
+	for index in STAT_ROWS.size():
+		parts.append("%s %s" % [STAT_ROWS[index][0], stat_values[index].text])
+	return " / ".join(parts)
+
+
+# A slot shows the equipped item's icon beside its caption, with the name on
+# the full width below, laid out by Containers inside the Button; the Button
+# keeps input and focus.
 func _build_slot(button: Button, slot: int) -> void:
 	var margin := MarginContainer.new()
 	margin.theme_type_variation = &"CompactMargin"
@@ -134,7 +176,7 @@ func _build_slot(button: Button, slot: int) -> void:
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	stack.add_child(header)
 	var glyph := Control.new()
-	glyph.custom_minimum_size = Vector2(16, 16)
+	glyph.custom_minimum_size = Vector2.ONE * SLOT_ICON
 	glyph.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	glyph.draw.connect(_draw_slot_glyph.bind(slot, glyph))
@@ -142,6 +184,7 @@ func _build_slot(button: Button, slot: int) -> void:
 	slot_glyphs.append(glyph)
 	var caption := HubUI.label(header, SLOT_CAPTIONS[slot], &"HudSmall")
 	caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+	caption.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var name_label := HubUI.label(stack, "", &"")
 	name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -150,13 +193,28 @@ func _build_slot(button: Button, slot: int) -> void:
 	button.toggled.connect(func(_on: bool): glyph.queue_redraw())
 
 
+# A stand-in without an id, so ItemGlyph draws the category symbol rather
+# than any specific item's icon.
+func _empty_slot_symbol(slot: int) -> ItemData:
+	var symbol := ItemData.new()
+	if slot <= Equipment.Slot.SUB:
+		symbol.kind = ItemData.Kind.WEAPON
+		symbol.weapon = WeaponData.new()
+	else:
+		symbol.kind = ItemData.Kind.ARMOR if slot == Equipment.Slot.ARMOR else ItemData.Kind.ACCESSORY
+	return symbol
+
+
 func _draw_slot_glyph(slot: int, glyph: Control) -> void:
 	if state == null:
 		return
 	var item: ItemData = state.equipment.slots[slot]
 	if item == null:
+		# An empty slot shows the faint common symbol of what it accepts.
+		ItemGlyph.paint(glyph, Rect2(Vector2.ONE * 8, glyph.size - Vector2.ONE * 16), _empty_slot_symbol(slot), glyph.get_theme_color(&"font_color", &"HudSmall"))
 		return
-	var role := &"GoldLabel" if slots[slot].button_pressed or slot == Equipment.Slot.MAIN else &"MutedLabel"
+	# Equipped art stays at full colour; only the drawn fallback symbol dims.
+	var role := &"GoldLabel" if slots[slot].button_pressed or slot == Equipment.Slot.MAIN else &"Label"
 	ItemGlyph.paint(glyph, Rect2(Vector2.ZERO, glyph.size), item, glyph.get_theme_color(&"font_color", role))
 
 
@@ -170,7 +228,7 @@ func present_equip(changed: Array[int]) -> void:
 			if is_instance_valid(slot) and slot.is_visible_in_tree():
 				UIMotion.of(slot).pulse()
 				UIMotion.of(portrait).flash()
-				UIMotion.of(stats_label).pulse(1.04, UIMotion.GOLD_TIME))
+				UIMotion.of(stat_sheet).pulse(1.04, UIMotion.GOLD_TIME))
 	else:
 		for index in changed:
 			UIMotion.of(slots[index]).pulse()
@@ -234,21 +292,21 @@ func _compare() -> void:
 	var before := state.preparation_stats()
 	var after := state.preparation_stats(preview)
 	var current := state.equipment.slots[selected_slot]
+	_show_stats(before, after)
 	comparison.line("%sに装備した場合（現在：%s）" % [SLOT_CAPTIONS[selected_slot], current.label() if current != null else "なし"], &"MutedLabel")
 	# Only values that change; an unchanged list hides the one that matters.
-	var changed := false
+	var rows: Array = []
 	for stat: Array in [["HP", "hp"], ["攻撃力", "attack"], ["防御力", "defense"]]:
 		if before[stat[1]] != after[stat[1]]:
-			comparison.delta(stat[0], before[stat[1]], after[stat[1]])
-			changed = true
+			rows.append([stat[0], before[stat[1]], after[stat[1]]])
 	if candidate.kind == ItemData.Kind.WEAPON:
 		var old_reach := current.weapon.reach if current != null else 0
 		if old_reach != candidate.weapon.reach:
-			comparison.delta("この枠の射程", old_reach, candidate.weapon.reach)
-			changed = true
-	if not changed:
+			rows.append(["この枠の射程", old_reach, candidate.weapon.reach])
+	comparison.stat_table(rows)
+	if rows.is_empty():
 		comparison.line("能力値は変わりません", &"MutedLabel")
-	comparison.item_text(candidate)
+	comparison.item_text(candidate, showcase)
 	if current != null:
 		comparison.line("外す装備", &"ItemNameLabel")
 		comparison.line("%s　%s" % [current.label(), ItemGlyph.main_effect(current)], &"MutedLabel")

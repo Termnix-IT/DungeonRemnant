@@ -5,6 +5,15 @@ var visible_cells: Dictionary = {}
 var tile_size := 48
 
 
+# A 48px icon drawn at the enemies' 0.8 world scale keeps one icon pixel per
+# screen pixel at the dungeon camera's zoom.
+const ICON_WORLD_SIZE := 48.0 * 0.8
+
+
+func _ready() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
+
 func _draw() -> void:
 	var visual_scale := float(tile_size) / 32.0
 	for cell: Vector2i in entries:
@@ -12,6 +21,15 @@ func _draw() -> void:
 			continue
 		var center := Vector2(cell * tile_size) + Vector2.ONE * tile_size / 2.0
 		var item: ItemData = entries[cell].item
+		var texture := ItemIcons.icon(item)
+		if texture != null:
+			var half := Vector2.ONE * ICON_WORLD_SIZE * 0.5
+			# A soft shadow seats the icon on the floor like the actors.
+			draw_set_transform(center + Vector2(0, 12), 0.0, Vector2(1, 0.32))
+			draw_circle(Vector2.ZERO, 12, Color(0.04, 0.045, 0.05, 0.45))
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			draw_texture_rect(texture, Rect2(center - half, half * 2.0), false)
+			continue
 		draw_set_transform(center, 0.0, Vector2.ONE * visual_scale)
 		if not item.effect_id.is_empty():
 			draw_rect(Rect2(-6, -10, 12, 20), Color("e8cf80"))

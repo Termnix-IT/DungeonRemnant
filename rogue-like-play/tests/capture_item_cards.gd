@@ -21,7 +21,7 @@ func capture() -> void:
 	check(shop.item_list.get_selected_items() == PackedInt32Array([0]), "Native Down selects first card")
 	await key(KEY_DOWN)
 	check(shop.item_list.get_selected_items() == PackedInt32Array([1]), "Native arrow selects next card")
-	check(shop.details.get_parsed_text().contains(shop.rows[1].item.display_name), "Keyboard selection updates correct details")
+	check(shows_name(shop.showcase, shop.details, shop.rows[1].item), "Keyboard selection updates correct details")
 	await shot("cards_top")
 	for page in ceili(shop.rows.size() / 4.0):
 		await key(KEY_PAGEDOWN)
@@ -32,7 +32,7 @@ func capture() -> void:
 	var rect := shop.item_list.card_rect(target)
 	await click(shop.item_list, rect.position + Vector2(30, rect.size.y / 2))
 	check(shop.item_list.get_selected_items() == PackedInt32Array([target]), "Scrolled glyph hit selects correct item")
-	check(shop.details.get_parsed_text().contains(shop.rows[target].item.display_name), "Scrolled item metadata matches details")
+	check(shows_name(shop.showcase, shop.details, shop.rows[target].item), "Scrolled item metadata matches details")
 	var index := 12
 	shop.item_list.select(index)
 	shop.item_list.item_selected.emit(index)
@@ -55,7 +55,7 @@ func capture() -> void:
 	Input.parse_input_event(release)
 	await settle()
 	check(shop.item_list.get_selected_items() == PackedInt32Array([1]), "Native incremental search still uses full card name")
-	check(shop.details.get_parsed_text().contains(long_item.display_name), "Full name remains available in details as literal text")
+	check(shows_name(shop.showcase, shop.details, long_item), "Full name remains available in the detail area as literal text")
 	check(shop.item_list.get_item_metadata(0).count == 999 and shop.item_list.get_item_metadata(1).count == 3, "Card quantity reflects grouped inventory")
 	await shot("cards_long_name")
 	root.size = Vector2i(1152, 720)
@@ -69,3 +69,9 @@ func capture() -> void:
 	main.free()
 	print("Item card render/input checks: ", "passed" if failures == 0 else "FAILED")
 	quit(0 if failures == 0 else 1)
+
+
+# The full name must be readable in the detail area: the showcase title wraps
+# without a limit, and details name the item when there is no showcase.
+func shows_name(showcase: ItemShowcase, details: ItemDetails, item: ItemData) -> bool:
+	return showcase.title.text == item.label() or details.get_parsed_text().contains(item.label())

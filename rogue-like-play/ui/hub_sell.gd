@@ -68,10 +68,16 @@ func _ready() -> void:
 	heading = _label(info, "", &"MutedLabel")
 	showcase = ItemShowcase.new()
 	info.add_child(showcase)
+	# The record sits in the same inset frame as the equipment comparison, so
+	# its spare height reads as part of the card rather than a gap.
+	var record := PanelContainer.new()
+	record.theme_type_variation = &"InsetPanel"
+	record.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	info.add_child(record)
 	details = ItemDetails.new()
 	details.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info.add_child(details)
+	record.add_child(details)
 	possession = _label(info, "", &"BodyLabel")
 	var quantity_row := HBoxContainer.new()
 	info.add_child(quantity_row)
@@ -196,7 +202,7 @@ func _update_quote() -> void:
 	var total := price * amount
 	quantity.editable = true
 	details.reset()
-	details.item_text(item)
+	details.item_text(item, showcase)
 	_compare_equipment(item)
 	_holdings(item)
 	quantity_label.text = "%s（最大 %d）" % ["購入数" if buying else "売却数", int(quantity.max_value)]

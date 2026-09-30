@@ -42,7 +42,7 @@ func run_tests() -> void:
 	select(shop.item_list, 0)
 	check(shop.item_list.selection_strength == 0.0, "Native selection starts accent")
 	check_alpha([shop.showcase, shop.details, shop.possession], 0.65, "Shop details start together")
-	check(shop.showcase.visual.item == shop.rows[0].item and shop.details.get_parsed_text().contains(shop.rows[0].item.label()), "Shop content updates before fade")
+	check(shop.showcase.visual.item == shop.rows[0].item and shows_name(shop.showcase, shop.details, shop.rows[0].item), "Shop content updates before fade")
 	var old_tween := UIMotion.of(shop.details).alpha_tween
 	for index in 20:
 		select(shop.item_list, index % 2)
@@ -90,3 +90,9 @@ func run_tests() -> void:
 	check(get_processed_tweens().is_empty(), "Selection tweens are released with UI")
 	print("UI selection: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
+
+
+# The full name must be readable in the detail area: the showcase title wraps
+# without a limit, and details name the item when there is no showcase.
+func shows_name(showcase: ItemShowcase, details: ItemDetails, item: ItemData) -> bool:
+	return showcase.title.text == item.label() or details.get_parsed_text().contains(item.label())

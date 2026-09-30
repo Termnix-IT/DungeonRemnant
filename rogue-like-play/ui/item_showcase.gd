@@ -14,9 +14,10 @@ func _init() -> void:
 	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	copy.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	add_child(copy)
+	# The title wraps without a line limit, so the full name is always here
+	# and the details below never need to repeat it.
 	title = HubUI.label(copy, "選択したアイテム", &"HeadingLabel")
-	title.max_lines_visible = 2
-	title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	category = HubUI.label(copy, "", &"MutedLabel")
 	effect = HubUI.label(copy, "", &"GoldLabel")
 	effect.max_lines_visible = 2
