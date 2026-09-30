@@ -90,8 +90,10 @@ func _ready() -> void:
 	summary.add_child(stats)
 	floor_value = _stat(stats, "到達階")
 	earned_value = _stat(stats, "今回獲得")
+	earned_value.theme_type_variation = &"MoneyValueLabel"
 	lost_value = _stat(stats, "失ったGold")
 	balance_value = _stat(stats, "残高")
+	balance_value.theme_type_variation = &"MoneyValueLabel"
 	level_value = _stat(stats, "到達Lv")
 	kills_value = _stat(stats, "倒した敵")
 	turns_value = _stat(stats, "経過ターン")

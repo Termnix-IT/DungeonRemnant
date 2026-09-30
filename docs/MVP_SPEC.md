@@ -989,7 +989,7 @@ SaveManager
 
 巨大なGameManager一つにすべてを詰め込むことも避ける。
 
-UIは `res://ui/theme/dungeon_theme.tres` をプロジェクト共通Themeとして使用する。暗色の面・明るい本文・控えめな金色を基調とし、通常面は低彩度の細い輪郭、選択と主要操作は金色の輪郭を使い、面の明度・余白・控えめな影で階層を示す。参考アートは方向性の基準であり、実行時素材として使用しない。拠点・ショップ・装備・倉庫・永久強化・出撃準備はこのThemeの役割を使用し、HUDのHP・MPなど意味を持つ専用表示は別途維持する。
+UIは `res://ui/theme/dungeon_theme.tres` をプロジェクト共通Themeとして使用する。暗色の面・明るい本文・控えめな金色を基調とし、通常面は低彩度の細い輪郭、選択と主要操作は金色の輪郭を使い、面の明度・余白・控えめな影で階層を示す。金色は、どこにでも使うと特別に見えなくなるため、次の2つの意味に限る。1つは「今選んでいるもの・押すべき操作」（選択枠・Focus・主要ボタン・有効な装備枠）、もう1つは「お金と手に入れた価値」（Gold残高・価格・収支、獲得済みの段階の目盛り、勝利の見出し）である。アイテムの効果、能力値、ステージの階数と難易度、移動の方向、キャラクターの台詞は情報として明るい本文色（`BodyLabel`・`ValueLabel`・`ItemNameLabel`）で示し、上昇は緑（`StatUp`・`PositiveLabel`）、下降と損失は赤（`StatDown`・`LossValueLabel`）で示す。冒険結果の数値のうち、今回獲得と残高だけが金（`MoneyValueLabel`、`GoldLabel` から色を受け継ぐ）となる。規則の常設案内は控えめな色（`MutedLabel`）とし、操作の結果だけを本文色で示す。参考アートは方向性の基準であり、実行時素材として使用しない。拠点・ショップ・装備・倉庫・永久強化・出撃準備はこのThemeの役割を使用し、HUDのHP・MPなど意味を持つ専用表示は別途維持する。
 
 - 操作は `PrimaryButton`（主要操作）、`SecondaryButton`（戻る・補助操作）、`ItemButton`（選択）、`GoldButton`（購入・成長）を使い分ける。
 - 文字は画面名 `TitleLabel`（30px）、見出し `HeadingLabel`（24px）、項目名 `ItemNameLabel`（20px）、主要値 `ValueLabel`（26px）、本文 `BodyLabel`（18px）、説明 `DescriptionLabel`（18px）、補足 `MutedLabel`（16px）、価格 `GoldLabel`（21px）を使用する。ボタンは原則18px、補助操作は16px。画面ごとのフォントサイズ・色overrideは追加しない。

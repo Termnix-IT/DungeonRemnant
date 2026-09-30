@@ -241,7 +241,7 @@ func _build_home() -> void:
 	tail_fill.polygon = PackedVector2Array([Vector2(200, 62), Vector2(210, 76), Vector2(220, 62)])
 	tail_fill.color = hero_speech.get_theme_stylebox("panel").bg_color
 	hero_speech.add_child(tail_fill)
-	var invitation := HubTheme.label(hero_speech, "準備ができたら、出発しよう。", Vector2(16, 12), Vector2(388, 40), &"GoldLabel")
+	var invitation := HubTheme.label(hero_speech, "準備ができたら、出発しよう。", Vector2(16, 12), Vector2(388, 40), &"ItemNameLabel")
 	invitation.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hero_speech.hide()
 

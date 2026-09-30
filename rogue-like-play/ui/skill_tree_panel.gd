@@ -163,8 +163,8 @@ func _build_detail() -> void:
 	arrow.custom_minimum_size = Vector2(24, 18)
 	arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	arrow.draw.connect(func():
-		var gold := arrow.get_theme_color(&"font_color", &"GoldLabel")
-		arrow.draw_polyline(PackedVector2Array([Vector2(4, 5), Vector2(12, 13), Vector2(20, 5)]), gold, 2.0, true))
+		var tone := arrow.get_theme_color(&"font_color", &"MutedLabel")
+		arrow.draw_polyline(PackedVector2Array([Vector2(4, 5), Vector2(12, 13), Vector2(20, 5)]), tone, 2.0, true))
 	change.add_child(arrow)
 	next_value = HubUI.label(change, "", &"ValueLabel")
 	benefit_label = HubUI.label(change, "", &"PositiveLabel")

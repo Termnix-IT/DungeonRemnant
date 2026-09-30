@@ -170,7 +170,7 @@ func _select_stage(index: int) -> void:
 	stage_details.line(stage.display_name, &"HeadingLabel")
 	stage_details.line(stage.description)
 	if stage.available:
-		stage_details.line("全%d階  /  難易度：%s" % [stage.floor_count, stage.difficulty], &"GoldLabel")
+		stage_details.line("全%d階  /  難易度：%s" % [stage.floor_count, stage.difficulty], &"BodyLabel")
 		if not stage.features.is_empty():
 			stage_details.line("探索の特徴", &"ItemNameLabel")
 			stage_details.line(stage.features)

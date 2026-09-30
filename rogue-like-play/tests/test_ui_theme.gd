@@ -68,6 +68,13 @@ func run_tests() -> void:
 	var probe := Color(0.7, 0.8, 0.9)
 	theme.set_color("font_color", "GoldLabel", probe)
 	check(shop.total_label.get_theme_color("font_color") == probe and hub.gold_label.get_theme_color("font_color") == probe and hub.warehouse_panel.get_node("%Gold").get_theme_color("font_color") == probe, "One theme edit reaches shop, home and warehouse")
+	var money := Label.new()
+	money.theme_type_variation = &"MoneyValueLabel"
+	hub.add_child(money)
+	check(money.get_theme_color("font_color") == probe, "Money values follow the one gold")
+	money.free()
+	check(hub.sell_page.showcase.effect.get_theme_color("font_color") != probe, "An item's effect is information, not gold")
+	check(hub.upgrade_page.next_value.get_theme_color("font_color") != probe, "An upgrade's next value is information, not gold")
 	theme.set_color("font_color", "GoldLabel", original)
 	main.free()
 	print("UI theme: %d checks, %d failures" % [checks, failures])

@@ -23,7 +23,7 @@ func _init() -> void:
 	title = HubUI.label(copy, "選択したアイテム", &"HeadingLabel")
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	category = HubUI.label(copy, "", &"MutedLabel")
-	effect = HubUI.label(copy, "", &"GoldLabel")
+	effect = HubUI.label(copy, "", &"BodyLabel")
 	effect.max_lines_visible = 2
 	effect.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 

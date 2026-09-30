@@ -87,7 +87,7 @@ theme_type_variation = &"ItemPanel"
 unique_name_in_owner = true
 text = "移動するアイテム"
 autowrap_mode = 3
-theme_type_variation = &"GoldLabel"
+theme_type_variation = &"ItemNameLabel"
 
 [node name="Visual" type="Control" parent="Panel/Margin/Stack/Columns/Transfer/Stack"]
 unique_name_in_owner = true

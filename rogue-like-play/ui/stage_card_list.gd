@@ -46,14 +46,14 @@ func _draw() -> void:
 			status = "全%d階  /  %s" % [stage.floor_count, stage.difficulty]
 			if locked:
 				status += "  /  " + (row.hint if not String(row.hint).is_empty() else "未解放")
-		_line(status, at + Vector2(0, 36), width, &"GoldLabel", HORIZONTAL_ALIGNMENT_LEFT, dim)
+		_line(status, at + Vector2(0, 36), width, &"GoldLabel", HORIZONTAL_ALIGNMENT_LEFT, dim if locked else &"Label")
 		_line(stage.description, at + Vector2(0, 72), width, &"MutedLabel")
 	if has_focus():
 		draw_style_box(get_theme_stylebox(&"focus"), Rect2(Vector2.ZERO, size))
 
 
 func _draw_padlock(center: Vector2) -> void:
-	var color := get_theme_color(&"font_color", &"GoldLabel")
+	var color := get_theme_color(&"font_color", &"Label")
 	draw_circle(center, 24, Color(0, 0, 0, 0.45))
 	draw_arc(center + Vector2(0, -4), 7, PI, TAU, 16, color, 2.5, true)
 	draw_rect(Rect2(center + Vector2(-10, -4), Vector2(20, 15)), color)

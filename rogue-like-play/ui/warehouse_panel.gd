@@ -62,6 +62,8 @@ func refresh(current_state: RunCarryover = state, message: String = "") -> void:
 	%Deposit.disabled = inventory_index < 0
 	%Withdraw.disabled = storage_index < 0
 	%Feedback.text = message if not message.is_empty() else STORAGE_NOTE
+	# The standing rule is quiet; only a move's result reads in the body tone.
+	%Feedback.theme_type_variation = &"BodyLabel" if not message.is_empty() else &"MutedLabel"
 	_update_details()
 
 
@@ -145,7 +147,7 @@ func _update_details() -> void:
 		details.line(item.label(), &"HeadingLabel")
 		details.line(ItemGlyph.category(item), &"MutedLabel")
 		details.line(item.description())
-		details.line("選択数 ×%d" % source.entries[index].count, &"GoldLabel")
+		details.line("選択数 ×%d" % source.entries[index].count, &"BodyLabel")
 	else:
 		%Visual.item = null
 		%Direction.text = "移動するアイテム"
