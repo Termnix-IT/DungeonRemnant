@@ -31,6 +31,7 @@ var ground_items: Dictionary = {}
 var decorations: Node2D
 var ambient_details := preload("res://world/dungeon/ambient_details.gd").new()
 var lights := preload("res://world/dungeon/dungeon_lights.gd").new()
+var mist := preload("res://world/dungeon/unexplored_mist.gd").new()
 
 
 func _ready() -> void:
@@ -43,6 +44,11 @@ func _ready() -> void:
 	add_child(decorations)
 	move_child(decorations, 2)
 	decorations.draw.connect(_draw_decorations)
+	# Added last so the fixed layer indices above stay as they were; the mist
+	# then moves under every terrain layer, so known tiles cover it.
+	mist.name = "Mist"
+	add_child(mist)
+	move_child(mist, 0)
 
 
 func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenerator, final_floor: bool) -> void:
@@ -71,6 +77,7 @@ func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenera
 	terrain.position = Vector2.ONE * TILE_SIZE / 2.0 - terrain.map_to_local(Vector2i.ZERO)
 	remembered.tile_set = terrain.tile_set
 	remembered.position = terrain.position
+	mist.refresh(grid.size, forest, terrain_theme_index)
 	terrain.clear()
 	remembered.clear()
 	$Items.tile_size = TILE_SIZE

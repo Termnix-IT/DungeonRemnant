@@ -25,6 +25,18 @@ static func category(item: ItemData) -> String:
 		_: return "MP回復" if item.restore_mp > 0 else "HP回復"
 
 
+# A stand-in without an id for an empty equipment slot, so paint() draws the
+# faint common symbol of what the slot accepts rather than any item's icon.
+static func slot_symbol(slot: int) -> ItemData:
+	var symbol := ItemData.new()
+	if slot <= Equipment.Slot.SUB:
+		symbol.kind = ItemData.Kind.WEAPON
+		symbol.weapon = WeaponData.new()
+	else:
+		symbol.kind = ItemData.Kind.ARMOR if slot == Equipment.Slot.ARMOR else ItemData.Kind.ACCESSORY
+	return symbol
+
+
 static func paint(canvas: Control, rect: Rect2, item: ItemData, color: Color) -> void:
 	var texture := ItemIcons.icon(item)
 	if texture != null:

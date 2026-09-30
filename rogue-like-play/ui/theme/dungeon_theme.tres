@@ -417,6 +417,19 @@ corner_radius_bottom_left = 3
 shadow_color = Color(0, 0, 0, 0.45)
 shadow_size = 6
 
+[sub_resource type="StyleBoxFlat" id="HudPortraitFrame"]
+resource_name = "HudPortraitFrame"
+bg_color = Color(0.06, 0.06, 0.06, 1)
+border_color = Color(0.55, 0.43, 0.26, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
 [sub_resource type="StyleBoxFlat" id="BannerBand"]
 resource_name = "BannerBand"
 content_margin_left = 48.0
@@ -659,6 +672,8 @@ MpTrail/styles/fill = SubResource("VitalManaTrail")
 
 HudPanel/base_type = &"Panel"
 HudPanel/styles/panel = SubResource("HudSurface")
+HudPortraitFrame/base_type = &"Panel"
+HudPortraitFrame/styles/panel = SubResource("HudPortraitFrame")
 HudCaption/base_type = &"Label"
 HudCaption/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
 HudCaption/font_sizes/font_size = 14
@@ -684,8 +699,8 @@ HudLog/colors/default_color = Color(0.79, 0.79, 0.75, 1)
 HudLog/font_sizes/normal_font_size = 15
 HudLog/styles/normal = SubResource("HudLogInsets")
 HudEquipment/base_type = &"Control"
-HudEquipment/constants/row_height = 30
-HudEquipment/constants/glyph_size = 20
+HudEquipment/constants/row_height = 38
+HudEquipment/constants/glyph_size = 32
 HudEquipment/constants/caption_width = 64
 HudEquipment/font_sizes/font_size = 15
 BossLabel/base_type = &"Label"

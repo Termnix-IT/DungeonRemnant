@@ -193,25 +193,13 @@ func _build_slot(button: Button, slot: int) -> void:
 	button.toggled.connect(func(_on: bool): glyph.queue_redraw())
 
 
-# A stand-in without an id, so ItemGlyph draws the category symbol rather
-# than any specific item's icon.
-func _empty_slot_symbol(slot: int) -> ItemData:
-	var symbol := ItemData.new()
-	if slot <= Equipment.Slot.SUB:
-		symbol.kind = ItemData.Kind.WEAPON
-		symbol.weapon = WeaponData.new()
-	else:
-		symbol.kind = ItemData.Kind.ARMOR if slot == Equipment.Slot.ARMOR else ItemData.Kind.ACCESSORY
-	return symbol
-
-
 func _draw_slot_glyph(slot: int, glyph: Control) -> void:
 	if state == null:
 		return
 	var item: ItemData = state.equipment.slots[slot]
 	if item == null:
 		# An empty slot shows the faint common symbol of what it accepts.
-		ItemGlyph.paint(glyph, Rect2(Vector2.ONE * 8, glyph.size - Vector2.ONE * 16), _empty_slot_symbol(slot), glyph.get_theme_color(&"font_color", &"HudSmall"))
+		ItemGlyph.paint(glyph, Rect2(Vector2.ONE * 8, glyph.size - Vector2.ONE * 16), ItemGlyph.slot_symbol(slot), glyph.get_theme_color(&"font_color", &"HudSmall"))
 		return
 	# Equipped art stays at full colour; only the drawn fallback symbol dims.
 	var role := &"GoldLabel" if slots[slot].button_pressed or slot == Equipment.Slot.MAIN else &"Label"

@@ -48,6 +48,10 @@ func run_tests() -> void:
 	# a rendering run can read pixels back.
 	if DisplayServer.get_name() != "headless":
 		await check_painted_rectangle()
+	var expected_kinds := [ItemData.Kind.WEAPON, ItemData.Kind.WEAPON, ItemData.Kind.ARMOR, ItemData.Kind.ACCESSORY, ItemData.Kind.ACCESSORY]
+	for slot in expected_kinds.size():
+		var symbol := ItemGlyph.slot_symbol(slot)
+		check(symbol.kind == expected_kinds[slot] and ItemIcons.icon(symbol) == null, "Empty slot %d shows its drawn category symbol, never an item's art" % slot)
 	print("Item icons: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures else 0)
 

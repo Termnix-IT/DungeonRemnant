@@ -22,9 +22,13 @@ func run_tests() -> void:
 	await process_frame
 	var portrait: HudPortrait = hud.portrait
 	var vitals: Control = hud.get_node("BottomLeft")
-	check(portrait != null and portrait.get_parent() == hud, "The HUD adds the portrait")
-	check(portrait.get_global_rect().end.y <= vitals.get_global_rect().position.y and is_equal_approx(portrait.get_global_rect().position.x, vitals.get_global_rect().position.x), "The portrait sits just above the vitals panel")
-	check(not portrait.get_global_rect().intersects(hud.get_node("TopLeft").get_global_rect()), "The portrait leaves the floor panel clear")
+	check(portrait != null and portrait.get_parent() == vitals, "The portrait shares one plate with the vitals")
+	var face_rect := portrait.get_global_rect()
+	check(vitals.get_global_rect().encloses(face_rect), "The portrait frame stays inside the plate")
+	for node_name in ["HpCaption", "HpValue", "HpBar", "MpCaption", "MpValue", "MpBar", "Level", "ExpValue", "ExpBar", "Meta"]:
+		check(not face_rect.intersects((vitals.get_node(node_name) as Control).get_global_rect()), "The portrait leaves %s clear" % node_name)
+	check(face_rect.end.x < (vitals.get_node("HpBar") as Control).get_global_rect().position.x, "HP and MP sit beside the face")
+	check(portrait.theme_type_variation == &"HudPortraitFrame", "The face uses the HUD portrait frame role")
 
 	for bar_name in ["HpBar", "MpBar"]:
 		var bar: ProgressBar = vitals.get_node(bar_name)

@@ -1,7 +1,7 @@
 class_name HudPortrait
 extends Panel
 
-# The hero's face beside her HP: calm with an occasional blink, a wince for a
+# The hero's face in the vitals plate, beside her HP: calm with an occasional blink, a wince for a
 # moment when hit, and worn out once HP falls into the danger range. Frames
 # come from art/ui/hud_portrait.png (normal, blink, hurt, near collapse).
 const SHEET := preload("res://art/ui/hud_portrait.png")
@@ -21,7 +21,7 @@ var _blink_clock := 0.0
 
 
 func _ready() -> void:
-	theme_type_variation = &"HudPanel"
+	theme_type_variation = &"HudPortraitFrame"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 

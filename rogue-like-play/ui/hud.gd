@@ -3,7 +3,9 @@ extends CanvasLayer
 const MAX_LOG_ENTRIES := 3
 # The newest entries stay at full strength; older ones recede.
 const EMPHASIZED_LOG_ENTRIES := 2
-const PORTRAIT_SIZE := 112
+# The face frame sits in the vitals plate's top-left, beside the HP and MP bars.
+const PORTRAIT_SIZE := 104
+const PORTRAIT_INSET := 14
 
 @onready var status: Label = $Status
 @onready var floor_value: Label = $TopLeft/Floor
@@ -30,18 +32,12 @@ var inventory_count := 0
 
 
 func _ready() -> void:
-	# The face sits just above the vitals panel, anchored to the same corner.
+	var vitals: Panel = $BottomLeft
 	portrait = HudPortrait.new()
 	portrait.name = "Portrait"
-	portrait.theme = $BottomLeft.theme
-	add_child(portrait)
-	portrait.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	var vitals: Panel = $BottomLeft
-	portrait.offset_left = vitals.offset_left
-	portrait.offset_right = vitals.offset_left + PORTRAIT_SIZE
-	portrait.offset_bottom = vitals.offset_top - 8
-	portrait.offset_top = portrait.offset_bottom - PORTRAIT_SIZE
-	portrait.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	vitals.add_child(portrait)
+	portrait.position = Vector2.ONE * PORTRAIT_INSET
+	portrait.size = Vector2.ONE * PORTRAIT_SIZE
 	for bar: ProgressBar in [hp_bar, mp_bar]:
 		var ticks := VitalTicks.new()
 		ticks.name = bar.name + "Ticks"

@@ -1,8 +1,9 @@
 class_name HudEquipment
 extends Control
 
-# Five equipped slots drawn as glyph, slot caption and item name. Row metrics
-# and text size live in the Theme type HudEquipment.
+# Five equipped slots drawn as a slot box holding the item's icon, the slot
+# caption and the item name. The main weapon's box is gold, and an empty box
+# shows the faint symbol of what it accepts. Row metrics and text size live in the Theme type HudEquipment.
 const CAPTIONS := Equipment.SLOT_NAMES
 const EMPTY := "—"
 
@@ -12,6 +13,8 @@ var items: Array[ItemData] = []
 func _init() -> void:
 	theme_type_variation = &"HudEquipment"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Icons are 2x pixel art drawn at a third of their size, so sample whole pixels.
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 
 func show_equipment(equipment: Equipment) -> void:
@@ -48,12 +51,18 @@ func _draw() -> void:
 	for index in CAPTIONS.size():
 		var top := index * row_height
 		var item: ItemData = items[index] if index < items.size() else null
-		var glyph := Rect2(0, top + (row_height - glyph_size) / 2.0, glyph_size, glyph_size)
-		if item != null:
-			ItemGlyph.paint(self, glyph, item, gold if index == 0 else muted)
+		var glyph := Rect2(2, top + (row_height - glyph_size) / 2.0, glyph_size, glyph_size)
+		var box := glyph.grow(2)
+		draw_rect(box, Color(0, 0, 0, 0.35))
+		draw_rect(box, gold if index == 0 and item != null else Color(muted, 0.35), false, 1.0)
+		if item == null:
+			ItemGlyph.paint(self, glyph.grow(-7), ItemGlyph.slot_symbol(index), Color(muted, 0.45))
+		else:
+			ItemGlyph.paint(self, glyph, item, body)
 		var baseline := top + (row_height - font.get_height(font_size)) / 2.0
-		_text(CAPTIONS[index], Vector2(glyph_size + 10, baseline), caption_width, muted)
-		var name_x := glyph_size + 10 + caption_width
+		var caption_x := box.end.x + 10
+		_text(CAPTIONS[index], Vector2(caption_x, baseline), caption_width, muted)
+		var name_x := caption_x + caption_width
 		_text(_name(index), Vector2(name_x, baseline), size.x - name_x, body if item != null else muted)
 
 
