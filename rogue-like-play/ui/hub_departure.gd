@@ -7,7 +7,7 @@ signal departure_requested
 
 var stages: Array[StageData] = []
 var state: RunCarryover
-var start_choice: OptionButton
+var start_choice: SegmentedChoice
 var starting_floor := 1
 var selected_stage: StageData
 var stage_list: StageCardList
@@ -109,9 +109,21 @@ func _ready() -> void:
 	empty_carried.add_child(empty_text)
 	for line: Array in [["持ち込みアイテムはありません", &"ItemNameLabel"], ["装備のみで出撃します。回復薬は倉庫・ショップから用意できます。", &"MutedLabel"]]:
 		HubUI.label(empty_text, line[0], line[1]).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	start_choice = OptionButton.new()
-	start_choice.custom_minimum_size.y = 40
-	departure.add_child(start_choice)
+	# The unlocked start floors sit side by side as buttons; the caption says
+	# once what every start shares instead of repeating it in each option.
+	var start_row := HBoxContainer.new()
+	start_row.theme_type_variation = &"CompactRow"
+	departure.add_child(start_row)
+	var start_caption := HubUI.label(start_row, "開始階", &"MutedLabel")
+	start_caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+	start_caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	start_choice = SegmentedChoice.new()
+	start_row.add_child(start_choice)
+	var start_note := HubUI.label(start_row, "Lv1・永久強化を適用", &"MutedLabel")
+	start_note.autowrap_mode = TextServer.AUTOWRAP_OFF
+	start_note.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	start_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	start_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	start_choice.item_selected.connect(func(index: int): starting_floor = start_choice.get_item_id(index); _update_start_label())
 	confirm_button = HubUI.button(departure, "挑戦する", func(): departure_requested.emit(), &"GoldButton")
 	confirm_button.custom_minimum_size.y = 54
@@ -197,7 +209,7 @@ func present_confirmation(current: RunCarryover) -> void:
 	start_choice.clear()
 	for floor_number in [1, 11, 21, 31, 41]:
 		if state.can_start(selected_stage, floor_number):
-			start_choice.add_item("%dFから開始（Lv1・永久強化適用）" % floor_number, floor_number)
+			start_choice.add_item("%dF" % floor_number, floor_number)
 			if floor_number == starting_floor:
 				start_choice.select(start_choice.item_count - 1)
 	starting_floor = start_choice.get_selected_id() if start_choice.item_count > 0 else 1

@@ -391,7 +391,7 @@ func show_page(target: String) -> void:
 			subtitle_label.text = "薬も武具も、金次第。"
 			sell_page.show()
 			sell_page.refresh(_state)
-			sell_page.source_choice.grab_focus()
+			sell_page.source_choice.focus_selected()
 		"upgrade":
 			title_label.text = "永久強化"
 			subtitle_label.text = "冒険の記憶は、この身に残る。"

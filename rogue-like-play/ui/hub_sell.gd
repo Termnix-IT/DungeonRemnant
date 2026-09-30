@@ -6,7 +6,7 @@ signal buy_requested(to_storage: bool, item_id: StringName, amount: int)
 signal mode_changed
 
 var state: RunCarryover
-var source_choice: OptionButton
+var source_choice: SegmentedChoice
 var item_list: ItemCardList
 var quantity: QuantityStepper
 var details: ItemDetails
@@ -52,11 +52,11 @@ func _ready() -> void:
 	source_label = _label(toolbar, "売却元", &"MutedLabel")
 	source_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	source_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	source_choice = OptionButton.new()
-	source_choice.add_item("倉庫")
-	source_choice.add_item("持ち込み所持品")
-	source_choice.custom_minimum_size = Vector2(180, 44)
+	# Both places stay in view as two buttons rather than behind a dropdown.
+	source_choice = SegmentedChoice.new()
 	toolbar.add_child(source_choice)
+	source_choice.add_item("倉庫")
+	source_choice.add_item("持ち込み")
 	source_choice.item_selected.connect(func(_index: int): refresh(state))
 	item_list = ItemCardList.new()
 	item_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
