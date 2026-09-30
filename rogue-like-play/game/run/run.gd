@@ -58,6 +58,7 @@ var reinforcements := ReinforcementSpawner.new()
 var journey_banner := preload("res://ui/journey_banner.gd").new()
 var ambience := preload("res://audio/dungeon_ambience.gd").new()
 var danger := DangerVignette.new()
+var vignette := DungeonVignette.new()
 var shake_tween: Tween
 var _snap_camera := true
 var _last_visual_hp := -1
@@ -81,6 +82,7 @@ var _summon_count := 0
 func _ready() -> void:
 	add_child(journey_banner)
 	add_child(ambience)
+	add_child(vignette)
 	add_child(danger)
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = 18.0

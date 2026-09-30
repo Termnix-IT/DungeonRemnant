@@ -29,9 +29,13 @@ var fog := FogOfWar.new()
 var ground_items: Dictionary = {}
 var decorations: Node2D
 var ambient_details := preload("res://world/dungeon/ambient_details.gd").new()
+var lights := preload("res://world/dungeon/dungeon_lights.gd").new()
 
 
 func _ready() -> void:
+	lights.name = "Lights"
+	add_child(lights)
+	move_child(lights, 2)
 	add_child(ambient_details)
 	move_child(ambient_details, 2)
 	decorations = Node2D.new()
@@ -42,6 +46,7 @@ func _ready() -> void:
 
 func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenerator, final_floor: bool) -> void:
 	ambient_details.refresh(null, {}, Vector2i.ZERO, false, Vector2i.ZERO, false)
+	lights.refresh(null, {}, Vector2i.ZERO, false, false, 0)
 	forest = settings.forest
 	escape_cell = Vector2i(-1, -1)
 	var generated := DungeonGenerator.generate(settings, floor_number, rng, final_floor)
@@ -123,13 +128,20 @@ func update_visibility(origin: Vector2i, radius: int) -> void:
 	$Items.visible_cells = fog.visible
 	$Items.queue_redraw()
 	decorations.queue_redraw()
-	ambient_details.refresh(grid, fog.visible, stairs_cell, has_stairs, escape_cell, forest)
+	ambient_details.refresh(grid, fog.visible, stairs_cell, has_stairs, escape_cell, forest, terrain_theme_index)
+	lights.refresh(grid, fog.visible, stairs_cell, has_stairs, forest, terrain_theme_index)
 
 
 func sync_actors() -> void:
 	# Dead actors also need their final position after a lethal movement turn.
 	for actor: Node2D in $Actors.get_children():
 		actor.position = Vector2(actor.cell * TILE_SIZE) + Vector2.ONE * TILE_SIZE / 2.0
+	# Actors are y-sorted so a lower row stands in front. On the same row the
+	# tree order decides, and the hero goes last so a large enemy beside her
+	# never hides her.
+	for actor: Node2D in $Actors.get_children():
+		if not actor.get("stats") is EnemyStats:
+			$Actors.move_child(actor, -1)
 
 
 func _make_tileset(texture: Texture2D) -> TileSet:

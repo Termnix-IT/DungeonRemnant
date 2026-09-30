@@ -52,6 +52,21 @@ func run_tests() -> void:
 	check(not ambient.is_processing() and ambient._phase == paused, "Hidden ambient node stops animation")
 	ambient.show()
 	check(ambient.is_processing(), "Visible populated ambient resumes animation")
+	for theme in 4:
+		ambient.refresh(grid, visible_cells, Vector2i(1, 1), true, Vector2i(2, 2), false, theme)
+		check(ambient._kind == theme and ambient._mote_cells.size() <= ambient.MAX_MOTES, "Theme %d selects its own motes within budget" % theme)
+		var inside := true
+		var ever_visible := false
+		for frame in 300:
+			ambient._phase = frame * 0.2
+			for cell: Vector2i in ambient._mote_cells:
+				var local: Vector2 = ambient._mote_local_position(cell)
+				inside = inside and local.x >= 0 and local.y >= 0 and local.x + ambient.MOTE_SIZE < 48 and local.y + ambient.MOTE_SIZE < 48
+				ever_visible = ever_visible or ambient._mote_color(cell).a > 0.05
+		check(inside, "Theme %d motes stay inside their visible cell" % theme)
+		check(ever_visible, "Theme %d motes are visible at some phase" % theme)
+	ambient.refresh(grid, visible_cells, Vector2i(1, 1), true, Vector2i(2, 2), true, 3)
+	check(ambient._kind == ambient.Kind.SPORE, "The forest always drifts spores")
 	ambient.refresh(null, {}, Vector2i.ZERO, false, Vector2i.ZERO, false)
 	check(not ambient.is_processing() and ambient._mote_cells.is_empty(), "Floor teardown can clear without a grid")
 	ambient.queue_free()

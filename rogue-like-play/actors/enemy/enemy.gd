@@ -27,10 +27,16 @@ var visual_rotation := 0.0:
 	set(value):
 		visual_rotation = value
 		queue_redraw()
+# Presentation-held sprite frame (wind-up, strike, hurt); -1 returns to idle.
+var pose_frame := -1:
+	set(value):
+		pose_frame = value
+		queue_redraw()
 var _idle_time := 0.0
 
 
 func _ready() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	hp = stats.max_hp
 	visibility_changed.connect(_update_idle_processing)
 	_update_idle_processing()
@@ -162,6 +168,83 @@ func _draw() -> void:
 	# Ground shadow and tactical markers stay readable when the body recoils.
 	draw_set_transform(visual_offset)
 	draw_ellipse_shadow()
+	var sheet := EnemySprites.sheet_for(stats)
+	if sheet != null:
+		_draw_sprite(sheet)
+	else:
+		_draw_procedural_body()
+	draw_set_transform(visual_offset)
+	if hp <= 0:
+		draw_set_transform(Vector2.ZERO)
+		return
+	var direction := Vector2(facing).normalized()
+	var charged := shot_direction != Vector2i.ZERO
+	var indicator_color := Color("efbb81") if charged else Color("b7ab92")
+	if charged:
+		draw_line(direction * 16, Vector2(shot_direction).normalized() * 28, indicator_color, 2)
+	var tip := direction * (30 if charged else 17)
+	var side := direction.orthogonal() * 2.5
+	draw_colored_polygon(PackedVector2Array([tip, tip - direction * 4 + side, tip - direction * 4 - side]), indicator_color)
+	if stats.elite:
+		draw_arc(Vector2.ZERO, 16, 0, TAU, 24, Color("d3b56e"), 1.5)
+	if stats.behavior == EnemyStats.Behavior.SUMMONER:
+		draw_arc(Vector2.ZERO, 18, -PI / 2, -PI / 2 + TAU * (summon_clock + 1) / stats.summon_interval, 24, Color("b7c78c"), 2)
+	if hp < stats.max_hp:
+		_draw_health(_health_bar_top())
+	draw_set_transform(Vector2.ZERO)
+
+
+# Sprites stand taller than the drawn bodies; the bar stays just above the head.
+func _health_bar_top() -> float:
+	var sheet := EnemySprites.sheet_for(stats)
+	if sheet == null:
+		return -23.0
+	return 13.0 - EnemySprites.body_height(sheet) * EnemySprites.WORLD_SCALE / scale.x - 8.0
+
+
+func has_sprite() -> bool:
+	return stats != null and EnemySprites.sheet_for(stats) != null
+
+
+func sprite_frame() -> int:
+	var sheet := EnemySprites.sheet_for(stats)
+	if sheet == null:
+		return -1
+	var count := EnemySprites.frame_count(sheet)
+	var frame := pose_frame
+	if frame < 0:
+		if hp <= 0:
+			frame = EnemySprites.FRAME_DOWN
+		elif shot_direction != Vector2i.ZERO:
+			# A turret aiming or a charger bracing holds its wind-up for the
+			# whole warning turn, so the body telegraphs the threat too.
+			frame = EnemySprites.FRAME_WIND_UP
+		elif stats.behavior == EnemyStats.Behavior.SUMMONER and summon_due:
+			# A nest never attacks; its burst frame marks the turn it hatched.
+			frame = EnemySprites.FRAME_STRIKE
+		elif stats.behavior == EnemyStats.Behavior.SUMMONER and summon_clock + 1 >= stats.summon_interval:
+			frame = EnemySprites.FRAME_WIND_UP
+		else:
+			# Neighbours desynchronise by cell so a room does not bob in unison.
+			var offset := absi(cell.x * 3 + cell.y * 5)
+			frame = (int(_idle_time * 5.0) + offset) % mini(EnemySprites.IDLE_FRAMES, count)
+	return frame if frame < count else 0
+
+
+# Strips face right and stand on the frame's bottom edge; the feet meet the
+# ground shadow and the body is mirrored when the enemy looks left.
+func _draw_sprite(sheet: Texture2D) -> void:
+	var frame_size := float(sheet.get_height())
+	var size := Vector2.ONE * frame_size * EnemySprites.WORLD_SCALE / scale.x
+	var body_scale := visual_scale
+	if facing.x < 0:
+		body_scale.x *= -1.0
+	draw_set_transform(visual_offset + Vector2(0, 13), visual_rotation, body_scale)
+	var region := Rect2(sprite_frame() * frame_size, 0, frame_size, frame_size)
+	draw_texture_rect_region(sheet, Rect2(Vector2(-size.x * 0.5, -size.y), size), region)
+
+
+func _draw_procedural_body() -> void:
 	var breath := sin(_idle_time * 2.4 + cell.x * 0.73 + cell.y * 1.13) if hp > 0 else 0.0
 	var body_scale := visual_scale * Vector2(1.0 + breath * 0.018, 1.0 - breath * 0.025)
 	if stats.behavior in [EnemyStats.Behavior.FAST, EnemyStats.Behavior.CHARGER] and facing.x > 0:
@@ -181,31 +264,12 @@ func _draw() -> void:
 		_draw_slime()
 	else:
 		_draw_guardian(false)
-	draw_set_transform(visual_offset)
-	if hp <= 0:
-		draw_set_transform(Vector2.ZERO)
-		return
-	var direction := Vector2(facing).normalized()
-	var charged := shot_direction != Vector2i.ZERO
-	var indicator_color := Color("efbb81") if charged else Color("b7ab92")
-	if charged:
-		draw_line(direction * 16, Vector2(shot_direction).normalized() * 28, indicator_color, 2)
-	var tip := direction * (30 if charged else 17)
-	var side := direction.orthogonal() * 2.5
-	draw_colored_polygon(PackedVector2Array([tip, tip - direction * 4 + side, tip - direction * 4 - side]), indicator_color)
-	if stats.elite:
-		draw_arc(Vector2.ZERO, 16, 0, TAU, 24, Color("d3b56e"), 1.5)
-	if stats.behavior == EnemyStats.Behavior.SUMMONER:
-		draw_arc(Vector2.ZERO, 18, -PI / 2, -PI / 2 + TAU * (summon_clock + 1) / stats.summon_interval, 24, Color("b7c78c"), 2)
-	if hp < stats.max_hp:
-		_draw_health()
-	draw_set_transform(Vector2.ZERO)
 
 
 # Framed bar whose fill warms from gold to red as the enemy weakens.
-func _draw_health() -> void:
+func _draw_health(top: float) -> void:
 	var ratio := clampf(float(hp) / stats.max_hp, 0.0, 1.0)
-	var frame := Rect2(-14, -23, 28, 5)
+	var frame := Rect2(-14, top, 28, 5)
 	draw_rect(frame.grow(1), Color("12141e"))
 	draw_rect(frame, Color("3b2e31"))
 	var fill := Color("e8c26f") if ratio > 0.5 else (Color("e98a4a") if ratio > 0.25 else Color("e0483f"))

@@ -75,6 +75,13 @@ func _reset_actor(actor: Node2D) -> void:
 		actor.visual_offset = Vector2.ZERO
 		actor.visual_scale = Vector2.ONE
 		actor.visual_rotation = 0.0
+		_hold_frame(actor, -1)
+
+
+# Only sprite enemies hold frames; the hero and drawn bodies ignore this.
+func _hold_frame(actor: Node2D, frame: int) -> void:
+	if is_instance_valid(actor) and actor.get("pose_frame") != null:
+		actor.pose_frame = frame
 
 
 func present(events: Array[Dictionary], player: Node2D, visible_cells: Dictionary, tile_size: int) -> void:
@@ -216,9 +223,12 @@ func _attack(actor: Node2D, direction: Vector2i, weapon: WeaponData) -> void:
 	tweens.append(tween)
 	var baseline: Vector2 = visual.get(property)
 	var anticipation := _impact_delay(weapon) - 0.04
+	_hold_frame(actor, EnemySprites.FRAME_WIND_UP)
 	tween.tween_property(visual, property, baseline - vector * 4.0, anticipation)
+	tween.tween_callback(_hold_frame.bind(actor, EnemySprites.FRAME_STRIKE))
 	tween.tween_property(visual, property, baseline + vector * 9.0, 0.04).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.tween_property(visual, property, baseline, 0.12)
+	tween.tween_callback(_hold_frame.bind(actor, -1))
 	_pose(actor, Vector2(0.94, 1.05), vector.x * -0.08, _impact_delay(weapon) + 0.12)
 	if weapon == null or actor.get("weapon_visual") == null:
 		return
@@ -267,14 +277,23 @@ func _hit(event: Dictionary, player: Node2D, tile_size: int) -> void:
 	var baseline: Vector2 = visual.get(property)
 	var tween := create_tween()
 	tweens.append(tween)
+	_hold_frame(actor, EnemySprites.FRAME_HURT)
+	var sprite_death: bool = event.dead and actor != player and actor.has_method("has_sprite") and actor.has_sprite()
 	tween.tween_property(visual, property, baseline + offset, 0.045)
+	# A defeated sprite drops to its down frame as the recoil peaks, so the
+	# fall is seen before the fade instead of a flinch dissolving away.
+	if sprite_death:
+		tween.tween_callback(_hold_frame.bind(actor, -1))
 	tween.tween_property(visual, property, baseline, 0.12)
+	tween.tween_callback(_hold_frame.bind(actor, -1))
 	actor.modulate = Color(1.8, 1.35, 1.35)
 	var flash := create_tween()
 	tweens.append(flash)
 	flash.tween_property(actor, "modulate", Color.WHITE, 0.12)
 	if event.dead and actor != player:
-		flash.tween_property(actor, "modulate:a", 0.0, 0.18)
+		if sprite_death:
+			flash.tween_interval(0.16)
+		flash.tween_property(actor, "modulate:a", 0.0, 0.22 if sprite_death else 0.18)
 		flash.tween_callback(actor.queue_free)
 	if actor == player or event.dead:
 		hit_stop()
@@ -378,6 +397,8 @@ func _pose(actor: Node2D, stretch: Vector2, tilt: float, duration: float, dead: 
 	tween.tween_property(visual, scale_key, stretch, duration * 0.3)
 	tween.tween_property(visual, rotation_key, tilt, duration * 0.3)
 	tween.chain()
-	tween.tween_property(visual, scale_key, Vector2(1.2, 0.25) if dead else Vector2.ONE, duration * 0.7)
-	tween.tween_property(visual, rotation_key, tilt * 2 if dead else 0.0, duration * 0.7)
+	# Drawn bodies flatten to show death; sprites have their own down frame.
+	var flatten: bool = dead and not (actor.has_method("has_sprite") and actor.has_sprite())
+	tween.tween_property(visual, scale_key, Vector2(1.2, 0.25) if flatten else Vector2.ONE, duration * 0.7)
+	tween.tween_property(visual, rotation_key, tilt * 2 if flatten else 0.0, duration * 0.7)
 	tween.finished.connect(func(): poses.erase(actor))

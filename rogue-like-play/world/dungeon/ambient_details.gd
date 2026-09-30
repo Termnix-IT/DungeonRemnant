@@ -3,11 +3,16 @@ extends Node2D
 const TILE_SIZE := 48.0
 const MAX_MOTES := 24
 const PHASE_PERIOD := TAU * 4.0
+# Terrain themes share dungeon.gd's order: slate dust, moss spores, rising
+# embers and sanctum glints give each depth band its own air.
+enum Kind { DUST, SPORE, EMBER, GLINT }
+const MOTE_SIZE := 2.0
 
 var _mote_cells: Array[Vector2i] = []
 var _stairs := Vector2i(-1, -1)
 var _escape := Vector2i(-1, -1)
 var _forest := false
+var _kind := Kind.DUST
 var _phase := 0.0
 
 
@@ -16,14 +21,17 @@ func _ready() -> void:
 	_update_processing()
 
 
-func refresh(grid: GridState, visible_cells: Dictionary, stairs_cell: Vector2i, has_stairs: bool, escape_cell: Vector2i, forest: bool) -> void:
+func refresh(grid: GridState, visible_cells: Dictionary, stairs_cell: Vector2i, has_stairs: bool, escape_cell: Vector2i, forest: bool, theme_index: int = 0) -> void:
 	_mote_cells.clear()
 	_stairs = Vector2i(-1, -1)
 	_escape = Vector2i(-1, -1)
 	_forest = forest
+	_kind = Kind.SPORE if forest else clampi(theme_index, 0, Kind.GLINT) as Kind
+	# Embers are small and short-lived, so the depths carry a denser field.
+	var spacing := 7 if _kind == Kind.EMBER else 11
 	if grid != null:
 		for cell: Vector2i in visible_cells:
-			if grid.is_floor(cell) and _cell_seed(cell) % 11 == 0 and _mote_cells.size() < MAX_MOTES:
+			if grid.is_floor(cell) and _cell_seed(cell) % spacing == 0 and _mote_cells.size() < MAX_MOTES:
 				_mote_cells.append(cell)
 		if has_stairs and visible_cells.has(stairs_cell) and grid.is_floor(stairs_cell):
 			_stairs = stairs_cell
@@ -47,19 +55,51 @@ func _cell_seed(cell: Vector2i) -> int:
 	return absi((cell.x * 73856093) ^ (cell.y * 19349663))
 
 
+func _cycle(cell: Vector2i) -> float:
+	return _phase + float(_cell_seed(cell) % 100) * 0.25
+
+
+# Every kind keeps the whole mote within its own visible tile at every phase.
 func _mote_local_position(cell: Vector2i) -> Vector2:
-	var seed_value := _cell_seed(cell)
-	var cycle := _phase + float(seed_value % 100) * 0.25
-	# The whole two-pixel mote stays within its own visible tile at every phase.
+	var cycle := _cycle(cell)
+	match _kind:
+		Kind.SPORE:
+			return Vector2(24.0 + sin(cycle * 0.4) * 12.0, 40.0 - fmod(cycle * 3.0, 32.0))
+		Kind.EMBER:
+			return Vector2(24.0 + sin(cycle * 1.3) * 6.0 + cos(cycle * 0.5) * 4.0, 44.0 - fmod(cycle * 6.0, 38.0))
+		Kind.GLINT:
+			var seed_value := _cell_seed(cell)
+			return Vector2(8.0 + seed_value % 30, 8.0 + (seed_value / 30) % 30)
 	return Vector2(24.0 + sin(cycle * 0.5) * 13.0, 24.0 + cos(cycle * 0.25) * 15.0)
+
+
+func _mote_color(cell: Vector2i) -> Color:
+	var cycle := _cycle(cell)
+	match _kind:
+		Kind.SPORE:
+			# Spores fade in near the floor and out as they drift up.
+			var rise := fmod(cycle * 3.0, 32.0) / 32.0
+			return Color(0.66, 0.82, 0.5, 0.32 * sin(rise * PI))
+		Kind.EMBER:
+			var rise := fmod(cycle * 6.0, 38.0) / 38.0
+			return Color(1.0, 0.56 + 0.3 * (1.0 - rise), 0.22, 0.75 * (1.0 - rise))
+		Kind.GLINT:
+			return Color(0.78, 0.68, 1.0, 0.7 * pow(maxf(0.0, sin(cycle * 0.9)), 6.0))
+	var shimmer := 0.13 + 0.10 * (0.5 + 0.5 * sin(_phase + float(_cell_seed(cell) % 31)))
+	return Color(0.74, 0.70, 0.57, shimmer)
 
 
 func _draw() -> void:
 	for cell in _mote_cells:
-		var offset := _mote_local_position(cell)
-		var shimmer := 0.13 + 0.10 * (0.5 + 0.5 * sin(_phase + float(_cell_seed(cell) % 31)))
-		var tint := Color(0.71, 0.76, 0.54, shimmer) if _forest else Color(0.74, 0.70, 0.57, shimmer)
-		draw_rect(Rect2(Vector2(cell) * TILE_SIZE + offset, Vector2(1.5, 1.5)), tint)
+		var origin := Vector2(cell) * TILE_SIZE + _mote_local_position(cell)
+		var tint := _mote_color(cell)
+		if _kind == Kind.GLINT:
+			# A tiny cross reads as a sparkle rather than dust.
+			draw_rect(Rect2(origin + Vector2(0.5, 0), Vector2(1, MOTE_SIZE)), tint)
+			draw_rect(Rect2(origin + Vector2(0, 0.5), Vector2(MOTE_SIZE, 1)), tint)
+		else:
+			var size := 1.5 if _kind == Kind.DUST else MOTE_SIZE
+			draw_rect(Rect2(origin, Vector2(size, size)), tint)
 	if _stairs.x >= 0:
 		_draw_exit_hint(_stairs, Color(0.66, 0.73, 0.65), 0.0)
 	if _escape.x >= 0:
