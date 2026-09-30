@@ -56,6 +56,14 @@ func run_tests() -> void:
 	check(shop.sell_button.get_theme_color("font_disabled_color") != shop.sell_button.get_theme_color("font_color"), "Disabled text is distinct")
 	check(shop.sell_button.get_theme_stylebox("normal") == hub.purchase_button.get_theme_stylebox("normal"), "Shop and upgrade share Gold style resource")
 	check(shop.sell_button.get_theme_stylebox("focus") == hub.back_button.get_theme_stylebox("focus"), "Buttons share focus resource")
+	var frame := theme.get_stylebox("panel", "MainPanel") as StyleBoxTexture
+	check(frame != null and frame.axis_stretch_horizontal == StyleBoxTexture.AXIS_STRETCH_MODE_TILE_FIT and frame.axis_stretch_vertical == StyleBoxTexture.AXIS_STRETCH_MODE_TILE_FIT, "Panel grain tiles at one scale instead of stretching")
+	var raised := theme.get_stylebox("card", "ItemCardList") as StyleBoxTexture
+	var sunk := theme.get_stylebox("panel", "InsetPanel") as StyleBoxTexture
+	check(raised != null and sunk != null and raised != sunk, "Cards are raised and detail wells are sunk")
+	if raised != null and sunk != null:
+		check(centre_tone(sunk.texture) < centre_tone(raised.texture), "Sunk wells sit darker than raised cards")
+	check(theme.get_stylebox("pressed", "Button") is StyleBoxFlat and theme.get_stylebox("normal", "TabActive") is StyleBoxFlat, "Pressed buttons and the active tab stay flat against raised surfaces")
 	var original := theme.get_color("font_color", "GoldLabel")
 	var probe := Color(0.7, 0.8, 0.9)
 	theme.set_color("font_color", "GoldLabel", probe)
@@ -64,3 +72,8 @@ func run_tests() -> void:
 	main.free()
 	print("UI theme: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
+
+
+func centre_tone(texture: Texture2D) -> float:
+	var image := texture.get_image()
+	return image.get_pixel(image.get_width() / 2, image.get_height() / 2).v

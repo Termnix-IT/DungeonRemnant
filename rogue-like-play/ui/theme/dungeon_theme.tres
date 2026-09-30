@@ -9,6 +9,10 @@
 [ext_resource type="Texture2D" path="res://art/ui/button_gold_hover.png" id="ButtonGoldHoverTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/button_gold_pressed.png" id="ButtonGoldPressedTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/vital_frame.png" id="VitalFrameTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/surface_raised.png" id="SurfaceRaisedTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/surface_hover.png" id="SurfaceHoverTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/surface_selected.png" id="SurfaceSelectedTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/surface_sunk.png" id="SurfaceSunkTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/vital_frame_thin.png" id="VitalFrameThinTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/vital_health.png" id="VitalHealthTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/vital_health_trail.png" id="VitalHealthTrailTexture"]
@@ -18,6 +22,8 @@
 
 [sub_resource type="StyleBoxTexture" id="FramePanel"]
 resource_name = "FramePanel"
+axis_stretch_horizontal = 2
+axis_stretch_vertical = 2
 texture = ExtResource("FramePanelTexture")
 texture_margin_left = 42.0
 texture_margin_top = 42.0
@@ -30,6 +36,8 @@ content_margin_bottom = 0.0
 
 [sub_resource type="StyleBoxTexture" id="FrameCard"]
 resource_name = "FrameCard"
+axis_stretch_horizontal = 2
+axis_stretch_vertical = 2
 texture = ExtResource("FrameCardTexture")
 texture_margin_left = 42.0
 texture_margin_top = 42.0
@@ -42,6 +50,8 @@ content_margin_bottom = 12.0
 
 [sub_resource type="StyleBoxTexture" id="FrameCardActive"]
 resource_name = "FrameCardActive"
+axis_stretch_horizontal = 2
+axis_stretch_vertical = 2
 texture = ExtResource("FrameCardActiveTexture")
 texture_margin_left = 42.0
 texture_margin_top = 42.0
@@ -96,18 +106,17 @@ corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
-[sub_resource type="StyleBoxFlat" id="SurfaceHover"]
+[sub_resource type="StyleBoxTexture" id="SurfaceHover"]
 resource_name = "SurfaceHover"
 content_margin_left = 12.0
 content_margin_top = 6.0
 content_margin_right = 12.0
 content_margin_bottom = 6.0
-bg_color = Color(0.21, 0.21, 0.21, 1)
-border_color = Color(0.32, 0.32, 0.32, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+texture = ExtResource("SurfaceHoverTexture")
+texture_margin_left = 6.0
+texture_margin_top = 6.0
+texture_margin_right = 6.0
+texture_margin_bottom = 6.0
 
 border_width_left = 1
 border_width_top = 1
@@ -132,18 +141,17 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 
-[sub_resource type="StyleBoxFlat" id="Surface"]
+[sub_resource type="StyleBoxTexture" id="Surface"]
 resource_name = "Surface"
 content_margin_left = 12.0
 content_margin_top = 6.0
 content_margin_right = 12.0
 content_margin_bottom = 6.0
-bg_color = Color(0.16, 0.16, 0.16, 1)
-border_color = Color(0.32, 0.32, 0.32, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+texture = ExtResource("SurfaceRaisedTexture")
+texture_margin_left = 6.0
+texture_margin_top = 6.0
+texture_margin_right = 6.0
+texture_margin_bottom = 6.0
 
 border_width_left = 1
 border_width_top = 1
@@ -253,18 +261,17 @@ corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
-[sub_resource type="StyleBoxFlat" id="ItemSelected"]
+[sub_resource type="StyleBoxTexture" id="ItemSelected"]
 resource_name = "ItemSelected"
 content_margin_left = 12.0
 content_margin_top = 6.0
 content_margin_right = 12.0
 content_margin_bottom = 6.0
-bg_color = Color(0.15, 0.14, 0.102, 1)
-border_color = Color(0.72, 0.59, 0.35, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+texture = ExtResource("SurfaceSelectedTexture")
+texture_margin_left = 6.0
+texture_margin_top = 6.0
+texture_margin_right = 6.0
+texture_margin_bottom = 6.0
 
 border_width_left = 1
 border_width_top = 1
@@ -273,31 +280,53 @@ border_width_bottom = 1
 shadow_color = Color(0.72, 0.52, 0.20, 0.12)
 shadow_size = 4
 
-[sub_resource type="StyleBoxFlat" id="ListBackground"]
+[sub_resource type="StyleBoxTexture" id="InsetSurface"]
+resource_name = "InsetSurface"
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+texture = ExtResource("SurfaceSunkTexture")
+texture_margin_left = 6.0
+texture_margin_top = 6.0
+texture_margin_right = 6.0
+texture_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxTexture" id="FieldSurface"]
+resource_name = "FieldSurface"
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+texture = ExtResource("SurfaceSunkTexture")
+texture_margin_left = 6.0
+texture_margin_top = 6.0
+texture_margin_right = 6.0
+texture_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxTexture" id="ListBackground"]
 resource_name = "ListBackground"
 content_margin_left = 8.0
 content_margin_top = 6.0
 content_margin_right = 8.0
 content_margin_bottom = 6.0
-bg_color = Color(0.11, 0.11, 0.11, 0.96)
-border_color = Color(0.32, 0.32, 0.32, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+texture = ExtResource("SurfaceSunkTexture")
+texture_margin_left = 6.0
+texture_margin_top = 6.0
+texture_margin_right = 6.0
+texture_margin_bottom = 6.0
 
-[sub_resource type="StyleBoxFlat" id="ItemSurface"]
+[sub_resource type="StyleBoxTexture" id="ItemSurface"]
 resource_name = "ItemSurface"
 content_margin_left = 16.0
 content_margin_top = 12.0
 content_margin_right = 16.0
 content_margin_bottom = 12.0
-bg_color = Color(0.17, 0.17, 0.17, 1)
-border_color = Color(0.32, 0.32, 0.32, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+texture = ExtResource("SurfaceRaisedTexture")
+texture_margin_left = 6.0
+texture_margin_top = 6.0
+texture_margin_right = 6.0
+texture_margin_bottom = 6.0
 
 border_width_left = 1
 border_width_top = 1
@@ -584,7 +613,7 @@ LineEdit/colors/font_uneditable_color = Color(0.69803923, 0.7019608, 0.6666667, 
 LineEdit/colors/selection_color = Color(0.23, 0.23, 0.23, 1)
 LineEdit/font_sizes/font_size = 18
 LineEdit/styles/focus = SubResource("FocusOutline")
-LineEdit/styles/normal = SubResource("Surface")
+LineEdit/styles/normal = SubResource("FieldSurface")
 LineEdit/styles/read_only = SubResource("ButtonDisabled")
 MainPanel/base_type = &"PanelContainer"
 MainPanel/styles/panel = SubResource("FramePanel")
@@ -643,9 +672,9 @@ VScrollBar/styles/scroll = SubResource("ScrollTrack")
 DetailPanel/base_type = &"PanelContainer"
 DetailPanel/styles/panel = SubResource("FramePanel")
 InsetPanel/base_type = &"PanelContainer"
-InsetPanel/styles/panel = SubResource("ItemSurface")
+InsetPanel/styles/panel = SubResource("InsetSurface")
 VisualPanel/base_type = &"PanelContainer"
-VisualPanel/styles/panel = SubResource("ItemSurface")
+VisualPanel/styles/panel = SubResource("InsetSurface")
 ItemNameLabel/base_type = &"Label"
 ItemNameLabel/font_sizes/font_size = 20
 ValueLabel/base_type = &"Label"
