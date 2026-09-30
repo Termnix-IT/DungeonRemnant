@@ -64,7 +64,8 @@ func _ready() -> void:
 	party.alignment = BoxContainer.ALIGNMENT_CENTER
 	equipment.add_child(party)
 	var portrait := CharacterPreview.new()
-	portrait.custom_minimum_size = Vector2(150, 230)
+	# Room for a whole 2x adventurer, the same size as on the equipment page.
+	portrait.custom_minimum_size = Vector2(180, 280)
 	portrait.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	party.add_child(portrait)
 	var loadout := VBoxContainer.new()
@@ -74,7 +75,8 @@ func _ready() -> void:
 	# Short fixed lines: wrapping would let a zero-width first layout grow them tall.
 	HubUI.label(loadout, "装備", &"MutedLabel").autowrap_mode = TextServer.AUTOWRAP_OFF
 	equipment_rows = HudEquipment.new()
-	equipment_rows.custom_minimum_size = Vector2(220, 150)
+	# The rows report their own height from the Theme's row metrics.
+	equipment_rows.custom_minimum_size.x = 220
 	loadout.add_child(equipment_rows)
 	HubUI.label(loadout, "出発時の能力", &"MutedLabel").autowrap_mode = TextServer.AUTOWRAP_OFF
 	equipment_label = HubUI.label(loadout, "", &"ValueLabel")

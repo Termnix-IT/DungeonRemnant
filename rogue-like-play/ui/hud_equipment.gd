@@ -13,6 +13,7 @@ var items: Array[ItemData] = []
 var strip := false:
 	set(value):
 		strip = value
+		update_minimum_size()
 		queue_redraw()
 
 
@@ -21,6 +22,14 @@ func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Icons are 2x pixel art drawn at a third of their size, so sample whole pixels.
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
+
+# The rows' height follows the Theme metrics, so a Container never lays the
+# next line over the last slot when those metrics change.
+func _get_minimum_size() -> Vector2:
+	if strip:
+		return Vector2(0, get_theme_constant(&"glyph_size") + 4 + get_theme_constant(&"strip_spacing") + get_theme_font(&"font").get_height(get_theme_font_size(&"font_size")))
+	return Vector2(0, get_theme_constant(&"row_height") * CAPTIONS.size())
 
 
 func show_equipment(equipment: Equipment) -> void:
