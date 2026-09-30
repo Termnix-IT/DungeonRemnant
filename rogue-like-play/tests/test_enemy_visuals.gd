@@ -57,7 +57,7 @@ func test_sprite_strips() -> void:
 	named_boss.is_boss = true
 	named_boss.display_name = "遺跡王"
 	check(EnemySprites.visual_id(named_boss) == ("boss_ruin_king" if ResourceLoader.exists("res://art/enemies/boss_ruin_king.png") else "boss"), "A named boss uses its own strip when it exists")
-	named_boss.display_name = "根の番人"
+	named_boss.display_name = "名もなき試験の主"
 	check(EnemySprites.visual_id(named_boss) == "boss", "A boss without its own strip falls back to the shared boss strip")
 	var fallback := preload("res://actors/enemy/enemy.tscn").instantiate()
 	root.add_child(fallback)

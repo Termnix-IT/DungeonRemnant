@@ -19,6 +19,11 @@ const BOSS_IDS := {
 	"魔砲の監視者": "boss_cannon_watcher",
 	"召喚の司祭": "boss_summoning_priest",
 	"遺跡王": "boss_ruin_king",
+	"根の番人": "boss_root_warden",
+	"疾風の狼王": "boss_gale_wolf_king",
+	"胞子の砲台": "boss_spore_cannon",
+	"群れの主": "boss_swarm_lord",
+	"古樹の王": "boss_ancient_tree_king",
 }
 
 static var _cache: Dictionary = {}
