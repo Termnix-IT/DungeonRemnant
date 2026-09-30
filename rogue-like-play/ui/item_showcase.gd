@@ -1,5 +1,8 @@
 class_name ItemShowcase
-extends HBoxContainer
+extends BoxContainer
+
+# A row (art beside the text) by default; stack() turns it into a column.
+# The spacing follows the matching container role of the shared Theme.
 
 var visual: ItemVisual
 var title: Label
@@ -8,6 +11,7 @@ var effect: Label
 
 
 func _init() -> void:
+	theme_type_variation = &"HBoxContainer"
 	visual = ItemVisual.new()
 	add_child(visual)
 	var copy := VBoxContainer.new()
@@ -22,6 +26,17 @@ func _init() -> void:
 	effect = HubUI.label(copy, "", &"GoldLabel")
 	effect.max_lines_visible = 2
 	effect.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+
+
+# Stacks the art above centred text, at `extent` px, for a narrow column
+# with height to spare (the equipment page). The row layout stays default.
+func stack(extent: float) -> void:
+	vertical = true
+	theme_type_variation = &"VBoxContainer"
+	visual.custom_minimum_size = Vector2(extent, extent)
+	visual.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	for label: Label in [title, category, effect]:
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
 func present(item: ItemData) -> void:

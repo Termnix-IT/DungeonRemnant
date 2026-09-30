@@ -33,13 +33,16 @@ const SLOT_CAPTIONS := Equipment.SLOT_NAMES
 const STAT_ROWS: Array = [["HP", "hp"], ["攻撃力", "attack"], ["防御力", "defense"], ["主武器の射程", "reach"]]
 # Slot art is the 48px item icon at its native size, so it is never blurred.
 const SLOT_ICON := 48
+# The candidate shown at 3x its icon above its name.
+const SHOWCASE_SIZE := 176.0
 
 
 func _ready() -> void:
 	var columns := HubUI.columns(self)
-	var catalog := HubUI.section(columns, 1.03)
+	# The adventurer's column is the widest, so she stands at twice her pixel
+	# size as the page's focus; candidates and the comparison flank her.
+	var catalog := HubUI.section(columns, 1.0)
 	HubUI.label(catalog, "装備候補", &"HeadingLabel")
-	HubUI.label(catalog, "所持品・倉庫から選択", &"MutedLabel")
 	candidate_list = ItemCardList.new()
 	candidate_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	catalog.add_child(candidate_list)
@@ -49,21 +52,28 @@ func _ready() -> void:
 	carried_list.custom_minimum_size.y = 112
 	catalog.add_child(carried_list)
 	HubUI.button(catalog, "倉庫で持ち込みを整理", func(): warehouse_requested.emit())
-	var detail := HubUI.section(columns, 1.0)
+	var detail := HubUI.section(columns, 0.9)
 	showcase = ItemShowcase.new()
+	showcase.stack(SHOWCASE_SIZE)
 	detail.add_child(showcase)
+	# The comparison keeps to its lines; the spare height sits above the
+	# actions instead of stretching into an empty well.
 	var compare_box := PanelContainer.new()
 	compare_box.theme_type_variation = &"InsetPanel"
-	compare_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	detail.add_child(compare_box)
 	comparison = ItemDetails.new()
-	comparison.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	comparison.fit_content = true
+	comparison.custom_minimum_size.y = 96
 	compare_box.add_child(comparison)
+	var gap := Control.new()
+	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	detail.add_child(gap)
 	equip_button = HubUI.button(detail, "選択した装備に変更", _equip, &"GoldButton")
 	unequip_button = HubUI.button(detail, "選択枠の装備を外す", func():
 		equipped_item = null
 		unequip_requested.emit(selected_slot))
-	var build := HubUI.section(columns, 1.25)
+	var build := HubUI.section(columns, 1.45)
 	build.theme_type_variation = &"DetailStack"
 	HubUI.label(build, "冒険者の装備", &"HeadingLabel")
 	var body := HBoxContainer.new()
@@ -75,7 +85,7 @@ func _ready() -> void:
 	left.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	body.add_child(left)
 	portrait = CharacterPreview.new()
-	portrait.custom_minimum_size = Vector2(120, 180)
+	portrait.custom_minimum_size = Vector2(180, 280)
 	portrait.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	portrait.size_flags_stretch_ratio = 1.2
 	body.add_child(portrait)

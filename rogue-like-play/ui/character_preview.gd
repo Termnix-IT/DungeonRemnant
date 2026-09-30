@@ -27,7 +27,9 @@ func _ready() -> void:
 func _fit() -> void:
 	if hero == null:
 		return
-	var factor := maxf(0.01, minf(size.x / 90.0, (size.y - 14) / 128.0))
+	# Whole multiples keep every pixel square; only a cramped box shrinks.
+	var fit := maxf(0.01, minf(size.x / 90.0, (size.y - 14) / 128.0))
+	var factor := floorf(fit) if fit >= 1.0 else fit
 	hero.scale = Vector2.ONE * factor
 	hero.position = Vector2(size.x / 2, size.y - 10)
 	queue_redraw()
