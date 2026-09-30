@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://drwdv1g5tihv6"
-path="res://.godot/imported/forest.svg-878c87a980c88a5cdbcff2469dc0703a.ctex"
+uid="uid://c5ipkfjykwtp1"
+path="res://.godot/imported/forest_trees.png-4c3e36e8cbc66fb6579dfbbea6cdec02.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/hub/forest.svg"
-dest_files=["res://.godot/imported/forest.svg-878c87a980c88a5cdbcff2469dc0703a.ctex"]
+source_file="res://art/tiles/forest_trees.png"
+dest_files=["res://.godot/imported/forest_trees.png-4c3e36e8cbc66fb6579dfbbea6cdec02.ctex"]
 
 [params]
 
@@ -38,6 +38,3 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=1.0
-editor/scale_with_editor_scale=false
-editor/convert_colors_with_editor_theme=false

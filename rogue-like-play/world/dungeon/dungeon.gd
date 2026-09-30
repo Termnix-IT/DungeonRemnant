@@ -7,6 +7,7 @@ const TERRAIN_ATLASES: Array[Texture2D] = [
 	preload("res://art/tiles/dungeon_terrain_ember.png"),
 	preload("res://art/tiles/dungeon_terrain_sanctum.png"),
 ]
+const FOREST_TREES := preload("res://art/tiles/forest_trees.png")
 const TERRAIN_THEME_NAMES: Array[String] = ["Slate Ruins", "Moss Caverns", "Ember Depths", "Obsidian Sanctum"]
 const FLOOR_TILES: Array[int] = [0, 3, 4]
 const STAIRS_TILE := 1
@@ -194,6 +195,25 @@ func _is_connectable_wall(cell: Vector2i) -> bool:
 	return grid.walls.has(cell) and not grid.pillars.has(cell)
 
 
+# Forest walls are trees: one of four variants per cell by coordinate hash,
+# rooted at the cell's bottom edge and wider than the cell so the canopies
+# close into a wall. Rows are drawn top to bottom so nearer trees overlap
+# the ones behind them; remembered but unseen trees stay dark.
+func _draw_forest_trees() -> void:
+	var cells: Array[Vector2i] = []
+	for cell: Vector2i in fog.explored:
+		if grid.walls.has(cell):
+			cells.append(cell)
+	cells.sort_custom(func(a: Vector2i, b: Vector2i): return a.y < b.y or (a.y == b.y and a.x < b.x))
+	var size := float(FOREST_TREES.get_height())
+	var variants := FOREST_TREES.get_width() / int(size)
+	for cell in cells:
+		var variant := absi(cell.x * 73856093 ^ cell.y * 19349663) % variants
+		var base := Vector2(cell * TILE_SIZE) + Vector2(TILE_SIZE / 2.0, TILE_SIZE)
+		var tint := Color.WHITE if fog.visible.has(cell) else Color(0.34, 0.36, 0.36)
+		decorations.draw_texture_rect_region(FOREST_TREES, Rect2(base - Vector2(size / 2.0, size - 4.0), Vector2.ONE * size), Rect2(variant * size, 0, size, size), tint)
+
+
 func _draw_decorations() -> void:
 	# The monster house reads as a stained, scarred room rather than a grid
 	# highlight: a low warm stain, scratches on some tiles, and an ember seam
@@ -217,16 +237,7 @@ func _draw_decorations() -> void:
 			var from := origin + Vector2.ONE * TILE_SIZE / 2.0 + Vector2(side) * (TILE_SIZE / 2.0 - 3) - Vector2(side).orthogonal() * TILE_SIZE / 2.0
 			decorations.draw_line(from, from + Vector2(side).orthogonal() * TILE_SIZE, seam, 2.0)
 	if forest:
-		for cell: Vector2i in fog.explored:
-			if not grid.walls.has(cell):
-				continue
-			var center := Vector2(cell * TILE_SIZE) + Vector2.ONE * TILE_SIZE / 2.0
-			var visible_now: bool = fog.visible.has(cell)
-			var canopy := Color("376145") if visible_now else Color("14271b")
-			decorations.draw_rect(Rect2(center + Vector2(-4, -4), Vector2(8, 21)), Color("4b4530") if visible_now else Color("201e16"))
-			decorations.draw_circle(center + Vector2(0, -6), 18, canopy)
-			decorations.draw_circle(center + Vector2(-9, 0), 12, canopy)
-			decorations.draw_circle(center + Vector2(9, 0), 12, canopy)
+		_draw_forest_trees()
 	if escape_cell.x < 0 or not fog.visible.has(escape_cell):
 		return
 	var center := Vector2(escape_cell * TILE_SIZE) + Vector2.ONE * TILE_SIZE / 2.0
