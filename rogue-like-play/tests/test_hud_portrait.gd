@@ -26,6 +26,13 @@ func run_tests() -> void:
 	check(portrait.get_global_rect().end.y <= vitals.get_global_rect().position.y and is_equal_approx(portrait.get_global_rect().position.x, vitals.get_global_rect().position.x), "The portrait sits just above the vitals panel")
 	check(not portrait.get_global_rect().intersects(hud.get_node("TopLeft").get_global_rect()), "The portrait leaves the floor panel clear")
 
+	for bar_name in ["HpBar", "MpBar"]:
+		var bar: ProgressBar = vitals.get_node(bar_name)
+		var ticks := vitals.get_node_or_null(bar_name + "Ticks") as VitalTicks
+		check(ticks != null and ticks.get_index() == bar.get_index() + 1 and ticks.get_rect() == bar.get_rect(), "%s has quarter notches drawn just above it" % bar_name)
+		check(ticks != null and ticks.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Notches never take input")
+	var track := (vitals.get_node("HpTrail") as ProgressBar).get_theme_stylebox(&"background") as StyleBoxTexture
+	check(track != null and track.expand_margin_top > 0.0, "The HP gauge frame surrounds the bar without moving it")
 	hud.show_health(24, 24)
 	check(portrait.face == HudPortrait.Face.NORMAL, "Full health shows the calm face")
 	hud.show_health(24, 24)

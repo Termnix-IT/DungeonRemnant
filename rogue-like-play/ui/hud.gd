@@ -42,6 +42,13 @@ func _ready() -> void:
 	portrait.offset_bottom = vitals.offset_top - 8
 	portrait.offset_top = portrait.offset_bottom - PORTRAIT_SIZE
 	portrait.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	for bar: ProgressBar in [hp_bar, mp_bar]:
+		var ticks := VitalTicks.new()
+		ticks.name = bar.name + "Ticks"
+		vitals.add_child(ticks)
+		vitals.move_child(ticks, bar.get_index() + 1)
+		ticks.position = bar.position
+		ticks.size = bar.size
 
 
 # log_key identifies the action the text belongs to: text that grows within one
