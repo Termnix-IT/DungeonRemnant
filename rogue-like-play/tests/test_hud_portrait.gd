@@ -29,6 +29,12 @@ func run_tests() -> void:
 		check(not face_rect.intersects((vitals.get_node(node_name) as Control).get_global_rect()), "The portrait leaves %s clear" % node_name)
 	check(face_rect.end.x < (vitals.get_node("HpBar") as Control).get_global_rect().position.x, "HP and MP sit beside the face")
 	check(portrait.theme_type_variation == &"HudPortraitFrame", "The face uses the HUD portrait frame role")
+	var equipment: HudEquipment = hud.equipment_rows
+	check(equipment.strip, "The dungeon HUD shows equipment as one compact row")
+	check((hud.get_node("BottomRight") as Control).size.y <= 180.0, "The equipment panel leaves the floor above it clear")
+	var rows := HudEquipment.new()
+	check(not rows.strip, "Other screens keep the captioned equipment rows")
+	rows.free()
 
 	for bar_name in ["HpBar", "MpBar"]:
 		var bar: ProgressBar = vitals.get_node(bar_name)

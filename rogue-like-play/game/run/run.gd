@@ -11,6 +11,9 @@ const FINAL_FLOOR := 50
 # Player-hit shake in screen pixels. A fixed pattern keeps gameplay RNG intact;
 # one strength value so a future setting can soften or disable it.
 const SHAKE_STRENGTH := 5.0
+# The camera looks slightly below the hero, so she sits above the screen
+# centre, clear of the bottom HUD, with more of the floor ahead of her shown.
+const CAMERA_LEAD := Vector2(0, 40)
 const SHAKE_PATTERN: Array[Vector2] = [Vector2(1, -0.6), Vector2(-0.8, 0.5), Vector2(0.45, 0.3), Vector2.ZERO]
 const SHAKE_STEP_TIME := 0.035
 @export_range(1, 100) var final_floor: int = FINAL_FLOOR
@@ -455,7 +458,7 @@ func _refresh() -> void:
 	presentation.present(events, turns.player, dungeon.fog.visible, dungeon.TILE_SIZE)
 	turns.player.input_enabled = turns.player.input_enabled and not presentation.playing
 	_record_discoveries()
-	camera.global_position = turns.player.global_position
+	camera.global_position = turns.player.global_position + CAMERA_LEAD
 	if _snap_camera:
 		camera.force_update_scroll()
 		camera.reset_smoothing()

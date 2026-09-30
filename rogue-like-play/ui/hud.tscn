@@ -264,7 +264,7 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -316.0
-offset_top = -296.0
+offset_top = -172.0
 offset_right = -16.0
 offset_bottom = -16.0
 grow_horizontal = 0
@@ -293,15 +293,15 @@ color = Color(0.32, 0.32, 0.32, 0.9)
 offset_left = 14.0
 offset_top = 46.0
 offset_right = 286.0
-offset_bottom = 236.0
+offset_bottom = 114.0
 mouse_filter = 2
 script = ExtResource("4")
 
 [node name="Hint" type="Label" parent="BottomRight"]
 offset_left = 14.0
-offset_top = 246.0
+offset_top = 122.0
 offset_right = 286.0
-offset_bottom = 266.0
+offset_bottom = 142.0
 theme_type_variation = &"HudSmall"
 text = "I 所持品  ·  Tab 武器切替"
 

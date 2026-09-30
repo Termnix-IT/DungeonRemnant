@@ -8,6 +8,10 @@ const TERRAIN_ATLASES: Array[Texture2D] = [
 	preload("res://art/tiles/dungeon_terrain_sanctum.png"),
 ]
 const FOREST_TREES := preload("res://art/tiles/forest_trees.png")
+# Trees are the forest's walls, so like the stone walls they sit a step below
+# the floor and actors; remembered but unseen trees go darker still.
+const TREE_TINT := Color(0.74, 0.77, 0.74)
+const REMEMBERED_TREE_TINT := Color(0.34, 0.36, 0.36)
 const TERRAIN_THEME_NAMES: Array[String] = ["Slate Ruins", "Moss Caverns", "Ember Depths", "Obsidian Sanctum"]
 const FLOOR_TILES: Array[int] = [0, 3, 4]
 const STAIRS_TILE := 1
@@ -217,7 +221,7 @@ func _draw_forest_trees() -> void:
 	for cell in cells:
 		var variant := absi(cell.x * 73856093 ^ cell.y * 19349663) % variants
 		var base := Vector2(cell * TILE_SIZE) + Vector2(TILE_SIZE / 2.0, TILE_SIZE)
-		var tint := Color.WHITE if fog.visible.has(cell) else Color(0.34, 0.36, 0.36)
+		var tint := TREE_TINT if fog.visible.has(cell) else REMEMBERED_TREE_TINT
 		decorations.draw_texture_rect_region(FOREST_TREES, Rect2(base - Vector2(size / 2.0, size - 4.0), Vector2.ONE * size), Rect2(variant * size, 0, size, size), tint)
 
 

@@ -52,7 +52,7 @@ func run_tests() -> void:
 		run._on_action("attack", Vector2i.RIGHT)
 		check(enemy.hp == 0 and not grid.occupants.has(enemy.cell), "Lethal damage is applied before playback")
 		check(run.presentation.playing and not player.input_enabled, "Playback locks world input")
-		check(run.camera.get_screen_center_position().distance_to(player.global_position) < 1.0, "Camera snaps immediately after relocating to a floor start")
+		check(run.camera.get_screen_center_position().distance_to(player.global_position + run.CAMERA_LEAD) < 1.0, "Camera snaps immediately after relocating to a floor start")
 		var has_ghost := false
 		for child in run.presentation.get_children():
 			if child is Node2D:

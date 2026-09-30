@@ -32,6 +32,7 @@ var inventory_count := 0
 
 
 func _ready() -> void:
+	equipment_rows.strip = true
 	var vitals: Panel = $BottomLeft
 	portrait = HudPortrait.new()
 	portrait.name = "Portrait"

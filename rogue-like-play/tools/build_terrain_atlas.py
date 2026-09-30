@@ -6,6 +6,7 @@ output keeps the atlas layout dungeon.gd reads (21 tiles of 48px in one row):
 floor 0, stairs 1, pillar 2, floor variants 3-4, then the 16 wall tiles indexed
 by the up/right/down/left connection mask. Wall edges without a neighbouring
 wall get a dark gap and a bevel, drawn here so the art only needs one wall.
+Wall stone is darker and flatter than the floor so rooms read at a glance.
 
 	python tools/build_terrain_atlas.py --all
 	python tools/build_terrain_atlas.py moss
@@ -32,6 +33,11 @@ GAP = 4
 RIM_LIGHT = 1.3
 RIM_SHADE = 0.6
 BEVEL = 3
+# Walls recede behind the floor: the stone is darkened and its texture
+# flattened toward its mean, so the eye goes to the walkable floor and the
+# actors. The lit and shaded rims still outline every room.
+WALL_TONE = 0.6
+WALL_CONTRAST = 0.5
 # Trim each board cell so a neighbouring tile never bleeds into this one.
 CELL_INSET = 0.02
 PALETTE_COLORS = 64
@@ -72,6 +78,8 @@ def wall_tile(wall: Image.Image, floor: Image.Image, mask: int) -> Image.Image:
 	start = 0 if left else GAP
 	end = TILE if right else TILE - GAP
 	stone = np.asarray(wall).astype(np.float64)
+	mean = stone.reshape(-1, 3).mean(axis=0)
+	stone = (mean + (stone - mean) * WALL_CONTRAST) * WALL_TONE
 	canvas = stone.copy()
 	# Open edges get a lit or shaded rim cut from the stone itself, so the
 	# block keeps its texture instead of gaining a flat painted line.

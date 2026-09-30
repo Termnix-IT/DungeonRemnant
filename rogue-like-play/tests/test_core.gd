@@ -111,7 +111,7 @@ func run_tests() -> void:
 	var before: Vector2i = run_instance.turns.enemies[0].cell
 	run_instance.turns.submit("move", Vector2i.DOWN)
 	check(run_instance.turns.player.position == Vector2(168, 216), "Movement advances exactly one 48px cell")
-	check(run_instance.camera.global_position == run_instance.turns.player.global_position, "Camera follows the 48px destination")
+	check(run_instance.camera.global_position == run_instance.turns.player.global_position + run_instance.CAMERA_LEAD, "Camera follows the 48px destination")
 	check(run_instance.turns.enemies[0].cell != before, "Enemy approaches on a player move")
 	check(run_instance.dungeon.grid.occupants.size() == 4, "Actors remain distinct")
 	run_instance.free()
@@ -130,7 +130,7 @@ func run_tests() -> void:
 	check(run_instance.turns.player.position == Vector2(168, 216), "Death display matches final 48px cell")
 	player_sprite = run_instance.turns.player.sprite
 	check(player_sprite.position == run_instance.turns.player.BASE_SPRITE_POSITION and not player_sprite.is_playing(), "Death clears a previous step and stops the sprite at the final cell")
-	check(run_instance.camera.global_position == run_instance.turns.player.global_position and not run_instance.preview.visible, "Death keeps the camera aligned and hides attack preview")
+	check(run_instance.camera.global_position == run_instance.turns.player.global_position + run_instance.CAMERA_LEAD and not run_instance.preview.visible, "Death keeps the camera aligned and hides attack preview")
 	run_instance.free()
 	print("Core tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
