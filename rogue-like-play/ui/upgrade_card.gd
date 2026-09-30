@@ -30,7 +30,8 @@ func _ready() -> void:
 	var row := HBoxContainer.new()
 	margin.add_child(row)
 	var icon := Control.new()
-	icon.custom_minimum_size.x = 44
+	icon.custom_minimum_size.x = 52
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(icon)
 	icon.draw.connect(func(): _draw_icon(icon))
@@ -118,7 +119,11 @@ func _draw_pips() -> void:
 
 func _draw_icon(icon: Control) -> void:
 	var color := get_theme_color(&"font_color", &"GoldLabel")
-	var rect := Rect2(Vector2(2, (icon.size.y - 40) / 2), Vector2(40, 40))
+	# 48px is exactly half a 2x emblem; without one the drawn symbol stays.
+	var rect := Rect2(Vector2(2, (icon.size.y - 48) / 2), Vector2(48, 48))
+	if EmblemIcons.paint(icon, rect, EmblemIcons.upgrade_key(effect, branch)):
+		return
+	rect = rect.grow(-4)
 	if effect == &"hp":
 		ItemGlyph.paint_ability(icon, rect, AbilityData.Effect.MAX_HP, color)
 		if branch:

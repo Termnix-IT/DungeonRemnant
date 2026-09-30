@@ -70,8 +70,11 @@ static func paint(canvas: Control, rect: Rect2, item: ItemData, color: Color) ->
 	canvas.draw_set_transform(Vector2.ZERO)
 
 
-# Abilities have no category data; each Effect maps onto the shared symbols.
+# A generated emblem wins when there is one. Otherwise, as abilities have no
+# category data, each Effect maps onto the shared symbols.
 static func paint_ability(canvas: Control, rect: Rect2, effect: AbilityData.Effect, color: Color) -> void:
+	if EmblemIcons.paint(canvas, rect, EmblemIcons.ability_key(effect)):
+		return
 	canvas.draw_set_transform(rect.position, 0, rect.size / 32.0)
 	match effect:
 		AbilityData.Effect.MAX_HP:

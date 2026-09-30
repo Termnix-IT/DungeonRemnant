@@ -23,6 +23,7 @@ var tabs: Array[Button] = []
 var detail: VBoxContainer
 var detail_title: Label
 var detail_rank: Label
+var detail_emblem: Control
 var current_value: Label
 var next_value: Label
 var benefit_label: Label
@@ -126,8 +127,22 @@ func _build_detail() -> void:
 	detail = HubUI.section(abilities, 1.0, &"DetailPanel")
 	detail.theme_type_variation = &"UpgradeList"
 	HubUI.label(detail, "選択中の永久強化", &"MutedLabel")
-	detail_title = HubUI.label(detail, "", &"TitleLabel")
-	detail_rank = HubUI.label(detail, "", &"MutedLabel")
+	# The selected upgrade's emblem heads the detail at its stored 96px.
+	var heading := HBoxContainer.new()
+	heading.theme_type_variation = &"CompactRow"
+	detail.add_child(heading)
+	detail_emblem = Control.new()
+	detail_emblem.custom_minimum_size = Vector2(96, 96)
+	detail_emblem.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	detail_emblem.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	detail_emblem.draw.connect(func(): EmblemIcons.paint(detail_emblem, Rect2(Vector2.ZERO, detail_emblem.size), _emblem_key()))
+	heading.add_child(detail_emblem)
+	var names := VBoxContainer.new()
+	names.alignment = BoxContainer.ALIGNMENT_CENTER
+	names.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	heading.add_child(names)
+	detail_title = HubUI.label(names, "", &"TitleLabel")
+	detail_rank = HubUI.label(names, "", &"MutedLabel")
 	var change := HubUI.section(detail, 1.0, &"InsetPanel")
 	change.theme_type_variation = &"CompactStack"
 	HubUI.label(change, "この能力による永久補正", &"MutedLabel")
@@ -286,6 +301,8 @@ func _refresh_detail() -> void:
 	var data := _info(selected_id)
 	detail_title.text = data.name
 	detail_rank.text = "Lv %d / %d" % [data.rank, data.max]
+	detail_emblem.visible = EmblemIcons.texture(_emblem_key()) != null
+	detail_emblem.queue_redraw()
 	current_value.text = "現在　Lv %d　%s +%d" % [data.rank, data.effect, data.rank * data.amount]
 	next_value.text = "%s +%d" % [data.effect, (data.rank + 1) * data.amount] if data.cost >= 0 else "%s +%d" % [data.effect, data.rank * data.amount]
 	benefit_label.text = "次は Lv %d　（+%d）" % [data.rank + 1, data.amount] if data.cost >= 0 else "この能力は最大まで成長しています"
@@ -295,6 +312,11 @@ func _refresh_detail() -> void:
 	if selected_id != &"hp":
 		allowed = state.can_purchase_skill(selected_id)
 	_action(upgrade_button, data.cost, data.met, allowed)
+
+
+func _emblem_key() -> String:
+	var card = skill_rows[selected_id].control if skill_rows.has(selected_id) else null
+	return "" if card == null else EmblemIcons.upgrade_key(card.effect, card.branch)
 
 
 func _action(button: Button, cost: int, prerequisite_met: bool, allowed: bool, verb: String = "強化する", complete: String = "強化上限") -> void:

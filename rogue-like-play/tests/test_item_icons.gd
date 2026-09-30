@@ -52,6 +52,7 @@ func run_tests() -> void:
 	for slot in expected_kinds.size():
 		var symbol := ItemGlyph.slot_symbol(slot)
 		check(symbol.kind == expected_kinds[slot] and ItemIcons.icon(symbol) == null, "Empty slot %d shows its drawn category symbol, never an item's art" % slot)
+	test_emblems()
 	print("Item icons: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures else 0)
 
@@ -78,3 +79,20 @@ func check_painted_rectangle() -> void:
 	check(ItemIcons.icon(potion) != null and ItemIcons.icon(potion).get_size() == Vector2(96, 96), "Clearing an override restores the generated icon")
 	viewport.queue_free()
 	await process_frame
+
+
+func test_emblems() -> void:
+	for effect: int in AbilityData.Effect.values():
+		var key := EmblemIcons.ability_key(effect)
+		check(EmblemIcons.texture(key) != null, "Ability %s has its emblem" % key)
+		var emblem := EmblemIcons.texture(key)
+		if emblem != null:
+			check(emblem.get_size() == Vector2(96, 96), "Emblem %s is a 48px emblem stored at 2x" % key)
+	check(EmblemIcons.upgrade_key(&"hp", false) == "max_hp", "Base HP shares the Max HP ability emblem")
+	check(EmblemIcons.upgrade_key(&"hp", true) == "vitality", "The vitality branch has its own emblem")
+	check(EmblemIcons.upgrade_key(&"mp", true) == "mana" and EmblemIcons.texture("mana") != null, "Mana has its own emblem")
+	check(EmblemIcons.upgrade_key(&"attack", true) == "attack" and EmblemIcons.upgrade_key(&"defense", true) == "defense", "Attack and defense upgrades share the ability emblems")
+	check(EmblemIcons.texture("") == null and EmblemIcons.texture("no_such_emblem") == null, "Unknown keys keep the drawn symbol")
+	var card := AbilityCard.new()
+	check(card.symbol.custom_minimum_size == Vector2(96, 96) and card.symbol.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST, "Ability cards show emblems at their stored size without blur")
+	card.free()
