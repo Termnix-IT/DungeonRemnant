@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="StageData" load_steps=10 format=3]
 [ext_resource type="Script" path="res://data/definitions/stage_data.gd" id="1"]
 [ext_resource type="Resource" path="res://data/dungeon/forest.tres" id="2"]
-[ext_resource type="Texture2D" path="res://art/hub/forest.svg" id="3"]
+[ext_resource type="Texture2D" path="res://art/hub/forest.png" id="3"]
 [ext_resource type="Script" path="res://data/definitions/enemy_stats.gd" id="4"]
 [sub_resource type="Resource" id="Boss0"]
 script = ExtResource("4")

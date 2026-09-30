@@ -246,15 +246,15 @@ func _build_home() -> void:
 	hero_speech.hide()
 
 
-# Card art is cut from the hall painting behind the hub, so the cards belong to
-# the room. Regions are in guild_hall.png pixels; replace them with dedicated
-# illustrations later by pointing the card at another texture.
+# Each card has its own illustration painted in the hall's style, with the
+# subject on the right and shadow on the left where the caption sits
+# (tools/cut_card_art.py cuts them from art/hub/source/home_cards.png).
 const HOME_ART := {
-	"stairs": Rect2(600, 90, 390, 260),
-	"weapons": Rect2(280, 260, 190, 200),
-	"chests": Rect2(1300, 680, 286, 200),
-	"lantern": Rect2(1380, 560, 206, 330),
-	"books": Rect2(0, 220, 250, 250),
+	"stairs": preload("res://art/hub/cards/stairs.png"),
+	"weapons": preload("res://art/hub/cards/weapons.png"),
+	"chests": preload("res://art/hub/cards/chests.png"),
+	"lantern": preload("res://art/hub/cards/shop.png"),
+	"books": preload("res://art/hub/cards/books.png"),
 }
 
 
@@ -271,11 +271,11 @@ func _readiness_row(parent: Node, caption: String) -> Label:
 	return value
 
 
-func _home_action(parent: Node, text: String, description: String, action: Callable, art_region: Rect2 = Rect2()) -> Button:
+func _home_action(parent: Node, text: String, description: String, action: Callable, card_art: Texture2D = null) -> Button:
 	var button := HubUI.button(parent, "", action, &"HomeCard")
 	button.custom_minimum_size.y = 116
-	if art_region.has_area():
-		_card_art(button, art_region)
+	if card_art != null:
+		_card_art(button, card_art)
 	var margin := MarginContainer.new()
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	button.add_child(margin)
@@ -297,35 +297,34 @@ func _home_action(parent: Node, text: String, description: String, action: Calla
 	return button
 
 
-# The art sits on the card's right, fading into the card colour towards the
-# text so captions keep their contrast. It never takes input.
-func _card_art(button: Button, region: Rect2) -> void:
-	var cut := AtlasTexture.new()
-	cut.atlas = preload("res://art/hub/guild_hall.png")
-	cut.region = region
+# The art fills the card behind the caption, fading into the card colour
+# towards the text so captions keep their contrast. It never takes input.
+func _card_art(button: Button, texture: Texture2D) -> void:
 	var art := TextureRect.new()
-	art.texture = cut
+	art.texture = texture
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# The hall is dark; lift the cut slightly so it reads inside the card.
-	art.modulate = Color(1.25, 1.15, 1.0, 0.9)
+	art.modulate = Color(1, 1, 1, 0.92)
 	button.add_child(art)
 	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	art.anchor_left = 0.4
+	# The painting already darkens towards its left edge, so it spans the card.
+	art.anchor_left = 0.0
 	# Stay inside the frame's border and corner ornaments.
-	art.offset_left = 0
+	art.offset_left = 3
 	art.offset_top = 3
 	art.offset_right = -3
 	art.offset_bottom = -3
 	var fade := Gradient.new()
 	var ground := Color(0.12, 0.12, 0.12, 1.0)
-	fade.set_color(0, ground)
+	# Solid under the caption, then clear by the painting's subject.
+	fade.set_color(0, Color(ground, 0.85))
 	fade.set_color(1, Color(ground, 0.0))
+	fade.add_point(0.35, Color(ground, 0.7))
 	var veil_texture := GradientTexture2D.new()
 	veil_texture.gradient = fade
 	veil_texture.fill_from = Vector2(0, 0.5)
-	veil_texture.fill_to = Vector2(0.55, 0.5)
+	veil_texture.fill_to = Vector2(0.72, 0.5)
 	var veil := TextureRect.new()
 	veil.texture = veil_texture
 	veil.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -333,7 +332,7 @@ func _card_art(button: Button, region: Rect2) -> void:
 	veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	button.add_child(veil)
 	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	veil.anchor_left = 0.4
+	veil.offset_left = 3
 	veil.offset_top = 3
 	veil.offset_right = -3
 	veil.offset_bottom = -3
