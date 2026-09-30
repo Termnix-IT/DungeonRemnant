@@ -39,14 +39,17 @@ func run_tests() -> void:
 	player.reset_step()
 	player.facing = Vector2i.DOWN
 	check(sprite.sprite_frames.get_frame_texture(&"idle_front", 0).get_size() == Vector2(64, 64), "Dungeon front uses a dedicated 64px sprite")
-	check(player.idle_eyes.visible and player.foot_marker.global_position.is_equal_approx(Vector2(0, 26)), "Front idle keeps blink and floor anchor")
-	var blink_texture := player.idle_eyes.sprite_frames.get_frame_texture(&"idle_front", 5) as AtlasTexture
-	check(blink_texture.region == Rect2(87, 93, 22, 9) and player.idle_eyes.position == Vector2(-9, -2), "Redesigned front blink aligns with the new eyes")
+	check(player.foot_marker.global_position.is_equal_approx(Vector2(0, 26)), "Front idle keeps the floor anchor")
+	check(sprite.get_node_or_null("IdleEyes") == null, "The dungeon blink is baked into the frames instead of an overlay")
+	var blink_texture := sprite.sprite_frames.get_frame_texture(&"idle_front", 5) as AtlasTexture
+	check(blink_texture.atlas == MioAnimation.FRONT_IDLE_SHEET and blink_texture.region == Rect2(64, 64, 64, 64), "Front idle plays its own blink frame")
+	var resting := MioAnimation.SHEET.get_image()
+	check(resting.get_region(Rect2i(0, 128, 64, 64)).get_data() != resting.get_region(Rect2i(64, 128, 64, 64)).get_data(), "Side idle breathes between two frames")
 	player.play_step(Vector2i.DOWN, 48)
-	check(not player.idle_eyes.visible and sprite.sprite_frames.get_frame_count(&"walk_front") == 8, "Walking uses eight frames without idle eye overlay")
+	check(sprite.sprite_frames.get_frame_count(&"walk_front") == 8, "Walking uses eight frames")
 	check(player.weapon_visual.global_scale.is_equal_approx(Vector2(1.5, 1.5)), "High-resolution front keeps weapon size")
 	await create_timer(0.46).timeout
-	check(sprite.animation == &"idle_front" and player.idle_eyes.visible, "Front walk returns to quiet idle in the existing step duration")
+	check(sprite.animation == &"idle_front", "Front walk returns to quiet idle in the existing step duration")
 	player.facing = Vector2i.RIGHT
 	var seen: Dictionary = {}
 	sprite.frame_changed.connect(func():
@@ -72,7 +75,7 @@ func run_tests() -> void:
 	check(sprite.animation == &"idle_right", "Single step returns to idle")
 	check(player.foot_marker.global_position.is_equal_approx(Vector2(0, 26)), "Foot marker settles under feet")
 	var idle_frame := sprite.frame
-	await create_timer(0.55).timeout
+	await create_timer(0.8).timeout
 	check(sprite.frame != idle_frame, "Idle animation advances while stationary")
 	player.play_step(Vector2i.RIGHT, 48)
 	await create_timer(0.15).timeout

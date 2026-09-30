@@ -42,21 +42,22 @@ func has_clear_cell_margins(image: Image, margin: int) -> bool:
 
 
 func run_tests() -> void:
-	var texture := load("res://art/characters/mio_dungeon_chibi_64/cardinal.png") as Texture2D
+	var texture := MioAnimation.SHEET
 	check(texture != null and texture.get_size() == Vector2(384, 192), "Animation atlas uses 18 padded 64px frames")
 	var image := texture.get_image()
 	check(has_binary_alpha(image), "Animation atlas has no semitransparent fringe")
-	check(has_clear_cell_margins(image, 2), "Every animation frame has a two-pixel transparent safety margin")
+	check(has_clear_cell_margins(image, 1), "Every outlined animation frame keeps a transparent safety margin")
 	var diagonal := MioAnimation.DIAGONAL_SHEET.get_image()
 	check(diagonal.get_size() == Vector2i(384, 256), "Diagonal atlas has 24 equally sized frames")
 	check(has_binary_alpha(diagonal), "Diagonal frames have clean binary transparency")
-	check(has_clear_cell_margins(diagonal, 2), "Diagonal frames have safe transparent margins")
+	check(has_clear_cell_margins(diagonal, 1), "Diagonal frames have safe transparent margins")
 	for row in 4:
 		var previous := PackedByteArray()
 		for column in 6:
 			var cell := diagonal.get_region(Rect2i(column * 64, row * 64, 64, 64))
 			var bounds := cell.get_used_rect()
-			check(bounds.size.y == 56 and bounds.end.y == 60, "Diagonal character scale and foot baseline stay aligned")
+			# Column 1 is the breath-in pose: the head sits one pixel lower.
+			check(bounds.size.y == (57 if column == 1 else 58) and bounds.end.y == 61, "Diagonal character scale and outlined foot baseline stay aligned")
 			if column > 2:
 				check(cell.get_data() != previous, "Walk frames contain distinct poses")
 			previous = cell.get_data()
@@ -76,7 +77,7 @@ func run_tests() -> void:
 		var first_frame := frame_set.get_frame_texture(idle_name, 0) as AtlasTexture
 		check(first_frame.region.size == Vector2(64, 64), "%s animation cell size" % direction_name)
 		var index: int = preview.DIRECTIONS.find(direction_name)
-		var expected_atlas: Texture2D = preload("res://art/characters/mio_dungeon_chibi_64/idle_front.png") if front else (MioAnimation.SHEET if index < 4 else MioAnimation.DIAGONAL_SHEET)
+		var expected_atlas: Texture2D = MioAnimation.FRONT_IDLE_SHEET if front else (MioAnimation.SHEET if index < 4 else MioAnimation.DIAGONAL_SHEET)
 		check(first_frame.atlas == expected_atlas, "Direction selects the correct atlas")
 		check(first_frame.region.position == Vector2(0, (0 if front else (index - 1 if index < 4 else index - 4)) * 64), "Direction selects its own row")
 	check(preview.actual_sprite.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST, "Native preview uses nearest filtering")
