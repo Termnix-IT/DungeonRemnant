@@ -65,6 +65,19 @@ corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
+[sub_resource type="StyleBoxFlat" id="ListFocus"]
+resource_name = "ListFocus"
+draw_center = false
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.8392157, 0.7176471, 0.48235294, 0.4)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
 [sub_resource type="StyleBoxFlat" id="FocusOutline"]
 resource_name = "FocusOutline"
 content_margin_left = 12.0
@@ -649,6 +662,7 @@ ItemCardList/styles/card_selected = SubResource("ItemSelected")
 ItemCardList/styles/card_hover = SubResource("SurfaceHover")
 ItemCardList/constants/quantity_width = 54
 ItemCardList/constants/row_gap = 6
+ItemCardList/styles/focus = SubResource("ListFocus")
 CompactMargin/base_type = &"MarginContainer"
 CompactMargin/constants/margin_left = 12
 CompactMargin/constants/margin_right = 12
