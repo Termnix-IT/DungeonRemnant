@@ -36,7 +36,7 @@ func capture() -> void:
 	await snap("forest")
 	main.active_run.finish_run(false, true)
 	main.active_run.retry_run()
-	root.size = Vector2i(1152, 720)
+	root.size = Vector2i(1280, 720)
 	hub.show_page("upgrade")
 	await snap("tree_small")
 	print("Campaign capture complete")

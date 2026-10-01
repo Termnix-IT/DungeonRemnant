@@ -8,7 +8,7 @@ func capture() -> void:
 	Engine.max_fps = 60
 	var hud = preload("res://ui/hud.tscn").instantiate()
 	root.add_child(hud)
-	for resolution in [Vector2i(1440, 900), Vector2i(1152, 720), Vector2i(1920, 1080)]:
+	for resolution in [Vector2i(1600, 900), Vector2i(1280, 720), Vector2i(1920, 1080)]:
 		root.size = resolution
 		hud.reset_log()
 		hud.refresh(24, 24, 0, 0, "", 1, "Room")

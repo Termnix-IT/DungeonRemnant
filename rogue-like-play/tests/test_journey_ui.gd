@@ -174,7 +174,7 @@ func run_tests() -> void:
 	await create_timer(0.3).timeout
 	check(inventory.get_node("Panel").modulate.a == 1.0, "Hidden inventory restores reveal alpha")
 	if "--capture" in OS.get_cmdline_user_args():
-		for size in [Vector2i(1440, 900), Vector2i(1152, 720), Vector2i(1920, 1080)]:
+		for size in [Vector2i(1600, 900), Vector2i(1280, 720), Vector2i(1920, 1080)]:
 			root.size = size
 			root.content_scale_size = size
 			choice.present(offers, abilities, 2, 1)

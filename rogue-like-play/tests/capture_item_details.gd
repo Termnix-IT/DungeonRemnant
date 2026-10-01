@@ -41,7 +41,7 @@ func capture() -> void:
 	await click(hub.warehouse_panel.get_node("%StorageList"), Vector2(35, 25))
 	check(hub.warehouse_panel.get_node("%Help").get_parsed_text().contains(armor.display_name), "Warehouse selection exposes description without hover")
 	await shot("details_warehouse")
-	for resolution in [Vector2i(1440, 900), Vector2i(1152, 720)]:
+	for resolution in [Vector2i(1600, 900), Vector2i(1280, 720)]:
 		root.size = resolution
 		await settle()
 		var list: ItemList = hub.warehouse_panel.get_node("%StorageList")

@@ -130,7 +130,7 @@ func capture() -> void:
 	await sample_cost(hub.equipment_page.done_button, true)
 	hub.show_page("upgrade")
 	var tree: SkillTreePanel = hub.upgrade_page
-	for resolution in [Vector2i(1440, 900), Vector2i(1152, 720), Vector2i(1920, 1080)]:
+	for resolution in [Vector2i(1600, 900), Vector2i(1280, 720), Vector2i(1920, 1080)]:
 		root.size = resolution
 		tree.select_upgrade(&"hp")
 		await settle()
@@ -146,7 +146,7 @@ func capture() -> void:
 	hub.show_page("equipment")
 	await create_timer(0.4).timeout
 	check(get_processed_tweens().size() == 1, "Stress capture leaves only hero breathing")
-	root.size = Vector2i(1152, 720)
+	root.size = Vector2i(1280, 720)
 	await key(KEY_ESCAPE)
 	await enter(hub, hub.sell_button)
 	await click(shop.buy_tab)

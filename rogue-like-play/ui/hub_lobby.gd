@@ -45,12 +45,14 @@ const ART := {
 	&"upgrade": preload("res://art/hub/cards/books.png"),
 }
 const HERO_TEXTURE := preload("res://art/characters/mio_lobby.png")
-# Layout in the 1440×900 base viewport. The menu keeps about a fifth of the
+# Layout in the 1600×900 base viewport. The menu keeps about a fifth of the
 # width; the heroine stands about two thirds of the height tall.
 const MENU_WIDTH := 300.0
 const MENU_TOP := 168.0
 const ROW_HEIGHT := 80.0
-const PANEL_RECT := Rect2(352, 0, 600, 0)
+# The panel centres in the floor between the menu and the heroine.
+const PANEL_CENTER_X := 0.465
+const PANEL_WIDTH := 600.0
 const PANEL_BOTTOM := 96.0
 const HERO_HEIGHT := 0.68
 const HERO_CENTER_X := 0.835
@@ -145,8 +147,10 @@ func _build_panel() -> void:
 	# floor whatever the chosen entry needs.
 	panel.anchor_top = 1.0
 	panel.anchor_bottom = 1.0
-	panel.offset_left = PANEL_RECT.position.x
-	panel.offset_right = PANEL_RECT.end.x
+	panel.anchor_left = PANEL_CENTER_X
+	panel.anchor_right = PANEL_CENTER_X
+	panel.offset_left = -PANEL_WIDTH * 0.5
+	panel.offset_right = PANEL_WIDTH * 0.5
 	panel.offset_bottom = -PANEL_BOTTOM
 	panel.offset_top = -PANEL_BOTTOM
 	panel.grow_vertical = Control.GROW_DIRECTION_BEGIN

@@ -46,7 +46,7 @@ func capture() -> void:
 	await shot("shop_trade")
 	await key(KEY_ESCAPE)
 	check(hub.page == "home", "Shop returns home with Esc")
-	root.size = Vector2i(1152, 720)
+	root.size = Vector2i(1280, 720)
 	await settle()
 	await enter(hub, hub.sell_button)
 	await click(shop.sell_tab)

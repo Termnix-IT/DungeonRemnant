@@ -114,7 +114,7 @@ func capture() -> void:
 	check(hub.visible and hub.page == "home", "Mouse result returns home")
 	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
 	# Check scaled hub layout and native input at a smaller window.
-	root.size = Vector2i(1152, 720)
+	root.size = Vector2i(1280, 720)
 	await shot("home_720")
 	await enter(hub, hub.equipment_button)
 	await shot("equipment_720")

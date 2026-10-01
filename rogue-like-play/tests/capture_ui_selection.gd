@@ -35,7 +35,7 @@ func capture() -> void:
 	root.add_child(main)
 	var hub = main.get_node("Hub")
 	var before := SaveCodec.encode(main.state)
-	for resolution in [Vector2i(1440, 900), Vector2i(1152, 720), Vector2i(1920, 1080)]:
+	for resolution in [Vector2i(1600, 900), Vector2i(1280, 720), Vector2i(1920, 1080)]:
 		root.size = resolution
 		hub.show_page("sell")
 		var shop: HubSell = hub.sell_page

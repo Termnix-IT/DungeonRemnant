@@ -58,7 +58,7 @@ func capture() -> void:
 	check(shows_name(shop.showcase, shop.details, long_item), "Full name remains available in the detail area as literal text")
 	check(shop.item_list.get_item_metadata(0).count == 999 and shop.item_list.get_item_metadata(1).count == 3, "Card quantity reflects grouped inventory")
 	await shot("cards_long_name")
-	root.size = Vector2i(1152, 720)
+	root.size = Vector2i(1280, 720)
 	await shot("cards_720")
 	var before: int = main.state.gold
 	await click(shop.sell_button)

@@ -15,8 +15,8 @@ func snapshot(label: String) -> void:
 
 
 func run_capture() -> void:
-	root.size = Vector2i(1440, 900)
-	root.content_scale_size = Vector2i(1440, 900)
+	root.size = Vector2i(1600, 900)
+	root.content_scale_size = Vector2i(1600, 900)
 	var main := preload("res://game/main.tscn").instantiate()
 	main.saving_enabled = false
 	root.add_child(main)

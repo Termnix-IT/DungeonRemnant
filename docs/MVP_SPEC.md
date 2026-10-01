@@ -993,7 +993,7 @@ UIは `res://ui/theme/dungeon_theme.tres` をプロジェクト共通Themeとし
 
 - 操作は `PrimaryButton`（主要操作）、`SecondaryButton`（戻る・補助操作）、`ItemButton`（選択）、`GoldButton`（購入・成長）を使い分ける。
 - 文字は画面名 `TitleLabel`（30px）、見出し `HeadingLabel`（24px）、項目名 `ItemNameLabel`（20px）、主要値 `ValueLabel`（26px）、本文 `BodyLabel`（18px）、説明 `DescriptionLabel`（18px）、補足 `MutedLabel`（16px）、価格 `GoldLabel`（21px）を使用する。ボタンは原則18px、補助操作は16px。画面ごとのフォントサイズ・色overrideは追加しない。
-- 拠点のヘッダー・ページ・フッター、各画面の列はContainerで配置する。ただし拠点ホームのロビー（`HubLobby`）は、背景の一枚絵と一体に見せるため、縮小されるページ内容とは別に1440×900の画面全体へ直接配置する。`HubUI` は `MainPanel` / `ItemPanel` とMargin・VBox/HBoxの構造だけを共通化する。基準内容幅1280px・高さ810px、画面端は最低20px相当を確保して縮小する。通常のパネル内余白24px、列間20px、縦間隔12px、密な詳細は8px。倉庫は独立した1280×650pxのContainer構成を同様に縮小する。
+- 拠点のヘッダー・ページ・フッター、各画面の列はContainerで配置する。ただし拠点ホームのロビー（`HubLobby`）は、背景の一枚絵と一体に見せるため、縮小されるページ内容とは別に1600×900の画面全体へ直接配置する。`HubUI` は `MainPanel` / `ItemPanel` とMargin・VBox/HBoxの構造だけを共通化する。基準内容幅1280px・高さ810px、画面端は最低20px相当を確保して縮小する。通常のパネル内余白24px、列間20px、縦間隔12px、密な詳細は8px。倉庫は独立した1280×650pxのContainer構成を同様に縮小する。
 - 外観の調整はTheme内の名前付きStyleBox（`MainSurface`、`SurfaceHover`、`FocusOutline`など）を編集する。同一のStyleBoxを共有するControlへ一括反映されるため、画面側で複製しない。文字色・文字サイズは該当するTheme Typeを編集する。Theme内の色項目とStyleBoxの色はGodot上では別プロパティであり、自動連動するパレットではない。
 - `CharacterButton` と `SpeechPanel` は拠点キャラクターの透明なクリック領域と吹き出し専用とする。新規画像を要する装飾は、後述「UI体験の改善」の素材差し替え口を通してのみ追加し、素材がない状態でも現行の表示で成立させる。
 
@@ -1041,7 +1041,7 @@ HPが最大値の30%以下になると、ダンジョンとHUDパネルの間の
 
 ダンジョンでは、ゲームパッドの十字キーを上下左右の移動、左スティックを8方向の移動（`StickDirections` がスティックの向きを移動アクションの押下と解放に変換し、押し続けによる連続移動もキーボードと同じ仕組みで行う）、Aを攻撃、Bをキャンセル、Xを所持品、Yを武器切替、Startを中断と結果画面からの再挑戦・帰還に割り当てる。所持品画面は開くと一覧にFocusを置き、Space・Enter・Aで選択中の消耗品を使うか、装備品を比較中の枠へ装備し、Yで武器を切り替える。能力選択は1〜3キーとマウスを開いた直後から受け付け、Focusは攻撃の連打で誤選択しないよう0.3秒後に最初のカードへ置く。中断の確認はEnter・Aで確定し、Esc・Bで取り消す。所持品の取り外しと魔法の装着先の選択は、現状マウス操作だけとする。
 
-変更時は `tests/test_ui_theme.gd`、`tests/test_ui_layout.gd`、`tests/test_ui_motion.gd`、`tests/test_upgrade_ui.gd` に加え、該当する取引・装備・セーブのテストを実行する。描画可能な環境では `tests/capture_art_direction.gd`（7画面を1440×900・1152×720・1920×1080で確認）、`tests/capture_shop.gd`、`tests/capture_preparation.gd`、`tests/capture_ui_motion.gd`、`tests/capture_item_details.gd`、`tests/capture_upgrade_ui.gd`、`tests/capture_item_cards.gd` で通常サイズ・縮小表示・各入力・ボタン端のクリックを確認する。演出用キャプチャは60 FPS上限でアイドル時と演出中のフレーム時間も比較する。生成画像は `.godot/` に出力する。
+変更時は `tests/test_ui_theme.gd`、`tests/test_ui_layout.gd`、`tests/test_ui_motion.gd`、`tests/test_upgrade_ui.gd` に加え、該当する取引・装備・セーブのテストを実行する。描画可能な環境では `tests/capture_art_direction.gd`（7画面を1600×900・1280×720・1920×1080で確認）、`tests/capture_shop.gd`、`tests/capture_preparation.gd`、`tests/capture_ui_motion.gd`、`tests/capture_item_details.gd`、`tests/capture_upgrade_ui.gd`、`tests/capture_item_cards.gd` で通常サイズ・縮小表示・各入力・ボタン端のクリックを確認する。演出用キャプチャは60 FPS上限でアイドル時と演出中のフレーム時間も比較する。生成画像は `.godot/` に出力する。
 
 ## UI体験の改善（優先度順）
 
@@ -1103,7 +1103,7 @@ Gold・EXP・到達階など結果の数値は、状態と保存上の値を即�
 
 ### 検証
 
-各見せ場について、`capture_*.gd` で演出開始・25%・50%・完了の4時点を1440×900・1152×720・1920×1080で撮影し、人の目で確認する。Headlessのテストでは、状態と保存上の値が演出の開始前に確定していること、見せ場を決定・キャンセル入力で最終状態へ飛ばせること、入場演出の途中でも選択できること、非表示・解放時に表示層とオーバーレイが基準状態へ戻ることを検証する。ヒットストップと画面揺れは、戦闘の論理座標とターン順序を変えないことを既存の戦闘テストで確認する。
+各見せ場について、`capture_*.gd` で演出開始・25%・50%・完了の4時点を1600×900・1280×720・1920×1080で撮影し、人の目で確認する。Headlessのテストでは、状態と保存上の値が演出の開始前に確定していること、見せ場を決定・キャンセル入力で最終状態へ飛ばせること、入場演出の途中でも選択できること、非表示・解放時に表示層とオーバーレイが基準状態へ戻ることを検証する。ヒットストップと画面揺れは、戦闘の論理座標とターン順序を変えないことを既存の戦闘テストで確認する。
 
 ---
 

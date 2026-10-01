@@ -261,6 +261,8 @@ func show_page(target: String) -> void:
 	back_button.visible = page != "home"
 	for child in _title_block.get_children():
 		child.visible = page != "home"
+	# On the lobby the left edge belongs to the menu.
+	save_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if page == "home" else HORIZONTAL_ALIGNMENT_LEFT
 	_ambience.focus(home_page.selected_id() if page == "home" else &"")
 	feedback.text = ""
 	subtitle_label.text = "身につけるもの、背負っていくもの。"

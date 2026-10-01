@@ -54,8 +54,8 @@ func run_tests() -> void:
 		check(not (label.is_visible_in_tree() and label.text.contains("Lv")), "Lobby shows no level: " + label.text)
 	var ambience: HubAmbience = hub.get_children().filter(func(child: Node): return child is HubAmbience)[0]
 	check(ambience.get_index() < hub.get_node("Content").get_index() and ambience.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Ambience sits beneath the panels and ignores the pointer")
-	ambience.size = Vector2(1440, 900)
-	check(ambience.light_rect(Vector2(0.5, 0.5), 10.0).get_center().is_equal_approx(Vector2(720, 450)), "Lights follow the covered background")
+	ambience.size = Vector2(1600, 900)
+	check(ambience.light_rect(Vector2(0.5, 0.5), 10.0).get_center().is_equal_approx(Vector2(800, 450)), "Lights follow the covered background")
 	hub.hide()
 	check(not ambience.dust.emitting, "Hidden hub stops the dust")
 	hub.show()

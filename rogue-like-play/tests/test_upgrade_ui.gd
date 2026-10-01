@@ -132,7 +132,7 @@ func run_tests() -> void:
 		panel.select_upgrade(node.id)
 		check(panel.upgrade_button.disabled and panel.benefit_label.text.contains("最大まで"), "Capped upgrade does not promise another bonus")
 	check_actions(panel)
-	for resolution in [Vector2i(1440, 900), Vector2i(1152, 720)]:
+	for resolution in [Vector2i(1600, 900), Vector2i(1280, 720)]:
 		root.size = resolution
 		await settle()
 		await check_layout(panel)

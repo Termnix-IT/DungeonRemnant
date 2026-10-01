@@ -43,7 +43,7 @@ func capture() -> void:
 	await click(panel.entry_buttons[0])
 	check(main.state.gold == 0 and main.state.can_start(panel.stages[1], 11), "Mouse unlocks selected dungeon floor")
 	await shot("upgrades_entry_owned")
-	root.size = Vector2i(1152, 720)
+	root.size = Vector2i(1280, 720)
 	await shot("upgrades_entry_720")
 	await click(panel.tabs[0])
 	await shot("upgrades_720")
