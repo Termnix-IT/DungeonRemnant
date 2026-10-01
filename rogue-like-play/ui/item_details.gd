@@ -4,6 +4,8 @@ extends RichTextLabel
 # Lines added by line() are centred when set, for a column that stacks the
 # item's art above its text (the warehouse's transfer column).
 var centered := false
+var _fit_gap: Control
+var _fit_minimum := 0.0
 
 
 func _init() -> void:
@@ -11,6 +13,32 @@ func _init() -> void:
 	focus_mode = Control.FOCUS_ALL
 	selection_enabled = true
 	context_menu_enabled = false
+
+
+# Keeps to its lines like fit_content while the column has spare height in
+# gap (an expanding spacer beside it), then scrolls instead of pushing the
+# actions below it off the page.
+func fit_lines(gap: Control, minimum: float) -> void:
+	fit_content = false
+	scroll_active = true
+	_fit_gap = gap
+	_fit_minimum = minimum
+	custom_minimum_size.y = minimum
+	# Content height is known once laid out; the deferred check settles in
+	# one step and stops when the height no longer changes.
+	draw.connect(func(): _fit_height.call_deferred())
+	gap.resized.connect(func(): _fit_height.call_deferred())
+
+
+func _fit_height() -> void:
+	if not is_visible_in_tree():
+		return
+	var wanted := maxf(_fit_minimum, get_content_height() + get_theme_stylebox(&"normal").get_minimum_size().y)
+	# The height this box and the spacer share between them.
+	var room := maxf(_fit_minimum, size.y + _fit_gap.size.y)
+	var target := floorf(minf(wanted, room))
+	if not is_equal_approx(custom_minimum_size.y, target):
+		custom_minimum_size.y = target
 
 
 func reset() -> void:

@@ -77,15 +77,14 @@ func _ready() -> void:
 	record.theme_type_variation = &"InsetPanel"
 	info.add_child(record)
 	details = ItemDetails.new()
-	details.fit_content = true
-	# Room for a comparison of two or three lines without shifting the counter.
-	details.custom_minimum_size.y = 64
 	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	record.add_child(details)
 	var gap := Control.new()
 	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	info.add_child(gap)
+	# Room for a comparison of two or three lines without shifting the counter.
+	details.fit_lines(gap, 64)
 	# The counter: quantity, the price as one large figure, and a quiet line
 	# of what changes, on one raised plate instead of a form and a formula.
 	var counter := PanelContainer.new()
@@ -106,9 +105,18 @@ func _ready() -> void:
 	total_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	possession = _label(counter_stack, "", &"MutedLabel")
 	possession.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	sell_button = _button(info, "売却する", &"GoldButton", _transact)
+	# The trades share one row, so the record above keeps the height for a
+	# comparison of three lines without scrolling.
+	var trades := HBoxContainer.new()
+	trades.theme_type_variation = &"CompactRow"
+	info.add_child(trades)
+	sell_button = _button(trades, "売却する", &"GoldButton", _transact)
 	sell_button.custom_minimum_size.y = 54
-	sell_all_button = _button(info, "選択アイテムを全部売却", &"SecondaryButton", _sell_all)
+	sell_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sell_button.size_flags_stretch_ratio = 1.2
+	sell_all_button = _button(trades, "全部売却", &"SecondaryButton", _sell_all)
+	sell_all_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sell_all_button.tooltip_text = "選択品を全部売却"
 
 
 func _column(parent: Container, stretch: float) -> VBoxContainer:
@@ -238,7 +246,7 @@ func _update_quote() -> void:
 		sell_button.text = "%d個を売却する" % amount
 		sell_button.disabled = total <= 0 or state.gold + total > SaveCodec.MAX_GOLD
 		var all_value: int = price * row.count
-		sell_all_button.text = "選択品を全部売却  /  %d個・%d G" % [row.count, all_value]
+		sell_all_button.text = "全部売却  %d個・%d G" % [row.count, all_value]
 		sell_all_button.disabled = price <= 0 or state.gold + all_value > SaveCodec.MAX_GOLD
 
 

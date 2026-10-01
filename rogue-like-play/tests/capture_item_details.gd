@@ -18,7 +18,8 @@ func capture() -> void:
 	await enter(hub, hub.sell_button)
 	await click(hub.sell_page.item_list, Vector2(35, 25))
 	check(shows_name(hub.sell_page.showcase, hub.sell_page.details, armor), "BBCode-like names remain literal")
-	check(hub.sell_page.total_label.text.contains("単価 %d" % armor.sell_price), "Price matches item data")
+	# The counter shows one total, not a unit-price formula.
+	check(hub.sell_page.total_label.text == "+%d G" % (armor.sell_price * int(hub.sell_page.quantity.value)), "Price matches item data")
 	await shot("details_shop")
 	await key(KEY_ESCAPE)
 	await enter(hub, hub.equipment_button)

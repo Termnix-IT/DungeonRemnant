@@ -62,13 +62,12 @@ func _ready() -> void:
 	compare_box.theme_type_variation = &"InsetPanel"
 	detail.add_child(compare_box)
 	comparison = ItemDetails.new()
-	comparison.fit_content = true
-	comparison.custom_minimum_size.y = 96
 	compare_box.add_child(comparison)
 	var gap := Control.new()
 	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	detail.add_child(gap)
+	comparison.fit_lines(gap, 96)
 	equip_button = HubUI.button(detail, "選択した装備に変更", _equip, &"GoldButton")
 	unequip_button = HubUI.button(detail, "選択枠の装備を外す", func():
 		equipped_item = null
