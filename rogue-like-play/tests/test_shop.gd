@@ -26,7 +26,7 @@ func run_tests() -> void:
 	main.state.storage.add(ItemCatalog.POTION, 7)
 	main.state.inventory.add(ARMOR, 2)
 	main.state.equipment.slots[2] = ARMOR
-	hub.sell_button.pressed.emit()
+	enter(hub, hub.sell_button)
 	check(hub.title_label.text == "ショップ", "Home opens shop")
 	check(shop.rows.size() == 2 and shop.rows[0].count == 5, "Five separate armor entries become one shop row")
 	check(shop.item_list.get_item_text(0).contains("×5"), "Grouped row shows aggregate quantity")
@@ -98,3 +98,10 @@ func run_tests() -> void:
 	main.free()
 	print("Shop tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
+
+
+# A lobby entry is chosen by its first press and entered by the next.
+func enter(hub: Node, button: Button) -> void:
+	if hub.home_page.buttons[hub.home_page.selected] != button:
+		button.pressed.emit()
+	button.pressed.emit()

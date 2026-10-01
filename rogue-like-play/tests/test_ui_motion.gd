@@ -165,6 +165,8 @@ func run_tests() -> void:
 	for page: Control in [hub.home_page, hub.sell_page, hub.equipment_page]:
 		check(is_equal_approx(page.modulate.a, 1.0) and near_scale(page, 1.0), "Rapid navigation restores page alpha and scale")
 	check(not motion.is_processing(), "Helper has no idle per-frame polling")
+	# The hall light fades between lobby entries after a page change.
+	await settle(HubAmbience.FOCUS_TIME * 1.5 + 0.05)
 	# The only perpetual tween is the existing hero breathing animation.
 	check(get_processed_tweens().size() == 1, "Completed and cancelled UI tweens do not accumulate")
 	main.free()

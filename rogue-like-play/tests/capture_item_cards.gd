@@ -12,7 +12,7 @@ func capture() -> void:
 	var hub = main.get_node("Hub")
 	var shop: HubSell = hub.sell_page
 	await settle()
-	await click(hub.sell_button)
+	await enter(hub, hub.sell_button)
 	await shot("cards_empty")
 	check(shop.item_list.item_count == 1 and shop.item_list.is_item_disabled(0), "Empty list retains disabled placeholder")
 	await click(shop.buy_tab)

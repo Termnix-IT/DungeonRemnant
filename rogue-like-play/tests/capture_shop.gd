@@ -14,7 +14,7 @@ func capture() -> void:
 	var hub = main.get_node("Hub")
 	var shop: HubSell = hub.sell_page
 	await settle()
-	await click(hub.sell_button)
+	await enter(hub, hub.sell_button)
 	await shot("shop_disabled")
 	await click(shop.item_list, Vector2(35, 25))
 	await click(shop.quantity.get_line_edit())
@@ -48,7 +48,7 @@ func capture() -> void:
 	check(hub.page == "home", "Shop returns home with Esc")
 	root.size = Vector2i(1152, 720)
 	await settle()
-	await click(hub.sell_button)
+	await enter(hub, hub.sell_button)
 	await click(shop.sell_tab)
 	await click(shop.item_list, Vector2(28, 20))
 	await shot("shop_720")

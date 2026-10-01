@@ -34,6 +34,17 @@ func _draw() -> void:
 			_line([Vector2(16, 7), Vector2(5, 3), Vector2(3, 26), Vector2(16, 29), Vector2(29, 26), Vector2(27, 3), Vector2(16, 7), Vector2(16, 29)], color)
 			_line([Vector2(8, 10), Vector2(12, 12)], color)
 			_line([Vector2(20, 12), Vector2(24, 10)], color)
+		"設定":
+			# Eight-toothed gear around a hollow hub.
+			var teeth := PackedVector2Array()
+			for step in 16:
+				var radius := 12.5 if step % 2 == 0 else 9.5
+				for edge in [-0.17, 0.17]:
+					var angle: float = (step + edge * 2.0) * TAU / 16.0
+					teeth.append(Vector2(16, 16) + Vector2.from_angle(angle) * radius)
+			teeth.append(teeth[0])
+			_line(teeth, color)
+			draw_arc(Vector2(16, 16), 4.0, 0, TAU, 20, color, 1.5, true)
 	draw_set_transform(Vector2.ZERO)
 
 

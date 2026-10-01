@@ -22,12 +22,12 @@ func run_tests() -> void:
 	root.add_child(main)
 	var hub = main.get_node("Hub")
 	check(hub.page == "home" and hub.home_page.visible, "Boot presents home")
-	hub.equipment_button.pressed.emit()
+	enter(hub, hub.equipment_button)
 	hub.equipment_page.swap_button.pressed.emit()
 	check(main.state.equipment.slots[0].weapon.kind == WeaponData.Kind.SPEAR, "Initial weapons can be exchanged without inventory detour")
 	hub.equipment_page.swap_button.pressed.emit()
 	hub.go_back()
-	hub.start_button.pressed.emit()
+	enter(hub, hub.start_button)
 	check(hub.page == "stages" and main.active_run == null, "Home departure opens selection without entering dungeon")
 	hub.departure_page.next_button.pressed.emit()
 	check(hub.page == "confirm" and main.active_run == null, "Stage selection requires final confirmation")
@@ -39,7 +39,7 @@ func run_tests() -> void:
 	main.state.storage.add(ARMOR)
 	main.state.storage.add(ItemCatalog.floor_item(0))
 	hub.refresh(main.state)
-	hub.equipment_button.pressed.emit()
+	enter(hub, hub.equipment_button)
 	hub.equipment_page.select_slot(Equipment.Slot.ARMOR)
 	check(hub.equipment_page.candidates.size() == 1 and hub.equipment_page.candidates[0].from_storage, "Equipment candidates include matching warehouse gear")
 	var preview_text: String = hub.equipment_page.comparison.get_parsed_text()
@@ -167,3 +167,10 @@ func run_tests() -> void:
 	main.free()
 	print("Preparation tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
+
+
+# A lobby entry is chosen by its first press and entered by the next.
+func enter(hub: Node, button: Button) -> void:
+	if hub.home_page.buttons[hub.home_page.selected] != button:
+		button.pressed.emit()
+	button.pressed.emit()

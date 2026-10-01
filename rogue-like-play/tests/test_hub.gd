@@ -40,9 +40,18 @@ func run_tests() -> void:
 	main.saving_enabled = false
 	root.add_child(main)
 	var hub: CanvasLayer = main.get_node("Hub")
-	var hero: AnimatedSprite2D = hub.home_page.get_node("Hero")
-	check(hero.is_playing() and hero.animation == &"idle_front", "Home hero starts idle animation")
-	check(hero.sprite_frames.get_frame_count(&"idle_front") == 8, "Home uses all eight high-resolution idle frames")
+	var lobby: HubLobby = hub.home_page
+	var hero: TextureRect = lobby.get_node("Hero")
+	var viewport := root.get_visible_rect().size
+	check(hero.texture != null and hero.size.y >= viewport.y * 0.6 and hero.size.y <= viewport.y * 0.7, "Lobby heroine stands 60-70% of the screen tall")
+	check(hero.get_rect().get_center().x > viewport.x * 0.66, "Heroine stands on the right side of the lobby")
+	check(lobby.buttons.map(func(button: Button): return button.text) == ["出撃", "装備", "倉庫", "ショップ", "強化", "設定"], "Lobby menu lists the six entries in order")
+	check(lobby.selected_id() == &"departure" and hub.start_button.has_focus(), "Lobby starts on departure with focus")
+	for button in lobby.buttons:
+		check(button.get_global_rect().end.x <= viewport.x * 0.22, "Menu entry stays within about a fifth of the width: " + button.text)
+	check(not hub.title_label.is_visible_in_tree() and hub.gold_label.is_visible_in_tree() and hub.settings_button.is_visible_in_tree(), "Lobby top shows only Gold and settings")
+	for label in hub.find_children("*", "Label", true, false):
+		check(not (label.is_visible_in_tree() and label.text.contains("Lv")), "Lobby shows no level: " + label.text)
 	var ambience: HubAmbience = hub.get_children().filter(func(child: Node): return child is HubAmbience)[0]
 	check(ambience.get_index() < hub.get_node("Content").get_index() and ambience.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Ambience sits beneath the panels and ignores the pointer")
 	ambience.size = Vector2(1440, 900)
@@ -50,17 +59,40 @@ func run_tests() -> void:
 	hub.hide()
 	check(not ambience.dust.emitting, "Hidden hub stops the dust")
 	hub.show()
-	var last_frame := hero.sprite_frames.get_frame_texture(&"idle_front", 7) as AtlasTexture
-	check(last_frame.region == Rect2(0, 0, 128, 128), "Idle keeps the same body silhouette through the loop")
-	var eyes: AnimatedSprite2D = hero.get_node("Eyes")
-	hero.frame = 5
-	check(eyes.frame == 5, "Blink stays synchronized with idle timing")
-	var blink := eyes.sprite_frames.get_frame_texture(&"idle_front", 5) as AtlasTexture
-	check(blink.region == Rect2(183, 159, 19, 8), "Blink affects only the eye region")
+	# Choosing and entering are separate: one press chooses, the next enters.
+	await create_timer(HubAmbience.FOCUS_TIME + 0.1).timeout
+	check(ambience.focus_id == &"departure" and ambience.focus_strength > 0.9, "Departure lights the gate")
+	hub.equipment_button.pressed.emit()
+	check(hub.page == "home" and lobby.selected_id() == &"equipment" and hub.decide_button.text == "装備を整える", "First press chooses equipment without leaving")
+	await create_timer(HubAmbience.FOCUS_TIME + 0.1).timeout
+	check(ambience.focus_id == &"equipment", "Choosing equipment lights the weapon rack")
+	check(lobby.equipment_label.is_visible_in_tree() and not lobby.carried_label.is_visible_in_tree(), "Panel shows only the chosen entry's information")
+	hub.equipment_button.pressed.emit()
+	check(hub.page == "equipment", "Pressing the chosen entry enters it")
+	await create_timer(HubAmbience.FOCUS_TIME + 0.1).timeout
+	check(ambience.focus_id == &"", "Pages away from the lobby clear the hall light")
+	hub.show_page("home")
+	check(lobby.selected_id() == &"equipment" and hub.equipment_button.has_focus(), "Returning home keeps the chosen entry")
+	hub.decide_button.pressed.emit()
+	check(hub.page == "equipment", "Panel button enters the chosen entry")
+	hub.show_page("home")
+	# Keyboard and gamepad focus chooses directly.
+	hub.warehouse_button.grab_focus()
+	check(lobby.selected_id() == &"storage" and lobby.stored_label.is_visible_in_tree(), "Focus chooses an entry")
+	hub.settings_button.pressed.emit()
+	check(lobby.selected_id() == &"settings" and not hub.decide_button.visible and lobby.volume_choice.option(lobby.volume_choice.selected).has_focus(), "Settings button opens the lobby settings")
+	var master := AudioServer.get_bus_index(&"Master")
+	lobby.volume_choice.option(2).pressed.emit()
+	check(hub.settings.volume_step == 2 and is_equal_approx(AudioServer.get_bus_volume_linear(master), 0.5), "Volume choice sets the master volume")
+	lobby.volume_choice.option(0).pressed.emit()
+	check(AudioServer.is_bus_mute(master), "Silent mutes the master bus")
+	lobby.volume_choice.option(4).pressed.emit()
+	check(not AudioServer.is_bus_mute(master) and is_equal_approx(AudioServer.get_bus_volume_linear(master), 1.0), "Loudest restores full volume")
+	hub.start_button.grab_focus()
 	check(not hub.hero_speech.visible, "Home speech starts hidden")
 	hub.hero_button.pressed.emit()
 	check(hub.hero_speech.visible, "Clicking hero opens speech")
-	check(hub.hero_speech.position.y + hub.hero_speech.size.y + 14 < hero.position.y + hero.offset.y * hero.scale.y, "Speech and tail stay above hero")
+	check(hub.hero_speech.get_global_rect().end.y + 14 <= hero.get_global_rect().position.y and not hub.hero_speech.get_global_rect().intersects(lobby.panel.get_global_rect()), "Speech and tail stay above the heroine, clear of the panel")
 	hub.hero_button.pressed.emit()
 	check(not hub.hero_speech.visible, "Clicking hero again closes speech")
 	hub.hero_button.pressed.emit()
@@ -158,5 +190,24 @@ func run_tests() -> void:
 	check(main.active_run.turns.player.stats.max_hp == 31, "Maximum upgrade applies +3 alongside gear")
 	check(preload("res://data/player_stats.tres").max_hp == 24, "Shared base Resource remains unchanged")
 	main.free()
+	# Settings live apart from progress and fall back to defaults when unreadable.
+	var stored := GameSettings.new()
+	stored.path = "res://.godot/settings-test.cfg"
+	stored.volume_step = 1
+	stored.fullscreen = true
+	check(stored.save_settings(), "Settings save to their own file")
+	var loaded := GameSettings.new()
+	loaded.path = stored.path
+	loaded.load_settings()
+	check(loaded.volume_step == 1 and loaded.fullscreen, "Settings survive a restart")
+	var broken := FileAccess.open(stored.path, FileAccess.WRITE)
+	broken.store_string("[audio
+volume_step = ")
+	broken.close()
+	var fallback := GameSettings.new()
+	fallback.path = stored.path
+	fallback.load_settings()
+	check(fallback.volume_step == GameSettings.VOLUME_STEPS.size() - 1 and not fallback.fullscreen, "Unreadable settings fall back to full volume in a window")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(stored.path))
 	print("Hub tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)

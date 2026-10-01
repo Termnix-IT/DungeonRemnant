@@ -19,7 +19,7 @@ func capture() -> void:
 		await settle()
 		hub.show_page("home")
 		await shot("art_home_%d" % resolution.y)
-		for button: Control in [hub.start_button, hub.equipment_button, hub.warehouse_button, hub.sell_button, hub.upgrade_button, hub.hero_button]:
+		for button: Control in [hub.start_button, hub.equipment_button, hub.warehouse_button, hub.sell_button, hub.upgrade_button, hub.hero_button, hub.decide_button, hub.settings_button, hub.home_page.panel]:
 			fits(button, "Home navigation")
 		hub.show_page("sell")
 		var shop: HubSell = hub.sell_page

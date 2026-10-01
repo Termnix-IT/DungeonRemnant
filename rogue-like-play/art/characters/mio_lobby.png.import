@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b5tx7foxglyap"
-path="res://.godot/imported/guild_hall.png-f71e1ba6abb0a214a7df4f340cd7d4b7.ctex"
+uid="uid://d4msqpclr8p8s"
+path="res://.godot/imported/mio_lobby.png-755c79ca7a04484a7478ed231c55f0e8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/hub/guild_hall.png"
-dest_files=["res://.godot/imported/guild_hall.png-f71e1ba6abb0a214a7df4f340cd7d4b7.ctex"]
+source_file="res://art/characters/mio_lobby.png"
+dest_files=["res://.godot/imported/mio_lobby.png-755c79ca7a04484a7478ed231c55f0e8.ctex"]
 
 [params]
 

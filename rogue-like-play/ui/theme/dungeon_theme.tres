@@ -522,6 +522,22 @@ opentype_features = {
 1885432948: 1
 }
 
+[sub_resource type="StyleBoxEmpty" id="LobbyMenuInsets"]
+resource_name = "LobbyMenuInsets"
+content_margin_left = 96.0
+content_margin_right = 12.0
+
+[sub_resource type="StyleBoxFlat" id="LobbyInfoSurface"]
+resource_name = "LobbyInfoSurface"
+bg_color = Color(0.05, 0.048, 0.05, 0.88)
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 16
+
+[sub_resource type="StyleBoxLine" id="LobbyDividerLine"]
+resource_name = "LobbyDividerLine"
+color = Color(0.66, 0.53, 0.33, 0.45)
+vertical = true
+
 [resource]
 StageCardList/base_type = &"ItemCardList"
 StageCardList/constants/v_separation = 122
@@ -818,3 +834,46 @@ HomeCardPrimary/base_type = &"HomeCard"
 HomeCardPrimary/styles/normal = SubResource("FrameCardActive")
 AbilityCardButton/base_type = &"Button"
 AbilityCardButton/styles/focus = SubResource("Invisible")
+LobbyMenuButton/base_type = &"Button"
+LobbyMenuButton/colors/font_color = Color(0.78, 0.75, 0.68, 1)
+LobbyMenuButton/colors/font_focus_color = Color(0.78, 0.75, 0.68, 1)
+LobbyMenuButton/colors/font_hover_color = Color(0.96, 0.92, 0.83, 1)
+LobbyMenuButton/colors/font_pressed_color = Color(0.96, 0.92, 0.83, 1)
+LobbyMenuButton/colors/font_hover_pressed_color = Color(0.96, 0.92, 0.83, 1)
+LobbyMenuButton/colors/font_outline_color = Color(0, 0, 0, 0.7)
+LobbyMenuButton/constants/outline_size = 4
+LobbyMenuButton/font_sizes/font_size = 28
+LobbyMenuButton/fonts/font = SubResource("DisplayBoldKana")
+LobbyMenuButton/styles/normal = SubResource("LobbyMenuInsets")
+LobbyMenuButton/styles/hover = SubResource("LobbyMenuInsets")
+LobbyMenuButton/styles/pressed = SubResource("LobbyMenuInsets")
+LobbyMenuButton/styles/hover_pressed = SubResource("LobbyMenuInsets")
+LobbyMenuButton/styles/focus = SubResource("Invisible")
+LobbyMenuButton/styles/disabled = SubResource("LobbyMenuInsets")
+LobbyMenuButtonSelected/base_type = &"LobbyMenuButton"
+LobbyMenuButtonSelected/colors/font_color = Color(0.96, 0.85, 0.6, 1)
+LobbyMenuButtonSelected/colors/font_focus_color = Color(0.96, 0.85, 0.6, 1)
+LobbyMenuButtonSelected/colors/font_hover_color = Color(1, 0.9, 0.68, 1)
+LobbyMenuButtonSelected/colors/font_pressed_color = Color(1, 0.9, 0.68, 1)
+LobbyMenuButtonSelected/colors/font_hover_pressed_color = Color(1, 0.9, 0.68, 1)
+LobbyInfoPanel/base_type = &"PanelContainer"
+LobbyInfoPanel/styles/panel = SubResource("LobbyInfoSurface")
+LobbyInfoMargin/base_type = &"MarginContainer"
+LobbyInfoMargin/constants/margin_left = 30
+LobbyInfoMargin/constants/margin_right = 30
+LobbyInfoMargin/constants/margin_top = 22
+LobbyInfoMargin/constants/margin_bottom = 24
+LobbyTitle/base_type = &"Label"
+LobbyTitle/colors/font_color = Color(0.95, 0.9, 0.8, 1)
+LobbyTitle/font_sizes/font_size = 34
+LobbyTitle/fonts/font = SubResource("DisplayBoldKana")
+LobbyDivider/base_type = &"VSeparator"
+LobbyDivider/constants/separation = 24
+LobbyDivider/styles/separator = SubResource("LobbyDividerLine")
+HubLobby/colors/slab = Color(0.03, 0.028, 0.03, 0.9)
+HubLobby/colors/rail = Color(0.72, 0.58, 0.36, 1)
+HubLobby/colors/band = Color(0.86, 0.66, 0.32, 0.2)
+HubLobby/colors/icon_rest = Color(0.82, 0.8, 0.74, 0.7)
+HubLobby/colors/shadow = Color(0, 0, 0, 0.6)
+HubLobby/colors/art_tint = Color(1, 1, 1, 0.6)
+HubLobby/colors/hero_tint = Color(0.9, 0.86, 0.82, 1)

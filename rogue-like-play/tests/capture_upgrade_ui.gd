@@ -11,7 +11,7 @@ func capture() -> void:
 	var hub = main.get_node("Hub")
 	var panel: SkillTreePanel = hub.upgrade_page
 	await settle()
-	await click(hub.upgrade_button)
+	await enter(hub, hub.upgrade_button)
 	await shot("upgrades_locked")
 	main.state.gold = 300
 	hub.refresh(main.state)

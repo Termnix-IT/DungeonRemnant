@@ -46,12 +46,12 @@ func capture() -> void:
 	main.state.gold = 101
 	main.state.inventory.add(ItemCatalog.POTION, 10)
 	hub.refresh(main.state)
-	await click(hub.upgrade_button)
+	await enter(hub, hub.upgrade_button)
 	await click(hub.purchase_button)
 	ok = ok and main.state.gold == 71 and main.state.hp_upgrade_level == 1
 	ok = root.get_texture().get_image().save_png("res://.godot/hub_purchased.png") == OK and ok
 	await click(hub.back_button)
-	await click(hub.warehouse_button)
+	await enter(hub, hub.warehouse_button)
 	var warehouse: WarehousePanel = hub.warehouse_panel
 	ok = ok and warehouse.visible
 	ok = root.get_texture().get_image().save_png("res://.godot/hub_warehouse.png") == OK and ok
@@ -65,7 +65,7 @@ func capture() -> void:
 	ok = ok and main.state.inventory.entries[0].count == 10 and main.state.storage.entries.is_empty()
 	await click(warehouse.get_node("%Close"))
 	ok = ok and not warehouse.visible
-	await click(hub.warehouse_button)
+	await enter(hub, hub.warehouse_button)
 	var escape := InputEventKey.new()
 	escape.keycode = KEY_ESCAPE
 	escape.pressed = true
@@ -75,7 +75,7 @@ func capture() -> void:
 	Input.parse_input_event(escape_release)
 	await settle()
 	ok = ok and not warehouse.visible
-	await click(hub.start_button)
+	await enter(hub, hub.start_button)
 	await click(hub.departure_page.next_button)
 	await click(hub.departure_page.confirm_button)
 	ok = ok and main.active_run != null and not hub.visible
@@ -97,7 +97,7 @@ func capture() -> void:
 	ok = root.get_texture().get_image().save_png("res://.godot/hub_returned.png") == OK and ok
 	# The return cover swallows input until it reveals the hub.
 	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
-	await click(hub.start_button)
+	await enter(hub, hub.start_button)
 	await click(hub.departure_page.next_button)
 	await click(hub.departure_page.confirm_button)
 	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
@@ -108,3 +108,10 @@ func capture() -> void:
 	ok = ok and hub.visible and main.active_run == null and main.state.gold == 36
 	print("Hub capture, mouse warehouse/purchase/start/return and keyboard R return: ", "passed" if ok else "FAILED")
 	quit(0 if ok else 1)
+
+
+# A lobby entry is chosen by its first click and entered by the next.
+func enter(hub: Node, button: Button) -> void:
+	if hub.home_page.buttons[hub.home_page.selected] != button:
+		await click(button)
+	await click(button)

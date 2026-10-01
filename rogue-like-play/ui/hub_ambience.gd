@@ -7,28 +7,43 @@ extends Control
 
 # Light sources in the background texture, as texture UV, radius in texture
 # pixels and base strength. They follow the covered background on resize.
-const TEXTURE_SIZE := Vector2(1586, 992)
+const TEXTURE_SIZE := Vector2(1536, 1024)
 const LIGHTS := [
-	[Vector2(0.500, 0.050), 150.0, 0.20],  # chandelier
-	[Vector2(0.260, 0.020), 70.0, 0.16],  # upper-left sconce
-	[Vector2(0.738, 0.020), 70.0, 0.16],  # upper-right sconce
-	[Vector2(0.424, 0.257), 55.0, 0.18],  # stair candle left
-	[Vector2(0.576, 0.257), 55.0, 0.18],  # stair candle right
-	[Vector2(0.315, 0.383), 80.0, 0.20],  # wall torch left
-	[Vector2(0.683, 0.383), 80.0, 0.20],  # wall torch right
-	[Vector2(0.381, 0.403), 95.0, 0.22],  # brazier left
-	[Vector2(0.618, 0.403), 95.0, 0.22],  # brazier right
-	[Vector2(0.110, 0.560), 90.0, 0.20],  # desk lantern
-	[Vector2(0.962, 0.655), 90.0, 0.20],  # right lantern
+	[Vector2(0.168, 0.146), 70.0, 0.20],  # hanging lantern by the banner
+	[Vector2(0.291, 0.229), 55.0, 0.18],  # lantern over the weapon rack
+	[Vector2(0.352, 0.440), 38.0, 0.16],  # altar candle left
+	[Vector2(0.449, 0.430), 38.0, 0.16],  # altar candle right
+	[Vector2(0.671, 0.127), 70.0, 0.18],  # hanging lantern by the gate
+	[Vector2(0.710, 0.234), 50.0, 0.16],  # wall lantern
+	[Vector2(0.771, 0.381), 60.0, 0.20],  # counter lantern
+	[Vector2(0.869, 0.254), 55.0, 0.18],  # stall lantern
+	[Vector2(0.954, 0.264), 55.0, 0.18],  # far right lantern
 ]
+# The hall object each lobby entry belongs to: texture UV, radius in texture
+# pixels and the light's colour. The chosen entry's object glows softly.
+const FOCUS := {
+	&"departure": [Vector2(0.550, 0.300), 210.0, Color(0.45, 0.62, 1.0)],  # gate to the depths
+	&"equipment": [Vector2(0.250, 0.450), 150.0, Color(1.0, 0.70, 0.38)],  # weapon rack
+	&"storage": [Vector2(0.945, 0.700), 170.0, Color(1.0, 0.66, 0.34)],  # chests and crates
+	&"shop": [Vector2(0.690, 0.420), 150.0, Color(1.0, 0.72, 0.40)],  # merchant counter
+	&"upgrade": [Vector2(0.398, 0.330), 140.0, Color(0.55, 0.62, 1.0)],  # rune crystal on the altar
+	&"settings": [Vector2(0.291, 0.229), 110.0, Color(1.0, 0.70, 0.38)],  # lantern
+}
+const FOCUS_STRENGTH := 0.5
+const FOCUS_TIME := 0.35
 const LIGHT_COLOR := Color(1.0, 0.68, 0.34)
 # Flicker stays within this share of each light's strength.
 const FLICKER := 0.3
 
 var glow: GradientTexture2D
+# White, so each focus colour shows true.
+var focus_glow: GradientTexture2D
 var noise := FastNoiseLite.new()
 var dust: CPUParticles2D
 var time := 0.0
+var focus_id := &""
+var focus_strength := 0.0
+var _focus_tween: Tween
 
 
 func _ready() -> void:
@@ -47,6 +62,11 @@ func _ready() -> void:
 	glow.fill_to = Vector2(1.0, 0.5)
 	glow.width = 128
 	glow.height = 128
+	focus_glow = glow.duplicate() as GradientTexture2D
+	var white := Gradient.new()
+	white.set_color(0, Color.WHITE)
+	white.set_color(1, Color(1, 1, 1, 0))
+	focus_glow.gradient = white
 	noise.frequency = 1.6
 	_build_dust()
 	resized.connect(_place_dust)
@@ -99,7 +119,29 @@ func light_rect(uv: Vector2, radius: float) -> Rect2:
 	return Rect2(center - extent * 0.5, extent)
 
 
+# Fades the old object's light out and the new one in. An unknown or empty
+# id clears it, as away from the lobby.
+func focus(id: StringName) -> void:
+	if id == focus_id and _focus_tween != null and _focus_tween.is_running():
+		return
+	if _focus_tween != null:
+		_focus_tween.kill()
+	_focus_tween = create_tween().set_trans(Tween.TRANS_SINE)
+	if focus_id != &"" and focus_strength > 0.0:
+		_focus_tween.tween_property(self, "focus_strength", 0.0, FOCUS_TIME * 0.5)
+	_focus_tween.tween_callback(func(): focus_id = id if FOCUS.has(id) else &"")
+	if FOCUS.has(id):
+		_focus_tween.tween_property(self, "focus_strength", 1.0, FOCUS_TIME)
+
+
 func _draw() -> void:
+	if focus_id != &"" and focus_strength > 0.0:
+		var target: Array = FOCUS[focus_id]
+		# Slow breathing, so the object reads as lit rather than flashing.
+		var breath := 0.85 + 0.15 * sin(time * 2.2)
+		var tint: Color = target[2]
+		draw_texture_rect(focus_glow, light_rect(target[0], target[1]), false, Color(tint, FOCUS_STRENGTH * focus_strength * breath))
+		draw_texture_rect(focus_glow, light_rect(target[0], target[1] * 0.45), false, Color(tint, FOCUS_STRENGTH * 0.6 * focus_strength * breath))
 	for index in LIGHTS.size():
 		var light: Array = LIGHTS[index]
 		var wave := noise.get_noise_2d(time, index * 37.0)

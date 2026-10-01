@@ -16,6 +16,12 @@ func _ready() -> void:
 	add_child(StickDirections.new())
 	if saving_enabled:
 		state = save_store.load_state()
+		$Hub.settings.load_settings()
+	$Hub.settings.apply_volume()
+	$Hub.settings.apply_display()
+	$Hub.settings_changed.connect(func():
+		if saving_enabled:
+			$Hub.settings.save_settings())
 	transition = SceneTransition.new()
 	add_child(transition)
 	$Hub.start_requested.connect(start_run)

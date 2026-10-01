@@ -49,11 +49,11 @@ func run_tests() -> void:
 			check(not hub.equipment_page.comparison.get_global_rect().intersects(hub.equipment_page.equip_button.get_global_rect()), "Equipment comparison leaves action visible")
 			check(not hub.equipment_page.stat_sheet.get_global_rect().intersects(hub.equipment_page.swap_button.get_global_rect()), "Equipment stats leave swap visible")
 	hub.show_page("home")
-	hub.warehouse_button.pressed.emit()
+	enter(hub, hub.warehouse_button)
 	await settle()
 	centered(hub.warehouse_panel.get_node("Panel"))
 	hub.warehouse_panel.close()
-	hub.start_button.pressed.emit()
+	enter(hub, hub.start_button)
 	hub.departure_page.next_button.pressed.emit()
 	hub.departure_page.confirm_button.pressed.emit()
 	await settle()
@@ -83,3 +83,10 @@ func run_tests() -> void:
 	centered(run.result_panel.presentation_panel)
 	print("UI layout: ", "passed" if failures == 0 else "FAILED")
 	quit(0 if failures == 0 else 1)
+
+
+# A lobby entry is chosen by its first press and entered by the next.
+func enter(hub: Node, button: Button) -> void:
+	if hub.home_page.buttons[hub.home_page.selected] != button:
+		button.pressed.emit()
+	button.pressed.emit()

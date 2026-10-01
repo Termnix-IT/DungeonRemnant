@@ -11,6 +11,7 @@ signal scroll_remove_requested(slot: int)
 signal swap_requested
 signal sell_requested(from_storage: bool, index: int, amount: int)
 signal buy_requested(to_storage: bool, item_id: StringName, amount: int)
+signal settings_changed
 
 @export var stages: Array[StageData] = [preload("res://data/stages/ancient_ruins.tres"), preload("res://data/stages/forest.tres"), preload("res://data/stages/unknown.tres")]
 var gold_label: Label
@@ -33,9 +34,12 @@ var subtitle_label: Label
 var equipment_page: HubEquipment
 var sell_page: HubSell
 var departure_page: HubDeparture
-var home_page: Control
+var home_page: HubLobby
+var settings_button: Button
+var decide_button: Button
 var hero_button: Button
 var hero_speech: Panel
+var settings := GameSettings.new()
 var upgrade_page: Control
 var page := "home"
 var equipment_return := "stages"
@@ -44,12 +48,14 @@ var _content: Control
 var _page_host: Control
 var _shell: VBoxContainer
 var _warehouse_focus: Control
+var _ambience: HubAmbience
+var _title_block: HBoxContainer
 @onready var warehouse_panel: WarehousePanel = $WarehousePanel
 
 
 func _ready() -> void:
 	var background := TextureRect.new()
-	background.texture = preload("res://art/hub/guild_hall.png")
+	background.texture = preload("res://art/hub/lobby_hall.png")
 	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -61,7 +67,8 @@ func _ready() -> void:
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(shade)
 	# Flickering light and dust over the painting, beneath every panel.
-	add_child(HubAmbience.new())
+	_ambience = HubAmbience.new()
+	add_child(_ambience)
 	_content = Control.new()
 	_content.name = "Content"
 	_content.theme = HubTheme.create()
@@ -75,15 +82,19 @@ func _ready() -> void:
 	var header := HBoxContainer.new()
 	header.custom_minimum_size.y = 86
 	_shell.add_child(header)
+	# The lobby keeps only Gold and settings on top; pages add their titles.
+	_title_block = HBoxContainer.new()
+	_title_block.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(_title_block)
 	var brand := VBoxContainer.new()
 	brand.custom_minimum_size.x = 330
-	header.add_child(brand)
+	_title_block.add_child(brand)
 	var logo := HubUI.label(brand, "Dungeon Remnant", &"LogoLabel")
 	logo.autowrap_mode = TextServer.AUTOWRAP_OFF
 	HubUI.label(brand, "残されたものたちの、もう一度", &"MutedLabel")
 	var heading := VBoxContainer.new()
 	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(heading)
+	_title_block.add_child(heading)
 	title_label = HubUI.label(heading, "旅支度の間", &"TitleLabel")
 	subtitle_label = HubUI.label(heading, "小さな準備が、大きな冒険につながる。", &"MutedLabel")
 	var purse := PanelContainer.new()
@@ -95,11 +106,19 @@ func _ready() -> void:
 	# Gold role is shared with quotes and the warehouse balance.
 	gold_label.theme_type_variation = &"GoldLabel"
 	gold_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	settings_button = HubUI.button(header, "", open_settings)
+	settings_button.name = "SettingsButton"
+	settings_button.custom_minimum_size = Vector2(52, 52)
+	settings_button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	settings_button.tooltip_text = "設定"
+	var gear := NavigationIcon.new()
+	gear.kind = "設定"
+	gear.custom_minimum_size = Vector2(52, 52)
+	settings_button.add_child(gear)
 	_page_host = Control.new()
 	_page_host.custom_minimum_size.y = 600
 	_page_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_shell.add_child(_page_host)
-	home_page = _page(Control.new())
 	_build_home()
 	equipment_page = _page(HubEquipment.new()) as HubEquipment
 	equipment_page.equip_requested.connect(func(source: bool, index: int, slot: int): equip_requested.emit(source, index, slot))
@@ -137,6 +156,7 @@ func _ready() -> void:
 	warehouse_panel.equipment_requested.connect(func(): show_page("equipment"))
 	move_child(warehouse_panel, get_child_count() - 1)
 	UIMotion.bind_buttons(_content)
+	UIMotion.bind_buttons(home_page)
 	UIMotion.bind_buttons(warehouse_panel)
 
 
@@ -148,194 +168,64 @@ func _page(control: Control) -> Control:
 	return control
 
 
+# The lobby spans the whole screen over the hall painting, above the scaled
+# page content, so the header's Gold and settings stay reachable through it.
 func _build_home() -> void:
-	var margin := MarginContainer.new()
-	margin.theme_type_variation = &"HomeMargin"
-	home_page.add_child(margin)
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var stack := VBoxContainer.new()
-	margin.add_child(stack)
-	var navigation := HBoxContainer.new()
-	navigation.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	stack.add_child(navigation)
-	var left := VBoxContainer.new()
-	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	navigation.add_child(left)
-	var center := HubUI.space(navigation)
-	center.size_flags_stretch_ratio = 1.2
-	var right := VBoxContainer.new()
-	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	navigation.add_child(right)
-	start_button = _home_action(left, "出撃", "ステージを選び、次の冒険へ", func(): show_page("stages"), HOME_ART.stairs)
-	# Departure is the main path: always gold-framed and taller than the rest.
-	start_button.theme_type_variation = &"HomeCardPrimary"
-	start_button.custom_minimum_size.y = 150
-	equipment_button = _home_action(left, "装備", "装備と持ち込みを整える", func(): equipment_return = "stages"; show_page("equipment"), HOME_ART.weapons)
-	warehouse_button = _home_action(left, "倉庫", "使うもの、残すものを選ぶ", open_warehouse, HOME_ART.chests)
-	sell_button = _home_action(right, "ショップ", "アイテムを購入・売却する", func(): show_page("sell"), HOME_ART.lantern)
-	upgrade_button = _home_action(right, "永久強化", "冒険の先へ、ずっと残る力", func(): show_page("upgrade"), HOME_ART.books)
-	var summary := PanelContainer.new()
-	summary.theme_type_variation = &"ItemPanel"
-	right.add_child(summary)
-	# Readiness at a glance: the Main weapon's glyph and name, then capacities.
-	var readiness := VBoxContainer.new()
-	readiness.theme_type_variation = &"CompactStack"
-	summary.add_child(readiness)
-	HubUI.label(readiness, "次の冒険の準備", &"MutedLabel")
-	var weapon_row := HBoxContainer.new()
-	weapon_row.theme_type_variation = &"CompactRow"
-	readiness.add_child(weapon_row)
-	main_glyph = Control.new()
-	main_glyph.custom_minimum_size = Vector2(26, 26)
-	main_glyph.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	main_glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	main_glyph.draw.connect(func():
-		if _state != null and _state.equipment.slots[Equipment.Slot.MAIN] != null:
-			ItemGlyph.paint(main_glyph, Rect2(Vector2.ZERO, main_glyph.size), _state.equipment.slots[Equipment.Slot.MAIN], main_glyph.get_theme_color(&"font_color", &"GoldLabel")))
-	weapon_row.add_child(main_glyph)
-	equipment_label = HubUI.label(weapon_row, "", &"ItemNameLabel")
-	equipment_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	carried_label = _readiness_row(readiness, "持ち込み")
-	stored_label = _readiness_row(readiness, "倉庫")
-	var note := HubUI.label(stack, "装備と倉庫は、次の冒険へ引き継がれます。", &"MutedLabel")
-	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var hero := AnimatedSprite2D.new()
-	hero.name = "Hero"
-	hero.sprite_frames = MioAnimation.build_front_idle_frames()
-	hero.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	# Anchor the 128px frame at its feet.
-	hero.centered = false
-	hero.offset = Vector2(-64, -121)
-	hero.position = Vector2(640, 448)
-	hero.scale = Vector2(2, 2)
-	home_page.add_child(hero)
-	var eyes := AnimatedSprite2D.new()
-	eyes.name = "Eyes"
-	eyes.sprite_frames = MioAnimation.build_front_idle_frames(true)
-	eyes.animation = &"idle_front"
-	eyes.centered = false
-	eyes.position = hero.offset + Vector2(55, 31)
-	hero.add_child(eyes)
-	hero.frame_changed.connect(func(): eyes.set_frame_and_progress(hero.frame, hero.frame_progress))
-	hero.play(&"idle_front")
-	# Less than one screen pixel of breathing at native UI scale, feet anchored.
-	# Keep X scale fixed so the hair and costume never sway sideways.
-	var breathing := hero.create_tween().set_loops()
-	breathing.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	breathing.tween_property(hero, "scale:y", 1.994, 2.4)
-	breathing.tween_property(hero, "scale:y", 2.0, 2.4)
-	hero_button = HubTheme.button(home_page, "", Vector2(550, 206), Vector2(180, 242), func(): hero_speech.visible = not hero_speech.visible)
-	hero_button.name = "HeroButton"
-	hero_button.tooltip_text = "話しかける"
-	hero_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	hero_button.theme_type_variation = &"CharacterButton"
-	hero_speech = HubTheme.panel(home_page, Vector2(430, 88), Vector2(420, 64))
-	hero_speech.name = "HeroSpeech"
-	hero_speech.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hero_speech.theme_type_variation = &"SpeechPanel"
-	var tail := Polygon2D.new()
-	tail.polygon = PackedVector2Array([Vector2(198, 63), Vector2(210, 78), Vector2(222, 63)])
-	tail.color = hero_speech.get_theme_stylebox("panel").border_color
-	hero_speech.add_child(tail)
-	var tail_fill := Polygon2D.new()
-	tail_fill.polygon = PackedVector2Array([Vector2(200, 62), Vector2(210, 76), Vector2(220, 62)])
-	tail_fill.color = hero_speech.get_theme_stylebox("panel").bg_color
-	hero_speech.add_child(tail_fill)
-	var invitation := HubTheme.label(hero_speech, "準備ができたら、出発しよう。", Vector2(16, 12), Vector2(388, 40), &"ItemNameLabel")
-	invitation.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hero_speech.hide()
+	home_page = HubLobby.new()
+	home_page.theme = _content.theme
+	home_page.settings = settings
+	add_child(home_page)
+	home_page.hide()
+	home_page.selection_changed.connect(func(id: StringName): _ambience.focus(id))
+	home_page.activated.connect(_enter)
+	home_page.settings_changed.connect(func(): settings_changed.emit())
+	start_button = home_page.buttons[0]
+	equipment_button = home_page.buttons[1]
+	warehouse_button = home_page.buttons[2]
+	sell_button = home_page.buttons[3]
+	upgrade_button = home_page.buttons[4]
+	decide_button = home_page.decide_button
+	hero_button = home_page.hero_button
+	hero_speech = home_page.hero_speech
+	equipment_label = home_page.equipment_label
+	main_glyph = home_page.main_glyph
+	carried_label = home_page.carried_label
+	stored_label = home_page.stored_label
 
 
-# Each card has its own illustration painted in the hall's style, with the
-# subject on the right and shadow on the left where the caption sits
-# (tools/cut_card_art.py cuts them from art/hub/source/home_cards.png).
-const HOME_ART := {
-	"stairs": preload("res://art/hub/cards/stairs.png"),
-	"weapons": preload("res://art/hub/cards/weapons.png"),
-	"chests": preload("res://art/hub/cards/chests.png"),
-	"lantern": preload("res://art/hub/cards/shop.png"),
-	"books": preload("res://art/hub/cards/books.png"),
-}
+func _enter(id: StringName) -> void:
+	match id:
+		&"departure":
+			show_page("stages")
+		&"equipment":
+			equipment_return = "stages"
+			show_page("equipment")
+		&"storage":
+			open_warehouse()
+		&"shop":
+			show_page("sell")
+		&"upgrade":
+			show_page("upgrade")
+		&"settings":
+			home_page.focus_first_setting()
 
 
-func _readiness_row(parent: Node, caption: String) -> Label:
-	var row := HBoxContainer.new()
-	row.theme_type_variation = &"CompactRow"
-	parent.add_child(row)
-	var caption_label := HubUI.label(row, caption, &"MutedLabel")
-	caption_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	caption_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var value := HubUI.label(row, "", &"BodyLabel")
-	value.autowrap_mode = TextServer.AUTOWRAP_OFF
-	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	return value
+func open_settings() -> void:
+	if page != "home":
+		show_page("home")
+	home_page.select(HubLobby.ENTRIES.size() - 1)
+	home_page.focus_first_setting()
 
 
-func _home_action(parent: Node, text: String, description: String, action: Callable, card_art: Texture2D = null) -> Button:
-	var button := HubUI.button(parent, "", action, &"HomeCard")
-	button.custom_minimum_size.y = 116
-	if card_art != null:
-		_card_art(button, card_art)
-	var margin := MarginContainer.new()
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	button.add_child(margin)
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var row := HBoxContainer.new()
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_child(row)
-	var icon := NavigationIcon.new()
-	icon.kind = text
-	row.add_child(icon)
-	var copy := VBoxContainer.new()
-	copy.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	copy.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(copy)
-	HubUI.label(copy, text + "  ›", &"HeadingLabel")
-	HubUI.label(copy, description, &"MutedLabel")
-	button.tooltip_text = text + "：" + description
-	return button
-
-
-# The art fills the card behind the caption, fading into the card colour
-# towards the text so captions keep their contrast. It never takes input.
-func _card_art(button: Button, texture: Texture2D) -> void:
-	var art := TextureRect.new()
-	art.texture = texture
-	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	art.modulate = Color(1, 1, 1, 0.92)
-	button.add_child(art)
-	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# The painting already darkens towards its left edge, so it spans the card.
-	art.anchor_left = 0.0
-	# Stay inside the frame's border and corner ornaments.
-	art.offset_left = 3
-	art.offset_top = 3
-	art.offset_right = -3
-	art.offset_bottom = -3
-	var fade := Gradient.new()
-	var ground := Color(0.12, 0.12, 0.12, 1.0)
-	# Solid under the caption, then clear by the painting's subject.
-	fade.set_color(0, Color(ground, 0.85))
-	fade.set_color(1, Color(ground, 0.0))
-	fade.add_point(0.35, Color(ground, 0.7))
-	var veil_texture := GradientTexture2D.new()
-	veil_texture.gradient = fade
-	veil_texture.fill_from = Vector2(0, 0.5)
-	veil_texture.fill_to = Vector2(0.72, 0.5)
-	var veil := TextureRect.new()
-	veil.texture = veil_texture
-	veil.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	veil.stretch_mode = TextureRect.STRETCH_SCALE
-	veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	button.add_child(veil)
-	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	veil.offset_left = 3
-	veil.offset_top = 3
-	veil.offset_right = -3
-	veil.offset_bottom = -3
+# The stage the departure entry shows: the last one chosen, else the first
+# that can be entered.
+func featured_stage() -> StageData:
+	if departure_page.selected_stage != null and _state.stage_available(departure_page.selected_stage):
+		return departure_page.selected_stage
+	for stage in stages:
+		if _state.stage_available(stage):
+			return stage
+	return null
 
 
 func _resize() -> void:
@@ -349,10 +239,7 @@ func _resize() -> void:
 func refresh(state: RunCarryover, message: String = "") -> void:
 	_state = state
 	gold_label.text = "Gold   %s" % state.gold
-	equipment_label.text = state.equipment.slots[0].display_name
-	carried_label.text = "%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries]
-	stored_label.text = "%d / %d 枠" % [state.storage.entries.size(), state.storage.max_entries]
-	main_glyph.queue_redraw()
+	home_page.refresh(state, featured_stage())
 	(upgrade_page as SkillTreePanel).refresh(state)
 	feedback.text = message
 	equipment_page.refresh(state)
@@ -372,14 +259,18 @@ func show_page(target: String) -> void:
 	for control in [home_page, equipment_page, sell_page, departure_page, upgrade_page]:
 		control.hide()
 	back_button.visible = page != "home"
+	for child in _title_block.get_children():
+		child.visible = page != "home"
+	_ambience.focus(home_page.selected_id() if page == "home" else &"")
 	feedback.text = ""
 	subtitle_label.text = "身につけるもの、背負っていくもの。"
 	match page:
 		"home":
 			title_label.text = "旅支度の間"
 			subtitle_label.text = "小さな準備が、大きな冒険につながる。"
+			home_page.refresh(_state, featured_stage())
 			home_page.show()
-			start_button.grab_focus()
+			home_page.focus_selected()
 		"equipment":
 			title_label.text = "装備・持ち込み準備"
 			equipment_page.show()
@@ -444,11 +335,13 @@ func open_warehouse() -> void:
 		equipment_return = "stages"
 	_warehouse_focus = _content.get_viewport().gui_get_focus_owner()
 	_content.hide()
+	home_page.hide()
 	warehouse_panel.present(_state)
 
 
 func _warehouse_closed() -> void:
 	_content.show()
+	home_page.visible = page == "home"
 	if is_instance_valid(_warehouse_focus) and _warehouse_focus.is_visible_in_tree():
 		_warehouse_focus.grab_focus()
 

@@ -61,7 +61,7 @@ func capture() -> void:
 	root.add_child(main)
 	var hub = main.get_node("Hub")
 	await settle()
-	await click(hub.sell_button)
+	await enter(hub, hub.sell_button)
 	var shop: HubSell = hub.sell_page
 	await click(shop.buy_tab)
 	await click(shop.item_list, Vector2(35, 25))
@@ -102,16 +102,20 @@ func capture() -> void:
 	await frame_shot("sale")
 	await settle()
 	await key(KEY_ESCAPE)
-	joy.button_index = JOY_BUTTON_DPAD_DOWN
-	joy.pressed = true
-	Input.parse_input_event(joy)
-	Input.flush_buffered_events()
-	joy = joy.duplicate()
-	joy.pressed = false
-	Input.parse_input_event(joy)
-	Input.flush_buffered_events()
-	check(hub.equipment_button.has_focus(), "Gamepad D-pad navigates from departure to equipment")
-	await click(hub.equipment_button)
+	check(hub.sell_button.has_focus(), "Returning to the lobby keeps the shop chosen")
+	# Two steps up the menu: shop, storage, equipment.
+	for step in 2:
+		joy = joy.duplicate()
+		joy.button_index = JOY_BUTTON_DPAD_UP
+		joy.pressed = true
+		Input.parse_input_event(joy)
+		Input.flush_buffered_events()
+		joy = joy.duplicate()
+		joy.pressed = false
+		Input.parse_input_event(joy)
+		Input.flush_buffered_events()
+	check(hub.equipment_button.has_focus() and hub.home_page.selected_id() == &"equipment", "Gamepad D-pad moves up the lobby menu and chooses")
+	await enter(hub, hub.equipment_button)
 	await click(hub.equipment_page.slots[2])
 	hub.equipment_page.equip_button.grab_focus()
 	await key(KEY_ENTER)
@@ -144,7 +148,7 @@ func capture() -> void:
 	check(get_processed_tweens().size() == 1, "Stress capture leaves only hero breathing")
 	root.size = Vector2i(1152, 720)
 	await key(KEY_ESCAPE)
-	await click(hub.sell_button)
+	await enter(hub, hub.sell_button)
 	await click(shop.buy_tab)
 	await click(shop.item_list, Vector2(28, 20))
 	shop.sell_button.grab_focus()

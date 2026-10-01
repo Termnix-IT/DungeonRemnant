@@ -72,7 +72,7 @@ func capture() -> void:
 	check(hub.page == "confirm", "Native Tab navigation reaches stage action")
 	await key(KEY_ESCAPE)
 	await key(KEY_ESCAPE)
-	await click(hub.equipment_button)
+	await enter(hub, hub.equipment_button)
 	await click(hub.equipment_page.slots[2])
 	await shot("equipment")
 	await click(hub.equipment_page.equip_button)
@@ -85,14 +85,14 @@ func capture() -> void:
 	check(hub.page == "equipment" and not hub.warehouse_panel.visible, "Esc closes only warehouse")
 	await key(KEY_ESCAPE)
 	check(hub.page == "home", "Esc returns home")
-	await click(hub.sell_button)
+	await enter(hub, hub.sell_button)
 	await click(hub.sell_page.item_list, Vector2(35, 25))
 	await shot("sale")
 	var gold_before: int = main.state.gold
 	await click(hub.sell_page.sell_button)
 	check(main.state.gold > gold_before, "Mouse sale credits Gold")
 	await key(KEY_ESCAPE)
-	await click(hub.start_button)
+	await enter(hub, hub.start_button)
 	check(main.active_run == null and hub.page == "stages", "Mouse departure stops at selection")
 	await shot("stages")
 	await click(hub.departure_page.next_button)
@@ -116,9 +116,16 @@ func capture() -> void:
 	# Check scaled hub layout and native input at a smaller window.
 	root.size = Vector2i(1152, 720)
 	await shot("home_720")
-	await click(hub.equipment_button)
+	await enter(hub, hub.equipment_button)
 	await shot("equipment_720")
 	check(hub.page == "equipment", "Scaled home hit targets work")
 	main.free()
 	print("Preparation render/input checks: ", "passed" if failures == 0 else "FAILED")
 	quit(0 if failures == 0 else 1)
+
+
+# A lobby entry is chosen by its first click and entered by the next.
+func enter(hub: Node, button: Button) -> void:
+	if hub.home_page.buttons[hub.home_page.selected] != button:
+		await click(button)
+	await click(button)
