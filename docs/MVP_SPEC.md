@@ -993,7 +993,7 @@ UIは `res://ui/theme/dungeon_theme.tres` をプロジェクト共通Themeとし
 
 - 操作は `PrimaryButton`（主要操作）、`SecondaryButton`（戻る・補助操作）、`ItemButton`（選択）、`GoldButton`（購入・成長）を使い分ける。
 - 文字は画面名 `TitleLabel`（30px）、見出し `HeadingLabel`（24px）、項目名 `ItemNameLabel`（20px）、主要値 `ValueLabel`（26px）、本文 `BodyLabel`（18px）、説明 `DescriptionLabel`（18px）、補足 `MutedLabel`（16px）、価格 `GoldLabel`（21px）を使用する。ボタンは原則18px、補助操作は16px。画面ごとのフォントサイズ・色overrideは追加しない。
-- 拠点のヘッダー・ページ・フッター、各画面の列はContainerで配置する。ただし拠点ホームのロビー（`HubLobby`）は、背景の一枚絵と一体に見せるため、縮小されるページ内容とは別に1600×900の画面全体へ直接配置する。`HubUI` は `MainPanel` / `ItemPanel` とMargin・VBox/HBoxの構造だけを共通化する。基準内容幅1280px・高さ810px、画面端は最低20px相当を確保して縮小する。通常のパネル内余白24px、列間20px、縦間隔12px、密な詳細は8px。倉庫は独立した1280×650pxのContainer構成を同様に縮小する。
+- 拠点のヘッダー・ページ・フッター、各画面の列はContainerで配置する。ただし拠点ホームのロビー（`HubLobby`）は、背景の一枚絵と一体に見せるため、縮小されるページ内容とは別に1600×900の画面全体へ直接配置する。`HubUI` は `MainPanel` / `ItemPanel` とMargin・VBox/HBoxの構造だけを共通化する。基準内容幅1440px・高さ810px（1600×900の画面で左右に80pxずつ背景を残す）、画面端は最低20px相当を確保して縮小する。通常のパネル内余白24px、列間20px、縦間隔12px、密な詳細は8px。倉庫は独立した1440×650pxのContainer構成を同様に縮小する。
 - 外観の調整はTheme内の名前付きStyleBox（`MainSurface`、`SurfaceHover`、`FocusOutline`など）を編集する。同一のStyleBoxを共有するControlへ一括反映されるため、画面側で複製しない。文字色・文字サイズは該当するTheme Typeを編集する。Theme内の色項目とStyleBoxの色はGodot上では別プロパティであり、自動連動するパレットではない。
 - `CharacterButton` と `SpeechPanel` は拠点キャラクターの透明なクリック領域と吹き出し専用とする。新規画像を要する装飾は、後述「UI体験の改善」の素材差し替え口を通してのみ追加し、素材がない状態でも現行の表示で成立させる。
 

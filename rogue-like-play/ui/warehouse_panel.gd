@@ -163,9 +163,12 @@ func _update_details() -> void:
 		%Direction.text = "移動するアイテム"
 
 
+const PANEL_SIZE := Vector2(1440, 650)
+
+
 func _resize() -> void:
 	var viewport := get_viewport().get_visible_rect().size
-	var factor := minf(1.0, minf((viewport.x - 40) / 1280.0, (viewport.y - 40) / 650.0))
-	$Panel.size = Vector2(1280, 650)
+	var factor := minf(1.0, minf((viewport.x - 40) / PANEL_SIZE.x, (viewport.y - 40) / PANEL_SIZE.y))
+	$Panel.size = PANEL_SIZE
 	$Panel.scale = Vector2.ONE * factor
 	$Panel.position = (viewport - $Panel.size * factor) / 2

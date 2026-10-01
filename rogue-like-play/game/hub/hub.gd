@@ -228,10 +228,15 @@ func featured_stage() -> StageData:
 	return null
 
 
+# Page content for the 1600×900 base: 80px of hall either side, and the
+# whole block shrinks together on smaller screens.
+const CONTENT_SIZE := Vector2(1440, 810)
+
+
 func _resize() -> void:
 	var viewport := get_viewport().get_visible_rect().size
-	var factor := minf(1.0, minf((viewport.x - 40) / 1280.0, (viewport.y - 36) / 810.0))
-	_content.size = Vector2(1280, 810)
+	var factor := minf(1.0, minf((viewport.x - 40) / CONTENT_SIZE.x, (viewport.y - 36) / CONTENT_SIZE.y))
+	_content.size = CONTENT_SIZE
 	_content.scale = Vector2.ONE * factor
 	_content.position = (viewport - _content.size * factor) * 0.5
 
