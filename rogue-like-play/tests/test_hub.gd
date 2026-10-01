@@ -49,7 +49,7 @@ func run_tests() -> void:
 	check(lobby.selected_id() == &"departure" and hub.start_button.has_focus(), "Lobby starts on departure with focus")
 	for button in lobby.buttons:
 		check(button.get_global_rect().end.x <= viewport.x * 0.22, "Menu entry stays within about a fifth of the width: " + button.text)
-	check(not hub.title_label.is_visible_in_tree() and hub.gold_label.is_visible_in_tree() and hub.settings_button.is_visible_in_tree(), "Lobby top shows only Gold and settings")
+	check(not hub.title_label.is_visible_in_tree() and hub.gold_label.is_visible_in_tree() and hub.find_children("SettingsButton", "", true, false).is_empty(), "Lobby top shows only Gold; settings live in the menu")
 	for label in hub.find_children("*", "Label", true, false):
 		check(not (label.is_visible_in_tree() and label.text.contains("Lv")), "Lobby shows no level: " + label.text)
 	var ambience: HubAmbience = hub.get_children().filter(func(child: Node): return child is HubAmbience)[0]
@@ -79,8 +79,10 @@ func run_tests() -> void:
 	# Keyboard and gamepad focus chooses directly.
 	hub.warehouse_button.grab_focus()
 	check(lobby.selected_id() == &"storage" and lobby.stored_label.is_visible_in_tree(), "Focus chooses an entry")
-	hub.settings_button.pressed.emit()
-	check(lobby.selected_id() == &"settings" and not hub.decide_button.visible and lobby.volume_choice.option(lobby.volume_choice.selected).has_focus(), "Settings button opens the lobby settings")
+	var settings_entry: Button = lobby.buttons[-1]
+	settings_entry.pressed.emit()
+	settings_entry.pressed.emit()
+	check(lobby.selected_id() == &"settings" and not hub.decide_button.visible and lobby.volume_choice.option(lobby.volume_choice.selected).has_focus(), "Entering the settings entry focuses its first option")
 	var master := AudioServer.get_bus_index(&"Master")
 	lobby.volume_choice.option(2).pressed.emit()
 	check(hub.settings.volume_step == 2 and is_equal_approx(AudioServer.get_bus_volume_linear(master), 0.5), "Volume choice sets the master volume")

@@ -35,7 +35,6 @@ var equipment_page: HubEquipment
 var sell_page: HubSell
 var departure_page: HubDeparture
 var home_page: HubLobby
-var settings_button: Button
 var decide_button: Button
 var hero_button: Button
 var hero_speech: Panel
@@ -82,7 +81,7 @@ func _ready() -> void:
 	var header := HBoxContainer.new()
 	header.custom_minimum_size.y = 86
 	_shell.add_child(header)
-	# The lobby keeps only Gold and settings on top; pages add their titles.
+	# The lobby keeps only Gold on top; pages add their titles.
 	_title_block = HBoxContainer.new()
 	_title_block.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(_title_block)
@@ -106,15 +105,6 @@ func _ready() -> void:
 	# Gold role is shared with quotes and the warehouse balance.
 	gold_label.theme_type_variation = &"GoldLabel"
 	gold_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	settings_button = HubUI.button(header, "", open_settings)
-	settings_button.name = "SettingsButton"
-	settings_button.custom_minimum_size = Vector2(52, 52)
-	settings_button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	settings_button.tooltip_text = "設定"
-	var gear := NavigationIcon.new()
-	gear.kind = "設定"
-	gear.custom_minimum_size = Vector2(52, 52)
-	settings_button.add_child(gear)
 	_page_host = Control.new()
 	_page_host.custom_minimum_size.y = 600
 	_page_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -208,13 +198,6 @@ func _enter(id: StringName) -> void:
 			show_page("upgrade")
 		&"settings":
 			home_page.focus_first_setting()
-
-
-func open_settings() -> void:
-	if page != "home":
-		show_page("home")
-	home_page.select(HubLobby.ENTRIES.size() - 1)
-	home_page.focus_first_setting()
 
 
 # The stage the departure entry shows: the last one chosen, else the first
