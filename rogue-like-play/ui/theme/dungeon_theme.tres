@@ -538,6 +538,39 @@ resource_name = "LobbyDividerLine"
 color = Color(0.66, 0.53, 0.33, 0.45)
 vertical = true
 
+[sub_resource type="StyleBoxEmpty" id="SliderTrack"]
+resource_name = "SliderTrack"
+content_margin_top = 13.0
+content_margin_bottom = 13.0
+
+[sub_resource type="Gradient" id="ClearGradient"]
+colors = PackedColorArray(0, 0, 0, 0, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="SliderGrabber"]
+gradient = SubResource("ClearGradient")
+width = 24
+height = 24
+
+[sub_resource type="StyleBoxFlat" id="CyclerRest"]
+resource_name = "CyclerRest"
+content_margin_left = 52.0
+content_margin_top = 8.0
+content_margin_right = 52.0
+content_margin_bottom = 8.0
+bg_color = Color(0, 0, 0, 0)
+border_width_bottom = 1
+border_color = Color(0.72, 0.58, 0.36, 0.35)
+
+[sub_resource type="StyleBoxFlat" id="CyclerActive"]
+resource_name = "CyclerActive"
+content_margin_left = 52.0
+content_margin_top = 8.0
+content_margin_right = 52.0
+content_margin_bottom = 8.0
+bg_color = Color(0.86, 0.66, 0.32, 0.1)
+border_width_bottom = 1
+border_color = Color(0.96, 0.85, 0.6, 0.85)
+
 [resource]
 StageCardList/base_type = &"ItemCardList"
 StageCardList/constants/v_separation = 122
@@ -877,3 +910,52 @@ HubLobby/colors/icon_rest = Color(0.82, 0.8, 0.74, 0.7)
 HubLobby/colors/shadow = Color(0, 0, 0, 0.6)
 HubLobby/colors/art_tint = Color(1, 1, 1, 0.6)
 HubLobby/colors/hero_tint = Color(0.9, 0.86, 0.82, 1)
+GameSlider/base_type = &"HSlider"
+GameSlider/colors/track = Color(0.45, 0.42, 0.36, 0.8)
+GameSlider/colors/fill = Color(0.86, 0.72, 0.46, 1)
+GameSlider/colors/knob = Color(0.16, 0.14, 0.11, 1)
+GameSlider/colors/knob_core = Color(0.96, 0.86, 0.62, 1)
+GameSlider/icons/grabber = SubResource("SliderGrabber")
+GameSlider/icons/grabber_highlight = SubResource("SliderGrabber")
+GameSlider/icons/grabber_disabled = SubResource("SliderGrabber")
+GameSlider/styles/slider = SubResource("SliderTrack")
+GameSlider/styles/grabber_area = SubResource("Invisible")
+GameSlider/styles/grabber_area_highlight = SubResource("Invisible")
+GameSlider/styles/focus = SubResource("Invisible")
+OptionCycler/base_type = &"Button"
+OptionCycler/colors/arrow = Color(0.62, 0.59, 0.52, 1)
+OptionCycler/colors/arrow_active = Color(0.96, 0.85, 0.6, 1)
+OptionCycler/constants/arrow_inset = 14
+OptionCycler/font_sizes/font_size = 20
+OptionCycler/fonts/font = SubResource("DisplayMediumKana")
+OptionCycler/styles/normal = SubResource("CyclerRest")
+OptionCycler/styles/hover = SubResource("CyclerActive")
+OptionCycler/styles/pressed = SubResource("CyclerActive")
+OptionCycler/styles/hover_pressed = SubResource("CyclerActive")
+OptionCycler/styles/focus = SubResource("CyclerActive")
+SettingsMargin/base_type = &"MarginContainer"
+SettingsMargin/constants/margin_left = 48
+SettingsMargin/constants/margin_right = 48
+SettingsMargin/constants/margin_top = 40
+SettingsMargin/constants/margin_bottom = 40
+SettingsRows/base_type = &"VBoxContainer"
+SettingsRows/constants/separation = 20
+SettingsRow/base_type = &"HBoxContainer"
+SettingsRow/constants/separation = 18
+SettingsValue/base_type = &"Label"
+SettingsValue/font_sizes/font_size = 22
+SettingsValue/fonts/font = SubResource("DisplayBoldKana")
+PurseStack/base_type = &"VBoxContainer"
+PurseStack/constants/separation = 0
+PurseRow/base_type = &"HBoxContainer"
+PurseRow/constants/separation = 10
+PurseCaption/base_type = &"Label"
+PurseCaption/colors/font_color = Color(0.82, 0.74, 0.58, 1)
+PurseCaption/colors/font_outline_color = Color(0, 0, 0, 0.7)
+PurseCaption/constants/outline_size = 3
+PurseCaption/font_sizes/font_size = 17
+PurseValue/base_type = &"GoldLabel"
+PurseValue/colors/font_outline_color = Color(0, 0, 0, 0.75)
+PurseValue/constants/outline_size = 4
+PurseValue/font_sizes/font_size = 28
+PurseValue/fonts/font = SubResource("DisplayBoldKana")

@@ -79,17 +79,34 @@ func run_tests() -> void:
 	# Keyboard and gamepad focus chooses directly.
 	hub.warehouse_button.grab_focus()
 	check(lobby.selected_id() == &"storage" and lobby.stored_label.is_visible_in_tree(), "Focus chooses an entry")
+	# Settings open as their own page, entered like the others.
 	var settings_entry: Button = lobby.buttons[-1]
 	settings_entry.pressed.emit()
+	check(lobby.selected_id() == &"settings" and hub.decide_button.visible and hub.decide_button.text == "設定を開く" and lobby.volume_value.text == "100%" and lobby.display_value.text == "ウィンドウ", "Settings entry shows current values and an open button")
 	settings_entry.pressed.emit()
-	check(lobby.selected_id() == &"settings" and not hub.decide_button.visible and lobby.volume_choice.option(lobby.volume_choice.selected).has_focus(), "Entering the settings entry focuses its first option")
+	var page: HubSettings = hub.settings_page
+	check(hub.page == "settings" and page.visible and not lobby.visible and page.volume_slider.has_focus(), "Settings slide in as a page with the volume bar focused")
 	var master := AudioServer.get_bus_index(&"Master")
-	lobby.volume_choice.option(2).pressed.emit()
-	check(hub.settings.volume_step == 2 and is_equal_approx(AudioServer.get_bus_volume_linear(master), 0.5), "Volume choice sets the master volume")
-	lobby.volume_choice.option(0).pressed.emit()
+	page.volume_slider.value = 50
+	check(is_equal_approx(hub.settings.volume, 0.5) and is_equal_approx(AudioServer.get_bus_volume_linear(master), 0.5) and page.volume_value.text == "50%", "Volume bar sets the master volume")
+	var step_right := InputEventAction.new()
+	step_right.action = &"ui_right"
+	step_right.pressed = true
+	root.push_input(step_right)
+	check(page.volume_slider.value == 55 and hub.settings.volume_percent() == 55, "Right on the focused bar raises the volume one step")
+	page.volume_slider.value = 0
 	check(AudioServer.is_bus_mute(master), "Silent mutes the master bus")
-	lobby.volume_choice.option(4).pressed.emit()
+	page.volume_slider.value = 100
 	check(not AudioServer.is_bus_mute(master) and is_equal_approx(AudioServer.get_bus_volume_linear(master), 1.0), "Loudest restores full volume")
+	page.display_cycler.grab_focus()
+	root.push_input(step_right)
+	check(hub.settings.fullscreen and page.display_cycler.text == "全画面" and page.display_cycler.has_focus(), "Right on the selector steps to fullscreen and keeps focus")
+	page.display_cycler.pressed.emit()
+	check(not hub.settings.fullscreen and page.display_cycler.text == "ウィンドウ", "Confirming the selector wraps back to window")
+	page.volume_slider.value = 80
+	hub.go_back()
+	check(hub.page == "home" and lobby.selected_id() == &"settings" and lobby.volume_value.text == "80%", "Back returns to the lobby with the new values")
+	page.volume_slider.value = 100
 	hub.start_button.grab_focus()
 	check(not hub.hero_speech.visible, "Home speech starts hidden")
 	hub.hero_button.pressed.emit()
@@ -195,21 +212,28 @@ func run_tests() -> void:
 	# Settings live apart from progress and fall back to defaults when unreadable.
 	var stored := GameSettings.new()
 	stored.path = "res://.godot/settings-test.cfg"
-	stored.volume_step = 1
+	stored.volume = 0.35
 	stored.fullscreen = true
 	check(stored.save_settings(), "Settings save to their own file")
 	var loaded := GameSettings.new()
 	loaded.path = stored.path
 	loaded.load_settings()
-	check(loaded.volume_step == 1 and loaded.fullscreen, "Settings survive a restart")
+	check(is_equal_approx(loaded.volume, 0.35) and loaded.fullscreen, "Settings survive a restart")
 	var broken := FileAccess.open(stored.path, FileAccess.WRITE)
-	broken.store_string("[audio
-volume_step = ")
+	broken.store_string("[audio\nvolume = ")
 	broken.close()
 	var fallback := GameSettings.new()
 	fallback.path = stored.path
 	fallback.load_settings()
-	check(fallback.volume_step == GameSettings.VOLUME_STEPS.size() - 1 and not fallback.fullscreen, "Unreadable settings fall back to full volume in a window")
+	check(is_equal_approx(fallback.volume, 1.0) and not fallback.fullscreen, "Unreadable settings fall back to full volume in a window")
+	# The first settings files stored five volume steps.
+	var legacy := ConfigFile.new()
+	legacy.set_value("audio", "volume_step", 2)
+	legacy.save(stored.path)
+	var upgraded := GameSettings.new()
+	upgraded.path = stored.path
+	upgraded.load_settings()
+	check(is_equal_approx(upgraded.volume, 0.5), "Old volume steps load as their level")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(stored.path))
 	print("Hub tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)

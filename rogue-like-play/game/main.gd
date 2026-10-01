@@ -186,7 +186,10 @@ func _save_result() -> void:
 
 
 func _update_save_status() -> void:
-	$Hub.save_label.text = save_store.message if saving_enabled else "テストモード：保存は無効です。"
+	if saving_enabled:
+		$Hub.show_save_status(save_store.message, save_store.alert)
+	else:
+		$Hub.show_save_status("テストモード：保存は無効です。", false)
 
 
 func _enter_tree() -> void:

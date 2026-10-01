@@ -12,7 +12,6 @@ extends Control
 
 signal selection_changed(id: StringName)
 signal activated(id: StringName)
-signal settings_changed
 
 # id, menu label, NavigationIcon kind
 const ENTRIES := [
@@ -29,6 +28,7 @@ const ACTIONS := {
 	&"storage": "倉庫を開く",
 	&"shop": "ショップに入る",
 	&"upgrade": "強化を選ぶ",
+	&"settings": "設定を開く",
 }
 const DESCRIPTIONS := {
 	&"equipment": "身につけるもの、背負っていくもの。",
@@ -73,8 +73,8 @@ var stored_label: Label
 var gold_value: Label
 var upgrade_value: Label
 var stage_strip: Label
-var volume_choice: SegmentedChoice
-var display_choice: SegmentedChoice
+var volume_value: Label
+var display_value: Label
 var settings: GameSettings
 var panel: PanelContainer
 var _art: TextureRect
@@ -211,20 +211,11 @@ func _build_panel() -> void:
 	var growth: HBoxContainer = _strip(stack)
 	_details[&"upgrade"] = growth
 	upgrade_value = _fact(growth, "習得した強化")
-	var options := VBoxContainer.new()
-	options.theme_type_variation = &"DetailStack"
-	stack.add_child(options)
-	_details[&"settings"] = options
-	volume_choice = _setting(options, "音量", GameSettings.VOLUME_NAMES)
-	volume_choice.item_selected.connect(func(index: int):
-		settings.volume_step = index
-		settings.apply_volume()
-		settings_changed.emit())
-	display_choice = _setting(options, "画面", ["ウィンドウ", "全画面"] as Array[String])
-	display_choice.item_selected.connect(func(index: int):
-		settings.fullscreen = index == 1
-		settings.apply_display()
-		settings_changed.emit())
+	var current: HBoxContainer = _strip(stack)
+	_details[&"settings"] = current
+	volume_value = _fact(current, "音量")
+	_divider(current)
+	display_value = _fact(current, "画面")
 	decide_button = HubUI.button(stack, "", func(): activated.emit(selected_id()), &"PrimaryButton")
 	decide_button.name = "Decide"
 	decide_button.custom_minimum_size.y = 52
@@ -263,22 +254,6 @@ func _divider(row: HBoxContainer) -> void:
 	var line := VSeparator.new()
 	line.theme_type_variation = &"LobbyDivider"
 	row.add_child(line)
-
-
-func _setting(parent: Node, caption: String, names: Array[String]) -> SegmentedChoice:
-	var row := HBoxContainer.new()
-	row.theme_type_variation = &"CompactRow"
-	parent.add_child(row)
-	var caption_label := HubUI.label(row, caption, &"MutedLabel")
-	caption_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	caption_label.custom_minimum_size.x = 56
-	caption_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var choice := SegmentedChoice.new()
-	choice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(choice)
-	for text in names:
-		choice.add_item(text)
-	return choice
 
 
 func _build_hero() -> void:
@@ -361,8 +336,8 @@ func refresh(state: RunCarryover, stage: StageData) -> void:
 	if stage != null:
 		stage_strip.text = "全%d階    難易度  %s" % [stage.floor_count, stage.difficulty]
 	if settings != null:
-		volume_choice.select(settings.volume_step)
-		display_choice.select(1 if settings.fullscreen else 0)
+		volume_value.text = "%d%%" % settings.volume_percent()
+		display_value.text = GameSettings.DISPLAY_NAMES[1 if settings.fullscreen else 0]
 	_show_entry()
 
 
@@ -386,10 +361,6 @@ func select(index: int) -> void:
 
 func focus_selected() -> void:
 	buttons[selected].grab_focus()
-
-
-func focus_first_setting() -> void:
-	volume_choice.focus_selected()
 
 
 func _move_band(value: float) -> void:
@@ -420,7 +391,7 @@ func _show_entry() -> void:
 	for key in _details:
 		var detail: Control = _details[key]
 		# Strips sit inside an inset panel and margin; show the outer one.
-		(detail if key == &"settings" else detail.get_parent().get_parent()).visible = key == id
+		detail.get_parent().get_parent().visible = key == id
 	if id == &"departure" and _stage != null:
 		title_label.text = _stage.display_name
 		description_label.text = _stage.description
@@ -432,13 +403,10 @@ func _show_entry() -> void:
 	decide_button.visible = ACTIONS.has(id)
 	decide_button.text = ACTIONS.get(id, "")
 	decide_button.tooltip_text = decide_button.text
-	# Right from the menu reaches the panel's first control.
-	var target: Control = volume_choice.option(volume_choice.selected) if id == &"settings" else decide_button
+	# Right from the menu reaches the panel's button.
 	for button in buttons:
-		button.focus_neighbor_right = target.get_path()
+		button.focus_neighbor_right = decide_button.get_path()
 	decide_button.focus_neighbor_left = buttons[selected].get_path()
-	for index in volume_choice.item_count:
-		volume_choice.option(index).focus_neighbor_left = buttons[selected].get_path() if index == 0 else NodePath()
 	queue_redraw()
 
 

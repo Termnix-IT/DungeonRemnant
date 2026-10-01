@@ -4,6 +4,9 @@ extends RefCounted
 var path := "user://progress.json"
 var message := ""
 var blocked := false
+# True while message reports something the player should notice: a failed or
+# stopped save, or progress restored from the backup.
+var alert := false
 const MAX_BYTES := 65536
 
 
@@ -22,23 +25,28 @@ func load_state() -> RunCarryover:
 	var state := _read(path) if FileAccess.file_exists(path) else null
 	if state != null:
 		message = "保存データを読み込みました。"
+		alert = false
 		return state
 	state = _read(path + ".bak") if FileAccess.file_exists(path + ".bak") else null
 	if state != null:
 		message = "前回のバックアップから復元しました。最新の進行とは異なる場合があります。"
+		alert = true
 		return state
 	blocked = FileAccess.file_exists(path) or FileAccess.file_exists(path + ".bak")
 	message = "保存データを読めません。元ファイルを保護し、保存を停止しています。" if blocked else "新規開始。冒険途中の状態は保存されません。"
+	alert = blocked
 	return RunCarryover.new()
 
 
 func save_state(state: RunCarryover) -> bool:
 	if blocked:
 		message = "保存停止中：既存データを読み込めません。元ファイルは保持されています。"
+		alert = true
 		return false
 	var data := SaveCodec.encode(state)
 	if SaveCodec.decode(data) == null:
 		message = "保存失敗：所持データが保存形式に適合しません。"
+		alert = true
 		return false
 	var temporary := path + ".tmp"
 	var file := FileAccess.open(temporary, FileAccess.WRITE)
@@ -66,9 +74,11 @@ func save_state(state: RunCarryover) -> bool:
 	if DirAccess.rename_absolute(temporary, path) != OK:
 		return _failed("保存ファイルを確定できません")
 	message = "保存済み。冒険途中で終了すると最後に保存した拠点状態に戻ります。"
+	alert = false
 	return true
 
 
 func _failed(reason: String) -> bool:
 	message = "保存失敗：%s。直前の保存データは保持されています。" % reason
+	alert = true
 	return false

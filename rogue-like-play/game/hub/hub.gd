@@ -40,6 +40,7 @@ var hero_button: Button
 var hero_speech: Panel
 var settings := GameSettings.new()
 var upgrade_page: Control
+var settings_page: HubSettings
 var page := "home"
 var equipment_return := "stages"
 var _state: RunCarryover
@@ -96,15 +97,13 @@ func _ready() -> void:
 	_title_block.add_child(heading)
 	title_label = HubUI.label(heading, "旅支度の間", &"TitleLabel")
 	subtitle_label = HubUI.label(heading, "小さな準備が、大きな冒険につながる。", &"MutedLabel")
-	var purse := PanelContainer.new()
-	purse.theme_type_variation = &"ItemPanel"
-	purse.custom_minimum_size.x = 190
+	var purse := GoldPurse.new()
+	purse.custom_minimum_size.x = 220
 	purse.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	header.add_child(purse)
-	gold_label = HubUI.label(purse, "", &"ValueLabel")
-	# Gold role is shared with quotes and the warehouse balance.
-	gold_label.theme_type_variation = &"GoldLabel"
-	gold_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	# PurseValue takes its colour from GoldLabel, shared with quotes and the
+	# warehouse balance.
+	gold_label = purse.value_label
 	_page_host = Control.new()
 	_page_host.custom_minimum_size.y = 600
 	_page_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -127,6 +126,8 @@ func _ready() -> void:
 	departure_page.departure_requested.connect(func(): start_requested.emit())
 	var tree := SkillTreePanel.new()
 	upgrade_page = _page(tree)
+	settings_page = _page(HubSettings.new()) as HubSettings
+	settings_page.changed.connect(func(): settings_changed.emit())
 	tree.hp_requested.connect(func(): purchase_requested.emit())
 	tree.skill_requested.connect(func(id: StringName): skill_requested.emit(id))
 	tree.entry_requested.connect(func(stage: StageData, floor_number: int): entry_requested.emit(stage, floor_number))
@@ -168,7 +169,6 @@ func _build_home() -> void:
 	home_page.hide()
 	home_page.selection_changed.connect(func(id: StringName): _ambience.focus(id))
 	home_page.activated.connect(_enter)
-	home_page.settings_changed.connect(func(): settings_changed.emit())
 	start_button = home_page.buttons[0]
 	equipment_button = home_page.buttons[1]
 	warehouse_button = home_page.buttons[2]
@@ -197,7 +197,7 @@ func _enter(id: StringName) -> void:
 		&"upgrade":
 			show_page("upgrade")
 		&"settings":
-			home_page.focus_first_setting()
+			show_page("settings")
 
 
 # The stage the departure entry shows: the last one chosen, else the first
@@ -226,7 +226,7 @@ func _resize() -> void:
 
 func refresh(state: RunCarryover, message: String = "") -> void:
 	_state = state
-	gold_label.text = "Gold   %s" % state.gold
+	gold_label.text = "%d" % state.gold
 	home_page.refresh(state, featured_stage())
 	(upgrade_page as SkillTreePanel).refresh(state)
 	feedback.text = message
@@ -244,7 +244,7 @@ func show_page(target: String) -> void:
 		return
 	page = target
 	hero_speech.hide()
-	for control in [home_page, equipment_page, sell_page, departure_page, upgrade_page]:
+	for control in [home_page, equipment_page, sell_page, departure_page, upgrade_page, settings_page]:
 		control.hide()
 	back_button.visible = page != "home"
 	for child in _title_block.get_children():
@@ -278,6 +278,12 @@ func show_page(target: String) -> void:
 			subtitle_label.text = "冒険の記憶は、この身に残る。"
 			upgrade_page.show()
 			(upgrade_page as SkillTreePanel).focus_first_action()
+		"settings":
+			title_label.text = "設定"
+			subtitle_label.text = "音と画面を整える。"
+			settings_page.show()
+			settings_page.refresh(settings)
+			settings_page.focus_first()
 		"stages":
 			title_label.text = "ステージ選択"
 			subtitle_label.text = "次は、どこへ潜ろうか。"
@@ -292,9 +298,16 @@ func show_page(target: String) -> void:
 	# Pages are anchored in a plain host, not laid out by a Container, so the
 	# whole page can slide: forward pages from the right, home from the left.
 	var side := -1.0 if page == "home" else 1.0
-	for control in [home_page, equipment_page, sell_page, departure_page, upgrade_page]:
+	for control in [home_page, equipment_page, sell_page, departure_page, upgrade_page, settings_page]:
 		if control.visible:
 			UIMotion.of(control).enter(0.0, Vector2(side * UIMotion.PAGE_DISTANCE, 0), UIMotion.WINDOW_TIME)
+
+
+# Routine save notes ("保存済み" and the like) stay out of sight so the hub
+# does not read like a page footer; only a status that needs attention shows.
+func show_save_status(text: String, alert: bool) -> void:
+	save_label.text = text
+	save_label.visible = alert
 
 
 func present_action(kind: StringName, gold_delta: int, slots: Array[int]) -> void:
