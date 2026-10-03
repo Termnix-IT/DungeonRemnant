@@ -14,7 +14,8 @@ swaying hair never leaves the texture):
   the edits can differ from the illustration.
 - art/characters/mio_lobby_pose_hilt.png, _pose_beret and _face_smile: the
   changed rectangle (PATCHES) of the edits mio_lobby_pose_hilt.png etc.,
-  for the Random Idle gestures and the click smile.
+  for the Random Idle gestures and the click smile; _pose_hilt_1/_2 and
+  _pose_beret_1/_2 are the arm's in-between frames on the way there.
 - art/characters/mio_lobby_motion.png: how far each body pixel may sway,
   read by ui/lobby_hero.gd. Red is the hair strands in front of her
   shoulder, green the coat and skirt hem; both grow towards the tips.
@@ -38,7 +39,11 @@ EYE_VARIANTS = ["half", "closed", "left", "right"]
 # mio_lobby_<name>.png; ui/lobby_hero.gd places them at the same rectangles
 # moved by MARGIN.
 PATCHES = {
+	"pose_hilt_1": (215, 300, 610, 770),
+	"pose_hilt_2": (215, 300, 610, 770),
 	"pose_hilt": (215, 300, 610, 770),
+	"pose_beret_1": (415, 85, 690, 545),
+	"pose_beret_2": (415, 85, 690, 545),
 	"pose_beret": (415, 85, 690, 545),
 	"face_smile": (295, 135, 455, 300),
 }

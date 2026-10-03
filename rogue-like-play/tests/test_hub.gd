@@ -122,9 +122,18 @@ func run_tests() -> void:
 	check(hero.face_mix == 0.0, "The smile fades back")
 	# A gesture fades in, holds, fades out, and holds the back hair still.
 	for name: StringName in LobbyHero.POSES:
+		var frames: Array = LobbyHero.POSES[name][1]
 		hero.gesture(name)
-		hero.advance(LobbyHero.POSE_FADE_IN + 0.05)
-		var rect: Rect2 = LobbyHero.POSES[name][1]
+		# On the way the arm passes through each in-between frame in turn.
+		var seen: Array = []
+		for step in 36:
+			hero.advance(LobbyHero.POSE_FADE_IN / 36.0)
+			var shown = material.get_shader_parameter(&"pose_to") if material.get_shader_parameter(&"pose_to_mix") > 0.0 else material.get_shader_parameter(&"pose_from")
+			if not seen.has(shown):
+				seen.append(shown)
+		check(seen == frames, "Gesture %s passes through its in-betweens in order" % name)
+		hero.advance(0.05)
+		var rect: Rect2 = LobbyHero.POSES[name][0]
 		check(hero.pose == name and is_equal_approx(hero.pose_mix, 1.0) and material.get_shader_parameter(&"pose_rect") == Vector4(rect.position.x, rect.position.y, rect.size.x, rect.size.y), "Gesture %s shows its patch" % name)
 		check(is_zero_approx(material.get_shader_parameter(&"hair_angle")), "The back hair holds still under gesture %s" % name)
 		hero.advance(LobbyHero.POSE_HOLD.y + LobbyHero.POSE_FADE_OUT + 0.05)

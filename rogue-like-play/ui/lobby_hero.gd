@@ -41,9 +41,13 @@ uniform float eye_frame = 0.0;
 uniform sampler2D face_texture : filter_linear_mipmap;
 uniform vec4 face_rect = vec4(0.0);
 uniform float face_mix = 0.0;
-uniform sampler2D pose_texture : filter_linear_mipmap;
+// A gesture steps through its frames: the frame it leaves stays fully on
+// while the next one cross-fades in over it.
+uniform sampler2D pose_from : filter_linear_mipmap;
+uniform sampler2D pose_to : filter_linear_mipmap;
 uniform vec4 pose_rect = vec4(0.0);
-uniform float pose_mix = 0.0;
+uniform float pose_from_mix = 0.0;
+uniform float pose_to_mix = 0.0;
 const float FEATHER = 18.0;
 
 varying vec4 tint;
@@ -92,7 +96,8 @@ void fragment() {
 		body.rgb = mix(body.rgb, eyes.rgb, eyes.a);
 	}
 	body = patched(body, face_texture, face_rect, face_mix, b);
-	body = patched(body, pose_texture, pose_rect, pose_mix, b);
+	body = patched(body, pose_from, pose_rect, pose_from_mix, b);
+	body = patched(body, pose_to, pose_rect, pose_to_mix, b);
 	// The back hair bends more towards its tips and trails the body.
 	// The root stays put; the bend and the trailing drop grow towards the tips.
 	float bend = smoothstep(hair_root, hair_tip, p.y);
@@ -128,17 +133,19 @@ const HAIR_LIFT := 12.0
 const STRAND_REACH := 300.0
 const HEM_REACH := 120.0
 # Random Idle: every 12-25 s she makes a brief gesture - a hand on the hilt
-# or a touch to her beret - cross-faded in, held 1-1.8 s and faded out.
-# Each is the changed area of an edit of the illustration (Rect2 in texture
-# pixels; tools/build_lobby_hero.py cuts the same rectangles).
+# or a touch to her beret. Each gesture is a rectangle of the illustration
+# (Rect2 in texture pixels; tools/build_lobby_hero.py cuts the same ones) and
+# three frames of the arm on its way: two in-betweens and the gesture itself.
+# The arm passes through them in POSE_FADE_IN, holds 1-1.8 s, and goes back
+# through them in POSE_FADE_OUT.
 const POSES := {
-	&"hilt": [preload("res://art/characters/mio_lobby_pose_hilt.png"), Rect2(255, 340, 395, 470)],
-	&"beret": [preload("res://art/characters/mio_lobby_pose_beret.png"), Rect2(455, 125, 275, 460)],
+	&"hilt": [Rect2(255, 340, 395, 470), [preload("res://art/characters/mio_lobby_pose_hilt_1.png"), preload("res://art/characters/mio_lobby_pose_hilt_2.png"), preload("res://art/characters/mio_lobby_pose_hilt.png")]],
+	&"beret": [Rect2(455, 125, 275, 460), [preload("res://art/characters/mio_lobby_pose_beret_1.png"), preload("res://art/characters/mio_lobby_pose_beret_2.png"), preload("res://art/characters/mio_lobby_pose_beret.png")]],
 }
 const POSE_GAP := Vector2(12.0, 25.0)
-const POSE_FADE_IN := 0.18
+const POSE_FADE_IN := 0.36
 const POSE_HOLD := Vector2(1.0, 1.8)
-const POSE_FADE_OUT := 0.22
+const POSE_FADE_OUT := 0.42
 # A click brings a smile for a moment.
 const SMILE: Texture2D = preload("res://art/characters/mio_lobby_face_smile.png")
 const SMILE_RECT := Rect2(335, 175, 160, 165)
@@ -163,6 +170,9 @@ var _hair_swing := 0.0
 var hair_offset := Vector2.ZERO
 var rng := RandomNumberGenerator.new()
 var pose := &""
+# How far along its frames the gesture is: 0 the idle, 3 the full gesture.
+var pose_progress := 0.0
+# How much the gesture covers the idle (0-1); the back hair holds by it.
 var pose_mix := 0.0
 var face_mix := 0.0
 var _next_pose := 0.0
@@ -233,8 +243,7 @@ func gesture(name: StringName = &"") -> void:
 	_pose_hold = rng.randf_range(POSE_HOLD.x, POSE_HOLD.y)
 	var shader_material := material as ShaderMaterial
 	if shader_material != null:
-		shader_material.set_shader_parameter(&"pose_texture", POSES[name][0])
-		shader_material.set_shader_parameter(&"pose_rect", _rect_vector(POSES[name][1]))
+		shader_material.set_shader_parameter(&"pose_rect", _rect_vector(POSES[name][0]))
 
 
 func _rect_vector(rect: Rect2) -> Vector4:
@@ -300,7 +309,7 @@ func advance(delta: float) -> void:
 	shader_material.set_shader_parameter(&"strand_shift", Vector2(-hair_angle * STRAND_REACH, hair_offset.y * 0.5))
 	shader_material.set_shader_parameter(&"hem_shift", Vector2(-hair_angle * HEM_REACH, hair_offset.y * 0.25))
 	shader_material.set_shader_parameter(&"eye_frame", float(eye_frame))
-	shader_material.set_shader_parameter(&"pose_mix", pose_mix)
+	_show_pose(shader_material)
 	shader_material.set_shader_parameter(&"face_mix", face_mix)
 
 
@@ -353,16 +362,38 @@ func _step_pose(delta: float) -> void:
 			_next_pose = rng.randf_range(POSE_GAP.x, POSE_GAP.y)
 		return
 	_pose_time += delta
-	var fade_out_at := POSE_FADE_IN + _pose_hold
+	var frames := 3.0
+	var hold_until := POSE_FADE_IN + _pose_hold
+	# Eased, so the arm starts and lands softly.
 	if _pose_time < POSE_FADE_IN:
-		pose_mix = _pose_time / POSE_FADE_IN
-	elif _pose_time < fade_out_at:
-		pose_mix = 1.0
-	elif _pose_time < fade_out_at + POSE_FADE_OUT:
-		pose_mix = 1.0 - (_pose_time - fade_out_at) / POSE_FADE_OUT
+		pose_progress = frames * smoothstep(0.0, 1.0, _pose_time / POSE_FADE_IN)
+	elif _pose_time < hold_until:
+		pose_progress = frames
+	elif _pose_time < hold_until + POSE_FADE_OUT:
+		pose_progress = frames * (1.0 - smoothstep(0.0, 1.0, (_pose_time - hold_until) / POSE_FADE_OUT))
 	else:
-		pose_mix = 0.0
+		pose_progress = 0.0
 		_pose_time = -1.0
+	pose_mix = clampf(pose_progress, 0.0, 1.0)
+
+
+# The frame the arm is leaving stays on; the next cross-fades in over it.
+func _show_pose(shader_material: ShaderMaterial) -> void:
+	if pose == &"" or pose_progress <= 0.0:
+		shader_material.set_shader_parameter(&"pose_from_mix", 0.0)
+		shader_material.set_shader_parameter(&"pose_to_mix", 0.0)
+		return
+	var frames: Array = POSES[pose][1]
+	var step := mini(floori(pose_progress), frames.size() - 1)
+	var blend := clampf(pose_progress - step, 0.0, 1.0)
+	if pose_progress >= frames.size():
+		step = frames.size()
+		blend = 0.0
+	shader_material.set_shader_parameter(&"pose_from", frames[step - 1] if step > 0 else frames[0])
+	shader_material.set_shader_parameter(&"pose_from_mix", 1.0 if step > 0 else 0.0)
+	if step < frames.size():
+		shader_material.set_shader_parameter(&"pose_to", frames[step])
+	shader_material.set_shader_parameter(&"pose_to_mix", blend if step < frames.size() else 0.0)
 
 
 func _step_smile(delta: float) -> void:
