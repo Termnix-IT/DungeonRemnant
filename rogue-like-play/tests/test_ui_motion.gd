@@ -167,8 +167,8 @@ func run_tests() -> void:
 	check(not motion.is_processing(), "Helper has no idle per-frame polling")
 	# The hall light fades between lobby entries after a page change.
 	await settle(HubAmbience.FOCUS_TIME * 1.5 + 0.05)
-	# The only perpetual tween is the existing hero breathing animation.
-	check(get_processed_tweens().size() == 1, "Completed and cancelled UI tweens do not accumulate")
+	# The heroine's idle runs in her own process, not in a tween.
+	check(get_processed_tweens().is_empty(), "Completed and cancelled UI tweens do not accumulate")
 	main.free()
 	await process_frame
 	check(get_processed_tweens().is_empty(), "Freeing UI releases all bound tweens")

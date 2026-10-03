@@ -145,7 +145,7 @@ func capture() -> void:
 		await settle()
 	hub.show_page("equipment")
 	await create_timer(0.4).timeout
-	check(get_processed_tweens().size() == 1, "Stress capture leaves only hero breathing")
+	check(get_processed_tweens().is_empty(), "Stress capture leaves no tween running")
 	root.size = Vector2i(1280, 720)
 	await key(KEY_ESCAPE)
 	await enter(hub, hub.sell_button)

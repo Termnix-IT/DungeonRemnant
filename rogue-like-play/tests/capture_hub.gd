@@ -40,7 +40,10 @@ func capture() -> void:
 	await click(hub.hero_button)
 	ok = ok and hub.hero_speech.visible
 	ok = root.get_texture().get_image().save_png("res://.godot/hub_speech.png") == OK and ok
+	var first_line: String = hub.home_page.speech_label.text
 	await click(hub.hero_button)
+	ok = ok and hub.hero_speech.visible and hub.home_page.speech_label.text != first_line
+	await create_timer(HubLobby.SPEECH_TIME + 0.2).timeout
 	ok = ok and not hub.hero_speech.visible
 	# Test-only funds make purchase verification repeatable; production starts at 0.
 	main.state.gold = 101

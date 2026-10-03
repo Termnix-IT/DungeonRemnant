@@ -41,9 +41,40 @@ func run_tests() -> void:
 	root.add_child(main)
 	var hub: CanvasLayer = main.get_node("Hub")
 	var lobby: HubLobby = hub.home_page
-	var hero: TextureRect = lobby.get_node("Hero")
+	var hero: LobbyHero = lobby.get_node("Hero")
 	var viewport := root.get_visible_rect().size
-	check(hero.texture != null and hero.size.y >= viewport.y * 0.6 and hero.size.y <= viewport.y * 0.7, "Lobby heroine stands 60-70% of the screen tall")
+	# The texture keeps a clear margin above her for swaying hair.
+	var figure := hero.size.y * (1.0 - 40.0 / hero.texture.get_height())
+	check(figure >= viewport.y * 0.74 and figure <= viewport.y * 0.82, "Lobby heroine stands about 78% of the screen tall")
+	check(hero.get_global_rect().end.x <= viewport.x + 1, "Heroine and her swaying hair stay on screen")
+	# Idle: breathing, lean, blinks every 3-7 s, glances of 1-2°, hair trailing.
+	var blinks := 0
+	var was_closed := false
+	var widest_angle := 0.0
+	var widest_hair := 0.0
+	for step in 1200:
+		hero.advance(0.025)
+		if hero.blink_amount > 0.5 and not was_closed:
+			blinks += 1
+		was_closed = hero.blink_amount > 0.5
+		widest_angle = maxf(widest_angle, absf(rad_to_deg(hero.head_angle)))
+		widest_hair = maxf(widest_hair, hero.hair_shift.length())
+	check(blinks >= 4 and blinks <= 11, "She blinks every 3-7 s over 30 s: %d" % blinks)
+	check(widest_angle > 0.5 and widest_angle <= 2.01, "Glances turn her head by up to 2°: %.2f" % widest_angle)
+	check(widest_hair > 1.0 and widest_hair <= LobbyHero.HAIR_REACH + 0.01, "Hair sways within its reach: %.2f" % widest_hair)
+	var material := hero.material as ShaderMaterial
+	check(material.get_shader_parameter(&"breath") is float and material.get_shader_parameter(&"blink_texture") != null and material.get_shader_parameter(&"motion_mask") != null, "Idle drives the shader with the blink and motion textures")
+	# The hair follows the body late: right after a sudden head turn it has
+	# barely moved, and it has caught up a few tenths of a second later.
+	var rest_hair := hero.hair_shift
+	hero.react()
+	hero.advance(0.016)
+	check(hero.scale.y > 1.0, "A click lifts her in a small hop")
+	var early := (hero.hair_shift - rest_hair).length()
+	hero.advance(0.2)
+	check((hero.hair_shift - rest_hair).length() > early * 3.0, "Hair trails the hop a moment late")
+	hero.advance(LobbyHero.REACT_TIME)
+	check(is_equal_approx(hero.scale.y, 1.0) and is_equal_approx(hero.scale.x, 1.0), "The hop settles back to rest")
 	check(hero.get_rect().get_center().x > viewport.x * 0.66, "Heroine stands on the right side of the lobby")
 	check(lobby.buttons.map(func(button: Button): return button.text) == ["出撃", "装備", "倉庫", "ショップ", "強化", "設定"], "Lobby menu lists the six entries in order")
 	check(lobby.selected_id() == &"departure" and hub.start_button.has_focus(), "Lobby starts on departure with focus")
@@ -111,9 +142,13 @@ func run_tests() -> void:
 	check(not hub.hero_speech.visible, "Home speech starts hidden")
 	hub.hero_button.pressed.emit()
 	check(hub.hero_speech.visible, "Clicking hero opens speech")
-	check(hub.hero_speech.get_global_rect().end.y + 14 <= hero.get_global_rect().position.y and not hub.hero_speech.get_global_rect().intersects(lobby.panel.get_global_rect()), "Speech and tail stay above the heroine, clear of the panel")
+	var speech_rect: Rect2 = hub.hero_speech.get_global_rect()
+	check(root.get_visible_rect().encloses(speech_rect) and not speech_rect.intersects(lobby.panel.get_global_rect()) and speech_rect.end.x <= hero.get_global_rect().position.x + hero.size.x * HubLobby.FACE.x, "Speech sits beside her face, on screen and clear of the panel")
+	var first_line: String = lobby.speech_label.text
 	hub.hero_button.pressed.emit()
-	check(not hub.hero_speech.visible, "Clicking hero again closes speech")
+	check(hub.hero_speech.visible and lobby.speech_label.text != first_line, "Clicking again moves to her next line")
+	await create_timer(HubLobby.SPEECH_TIME + 0.2).timeout
+	check(not hub.hero_speech.visible, "Speech fades by itself after a while")
 	hub.hero_button.pressed.emit()
 	hub.show_page("stages")
 	hub.show_page("home")

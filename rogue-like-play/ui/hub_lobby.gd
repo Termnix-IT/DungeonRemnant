@@ -45,6 +45,13 @@ const ART := {
 	&"upgrade": preload("res://art/hub/cards/books.png"),
 }
 const HERO_TEXTURE := preload("res://art/characters/mio_lobby.png")
+# Where her face and the middle of her soles sit in the texture, as fractions.
+const FACE := Vector2(0.38, 0.165)
+const FEET := Vector2(0.52, 0.985)
+# The soles: her right foot stands on the floor, the left a step behind it.
+const SOLES := [Vector2(0.61, 0.985), Vector2(0.42, 0.93)]
+const SPEECH := ["準備ができたら、出発しよう。", "装備の確認は済んだ？", "次は、どこへ潜ろうか。", "倉庫の整理も忘れずにね。"]
+const SPEECH_TIME := 4.0
 # Layout in the 1600×900 base viewport. The menu keeps about a fifth of the
 # width; the heroine stands about two thirds of the height tall.
 const MENU_WIDTH := 300.0
@@ -54,7 +61,9 @@ const ROW_HEIGHT := 80.0
 const PANEL_CENTER_X := 0.465
 const PANEL_WIDTH := 600.0
 const PANEL_BOTTOM := 96.0
-const HERO_HEIGHT := 0.68
+# The texture keeps clear margins for swaying hair, so the figure itself
+# stands about 78% of the screen tall.
+const HERO_HEIGHT := 0.8
 const HERO_CENTER_X := 0.835
 const HERO_FEET_Y := 0.965
 
@@ -63,7 +72,11 @@ var selected := 0
 var decide_button: Button
 var title_label: Label
 var description_label: Label
-var hero: TextureRect
+var hero: LobbyHero
+var speech_label: Label
+var _speech_index := 0
+var _speech_token := 0
+var _shadow_texture: GradientTexture2D
 var hero_button: Button
 var hero_speech: Panel
 var equipment_label: Label
@@ -257,27 +270,19 @@ func _divider(row: HBoxContainer) -> void:
 
 
 func _build_hero() -> void:
-	hero = TextureRect.new()
+	hero = LobbyHero.new()
 	hero.name = "Hero"
 	hero.texture = HERO_TEXTURE
-	hero.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	hero.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	hero.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Settle the bright illustration into the lantern light of the hall.
 	hero.modulate = get_theme_color(&"hero_tint", &"HubLobby")
 	add_child(hero)
-	# Barely visible breathing, anchored at the feet.
-	var breathing := hero.create_tween().set_loops()
-	breathing.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	breathing.tween_property(hero, "scale:y", 1.004, 2.4)
-	breathing.tween_property(hero, "scale:y", 1.0, 2.4)
 	hero_button = Button.new()
 	hero_button.name = "HeroButton"
 	hero_button.theme_type_variation = &"CharacterButton"
 	hero_button.tooltip_text = "話しかける"
 	hero_button.focus_mode = Control.FOCUS_NONE
 	hero_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	hero_button.pressed.connect(func(): hero_speech.visible = not hero_speech.visible)
+	hero_button.pressed.connect(talk)
 	add_child(hero_button)
 	hero_speech = Panel.new()
 	hero_speech.name = "HeroSpeech"
@@ -285,26 +290,50 @@ func _build_hero() -> void:
 	hero_speech.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hero_speech.size = Vector2(300, 60)
 	add_child(hero_speech)
-	# The tail points down, towards her head.
+	# The tail points right, towards her face.
 	var border := hero_speech.get_theme_stylebox("panel").get(&"border_color") as Color
 	var fill := hero_speech.get_theme_stylebox("panel").get(&"bg_color") as Color
 	var tail := Polygon2D.new()
-	tail.polygon = PackedVector2Array([Vector2(138, 59), Vector2(150, 74), Vector2(162, 59)])
+	tail.polygon = PackedVector2Array([Vector2(299, 18), Vector2(316, 30), Vector2(299, 42)])
 	tail.color = border
 	hero_speech.add_child(tail)
 	var tail_fill := Polygon2D.new()
-	tail_fill.polygon = PackedVector2Array([Vector2(140, 58), Vector2(150, 71), Vector2(160, 58)])
+	tail_fill.polygon = PackedVector2Array([Vector2(298, 20), Vector2(313, 30), Vector2(298, 40)])
 	tail_fill.color = fill
 	hero_speech.add_child(tail_fill)
-	var invitation := Label.new()
-	invitation.text = "準備ができたら、出発しよう。"
-	invitation.theme_type_variation = &"ItemNameLabel"
-	invitation.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	invitation.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	invitation.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hero_speech.add_child(invitation)
-	invitation.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	speech_label = Label.new()
+	speech_label.theme_type_variation = &"ItemNameLabel"
+	speech_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	speech_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	speech_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hero_speech.add_child(speech_label)
+	speech_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hero_speech.hide()
+	var fade := Gradient.new()
+	fade.set_color(0, Color.WHITE)
+	fade.set_color(1, Color(1, 1, 1, 0))
+	fade.add_point(0.4, Color(1, 1, 1, 0.75))
+	_shadow_texture = GradientTexture2D.new()
+	_shadow_texture.gradient = fade
+	_shadow_texture.fill = GradientTexture2D.FILL_RADIAL
+	_shadow_texture.fill_from = Vector2(0.5, 0.5)
+	_shadow_texture.fill_to = Vector2(1.0, 0.5)
+	# The gradient renders a frame later; draw the shadow again once it has.
+	_shadow_texture.changed.connect(queue_redraw)
+
+
+# A click on her: she reacts and says the next line, which fades after a while.
+func talk() -> void:
+	hero.react()
+	speech_label.text = SPEECH[_speech_index % SPEECH.size()]
+	_speech_index += 1
+	hero_speech.show()
+	UIMotion.of(hero_speech).reveal(UIMotion.SELECT_TIME)
+	_speech_token += 1
+	var token := _speech_token
+	get_tree().create_timer(SPEECH_TIME).timeout.connect(func():
+		if token == _speech_token:
+			hero_speech.hide())
 
 
 func _place_hero() -> void:
@@ -314,10 +343,11 @@ func _place_hero() -> void:
 	hero.position = feet - Vector2(extent.x * 0.5, extent.y)
 	hero.pivot_offset = Vector2(extent.x * 0.5, extent.y)
 	# Only her figure answers the pointer, not the empty corners of the art.
-	hero_button.position = hero.position + Vector2(extent.x * 0.22, extent.y * 0.04)
-	hero_button.size = Vector2(extent.x * 0.56, extent.y * 0.9)
-	# Above her head, clear of the information panel.
-	hero_speech.position = hero.position + Vector2(extent.x * 0.45 - hero_speech.size.x * 0.5, -hero_speech.size.y - 18)
+	hero_button.position = hero.position + Vector2(extent.x * 0.24, extent.y * 0.05)
+	hero_button.size = Vector2(extent.x * 0.52, extent.y * 0.9)
+	# Beside her face, its tail pointing at her; clear of the information panel.
+	var face := hero.position + extent * FACE
+	hero_speech.position = Vector2(face.x - hero_speech.size.x - 70, face.y - hero_speech.size.y * 0.5)
 	queue_redraw()
 
 
@@ -418,12 +448,14 @@ func _draw_main_glyph() -> void:
 func _draw() -> void:
 	_draw_menu_slab()
 	_draw_selection()
-	# A soft pool of shade grounds the heroine on the floor.
-	var feet := hero.position + Vector2(hero.size.x * 0.5, hero.size.y)
+	# A soft pool of shade, and a darker contact shadow right under her boots,
+	# ground the heroine on the floor.
+	var feet := hero.position + hero.size * FEET
 	var shadow := get_theme_color(&"shadow", &"HubLobby")
-	for ring in 4:
-		var radius := Vector2(150 - ring * 28, 22 - ring * 4)
-		_draw_ellipse(feet + Vector2(0, -4), radius, Color(shadow, shadow.a * 0.3))
+	draw_texture_rect(_shadow_texture, Rect2(feet - Vector2(200, 32), Vector2(400, 64)), false, Color(shadow, shadow.a * 0.7))
+	for sole: Vector2 in SOLES:
+		var at := hero.position + hero.size * sole
+		draw_texture_rect(_shadow_texture, Rect2(at - Vector2(62, 11), Vector2(124, 22)), false, shadow)
 
 
 func _draw_menu_slab() -> void:
@@ -502,10 +534,3 @@ func _draw_panel_frame(frame: Control) -> void:
 
 func _diamond(center: Vector2, radius: float, color: Color) -> void:
 	draw_colored_polygon(PackedVector2Array([center + Vector2(0, -radius), center + Vector2(radius, 0), center + Vector2(0, radius), center + Vector2(-radius, 0)]), color)
-
-
-func _draw_ellipse(center: Vector2, radius: Vector2, color: Color) -> void:
-	var points := PackedVector2Array()
-	for step in 32:
-		points.append(center + Vector2.from_angle(step * TAU / 32.0) * radius)
-	draw_colored_polygon(points, color)
