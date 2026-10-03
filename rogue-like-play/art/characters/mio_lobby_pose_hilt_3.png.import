@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://sl28eovporkx"
-path="res://.godot/imported/mio_lobby_pose_hilt_2.png-2be021047fe58750248328bc4c68576a.ctex"
+uid="uid://b17jqcl5wtdts"
+path="res://.godot/imported/mio_lobby_pose_hilt_3.png-b6b56af10544f6fbced44202f17957b4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/characters/mio_lobby_pose_hilt_2.png"
-dest_files=["res://.godot/imported/mio_lobby_pose_hilt_2.png-2be021047fe58750248328bc4c68576a.ctex"]
+source_file="res://art/characters/mio_lobby_pose_hilt_3.png"
+dest_files=["res://.godot/imported/mio_lobby_pose_hilt_3.png-b6b56af10544f6fbced44202f17957b4.ctex"]
 
 [params]
 

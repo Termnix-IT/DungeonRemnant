@@ -135,17 +135,17 @@ const HEM_REACH := 120.0
 # Random Idle: every 12-25 s she makes a brief gesture - a hand on the hilt
 # or a touch to her beret. Each gesture is a rectangle of the illustration
 # (Rect2 in texture pixels; tools/build_lobby_hero.py cuts the same ones) and
-# three frames of the arm on its way: two in-betweens and the gesture itself.
+# frames of the arm on its way: three in-betweens and the gesture itself.
 # The arm passes through them in POSE_FADE_IN, holds 1-1.8 s, and goes back
 # through them in POSE_FADE_OUT.
 const POSES := {
-	&"hilt": [Rect2(255, 340, 395, 470), [preload("res://art/characters/mio_lobby_pose_hilt_1.png"), preload("res://art/characters/mio_lobby_pose_hilt_2.png"), preload("res://art/characters/mio_lobby_pose_hilt.png")]],
-	&"beret": [Rect2(455, 125, 275, 460), [preload("res://art/characters/mio_lobby_pose_beret_1.png"), preload("res://art/characters/mio_lobby_pose_beret_2.png"), preload("res://art/characters/mio_lobby_pose_beret.png")]],
+	&"hilt": [Rect2(255, 340, 395, 470), [preload("res://art/characters/mio_lobby_pose_hilt_1.png"), preload("res://art/characters/mio_lobby_pose_hilt_2.png"), preload("res://art/characters/mio_lobby_pose_hilt_3.png"), preload("res://art/characters/mio_lobby_pose_hilt.png")]],
+	&"beret": [Rect2(455, 125, 275, 460), [preload("res://art/characters/mio_lobby_pose_beret_1.png"), preload("res://art/characters/mio_lobby_pose_beret_2.png"), preload("res://art/characters/mio_lobby_pose_beret_3.png"), preload("res://art/characters/mio_lobby_pose_beret.png")]],
 }
 const POSE_GAP := Vector2(12.0, 25.0)
-const POSE_FADE_IN := 0.36
+const POSE_FADE_IN := 0.44
 const POSE_HOLD := Vector2(1.0, 1.8)
-const POSE_FADE_OUT := 0.42
+const POSE_FADE_OUT := 0.5
 # A click brings a smile for a moment.
 const SMILE: Texture2D = preload("res://art/characters/mio_lobby_face_smile.png")
 const SMILE_RECT := Rect2(335, 175, 160, 165)
@@ -170,7 +170,8 @@ var _hair_swing := 0.0
 var hair_offset := Vector2.ZERO
 var rng := RandomNumberGenerator.new()
 var pose := &""
-# How far along its frames the gesture is: 0 the idle, 3 the full gesture.
+# How far along its frames the gesture is: 0 the idle, the frame count the
+# full gesture.
 var pose_progress := 0.0
 # How much the gesture covers the idle (0-1); the back hair holds by it.
 var pose_mix := 0.0
@@ -362,7 +363,7 @@ func _step_pose(delta: float) -> void:
 			_next_pose = rng.randf_range(POSE_GAP.x, POSE_GAP.y)
 		return
 	_pose_time += delta
-	var frames := 3.0
+	var frames := float((POSES[pose][1] as Array).size())
 	var hold_until := POSE_FADE_IN + _pose_hold
 	# Eased, so the arm starts and lands softly.
 	if _pose_time < POSE_FADE_IN:

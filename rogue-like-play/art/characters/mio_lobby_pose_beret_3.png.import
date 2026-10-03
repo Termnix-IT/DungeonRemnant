@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://sl28eovporkx"
-path="res://.godot/imported/mio_lobby_pose_hilt_2.png-2be021047fe58750248328bc4c68576a.ctex"
+uid="uid://cdicojn68unvt"
+path="res://.godot/imported/mio_lobby_pose_beret_3.png-b7ca3b15624c6cdc5ef8dceb8549402d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/characters/mio_lobby_pose_hilt_2.png"
-dest_files=["res://.godot/imported/mio_lobby_pose_hilt_2.png-2be021047fe58750248328bc4c68576a.ctex"]
+source_file="res://art/characters/mio_lobby_pose_beret_3.png"
+dest_files=["res://.godot/imported/mio_lobby_pose_beret_3.png-b7ca3b15624c6cdc5ef8dceb8549402d.ctex"]
 
 [params]
 
