@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://enmr0we4bfv6"
-path="res://.godot/imported/mio_lobby_blink.png-6338208a81a8a14d706cb975086cdcf8.ctex"
+uid="uid://c4lricfhelaky"
+path="res://.godot/imported/mio_lobby_eyes.png-56154f998f98716c907e6560ed108039.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/characters/mio_lobby_blink.png"
-dest_files=["res://.godot/imported/mio_lobby_blink.png-6338208a81a8a14d706cb975086cdcf8.ctex"]
+source_file="res://art/characters/mio_lobby_eyes.png"
+dest_files=["res://.godot/imported/mio_lobby_eyes.png-56154f998f98716c907e6560ed108039.ctex"]
 
 [params]
 
