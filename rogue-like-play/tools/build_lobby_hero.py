@@ -45,6 +45,8 @@ BODY_BOXES = [(470, 360, 580, 470), (440, 690, 620, 840), (440, 820, 640, 940)]
 HAND = (420, 280, 580, 470)
 # Where the body stops keeping the hair's pixels under the root.
 ROOT_OVERLAP = 300.0
+# How far the hair continues, hidden, under the coat and sleeve.
+UNDER_REACH = 48
 FRONT_HAIR = [(215, 190, 335, 700)]
 FRONT_HAIR_EXCLUDE = [(225, 380, 315, 450)]
 HAIR_ROOT, HAIR_TIP = 230.0, 820.0
@@ -109,6 +111,41 @@ def back_hair(figure: Image.Image) -> np.ndarray:
 	hair = (a > 0.02) & inside(shape, [BACK_HAIR_ZONE]) & ~body
 	cleaned = Image.fromarray((hair * 255).astype(np.uint8)).filter(ImageFilter.MinFilter(3)).filter(ImageFilter.MaxFilter(3))
 	return np.array(cleaned).astype(np.float32) / 255.0
+
+
+# The painting never shows the hair where the coat and sleeve cover it, so a
+# swing would open a gap between them. Grow the hair's colours into the
+# covered area, a pixel ring per step, so the layer continues under the body.
+def hair_under_body(figure: Image.Image, hair: np.ndarray) -> Image.Image:
+	rgba = np.array(figure).astype(np.float32) / 255.0
+	colour = rgba[..., :3]
+	r, g, b, a, light = channels(figure)
+	shape = hair.shape
+	# Grow only from clean lavender strands, not from edges tinted by the
+	# coat's rim light, or orange streaks would spread under the cloth.
+	filled = (hair > 0.5) & (a > 0.9) & (light > 0.6) & ((b - g) > 0.03) & ((b - r) > -0.02)
+	covered = (a > 0.5) & (hair <= 0.5) & inside(shape, [BACK_HAIR_ZONE])
+	result = colour * filled[..., None]
+	for _ in range(UNDER_REACH):
+		total = np.zeros_like(result)
+		count = np.zeros(shape, dtype=np.float32)
+		for dy in (-1, 0, 1):
+			for dx in (-1, 0, 1):
+				if dx == 0 and dy == 0:
+					continue
+				neighbour = np.roll(np.roll(filled, dy, axis=0), dx, axis=1)
+				total += np.roll(np.roll(result, dy, axis=0), dx, axis=1) * neighbour[..., None]
+				count += neighbour
+		grow_now = covered & ~filled & (count > 0)
+		result[grow_now] = total[grow_now] / count[grow_now][:, None]
+		filled = filled | grow_now
+	grown = filled & covered
+	# Soften the grown colours so they read as hair in shadow, not streaks.
+	soft = np.array(Image.fromarray((np.clip(result, 0.0, 1.0) * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(3))).astype(np.float32) / 255.0
+	result = np.where(grown[..., None], soft, colour)
+	alpha = np.where(hair > 0.5, a * hair, grown.astype(np.float32))
+	out = np.dstack([result, alpha])
+	return Image.fromarray((np.clip(out, 0.0, 1.0) * 255).astype(np.uint8), "RGBA")
 
 
 def layer(figure: Image.Image, weight: np.ndarray | float) -> Image.Image:
@@ -185,7 +222,7 @@ def main() -> None:
 	ys = np.arange(figure.height, dtype=np.float32)[:, None]
 	overlap = 1.0 - ramp(ys, BACK_HAIR_ZONE[1] + 10.0, ROOT_OVERLAP)
 	framed(layer(figure, 1.0 - hair * (1.0 - overlap))).save(OUTPUT / "mio_lobby.png", optimize=True)
-	framed(layer(figure, hair)).save(OUTPUT / "mio_lobby_hair.png", optimize=True)
+	framed(hair_under_body(figure, hair)).save(OUTPUT / "mio_lobby_hair.png", optimize=True)
 	framed(motion(figure)).save(OUTPUT / "mio_lobby_motion.png", optimize=True)
 	eye_atlas(box).save(OUTPUT / "mio_lobby_eyes.png", optimize=True)
 	print("figure", figure.size, "framed", framed(figure).size)

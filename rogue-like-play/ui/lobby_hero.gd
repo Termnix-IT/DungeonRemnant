@@ -71,8 +71,9 @@ void fragment() {
 		body.rgb = mix(body.rgb, eyes.rgb, eyes.a);
 	}
 	// The back hair bends more towards its tips and trails the body.
-	vec2 h = p - hair_offset;
-	h = turn(h, hair_pivot, hair_angle * smoothstep(hair_root, hair_tip, h.y));
+	// The root stays put; the bend and the trailing drop grow towards the tips.
+	float bend = smoothstep(hair_root, hair_tip, p.y);
+	vec2 h = turn(p - hair_offset * bend, hair_pivot, hair_angle * bend);
 	vec4 hair = texture(hair_texture, h / extent) * within(h / extent);
 	float alpha = body.a + hair.a * (1.0 - body.a);
 	vec3 rgb = (body.rgb * body.a + hair.rgb * hair.a * (1.0 - body.a)) / max(alpha, 0.0001);
@@ -99,12 +100,14 @@ const GLANCE_HOLD := Vector2(1.2, 2.4)
 const HAIR_FREQUENCY := 1.1
 const HAIR_DAMPING := 0.3
 const HAIR_LIMIT := 0.06
-const HAIR_LIFT := 18.0
+const HAIR_LIFT := 12.0
 # Front strands and the coat hem take a share of the same motion.
 const STRAND_REACH := 300.0
 const HEM_REACH := 120.0
 # A click makes her hop slightly and turn her head.
 const REACT_TIME := 0.5
+# After a hop she stays on her feet a moment before the next one.
+const REACT_REST := 0.3
 const REACT_LIFT := 0.022
 const REACT_ANGLE := 2.5
 
@@ -113,6 +116,9 @@ var eye_frame: Eyes = Eyes.OPEN
 var gaze: Eyes = Eyes.OPEN
 var head_angle := 0.0
 var hair_angle := 0.0
+# The spring's own angle; hair_angle eases it into HAIR_LIMIT instead of
+# stopping hard there.
+var _hair_swing := 0.0
 var hair_offset := Vector2.ZERO
 var rng := RandomNumberGenerator.new()
 var _hair_velocity := 0.0
@@ -123,7 +129,7 @@ var _blink_time := -1.0
 var _next_glance := 0.0
 var _glance_left := 0.0
 var _glance_target := 0.0
-var _react_left := 0.0
+var _react_left := -REACT_REST
 var _rest_scale := Vector2.ONE
 
 
@@ -149,7 +155,12 @@ func _ready() -> void:
 
 
 # The click reaction: a small hop from the feet, a turn of the head, a blink.
+# Clicks during a hop, or just after it, only hold the head turn, so quick
+# taps never restart the hop mid-air, chain hops, or flip her head.
 func react() -> void:
+	if _react_left > -REACT_REST:
+		_glance_left = maxf(_glance_left, REACT_TIME)
+		return
 	_react_left = REACT_TIME
 	_glance_target = deg_to_rad(REACT_ANGLE) * (1.0 if rng.randf() < 0.5 else -1.0)
 	_glance_left = REACT_TIME + 0.6
@@ -175,8 +186,9 @@ func advance(delta: float) -> void:
 	var head_target := _glance_target if _glance_left > 0.0 else 0.0
 	head_angle = lerpf(head_angle, head_target, 1.0 - exp(-delta / 0.35))
 	var lift := 0.0
+	# Counts down through the hop, then on through the rest after it.
+	_react_left = maxf(-REACT_REST, _react_left - delta)
 	if _react_left > 0.0:
-		_react_left = maxf(0.0, _react_left - delta)
 		var progress := 1.0 - _react_left / REACT_TIME
 		lift = sin(progress * PI) * (1.0 - progress * 0.5)
 	scale = _rest_scale * Vector2(1.0 - lift * REACT_LIFT * 0.4, 1.0 + lift * REACT_LIFT)
@@ -189,10 +201,11 @@ func advance(delta: float) -> void:
 	var step := delta / steps
 	var lift_pixels := lift * HAIR_LIFT
 	for i in steps:
-		_hair_velocity += (omega * omega * (target - hair_angle) - 2.0 * HAIR_DAMPING * omega * _hair_velocity) * step
-		hair_angle = clampf(hair_angle + _hair_velocity * step, -HAIR_LIMIT, HAIR_LIMIT)
+		_hair_velocity += (omega * omega * (target - _hair_swing) - 2.0 * HAIR_DAMPING * omega * _hair_velocity) * step
+		_hair_swing += _hair_velocity * step
 		_lift_velocity += (omega * omega * (lift_pixels - _lift_follow) - 2.0 * HAIR_DAMPING * omega * _lift_velocity) * step
 		_lift_follow += _lift_velocity * step
+	hair_angle = HAIR_LIMIT * tanh(_hair_swing / HAIR_LIMIT)
 	# While she rises the hair stays a little below, then catches up.
 	hair_offset = Vector2(0.0, -(lift_pixels - _lift_follow))
 	eye_frame = gaze

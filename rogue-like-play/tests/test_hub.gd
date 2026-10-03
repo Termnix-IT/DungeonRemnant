@@ -83,6 +83,27 @@ func run_tests() -> void:
 	var early := absf(hero.hair_offset.y)
 	hero.advance(0.15)
 	check(absf(hero.hair_offset.y) > early * 3.0, "Hair trails the hop a moment late")
+	# Quick taps: a tap mid-hop neither restarts the hop nor flips her head,
+	# and right after a hop she rests before the next one.
+	var mid_scale := hero.scale.y
+	var head_side := signf(hero._glance_target)
+	hero.react()
+	hero.advance(0.016)
+	check(hero.scale.y > mid_scale - 0.004 and signf(hero._glance_target) == head_side, "A tap mid-hop keeps the hop and the head's side")
+	hero.advance(LobbyHero.REACT_TIME)
+	hero.react()
+	hero.advance(0.016)
+	check(is_equal_approx(hero.scale.y, 1.0), "Right after a hop she rests before hopping again")
+	hero.advance(LobbyHero.REACT_REST)
+	hero.react()
+	hero.advance(0.05)
+	check(hero.scale.y > 1.0, "After resting she hops again")
+	var steady := true
+	for tap in 40:
+		hero.react()
+		hero.advance(0.05)
+		steady = steady and absf(hero.hair_angle) < LobbyHero.HAIR_LIMIT and is_finite(hero.hair_angle) and is_finite(hero.hair_offset.y)
+	check(steady, "Forty quick taps keep the hair within its limit")
 	hero.advance(LobbyHero.REACT_TIME)
 	check(is_equal_approx(hero.scale.y, 1.0) and is_equal_approx(hero.scale.x, 1.0), "The hop settles back to rest")
 	check(hero.get_rect().get_center().x > viewport.x * 0.66, "Heroine stands on the right side of the lobby")
