@@ -35,6 +35,16 @@ uniform vec4 eye_rect = vec4(338.0, 182.0, 129.0, 88.0);
 uniform float eye_cells = 4.0;
 // 0 shows the painted eyes; 1 and up pick a cell of the eye atlas.
 uniform float eye_frame = 0.0;
+// Patches painted over the body for an expression and a passing pose: the
+// changed area of an edit, cross-faded in by its mix and feathered at the
+// edges of its rectangle (pixels of the texture).
+uniform sampler2D face_texture : filter_linear_mipmap;
+uniform vec4 face_rect = vec4(0.0);
+uniform float face_mix = 0.0;
+uniform sampler2D pose_texture : filter_linear_mipmap;
+uniform vec4 pose_rect = vec4(0.0);
+uniform float pose_mix = 0.0;
+const float FEATHER = 18.0;
 
 varying vec4 tint;
 
@@ -54,6 +64,17 @@ float within(vec2 uv) {
 	return step(0.0, uv.x) * step(uv.x, 1.0) * step(0.0, uv.y) * step(uv.y, 1.0);
 }
 
+vec4 patched(vec4 base, sampler2D patch, vec4 rect, float amount, vec2 p) {
+	vec2 local = p - rect.xy;
+	if (amount <= 0.0 || local.x < 0.0 || local.y < 0.0 || local.x > rect.z || local.y > rect.w) {
+		return base;
+	}
+	float edge = min(min(local.x, rect.z - local.x), min(local.y, rect.w - local.y));
+	vec4 over = texture(patch, local / rect.zw);
+	vec4 mixed = mix(vec4(base.rgb * base.a, base.a), vec4(over.rgb * over.a, over.a), amount * smoothstep(0.0, FEATHER, edge));
+	return vec4(mixed.rgb / max(mixed.a, 0.0001), mixed.a);
+}
+
 void vertex() {
 	tint = COLOR;
 }
@@ -70,6 +91,8 @@ void fragment() {
 		vec4 eyes = texture(eye_atlas, cell);
 		body.rgb = mix(body.rgb, eyes.rgb, eyes.a);
 	}
+	body = patched(body, face_texture, face_rect, face_mix, b);
+	body = patched(body, pose_texture, pose_rect, pose_mix, b);
 	// The back hair bends more towards its tips and trails the body.
 	// The root stays put; the bend and the trailing drop grow towards the tips.
 	float bend = smoothstep(hair_root, hair_tip, p.y);
@@ -104,6 +127,24 @@ const HAIR_LIFT := 12.0
 # Front strands and the coat hem take a share of the same motion.
 const STRAND_REACH := 300.0
 const HEM_REACH := 120.0
+# Random Idle: every 12-25 s she makes a brief gesture - a hand on the hilt
+# or a touch to her beret - cross-faded in, held 1-1.8 s and faded out.
+# Each is the changed area of an edit of the illustration (Rect2 in texture
+# pixels; tools/build_lobby_hero.py cuts the same rectangles).
+const POSES := {
+	&"hilt": [preload("res://art/characters/mio_lobby_pose_hilt.png"), Rect2(255, 340, 395, 470)],
+	&"beret": [preload("res://art/characters/mio_lobby_pose_beret.png"), Rect2(455, 125, 275, 460)],
+}
+const POSE_GAP := Vector2(12.0, 25.0)
+const POSE_FADE_IN := 0.18
+const POSE_HOLD := Vector2(1.0, 1.8)
+const POSE_FADE_OUT := 0.22
+# A click brings a smile for a moment.
+const SMILE: Texture2D = preload("res://art/characters/mio_lobby_face_smile.png")
+const SMILE_RECT := Rect2(335, 175, 160, 165)
+const SMILE_IN := 0.12
+const SMILE_HOLD := 1.6
+const SMILE_OUT := 0.25
 # A click makes her hop slightly and turn her head.
 const REACT_TIME := 0.5
 # After a hop she stays on her feet a moment before the next one.
@@ -121,6 +162,13 @@ var hair_angle := 0.0
 var _hair_swing := 0.0
 var hair_offset := Vector2.ZERO
 var rng := RandomNumberGenerator.new()
+var pose := &""
+var pose_mix := 0.0
+var face_mix := 0.0
+var _next_pose := 0.0
+var _pose_time := -1.0
+var _pose_hold := 0.0
+var _smile_time := -1.0
 var _hair_velocity := 0.0
 var _lift_follow := 0.0
 var _lift_velocity := 0.0
@@ -151,6 +199,9 @@ func _ready() -> void:
 	material = shader_material
 	_next_blink = rng.randf_range(BLINK_GAP.x, BLINK_GAP.y)
 	_next_glance = rng.randf_range(GLANCE_GAP.x, GLANCE_GAP.y)
+	_next_pose = rng.randf_range(POSE_GAP.x, POSE_GAP.y)
+	shader_material.set_shader_parameter(&"face_texture", SMILE)
+	shader_material.set_shader_parameter(&"face_rect", _rect_vector(SMILE_RECT))
 	visibility_changed.connect(func(): set_process(is_visible_in_tree()))
 
 
@@ -160,12 +211,34 @@ func _ready() -> void:
 func react() -> void:
 	if _react_left > -REACT_REST:
 		_glance_left = maxf(_glance_left, REACT_TIME)
+		if _smile_time >= 0.0:
+			_smile_time = minf(_smile_time, SMILE_IN)
 		return
 	_react_left = REACT_TIME
 	_glance_target = deg_to_rad(REACT_ANGLE) * (1.0 if rng.randf() < 0.5 else -1.0)
 	_glance_left = REACT_TIME + 0.6
 	gaze = Eyes.OPEN
 	blink()
+	_smile_time = 0.0
+
+
+# Starts a Random Idle gesture now; the idle calls it every 12-25 s.
+func gesture(name: StringName = &"") -> void:
+	if name == &"":
+		var names: Array = POSES.keys()
+		names.erase(pose)
+		name = names[rng.randi_range(0, names.size() - 1)]
+	pose = name
+	_pose_time = 0.0
+	_pose_hold = rng.randf_range(POSE_HOLD.x, POSE_HOLD.y)
+	var shader_material := material as ShaderMaterial
+	if shader_material != null:
+		shader_material.set_shader_parameter(&"pose_texture", POSES[name][0])
+		shader_material.set_shader_parameter(&"pose_rect", _rect_vector(POSES[name][1]))
+
+
+func _rect_vector(rect: Rect2) -> Vector4:
+	return Vector4(rect.position.x, rect.position.y, rect.size.x, rect.size.y)
 
 
 func blink() -> void:
@@ -183,6 +256,8 @@ func advance(delta: float) -> void:
 	var lean := sin(time * TAU / LEAN_PERIOD) * LEAN_REACH
 	_step_blink(delta)
 	_step_glance(delta)
+	_step_pose(delta)
+	_step_smile(delta)
 	var head_target := _glance_target if _glance_left > 0.0 else 0.0
 	head_angle = lerpf(head_angle, head_target, 1.0 - exp(-delta / 0.35))
 	var lift := 0.0
@@ -217,11 +292,16 @@ func advance(delta: float) -> void:
 	shader_material.set_shader_parameter(&"breath", breath)
 	shader_material.set_shader_parameter(&"lean", lean)
 	shader_material.set_shader_parameter(&"head_angle", head_angle)
-	shader_material.set_shader_parameter(&"hair_angle", hair_angle)
-	shader_material.set_shader_parameter(&"hair_offset", hair_offset)
+	# A pose patch carries the back hair as painted; hold the swing still under
+	# it so the two never part.
+	var hair_free := 1.0 - pose_mix
+	shader_material.set_shader_parameter(&"hair_angle", hair_angle * hair_free)
+	shader_material.set_shader_parameter(&"hair_offset", hair_offset * hair_free)
 	shader_material.set_shader_parameter(&"strand_shift", Vector2(-hair_angle * STRAND_REACH, hair_offset.y * 0.5))
 	shader_material.set_shader_parameter(&"hem_shift", Vector2(-hair_angle * HEM_REACH, hair_offset.y * 0.25))
 	shader_material.set_shader_parameter(&"eye_frame", float(eye_frame))
+	shader_material.set_shader_parameter(&"pose_mix", pose_mix)
+	shader_material.set_shader_parameter(&"face_mix", face_mix)
 
 
 func _step_blink(delta: float) -> void:
@@ -262,3 +342,40 @@ func _step_glance(delta: float) -> void:
 		if _glance_left == 0.0:
 			# The eyes come back at once; the head eases back after them.
 			gaze = Eyes.OPEN
+
+
+func _step_pose(delta: float) -> void:
+	if _pose_time < 0.0:
+		_next_pose -= delta
+		# Not in the middle of a click reaction.
+		if _next_pose <= 0.0 and _react_left <= -REACT_REST:
+			gesture()
+			_next_pose = rng.randf_range(POSE_GAP.x, POSE_GAP.y)
+		return
+	_pose_time += delta
+	var fade_out_at := POSE_FADE_IN + _pose_hold
+	if _pose_time < POSE_FADE_IN:
+		pose_mix = _pose_time / POSE_FADE_IN
+	elif _pose_time < fade_out_at:
+		pose_mix = 1.0
+	elif _pose_time < fade_out_at + POSE_FADE_OUT:
+		pose_mix = 1.0 - (_pose_time - fade_out_at) / POSE_FADE_OUT
+	else:
+		pose_mix = 0.0
+		_pose_time = -1.0
+
+
+func _step_smile(delta: float) -> void:
+	if _smile_time < 0.0:
+		face_mix = 0.0
+		return
+	_smile_time += delta
+	if _smile_time < SMILE_IN:
+		face_mix = _smile_time / SMILE_IN
+	elif _smile_time < SMILE_IN + SMILE_HOLD:
+		face_mix = 1.0
+	elif _smile_time < SMILE_IN + SMILE_HOLD + SMILE_OUT:
+		face_mix = 1.0 - (_smile_time - SMILE_IN - SMILE_HOLD) / SMILE_OUT
+	else:
+		face_mix = 0.0
+		_smile_time = -1.0

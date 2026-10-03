@@ -12,6 +12,9 @@ swaying hair never leaves the texture):
 - art/characters/mio_lobby_eyes.png: one cell per eye variant (half, closed,
   left, right), each the eye area with a feathered edge, so nothing else of
   the edits can differ from the illustration.
+- art/characters/mio_lobby_pose_hilt.png, _pose_beret and _face_smile: the
+  changed rectangle (PATCHES) of the edits mio_lobby_pose_hilt.png etc.,
+  for the Random Idle gestures and the click smile.
 - art/characters/mio_lobby_motion.png: how far each body pixel may sway,
   read by ui/lobby_hero.gd. Red is the hair strands in front of her
   shoulder, green the coat and skirt hem; both grow towards the tips.
@@ -30,6 +33,15 @@ ROOT = Path(__file__).resolve().parent.parent
 SOURCE_DIR = ROOT / "art" / "characters" / "source"
 SOURCE = SOURCE_DIR / "mio_lobby_source.png"
 EYE_VARIANTS = ["half", "closed", "left", "right"]
+# Edits that change a larger area: a passing pose and an expression. Each is
+# cut to its rectangle (trimmed figure pixels) and written as
+# mio_lobby_<name>.png; ui/lobby_hero.gd places them at the same rectangles
+# moved by MARGIN.
+PATCHES = {
+	"pose_hilt": (215, 300, 610, 770),
+	"pose_beret": (415, 85, 690, 545),
+	"face_smile": (295, 135, 455, 300),
+}
 OUTPUT = ROOT / "art" / "characters"
 # Trim to the figure plus TRIM, then add MARGIN on the sides and top. The feet
 # keep only TRIM below them, so the lobby can stand her on the floor.
@@ -177,9 +189,11 @@ def motion(figure: Image.Image) -> Image.Image:
 
 # An edit can come back nudged by a few pixels. Find the shift that best lines
 # up the face around the eyes (the eyes themselves differ on purpose).
-def alignment(figure: Image.Image, edit: Image.Image, reach: int = 14) -> tuple[int, int]:
-	x0, y0, x1, y1 = EYES
+def alignment(figure: Image.Image, edit: Image.Image, reach: int = 14, around: tuple[int, int, int, int] = EYES) -> tuple[int, int]:
+	x0, y0, x1, y1 = around
 	pad = 40
+	x0, y0 = max(x0, pad + reach), max(y0, pad + reach)
+	x1, y1 = min(x1, figure.width - pad - reach), min(y1, figure.height - pad - reach)
 	original = np.array(figure.convert("RGB")).astype(np.float32)
 	changed = np.array(edit.convert("RGB")).astype(np.float32)
 	ring = np.ones((y1 - y0 + pad * 2, x1 - x0 + pad * 2), dtype=bool)
@@ -195,6 +209,24 @@ def alignment(figure: Image.Image, edit: Image.Image, reach: int = 14) -> tuple[
 				best, best_error = (dx, dy), error
 	print("eyes", best, round(best_error, 1))
 	return best
+
+
+# The rectangle an edit changes, for choosing PATCHES: where it differs from
+# the illustration once aligned, with room for the feathered edge.
+def changed_area(figure: Image.Image, edit: Image.Image, shift: tuple[int, int], margin: int = 26) -> tuple[int, int, int, int]:
+	original = np.array(figure).astype(np.float32)
+	moved = np.array(edit.transform(edit.size, Image.AFFINE, (1, 0, shift[0], 0, 1, shift[1]))).astype(np.float32)
+	difference = np.abs(original - moved).sum(axis=2)
+	ys, xs = np.where(difference > 120)
+	return (max(0, int(np.percentile(xs, 0.5)) - margin), max(0, int(np.percentile(ys, 0.5)) - margin), min(figure.width, int(np.percentile(xs, 99.5)) + margin), min(figure.height, int(np.percentile(ys, 99.5)) + margin))
+
+
+def patch(figure: Image.Image, box: tuple[int, int, int, int], name: str, rect: tuple[int, int, int, int]) -> Image.Image:
+	edit, _ = trimmed(SOURCE_DIR / f"mio_lobby_{name}.png", box)
+	dx, dy = alignment(figure, edit, around=rect)
+	print(name, "changed", changed_area(figure, edit, (dx, dy)))
+	x0, y0, x1, y1 = rect
+	return edit.crop((x0 + dx, y0 + dy, x1 + dx, y1 + dy))
 
 
 def eye_atlas(box: tuple[int, int, int, int]) -> Image.Image:
@@ -225,6 +257,8 @@ def main() -> None:
 	framed(hair_under_body(figure, hair)).save(OUTPUT / "mio_lobby_hair.png", optimize=True)
 	framed(motion(figure)).save(OUTPUT / "mio_lobby_motion.png", optimize=True)
 	eye_atlas(box).save(OUTPUT / "mio_lobby_eyes.png", optimize=True)
+	for name, rect in PATCHES.items():
+		patch(figure, box, name, rect).save(OUTPUT / f"mio_lobby_{name}.png", optimize=True)
 	print("figure", figure.size, "framed", framed(figure).size)
 
 

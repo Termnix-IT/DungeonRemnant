@@ -56,8 +56,14 @@ func run_tests() -> void:
 	var glanced_eyes := false
 	var widest_angle := 0.0
 	var widest_hair := 0.0
+	var gestures := 0
+	var was_posing := false
 	for step in 2400:
 		hero.advance(0.025)
+		var posing := hero.pose_mix > 0.0
+		if posing and not was_posing:
+			gestures += 1
+		was_posing = posing
 		var closed := hero.eye_frame == LobbyHero.Eyes.CLOSED
 		if closed and not was_closed:
 			blinks += 1
@@ -67,6 +73,7 @@ func run_tests() -> void:
 		widest_angle = maxf(widest_angle, absf(rad_to_deg(hero.head_angle)))
 		widest_hair = maxf(widest_hair, absf(hero.hair_angle))
 	check(blinks >= 8 and blinks <= 21, "She blinks every 3-7 s over 60 s: %d" % blinks)
+	check(gestures >= 2 and gestures <= 5, "A Random Idle gesture comes every 12-25 s: %d in 60 s" % gestures)
 	check(half_seen, "Blinks pass through half-closed eyes")
 	check(glanced_eyes, "Glances move her eyes to one side")
 	check(widest_angle > 0.5 and widest_angle <= 2.01, "Glances turn her head by up to 2°: %.2f" % widest_angle)
@@ -104,6 +111,24 @@ func run_tests() -> void:
 		hero.advance(0.05)
 		steady = steady and absf(hero.hair_angle) < LobbyHero.HAIR_LIMIT and is_finite(hero.hair_angle) and is_finite(hero.hair_offset.y)
 	check(steady, "Forty quick taps keep the hair within its limit")
+	# A click brings a smile that fades again.
+	hero.advance(2.0)
+	hero.react()
+	hero.advance(0.05)
+	check(hero.face_mix > 0.0, "A click starts a smile")
+	hero.advance(LobbyHero.SMILE_IN + LobbyHero.SMILE_HOLD * 0.5)
+	check(is_equal_approx(hero.face_mix, 1.0), "The smile holds")
+	hero.advance(LobbyHero.SMILE_HOLD + LobbyHero.SMILE_OUT)
+	check(hero.face_mix == 0.0, "The smile fades back")
+	# A gesture fades in, holds, fades out, and holds the back hair still.
+	for name: StringName in LobbyHero.POSES:
+		hero.gesture(name)
+		hero.advance(LobbyHero.POSE_FADE_IN + 0.05)
+		var rect: Rect2 = LobbyHero.POSES[name][1]
+		check(hero.pose == name and is_equal_approx(hero.pose_mix, 1.0) and material.get_shader_parameter(&"pose_rect") == Vector4(rect.position.x, rect.position.y, rect.size.x, rect.size.y), "Gesture %s shows its patch" % name)
+		check(is_zero_approx(material.get_shader_parameter(&"hair_angle")), "The back hair holds still under gesture %s" % name)
+		hero.advance(LobbyHero.POSE_HOLD.y + LobbyHero.POSE_FADE_OUT + 0.05)
+		check(hero.pose_mix == 0.0, "Gesture %s returns to the idle" % name)
 	hero.advance(LobbyHero.REACT_TIME)
 	check(is_equal_approx(hero.scale.y, 1.0) and is_equal_approx(hero.scale.x, 1.0), "The hop settles back to rest")
 	check(hero.get_rect().get_center().x > viewport.x * 0.66, "Heroine stands on the right side of the lobby")
