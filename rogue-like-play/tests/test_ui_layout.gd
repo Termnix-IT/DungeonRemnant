@@ -94,8 +94,6 @@ func run_tests() -> void:
 	quit(0 if failures == 0 else 1)
 
 
-# A lobby entry is chosen by its first press and entered by the next.
-func enter(hub: Node, button: Button) -> void:
-	if hub.home_page.buttons[hub.home_page.selected] != button:
-		button.pressed.emit()
+# One press on a lobby entry enters it.
+func enter(_hub: Node, button: Button) -> void:
 	button.pressed.emit()

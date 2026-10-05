@@ -307,8 +307,9 @@ func show_page(target: String) -> void:
 	hero_speech.hide()
 	for control in [home_page, equipment_page, sell_page, warehouse_page, departure_page, upgrade_page, settings_page]:
 		control.hide()
-	key_guide.visible = page != "home"
 	key_guide.clear_hints()
+	# The lobby has nowhere to go back to; it shows how to choose and enter.
+	back_button.visible = page != "home"
 	title_label.visible = page not in ["sell", "upgrade"]
 	sell_page.mode_tabs.visible = page == "sell"
 	(upgrade_page as SkillTreePanel).mode_tabs.visible = page == "upgrade"
@@ -326,6 +327,8 @@ func show_page(target: String) -> void:
 			home_page.refresh(_state, featured_stage())
 			home_page.show()
 			home_page.focus_selected()
+			key_guide.add_hint("Enter", "A", "決定")
+			key_guide.add_hint("↑ / ↓", "▲ / ▼", "選ぶ")
 		"equipment":
 			title_label.text = "装備・持ち込み準備"
 			equipment_page.show()

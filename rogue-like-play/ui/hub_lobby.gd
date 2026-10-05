@@ -63,6 +63,9 @@ const MENU_TOP := 168.0
 const ROW_HEIGHT := 80.0
 const BAND_INSET := 14.0
 # The panel centres in the floor between the menu and the heroine.
+# How long the pointer must rest on an entry before it is chosen, so one
+# crossed on the way to the panel's button is not.
+const HOVER_INTENT := 0.1
 const PANEL_CENTER_X := 0.465
 const PANEL_WIDTH := 660.0
 # Low enough that the altar and the foot of the stairs stay in view, its
@@ -88,6 +91,8 @@ var description_label: Label
 var hero: LobbyHero
 var speech_label: Label
 var _speech_index := 0
+# The entry under the pointer, or -1.
+var _hover_index := -1
 var _speech_token := 0
 var _shadow_texture: GradientTexture2D
 var hero_button: Button
@@ -155,6 +160,8 @@ func _build_menu() -> void:
 		icon.size = Vector2(48, 48)
 		button.pressed.connect(_pressed.bind(index))
 		button.focus_entered.connect(_focused.bind(index))
+		button.mouse_entered.connect(_hovered.bind(index))
+		button.mouse_exited.connect(_unhovered.bind(index))
 		if previous != null:
 			previous.focus_neighbor_bottom = button.get_path()
 			button.focus_neighbor_top = previous.get_path()
@@ -506,11 +513,27 @@ func _move_band(value: float) -> void:
 	queue_redraw()
 
 
+# Keys and the gamepad choose by moving focus and press to enter; the pointer
+# chooses by resting on an entry, so one click enters.
 func _pressed(index: int) -> void:
-	if index == selected:
-		activated.emit(selected_id())
-	else:
+	if not is_visible_in_tree():
+		return
+	select(index)
+	activated.emit(selected_id())
+
+
+# Resting on an entry chooses it, and focus follows so keys go on from there.
+func _hovered(index: int) -> void:
+	_hover_index = index
+	await get_tree().create_timer(HOVER_INTENT).timeout
+	if _hover_index == index and is_visible_in_tree():
 		select(index)
+		buttons[index].grab_focus()
+
+
+func _unhovered(index: int) -> void:
+	if _hover_index == index:
+		_hover_index = -1
 
 
 # A click gives focus on mouse down; the click itself chooses on release, so

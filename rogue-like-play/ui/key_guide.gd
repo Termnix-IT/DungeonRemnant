@@ -6,6 +6,10 @@ extends HBoxContainer
 # action can also be clicked. While a gamepad is in use the caps show its
 # buttons (B, A) instead of the keys.
 
+# Each cap starts this far into its hint.
+const CAP_INSET := 4.0
+const STATES: Array[StringName] = [&"normal", &"hover", &"pressed", &"hover_pressed", &"disabled"]
+
 var _hints: Array[Button] = []
 var pad := false
 
@@ -32,6 +36,7 @@ func add_hint(keys: String, buttons: String, text: String, action: Callable = Ca
 		hint.focus_mode = Control.FOCUS_NONE
 	hint.draw.connect(_draw_cap.bind(hint))
 	add_child(hint)
+	hint.set_meta(&"base_style", hint.get_theme_stylebox(&"normal"))
 	_hints.append(hint)
 	_fit(hint)
 	return hint
@@ -62,11 +67,20 @@ func cap_text(hint: Button) -> String:
 	return hint.get_meta(&"buttons" if pad else &"keys")
 
 
-# The cap's width, for drawing it in the hint's left padding.
+# The cap is drawn in the hint's left padding, which each hint widens to its
+# own cap: every cap then starts at the hint's left edge and its words follow
+# the same gap after it, whether the cap is "R" or "LB / RB". With one shared
+# padding a wide cap would reach out past the hint, beyond the screen's edge
+# when it leads the guide.
 func _fit(hint: Button) -> void:
 	var font := hint.get_theme_font(&"font")
 	var size := hint.get_theme_font_size(&"cap_font_size")
-	hint.set_meta(&"cap_width", font.get_string_size(cap_text(hint), HORIZONTAL_ALIGNMENT_LEFT, -1, size).x + hint.get_theme_constant(&"cap_padding") * 2.0)
+	var width := font.get_string_size(cap_text(hint), HORIZONTAL_ALIGNMENT_LEFT, -1, size).x + hint.get_theme_constant(&"cap_padding") * 2.0
+	hint.set_meta(&"cap_width", width)
+	var padded := (hint.get_meta(&"base_style") as StyleBox).duplicate() as StyleBox
+	padded.content_margin_left = CAP_INSET + width + hint.get_theme_constant(&"cap_gap")
+	for state in STATES:
+		hint.add_theme_stylebox_override(state, padded)
 
 
 func _draw_cap(hint: Button) -> void:
@@ -74,8 +88,7 @@ func _draw_cap(hint: Button) -> void:
 	var font := hint.get_theme_font(&"font")
 	var size := hint.get_theme_font_size(&"cap_font_size")
 	var height := font.get_height(size) + 6.0
-	# The theme's left padding holds the widest cap; each cap ends the same
-	# gap before the text, so the words line up whatever the key.
+	# The cap ends the same gap before the words.
 	var right := hint.get_theme_stylebox(&"normal").content_margin_left - hint.get_theme_constant(&"cap_gap")
 	var rect := Rect2(Vector2(right - width, (hint.size.y - height) * 0.5), Vector2(width, height))
 	var active := hint.is_hovered() or hint.has_focus()

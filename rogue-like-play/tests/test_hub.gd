@@ -181,11 +181,18 @@ func run_tests() -> void:
 	hub.hide()
 	check(not ambience.dust.emitting, "Hidden hub stops the dust")
 	hub.show()
-	# Choosing and entering are separate: one press chooses, the next enters.
+	# Choosing and entering are separate: keys and the gamepad choose by focus,
+	# the pointer by resting on an entry; a press enters.
 	await create_timer(HubAmbience.FOCUS_TIME + 0.1).timeout
 	check(ambience.focus_id == &"departure" and ambience.focus_strength > 0.9, "Departure lights the gate")
-	hub.equipment_button.pressed.emit()
-	check(hub.page == "home" and lobby.selected_id() == &"equipment" and hub.decide_button.text == "装備を整える", "First press chooses equipment without leaving")
+	hub.equipment_button.mouse_entered.emit()
+	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
+	check(hub.page == "home" and lobby.selected_id() == &"equipment" and hub.decide_button.text == "装備を整える" and hub.equipment_button.has_focus(), "Resting the pointer on equipment chooses it without leaving")
+	hub.equipment_button.mouse_exited.emit()
+	hub.warehouse_button.mouse_entered.emit()
+	hub.warehouse_button.mouse_exited.emit()
+	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
+	check(lobby.selected_id() == &"equipment", "An entry the pointer only crosses is not chosen")
 	await create_timer(HubAmbience.FOCUS_TIME + 0.1).timeout
 	check(ambience.focus_id == &"equipment", "Choosing equipment lights the weapon rack")
 	check(lobby.equipment_label.is_visible_in_tree() and not lobby.carried_label.is_visible_in_tree(), "Panel shows only the chosen entry's information")
@@ -233,7 +240,24 @@ func run_tests() -> void:
 	hub.key_guide._input(key_press)
 	check(hub.key_guide.cap_text(hub.back_button) == "Esc", "Keys turn it back")
 	hub.back_button.pressed.emit()
-	check(hub.page == "home" and not hub.key_guide.visible and not hub.purse.quiet, "The guide's back returns to the lobby, where Gold is full")
+	check(hub.page == "home" and not hub.back_button.visible and not hub.purse.quiet, "The guide's back returns to the lobby, where Gold is full")
+	var lobby_hints: Array = hub.key_guide.get_children().filter(func(hint: Control): return hint.visible).map(func(hint: Button): return hint.text)
+	check(hub.key_guide.visible and lobby_hints == ["決定", "選ぶ"], "The lobby's guide shows how to choose and enter, with no back")
+	# Every cap starts inside its hint, the wide "Enter" leading the lobby's
+	# guide and a gamepad's "LB / RB" alike, so none reaches past the edge.
+	for use_pad in [false, true]:
+		var press: InputEvent = InputEventJoypadButton.new() if use_pad else InputEventKey.new()
+		press.pressed = true
+		hub.key_guide._input(press)
+		for hint: Button in hub.key_guide.get_children():
+			var cap_left: float = hint.get_theme_stylebox(&"normal").content_margin_left - hint.get_theme_constant(&"cap_gap") - hint.get_meta(&"cap_width")
+			check(is_equal_approx(cap_left, KeyGuide.CAP_INSET), "The %s cap starts at its hint's edge" % hub.key_guide.cap_text(hint))
+	hub.show_page("warehouse")
+	check(hub.back_button.visible, "Pages bring the back hint again")
+	hub.show_page("home")
+	# One click on an entry not yet chosen enters it.
+	hub.sell_button.pressed.emit()
+	check(hub.page == "sell" and lobby.selected_id() == &"shop", "One press on another entry chooses and enters it")
 	hub.show_page("sell")
 	check(not hub.purse.quiet, "Gold is full in the shop")
 	# The shop: no framed panels, one stat display, buying and selling at the title's place.
@@ -287,7 +311,7 @@ func run_tests() -> void:
 	check(lobby.selected_id() == &"storage" and lobby.stored_label.is_visible_in_tree(), "Focus chooses an entry")
 	# Settings open as their own page, entered like the others.
 	var settings_entry: Button = lobby.buttons[-1]
-	settings_entry.pressed.emit()
+	settings_entry.grab_focus()
 	check(lobby.selected_id() == &"settings" and hub.decide_button.visible and hub.decide_button.text == "設定を開く" and lobby.volume_value.text == "100%" and lobby.display_value.text == "ウィンドウ", "Settings entry shows current values and an open button")
 	settings_entry.pressed.emit()
 	var page: HubSettings = hub.settings_page

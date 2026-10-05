@@ -113,8 +113,6 @@ func capture() -> void:
 	quit(0 if ok else 1)
 
 
-# A lobby entry is chosen by its first click and entered by the next.
-func enter(hub: Node, button: Button) -> void:
-	if hub.home_page.buttons[hub.home_page.selected] != button:
-		await click(button)
+# One click on a lobby entry enters it.
+func enter(_hub: Node, button: Button) -> void:
 	await click(button)
