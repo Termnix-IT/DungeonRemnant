@@ -655,6 +655,15 @@ content_margin_top = 18.0
 content_margin_right = 34.0
 content_margin_bottom = 18.0
 
+[sub_resource type="StyleBoxFlat" id="SlabVeilWideSurface"]
+resource_name = "SlabVeilWideSurface"
+expand_margin_left = 80.0
+content_margin_left = 0.0
+content_margin_top = 18.0
+content_margin_right = 24.0
+content_margin_bottom = 18.0
+bg_color = Color(0.03, 0.028, 0.03, 0.7)
+
 [sub_resource type="StyleBoxFlat" id="SlabSolidEndSurface"]
 resource_name = "SlabSolidEndSurface"
 expand_margin_right = 80.0
@@ -1209,6 +1218,20 @@ NoteLabel/font_sizes/font_size = 14
 SlabSolid/base_type = &"PanelContainer"
 SlabSolidEnd/base_type = &"PanelContainer"
 SlabSolidEnd/styles/panel = SubResource("SlabSolidEndSurface")
+SlabVeilWide/base_type = &"PanelContainer"
+SlabVeilWide/styles/panel = SubResource("SlabVeilWideSurface")
+SkillNode/base_type = &"Button"
+SkillNode/colors/disc = Color(0.035, 0.032, 0.035, 0.96)
+SkillNode/colors/disc_hover = Color(0.1, 0.09, 0.085, 0.98)
+SkillNode/colors/focus_ring = Color(0.93333334, 0.9137255, 0.8745098, 0.9)
+SkillNode/font_sizes/font_size = 15
+SkillNode/font_sizes/rank_font_size = 12
+SkillNode/styles/normal = SubResource("Invisible")
+SkillNode/styles/hover = SubResource("Invisible")
+SkillNode/styles/pressed = SubResource("Invisible")
+SkillNode/styles/hover_pressed = SubResource("Invisible")
+SkillNode/styles/disabled = SubResource("Invisible")
+SkillNode/styles/focus = SubResource("Invisible")
 SlabVeil/base_type = &"PanelContainer"
 SlabVeil/styles/panel = SubResource("SlabVeilSurface")
 SlabSolid/styles/panel = SubResource("SlabSolidSurface")

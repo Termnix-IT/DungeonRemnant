@@ -3,10 +3,10 @@
 [resource]
 script = ExtResource("1")
 id = &"vitality"
-display_name = "生命力"
+display_name = "生命力 I"
 effect = &"hp"
 amount = 3
-max_rank = 20
+max_rank = 5
 base_cost = 100
 cost_step = 50
 prerequisite = &"hp"

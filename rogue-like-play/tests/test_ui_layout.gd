@@ -42,7 +42,7 @@ func run_tests() -> void:
 			if control.visible:
 				# The shop's slab runs off the screen's left edge by design; it
 				# still has to stay on the screen.
-				var bounds: Rect2 = root.get_visible_rect() if control in [hub.sell_page, hub.equipment_page, hub.warehouse_page] else content.get_global_rect()
+				var bounds: Rect2 = root.get_visible_rect() if control in [hub.sell_page, hub.equipment_page, hub.warehouse_page, hub.upgrade_page] else content.get_global_rect()
 				check(bounds.grow(1).encloses(control.get_global_rect()), "%s page fits Hub content" % page)
 		if page == "confirm":
 			check(not hub.departure_page.equipment_label.get_global_rect().intersects(hub.departure_page.review_button.get_global_rect()), "Confirmation equipment does not overlap review button")

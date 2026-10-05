@@ -3,11 +3,11 @@
 [resource]
 script = ExtResource("1")
 id = &"attack"
-display_name = "攻撃力"
+display_name = "攻撃力 I"
 effect = &"attack"
 amount = 1
-max_rank = 20
+max_rank = 5
 base_cost = 100
 cost_step = 60
 prerequisite = &"hp"
-prerequisite_rank = 1
+prerequisite_rank = 3

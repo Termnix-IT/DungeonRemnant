@@ -19,7 +19,6 @@ var equipment_label: Label
 var carried_label: Label
 var stored_label: Label
 var main_glyph: Control
-var upgrade_label: Label
 var feedback: Label
 var purchase_button: Button
 var start_button: Button
@@ -161,13 +160,19 @@ func _ready() -> void:
 	departure_page.departure_requested.connect(func(): start_requested.emit())
 	var tree := SkillTreePanel.new()
 	upgrade_page = _page(tree)
+	# Its tree's slab runs off the left edge, its detail's off the right.
+	tree.offset_left = bleed
+	tree.offset_right = -bleed
+	heading_box.add_child(tree.mode_tabs)
+	heading_box.move_child(tree.mode_tabs, 1)
+	tree.mode_tabs.visible = false
+	tree.mode_changed.connect(_upgrade_hints)
 	settings_page = _page(HubSettings.new()) as HubSettings
 	settings_page.changed.connect(func(): settings_changed.emit())
 	tree.hp_requested.connect(func(): purchase_requested.emit())
 	tree.skill_requested.connect(func(id: StringName): skill_requested.emit(id))
 	tree.entry_requested.connect(func(stage: StageData, floor_number: int): entry_requested.emit(stage, floor_number))
 	purchase_button = tree.upgrade_button
-	upgrade_label = tree.root_label
 	# Footer: the key guide at the bottom left, the same on every screen.
 	var footer_room := Control.new()
 	footer_room.custom_minimum_size.y = 44
@@ -296,8 +301,9 @@ func show_page(target: String) -> void:
 		control.hide()
 	key_guide.visible = page != "home"
 	key_guide.clear_hints()
-	title_label.visible = page != "sell"
+	title_label.visible = page not in ["sell", "upgrade"]
 	sell_page.mode_tabs.visible = page == "sell"
+	(upgrade_page as SkillTreePanel).mode_tabs.visible = page == "upgrade"
 	# Gold stays where the eye looks for it; it is quiet where nothing costs.
 	purse.quiet = page not in ["home", "sell", "upgrade"]
 	for child in _title_block.get_children():
@@ -334,6 +340,7 @@ func show_page(target: String) -> void:
 		"upgrade":
 			title_label.text = "永久強化"
 			upgrade_page.show()
+			_upgrade_hints()
 			(upgrade_page as SkillTreePanel).focus_first_action()
 		"settings":
 			title_label.text = "設定"
@@ -365,6 +372,17 @@ func show_page(target: String) -> void:
 func show_save_status(text: String, alert: bool) -> void:
 	save_label.text = text
 	save_label.visible = alert
+
+
+# The upgrade's keys: the action, moving between nodes, the switch of mode.
+func _upgrade_hints() -> void:
+	if page != "upgrade":
+		return
+	var tree := upgrade_page as SkillTreePanel
+	key_guide.clear_hints()
+	key_guide.add_hint("Enter", "A", "解放" if tree.entries_shown else "強化")
+	key_guide.add_hint("矢印", "十字", "選ぶ")
+	key_guide.add_hint("R", "Y", "能力の成長へ" if tree.entries_shown else "開始地点へ", func(): tree.set_entries(not tree.entries_shown))
 
 
 # The shop's keys: the trade, the category tabs and the switch of mode.

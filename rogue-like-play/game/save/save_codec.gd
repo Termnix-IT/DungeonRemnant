@@ -1,7 +1,10 @@
 class_name SaveCodec
 extends RefCounted
 
-const VERSION := 3
+# 4: the permanent branches are split into tiers (SkillCatalog.spread_legacy).
+const VERSION := 4
+# Before version 4 each branch was one node; what it needed to open.
+const LEGACY_PREREQUISITES := {"vitality": ["hp", 3], "attack": ["hp", 1], "mana": ["hp", 1], "defense": ["attack", 1]}
 const MAX_GOLD := 1000000000
 
 
@@ -52,7 +55,6 @@ static func decode(data: Variant) -> RunCarryover:
 	if not _decode_campaign(data, state):
 		return null
 	state.gold = int(data.gold)
-	state.hp_upgrade_level = int(data.hp_upgrade_level)
 	return state
 
 
@@ -101,17 +103,45 @@ static func _decode_item(data: Variant) -> ItemData:
 	return item
 
 
+# A save from before the tiers: checked by the rules it was made under, then
+# each branch's rank spread over its tiers. The old tree opened attack and
+# mana at base HP Lv 1; the tiers open at its cap, so a save that grew a
+# branch early gets base HP raised to its cap rather than losing the branch.
+static func _decode_legacy_skills(skills: Dictionary, state: RunCarryover) -> bool:
+	var ranks := {}
+	for id: Variant in skills:
+		if not id is String or not LEGACY_PREREQUISITES.has(id) or not integer(skills[id], 0, 20):
+			return false
+		ranks[id] = int(skills[id])
+	for id: String in ranks:
+		var needed: Array = LEGACY_PREREQUISITES[id]
+		var held: int = state.hp_upgrade_level if needed[0] == "hp" else int(ranks.get(needed[0], 0))
+		if ranks[id] > 0 and held < needed[1]:
+			return false
+		var levels := SkillCatalog.spread_legacy(StringName(id), ranks[id])
+		if levels.is_empty() and ranks[id] > 0:
+			return false
+		state.skill_levels.merge(levels)
+	if not state.skill_levels.is_empty():
+		state.hp_upgrade_level = state.upgrade.costs.size()
+	return true
+
+
 static func _decode_campaign(data: Dictionary, state: RunCarryover) -> bool:
 	var skills: Variant = data.get("skills", {})
 	if not skills is Dictionary:
 		return false
-	for id: Variant in skills:
-		if not id is String:
+	if int(data.version) < 4:
+		if not _decode_legacy_skills(skills, state):
 			return false
-		var node := SkillCatalog.find(StringName(id))
-		if node == null or not integer(skills[id], 0, node.max_rank):
-			return false
-		state.skill_levels[id] = int(skills[id])
+	else:
+		for id: Variant in skills:
+			if not id is String:
+				return false
+			var node := SkillCatalog.find(StringName(id))
+			if node == null or not integer(skills[id], 0, node.max_rank):
+				return false
+			state.skill_levels[id] = int(skills[id])
 	for field in ["bosses", "entries"]:
 		var values: Variant = data.get(field, {})
 		if not values is Dictionary:

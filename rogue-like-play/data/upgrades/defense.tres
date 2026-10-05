@@ -3,11 +3,11 @@
 [resource]
 script = ExtResource("1")
 id = &"defense"
-display_name = "防御力"
+display_name = "防御力 I"
 effect = &"defense"
 amount = 1
-max_rank = 10
+max_rank = 4
 base_cost = 150
 cost_step = 90
-prerequisite = &"attack"
-prerequisite_rank = 1
+prerequisite = &"hp"
+prerequisite_rank = 3

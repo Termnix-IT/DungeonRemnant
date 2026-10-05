@@ -2,12 +2,12 @@
 [ext_resource type="Script" path="res://data/definitions/skill_node.gd" id="1"]
 [resource]
 script = ExtResource("1")
-id = &"mana"
-display_name = "魔力量 I"
+id = &"mana_2"
+display_name = "魔力量 II"
 effect = &"mp"
 amount = 3
-max_rank = 4
-base_cost = 80
+max_rank = 3
+base_cost = 240
 cost_step = 40
-prerequisite = &"hp"
-prerequisite_rank = 3
+prerequisite = &"mana"
+prerequisite_rank = 4

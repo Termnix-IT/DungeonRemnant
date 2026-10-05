@@ -75,13 +75,11 @@ func check_wrapping() -> void:
 
 func check_upgrade(hub) -> void:
 	hub.show_page("upgrade")
-	var locked_found := false
-	for id: StringName in hub.upgrade_page.skill_rows:
-		var card = hub.upgrade_page.skill_rows[id].control
-		if card.cost_label.text.contains("条件未達"):
-			locked_found = true
-			check(card.cost_label.theme_type_variation == &"MutedLabel", "Locked price drops the gold tone")
-	check(locked_found, "Fresh save shows a locked branch")
+	var tree: SkillTreePanel = hub.upgrade_page
+	check(tree.root_button.open and not tree.nodes[&"attack"].open, "Fresh save shows the centre open and the branches shut")
+	tree.select_upgrade(&"attack")
+	check(tree.upgrade_button.disabled and tree.upgrade_button.text == "条件未達", "A shut node's action says why")
+	tree.select_upgrade(&"hp")
 
 
 func check_stages(hub, main) -> void:
