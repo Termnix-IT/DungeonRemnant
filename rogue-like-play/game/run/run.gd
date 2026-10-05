@@ -34,6 +34,9 @@ const ENEMY_TYPES: Array[EnemyStats] = [
 @export var level_settings: LevelSettings = preload("res://data/progression/levels.tres")
 ## Zero selects a fresh random seed. Nonzero seeds reproduce layouts for testing.
 @export var generation_seed: int = 0
+# The player's screen-shake setting (GameSettings.shake_scale()): 1 shakes at
+# full strength, 0 not at all.
+var shake_scale := 1.0
 var preview: Node2D
 var stage_data: StageData
 var starting_floor := 1
@@ -817,6 +820,7 @@ func _scale_enemy(enemy: Node2D) -> void:
 
 func shake_camera(strength: float = SHAKE_STRENGTH) -> void:
 	stop_shake()
+	strength *= shake_scale
 	if strength <= 0.0:
 		return
 	shake_tween = create_tween()

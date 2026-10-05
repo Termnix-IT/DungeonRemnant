@@ -209,6 +209,10 @@ func check_confirmation_page() -> void:
 	main.state.inventory.add(ItemCatalog.POTION, 3)
 	hub.show_page("confirm")
 	check(page.inventory_list.item_count == 1 and page.carried_count.text == "1 / 40 枠", "Carried items list with capacity")
+	check(page.start_only.visible and not page.start_choice.visible and page.start_only.text == "1F", "A single start floor reads as text, not a tab of one")
+	main.state.unlocked_entries[String(page.selected_stage.id)] = [11]
+	hub.show_page("confirm")
+	check(page.start_choice.visible and not page.start_only.visible and page.start_choice.item_count == 2, "Two start floors become tabs")
 	main.free()
 	await process_frame
 

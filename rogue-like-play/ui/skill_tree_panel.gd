@@ -122,7 +122,14 @@ func _build_mode_tabs() -> void:
 
 
 func _build_tree(parent: VBoxContainer) -> void:
-	growth_rule = HintMark.make(parent, "基礎HPを上限まで上げると4本の枝が開き、各段を上限まで上げると次の段が開く。", HubSettings.TOPIC_GROWTH)
+	# The rule's mark beside a caption, so it reads as about the tree.
+	var heading := HBoxContainer.new()
+	heading.theme_type_variation = &"CompactRow"
+	parent.add_child(heading)
+	var caption := HubUI.label(heading, "ツリーの開き方", &"NoteLabel")
+	caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	growth_rule = HintMark.make(heading, "基礎HPを上限まで上げると4本の枝が開き、各段を上限まで上げると次の段が開く。", HubSettings.TOPIC_GROWTH)
 	canvas = Control.new()
 	canvas.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -473,7 +480,8 @@ func _refresh_detail() -> void:
 	detail_rank.text = "上限" if data.cost < 0 else "Lv %d / %d" % [data.rank, data.max]
 	detail_emblem.queue_redraw()
 	current_value.text = "今　%s +%d" % [effect, data.rank * data.amount]
-	next_value.text = "%s +%d" % [effect, (data.rank + 1) * data.amount] if data.cost >= 0 else "%s +%d" % [effect, data.rank * data.amount]
+	# The next rank's total, said as next like the current one is said as now.
+	next_value.text = "次　%s +%d" % [effect, (data.rank + 1) * data.amount] if data.cost >= 0 else "%s +%d" % [effect, data.rank * data.amount]
 	# The next value already says the gain; only a capped node needs a line.
 	benefit_label.text = "" if data.cost >= 0 else "この段は最大まで成長しています"
 	benefit_label.visible = data.cost < 0

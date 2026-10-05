@@ -154,6 +154,7 @@ func start_run() -> void:
 	active_run.name = "Run"
 	active_run.initial_state = state
 	active_run.generation_seed = run_seed
+	active_run.shake_scale = $Hub.settings.shake_scale()
 	if stage != null:
 		active_run.stage_data = stage
 		active_run.starting_floor = entry_floor

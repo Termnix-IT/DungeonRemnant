@@ -32,6 +32,11 @@ func check_help(hub, page: HubSettings) -> void:
 	check(page.help_body.text.contains("Lv 1") and page.topic_buttons[HubSettings.TOPIC_RUN].has_focus(), "A topic reads its paragraphs and takes focus")
 	page.select_topic(HubSettings.TOPIC_LOSS)
 	check(page.help_body.text.contains("半分") and page.help_title.text == "失うもの", "Choosing a topic shows it")
+	# Lines of about 40 full-width characters at most (Xbox Accessibility
+	# Guideline 101 for Japanese) once the page has its width.
+	await process_frame
+	var body_size := page.help_body.get_theme_font_size(&"font_size")
+	check(page.help_body.size.x > body_size * 20 and page.help_body.size.x <= body_size * 40, "Help lines stay within about 40 characters")
 	hub.go_back()
 	check(hub.page == "settings" and not page.help_shown and hub.title_label.text == "設定" and page.help_button.has_focus(), "Back from the help returns to the settings")
 	var marks: Array[Node] = hub.get_tree().get_nodes_in_group(HintMark.GROUP)
@@ -328,8 +333,23 @@ func run_tests() -> void:
 	check(AudioServer.is_bus_mute(master), "Silent mutes the master bus")
 	page.volume_slider.value = 100
 	check(not AudioServer.is_bus_mute(master) and is_equal_approx(AudioServer.get_bus_volume_linear(master), 1.0), "Loudest restores full volume")
+	# Effects and the room tone have their own buses under the master.
+	page.effects_slider.value = 40
+	page.ambience_slider.value = 0
+	var effects_bus := AudioServer.get_bus_index(GameSettings.EFFECTS_BUS)
+	var ambience_bus := AudioServer.get_bus_index(GameSettings.AMBIENCE_BUS)
+	check(effects_bus > 0 and ambience_bus > 0 and AudioServer.get_bus_send(effects_bus) == &"Master" and AudioServer.get_bus_send(ambience_bus) == &"Master", "Effects and ambience run on their own buses into the master")
+	check(is_equal_approx(hub.settings.effects_volume, 0.4) and is_equal_approx(AudioServer.get_bus_volume_linear(effects_bus), 0.4) and page.effects_value.text == "40%", "The effects bar sets the effects bus")
+	check(hub.settings.ambience_volume == 0.0 and AudioServer.is_bus_mute(ambience_bus) and not AudioServer.is_bus_mute(master), "Silencing the room tone leaves the rest playing")
+	page.effects_slider.value = 100
+	page.ambience_slider.value = 100
+	check(GameAudio.play(hub, &"confirm") == null or GameAudio.play(hub, &"confirm").bus == GameSettings.EFFECTS_BUS, "Cues play on the effects bus")
+	page.shake_cycler.grab_focus()
+	check(page.focused_row == 3 and page.note.text.contains("揺れ"), "The shake row has its own note")
+	root.push_input(step_right)
+	check(hub.settings.shake_level == 1 and page.shake_cycler.text == "弱め" and is_equal_approx(hub.settings.shake_scale(), 0.5), "Right on the shake selector softens the shake")
 	page.display_cycler.grab_focus()
-	check(page.focused_row == 1 and page.note.text.contains("全画面"), "The band and the note follow the focused setting")
+	check(page.focused_row == 4 and page.note.text.contains("全画面"), "The band and the note follow the focused setting")
 	root.push_input(step_right)
 	check(hub.settings.fullscreen and page.display_cycler.text == "全画面" and page.display_cycler.has_focus(), "Right on the selector steps to fullscreen and keeps focus")
 	page.display_cycler.pressed.emit()
@@ -400,6 +420,14 @@ func run_tests() -> void:
 	var run: Node2D = main.active_run
 	var player: Node2D = run.turns.player
 	check(not hub.visible and run.turns.gold == 71 and run.progression.level == 1, "Start initializes new run with remaining Gold")
+	# The shake setting chosen in the hub ("弱め" above) reaches the run.
+	check(is_equal_approx(run.shake_scale, 0.5), "The run shakes as the settings say")
+	run.shake_camera()
+	check(run.shake_tween != null and run.shake_tween.is_valid(), "A softened shake still shakes")
+	run.shake_scale = 0.0
+	run.shake_camera()
+	check(not run.shake_tween.is_valid() and run.camera.offset == Vector2.ZERO, "With the shake off, a hit leaves the camera still")
+	run.shake_scale = 0.5
 	check(player.stats.max_hp == 29 and player.hp == 29, "Base HP plus permanent upgrade plus equipment")
 	main.start_run()
 	var runs := main.get_children().filter(func(child: Node): return child.has_method("finish_run"))
@@ -468,12 +496,16 @@ func run_tests() -> void:
 	var stored := GameSettings.new()
 	stored.path = "res://.godot/settings-test.cfg"
 	stored.volume = 0.35
+	stored.effects_volume = 0.6
+	stored.ambience_volume = 0.2
+	stored.shake_level = 2
 	stored.fullscreen = true
 	check(stored.save_settings(), "Settings save to their own file")
 	var loaded := GameSettings.new()
 	loaded.path = stored.path
 	loaded.load_settings()
 	check(is_equal_approx(loaded.volume, 0.35) and loaded.fullscreen, "Settings survive a restart")
+	check(is_equal_approx(loaded.effects_volume, 0.6) and is_equal_approx(loaded.ambience_volume, 0.2) and loaded.shake_level == 2 and loaded.shake_scale() == 0.0, "Separate volumes and the shake survive a restart")
 	var broken := FileAccess.open(stored.path, FileAccess.WRITE)
 	broken.store_string("[audio\nvolume = ")
 	broken.close()

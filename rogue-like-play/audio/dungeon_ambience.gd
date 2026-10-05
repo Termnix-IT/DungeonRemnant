@@ -10,6 +10,7 @@ static var _streams: Dictionary = {}
 func start(forest: bool = false) -> void:
 	var next_stream: AudioStream = stream_override if stream_override != null else stream_for(forest)
 	volume_db = -32.0
+	bus = GameSettings.AMBIENCE_BUS
 	if stream != next_stream:
 		stream = next_stream
 	if is_inside_tree() and DisplayServer.get_name() != "headless" and not playing:

@@ -29,6 +29,8 @@ const EDGE_FADE := preload("res://ui/edge_fade.gdshader")
 var stages: Array[StageData] = []
 var state: RunCarryover
 var start_choice: SegmentedChoice
+# The start floor when there is only one: a choice of one is not a choice.
+var start_only: Label
 var starting_floor := 1
 var selected_stage: StageData
 var map: Control
@@ -163,6 +165,9 @@ func _build_confirmation(parent: Control) -> void:
 	start_choice = SegmentedChoice.new()
 	start_choice.option_role = &"CategoryTab"
 	start_row.add_child(start_choice)
+	start_only = HubUI.label(start_row, "", &"BodyLabel")
+	start_only.autowrap_mode = TextServer.AUTOWRAP_OFF
+	start_only.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	start_rule = HintMark.make(start_row, "どの階から始めてもLv 1。永久強化と装備・持ち込みは引き継ぐ。", HubSettings.TOPIC_GROWTH)
 	start_row.move_child(start_rule, 1)
 	start_choice.item_selected.connect(func(index: int): starting_floor = start_choice.get_item_id(index); _update_start_label())
@@ -320,6 +325,9 @@ func present_confirmation(current: RunCarryover) -> void:
 			if floor_number == starting_floor:
 				start_choice.select(start_choice.item_count - 1)
 	starting_floor = start_choice.get_selected_id() if start_choice.item_count > 0 else 1
+	start_choice.visible = start_choice.item_count > 1
+	start_only.visible = not start_choice.visible
+	start_only.text = "%dF" % starting_floor
 	_update_start_label()
 	confirm_button.grab_focus()
 

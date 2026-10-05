@@ -13,11 +13,11 @@ extends Control
 
 signal changed
 
-const ROW_HEIGHT := 92.0
+const ROW_HEIGHT := 80.0
 const BAND_TIP := 18.0
 # The band starts at the screen's left edge, as the lobby menu's does.
 const EDGE_REACH := 40.0
-const NOTES := ["効果音と環境音の大きさ。0%で消音。", "ウィンドウか全画面。", "冒険の決まりごとと操作。"]
+const NOTES := ["すべての音の大きさ。0%で消音。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "ダンジョンの空気の音の大きさ。", "被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "冒険の決まりごとと操作。"]
 # The help's topics, in order: [title, paragraphs]. HintMarks name them by index.
 const TOPIC_RUN := 0
 const TOPIC_LOSS := 1
@@ -54,8 +54,13 @@ const HELP := [
 ]
 
 var volume_slider: GameSlider
+var effects_slider: GameSlider
+var ambience_slider: GameSlider
 var help_button: Button
 var volume_value: Label
+var effects_value: Label
+var ambience_value: Label
+var shake_cycler: OptionCycler
 var display_cycler: OptionCycler
 var settings: GameSettings
 var rows: VBoxContainer
@@ -87,24 +92,27 @@ func _ready() -> void:
 	left.add_child(rows)
 	UIMotion.of(rows)
 	rows.draw.connect(_draw_rows)
-	var volume_row := _row("音量")
-	_hint(volume_row, "← 小")
-	volume_slider = GameSlider.new()
-	volume_slider.name = "VolumeSlider"
-	volume_slider.min_value = 0
-	volume_slider.max_value = 100
-	volume_slider.step = 5
-	volume_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	volume_slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	volume_slider.tooltip_text = "音量"
-	volume_row.add_child(volume_slider)
-	_hint(volume_row, "大 →")
-	volume_value = HubUI.label(volume_row, "", &"SettingsValue")
-	volume_value.autowrap_mode = TextServer.AUTOWRAP_OFF
-	volume_value.custom_minimum_size.x = 72
-	volume_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	volume_value.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	volume_slider.value_changed.connect(_volume_changed)
+	# Three volumes, each a bar: everything, the effects, the room tone.
+	var volume_parts := _volume_row("全体の音量", "VolumeSlider")
+	volume_slider = volume_parts[0]
+	volume_value = volume_parts[1]
+	var effects_parts := _volume_row("効果音", "EffectsSlider")
+	effects_slider = effects_parts[0]
+	effects_value = effects_parts[1]
+	var ambience_parts := _volume_row("環境音", "AmbienceSlider")
+	ambience_slider = ambience_parts[0]
+	ambience_value = ambience_parts[1]
+	var shake_row := _row("画面の揺れ")
+	shake_cycler = OptionCycler.new()
+	shake_cycler.name = "ShakeCycler"
+	shake_cycler.custom_minimum_size = Vector2(300, 52)
+	shake_cycler.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	shake_cycler.tooltip_text = "画面の揺れ"
+	shake_row.add_child(shake_cycler)
+	shake_cycler.setup(GameSettings.SHAKE_NAMES)
+	shake_cycler.item_selected.connect(func(index: int):
+		settings.shake_level = index
+		changed.emit())
 	var display_row := _row("画面モード")
 	display_cycler = OptionCycler.new()
 	display_cycler.name = "DisplayCycler"
@@ -124,12 +132,13 @@ func _ready() -> void:
 		if hub != null:
 			hub.call(&"_settings_hints"), &"TextAction")
 	help_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	volume_slider.focus_neighbor_bottom = display_cycler.get_path()
-	display_cycler.focus_neighbor_top = volume_slider.get_path()
-	display_cycler.focus_neighbor_bottom = help_button.get_path()
-	help_button.focus_neighbor_top = display_cycler.get_path()
-	for index in 3:
-		var control: Control = [volume_slider, display_cycler, help_button][index]
+	var controls: Array[Control] = [volume_slider, effects_slider, ambience_slider, shake_cycler, display_cycler, help_button]
+	for index in controls.size():
+		var control := controls[index]
+		if index > 0:
+			control.focus_neighbor_top = controls[index - 1].get_path()
+		if index < controls.size() - 1:
+			control.focus_neighbor_bottom = controls[index + 1].get_path()
 		control.focus_entered.connect(_focus_row.bind(index))
 	HubUI.rule(left)
 	note = HubUI.label(left, NOTES[0], &"NoteLabel")
@@ -163,15 +172,16 @@ func _build_help() -> void:
 		row.custom_minimum_size.y = 56
 		row.focus_entered.connect(select_topic.bind(index))
 		topic_buttons.append(row)
-	# Lines no longer than a reader's eye takes in; the hall shows past them.
-	var page := HubUI.open_column(help_view, 1.2, &"SlabColumn")
+	# About 40 characters a line at most, the Xbox Accessibility Guideline 101
+	# limit for Japanese; the hall shows past them.
+	var page := HubUI.open_column(help_view, 1.0, &"SlabColumn")
 	page.theme_type_variation = &"DetailStack"
 	help_title = HubUI.label(page, "", &"HeadingLabel")
 	HubUI.rule(page)
 	help_body = HubUI.label(page, "", &"BodyLabel")
 	var hall := Control.new()
 	hall.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hall.size_flags_stretch_ratio = 0.5
+	hall.size_flags_stretch_ratio = 0.7
 	hall.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	help_view.add_child(hall)
 
@@ -220,6 +230,30 @@ func _row(caption: String) -> HBoxContainer:
 	return row
 
 
+# A volume as a bar from 0 to 100% in 5% steps, its value at the right.
+# Returns [the bar, the value].
+func _volume_row(caption: String, slider_name: String) -> Array:
+	var row := _row(caption)
+	_hint(row, "← 小")
+	var slider := GameSlider.new()
+	slider.name = slider_name
+	slider.min_value = 0
+	slider.max_value = 100
+	slider.step = 5
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	slider.tooltip_text = caption
+	row.add_child(slider)
+	_hint(row, "大 →")
+	var value := HubUI.label(row, "", &"SettingsValue")
+	value.autowrap_mode = TextServer.AUTOWRAP_OFF
+	value.custom_minimum_size.x = 72
+	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	slider.value_changed.connect(_volume_changed.bind(slider))
+	return [slider, value]
+
+
 func _hint(row: HBoxContainer, text: String) -> void:
 	var hint := HubUI.label(row, text, &"NoteLabel")
 	hint.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -259,9 +293,11 @@ func _focus_row(index: int) -> void:
 
 func refresh(value: GameSettings) -> void:
 	settings = value
-	volume_slider.set_value_no_signal(settings.volume_percent())
-	volume_slider.queue_redraw()
-	volume_value.text = "%d%%" % settings.volume_percent()
+	for pair: Array in [[volume_slider, volume_value, settings.volume], [effects_slider, effects_value, settings.effects_volume], [ambience_slider, ambience_value, settings.ambience_volume]]:
+		(pair[0] as GameSlider).set_value_no_signal(settings.volume_percent(pair[2]))
+		(pair[0] as GameSlider).queue_redraw()
+		(pair[1] as Label).text = "%d%%" % settings.volume_percent(pair[2])
+	shake_cycler.select(settings.shake_level)
 	display_cycler.select(1 if settings.fullscreen else 0)
 
 
@@ -279,8 +315,16 @@ func play_entrance() -> void:
 	UIMotion.of(note).appear(UIMotion.STAGGER_TIME)
 
 
-func _volume_changed(percent: float) -> void:
-	settings.volume = percent / 100.0
+func _volume_changed(percent: float, slider: GameSlider) -> void:
+	var level := percent / 100.0
+	if slider == effects_slider:
+		settings.effects_volume = level
+		effects_value.text = "%d%%" % settings.volume_percent(level)
+	elif slider == ambience_slider:
+		settings.ambience_volume = level
+		ambience_value.text = "%d%%" % settings.volume_percent(level)
+	else:
+		settings.volume = level
+		volume_value.text = "%d%%" % settings.volume_percent(level)
 	settings.apply_volume()
-	volume_value.text = "%d%%" % settings.volume_percent()
 	changed.emit()

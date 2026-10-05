@@ -67,6 +67,7 @@ static func play(parent: Node, cue: StringName, volume_db: float = -16.0) -> Aud
 			oldest.queue_free()
 	var player := AudioStreamPlayer.new()
 	player.stream = stream
+	player.bus = GameSettings.EFFECTS_BUS
 	player.volume_db = clampf(volume_db, -60.0, -12.0)
 	parent.add_child(player)
 	player.add_to_group(VOICE_GROUP)
