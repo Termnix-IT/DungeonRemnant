@@ -1,10 +1,16 @@
 class_name GoldPurse
 extends VBoxContainer
 
-# The hub's Gold, set straight on the hall instead of in a boxed card: a coin,
-# the word Gold and the amount, over a gilt rule drawn like the lobby menu's
+# The hub's Gold, set straight on the hall instead of in a boxed card: a coin
+# and the amount in one typeface (the coin stands for the unit, so no word
+# sits beside the digits at another height), over a gilt rule drawn like the
+# lobby menu's
 # rail (a double line with diamond studs), on a faint pool of shade that
 # keeps it legible against the lantern-lit wall.
+
+const COIN_SIZE := 30.0
+# Digits rise about 0.7 em above the baseline; the coin centres on them.
+const DIGIT_HEIGHT := 0.7
 
 var value_label: Label
 var _shade: GradientTexture2D
@@ -31,17 +37,18 @@ func _ready() -> void:
 	add_child(row)
 	var coin := Control.new()
 	coin.name = "Coin"
-	coin.custom_minimum_size = Vector2(32, 32)
-	coin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	coin.custom_minimum_size.x = COIN_SIZE
+	# As tall as the amount's line, so the coin can centre on the digits.
+	coin.size_flags_vertical = Control.SIZE_FILL
 	coin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	coin.draw.connect(_draw_coin.bind(coin))
 	row.add_child(coin)
-	var caption := HubUI.label(row, "Gold", &"PurseCaption")
-	caption.autowrap_mode = TextServer.AUTOWRAP_OFF
-	caption.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	value_label = HubUI.label(row, "", &"PurseValue")
 	value_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	value_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	value_label.tooltip_text = "Gold"
+	value_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	value_label.item_rect_changed.connect(coin.queue_redraw)
 	var rule := Control.new()
 	rule.custom_minimum_size.y = 12
 	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -49,10 +56,24 @@ func _ready() -> void:
 	add_child(rule)
 
 
+# Thousands separated, as a game shows money: 1,280.
+static func amount(value: int) -> String:
+	var digits := str(absi(value))
+	var grouped := ""
+	while digits.length() > 3:
+		grouped = "," + digits.right(3) + grouped
+		digits = digits.left(digits.length() - 3)
+	return ("-" if value < 0 else "") + digits + grouped
+
+
 func _draw_coin(coin: Control) -> void:
 	var gold := coin.get_theme_color(&"font_color", &"GoldLabel")
-	var center := coin.size * 0.5
-	var radius := minf(coin.size.x, coin.size.y) * 0.5 - 1.0
+	var font := value_label.get_theme_font(&"font")
+	var size := value_label.get_theme_font_size(&"font_size")
+	# The label's line starts at its top; its baseline lies an ascent below.
+	var baseline := value_label.position.y + font.get_ascent(size)
+	var center := Vector2(coin.size.x * 0.5, baseline - size * DIGIT_HEIGHT * 0.5)
+	var radius := COIN_SIZE * 0.5 - 1.0
 	coin.draw_circle(center, radius, gold.darkened(0.45))
 	coin.draw_circle(center, radius - 2.5, gold)
 	coin.draw_arc(center, radius - 5.0, 0, TAU, 24, gold.darkened(0.35), 1.5, true)

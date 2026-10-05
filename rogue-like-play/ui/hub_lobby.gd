@@ -70,6 +70,8 @@ const PANEL_BOTTOM := 64.0
 const PANEL_HEIGHT := 256.0
 const STRIP_HEIGHT := 60.0
 const DECIDE_HEIGHT := 60.0
+# Room for the main weapon's name beside its glyph in half the strip.
+const WEAPON_NAME_WIDTH := 240.0
 # The texture keeps clear margins for swaying hair, so the figure itself
 # stands about 78% of the screen tall.
 const HERO_HEIGHT := 0.8
@@ -233,19 +235,21 @@ func _build_panel() -> void:
 	difficulty_value = _fact(route, "難易度")
 	var gear: HBoxContainer = _strip(stack)
 	_details[&"equipment"] = gear
-	var gear_caption := HubUI.label(gear, "主武器", &"MutedLabel")
-	gear_caption.autowrap_mode = TextServer.AUTOWRAP_OFF
-	gear_caption.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# The main weapon's value is its glyph and name side by side.
+	var weapon := _cell(gear, "主武器")
+	var named := HBoxContainer.new()
+	named.theme_type_variation = &"CompactRow"
+	named.alignment = BoxContainer.ALIGNMENT_CENTER
+	weapon.add_child(named)
 	main_glyph = Control.new()
 	main_glyph.custom_minimum_size = Vector2(26, 26)
 	main_glyph.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	main_glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	main_glyph.draw.connect(_draw_main_glyph)
-	gear.add_child(main_glyph)
-	equipment_label = HubUI.label(gear, "", &"ValueLabel")
+	named.add_child(main_glyph)
+	equipment_label = HubUI.label(named, "", &"ValueLabel")
 	equipment_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	equipment_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	equipment_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	equipment_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	equipment_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_divider(gear)
 	worn_value = _fact(gear, "装備枠")
@@ -280,35 +284,71 @@ func _build_panel() -> void:
 	panel.add_child(frame)
 
 
+# The facts lie on a dark band whose ends melt into the panel, between faint
+# gilt hairlines, instead of in a sunken box: laid on the panel, not fenced.
 func _strip(parent: Node) -> HBoxContainer:
-	var inset := PanelContainer.new()
-	inset.theme_type_variation = &"InsetPanel"
-	inset.custom_minimum_size.y = STRIP_HEIGHT
-	parent.add_child(inset)
-	var margin := MarginContainer.new()
-	margin.theme_type_variation = &"LobbyStripMargin"
-	inset.add_child(margin)
+	var band := Control.new()
+	band.custom_minimum_size.y = STRIP_HEIGHT
+	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	band.draw.connect(_draw_band.bind(band))
+	parent.add_child(band)
 	var row := HBoxContainer.new()
-	row.theme_type_variation = &"CompactRow"
-	margin.add_child(row)
+	row.theme_type_variation = &"LobbyFactRow"
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	band.add_child(row)
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	return row
 
 
+# A fact reads as a small kicker above its value, both centred.
+func _cell(row: HBoxContainer, caption: String) -> VBoxContainer:
+	var cell := VBoxContainer.new()
+	cell.theme_type_variation = &"LobbyFact"
+	cell.alignment = BoxContainer.ALIGNMENT_CENTER
+	cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(cell)
+	var kicker := HubUI.label(cell, caption, &"LobbyFactCaption")
+	kicker.autowrap_mode = TextServer.AUTOWRAP_OFF
+	kicker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	return cell
+
+
 func _fact(row: HBoxContainer, caption: String, role: StringName = &"ValueLabel") -> Label:
-	var caption_label := HubUI.label(row, caption, &"MutedLabel")
-	caption_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	caption_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var value := HubUI.label(row, "", role)
+	var value := HubUI.label(_cell(row, caption), "", role)
 	value.autowrap_mode = TextServer.AUTOWRAP_OFF
-	value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	value.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	return value
 
 
+# A gilt diamond between the facts, with hairlines fading above and below.
 func _divider(row: HBoxContainer) -> void:
-	var line := VSeparator.new()
-	line.theme_type_variation = &"LobbyDivider"
-	row.add_child(line)
+	var mark := Control.new()
+	mark.custom_minimum_size.x = 24
+	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mark.draw.connect(func():
+		var rail := get_theme_color(&"rail", &"HubLobby")
+		var middle := mark.size * 0.5
+		mark.draw_polyline_colors(PackedVector2Array([middle + Vector2(0, -22), middle + Vector2(0, -8)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.6)]), 1.0, true)
+		mark.draw_polyline_colors(PackedVector2Array([middle + Vector2(0, 8), middle + Vector2(0, 22)]), PackedColorArray([Color(rail, 0.6), Color(rail, 0.0)]), 1.0, true)
+		_diamond_on(mark, middle, 5.0, Color(rail, 0.9)))
+	row.add_child(mark)
+
+
+func _draw_band(band: Control) -> void:
+	var rail := get_theme_color(&"rail", &"HubLobby")
+	var dark := get_theme_color(&"fact_band", &"HubLobby")
+	var clear := Color(dark, 0.0)
+	var w := band.size.x
+	var h := band.size.y
+	band.draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(w * 0.5, 0), Vector2(w * 0.5, h), Vector2(0, h)]), PackedColorArray([clear, dark, dark, clear]))
+	band.draw_polygon(PackedVector2Array([Vector2(w * 0.5, 0), Vector2(w, 0), Vector2(w, h), Vector2(w * 0.5, h)]), PackedColorArray([dark, clear, clear, dark]))
+	for y in [0.5, h - 0.5]:
+		band.draw_polyline_colors(PackedVector2Array([Vector2(0, y), Vector2(w * 0.5, y), Vector2(w, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.45), Color(rail, 0.0)]), 1.0, true)
+
+
+func _diamond_on(canvas: CanvasItem, center: Vector2, radius: float, color: Color) -> void:
+	canvas.draw_colored_polygon(PackedVector2Array([center + Vector2(0, -radius), center + Vector2(radius, 0), center + Vector2(0, radius), center + Vector2(-radius, 0)]), color)
 
 
 func _build_hero() -> void:
@@ -397,13 +437,18 @@ func refresh(state: RunCarryover, stage: StageData) -> void:
 	_state = state
 	_stage = stage
 	equipment_label.text = state.equipment.slots[Equipment.Slot.MAIN].display_name
-	# A long name is cut short in the strip; the full name stays in the tooltip.
+	# A trimming label has no width of its own: give it the name's width, up
+	# to what its half of the strip holds; longer names end in "…" and stay
+	# whole in the tooltip.
+	var font := equipment_label.get_theme_font(&"font")
+	var name_width := font.get_string_size(equipment_label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, equipment_label.get_theme_font_size(&"font_size")).x
+	equipment_label.custom_minimum_size.x = minf(ceilf(name_width) + 2.0, WEAPON_NAME_WIDTH)
 	equipment_label.tooltip_text = equipment_label.text
 	equipment_label.mouse_filter = Control.MOUSE_FILTER_PASS
 	main_glyph.queue_redraw()
 	carried_label.text = "%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries]
 	stored_label.text = "%d / %d 枠" % [state.storage.entries.size(), state.storage.max_entries]
-	gold_value.text = "%d G" % state.gold
+	gold_value.text = "%s G" % GoldPurse.amount(state.gold)
 	carried_room.text = "%d 枠" % (state.inventory.max_entries - state.inventory.entries.size())
 	var worn := 0
 	for item in state.equipment.slots:
@@ -479,7 +524,8 @@ func _show_entry() -> void:
 	for key in _details:
 		var detail: Control = _details[key]
 		# Strips sit inside an inset panel and margin; show the outer one.
-		detail.get_parent().get_parent().visible = key == id
+		# Each strip's row sits in its band.
+		detail.get_parent().visible = key == id
 	if id == &"departure" and _stage != null:
 		title_label.text = _stage.display_name
 		description_label.text = _stage.description

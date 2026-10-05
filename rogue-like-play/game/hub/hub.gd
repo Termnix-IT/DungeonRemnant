@@ -226,7 +226,7 @@ func _resize() -> void:
 
 func refresh(state: RunCarryover, message: String = "") -> void:
 	_state = state
-	gold_label.text = "%d" % state.gold
+	gold_label.text = GoldPurse.amount(state.gold)
 	home_page.refresh(state, featured_stage())
 	(upgrade_page as SkillTreePanel).refresh(state)
 	feedback.text = message
