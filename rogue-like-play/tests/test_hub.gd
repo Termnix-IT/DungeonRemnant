@@ -236,6 +236,10 @@ func run_tests() -> void:
 	check(hub.hero_speech.visible, "Clicking hero opens speech")
 	var speech_rect: Rect2 = hub.hero_speech.get_global_rect()
 	check(root.get_visible_rect().encloses(speech_rect) and not speech_rect.intersects(lobby.panel.get_global_rect()) and speech_rect.end.x <= hero.get_global_rect().position.x + hero.size.x * HubLobby.FACE.x, "Speech sits beside her face, on screen and clear of the panel")
+	var backing := hub.hero_speech.get_theme_stylebox(&"panel") as StyleBoxTexture
+	check(backing != null and backing.texture != null and hub.hero_speech.find_children("*", "Polygon2D", true, false).is_empty(), "The speech backing is the ink-wash strip, with no drawn triangle tail")
+	var line_width: float = lobby.speech_label.get_theme_font(&"font").get_string_size(lobby.speech_label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, lobby.speech_label.get_theme_font_size(&"font_size")).x
+	check(lobby.speech_label.size.x >= line_width + HubLobby.SPEECH_GAP * 2.0 - 1.0, "The line keeps its gap from the end studs")
 	var first_line: String = lobby.speech_label.text
 	hub.hero_button.pressed.emit()
 	check(hub.hero_speech.visible and lobby.speech_label.text != first_line, "Clicking again moves to her next line")

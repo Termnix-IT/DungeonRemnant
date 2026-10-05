@@ -53,6 +53,9 @@ const FEET := Vector2(0.52, 0.985)
 const SOLES := [Vector2(0.61, 0.985), Vector2(0.42, 0.93)]
 const SPEECH := ["準備ができたら、出発しよう。", "装備の確認は済んだ？", "次は、どこへ潜ろうか。", "倉庫の整理も忘れずにね。"]
 const SPEECH_TIME := 4.0
+# Room between the line and the end studs, and from the tail's tip to her face.
+const SPEECH_GAP := 22.0
+const SPEECH_REACH := 46.0
 # Layout in the 1600×900 base viewport. The menu keeps about a fifth of the
 # width; the heroine stands about two thirds of the height tall.
 const MENU_WIDTH := 300.0
@@ -370,19 +373,9 @@ func _build_hero() -> void:
 	hero_speech.name = "HeroSpeech"
 	hero_speech.theme_type_variation = &"SpeechPanel"
 	hero_speech.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hero_speech.size = Vector2(300, 60)
 	add_child(hero_speech)
-	# The tail points right, towards her face.
-	var border := hero_speech.get_theme_stylebox("panel").get(&"border_color") as Color
-	var fill := hero_speech.get_theme_stylebox("panel").get(&"bg_color") as Color
-	var tail := Polygon2D.new()
-	tail.polygon = PackedVector2Array([Vector2(299, 18), Vector2(316, 30), Vector2(299, 42)])
-	tail.color = border
-	hero_speech.add_child(tail)
-	var tail_fill := Polygon2D.new()
-	tail_fill.polygon = PackedVector2Array([Vector2(298, 20), Vector2(313, 30), Vector2(298, 40)])
-	tail_fill.color = fill
-	hero_speech.add_child(tail_fill)
+	# The backing is an ink-wash strip whose brush-stroke tail points at her
+	# face; its ends keep their size and the plain middle fits the line.
 	speech_label = Label.new()
 	speech_label.theme_type_variation = &"ItemNameLabel"
 	speech_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -390,6 +383,10 @@ func _build_hero() -> void:
 	speech_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hero_speech.add_child(speech_label)
 	speech_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var backing := hero_speech.get_theme_stylebox(&"panel") as StyleBoxTexture
+	# The text keeps clear of the end studs and the tail.
+	speech_label.offset_left = backing.texture_margin_left
+	speech_label.offset_right = -backing.texture_margin_right
 	hero_speech.hide()
 	var fade := Gradient.new()
 	fade.set_color(0, Color.WHITE)
@@ -409,6 +406,7 @@ func talk() -> void:
 	hero.react()
 	speech_label.text = SPEECH[_speech_index % SPEECH.size()]
 	_speech_index += 1
+	_fit_speech()
 	hero_speech.show()
 	UIMotion.of(hero_speech).reveal(UIMotion.SELECT_TIME)
 	_speech_token += 1
@@ -427,10 +425,19 @@ func _place_hero() -> void:
 	# Only her figure answers the pointer, not the empty corners of the art.
 	hero_button.position = hero.position + Vector2(extent.x * 0.24, extent.y * 0.05)
 	hero_button.size = Vector2(extent.x * 0.52, extent.y * 0.9)
-	# Beside her face, its tail pointing at her; clear of the information panel.
-	var face := hero.position + extent * FACE
-	hero_speech.position = Vector2(face.x - hero_speech.size.x - 70, face.y - hero_speech.size.y * 0.5)
+	_fit_speech()
 	queue_redraw()
+
+
+# The bubble is as wide as its line plus the gap on each side and the two
+# ends, and stands beside her face with the tail's tip just short of it.
+func _fit_speech() -> void:
+	var backing := hero_speech.get_theme_stylebox(&"panel") as StyleBoxTexture
+	var font := speech_label.get_theme_font(&"font")
+	var line := font.get_string_size(speech_label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, speech_label.get_theme_font_size(&"font_size")).x
+	hero_speech.size = Vector2(ceilf(line) + SPEECH_GAP * 2.0 + backing.texture_margin_left + backing.texture_margin_right, backing.texture.get_height())
+	var face := hero.position + hero.size * FACE
+	hero_speech.position = Vector2(maxf(0.0, face.x - SPEECH_REACH - hero_speech.size.x), face.y - hero_speech.size.y * 0.5)
 
 
 func refresh(state: RunCarryover, stage: StageData) -> void:
