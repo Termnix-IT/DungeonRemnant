@@ -2,6 +2,7 @@ class_name HubUI
 extends RefCounted
 
 # Structure only: appearance and spacing are owned by dungeon_theme.tres.
+const PRIMARY_ACTION_HEIGHT := 60.0
 static func columns(parent: Control) -> HBoxContainer:
 	var row := HBoxContainer.new()
 	parent.add_child(row)
@@ -40,6 +41,16 @@ static func button(parent: Node, text: String, action: Callable, role: StringNam
 	button.custom_minimum_size.y = 44
 	button.pressed.connect(action)
 	parent.add_child(button)
+	return button
+
+
+# The screen's one primary action (docs/MVP_SPEC.md, 個別画面のUI文法): the
+# same plate as the lobby's decide button, full width at the foot of the
+# right panel. Other actions are SecondaryButton above it.
+static func primary_action(parent: Node, text: String, action: Callable) -> Button:
+	var button := button(parent, text, action, &"PrimaryAction")
+	button.custom_minimum_size.y = PRIMARY_ACTION_HEIGHT
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return button
 
 

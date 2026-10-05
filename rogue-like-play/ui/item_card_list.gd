@@ -7,6 +7,12 @@ var selection_strength := 1.0:
 		queue_redraw()
 
 
+# Said in the middle of an empty list instead of leaving it blank.
+var empty_text := "":
+	set(value):
+		empty_text = value
+		queue_redraw()
+
 func _ready() -> void:
 	item_selected.connect(func(_index: int): UIMotion.of(self).select_card())
 
@@ -66,8 +72,12 @@ func _draw() -> void:
 		_line(data.item.label(), Vector2(text_x, top), text_width, &"ItemNameLabel")
 		var second := top + get_theme_font(&"font").get_height(get_theme_font_size(&"font_size", &"ItemNameLabel")) + 2
 		_line(ItemGlyph.main_effect(data.item), Vector2(text_x, second), text_width, &"MutedLabel")
-		_line("%d G" % data.price if data.price >= 0 else "×%d" % data.count, Vector2(price_x, top), price_width, &"GoldLabel", HORIZONTAL_ALIGNMENT_RIGHT)
+		# A row's price reads in the body colour; gold is kept for the
+		# selection and the money that the choice now spends.
+		_line(UIFormat.gold(data.price) if data.price >= 0 else "×%d" % data.count, Vector2(price_x, top), price_width, &"GoldLabel", HORIZONTAL_ALIGNMENT_RIGHT, &"GoldLabel" if selected else &"Label")
 		_line("所持 ×%d" % data.count if data.price >= 0 else data.get("context", ""), Vector2(price_x, second), price_width, &"MutedLabel", HORIZONTAL_ALIGNMENT_RIGHT)
+	if item_count == 0 and not empty_text.is_empty():
+		_line(empty_text, Vector2(0, size.y * 0.5 - 12), size.x, &"MutedLabel", HORIZONTAL_ALIGNMENT_CENTER)
 	if has_focus():
 		draw_style_box(get_theme_stylebox(&"focus"), Rect2(Vector2.ZERO, size))
 

@@ -9,6 +9,7 @@ extends VBoxContainer
 # keeps it legible against the lantern-lit wall.
 
 const COIN_SIZE := 30.0
+const QUIET_ALPHA := 0.7
 # Digits rise about 0.7 em above the baseline; the coin centres on them.
 const DIGIT_HEIGHT := 0.7
 
@@ -58,14 +59,14 @@ func _ready() -> void:
 	add_child(rule)
 
 
-# Thousands separated, as a game shows money: 1,280.
-static func amount(value: int) -> String:
-	var digits := str(absi(value))
-	var grouped := ""
-	while digits.length() > 3:
-		grouped = "," + digits.right(3) + grouped
-		digits = digits.left(digits.length() - 3)
-	return ("-" if value < 0 else "") + digits + grouped
+# Quiet on screens that do not spend money: smaller and dimmer, in the same
+# place, so the balance is still where the eye looks for it.
+var quiet := false:
+	set(value):
+		quiet = value
+		if value_label != null:
+			value_label.theme_type_variation = &"PurseValueQuiet" if quiet else &"PurseValue"
+		modulate.a = QUIET_ALPHA if quiet else 1.0
 
 
 func _draw_coin(coin: Control) -> void:
@@ -75,7 +76,8 @@ func _draw_coin(coin: Control) -> void:
 	# The label's line starts at its top; its baseline lies an ascent below.
 	var baseline := value_label.position.y + font.get_ascent(size)
 	var center := Vector2(coin.size.x * 0.5, baseline - size * DIGIT_HEIGHT * 0.5)
-	var radius := COIN_SIZE * 0.5 - 1.0
+	# The coin keeps its size against the digits when the amount is quieter.
+	var radius := COIN_SIZE * size / 32.0 * 0.5 - 1.0
 	coin.draw_circle(center, radius, gold.darkened(0.45))
 	coin.draw_circle(center, radius - 2.5, gold)
 	coin.draw_arc(center, radius - 5.0, 0, TAU, 24, gold.darkened(0.35), 1.5, true)

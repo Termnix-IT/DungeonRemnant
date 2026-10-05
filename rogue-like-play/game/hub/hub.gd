@@ -50,6 +50,8 @@ var _shell: VBoxContainer
 var _warehouse_focus: Control
 var _ambience: HubAmbience
 var _title_block: HBoxContainer
+var purse: GoldPurse
+var key_guide: KeyGuide
 @onready var warehouse_panel: WarehousePanel = $WarehousePanel
 
 
@@ -82,22 +84,17 @@ func _ready() -> void:
 	var header := HBoxContainer.new()
 	header.custom_minimum_size.y = 86
 	_shell.add_child(header)
-	# The lobby keeps only Gold on top; pages add their titles.
+	# Header: the screen's name and line on the left, Gold on the right. The
+	# lobby keeps only Gold, and no screen carries the game's logo.
 	_title_block = HBoxContainer.new()
 	_title_block.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(_title_block)
-	var brand := VBoxContainer.new()
-	brand.custom_minimum_size.x = 330
-	_title_block.add_child(brand)
-	var logo := HubUI.label(brand, "Dungeon Remnant", &"LogoLabel")
-	logo.autowrap_mode = TextServer.AUTOWRAP_OFF
-	HubUI.label(brand, "残されたものたちの、もう一度", &"MutedLabel")
 	var heading := VBoxContainer.new()
 	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_title_block.add_child(heading)
 	title_label = HubUI.label(heading, "旅支度の間", &"TitleLabel")
 	subtitle_label = HubUI.label(heading, "小さな準備が、大きな冒険につながる。", &"MutedLabel")
-	var purse := GoldPurse.new()
+	purse = GoldPurse.new()
 	purse.custom_minimum_size.x = 220
 	purse.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	header.add_child(purse)
@@ -133,10 +130,14 @@ func _ready() -> void:
 	tree.entry_requested.connect(func(stage: StageData, floor_number: int): entry_requested.emit(stage, floor_number))
 	purchase_button = tree.upgrade_button
 	upgrade_label = tree.root_label
+	# Footer: the key guide at the bottom left, the same on every screen.
 	var footer := HBoxContainer.new()
+	footer.theme_type_variation = &"KeyGuide"
 	_shell.add_child(footer)
-	back_button = HubUI.button(footer, "戻る  /  Esc", go_back)
-	back_button.custom_minimum_size = Vector2(215, 44)
+	key_guide = KeyGuide.new()
+	key_guide.custom_minimum_size.y = 44
+	footer.add_child(key_guide)
+	back_button = key_guide.add_hint("Esc", "B", "戻る", go_back)
 	feedback = HubUI.label(footer, "", &"GoldLabel")
 	feedback.custom_minimum_size.y = 44
 	feedback.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -226,7 +227,7 @@ func _resize() -> void:
 
 func refresh(state: RunCarryover, message: String = "") -> void:
 	_state = state
-	gold_label.text = GoldPurse.amount(state.gold)
+	gold_label.text = UIFormat.amount(state.gold)
 	home_page.refresh(state, featured_stage())
 	(upgrade_page as SkillTreePanel).refresh(state)
 	feedback.text = message
@@ -246,7 +247,9 @@ func show_page(target: String) -> void:
 	hero_speech.hide()
 	for control in [home_page, equipment_page, sell_page, departure_page, upgrade_page, settings_page]:
 		control.hide()
-	back_button.visible = page != "home"
+	key_guide.visible = page != "home"
+	# Gold stays where the eye looks for it; it is quiet where nothing costs.
+	purse.quiet = page not in ["home", "sell", "upgrade"]
 	for child in _title_block.get_children():
 		child.visible = page != "home"
 	# On the lobby the left edge belongs to the menu.

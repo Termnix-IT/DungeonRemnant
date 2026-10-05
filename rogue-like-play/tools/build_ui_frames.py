@@ -71,8 +71,11 @@ SURFACES = {
 # Raised surfaces light their top edge and shade their foot; sunk ones do
 # the opposite, so the eye reads cards above the panel and wells below it.
 SURFACE_STYLES = {
-	"surface_raised": ((52, 52, 51, 255), (40, 40, 39, 255), (70, 70, 68, 255), (92, 92, 88, 255), (18, 18, 18, 255), True),
-	"surface_hover": ((62, 62, 60, 255), (48, 48, 46, 255), (84, 84, 80, 255), (108, 108, 102, 255), (20, 20, 20, 255), True),
+	# Unselected and hovered cards draw no rule round them: only the selected
+	# card has a border (gold), so the eye finds it at once. Their edge is
+	# the fill's own colour and a faint lit top row.
+	"surface_raised": ((52, 52, 51, 255), (40, 40, 39, 255), (52, 52, 51, 255), (62, 62, 60, 255), (30, 30, 30, 255), True),
+	"surface_hover": ((64, 64, 62, 255), (50, 50, 48, 255), (64, 64, 62, 255), (78, 78, 74, 255), (34, 34, 34, 255), True),
 	"surface_selected": ((58, 50, 32, 255), (40, 35, 22, 255), (184, 150, 89, 255), (222, 190, 128, 255), (92, 72, 40, 255), True),
 	"surface_sunk": ((20, 20, 20, 250), (28, 28, 28, 250), (14, 14, 14, 255), (8, 8, 8, 255), (58, 58, 56, 255), False),
 }

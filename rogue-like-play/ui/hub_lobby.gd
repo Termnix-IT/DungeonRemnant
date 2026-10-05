@@ -72,7 +72,6 @@ const PANEL_BOTTOM := 64.0
 # the facts and the button at the bottom, so switching entries moves nothing.
 const PANEL_HEIGHT := 256.0
 const STRIP_HEIGHT := 60.0
-const DECIDE_HEIGHT := 60.0
 # Room for the main weapon's name beside its glyph in half the strip.
 const WEAPON_NAME_WIDTH := 240.0
 # The texture keeps clear margins for swaying hair, so the figure itself
@@ -277,9 +276,8 @@ func _build_panel() -> void:
 	volume_value = _fact(current, "音量")
 	_divider(current)
 	display_value = _fact(current, "画面")
-	decide_button = HubUI.button(stack, "", func(): activated.emit(selected_id()), &"LobbyDecideButton")
+	decide_button = HubUI.primary_action(stack, "", func(): activated.emit(selected_id()))
 	decide_button.name = "Decide"
-	decide_button.custom_minimum_size.y = DECIDE_HEIGHT
 	var frame := Control.new()
 	frame.name = "Frame"
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -455,7 +453,7 @@ func refresh(state: RunCarryover, stage: StageData) -> void:
 	main_glyph.queue_redraw()
 	carried_label.text = "%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries]
 	stored_label.text = "%d / %d 枠" % [state.storage.entries.size(), state.storage.max_entries]
-	gold_value.text = "%s G" % GoldPurse.amount(state.gold)
+	gold_value.text = "%s G" % UIFormat.amount(state.gold)
 	carried_room.text = "%d 枠" % (state.inventory.max_entries - state.inventory.entries.size())
 	var worn := 0
 	for item in state.equipment.slots:

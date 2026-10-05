@@ -51,7 +51,8 @@ func run_tests() -> void:
 	hub.show_page("home")
 	var logo_found: Array[String] = []
 	texts(hub, logo_found)
-	check("Dungeon Remnant" in logo_found, "Logo keeps the space between words")
+	# The hub's screens carry no logo (docs/MVP_SPEC.md, 個別画面のUI文法).
+	check(not "Dungeon Remnant" in logo_found, "The hub shows no logo")
 	check_upgrade(hub)
 	await check_stages(hub, main)
 	check_details(hub, main)

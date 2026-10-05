@@ -191,7 +191,36 @@ func run_tests() -> void:
 		var tip: Control = hinted._make_custom_tooltip(hinted.tooltip_text)
 		check(tip != null and tip.theme_type_variation == &"InkTooltip" and (tip.get_child(0) as Label).text == hinted.tooltip_text, "%s hints in ink" % hinted.name)
 		tip.free()
-	check(GoldPurse.amount(0) == "0" and GoldPurse.amount(1280) == "1,280" and GoldPurse.amount(1234567) == "1,234,567" and GoldPurse.amount(999) == "999", "Gold amounts group thousands")
+	# Shared screen parts (docs/MVP_SPEC.md, 個別画面のUI文法).
+	check(hub.find_children("*", "Label", true, false).all(func(label: Label): return label.text != "Dungeon Remnant"), "No screen carries the game's logo")
+	hub.show_page("equipment")
+	check(hub.key_guide.visible and hub.back_button.get_parent() == hub.key_guide and hub.key_guide.cap_text(hub.back_button) == "Esc", "Pages show the key guide with Esc to go back")
+	check(hub.purse.quiet and hub.gold_label.theme_type_variation == &"PurseValueQuiet", "Gold is quiet where nothing costs")
+	var pad_press := InputEventJoypadButton.new()
+	pad_press.button_index = JOY_BUTTON_DPAD_DOWN
+	pad_press.pressed = true
+	hub.key_guide._input(pad_press)
+	check(hub.key_guide.cap_text(hub.back_button) == "B", "A gamepad turns the cap to its button")
+	var key_press := InputEventKey.new()
+	key_press.keycode = KEY_DOWN
+	key_press.pressed = true
+	hub.key_guide._input(key_press)
+	check(hub.key_guide.cap_text(hub.back_button) == "Esc", "Keys turn it back")
+	hub.back_button.pressed.emit()
+	check(hub.page == "home" and not hub.key_guide.visible and not hub.purse.quiet, "The guide's back returns to the lobby, where Gold is full")
+	hub.show_page("sell")
+	check(not hub.purse.quiet, "Gold is full in the shop")
+	hub.show_page("home")
+	check(lobby.decide_button.theme_type_variation == &"PrimaryAction" and lobby.decide_button.size.y >= HubUI.PRIMARY_ACTION_HEIGHT, "The lobby's decide button is the shared primary action")
+	var focus_style := lobby.decide_button.get_theme_stylebox(&"focus") as StyleBoxFlat
+	var selected_gold := Color(0.8392157, 0.7176471, 0.48235294)
+	check(not focus_style.border_color.is_equal_approx(Color(selected_gold, focus_style.border_color.a)), "Focus is not drawn in the selection's gold")
+	var empty := ItemCardList.new()
+	empty.empty_text = "持ち込める品はまだない"
+	check(empty.item_count == 0 and empty.empty_text != "", "Lists can say why they are empty")
+	empty.free()
+	check(UIFormat.gold(20) == "20 G" and UIFormat.gold(12500) == "12,500 G", "Prices put the unit after grouped digits")
+	check(UIFormat.amount(0) == "0" and UIFormat.amount(1280) == "1,280" and UIFormat.amount(1234567) == "1,234,567" and UIFormat.amount(999) == "999", "Gold amounts group thousands")
 	var purse_row: HBoxContainer = hub.gold_label.get_parent()
 	check(purse_row.get_children().filter(func(node: Node): return node is Label).size() == 1, "Gold shows no word beside the amount")
 	lobby.select(1)
