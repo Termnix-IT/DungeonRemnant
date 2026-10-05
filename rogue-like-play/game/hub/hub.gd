@@ -171,6 +171,7 @@ func _ready() -> void:
 	tree.mode_tabs.visible = false
 	tree.mode_changed.connect(_upgrade_hints)
 	settings_page = _page(HubSettings.new()) as HubSettings
+	settings_page.offset_left = bleed
 	settings_page.changed.connect(func(): settings_changed.emit())
 	tree.hp_requested.connect(func(): purchase_requested.emit())
 	tree.skill_requested.connect(func(id: StringName): skill_requested.emit(id))
@@ -350,6 +351,8 @@ func show_page(target: String) -> void:
 			settings_page.show()
 			settings_page.refresh(settings)
 			settings_page.focus_first()
+			key_guide.add_hint("↑ / ↓", "▲ / ▼", "項目")
+			key_guide.add_hint("← / →", "◀ / ▶", "変更")
 		"stages":
 			title_label.text = "ステージ選択"
 			departure_page.show()

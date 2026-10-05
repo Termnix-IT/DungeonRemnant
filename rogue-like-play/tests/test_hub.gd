@@ -279,6 +279,7 @@ func run_tests() -> void:
 	page.volume_slider.value = 100
 	check(not AudioServer.is_bus_mute(master) and is_equal_approx(AudioServer.get_bus_volume_linear(master), 1.0), "Loudest restores full volume")
 	page.display_cycler.grab_focus()
+	check(page.focused_row == 1 and page.note.text.contains("全画面"), "The band and the note follow the focused setting")
 	root.push_input(step_right)
 	check(hub.settings.fullscreen and page.display_cycler.text == "全画面" and page.display_cycler.has_focus(), "Right on the selector steps to fullscreen and keeps focus")
 	page.display_cycler.pressed.emit()

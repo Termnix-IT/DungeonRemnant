@@ -664,6 +664,15 @@ content_margin_right = 24.0
 content_margin_bottom = 18.0
 bg_color = Color(0.03, 0.028, 0.03, 0.7)
 
+[sub_resource type="StyleBoxTexture" id="SlabBandSurface"]
+resource_name = "SlabBandSurface"
+texture = SubResource("SlabTexture")
+expand_margin_left = 80.0
+content_margin_left = 0.0
+content_margin_top = 18.0
+content_margin_right = 120.0
+content_margin_bottom = 18.0
+
 [sub_resource type="StyleBoxFlat" id="SlabSolidEndSurface"]
 resource_name = "SlabSolidEndSurface"
 expand_margin_right = 80.0
@@ -1115,13 +1124,8 @@ OptionCycler/styles/pressed = SubResource("CyclerActive")
 OptionCycler/styles/hover_pressed = SubResource("CyclerActive")
 OptionCycler/styles/focus = SubResource("CyclerActive")
 OptionCycler/styles/disabled = SubResource("CyclerRest")
-SettingsMargin/base_type = &"MarginContainer"
-SettingsMargin/constants/margin_left = 48
-SettingsMargin/constants/margin_right = 48
-SettingsMargin/constants/margin_top = 40
-SettingsMargin/constants/margin_bottom = 40
 SettingsRows/base_type = &"VBoxContainer"
-SettingsRows/constants/separation = 20
+SettingsRows/constants/separation = 0
 SettingsRow/base_type = &"HBoxContainer"
 SettingsRow/constants/separation = 18
 SettingsValue/base_type = &"Label"
@@ -1214,6 +1218,8 @@ ShadeColumn/styles/panel = SubResource("ShadeSurface")
 NoteLabel/base_type = &"MutedLabel"
 NoteLabel/font_sizes/font_size = 14
 SlabSolid/base_type = &"PanelContainer"
+SlabBand/base_type = &"PanelContainer"
+SlabBand/styles/panel = SubResource("SlabBandSurface")
 SlabSolidEnd/base_type = &"PanelContainer"
 SlabSolidEnd/styles/panel = SubResource("SlabSolidEndSurface")
 SlabVeilWide/base_type = &"PanelContainer"
