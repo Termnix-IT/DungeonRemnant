@@ -25,7 +25,7 @@ var category_tabs: CategoryTabs
 var source_choice: SegmentedChoice
 var source_label: Label
 var item_list: ItemCardList
-var help_label: Label
+var sell_rule: HintMark
 var showcase: ItemShowcase
 var details: ItemDetails
 var swap_label: Label
@@ -99,7 +99,11 @@ func _build_catalog(catalog: VBoxContainer) -> void:
 	source_label = HubUI.label(_source_row, "売却元", &"NoteLabel")
 	source_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	source_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	source_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sell_rule = HintMark.make(_source_row, "装備中の品と、魔法を込めた杖は売れない。", HubSettings.TOPIC_PREPARATION)
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_source_row.add_child(spacer)
 	source_choice = SegmentedChoice.new()
 	source_choice.option_role = &"CategoryTab"
 	_source_row.add_child(source_choice)
@@ -111,7 +115,6 @@ func _build_catalog(catalog: VBoxContainer) -> void:
 	item_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	catalog.add_child(item_list)
 	item_list.item_selected.connect(_select)
-	help_label = HubUI.label(catalog, "", &"NoteLabel")
 
 
 func _build_info(info: VBoxContainer) -> void:
@@ -216,8 +219,6 @@ func refresh(current: RunCarryover) -> void:
 		var item: ItemData = row.item
 		item_list.add_card(item, row.count, item.buy_price if buying else item.sell_price)
 	item_list.empty_text = ("この分類の品は扱っていない" if buying else "売れる品はここにない")
-	help_label.text = "" if buying else "装備中の品と、魔法を込めた杖は売れません。"
-	help_label.visible = not buying
 	sell_all_button.visible = not buying
 	quantity.value = 1
 	showcase.present(null)
@@ -272,7 +273,6 @@ func _update_quote() -> void:
 		# Assigning text equal to the last assignment would keep appended
 		# lines; reset clears whatever the previous goods wrote.
 		details.reset()
-		details.line("品を選んでください。", &"MutedLabel")
 		# The balance is in the header; nothing chosen, nothing changes.
 		possession.text = ""
 		total_label.text = "—"

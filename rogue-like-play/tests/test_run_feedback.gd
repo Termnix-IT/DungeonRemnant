@@ -202,7 +202,7 @@ func check_confirmation_page() -> void:
 	hub.show_page("stages")
 	hub.show_page("confirm")
 	var page: HubDeparture = hub.departure_page
-	check(page.inventory_list.item_count == 0 and page.inventory_list.empty_text.contains("装備だけで出撃"), "An empty loadout reads as a note, not a disabled row")
+	check(page.inventory_list.item_count == 0 and page.inventory_list.empty_text == "持ち込みの品はない" and page.carried_rule.tooltip_text.contains("半分を失う"), "An empty loadout reads as a note, not a disabled row")
 	check(page.equipment_rows.row_text(0) == main.state.equipment.slots[0].label(), "Confirmation lists equipment with glyph rows")
 	check(page.hero_stats.specs.rows.size() == 4 and page.hero_stats.specs.rows[0][1] == main.state.preparation_stats().hp, "Confirmation shows departure stats beside the heroine")
 	check(page.stage_banner.texture == page.selected_stage.diorama, "Confirmation shows the destination's diorama")

@@ -43,6 +43,8 @@ var page := "home"
 var equipment_return := "stages"
 # The page the warehouse goes back to: the lobby or the equipment page.
 var warehouse_return := "home"
+# The page a "?" mark opened the help from, which back returns to.
+var help_return := ""
 var _state: RunCarryover
 var _content: Control
 var _page_host: Control
@@ -60,6 +62,8 @@ var warehouse_page: HubWarehouse
 
 
 func _ready() -> void:
+	# HintMarks find the hub here to open the help at their topic.
+	add_to_group(&"hub")
 	var background := TextureRect.new()
 	background.texture = preload("res://art/hub/lobby_hall.png")
 	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -351,8 +355,7 @@ func show_page(target: String) -> void:
 			settings_page.show()
 			settings_page.refresh(settings)
 			settings_page.focus_first()
-			key_guide.add_hint("↑ / ↓", "▲ / ▼", "項目")
-			key_guide.add_hint("← / →", "◀ / ▶", "変更")
+			_settings_hints()
 		"stages":
 			title_label.text = "ステージ選択"
 			departure_page.show()
@@ -433,7 +436,34 @@ func open_warehouse() -> void:
 	show_page("warehouse")
 
 
+# Opens the settings' help at a topic, from a "?" mark anywhere in the hub;
+# back returns to where the mark was.
+func open_help(topic: int) -> void:
+	var from := page
+	show_page("settings")
+	help_return = from if from != "settings" else ""
+	settings_page.open_help(topic)
+	_settings_hints()
+
+
+func _settings_hints() -> void:
+	title_label.text = "ヘルプ" if settings_page.help_shown else "設定"
+	key_guide.clear_hints()
+	key_guide.add_hint("↑ / ↓", "▲ / ▼", "項目")
+	if not settings_page.help_shown:
+		key_guide.add_hint("← / →", "◀ / ▶", "変更")
+
+
 func go_back() -> void:
+	if page == "settings" and settings_page.help_shown:
+		if help_return.is_empty():
+			settings_page.close_help()
+			_settings_hints()
+		else:
+			var back := help_return
+			help_return = ""
+			show_page(back)
+		return
 	if page == "confirm":
 		show_page("stages")
 	elif page == "equipment" and equipment_return == "confirm":

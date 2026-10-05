@@ -8,6 +8,8 @@ extends Control
 # between rows) and what it does under them. Changes apply at once and are
 # stored by GameSettings when the hub reports them, so the page holds no
 # primary action.
+# The last row opens the help: the game's rules that the screens keep out of
+# their way, by topic. A HintMark ("?") on another page opens it at its topic.
 
 signal changed
 
@@ -15,28 +17,71 @@ const ROW_HEIGHT := 92.0
 const BAND_TIP := 18.0
 # The band starts at the screen's left edge, as the lobby menu's does.
 const EDGE_REACH := 40.0
-const NOTES := ["効果音と環境音の大きさ。左右キーかドラッグで5%ずつ変える。0%で消音。", "ウィンドウと全画面を切り替える。左右キーか矢印を押して選ぶ。"]
+const NOTES := ["効果音と環境音の大きさ。0%で消音。", "ウィンドウか全画面。", "冒険の決まりごとと操作。"]
+# The help's topics, in order: [title, paragraphs]. HintMarks name them by index.
+const TOPIC_RUN := 0
+const TOPIC_LOSS := 1
+const TOPIC_PREPARATION := 2
+const TOPIC_GROWTH := 3
+const TOPIC_CONTROLS := 4
+const HELP := [
+	["冒険の流れ", [
+		"冒険はいつもLv 1から始まる。冒険中に得たレベルと能力は、冒険が終わると消える。",
+		"10階ごとに中ボスがいる。倒すとその階の入口に脱出口が現れ、乗ると持ち物をすべて持ったまま拠点へ帰れる。",
+		"50階の主を倒すとそのステージを踏破し、次のステージへの道が開く。",
+	]],
+	["失うもの", [
+		"倒れたとき、冒険を中断したとき、階の滞在ターンの上限を超えたときは、Goldの半分と、持ち込みの品のおよそ半分を失う。",
+		"装備中の5枠の品と、倉庫の品は失わない。",
+	]],
+	["拠点の準備", [
+		"持ち込み（40枠）は次の冒険へ持っていく品。倉庫（120枠）の品は持っていかないが、失うこともない。",
+		"装備は、持ち込みと倉庫のどちらからでも直接付けられる。",
+		"装備中の品と、魔法を込めた杖は売れない。",
+		"準備の操作はそのたびに自動で保存される。",
+	]],
+	["永久強化と開始地点", [
+		"永久強化はGoldで買い、効果は次の冒険からずっと続く。",
+		"中央の基礎HPを上限まで上げると4本の枝が開き、各段を上限まで上げると次の段が開く。",
+		"中ボスを倒した階の次の階（11F・21F・31F・41F）から始められるよう、Goldで開始地点を解放できる。どの階から始めてもLv 1で、永久強化と装備・持ち込みは引き継ぐ。",
+	]],
+	["操作", [
+		"移動：WASD・矢印キー・テンキー。斜めはQ・E・Z・C。",
+		"攻撃：Spaceで構え、向きを選んでもう一度Space。",
+		"持ち物：I。主武器と副武器の切り替え：Tab。中断：R。",
+		"拠点では、Enterで選んだものの操作へ移り、もう一度Enterで実行する。Escで戻る。",
+	]],
+]
 
 var volume_slider: GameSlider
+var help_button: Button
 var volume_value: Label
 var display_cycler: OptionCycler
 var settings: GameSettings
 var rows: VBoxContainer
 var note: Label
 var focused_row := 0
+var help_shown := false
+var help_view: Control
+var help_title: Label
+var help_body: Label
+var topic_rows: VBoxContainer
+var topic_buttons: Array[Button] = []
+var selected_topic := 0
 var _rows: Array[Control] = []
+var _columns: HBoxContainer
 
 
 func _ready() -> void:
 	var columns := HBoxContainer.new()
+	_columns = columns
 	columns.theme_type_variation = &"ShopColumns"
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var left := HubUI.open_column(columns, 1.5, &"SlabBand")
 	left.theme_type_variation = &"DetailStack"
-	# Two settings make a band, not a full-height column of empty slab.
+	# A few settings make a band, not a full-height column of empty slab.
 	(left.get_parent() as Control).size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	HubUI.label(left, "変更はその場で反映され、自動で保存される。", &"NoteLabel")
 	rows = VBoxContainer.new()
 	rows.theme_type_variation = &"SettingsRows"
 	left.add_child(rows)
@@ -72,10 +117,19 @@ func _ready() -> void:
 		settings.fullscreen = index == 1
 		settings.apply_display()
 		changed.emit())
+	var help_row := _row("ヘルプ")
+	help_button = HubUI.button(help_row, "遊び方と決まりごとを読む  ›", func():
+		open_help(TOPIC_RUN)
+		var hub := get_tree().get_first_node_in_group(&"hub")
+		if hub != null:
+			hub.call(&"_settings_hints"), &"TextAction")
+	help_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	volume_slider.focus_neighbor_bottom = display_cycler.get_path()
 	display_cycler.focus_neighbor_top = volume_slider.get_path()
-	for index in 2:
-		var control: Control = [volume_slider, display_cycler][index]
+	display_cycler.focus_neighbor_bottom = help_button.get_path()
+	help_button.focus_neighbor_top = display_cycler.get_path()
+	for index in 3:
+		var control: Control = [volume_slider, display_cycler, help_button][index]
 		control.focus_entered.connect(_focus_row.bind(index))
 	HubUI.rule(left)
 	note = HubUI.label(left, NOTES[0], &"NoteLabel")
@@ -84,6 +138,73 @@ func _ready() -> void:
 	hall.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hall.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	columns.add_child(hall)
+	_build_help()
+
+
+# The help: topics as rows on a slab from the left edge, the chosen topic's
+# paragraphs beside them.
+func _build_help() -> void:
+	help_view = HBoxContainer.new()
+	help_view.theme_type_variation = &"ShopColumns"
+	add_child(help_view)
+	help_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	help_view.hide()
+	var topics := HubUI.open_column(help_view, 0.7, &"SlabSolid")
+	topics.theme_type_variation = &"DetailStack"
+	topic_rows = VBoxContainer.new()
+	topic_rows.theme_type_variation = &"SlotRows"
+	topics.add_child(topic_rows)
+	UIMotion.of(topic_rows)
+	topic_rows.draw.connect(_draw_topic_band)
+	for index in HELP.size():
+		var row := HubUI.button(topic_rows, HELP[index][0], select_topic.bind(index), &"HelpTopic")
+		row.toggle_mode = true
+		row.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		row.custom_minimum_size.y = 56
+		row.focus_entered.connect(select_topic.bind(index))
+		topic_buttons.append(row)
+	# Lines no longer than a reader's eye takes in; the hall shows past them.
+	var page := HubUI.open_column(help_view, 1.2, &"SlabColumn")
+	page.theme_type_variation = &"DetailStack"
+	help_title = HubUI.label(page, "", &"HeadingLabel")
+	HubUI.rule(page)
+	help_body = HubUI.label(page, "", &"BodyLabel")
+	var hall := Control.new()
+	hall.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hall.size_flags_stretch_ratio = 0.5
+	hall.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	help_view.add_child(hall)
+
+
+func open_help(topic: int) -> void:
+	help_shown = true
+	_columns.hide()
+	help_view.show()
+	select_topic(topic)
+	topic_buttons[topic].grab_focus()
+	UIMotion.of(help_view).appear(0.0, UIMotion.WINDOW_TIME)
+
+
+func close_help() -> void:
+	help_shown = false
+	help_view.hide()
+	_columns.show()
+	help_button.grab_focus()
+
+
+func select_topic(index: int) -> void:
+	selected_topic = index
+	for other in topic_buttons.size():
+		topic_buttons[other].set_pressed_no_signal(other == index)
+	help_title.text = HELP[index][0]
+	help_body.text = "\n\n".join(HELP[index][1])
+	topic_rows.queue_redraw()
+	UIMotion.reveal_selection([help_body])
+
+
+func _draw_topic_band() -> void:
+	var chosen := topic_buttons[selected_topic]
+	_draw_band(topic_rows, UIMotion.of(topic_rows).follow_mark(Rect2(chosen.position + Vector2(-EDGE_REACH, 2), chosen.size + Vector2(EDGE_REACH, -4))))
 
 
 func _row(caption: String) -> HBoxContainer:
@@ -109,19 +230,24 @@ func _hint(row: HBoxContainer, text: String) -> void:
 # note; the others are parted by faint rules.
 func _draw_rows() -> void:
 	var rail := rows.get_theme_color(&"rail", &"HubLobby")
-	var band := rows.get_theme_color(&"band", &"HubLobby")
 	var chosen := _rows[focused_row]
-	var rect := UIMotion.of(rows).follow_mark(Rect2(chosen.position + Vector2(-EDGE_REACH, 4), chosen.size + Vector2(EDGE_REACH + BAND_TIP, -8)))
-	var tip := rect.end.x
-	var middle := rect.get_center().y
-	var outline := PackedVector2Array([rect.position, Vector2(tip - BAND_TIP, rect.position.y), Vector2(tip, middle), Vector2(tip - BAND_TIP, rect.end.y), Vector2(rect.position.x, rect.end.y)])
-	rows.draw_polygon(outline, PackedColorArray([Color(band, band.a * 0.5), Color(band, band.a * 1.6), Color(band, band.a * 1.8), Color(band, band.a * 1.6), Color(band, band.a * 0.5)]))
-	rows.draw_polyline_colors(outline, PackedColorArray([Color(rail, 0.0), Color(rail, 0.85), rail, Color(rail, 0.85), Color(rail, 0.0)]), 1.5, true)
+	_draw_band(rows, UIMotion.of(rows).follow_mark(Rect2(chosen.position + Vector2(-EDGE_REACH, 4), chosen.size + Vector2(EDGE_REACH + BAND_TIP, -8))))
 	for index in _rows.size() - 1:
 		if index == focused_row or index + 1 == focused_row:
 			continue
 		var y := _rows[index].position.y + _rows[index].size.y
 		rows.draw_polyline_colors(PackedVector2Array([Vector2(0, y), Vector2(rows.size.x * 0.5, y), Vector2(rows.size.x, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.22), Color(rail, 0.0)]), 1.0, true)
+
+
+# The lobby's warm band, pointed at its right end.
+func _draw_band(canvas: Control, rect: Rect2) -> void:
+	var rail := canvas.get_theme_color(&"rail", &"HubLobby")
+	var band := canvas.get_theme_color(&"band", &"HubLobby")
+	var tip := rect.end.x
+	var middle := rect.get_center().y
+	var outline := PackedVector2Array([rect.position, Vector2(tip - BAND_TIP, rect.position.y), Vector2(tip, middle), Vector2(tip - BAND_TIP, rect.end.y), Vector2(rect.position.x, rect.end.y)])
+	canvas.draw_polygon(outline, PackedColorArray([Color(band, band.a * 0.5), Color(band, band.a * 1.6), Color(band, band.a * 1.8), Color(band, band.a * 1.6), Color(band, band.a * 0.5)]))
+	canvas.draw_polyline_colors(outline, PackedColorArray([Color(rail, 0.0), Color(rail, 0.85), rail, Color(rail, 0.85), Color(rail, 0.0)]), 1.5, true)
 
 
 func _focus_row(index: int) -> void:
@@ -140,6 +266,8 @@ func refresh(value: GameSettings) -> void:
 
 
 func focus_first() -> void:
+	if help_shown:
+		close_help()
 	volume_slider.grab_focus()
 	_focus_row(0)
 

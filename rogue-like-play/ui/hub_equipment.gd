@@ -293,6 +293,7 @@ func _compare() -> void:
 	var current := state.equipment.slots[selected_slot]
 	scroll_remove_button.visible = state.equipment.can_socket(selected_slot) and current.socketed_scroll != null
 	equip_button.text = "装備する"
+	equip_button.tooltip_text = ""
 	# The Main weapon cannot be taken off; an empty slot has nothing to take.
 	unequip_button.visible = selected_slot != Equipment.Slot.MAIN
 	unequip_button.disabled = current == null
@@ -308,8 +309,8 @@ func _compare() -> void:
 	showcase.present(candidate)
 	if candidate.kind == ItemData.Kind.SCROLL:
 		comparison.line(candidate.description(), &"NoteLabel")
-		comparison.line("交換前の魔法は選択元に戻ります。", &"NoteLabel")
 		equip_button.text = "杖に魔法を込める"
+		equip_button.tooltip_text = "込めてあった魔法は、元の場所へ戻る"
 		hero_stats.show_stats(before)
 		return
 	var preview := Equipment.new()

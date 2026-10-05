@@ -34,7 +34,8 @@ var stage_facts: Label
 var equipment_rows: HudEquipment
 var stage_banner: TextureRect
 var banner_title: Label
-var banner_line: Label
+var carried_rule: HintMark
+var start_rule: HintMark
 var carried_count: Label
 var inventory_list: ItemCardList
 var hero_stats: HeroStats
@@ -73,7 +74,13 @@ func _ready() -> void:
 func _build_stage_detail(column: VBoxContainer) -> void:
 	column.theme_type_variation = &"DetailStack"
 	stage_title = HubUI.label(column, "", &"HeadingLabel")
-	stage_facts = HubUI.label(column, "", &"NoteLabel")
+	var facts_row := HBoxContainer.new()
+	facts_row.theme_type_variation = &"CompactRow"
+	column.add_child(facts_row)
+	stage_facts = HubUI.label(facts_row, "", &"NoteLabel")
+	stage_facts.autowrap_mode = TextServer.AUTOWRAP_OFF
+	stage_facts.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	HintMark.make(facts_row, "10階ごとに中ボス、50階に主がいる。中ボスを倒すと脱出口から帰れる。", HubSettings.TOPIC_RUN)
 	HubUI.rule(column)
 	stage_details = ItemDetails.new()
 	stage_details.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -99,12 +106,17 @@ func _build_confirmation(parent: Control) -> void:
 	carried_heading.theme_type_variation = &"CompactRow"
 	kit.add_child(carried_heading)
 	var carried_title := HubUI.label(carried_heading, "持ち込み", &"NoteLabel")
-	carried_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	carried_title.autowrap_mode = TextServer.AUTOWRAP_OFF
+	carried_rule = HintMark.make(carried_heading, "倒れたり中断したりすると、持ち込みのおよそ半分を失う。装備中の5枠は失わない。", HubSettings.TOPIC_LOSS)
+	var carried_gap := Control.new()
+	carried_gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	carried_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	carried_heading.add_child(carried_gap)
 	carried_count = HubUI.label(carried_heading, "", &"NoteLabel")
 	carried_count.autowrap_mode = TextServer.AUTOWRAP_OFF
 	inventory_list = ItemCardList.new()
 	inventory_list.theme_type_variation = &"OpenCardList"
-	inventory_list.empty_text = "持ち込みの品はない。装備だけで出撃する"
+	inventory_list.empty_text = "持ち込みの品はない"
 	inventory_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	kit.add_child(inventory_list)
 	HubUI.rule(kit)
@@ -123,8 +135,6 @@ func _build_confirmation(parent: Control) -> void:
 	trip.add_child(stage_banner)
 	banner_title = HubUI.label(trip, "", &"HeadingLabel")
 	banner_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	banner_line = HubUI.label(trip, "", &"NoteLabel")
-	banner_line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	HubUI.rule(trip)
 	# The unlocked start floors as text tabs; what every start shares is said
 	# once beside them.
@@ -137,11 +147,8 @@ func _build_confirmation(parent: Control) -> void:
 	start_choice = SegmentedChoice.new()
 	start_choice.option_role = &"CategoryTab"
 	start_row.add_child(start_choice)
-	var start_note := HubUI.label(start_row, "Lv1・永久強化を適用", &"NoteLabel")
-	start_note.autowrap_mode = TextServer.AUTOWRAP_OFF
-	start_note.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	start_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	start_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	start_rule = HintMark.make(start_row, "どの階から始めてもLv 1。永久強化と装備・持ち込みは引き継ぐ。", HubSettings.TOPIC_GROWTH)
+	start_row.move_child(start_rule, 1)
 	start_choice.item_selected.connect(func(index: int): starting_floor = start_choice.get_item_id(index); _update_start_label())
 	confirm_button = HubUI.primary_action(trip, "挑戦する", func(): departure_requested.emit())
 	# Right: the heroine, and her stats for this run.
@@ -246,14 +253,6 @@ func _select_stage(index: int) -> void:
 	stage_details.reset()
 	stage_details.line(stage.description, &"BodyLabel")
 	if stage.available:
-		if not state.stage_available(stage):
-			stage_details.line(_unlock_hint(stage), &"NoteLabel")
-		if not stage.features.is_empty():
-			stage_details.line("探索の特徴", &"NoteLabel")
-			stage_details.line(stage.features)
-		if not stage.enemy_summary.is_empty():
-			stage_details.line("主な敵の傾向", &"NoteLabel")
-			stage_details.line(stage.enemy_summary)
 		if not stage.bosses.is_empty():
 			var defeated: Array = state.defeated_bosses.get(String(stage.id), [])
 			var guardians: Array[String] = []
@@ -275,7 +274,6 @@ func present_confirmation(current: RunCarryover) -> void:
 	hero_stats.show_stats(state.preparation_stats())
 	stage_banner.texture = selected_stage.diorama if selected_stage.diorama != null else selected_stage.illustration
 	banner_title.text = "%s　全%d階" % [selected_stage.display_name, selected_stage.floor_count]
-	banner_line.text = selected_stage.description
 	inventory_list.clear()
 	for entry in state.inventory.entries:
 		inventory_list.add_card(entry.item, entry.count)

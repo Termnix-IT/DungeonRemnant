@@ -10,7 +10,7 @@ extends Control
 signal transfer_requested(from_storage: bool, index: int)
 signal equipment_requested
 
-const STORAGE_NOTE := "倉庫の品は冒険へ持ち込まず、死亡・中断でも失いません。"
+const STORAGE_NOTE := "倉庫の品は冒険へ持っていかず、倒れても失わない。"
 const SHOWCASE_SIZE := 192.0
 
 var state: RunCarryover
@@ -30,6 +30,7 @@ var amount_label: Label
 var change_label: Label
 var move_button: Button
 var equipment_link: Button
+var storage_rule: HintMark
 var _middle: VBoxContainer
 
 
@@ -49,14 +50,9 @@ func _ready() -> void:
 	_middle = HubUI.open_column(columns, 0.9, &"SlabVeil")
 	_build_middle(_middle)
 	var kept := HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
-	storage_title = _stock_heading(kept, "倉庫")
+	storage_title = _stock_heading(kept, "倉庫", STORAGE_NOTE)
 	storage_list = _stock_list(kept, "倉庫に品はない", true)
 	storage_list.item_selected.connect(_select_storage)
-	HubUI.rule(kept)
-	# As tall as the link across, so both feet share one line.
-	var note := HubUI.label(kept, STORAGE_NOTE, &"NoteLabel")
-	note.custom_minimum_size.y = 44
-	note.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	HubUI.accept_to_action(inventory_list, move_button)
 	HubUI.accept_to_action(storage_list, move_button)
 	# Left and right step between the two stocks.
@@ -64,14 +60,17 @@ func _ready() -> void:
 	storage_list.gui_input.connect(_cross.bind(storage_list))
 
 
-# A stock's name with its use beside it, quiet, above its list.
-func _stock_heading(column: VBoxContainer, title: String) -> Label:
+# A stock's name, with a ? for its rule if it has one, and its room at the
+# right, above its list.
+func _stock_heading(column: VBoxContainer, title: String, rule: String = "") -> Label:
 	column.theme_type_variation = &"DetailStack"
 	var row := HBoxContainer.new()
 	row.theme_type_variation = &"CompactRow"
 	column.add_child(row)
 	var name_label := HubUI.label(row, title, &"ItemNameLabel")
 	name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	if not rule.is_empty():
+		storage_rule = HintMark.make(row, rule, HubSettings.TOPIC_PREPARATION)
 	var count := HubUI.label(row, "", &"NoteLabel")
 	count.autowrap_mode = TextServer.AUTOWRAP_OFF
 	count.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -225,7 +224,6 @@ func _update_details() -> void:
 		move_button.text = "移動する"
 		amount_label.text = "—"
 		change_label.text = ""
-		details.line("どちらかの一覧から品を選んでください。", &"NoteLabel")
 		return
 	direction.text = "倉庫　→　持ち込み" if from_storage else "持ち込み　→　倉庫"
 	move_button.text = "← 持ち出す" if from_storage else "倉庫へ預ける →"

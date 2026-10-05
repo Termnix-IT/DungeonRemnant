@@ -24,6 +24,31 @@ func check(ok: bool, label: String) -> void:
 		push_error(label)
 
 
+# Rules live in the settings' help; the screens keep only a ? that says one
+# line and opens the help at its topic, and back returns to where it was.
+func check_help(hub, page: HubSettings) -> void:
+	page.help_button.pressed.emit()
+	check(page.help_shown and page.selected_topic == HubSettings.TOPIC_RUN and hub.title_label.text == "ヘルプ", "The help row opens the help at its first topic")
+	check(page.help_body.text.contains("Lv 1") and page.topic_buttons[HubSettings.TOPIC_RUN].has_focus(), "A topic reads its paragraphs and takes focus")
+	page.select_topic(HubSettings.TOPIC_LOSS)
+	check(page.help_body.text.contains("半分") and page.help_title.text == "失うもの", "Choosing a topic shows it")
+	hub.go_back()
+	check(hub.page == "settings" and not page.help_shown and hub.title_label.text == "設定" and page.help_button.has_focus(), "Back from the help returns to the settings")
+	var marks: Array[Node] = hub.get_tree().get_nodes_in_group(HintMark.GROUP)
+	check(marks.size() >= 7, "Pages carry ? marks for their rules")
+	for mark: HintMark in marks:
+		check(not mark.tooltip_text.is_empty() and mark.tooltip_text.length() <= 48 and mark.topic >= 0 and mark.topic < HubSettings.HELP.size(), "A ? says one short line and names a topic: " + mark.tooltip_text)
+	hub.show_page("sell")
+	hub.sell_page.set_buying(false)
+	hub.sell_page.sell_rule.pressed.emit()
+	check(hub.page == "settings" and page.help_shown and page.selected_topic == HubSettings.TOPIC_PREPARATION, "A ? opens the help at its topic")
+	hub.go_back()
+	check(hub.page == "sell" and not hub.settings_page.visible, "Back from a ?'s help returns to its page")
+	hub.show_page("settings")
+	check(not page.help_shown and page.volume_slider.has_focus(), "Settings open on their rows again")
+	await process_frame
+
+
 func run_tests() -> void:
 	var state := RunCarryover.new()
 	check(not state.purchase_upgrade() and state.gold == 0 and state.hp_upgrade_level == 0, "Insufficient funds do not mutate state")
@@ -284,6 +309,7 @@ func run_tests() -> void:
 	check(hub.settings.fullscreen and page.display_cycler.text == "全画面" and page.display_cycler.has_focus(), "Right on the selector steps to fullscreen and keeps focus")
 	page.display_cycler.pressed.emit()
 	check(not hub.settings.fullscreen and page.display_cycler.text == "ウィンドウ", "Confirming the selector wraps back to window")
+	await check_help(hub, page)
 	page.volume_slider.value = 80
 	hub.go_back()
 	check(hub.page == "home" and lobby.selected_id() == &"settings" and lobby.volume_value.text == "80%", "Back returns to the lobby with the new values")

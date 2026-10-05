@@ -59,7 +59,7 @@ func capture() -> void:
 
 func check_shop_layout(shop: HubSell) -> void:
 	var bounds := shop.get_global_rect().grow(1)
-	for control: Control in [shop.item_list, shop.source_choice, shop.quantity, shop.total_label, shop.sell_button, shop.sell_all_button, shop.help_label]:
+	for control: Control in [shop.item_list, shop.source_choice, shop.quantity, shop.total_label, shop.sell_button, shop.sell_all_button, shop.sell_rule]:
 		if control.is_visible_in_tree():
 			check(bounds.encloses(control.get_global_rect()), "%s fits shop at %s" % [control.get_class(), root.size])
 	check(not shop.sell_button.get_global_rect().intersects(shop.total_label.get_global_rect()), "Quote and action do not overlap")

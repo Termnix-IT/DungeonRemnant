@@ -60,6 +60,8 @@ var stage_status: Label
 var entry_rows: Array[Button] = []
 var entry_list: VBoxContainer
 var stage_art: TextureRect
+var growth_rule: HintMark
+var entry_rule: HintMark
 # Each wire's lit share as drawn: from, to, and the blend between them.
 var blend := 1.0:
 	set(value):
@@ -120,7 +122,7 @@ func _build_mode_tabs() -> void:
 
 
 func _build_tree(parent: VBoxContainer) -> void:
-	HubUI.label(parent, "中央の基礎HPを上限まで育てると4つの枝が開き、各段を上限まで育てると次の段へつながる。", &"NoteLabel")
+	growth_rule = HintMark.make(parent, "基礎HPを上限まで上げると4本の枝が開き、各段を上限まで上げると次の段が開く。", HubSettings.TOPIC_GROWTH)
 	canvas = Control.new()
 	canvas.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -312,10 +314,13 @@ func _build_detail(column: VBoxContainer) -> void:
 
 
 func _build_entries(parent: VBoxContainer) -> void:
-	HubUI.label(parent, "中ボスを倒した階の次から、Goldで冒険を始められるようにする。開始時はLv 1で、永久強化は引き継ぐ。", &"NoteLabel")
+	var choice_row := HBoxContainer.new()
+	choice_row.theme_type_variation = &"CompactRow"
+	parent.add_child(choice_row)
 	stage_choice = SegmentedChoice.new()
 	stage_choice.option_role = &"CategoryTab"
-	parent.add_child(stage_choice)
+	choice_row.add_child(stage_choice)
+	entry_rule = HintMark.make(choice_row, "中ボスを倒した階の次から始められる。どの階から始めてもLv 1。", HubSettings.TOPIC_GROWTH)
 	for stage in stages:
 		stage_choice.add_item(stage.display_name)
 	stage_choice.item_selected.connect(func(_index: int):
@@ -459,7 +464,9 @@ func _refresh_detail() -> void:
 	detail_emblem.queue_redraw()
 	current_value.text = "今　%s +%d" % [effect, data.rank * data.amount]
 	next_value.text = "%s +%d" % [effect, (data.rank + 1) * data.amount] if data.cost >= 0 else "%s +%d" % [effect, data.rank * data.amount]
-	benefit_label.text = "次は Lv %d（+%d）" % [data.rank + 1, data.amount] if data.cost >= 0 else "この段は最大まで成長しています"
+	# The next value already says the gain; only a capped node needs a line.
+	benefit_label.text = "" if data.cost >= 0 else "この段は最大まで成長しています"
+	benefit_label.visible = data.cost < 0
 	requirement.text = _condition(selected_id, data)
 	var shown := []
 	for row: Array in TOTALS:
@@ -504,7 +511,8 @@ func _counter(cost: int, met: bool, allowed: bool, verb: String, complete: Strin
 func _refresh_entries() -> void:
 	var stage := stages[stage_choice.selected]
 	var available := state.stage_available(stage)
-	stage_status.text = "開始時はLv 1。永久強化は引き継がれます。" if available else "ステージ未解放：%sをクリア" % _stage_name(stage.previous_stage)
+	stage_status.text = "" if available else "ステージ未解放：%sをクリア" % _stage_name(stage.previous_stage)
+	stage_status.visible = not available
 	stage_art.texture = stage.illustration
 	_stage_text.text = "%s　全%d階　%s
 %s" % [stage.display_name, stage.floor_count, stage.difficulty, stage.description]
