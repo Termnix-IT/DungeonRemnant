@@ -20,6 +20,7 @@
 [ext_resource type="Texture2D" path="res://art/ui/vital_mana_trail.png" id="VitalManaTrailTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/vital_experience.png" id="VitalExperienceTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/speech_bubble.png" id="SpeechBubbleTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/ink_plate.png" id="InkPlateTexture"]
 
 [sub_resource type="StyleBoxTexture" id="FramePanel"]
 resource_name = "FramePanel"
@@ -378,6 +379,16 @@ border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
+
+[sub_resource type="StyleBoxTexture" id="InkPlate"]
+resource_name = "InkPlate"
+texture = ExtResource("InkPlateTexture")
+texture_margin_left = 56.0
+texture_margin_right = 56.0
+content_margin_left = 36.0
+content_margin_right = 36.0
+content_margin_top = 0.0
+content_margin_bottom = 0.0
 
 [sub_resource type="StyleBoxTexture" id="SpeechSurface"]
 resource_name = "SpeechSurface"
@@ -948,3 +959,8 @@ LobbyFact/base_type = &"VBoxContainer"
 LobbyFact/constants/separation = -4
 LobbyFactCaption/base_type = &"MutedLabel"
 LobbyFactCaption/font_sizes/font_size = 14
+InkTooltip/base_type = &"PanelContainer"
+InkTooltip/styles/panel = SubResource("InkPlate")
+InkTooltipLabel/base_type = &"Label"
+InkTooltipLabel/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+InkTooltipLabel/font_sizes/font_size = 16

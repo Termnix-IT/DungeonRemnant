@@ -361,7 +361,7 @@ func _build_hero() -> void:
 	# Settle the bright illustration into the lantern light of the hall.
 	hero.modulate = get_theme_color(&"hero_tint", &"HubLobby")
 	add_child(hero)
-	hero_button = Button.new()
+	hero_button = InkTooltip.HintButton.new()
 	hero_button.name = "HeroButton"
 	hero_button.theme_type_variation = &"CharacterButton"
 	hero_button.tooltip_text = "話しかける"

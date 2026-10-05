@@ -186,6 +186,11 @@ func run_tests() -> void:
 	# No hover popup repeats what is already on screen.
 	check(lobby.buttons.all(func(button: Button): return button.tooltip_text.is_empty()) and lobby.decide_button.tooltip_text.is_empty(), "Menu entries and the decide button have no tooltip")
 	check(lobby.equipment_label.tooltip_text.is_empty() and lobby.description_label.tooltip_text.is_empty(), "Whole texts need no tooltip")
+	# The hints that remain are drawn in the speech bubble's ink, not the boxed tooltip.
+	for hinted: Control in [hub.hero_button, hub.gold_label]:
+		var tip: Control = hinted._make_custom_tooltip(hinted.tooltip_text)
+		check(tip != null and tip.theme_type_variation == &"InkTooltip" and (tip.get_child(0) as Label).text == hinted.tooltip_text, "%s hints in ink" % hinted.name)
+		tip.free()
 	check(GoldPurse.amount(0) == "0" and GoldPurse.amount(1280) == "1,280" and GoldPurse.amount(1234567) == "1,234,567" and GoldPurse.amount(999) == "999", "Gold amounts group thousands")
 	var purse_row: HBoxContainer = hub.gold_label.get_parent()
 	check(purse_row.get_children().filter(func(node: Node): return node is Label).size() == 1, "Gold shows no word beside the amount")

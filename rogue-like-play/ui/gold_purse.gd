@@ -43,7 +43,9 @@ func _ready() -> void:
 	coin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	coin.draw.connect(_draw_coin.bind(coin))
 	row.add_child(coin)
-	value_label = HubUI.label(row, "", &"PurseValue")
+	value_label = InkTooltip.HintLabel.new()
+	value_label.theme_type_variation = &"PurseValue"
+	row.add_child(value_label)
 	value_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	value_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	value_label.tooltip_text = "Gold"
