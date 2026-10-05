@@ -3,9 +3,11 @@ extends Button
 
 # One node of the permanent tree: its emblem in a ring of rank marks, its
 # name and rank under it. The tree draws the wires between nodes; a node's
-# dark disc covers their ends. A node not yet open is dim; a capped node's
-# ring is whole and bright; the chosen node stands on the lobby band's warm
-# glow with its name in gold. The Button keeps focus and input.
+# dark disc covers their ends. A node not yet open is dim and carries a
+# padlock; a node that can be grown with the Gold at hand carries a gold
+# diamond (StateMark), so where to grow next reads before choosing; a capped
+# node's ring is whole and bright; the chosen node stands on the lobby band's
+# warm glow with its name in gold. The Button keeps focus and input.
 
 const NAME_GAP := 6.0
 
@@ -16,6 +18,8 @@ var rank := 0
 var max_rank := 1
 # Its prerequisite is capped, so it can be grown.
 var open := true
+# Open, short of its cap and affordable now.
+var growable := false
 # The emblem's size: the centre at its stored 96px, the tiers at their native 48px.
 var emblem_size := 48.0
 # 0 to 1 on a gain (UIMotion.glow_in): the ring brightens.
@@ -58,12 +62,13 @@ func setup(node_id: StringName, key: String, extent: float) -> void:
 	size = custom_minimum_size
 
 
-func show_rank(name_text: String, current: int, cap: int, available: bool) -> void:
+func show_rank(name_text: String, current: int, cap: int, available: bool, affordable: bool = false) -> void:
 	title = name_text
 	rank = current
 	max_rank = maxi(cap, 1)
 	open = available
-	tooltip_text = "%s　Lv %d / %d" % [title, rank, max_rank]
+	growable = available and current < max_rank and affordable
+	tooltip_text = "%s　Lv %d / %d%s" % [title, rank, max_rank, "" if available else "（未解放）"]
 	queue_redraw()
 
 
@@ -106,6 +111,12 @@ func _draw() -> void:
 		draw_texture_rect(picture, art, false, shade)
 	if has_focus():
 		draw_arc(middle, ring + 4.0, 0, TAU, 48, get_theme_color(&"focus_ring"), 1.5, true)
+	# The state mark sits on the disc's upper right, clear of the wires.
+	var corner := middle + Vector2(ring, -ring) * 0.74
+	if not open:
+		StateMark.lock(self, corner, 14.0, Color(muted, 0.85))
+	elif growable:
+		StateMark.ready(self, corner, 6.0, get_theme_color(&"font_color", &"GoldLabel"))
 	# Name and rank under the disc, centred.
 	var font := get_theme_font(&"font")
 	var name_size := get_theme_font_size(&"font_size")

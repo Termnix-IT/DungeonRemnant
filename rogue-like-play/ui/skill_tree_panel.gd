@@ -448,7 +448,7 @@ func refresh(current: RunCarryover) -> void:
 		if _ranks_shown.has(id) and data.rank > _ranks_shown[id]:
 			_increased.append(id)
 		_ranks_shown[id] = data.rank
-		(buttons[id] as SkillNodeButton).show_rank(data.name, data.rank, data.max, data.met)
+		(buttons[id] as SkillNodeButton).show_rank(data.name, data.rank, data.max, data.met, data.cost >= 0 and state.gold >= data.cost)
 	# Wires show their new share at once; a gain replays it (present_upgrade).
 	for node in SkillCatalog.NODES:
 		var source := _info(node.prerequisite)
@@ -505,6 +505,9 @@ func _condition(id: StringName, data: Dictionary) -> String:
 
 func _counter(cost: int, met: bool, allowed: bool, verb: String, complete: String) -> void:
 	price_label.text = "—" if cost < 0 else UIFormat.gold(cost)
+	# Gold marks a price that bears on the choice now; one behind an unmet
+	# condition cannot be paid yet, so it stays out of gold.
+	price_label.theme_type_variation = &"PriceLabel" if met or cost < 0 else &"PriceLabelLocked"
 	after_label.text = "" if cost < 0 or not allowed else "強化後 %s" % UIFormat.gold(state.gold - cost)
 	upgrade_button.disabled = not allowed
 	upgrade_button.focus_mode = Control.FOCUS_ALL if allowed else Control.FOCUS_NONE
@@ -564,12 +567,21 @@ func _draw_entry_row(row: Button, index: int) -> void:
 	var body := row.get_theme_color(&"font_color", &"Label")
 	var muted := row.get_theme_color(&"font_color", &"MutedLabel")
 	var chosen := row.button_pressed
-	var title_tone := row.get_theme_color(&"font_color", &"GoldLabel") if chosen else (body if entry.met or entry.unlocked else muted)
+	# A floor that cannot be opened yet sits a step darker than the rest.
+	var title_tone := row.get_theme_color(&"font_color", &"GoldLabel") if chosen else (body if entry.met or entry.unlocked else Color(muted, 0.75))
 	var width := row.size.x - BAND_TIP - 24.0
 	draw_text(row, font, Vector2(16, 30), "%dFから開始" % entry.floor, width, name_size, title_tone, HORIZONTAL_ALIGNMENT_LEFT)
 	draw_text(row, font, Vector2(16, 54), entry.condition, width, note_size, muted, HORIZONTAL_ALIGNMENT_LEFT)
 	var tag := "解放済み" if entry.unlocked else UIFormat.gold(entry.cost)
-	draw_text(row, font, Vector2(16, 30), tag, width, note_size + 2, body if entry.met or entry.unlocked else muted, HORIZONTAL_ALIGNMENT_RIGHT)
+	var reachable: bool = entry.met or entry.unlocked
+	draw_text(row, font, Vector2(16, 30), tag, width, note_size + 2, body if reachable else Color(muted, 0.7), HORIZONTAL_ALIGNMENT_RIGHT)
+	# The row's state before it is chosen: a padlock before the price of a
+	# floor whose boss still stands, a gold diamond on one Gold can open now.
+	var mark_x := 16.0 + width - font.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, note_size + 2).x - 14.0
+	if not reachable:
+		StateMark.lock(row, Vector2(mark_x, 25), 14.0, Color(muted, 0.85))
+	elif entry.allowed:
+		StateMark.ready(row, Vector2(mark_x, 25), 6.0, row.get_theme_color(&"font_color", &"GoldLabel"))
 	if index < entry_rows.size() - 1 and not chosen:
 		var rail := row.get_theme_color(&"rail", &"HubLobby")
 		var y := row.size.y - 0.5
