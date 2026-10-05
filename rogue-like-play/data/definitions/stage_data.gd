@@ -10,6 +10,9 @@ extends Resource
 @export_multiline var enemy_summary: String
 @export var settings: DungeonSettings
 @export var illustration: Texture2D
+# The stage-select map's piece: the dungeon on an oval island, transparent
+# around it (tools/build_stage_dioramas.py).
+@export var diorama: Texture2D
 @export var available := true
 
 @export var previous_stage: StringName

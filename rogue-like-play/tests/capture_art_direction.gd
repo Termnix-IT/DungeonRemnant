@@ -54,8 +54,11 @@ func capture() -> void:
 		fits(hub.purchase_button, "Upgrade action")
 		hub.show_page("stages")
 		await shot("art_stages_%d" % resolution.y)
-		for control: Control in [hub.departure_page.stage_list, hub.departure_page.stage_art, hub.departure_page.stage_details, hub.departure_page.next_button]:
+		var nodes: Array = hub.departure_page.stage_nodes
+		for control: Control in [hub.departure_page.map, hub.departure_page.stage_details, hub.departure_page.next_button] + nodes:
 			fits(control, "Stage selection")
+		# The road never runs straight: the second stage stands higher.
+		check(nodes.size() >= 2 and nodes[1].position.y < nodes[0].position.y - 40, "Stages are set off a straight line")
 		hub.departure_page._select_stage(1)
 		check(hub.departure_page.next_button.disabled, "Locked destination cannot be started")
 		hub.departure_page._select_stage(0)

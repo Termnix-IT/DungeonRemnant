@@ -155,6 +155,9 @@ func _ready() -> void:
 	heading_box.move_child(sell_page.mode_tabs, 0)
 	sell_page.mode_tabs.visible = false
 	departure_page = _page(HubDeparture.new()) as HubDeparture
+	# Its map's slab runs off the left edge; its detail and the heroine off the right.
+	departure_page.offset_left = bleed
+	departure_page.offset_right = -bleed
 	departure_page.confirm_requested.connect(func(): show_page("confirm"))
 	departure_page.equipment_requested.connect(func(): equipment_return = "confirm"; show_page("equipment"))
 	departure_page.departure_requested.connect(func(): start_requested.emit())
@@ -351,11 +354,13 @@ func show_page(target: String) -> void:
 			title_label.text = "ステージ選択"
 			departure_page.show()
 			departure_page.present_selection(stages, _state)
+			key_guide.add_hint("Enter", "A", "出撃準備")
+			key_guide.add_hint("← / →", "◀ / ▶", "ステージ")
 		"confirm":
-			var stage := departure_page.selected_stage
-			title_label.text = "出撃確認  /  %s・全%d階" % [stage.display_name, stage.floor_count]
+			title_label.text = "出撃確認"
 			departure_page.show()
 			departure_page.present_confirmation(_state)
+			key_guide.add_hint("Enter", "A", "挑戦")
 	# Pages are anchored in a plain host, not laid out by a Container, so the
 	# whole page can slide: forward pages from the right, home from the left.
 	var side := -1.0 if page == "home" else 1.0

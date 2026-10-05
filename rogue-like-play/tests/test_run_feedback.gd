@@ -202,13 +202,13 @@ func check_confirmation_page() -> void:
 	hub.show_page("stages")
 	hub.show_page("confirm")
 	var page: HubDeparture = hub.departure_page
-	check(page.empty_carried.visible and not page.inventory_list.visible, "An empty loadout reads as a note, not a disabled row")
+	check(page.inventory_list.item_count == 0 and page.inventory_list.empty_text.contains("装備だけで出撃"), "An empty loadout reads as a note, not a disabled row")
 	check(page.equipment_rows.row_text(0) == main.state.equipment.slots[0].label(), "Confirmation lists equipment with glyph rows")
-	check(page.equipment_label.text.begins_with("HP "), "Confirmation shows departure stats")
-	check(page.stage_banner.texture == page.selected_stage.illustration, "Confirmation shows the destination art")
+	check(page.hero_stats.specs.rows.size() == 4 and page.hero_stats.specs.rows[0][1] == main.state.preparation_stats().hp, "Confirmation shows departure stats beside the heroine")
+	check(page.stage_banner.texture == page.selected_stage.diorama, "Confirmation shows the destination's diorama")
 	main.state.inventory.add(ItemCatalog.POTION, 3)
 	hub.show_page("confirm")
-	check(page.inventory_list.visible and not page.empty_carried.visible and page.carried_count.text == "1 / 40 枠", "Carried items list with capacity")
+	check(page.inventory_list.item_count == 1 and page.carried_count.text == "1 / 40 枠", "Carried items list with capacity")
 	main.free()
 	await process_frame
 

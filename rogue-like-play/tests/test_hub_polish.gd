@@ -87,30 +87,39 @@ func check_stages(hub, main) -> void:
 	var page: HubDeparture = hub.departure_page
 	# Details stay focusable: long guardian lists scroll from the keyboard.
 	check(page.stage_details.focus_mode != Control.FOCUS_NONE, "Stage details remain keyboard scrollable")
-	var list: StageCardList = page.stage_list
 	var locked_index := -1
-	for index in list.item_count:
-		var row: Dictionary = list.get_item_metadata(index)
-		if row.stage.available and not row.unlocked:
+	for index in page.stage_nodes.size():
+		var node: StageMapNode = page.stage_nodes[index]
+		check(node.stage.diorama != null, "Every stage stands on its diorama: " + node.stage.display_name)
+		if node.stage.available and not node.unlocked:
 			locked_index = index
-			check(String(row.hint).contains("踏破で解放"), "Locked stage explains how to open it")
-	check(locked_index >= 0, "A locked stage is listed")
+			check(node.hint.contains("踏破で解放"), "Locked stage explains how to open it")
+	check(locked_index >= 0, "A locked stage is on the map")
 	var descriptions := {}
-	for index in list.item_count:
-		var stage: StageData = list.get_item_metadata(index).stage
+	for node: StageMapNode in page.stage_nodes:
+		var stage := node.stage
 		check(not descriptions.has(stage.description), "Stage descriptions differ: " + stage.display_name)
 		descriptions[stage.description] = true
 		check(not (stage.description.contains("今後追加予定") and not stage.available), "Upcoming stage does not repeat its status")
-	list.select(locked_index)
 	page._select_stage(locked_index)
-	list.item_activated.emit(locked_index)
-	check(hub.page == "stages", "Activating a locked stage stays on selection")
-	list.select(0)
+	check(page.next_button.disabled and page.stage_nodes[locked_index].button_pressed, "A locked stage can be read but not started")
+	page.next_button.pressed.emit()
+	check(hub.page == "stages", "A locked stage stays on selection")
+	page._select_stage(0)
+	page.stage_nodes[0].grab_focus()
+	var right := InputEventKey.new()
+	right.keycode = KEY_RIGHT
+	right.physical_keycode = KEY_RIGHT
+	right.pressed = true
+	Input.parse_input_event(right)
+	await process_frame
+	await process_frame
+	check(page.selected_stage == page.stages[1] and page.stage_nodes[1].has_focus(), "Right moves to the next stage on the map and chooses it")
 	page._select_stage(0)
 	check(page.stage_details.get_parsed_text().contains("守護者"), "Stage details list guardians by floor")
-	list.item_activated.emit(0)
+	page.next_button.pressed.emit()
 	await process_frame
-	check(hub.page == "confirm", "Enter or double-click on an open stage goes to the sortie check")
+	check(hub.page == "confirm", "The action on an open stage goes to the sortie check")
 
 
 func check_details(hub, main) -> void:

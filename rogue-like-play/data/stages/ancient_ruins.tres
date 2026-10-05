@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="StageData" load_steps=10 format=3]
+[gd_resource type="Resource" script_class="StageData" load_steps=11 format=3]
 [ext_resource type="Script" path="res://data/definitions/stage_data.gd" id="1"]
 [ext_resource type="Resource" path="res://data/dungeon/default.tres" id="2"]
 [ext_resource type="Texture2D" path="res://art/hub/ancient_ruins.png" id="3"]
 [ext_resource type="Script" path="res://data/definitions/enemy_stats.gd" id="4"]
+[ext_resource type="Texture2D" path="res://art/hub/dioramas/ancient_ruins.png" id="diorama"]
 [sub_resource type="Resource" id="Boss0"]
 script = ExtResource("4")
 display_name = "石門の守護者"
@@ -89,5 +90,6 @@ features = "中ボス撃破後は安全帰還。\n永久強化と途中開始で
 enemy_summary = "追跡 / 砲台 / 高速型 / 召喚型 / エリート"
 settings = ExtResource("2")
 illustration = ExtResource("3")
+diorama = ExtResource("diorama")
 previous_stage = &""
 bosses = Array[ExtResource("4")]([SubResource("Boss0"), SubResource("Boss1"), SubResource("Boss2"), SubResource("Boss3"), SubResource("Boss4")])
