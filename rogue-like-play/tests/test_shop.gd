@@ -79,6 +79,8 @@ func run_tests() -> void:
 	shop.item_list.select(0)
 	shop.item_list.item_selected.emit(0)
 	check(not shop.swap_label.visible and shop.hero_specs.rows.all(func(row: Array): return row[1] == row[2]), "Selling shows her stats as they are")
+	# Gear has no fixed ceiling, so her stats carry no bar to misread.
+	check(not shop.hero_specs.bars, "Her stats are numbers without bars")
 	shop.set_buying(true)
 	var before := SaveCodec.encode(main.state)
 	check(not main.buy_item(false, ItemCatalog.POTION.id, 3) and before == SaveCodec.encode(main.state), "Insufficient Gold changes nothing")

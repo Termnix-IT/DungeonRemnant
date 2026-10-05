@@ -50,6 +50,9 @@ func _ready() -> void:
 	HubUI.label(stack, "次の冒険の能力", &"NoteLabel")
 	swap_label = HubUI.label(stack, "", &"NoteLabel")
 	specs = StatBars.new()
+	# No bars: gear has no fixed ceiling, so a bar's length could only be
+	# measured against her own value and would say nothing about its size.
+	specs.bars = false
 	stack.add_child(specs)
 
 
@@ -79,8 +82,7 @@ func show_stats(before: Dictionary, after: Dictionary = {}, swap: String = "") -
 	var shown := []
 	for stat: Array in STATS:
 		var next: int = after.get(stat[0], before[stat[0]])
-		# Bars leave room for the change against her current value.
-		shown.append([stat[1], before[stat[0]], next, maxi(before[stat[0]], next) * 1.25 + 1])
+		shown.append([stat[1], before[stat[0]], next, 0])
 	specs.show_rows(shown)
 
 

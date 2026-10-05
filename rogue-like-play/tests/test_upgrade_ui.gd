@@ -109,6 +109,9 @@ func run_tests() -> void:
 	check(state.skill_rank(&"attack") == 1 and state.gold == 1000 - 60 - 90 - 100, "Primary action buys the chosen branch")
 	panel.select_upgrade(&"attack")
 	check(panel.totals.rows[1][1] == 1 and panel.totals.rows[1][2] == 2, "Permanent totals show before and after the next rank")
+	# Attack's four tiers of five ranks at +1 each: the bar measures against
+	# the whole branch, not against her current bonus.
+	check(panel.totals.rows[1][3] == 20 and panel.totals.rows[0][3] == panel.ceiling(&"hp") and panel.ceiling(&"hp") > 3, "Permanent total bars measure against the fully grown tree")
 	state.gold = 0
 	hub.refresh(state)
 	panel.select_upgrade(&"mana")

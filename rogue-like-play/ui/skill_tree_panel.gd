@@ -429,6 +429,16 @@ func _total(effect: StringName, plus: StringName = &"") -> int:
 	return value
 
 
+# The permanent bonus of an effect with every node capped: the totals' bars
+# are measured against it, so a bar reads as how far that growth has come.
+func ceiling(effect: StringName) -> int:
+	var value := state.upgrade.hp_bonus(state.upgrade.costs.size()) if effect == &"hp" else 0
+	for node in SkillCatalog.NODES:
+		if node.effect == effect:
+			value += node.amount * node.max_rank
+	return value
+
+
 func refresh(current: RunCarryover) -> void:
 	var action_had_focus := upgrade_button.has_focus()
 	state = current
@@ -472,7 +482,7 @@ func _refresh_detail() -> void:
 	for row: Array in TOTALS:
 		var before := _total(row[0])
 		var after := _total(row[0], selected_id)
-		shown.append([row[1], before, after, maxi(before, after) * 1.25 + 1])
+		shown.append([row[1], before, after, ceiling(row[0])])
 	totals.show_rows(shown)
 	var allowed: bool = data.cost >= 0 and data.met and state.gold >= data.cost
 	_counter(data.cost, data.met, allowed, "強化する", "強化上限")

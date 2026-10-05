@@ -3,8 +3,8 @@ extends Control
 
 # Stat rows that read a change at a glance: the caption, an optional bar
 # (the current value filled, a rise drawn green past it, a fall cut back in
-# red), then "current » new" with an arrow. Values that do not change stay
-# in the quiet colour so the changed ones stand out.
+# red), then "current » new" with an arrow. A value that does not change is
+# written once, so only the changed rows carry an arrow.
 
 const ROW_HEIGHT := 28.0
 const CAPTION_WIDTH := 96.0
@@ -91,8 +91,10 @@ func _draw() -> void:
 			if bar[1] - bar[0] > 0.5 and bar[2] != &"":
 				draw_rect(Rect2(track.position + Vector2(bar[0], 0), Vector2(bar[1] - bar[0], BAR_HEIGHT)), rise if bar[2] == &"StatUp" else fall)
 			x += BAR_WIDTH + 16.0
-		var right := size.x
-		var arrow := "▲" if after > before else ("▼" if after < before else "")
+		# Without bars the numbers keep close to their captions, so the eye
+		# does not cross an empty stretch to find a row's value.
+		var right := size.x if bars else minf(size.x, CAPTION_WIDTH + NUMBER_WIDTH * 2.0 + 26.0 + 18.0)
+		var arrow :="▲" if after > before else ("▼" if after < before else "")
 		var arrow_width := 18.0
 		# A new arrow fades in with the bar's move.
 		var arrow_tone := tone
@@ -100,5 +102,7 @@ func _draw() -> void:
 			arrow_tone.a *= blend
 		draw_string(font, Vector2(right - arrow_width, baseline), arrow, HORIZONTAL_ALIGNMENT_RIGHT, arrow_width, caption_size, arrow_tone)
 		draw_string(font, Vector2(right - arrow_width - NUMBER_WIDTH, baseline), str(after), HORIZONTAL_ALIGNMENT_RIGHT, NUMBER_WIDTH, value_size, tone if after != before else body)
+		if after == before:
+			continue
 		draw_string(font, Vector2(right - arrow_width - NUMBER_WIDTH - 26.0, baseline), "»", HORIZONTAL_ALIGNMENT_CENTER, 26.0, caption_size, muted)
 		draw_string(font, Vector2(right - arrow_width - NUMBER_WIDTH * 2.0 - 26.0, baseline), str(before), HORIZONTAL_ALIGNMENT_RIGHT, NUMBER_WIDTH, value_size, muted)
