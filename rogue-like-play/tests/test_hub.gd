@@ -309,25 +309,40 @@ func run_tests() -> void:
 	hub.hero_button.pressed.emit()
 	hub.open_warehouse()
 	check(not hub.hero_speech.visible, "Warehouse closes speech")
-	hub.warehouse_panel.close()
+	check(hub.page == "warehouse" and hub.warehouse_page.visible and not hub.home_page.visible, "The warehouse is a page of its own")
+	hub.go_back()
+	check(hub.page == "home", "Back from the warehouse opened at home returns to the lobby")
 	check(hub.visible and main.active_run == null and hub.purchase_button.disabled, "Game starts in Hub with no active dungeon")
-	check(hub.get_child(hub.get_child_count() - 1) == hub.warehouse_panel, "Warehouse modal is last in GUI input order")
 	check(hub.gold_label.text.contains("0") and hub.equipment_label.text.contains("剣"), "Hub displays initial Gold and equipment")
 	main.state.gold = 101
 	main.state.inventory.add(ItemCatalog.POTION, 10)
 	main.state.inventory.add(preload("res://data/items/leather_armor.tres"))
 	main.state.equipment.slots[3] = preload("res://data/items/vital_charm.tres")
-	hub.warehouse_panel.present(main.state)
-	check(hub.warehouse_panel.visible and hub.warehouse_panel.get_node("%InventoryList").item_count == 2, "Warehouse opens with carried inventory")
-	hub.warehouse_panel.get_node("%InventoryList").item_selected.emit(1)
-	hub.warehouse_panel.get_node("%Deposit").pressed.emit()
+	hub.open_warehouse()
+	var warehouse: HubWarehouse = hub.warehouse_page
+	check(warehouse.visible and warehouse.inventory_list.item_count == 2, "Warehouse opens with carried inventory")
+	check(warehouse.move_button.disabled, "Nothing chosen, nothing to move")
+	warehouse.inventory_list.item_selected.emit(1)
+	check(warehouse.move_button.text.contains("預ける") and warehouse.direction.text == "持ち込み　→　倉庫", "Carried goods offer the deposit")
+	warehouse.move_button.pressed.emit()
 	check(main.state.storage.entries.size() == 1 and main.state.inventory.entries.size() == 1, "Hub UI deposits one equipment item")
-	hub.warehouse_panel.get_node("%StorageList").item_selected.emit(0)
-	hub.warehouse_panel.get_node("%Withdraw").pressed.emit()
+	# Right from what she carries crosses to the warehouse and chooses there.
+	warehouse.inventory_list.grab_focus()
+	var right := InputEventKey.new()
+	right.keycode = KEY_RIGHT
+	right.physical_keycode = KEY_RIGHT
+	right.pressed = true
+	Input.parse_input_event(right)
+	await process_frame
+	await process_frame
+	check(warehouse.storage_list.has_focus() and warehouse.storage_index == 0 and warehouse.inventory_index == -1, "Right crosses from what she carries to the warehouse")
+	warehouse.storage_list.item_selected.emit(0)
+	check(warehouse.move_button.text.contains("持ち出す") and warehouse.direction.text == "倉庫　→　持ち込み", "The one action turns to the warehouse's side")
+	warehouse.move_button.pressed.emit()
 	check(main.state.storage.entries.is_empty() and main.state.inventory.entries.size() == 2, "Hub UI withdraws deposited item")
 	main.state.inventory.remove(1)
 	main.state.storage.add(ItemCatalog.POTION, 12)
-	hub.warehouse_panel.close()
+	hub.go_back()
 	check(main.purchase_upgrade() and main.state.gold == 71 and main.state.hp_upgrade_level == 1, "Hub purchase updates shared state")
 	main.start_run()
 	var run: Node2D = main.active_run

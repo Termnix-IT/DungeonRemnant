@@ -124,9 +124,20 @@ func check_details(hub, main) -> void:
 	# Owned copies read once in the counter (and in the row), not again in the details.
 	check(shop.possession.text.contains("倉庫") and shop.possession.text.contains("→") and not shop.details.get_parsed_text().contains("手元に"), "The shop counter says where the copies go")
 	hub.open_warehouse()
-	check(hub.warehouse_panel.get_node("%Feedback").text == WarehousePanel.STORAGE_NOTE, "Warehouse rule note sits on the feedback line")
-	var visual: ItemVisual = hub.warehouse_panel.get_node("%Visual")
-	check(visual.custom_minimum_size == Vector2.ONE * WarehousePanel.VISUAL_SIZE and visual.size_flags_horizontal == Control.SIZE_SHRINK_CENTER, "The transfer column shows the item at 3x, centred")
-	check((hub.warehouse_panel.get_node("%Help") as ItemDetails).centered, "The transfer column centres the item's lines under its art")
-	check((hub.warehouse_panel.get_node("%Deposit") as Button).tooltip_text.contains("1"), "The one-stack rule stays on the move buttons")
-	hub.warehouse_panel.close()
+	var warehouse: HubWarehouse = hub.warehouse_page
+	var visual: ItemVisual = warehouse.showcase.visual
+	check(visual.custom_minimum_size == Vector2.ONE * HubWarehouse.SHOWCASE_SIZE and not visual.framed and visual.idle, "The middle shows the goods large, unframed, drifting")
+	check(warehouse.details.centered, "The middle centres the item's lines under its art")
+	check(warehouse.move_button.tooltip_text.contains("1") and warehouse.move_button.theme_type_variation == &"PrimaryAction", "One primary move action carries the one-stack rule")
+	check(warehouse.storage_list.points_left and not warehouse.inventory_list.points_left, "Both stocks' bands point at the middle")
+	var standing := false
+	for label in warehouse.find_children("*", "Label", true, false):
+		standing = standing or (label as Label).text == HubWarehouse.STORAGE_NOTE
+	check(standing and not warehouse.result_label.visible, "The warehouse rule stands under its list; no result before a move")
+	var stock := warehouse.storage_list if main.state.inventory.entries.is_empty() else warehouse.inventory_list
+	var entries: Array[InventoryEntry] = main.state.storage.entries if main.state.inventory.entries.is_empty() else main.state.inventory.entries
+	check(not entries.is_empty(), "The polish fixture has goods to move")
+	if not entries.is_empty():
+		stock.item_selected.emit(0)
+		check(warehouse.amount_label.text == "×%d" % entries[0].count and warehouse.change_label.text.contains("→"), "The counter says how many go and what it does to both stocks")
+	hub.go_back()

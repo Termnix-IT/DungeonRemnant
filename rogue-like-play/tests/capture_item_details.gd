@@ -41,13 +41,13 @@ func capture() -> void:
 	await shot("details_equipment")
 	hub.open_warehouse()
 	await settle()
-	await click(hub.warehouse_panel.get_node("%StorageList"), Vector2(35, 25))
-	check(hub.warehouse_panel.get_node("%Help").get_parsed_text().contains(armor.display_name), "Warehouse selection exposes description without hover")
+	await click(hub.warehouse_page.storage_list, Vector2(35, 25))
+	check(shows_name(hub.warehouse_page.showcase, hub.warehouse_page.details, armor), "Warehouse selection exposes the full name without hover")
 	await shot("details_warehouse")
 	for resolution in [Vector2i(1600, 900), Vector2i(1280, 720)]:
 		root.size = resolution
 		await settle()
-		var list: ItemList = hub.warehouse_panel.get_node("%StorageList")
+		var list: ItemList = hub.warehouse_page.storage_list
 		var motion := InputEventMouseMotion.new()
 		motion.position = root.get_final_transform() * (list.get_global_rect().position + Vector2(35, 25))
 		Input.parse_input_event(motion)

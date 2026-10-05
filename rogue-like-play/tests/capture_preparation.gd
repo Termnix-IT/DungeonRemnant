@@ -82,7 +82,7 @@ func capture() -> void:
 	hub.open_warehouse()
 	await shot("warehouse")
 	await key(KEY_ESCAPE)
-	check(hub.page == "equipment" and not hub.warehouse_panel.visible, "Esc closes only warehouse")
+	check(hub.page == "equipment" and not hub.warehouse_page.visible, "Esc from the warehouse returns to equipment")
 	await key(KEY_ESCAPE)
 	check(hub.page == "home", "Esc returns home")
 	await enter(hub, hub.sell_button)

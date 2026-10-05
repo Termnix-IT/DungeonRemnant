@@ -33,15 +33,15 @@ func capture() -> void:
 					fits(control, "Shop")
 			check(shop.details.size.y >= 48, "Shop keeps readable description height")
 		hub.open_warehouse()
-		var warehouse: WarehousePanel = hub.warehouse_panel
-		warehouse.get_node("%StorageList").select(0)
-		warehouse.get_node("%StorageList").item_selected.emit(0)
+		var warehouse: HubWarehouse = hub.warehouse_page
+		warehouse.storage_list.select(0)
+		warehouse.storage_list.item_selected.emit(0)
 		await shot("art_warehouse_%d" % resolution.y)
-		for key in ["%InventoryList", "%StorageList", "%Help", "%Deposit", "%Withdraw", "%Gold", "%Direction"]:
-			fits(warehouse.get_node(key), "Warehouse")
-		check(warehouse.get_node("%Direction").text == "倉庫 → 所持品", "Transfer direction matches selection")
-		check(warehouse.get_node("%Deposit").disabled and not warehouse.get_node("%Withdraw").disabled, "Only the selected source can transfer")
-		warehouse.close()
+		for control: Control in [warehouse.inventory_list, warehouse.storage_list, warehouse.showcase, warehouse.details, warehouse.move_button, warehouse.change_label, warehouse.direction]:
+			fits(control, "Warehouse")
+		check(warehouse.direction.text == "倉庫　→　持ち込み", "Transfer direction matches selection")
+		check(not warehouse.move_button.disabled and warehouse.move_button.text.contains("持ち出す"), "The move action turns to the selected side")
+		hub.go_back()
 		hub.show_page("equipment")
 		hub.equipment_page.select_slot(Equipment.Slot.ARMOR)
 		await shot("art_equipment_%d" % resolution.y)

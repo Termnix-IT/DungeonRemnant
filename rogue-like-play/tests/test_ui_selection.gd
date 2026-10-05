@@ -67,22 +67,22 @@ func run_tests() -> void:
 	hub.show_page("home")
 	check_alpha([equipment.showcase, equipment.comparison], 1.0, "Leaving equipment resets fades")
 	hub.open_warehouse()
-	var warehouse: WarehousePanel = hub.warehouse_panel
-	var inventory_list: ItemCardList = warehouse.get_node("%InventoryList")
-	var storage_list: ItemCardList = warehouse.get_node("%StorageList")
-	var help: ItemDetails = warehouse.get_node("%Help")
-	var visual: ItemVisual = warehouse.get_node("%Visual")
-	var direction: Label = warehouse.get_node("%Direction")
+	var warehouse: HubWarehouse = hub.warehouse_page
+	var inventory_list := warehouse.inventory_list
+	var storage_list := warehouse.storage_list
+	var help := warehouse.details
+	var showcase := warehouse.showcase
+	var direction := warehouse.direction
 	select(storage_list, 0)
-	check_alpha([help, visual, direction], 0.65, "Warehouse details and direction start together")
-	check(direction.text == "倉庫 → 所持品" and visual.item == main.state.storage.entries[0].item, "Storage selection immediately shows matching content")
+	check_alpha([help, showcase, direction], 0.65, "Warehouse details and direction start together")
+	check(direction.text == "倉庫　→　持ち込み" and showcase.visual.item == main.state.storage.entries[0].item, "Storage selection immediately shows matching content")
 	select(inventory_list, 0)
 	check(storage_list.get_selected_items().is_empty() and storage_list.selection_strength == 1.0, "Changing source clears old selection and motion")
-	check(direction.text == "所持品 → 倉庫" and visual.item == ItemCatalog.POTION, "Inventory selection immediately changes art and direction")
-	check(not warehouse.get_node("%Deposit").disabled and warehouse.get_node("%Withdraw").disabled, "Only matching transfer action is enabled")
-	check_alpha([help, visual, direction], 0.65, "New source starts synchronized fade")
-	warehouse.close()
-	check_alpha([help, visual, direction], 1.0, "Closing warehouse resets fades")
+	check(direction.text == "持ち込み　→　倉庫" and showcase.visual.item == ItemCatalog.POTION, "Inventory selection immediately changes art and direction")
+	check(not warehouse.move_button.disabled and warehouse.move_button.text.contains("預ける"), "The one move action turns to the chosen side")
+	check_alpha([help, showcase, direction], 0.65, "New source starts synchronized fade")
+	hub.go_back()
+	check_alpha([help, showcase, direction], 1.0, "Closing warehouse resets fades")
 	check(inventory_list.selection_strength == 1.0, "Closing resets accent")
 	check(SaveCodec.encode(main.state) == before, "Selection never trades, equips, or changes persisted data")
 	main.free()

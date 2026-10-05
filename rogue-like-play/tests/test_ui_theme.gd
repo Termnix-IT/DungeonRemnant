@@ -47,7 +47,6 @@ func run_tests() -> void:
 	check(shop.source_label.size.y <= shop.source_choice.size.y, "Source caption stays on one row")
 	check(not shop.total_label.get_global_rect().intersects(shop.sell_button.get_global_rect()), "Quote leaves action visible")
 	inspect_styles(hub.get_node("Content"))
-	inspect_styles(hub.warehouse_panel)
 	var normal := shop.sell_button.get_theme_stylebox("normal")
 	for state in ["hover", "pressed", "disabled", "focus"]:
 		check(shop.sell_button.get_theme_stylebox(state) != normal, "Gold button has distinct " + state)
@@ -68,7 +67,7 @@ func run_tests() -> void:
 	var original := theme.get_color("font_color", "GoldLabel")
 	var probe := Color(0.7, 0.8, 0.9)
 	theme.set_color("font_color", "GoldLabel", probe)
-	check(shop.total_label.get_theme_color("font_color") == probe and hub.gold_label.get_theme_color("font_color") == probe and hub.warehouse_panel.get_node("%Gold").get_theme_color("font_color") == probe, "One theme edit reaches shop, home and warehouse")
+	check(shop.total_label.get_theme_color("font_color") == probe and hub.gold_label.get_theme_color("font_color") == probe, "One theme edit reaches shop and the header's Gold")
 	var money := Label.new()
 	money.theme_type_variation = &"MoneyValueLabel"
 	hub.add_child(money)

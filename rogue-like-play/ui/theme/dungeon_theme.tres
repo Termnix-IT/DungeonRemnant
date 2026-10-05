@@ -638,6 +638,32 @@ content_margin_top = 18.0
 content_margin_right = 34.0
 content_margin_bottom = 18.0
 
+[sub_resource type="Gradient" id="VeilFade"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(0.03, 0.028, 0.03, 0.88, 0.03, 0.028, 0.03, 0.62, 0.03, 0.028, 0.03, 0.88)
+
+[sub_resource type="GradientTexture2D" id="VeilTexture"]
+gradient = SubResource("VeilFade")
+width = 64
+height = 4
+
+[sub_resource type="StyleBoxTexture" id="SlabVeilSurface"]
+resource_name = "SlabVeilSurface"
+texture = SubResource("VeilTexture")
+content_margin_left = 34.0
+content_margin_top = 18.0
+content_margin_right = 34.0
+content_margin_bottom = 18.0
+
+[sub_resource type="StyleBoxFlat" id="SlabSolidEndSurface"]
+resource_name = "SlabSolidEndSurface"
+expand_margin_right = 80.0
+content_margin_left = 14.0
+content_margin_top = 18.0
+content_margin_right = 0.0
+content_margin_bottom = 18.0
+bg_color = Color(0.03, 0.028, 0.03, 0.88)
+
 [sub_resource type="Gradient" id="ShadeFade"]
 offsets = PackedFloat32Array(0, 0.62, 1)
 colors = PackedColorArray(0.02, 0.018, 0.02, 0.66, 0.02, 0.018, 0.02, 0.5, 0.02, 0.018, 0.02, 0)
@@ -1181,6 +1207,10 @@ ShadeColumn/styles/panel = SubResource("ShadeSurface")
 NoteLabel/base_type = &"MutedLabel"
 NoteLabel/font_sizes/font_size = 14
 SlabSolid/base_type = &"PanelContainer"
+SlabSolidEnd/base_type = &"PanelContainer"
+SlabSolidEnd/styles/panel = SubResource("SlabSolidEndSurface")
+SlabVeil/base_type = &"PanelContainer"
+SlabVeil/styles/panel = SubResource("SlabVeilSurface")
 SlabSolid/styles/panel = SubResource("SlabSolidSurface")
 OpenCardList/base_type = &"ItemCardList"
 OpenCardList/constants/open_rows = 1

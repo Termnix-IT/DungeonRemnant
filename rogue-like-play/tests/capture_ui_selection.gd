@@ -61,13 +61,13 @@ func capture() -> void:
 		check(equipment.selected_slot == Equipment.Slot.ARMOR, "Native mouse slot selection")
 		await selection_shot("equipment_%d" % resolution.y, [equipment.showcase, equipment.comparison])
 		hub.open_warehouse()
-		var warehouse: WarehousePanel = hub.warehouse_panel
-		warehouse.get_node("%StorageList").grab_focus()
+		var warehouse: HubWarehouse = hub.warehouse_page
+		warehouse.storage_list.grab_focus()
 		await settle()
 		down()
-		check(warehouse.storage_index == 0 and warehouse.get_node("%Direction").text == "倉庫 → 所持品", "Keyboard warehouse selection matches direction")
-		await selection_shot("warehouse_%d" % resolution.y, [warehouse.get_node("%Help"), warehouse.get_node("%Visual"), warehouse.get_node("%Direction")])
-		warehouse.close()
+		check(warehouse.storage_index == 0 and warehouse.direction.text == "倉庫　→　持ち込み", "Keyboard warehouse selection matches direction")
+		await selection_shot("warehouse_%d" % resolution.y, [warehouse.details, warehouse.showcase, warehouse.direction])
+		hub.go_back()
 	check(SaveCodec.encode(main.state) == before, "Selection captures do not change inventory or Gold")
 	main.free()
 	print("UI selection render/input: ", "passed" if failures == 0 else "FAILED")

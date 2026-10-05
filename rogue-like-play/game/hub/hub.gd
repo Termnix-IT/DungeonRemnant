@@ -42,6 +42,8 @@ var upgrade_page: Control
 var settings_page: HubSettings
 var page := "home"
 var equipment_return := "stages"
+# The page the warehouse goes back to: the lobby or the equipment page.
+var warehouse_return := "home"
 var _state: RunCarryover
 var _content: Control
 var _page_host: Control
@@ -51,12 +53,11 @@ var _frame: Control
 const EDGE_X := 40.0
 const EDGE_TOP := 22.0
 const EDGE_BOTTOM := 16.0
-var _warehouse_focus: Control
 var _ambience: HubAmbience
 var _title_block: HBoxContainer
 var purse: GoldPurse
 var key_guide: KeyGuide
-@onready var warehouse_panel: WarehousePanel = $WarehousePanel
+var warehouse_page: HubWarehouse
 
 
 func _ready() -> void:
@@ -134,10 +135,16 @@ func _ready() -> void:
 	equipment_page.swap_requested.connect(func(): swap_requested.emit())
 	equipment_page.warehouse_requested.connect(open_warehouse)
 	sell_page = _page(HubSell.new()) as HubSell
-	# The shop's and the equipment's slabs run off the screen's left edge,
-	# their lists lined up with the title above them.
-	for bleeding: Control in [sell_page, equipment_page]:
-		bleeding.offset_left = EDGE_X - (get_viewport().get_visible_rect().size.x - CONTENT_SIZE.x) * 0.5
+	warehouse_page = _page(HubWarehouse.new()) as HubWarehouse
+	warehouse_page.transfer_requested.connect(func(source: bool, index: int): storage_transfer_requested.emit(source, index))
+	warehouse_page.equipment_requested.connect(func(): show_page("equipment"))
+	# The shop's, the equipment's and the warehouse's slabs run off the
+	# screen's left edge (the warehouse's also off its right), their lists
+	# lined up with the title and the Gold above them.
+	var bleed := EDGE_X - (get_viewport().get_visible_rect().size.x - CONTENT_SIZE.x) * 0.5
+	for bleeding: Control in [sell_page, equipment_page, warehouse_page]:
+		bleeding.offset_left = bleed
+	warehouse_page.offset_right = -bleed
 	sell_page.sell_requested.connect(func(source: bool, index: int, amount: int): sell_requested.emit(source, index, amount))
 	sell_page.buy_requested.connect(func(destination: bool, item_id: StringName, amount: int): buy_requested.emit(destination, item_id, amount))
 	sell_page.mode_changed.connect(func():
@@ -185,17 +192,11 @@ func _ready() -> void:
 	feedback.custom_minimum_size.y = 44
 	feedback.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	save_label = HubUI.label(_shell, "", &"MutedLabel")
-	# Above the lobby, below the warehouse.
+	# Above the lobby.
 	move_child(_frame, get_child_count() - 1)
-	warehouse_panel.theme = _content.theme
-	warehouse_panel.transfer_requested.connect(func(source: bool, index: int): storage_transfer_requested.emit(source, index))
-	warehouse_panel.closed.connect(_warehouse_closed)
-	warehouse_panel.equipment_requested.connect(func(): show_page("equipment"))
-	move_child(warehouse_panel, get_child_count() - 1)
 	UIMotion.bind_buttons(_content)
 	UIMotion.bind_buttons(_frame)
 	UIMotion.bind_buttons(home_page)
-	UIMotion.bind_buttons(warehouse_panel)
 
 
 func _page(control: Control) -> Control:
@@ -279,7 +280,7 @@ func refresh(state: RunCarryover, message: String = "") -> void:
 	feedback.text = message
 	equipment_page.refresh(state)
 	sell_page.refresh(state)
-	warehouse_panel.refresh(state)
+	warehouse_page.refresh(state)
 	if page == "confirm":
 		departure_page.present_confirmation(state)
 	if not home_page.visible and page == "home":
@@ -291,7 +292,7 @@ func show_page(target: String) -> void:
 		return
 	page = target
 	hero_speech.hide()
-	for control in [home_page, equipment_page, sell_page, departure_page, upgrade_page, settings_page]:
+	for control in [home_page, equipment_page, sell_page, warehouse_page, departure_page, upgrade_page, settings_page]:
 		control.hide()
 	key_guide.visible = page != "home"
 	key_guide.clear_hints()
@@ -324,6 +325,12 @@ func show_page(target: String) -> void:
 			sell_page.refresh(_state)
 			_shop_hints()
 			sell_page.source_choice.focus_selected()
+		"warehouse":
+			title_label.text = "倉庫"
+			warehouse_page.show()
+			warehouse_page.present(_state)
+			key_guide.add_hint("Enter", "A", "移動")
+			key_guide.add_hint("← / →", "◀ / ▶", "持ち込み・倉庫")
 		"upgrade":
 			title_label.text = "永久強化"
 			upgrade_page.show()
@@ -345,7 +352,7 @@ func show_page(target: String) -> void:
 	# Pages are anchored in a plain host, not laid out by a Container, so the
 	# whole page can slide: forward pages from the right, home from the left.
 	var side := -1.0 if page == "home" else 1.0
-	for control in [home_page, equipment_page, sell_page, departure_page, upgrade_page, settings_page]:
+	for control in [home_page, equipment_page, sell_page, warehouse_page, departure_page, upgrade_page, settings_page]:
 		if control.visible:
 			UIMotion.of(control).enter(0.0, Vector2(side * UIMotion.PAGE_DISTANCE, 0), UIMotion.WINDOW_TIME)
 			# Pages built in the screen grammar bring their parts in one by one.
@@ -388,25 +395,16 @@ func present_action(kind: StringName, gold_delta: int, slots: Array[int]) -> voi
 		&"upgrade":
 			(upgrade_page as SkillTreePanel).present_upgrade()
 		&"deposit", &"withdraw":
-			warehouse_panel.present_move(kind == &"deposit")
-			UIMotion.of(warehouse_panel.get_node("%Feedback")).reveal()
+			warehouse_page.present_move(kind == &"deposit")
 
 
+# The warehouse goes back to where it was opened from: the lobby, or the
+# equipment page that asked for it.
 func open_warehouse() -> void:
-	hero_speech.hide()
 	if page == "home":
 		equipment_return = "stages"
-	_warehouse_focus = _content.get_viewport().gui_get_focus_owner()
-	_content.hide()
-	home_page.hide()
-	warehouse_panel.present(_state)
-
-
-func _warehouse_closed() -> void:
-	_content.show()
-	home_page.visible = page == "home"
-	if is_instance_valid(_warehouse_focus) and _warehouse_focus.is_visible_in_tree():
-		_warehouse_focus.grab_focus()
+	warehouse_return = "equipment" if page == "equipment" else "home"
+	show_page("warehouse")
 
 
 func go_back() -> void:
@@ -414,11 +412,13 @@ func go_back() -> void:
 		show_page("stages")
 	elif page == "equipment" and equipment_return == "confirm":
 		show_page("confirm")
+	elif page == "warehouse":
+		show_page(warehouse_return)
 	else:
 		show_page("home")
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if visible and not warehouse_panel.visible and event.is_action_pressed("ui_cancel"):
+	if visible and event.is_action_pressed("ui_cancel"):
 		go_back()
 		get_viewport().set_input_as_handled()

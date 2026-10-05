@@ -32,17 +32,17 @@ func run_tests() -> void:
 	await settle()
 	var hub = main.get_node("Hub")
 	centered(hub.get_node("Content"))
-	for page in ["equipment", "sell", "upgrade", "stages", "confirm"]:
+	for page in ["equipment", "sell", "warehouse", "upgrade", "stages", "confirm"]:
 		hub.show_page(page)
 		# Measure the resting layout, after the page has slid into place.
 		await create_timer(UIMotion.WINDOW_TIME + 0.05).timeout
 		await settle()
 		var content: Control = hub.get_node("Content")
-		for control: Control in [hub.equipment_page, hub.sell_page, hub.departure_page, hub.upgrade_page]:
+		for control: Control in [hub.equipment_page, hub.sell_page, hub.warehouse_page, hub.departure_page, hub.upgrade_page]:
 			if control.visible:
 				# The shop's slab runs off the screen's left edge by design; it
 				# still has to stay on the screen.
-				var bounds: Rect2 = root.get_visible_rect() if control in [hub.sell_page, hub.equipment_page] else content.get_global_rect()
+				var bounds: Rect2 = root.get_visible_rect() if control in [hub.sell_page, hub.equipment_page, hub.warehouse_page] else content.get_global_rect()
 				check(bounds.grow(1).encloses(control.get_global_rect()), "%s page fits Hub content" % page)
 		if page == "confirm":
 			check(not hub.departure_page.equipment_label.get_global_rect().intersects(hub.departure_page.review_button.get_global_rect()), "Confirmation equipment does not overlap review button")
@@ -53,9 +53,14 @@ func run_tests() -> void:
 			check(not hub.equipment_page.candidate_list.get_global_rect().intersects(hub.equipment_page.swap_button.get_global_rect()), "Equipment candidates leave the lesser actions visible")
 	hub.show_page("home")
 	enter(hub, hub.warehouse_button)
+	await create_timer(UIMotion.WINDOW_TIME + 0.05).timeout
 	await settle()
-	centered(hub.warehouse_panel.get_node("Panel"))
-	hub.warehouse_panel.close()
+	var warehouse: HubWarehouse = hub.warehouse_page
+	# The two stocks mirror each other about the screen's centre.
+	var middle := root.get_visible_rect().get_center().x
+	check(absf((warehouse.inventory_list.get_global_rect().position.x - middle) + (warehouse.storage_list.get_global_rect().end.x - middle)) < 2.0, "Warehouse stocks mirror about the centre")
+	check(root.get_visible_rect().encloses(warehouse.move_button.get_global_rect()), "Warehouse action stays on the screen")
+	hub.go_back()
 	enter(hub, hub.start_button)
 	hub.departure_page.next_button.pressed.emit()
 	hub.departure_page.confirm_button.pressed.emit()

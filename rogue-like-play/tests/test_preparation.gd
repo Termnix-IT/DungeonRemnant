@@ -64,9 +64,9 @@ func run_tests() -> void:
 	var snapshot := SaveCodec.encode(main.state)
 	check(not main.equip_item(false, 0, 2) and snapshot == SaveCodec.encode(main.state), "Consumable cannot enter armor slot or mutate items")
 	hub.open_warehouse()
-	check(hub.warehouse_panel.visible and not hub._content.visible, "Warehouse isolates underlying controls")
-	hub.warehouse_panel.close()
-	check(hub.equipment_page.visible and hub.page == "equipment" and hub._content.visible, "Warehouse close returns to equipment")
+	check(hub.warehouse_page.visible and not hub.equipment_page.visible and hub.page == "warehouse", "Warehouse opens as a page in place of equipment")
+	hub.back_button.pressed.emit()
+	check(hub.equipment_page.visible and hub.page == "equipment", "Back from the warehouse returns to equipment")
 	main.state.storage.add(ItemCatalog.POTION, 70)
 	check(main.transfer_storage(true, 1) and main.state.inventory.entries[0].count == 50 and main.state.storage.entries[1].count == 24, "Taking supplies respects stack limit and preserves leftovers")
 	hub.show_page("sell")
@@ -143,7 +143,7 @@ func run_tests() -> void:
 	run.retry_run()
 	check(main.active_run == null and hub.visible and hub.page == "home", "Run returns directly to home")
 	hub.open_warehouse()
-	hub.warehouse_panel.get_node("%Equipment").pressed.emit()
+	hub.warehouse_page.equipment_link.pressed.emit()
 	check(hub.page == "equipment" and hub.equipment_return == "stages", "Home warehouse equipment shortcut does not return to stale confirmation")
 	hub.back_button.pressed.emit()
 	check(hub.page == "home", "Back from equipment opened at home returns to the lobby")
@@ -158,11 +158,11 @@ func run_tests() -> void:
 	hub.show_page("home")
 	hub.open_warehouse()
 	await create_timer(0.1).timeout
-	var shelf = hub.warehouse_panel
-	shelf.get_node("%InventoryList").select(0)
-	shelf.get_node("%InventoryList").item_selected.emit(0)
+	var shelf: HubWarehouse = hub.warehouse_page
+	shelf.inventory_list.select(0)
+	shelf.inventory_list.item_selected.emit(0)
 	var stored_before: int = main.state.storage.entries.size()
-	shelf.get_node("%Deposit").pressed.emit()
+	shelf.move_button.pressed.emit()
 	var moving: Array = shelf.get_children().filter(func(child: Node): return child is Control and child.top_level)
 	check(main.state.storage.entries.size() >= stored_before and moving.size() == 1 and shelf.moved_item == null, "Deposit sends one glyph toward the storage list")
 	await create_timer(UIMotion.TRAVEL_TIME + 0.1).timeout

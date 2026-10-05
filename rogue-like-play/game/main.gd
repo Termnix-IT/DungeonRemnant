@@ -67,17 +67,17 @@ func transfer_storage(from_storage: bool, index: int) -> bool:
 	var destination := state.inventory if from_storage else state.storage
 	var moved := state.transfer_item(source, destination, index)
 	if moved == 0:
-		$Hub.warehouse_panel.refresh(state, "移動できません。移動先の空き容量を確認してください。")
+		$Hub.warehouse_page.refresh(state, "移動できません。移動先の空き容量を確認してください。")
 		return false
 	if saving_enabled and not save_store.save_state(state):
 		state.inventory = previous_inventory
 		state.storage = previous_storage
-		$Hub.warehouse_panel.refresh(state, "保存に失敗したため、アイテム移動を取り消しました。")
+		$Hub.warehouse_page.refresh(state, "保存に失敗したため、アイテム移動を取り消しました。")
 		_update_save_status()
 		return false
 	var action := "取り出しました" if from_storage else "預けました"
 	$Hub.refresh(state)
-	$Hub.warehouse_panel.refresh(state, "%d個%s。" % [moved, action])
+	$Hub.warehouse_page.refresh(state, "%d個%s。" % [moved, action])
 	_update_save_status()
 	var slots: Array[int] = []
 	preparation_completed.emit(&"withdraw" if from_storage else &"deposit", 0, slots)
@@ -146,7 +146,6 @@ func start_run() -> void:
 	if saving_enabled and not save_store.save_state(state):
 		_update_save_status()
 		return
-	$Hub.warehouse_panel.close()
 	$Hub.hide()
 	active_run = run_scene.instantiate()
 	active_run.name = "Run"

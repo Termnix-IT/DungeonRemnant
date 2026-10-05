@@ -9,6 +9,10 @@ var selection_strength := 1.0:
 		queue_redraw()
 
 
+# Open rows on a list right of the details (the warehouse) point their band
+# left, at the details, and arrive from the right.
+var points_left := false
+
 # 0 to 1 while the rows arrive (UIMotion.intro_rows); 1 when settled.
 var intro := 1.0:
 	set(value):
@@ -82,8 +86,16 @@ func _draw_band(rect: Rect2, strength: float) -> void:
 	var tip := rect.end.x
 	var middle := rect.get_center().y
 	var outline := PackedVector2Array([rect.position, Vector2(tip - OPEN_TIP, rect.position.y), Vector2(tip, middle), Vector2(tip - OPEN_TIP, rect.end.y), Vector2(rect.position.x, rect.end.y)])
+	if points_left:
+		var start := rect.position.x
+		outline = PackedVector2Array([Vector2(rect.end.x, rect.position.y), Vector2(start + OPEN_TIP, rect.position.y), Vector2(start, middle), Vector2(start + OPEN_TIP, rect.end.y), rect.end])
 	draw_polygon(outline, PackedColorArray([Color(band, band.a * 0.5 * strength), Color(band, band.a * 1.6 * strength), Color(band, band.a * 1.8 * strength), Color(band, band.a * 1.6 * strength), Color(band, band.a * 0.5 * strength)]))
 	draw_polyline_colors(outline, PackedColorArray([Color(rail, 0.0), Color(rail, 0.85 * strength), Color(rail, strength), Color(rail, 0.85 * strength), Color(rail, 0.0)]), 1.5, true)
+
+
+# Rows come in from the side the band points away from.
+func _arrival_side() -> float:
+	return 1.0 if points_left else -1.0
 
 
 func _faded(color: Color) -> Color:
@@ -126,7 +138,7 @@ func _draw() -> void:
 		var band := motion.follow_mark(get_item_rect(chosen[0]).grow_individual(-2, -2, -2, -get_theme_constant(&"row_gap")))
 		band.position.y -= get_v_scroll_bar().value
 		var arrival := UIMotion.row_arrival(intro, chosen[0] - _first_row(), _visible_rows())
-		draw_set_transform(Vector2(-UIMotion.ROW_DISTANCE * (1.0 - arrival), 0))
+		draw_set_transform(Vector2(_arrival_side() * UIMotion.ROW_DISTANCE * (1.0 - arrival), 0))
 		_draw_band(band, clampf(selection_strength, 0.0, 1.0) * arrival)
 		draw_set_transform(Vector2.ZERO)
 	elif _open_rows():
@@ -138,7 +150,7 @@ func _draw() -> void:
 		if not rect.intersects(Rect2(Vector2.ZERO, size)):
 			continue
 		_row_alpha = UIMotion.row_arrival(intro, index - _first_row(), _visible_rows())
-		draw_set_transform(Vector2(-UIMotion.ROW_DISTANCE * (1.0 - _row_alpha), 0))
+		draw_set_transform(Vector2(_arrival_side() * UIMotion.ROW_DISTANCE * (1.0 - _row_alpha), 0))
 		var data: Variant = get_item_metadata(index)
 		if not data is Dictionary:
 			_line(get_item_text(index), rect.position + Vector2(inset, gap), rect.size.x - inset * 2, &"MutedLabel")
@@ -150,6 +162,8 @@ func _draw() -> void:
 			_draw_open_row(rect, selected, hovered, index == item_count - 1)
 			# Keep the text clear of the band's point.
 			rect.size.x -= OPEN_TIP
+			if points_left:
+				rect.position.x += OPEN_TIP
 		else:
 			draw_style_box(get_theme_stylebox(&"card_selected" if selected else (&"card_hover" if hovered else &"card")), rect)
 			if selected:
