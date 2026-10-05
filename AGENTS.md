@@ -20,7 +20,7 @@ GDScriptはUTF-8で記述し、インデントにはタブを使用します。�
 
 ## UI変更の指針
 
-- UIの仕様・デザイン値・操作要件は `docs/MVP_SPEC.md` のUI記述を参照する。AGENTS.mdには作業上の判断基準を置き、色・文字サイズ・余白の数値を二重管理しない。
+- UIの仕様・デザイン値・操作要件は `docs/MVP_SPEC.md` のUI記述を参照する。拠点の個別画面（出撃・装備・倉庫・ショップ・強化・設定）を変更するときは、同書の「個別画面のUI文法」に従う。AGENTS.mdには作業上の判断基準を置き、色・文字サイズ・余白の数値を二重管理しない。
 - 外観は `rogue-like-play/ui/theme/dungeon_theme.tres` のTheme Type Variation・StyleBox・定数で管理する。画面ごとの色・フォントサイズ・StyleBox overrideや別Themeの追加を避ける。
 - 拠点背景の明るさは `rogue-like-play/game/hub/hub.gd` の背景上の暗幕で、パネルの明るさと色相は共通Themeの `MainSurface`・`ItemSurface`・`ListBackground` で調整する。背景の暖かい光と、青みのない石墨色のパネルを分け、選択の金枠と本文の視認性を保つ。
 - パネル構造には `HubUI`、アイテム一覧には `ItemCardList`、選択品の表示には `ItemVisual` / `ItemShowcase` / `ItemDetails` を優先して再利用する。ItemListの標準入力・検索・Tooltip・スクロールを維持し、表示を省略する場合も名前の全文を詳細とTooltipに残す。
