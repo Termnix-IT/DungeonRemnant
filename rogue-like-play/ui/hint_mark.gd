@@ -24,7 +24,7 @@ func _init() -> void:
 	theme_type_variation = &"HintMark"
 	focus_mode = Control.FOCUS_NONE
 	mouse_default_cursor_shape = Control.CURSOR_HELP
-	custom_minimum_size = Vector2(22, 22)
+	custom_minimum_size = Vector2(26, 26)
 	size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	add_to_group(GROUP)

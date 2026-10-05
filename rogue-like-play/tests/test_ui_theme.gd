@@ -64,6 +64,7 @@ func run_tests() -> void:
 		check(centre_tone(sunk.texture) < centre_tone(raised.texture), "Sunk wells sit darker than raised cards")
 	check(theme.get_stylebox("pressed", "Button") is StyleBoxFlat and theme.get_stylebox("normal", "TabActive") is StyleBoxFlat, "Pressed buttons and the active tab stay flat against raised surfaces")
 	check_steady_buttons(theme)
+	check_readable_floor(theme)
 	var original := theme.get_color("font_color", "GoldLabel")
 	var probe := Color(0.7, 0.8, 0.9)
 	theme.set_color("font_color", "GoldLabel", probe)
@@ -79,6 +80,16 @@ func run_tests() -> void:
 	main.free()
 	print("UI theme: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
+
+
+# The hub's smallest text, key caps included: 16px at 1600x900 is about 19px
+# at 1080p, above the 18px floor of Xbox Accessibility Guideline 101 for PC.
+# The dungeon HUD (Hud*) keeps its own sizes for the floor it must not cover.
+func check_readable_floor(theme: Theme) -> void:
+	for pair: Array in [[&"font_size", &"NoteLabel"], [&"font_size", &"MutedLabel"], [&"font_size", &"LobbyFactCaption"], [&"cap_font_size", &"KeyGuideButton"], [&"font_size", &"KeyGuideButton"], [&"font_size", &"CategoryCap"], [&"note_font_size", &"StageNode"], [&"font_size", &"HintMark"], [&"font_size", &"SkillNode"], [&"rank_font_size", &"SkillNode"], [&"font_size", &"TextAction"], [&"font_size", &"SecondaryButton"]]:
+		check(theme.get_font_size(pair[0], pair[1]) >= 16, "%s %s stays at 16px or more" % [pair[1], pair[0]])
+	# Notes share the muted size, so they step down by tone instead.
+	check(theme.get_color(&"font_color", &"NoteLabel") != theme.get_color(&"font_color", &"MutedLabel"), "Notes stay a step quieter than muted text")
 
 
 # A button whose state style has other margins than its rest style would
