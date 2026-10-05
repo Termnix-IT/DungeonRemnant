@@ -30,7 +30,6 @@ var sell_button: Button
 var upgrade_button: Button
 var back_button: Button
 var title_label: Label
-var subtitle_label: Label
 var equipment_page: HubEquipment
 var sell_page: HubSell
 var departure_page: HubDeparture
@@ -95,8 +94,9 @@ func _ready() -> void:
 	_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_frame)
 	_frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# The header holds the screen's name alone, so the pages begin under it.
 	var header_room := Control.new()
-	header_room.custom_minimum_size.y = 86
+	header_room.custom_minimum_size.y = 56
 	header_room.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_shell.add_child(header_room)
 	var header := HBoxContainer.new()
@@ -106,8 +106,8 @@ func _ready() -> void:
 	header.offset_left = EDGE_X
 	header.offset_right = -EDGE_X
 	header.offset_top = EDGE_TOP
-	# Header: the screen's name and line on the left, Gold on the right. The
-	# lobby keeps only Gold, and no screen carries the game's logo.
+	# Header: the screen's name on the left, Gold on the right. The lobby
+	# keeps only Gold, and no screen carries the game's logo.
 	_title_block = HBoxContainer.new()
 	_title_block.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(_title_block)
@@ -115,7 +115,6 @@ func _ready() -> void:
 	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_title_block.add_child(heading)
 	title_label = HubUI.label(heading, "旅支度の間", &"TitleLabel")
-	subtitle_label = HubUI.label(heading, "小さな準備が、大きな冒険につながる。", &"MutedLabel")
 	purse = GoldPurse.new()
 	purse.custom_minimum_size.x = 220
 	purse.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -306,11 +305,9 @@ func show_page(target: String) -> void:
 	save_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if page == "home" else HORIZONTAL_ALIGNMENT_LEFT
 	_ambience.focus(home_page.selected_id() if page == "home" else &"")
 	feedback.text = ""
-	subtitle_label.text = "身につけるもの、背負っていくもの。"
 	match page:
 		"home":
 			title_label.text = "旅支度の間"
-			subtitle_label.text = "小さな準備が、大きな冒険につながる。"
 			home_page.refresh(_state, featured_stage())
 			home_page.show()
 			home_page.focus_selected()
@@ -323,31 +320,26 @@ func show_page(target: String) -> void:
 			equipment_page.slots[equipment_page.selected_slot].grab_focus()
 		"sell":
 			title_label.text = "ショップ"
-			subtitle_label.text = "薬も武具も、金次第。"
 			sell_page.show()
 			sell_page.refresh(_state)
 			_shop_hints()
 			sell_page.source_choice.focus_selected()
 		"upgrade":
 			title_label.text = "永久強化"
-			subtitle_label.text = "冒険の記憶は、この身に残る。"
 			upgrade_page.show()
 			(upgrade_page as SkillTreePanel).focus_first_action()
 		"settings":
 			title_label.text = "設定"
-			subtitle_label.text = "音と画面を整える。"
 			settings_page.show()
 			settings_page.refresh(settings)
 			settings_page.focus_first()
 		"stages":
 			title_label.text = "ステージ選択"
-			subtitle_label.text = "次は、どこへ潜ろうか。"
 			departure_page.show()
 			departure_page.present_selection(stages, _state)
 		"confirm":
 			var stage := departure_page.selected_stage
 			title_label.text = "出撃確認  /  %s・全%d階" % [stage.display_name, stage.floor_count]
-			subtitle_label.text = "持ち物を確かめたら、出発だ。"
 			departure_page.show()
 			departure_page.present_confirmation(_state)
 	# Pages are anchored in a plain host, not laid out by a Container, so the

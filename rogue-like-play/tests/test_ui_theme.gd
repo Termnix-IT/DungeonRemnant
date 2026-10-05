@@ -64,6 +64,7 @@ func run_tests() -> void:
 	if raised != null and sunk != null:
 		check(centre_tone(sunk.texture) < centre_tone(raised.texture), "Sunk wells sit darker than raised cards")
 	check(theme.get_stylebox("pressed", "Button") is StyleBoxFlat and theme.get_stylebox("normal", "TabActive") is StyleBoxFlat, "Pressed buttons and the active tab stay flat against raised surfaces")
+	check_steady_buttons(theme)
 	var original := theme.get_color("font_color", "GoldLabel")
 	var probe := Color(0.7, 0.8, 0.9)
 	theme.set_color("font_color", "GoldLabel", probe)
@@ -79,6 +80,41 @@ func run_tests() -> void:
 	main.free()
 	print("UI theme: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
+
+
+# A button whose state style has other margins than its rest style would
+# move its neighbours, or cut its own text, on hover or when disabled.
+func check_steady_buttons(theme: Theme) -> void:
+	for type in theme.get_type_list():
+		if not theme_reaches(theme, type, &"Button"):
+			continue
+		var rest := theme_style(theme, "normal", type)
+		if rest == null:
+			continue
+		for state in ["hover", "pressed", "hover_pressed", "disabled"]:
+			var style := theme_style(theme, state, type)
+			if style == null:
+				continue
+			var same := true
+			for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+				same = same and is_equal_approx(style.get_margin(side), rest.get_margin(side))
+			check(same, "%s keeps its margins when %s" % [type, state])
+
+
+func theme_reaches(theme: Theme, type: StringName, base: StringName) -> bool:
+	while type != &"":
+		if type == base:
+			return true
+		type = theme.get_type_variation_base(type)
+	return false
+
+
+func theme_style(theme: Theme, state: String, type: StringName) -> StyleBox:
+	while type != &"":
+		if theme.has_stylebox(state, type):
+			return theme.get_stylebox(state, type)
+		type = theme.get_type_variation_base(type)
+	return null
 
 
 func centre_tone(texture: Texture2D) -> float:

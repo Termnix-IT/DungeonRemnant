@@ -163,6 +163,19 @@ border_width_bottom = 1
 [sub_resource type="StyleBoxEmpty" id="Invisible"]
 resource_name = "Invisible"
 
+[sub_resource type="StyleBoxFlat" id="PlateDisabled"]
+resource_name = "PlateDisabled"
+content_margin_left = 24.0
+content_margin_top = 6.0
+content_margin_right = 24.0
+content_margin_bottom = 6.0
+bg_color = Color(0.13, 0.13, 0.13, 1)
+border_color = Color(0.32, 0.32, 0.32, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
 [sub_resource type="StyleBoxTexture" id="PlateGold"]
 resource_name = "PlateGold"
 texture = ExtResource("ButtonGoldTexture")
@@ -691,6 +704,16 @@ content_margin_bottom = 4.0
 resource_name = "SlotHover"
 bg_color = Color(1, 1, 1, 0.04)
 
+[sub_resource type="StyleBoxFlat" id="TextActionHover"]
+resource_name = "TextActionHover"
+content_margin_left = 2.0
+content_margin_top = 8.0
+content_margin_right = 2.0
+content_margin_bottom = 8.0
+bg_color = Color(0, 0, 0, 0)
+border_width_bottom = 1
+border_color = Color(0.62, 0.59, 0.52, 0.6)
+
 [sub_resource type="StyleBoxEmpty" id="TextActionRest"]
 resource_name = "TextActionRest"
 content_margin_left = 2.0
@@ -727,6 +750,7 @@ Button/styles/normal = SubResource("Surface")
 Button/styles/pressed = SubResource("ButtonPressed")
 CharacterButton/base_type = &"Button"
 CharacterButton/styles/disabled = SubResource("Invisible")
+CharacterButton/styles/hover_pressed = SubResource("Invisible")
 CharacterButton/styles/hover = SubResource("Invisible")
 CharacterButton/styles/normal = SubResource("Invisible")
 CharacterButton/styles/pressed = SubResource("Invisible")
@@ -737,6 +761,7 @@ GoldButton/styles/hover = SubResource("PlateGoldHover")
 GoldButton/styles/normal = SubResource("PlateGold")
 GoldButton/styles/pressed = SubResource("PlateGoldPressed")
 GoldButton/styles/hover_pressed = SubResource("PlateGoldPressed")
+GoldButton/styles/disabled = SubResource("PlateDisabled")
 GoldLabel/base_type = &"Label"
 GoldLabel/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
 GoldLabel/font_sizes/font_size = 21
@@ -825,6 +850,7 @@ PrimaryButton/base_type = &"Button"
 PrimaryButton/styles/normal = SubResource("PlateGold")
 PrimaryButton/styles/pressed = SubResource("PlateGoldPressed")
 PrimaryButton/styles/hover_pressed = SubResource("PlateGoldPressed")
+PrimaryButton/styles/disabled = SubResource("PlateDisabled")
 TabActive/base_type = &"Button"
 TabActive/colors/font_color = Color(0.91, 0.81, 0.6, 1)
 TabActive/styles/normal = SubResource("ButtonPressed")
@@ -1058,6 +1084,7 @@ OptionCycler/styles/hover = SubResource("CyclerActive")
 OptionCycler/styles/pressed = SubResource("CyclerActive")
 OptionCycler/styles/hover_pressed = SubResource("CyclerActive")
 OptionCycler/styles/focus = SubResource("CyclerActive")
+OptionCycler/styles/disabled = SubResource("CyclerRest")
 SettingsMargin/base_type = &"MarginContainer"
 SettingsMargin/constants/margin_left = 48
 SettingsMargin/constants/margin_right = 48
@@ -1129,11 +1156,13 @@ CategoryTab/colors/font_hover_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
 CategoryTab/colors/font_pressed_color = Color(0.96, 0.85, 0.6, 1)
 CategoryTab/colors/font_hover_pressed_color = Color(0.96, 0.85, 0.6, 1)
 CategoryTab/colors/font_focus_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+CategoryTab/colors/font_disabled_color = Color(0.36, 0.35, 0.33, 1)
 CategoryTab/font_sizes/font_size = 17
 CategoryTab/styles/normal = SubResource("TabRest")
 CategoryTab/styles/hover = SubResource("TabHover")
 CategoryTab/styles/pressed = SubResource("TabChosen")
 CategoryTab/styles/hover_pressed = SubResource("TabChosen")
+CategoryTab/styles/disabled = SubResource("TabRest")
 CategoryCap/base_type = &"Label"
 CategoryCap/colors/font_color = Color(0.62, 0.59, 0.52, 1)
 CategoryCap/font_sizes/font_size = 13
@@ -1206,9 +1235,9 @@ TextAction/colors/font_hover_pressed_color = Color(0.93333334, 0.9137255, 0.8745
 TextAction/colors/font_disabled_color = Color(0.36, 0.35, 0.33, 1)
 TextAction/font_sizes/font_size = 16
 TextAction/styles/normal = SubResource("TextActionRest")
-TextAction/styles/hover = SubResource("TabHover")
+TextAction/styles/hover = SubResource("TextActionHover")
 TextAction/styles/pressed = SubResource("TextActionRest")
-TextAction/styles/hover_pressed = SubResource("TabHover")
+TextAction/styles/hover_pressed = SubResource("TextActionHover")
 TextAction/styles/disabled = SubResource("TextActionRest")
 SlotRows/base_type = &"VBoxContainer"
 SlotRows/constants/separation = 0

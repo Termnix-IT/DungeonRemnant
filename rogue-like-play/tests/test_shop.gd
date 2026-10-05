@@ -55,10 +55,13 @@ func run_tests() -> void:
 	check(shop.buying and not shop.sell_all_button.visible and shop.rows.size() == ItemCatalog.shop_items().size(), "Purchase tab exposes catalog and hides sell-all")
 	shop.item_list.select(0)
 	shop.item_list.item_selected.emit(0)
+	var selector_size := shop.quantity.get_combined_minimum_size()
 	shop.quantity.plus.pressed.emit()
 	check(shop.quantity.value == 2 and not shop.quantity.minus.disabled, "Plus steps the quantity")
 	shop.quantity.value = 999
 	check(shop.quantity.value == shop.quantity.max_value and shop.quantity.plus.disabled, "Quantity clamps at the purchase limit")
+	# The arrows stay under the pointer while the limit disables them.
+	check(shop.quantity.get_combined_minimum_size() == selector_size, "Quantity selector keeps its size at the limit")
 	check(shop.quantity_label.text.contains("最大 %d" % int(shop.quantity.max_value)), "Quantity caption states the limit")
 	shop.quantity.value = 3
 	shop.sell_button.pressed.emit()
