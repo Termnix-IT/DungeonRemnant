@@ -172,6 +172,14 @@ func run_tests() -> void:
 		panel_rects[lobby.panel.get_global_rect()] = true
 		button_rects[lobby.decide_button.get_global_rect()] = true
 	check(panel_rects.size() == 1 and button_rects.size() == 1, "Every lobby entry keeps the same panel size and button place")
+	check(lobby.decide_button.size.y >= 60.0, "The decide button stands 60px tall")
+	check(lobby.panel.get_global_rect().end.y <= viewport.y - 60.0 and lobby.panel.get_global_rect().position.y >= viewport.y * 0.62, "The panel sits low, clear of the altar and the stairs")
+	for index in lobby.buttons.size():
+		lobby.select(index)
+		check(lobby._art.texture != null, "Entry %s shows its illustration" % lobby.selected_id())
+		check(lobby.title_icon.kind == HubLobby.ENTRIES[index][2], "Entry %s shows its menu mark" % lobby.selected_id())
+	check(lobby.carried_room.text == "%d 枠" % (main.state.inventory.max_entries - main.state.inventory.entries.size()), "Shop shows the free carry slots")
+	check(lobby.worn_value.text.ends_with("/ 5") and lobby.upgrade_ready.text.ends_with("件"), "Equipment and upgrade show their second facts")
 	lobby.select(1)
 	hub.equipment_button.pressed.emit()
 	check(hub.page == "equipment", "Pressing the chosen entry enters it")

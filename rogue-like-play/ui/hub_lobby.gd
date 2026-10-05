@@ -43,6 +43,7 @@ const ART := {
 	&"storage": preload("res://art/hub/cards/chests.png"),
 	&"shop": preload("res://art/hub/cards/shop.png"),
 	&"upgrade": preload("res://art/hub/cards/books.png"),
+	&"settings": preload("res://art/hub/cards/settings.png"),
 }
 const HERO_TEXTURE := preload("res://art/characters/mio_lobby.png")
 # Where her face and the middle of her soles sit in the texture, as fractions.
@@ -57,14 +58,18 @@ const SPEECH_TIME := 4.0
 const MENU_WIDTH := 300.0
 const MENU_TOP := 168.0
 const ROW_HEIGHT := 80.0
+const BAND_INSET := 14.0
 # The panel centres in the floor between the menu and the heroine.
 const PANEL_CENTER_X := 0.465
-const PANEL_WIDTH := 600.0
-const PANEL_BOTTOM := 96.0
+const PANEL_WIDTH := 660.0
+# Low enough that the altar and the foot of the stairs stay in view, its
+# bottom edge on the heroine's floor line.
+const PANEL_BOTTOM := 64.0
 # Every entry shows the same panel: one size, the name and line at the top,
 # the facts and the button at the bottom, so switching entries moves nothing.
-const PANEL_HEIGHT := 300.0
+const PANEL_HEIGHT := 256.0
 const STRIP_HEIGHT := 60.0
+const DECIDE_HEIGHT := 60.0
 # The texture keeps clear margins for swaying hair, so the figure itself
 # stands about 78% of the screen tall.
 const HERO_HEIGHT := 0.8
@@ -88,7 +93,11 @@ var main_glyph: Control
 var carried_label: Label
 var stored_label: Label
 var gold_value: Label
+var carried_room: Label
 var upgrade_value: Label
+var upgrade_ready: Label
+var worn_value: Label
+var title_icon: NavigationIcon
 var floors_value: Label
 var difficulty_value: Label
 var volume_value: Label
@@ -197,15 +206,26 @@ func _build_panel() -> void:
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(margin)
 	var stack := VBoxContainer.new()
-	stack.theme_type_variation = &"DetailStack"
+	stack.theme_type_variation = &"LobbyInfoStack"
 	margin.add_child(stack)
-	title_label = HubUI.label(stack, "", &"LobbyTitle")
+	# The entry's mark from the menu beside its name ties the two together.
+	var heading := HBoxContainer.new()
+	heading.theme_type_variation = &"CompactRow"
+	stack.add_child(heading)
+	title_icon = NavigationIcon.new()
+	heading.add_child(title_icon)
+	title_label = HubUI.label(heading, "", &"LobbyTitle")
 	title_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	title_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# One line: a longer description is cut short, whole in the tooltip.
 	description_label = HubUI.label(stack, "", &"DescriptionLabel")
-	description_label.max_lines_visible = 2
-	# One line or two, the description's spare height sits here, so the facts
-	# and the button keep their place at the bottom.
-	HubUI.space(stack)
+	description_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	description_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	description_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	# The line takes any spare height, so the facts and the button keep their
+	# place at the bottom.
+	description_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	description_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	var route: HBoxContainer = _strip(stack)
 	_details[&"departure"] = route
 	floors_value = _fact(route, "階層")
@@ -227,6 +247,8 @@ func _build_panel() -> void:
 	equipment_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	equipment_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	equipment_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_divider(gear)
+	worn_value = _fact(gear, "装備枠")
 	var room: HBoxContainer = _strip(stack)
 	_details[&"storage"] = room
 	carried_label = _fact(room, "持ち込み")
@@ -236,17 +258,21 @@ func _build_panel() -> void:
 	_details[&"shop"] = purse
 	# Money keeps its gold, at the same size as every other value.
 	gold_value = _fact(purse, "所持金", &"MoneyValueLabel")
+	_divider(purse)
+	carried_room = _fact(purse, "持ち込み空き")
 	var growth: HBoxContainer = _strip(stack)
 	_details[&"upgrade"] = growth
 	upgrade_value = _fact(growth, "習得した強化")
+	_divider(growth)
+	upgrade_ready = _fact(growth, "強化できる")
 	var current: HBoxContainer = _strip(stack)
 	_details[&"settings"] = current
 	volume_value = _fact(current, "音量")
 	_divider(current)
 	display_value = _fact(current, "画面")
-	decide_button = HubUI.button(stack, "", func(): activated.emit(selected_id()), &"PrimaryButton")
+	decide_button = HubUI.button(stack, "", func(): activated.emit(selected_id()), &"LobbyDecideButton")
 	decide_button.name = "Decide"
-	decide_button.custom_minimum_size.y = 52
+	decide_button.custom_minimum_size.y = DECIDE_HEIGHT
 	var frame := Control.new()
 	frame.name = "Frame"
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -260,7 +286,7 @@ func _strip(parent: Node) -> HBoxContainer:
 	inset.custom_minimum_size.y = STRIP_HEIGHT
 	parent.add_child(inset)
 	var margin := MarginContainer.new()
-	margin.theme_type_variation = &"CompactMargin"
+	margin.theme_type_variation = &"LobbyStripMargin"
 	inset.add_child(margin)
 	var row := HBoxContainer.new()
 	row.theme_type_variation = &"CompactRow"
@@ -378,6 +404,18 @@ func refresh(state: RunCarryover, stage: StageData) -> void:
 	carried_label.text = "%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries]
 	stored_label.text = "%d / %d 枠" % [state.storage.entries.size(), state.storage.max_entries]
 	gold_value.text = "%d G" % state.gold
+	carried_room.text = "%d 枠" % (state.inventory.max_entries - state.inventory.entries.size())
+	var worn := 0
+	for item in state.equipment.slots:
+		if item != null:
+			worn += 1
+	worn_value.text = "%d / %d" % [worn, state.equipment.slots.size()]
+	# What the current Gold can buy now, by the same rules the tree uses.
+	var ready := 1 if state.upgrade.price(state.hp_upgrade_level) >= 0 and state.gold >= state.upgrade.price(state.hp_upgrade_level) else 0
+	for node in SkillCatalog.NODES:
+		if state.can_purchase_skill(node.id):
+			ready += 1
+	upgrade_ready.text = "%d 件" % ready
 	var ranks := state.hp_upgrade_level
 	for id in state.skill_levels:
 		ranks += int(state.skill_levels[id])
@@ -450,6 +488,9 @@ func _show_entry() -> void:
 		title_label.text = ENTRIES[selected][1]
 		description_label.text = DESCRIPTIONS.get(id, "")
 		_art.texture = ART.get(id)
+	description_label.tooltip_text = description_label.text
+	title_icon.kind = ENTRIES[selected][2]
+	title_icon.queue_redraw()
 	decide_button.visible = ACTIONS.has(id)
 	decide_button.text = ACTIONS.get(id, "")
 	decide_button.tooltip_text = decide_button.text
@@ -523,8 +564,10 @@ func _ornament_line(y: float) -> void:
 func _draw_selection() -> void:
 	var gold := get_theme_color(&"band", &"HubLobby")
 	var rail := get_theme_color(&"rail", &"HubLobby")
-	var top := _band_y + 8.0
-	var bottom := _band_y + ROW_HEIGHT - 8.0
+	# The gold text, the point and the edge line say which entry is chosen;
+	# the fill and the halo only warm it, kept low so the heroine leads.
+	var top := _band_y + BAND_INSET
+	var bottom := _band_y + ROW_HEIGHT - BAND_INSET
 	var middle := (top + bottom) * 0.5
 	var tip := MENU_WIDTH + 22.0
 	# Warm light across the chosen row, ending in a point past the rail.
@@ -534,8 +577,8 @@ func _draw_selection() -> void:
 	_diamond(Vector2(tip, middle), 5.0, rail)
 	# Halo behind the chosen icon.
 	var halo := Vector2(16 + 54, middle)
-	for ring in 5:
-		draw_circle(halo, 34.0 - ring * 6.0, Color(gold, gold.a * 0.35))
+	for ring in 4:
+		draw_circle(halo, 26.0 - ring * 5.0, Color(gold, gold.a * 0.3))
 
 
 func _draw_panel_frame(frame: Control) -> void:
