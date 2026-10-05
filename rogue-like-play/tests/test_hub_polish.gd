@@ -121,7 +121,8 @@ func check_details(hub, main) -> void:
 	shop.set_buying(true)
 	shop.item_list.select(0)
 	shop.item_list.item_selected.emit(0)
-	check(shop.details.get_parsed_text().contains("手元に") and shop.details.get_parsed_text().contains("倉庫"), "Shop details say where copies already are")
+	# Owned copies read once in the counter (and in the row), not again in the details.
+	check(shop.possession.text.contains("倉庫") and shop.possession.text.contains("→") and not shop.details.get_parsed_text().contains("手元に"), "The shop counter says where the copies go")
 	hub.open_warehouse()
 	check(hub.warehouse_panel.get_node("%Feedback").text == WarehousePanel.STORAGE_NOTE, "Warehouse rule note sits on the feedback line")
 	var visual: ItemVisual = hub.warehouse_panel.get_node("%Visual")

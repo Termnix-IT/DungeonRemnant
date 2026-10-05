@@ -14,7 +14,7 @@ func capture() -> void:
 	await settle()
 	await enter(hub, hub.sell_button)
 	await shot("cards_empty")
-	check(shop.item_list.item_count == 1 and shop.item_list.is_item_disabled(0), "Empty list retains disabled placeholder")
+	check(shop.item_list.item_count == 0 and not shop.item_list.empty_text.is_empty(), "An empty list says why instead of a row")
 	await click(shop.buy_tab)
 	shop.item_list.grab_focus()
 	await key(KEY_DOWN)

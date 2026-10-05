@@ -70,7 +70,13 @@ func run_tests() -> void:
 		if shop.rows[index].item.id == ARMOR.id:
 			shop.item_list.select(index)
 			shop.item_list.item_selected.emit(index)
-	check(shop.details.get_parsed_text().contains("防具に装備した場合"), "Equipment in the shop compares against its slot")
+	# She already wears this armor, so the slot is named and nothing changes.
+	check(shop.swap_label.visible and shop.swap_label.text == "防具と入れ替え（今：革の防具）" and shop.hero_specs.rows.all(func(row: Array): return row[1] == row[2]), "Equipment in the shop names its slot and what she wears there")
+	shop.set_buying(false)
+	shop.item_list.select(0)
+	shop.item_list.item_selected.emit(0)
+	check(not shop.swap_label.visible and shop.hero_specs.rows.all(func(row: Array): return row[1] == row[2]), "Selling shows her stats as they are")
+	shop.set_buying(true)
 	var before := SaveCodec.encode(main.state)
 	check(not main.buy_item(false, ItemCatalog.POTION.id, 3) and before == SaveCodec.encode(main.state), "Insufficient Gold changes nothing")
 	check(not main.buy_item(false, &"missing", 1) and not main.buy_item(false, ItemCatalog.POTION.id, 0), "Unknown item and zero quantity rejected")

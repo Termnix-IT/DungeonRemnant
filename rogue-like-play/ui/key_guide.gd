@@ -37,6 +37,14 @@ func add_hint(keys: String, buttons: String, text: String, action: Callable = Ca
 	return hint
 
 
+# Drops the hints after the first keep, for a screen to add its own.
+func clear_hints(keep: int = 1) -> void:
+	while _hints.size() > keep:
+		var hint: Button = _hints.pop_back()
+		remove_child(hint)
+		hint.queue_free()
+
+
 func _input(event: InputEvent) -> void:
 	var now_pad := pad
 	if event is InputEventJoypadButton or (event is InputEventJoypadMotion and absf(event.axis_value) > 0.5):

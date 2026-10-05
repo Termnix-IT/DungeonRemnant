@@ -31,7 +31,7 @@ func capture() -> void:
 			for control: Control in [shop.item_list, shop.showcase, shop.details, shop.possession, shop.quantity, shop.total_label, shop.sell_button, shop.sell_all_button]:
 				if control.is_visible_in_tree():
 					fits(control, "Shop")
-			check(shop.details.size.y >= 64, "Shop keeps readable description height")
+			check(shop.details.size.y >= 48, "Shop keeps readable description height")
 		hub.open_warehouse()
 		var warehouse: WarehousePanel = hub.warehouse_panel
 		warehouse.get_node("%StorageList").select(0)

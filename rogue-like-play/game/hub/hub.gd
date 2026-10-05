@@ -116,7 +116,14 @@ func _ready() -> void:
 	sell_page = _page(HubSell.new()) as HubSell
 	sell_page.sell_requested.connect(func(source: bool, index: int, amount: int): sell_requested.emit(source, index, amount))
 	sell_page.buy_requested.connect(func(destination: bool, item_id: StringName, amount: int): buy_requested.emit(destination, item_id, amount))
-	sell_page.mode_changed.connect(func(): feedback.text = "")
+	sell_page.mode_changed.connect(func():
+		feedback.text = ""
+		_shop_hints())
+	# Buying and selling switch at the title's place in the header.
+	var heading_box: VBoxContainer = title_label.get_parent()
+	heading_box.add_child(sell_page.mode_tabs)
+	heading_box.move_child(sell_page.mode_tabs, 0)
+	sell_page.mode_tabs.visible = false
 	departure_page = _page(HubDeparture.new()) as HubDeparture
 	departure_page.confirm_requested.connect(func(): show_page("confirm"))
 	departure_page.equipment_requested.connect(func(): equipment_return = "confirm"; show_page("equipment"))
@@ -248,6 +255,9 @@ func show_page(target: String) -> void:
 	for control in [home_page, equipment_page, sell_page, departure_page, upgrade_page, settings_page]:
 		control.hide()
 	key_guide.visible = page != "home"
+	key_guide.clear_hints()
+	title_label.visible = page != "sell"
+	sell_page.mode_tabs.visible = page == "sell"
 	# Gold stays where the eye looks for it; it is quiet where nothing costs.
 	purse.quiet = page not in ["home", "sell", "upgrade"]
 	for child in _title_block.get_children():
@@ -275,6 +285,7 @@ func show_page(target: String) -> void:
 			subtitle_label.text = "薬も武具も、金次第。"
 			sell_page.show()
 			sell_page.refresh(_state)
+			_shop_hints()
 			sell_page.source_choice.focus_selected()
 		"upgrade":
 			title_label.text = "永久強化"
@@ -311,6 +322,16 @@ func show_page(target: String) -> void:
 func show_save_status(text: String, alert: bool) -> void:
 	save_label.text = text
 	save_label.visible = alert
+
+
+# The shop's keys: the trade, the category tabs and the switch of mode.
+func _shop_hints() -> void:
+	if page != "sell":
+		return
+	key_guide.clear_hints()
+	key_guide.add_hint("Enter", "A", "購入" if sell_page.buying else "売却")
+	key_guide.add_hint("Q / E", "LB / RB", "分類")
+	key_guide.add_hint("R", "Y", "売却へ" if sell_page.buying else "購入へ", func(): sell_page.set_buying(not sell_page.buying))
 
 
 func present_action(kind: StringName, gold_delta: int, slots: Array[int]) -> void:

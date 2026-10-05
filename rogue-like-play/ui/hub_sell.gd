@@ -1,60 +1,102 @@
 class_name HubSell
 extends Control
 
+# The shop, laid out so the eye runs left to right: choose the goods (a list
+# filtered by category tabs, on a slab like the lobby menu), learn them (name,
+# a short note, the counter and the one trade action, on the hall with only a
+# shade behind), then see what they do to her (the heroine from the knees up,
+# her whole stats before and after over her). No framed box parts the
+# screen, and each number shows once or twice rather than four times.
+# Buying and selling switch at the header's title place (mode_tabs).
+
 signal sell_requested(from_storage: bool, index: int, amount: int)
 signal buy_requested(to_storage: bool, item_id: StringName, amount: int)
 signal mode_changed
 
+const SHOWCASE_SIZE := 128.0
+const CATEGORIES: Array[String] = ["すべて", "武器", "防具", "装飾", "消耗品", "魔法"]
+const CATEGORY_KINDS := [-1, ItemData.Kind.WEAPON, ItemData.Kind.ARMOR, ItemData.Kind.ACCESSORY, ItemData.Kind.CONSUMABLE, ItemData.Kind.SCROLL]
+# The heroine from the knees up: her height in screen pixels, the share of
+# it from the texture's top down to her knees, and where her face sits across.
+const HERO_HEIGHT := 960.0
+const HERO_KNEES := 0.72
+const HERO_FACE_X := 0.4
+# Her whole stats for the next run.
+const HERO_STATS := [["hp", "最大HP"], ["attack", "攻撃力"], ["defense", "防御力"], ["reach", "射程"]]
+
 var state: RunCarryover
-var source_choice: SegmentedChoice
-var item_list: ItemCardList
-var quantity: QuantityStepper
-var details: ItemDetails
-var total_label: Label
-var sell_button: Button
-var sell_all_button: Button
+var mode_tabs: HBoxContainer
 var buy_tab: Button
 var sell_tab: Button
-var heading: Label
+var category_tabs: CategoryTabs
+var source_choice: SegmentedChoice
 var source_label: Label
-var quantity_label: Label
+var item_list: ItemCardList
 var help_label: Label
-var buying := false
 var showcase: ItemShowcase
+var details: ItemDetails
+var swap_label: Label
+var quantity: QuantityStepper
+var quantity_label: Label
+var total_label: Label
 var possession: Label
+var sell_all_button: Button
+var sell_button: Button
+var hero: LobbyHero
+var hero_specs: StatBars
+var heading: Label
+var buying := false
 # Inventory keeps individual equipment entries; the shop groups only its view.
 var rows: Array[Dictionary] = []
 # The item of the last requested trade, for the success moment after saving.
 var traded_item: ItemData
-const SHOWCASE_SIZE := 192.0
-const COMPARED_STATS := [["hp", "最大HP"], ["attack", "攻撃力"], ["defense", "防御力"], ["reach", "射程"]]
+var _source_row: HBoxContainer
+var _place_row: HBoxContainer
+var _hero_holder: Control
+var _hero_frame: Control
 
 
 func _ready() -> void:
+	_build_mode_tabs()
 	var columns := HBoxContainer.new()
+	columns.theme_type_variation = &"ShopColumns"
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var catalog := _column(columns, 1.12)
-	var toolbar := HBoxContainer.new()
-	toolbar.theme_type_variation = &"CompactRow"
-	catalog.add_child(toolbar)
-	sell_tab = _button(toolbar, "売却", &"ItemButton", set_buying.bind(false))
-	buy_tab = _button(toolbar, "購入", &"ItemButton", set_buying.bind(true))
-	var tabs := ButtonGroup.new()
-	for button in [sell_tab, buy_tab]:
-		button.custom_minimum_size.x = 100
-		button.toggle_mode = true
-		button.button_group = tabs
+	_build_catalog(HubUI.open_column(columns, 1.1, &"SlabColumn"))
+	_build_info(HubUI.open_column(columns, 1.15, &"ShadeColumn"))
+	_build_hero(columns)
+
+
+# Two title-sized tabs the hub shows in its header in place of the title.
+func _build_mode_tabs() -> void:
+	mode_tabs = HBoxContainer.new()
+	mode_tabs.theme_type_variation = &"ModeTabs"
+	var group := ButtonGroup.new()
+	buy_tab = HubUI.button(mode_tabs, "購入", set_buying.bind(true), &"ModeTab")
+	sell_tab = HubUI.button(mode_tabs, "売却", set_buying.bind(false), &"ModeTab")
+	for tab in [buy_tab, sell_tab]:
+		tab.custom_minimum_size.y = 0
+		tab.toggle_mode = true
+		tab.button_group = group
 	sell_tab.button_pressed = true
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	toolbar.add_child(spacer)
-	source_label = _label(toolbar, "売却元", &"MutedLabel")
+
+
+func _build_catalog(catalog: VBoxContainer) -> void:
+	category_tabs = CategoryTabs.new()
+	catalog.add_child(category_tabs)
+	category_tabs.setup(CATEGORIES)
+	category_tabs.changed.connect(func(_index: int): refresh(state))
+	# Selling chooses which stock to show, so the choice stands by the list;
+	# buying chooses where the goods go, so it stands by the counter.
+	_source_row = HBoxContainer.new()
+	_source_row.theme_type_variation = &"CompactRow"
+	catalog.add_child(_source_row)
+	source_label = HubUI.label(_source_row, "売却元", &"NoteLabel")
 	source_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	source_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	# Both places stay in view as two buttons rather than behind a dropdown.
+	source_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	source_choice = SegmentedChoice.new()
-	toolbar.add_child(source_choice)
+	_source_row.add_child(source_choice)
 	source_choice.add_item("倉庫")
 	source_choice.add_item("持ち込み")
 	source_choice.item_selected.connect(func(_index: int): refresh(state))
@@ -62,79 +104,109 @@ func _ready() -> void:
 	item_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	catalog.add_child(item_list)
 	item_list.item_selected.connect(_select)
-	help_label = _label(catalog, "", &"MutedLabel")
-	help_label.custom_minimum_size.y = 48
-	var info := _column(columns, 1.0)
+	help_label = HubUI.label(catalog, "", &"NoteLabel")
+
+
+func _build_info(info: VBoxContainer) -> void:
 	info.theme_type_variation = &"DetailStack"
-	heading = _label(info, "", &"MutedLabel")
-	# The goods are the focus: the showcase draws the item at 3x its icon.
+	heading = HubUI.label(info, "", &"MutedLabel")
+	heading.visible = false
 	showcase = ItemShowcase.new()
+	showcase.show_effect = false
 	showcase.visual.custom_minimum_size = Vector2.ONE * SHOWCASE_SIZE
 	info.add_child(showcase)
-	# The record keeps to its lines instead of stretching into an empty well;
-	# the spare height sits above the counter, which stays by the button.
-	var record := PanelContainer.new()
-	record.theme_type_variation = &"InsetPanel"
-	info.add_child(record)
 	details = ItemDetails.new()
 	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	record.add_child(details)
+	info.add_child(details)
 	var gap := Control.new()
 	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	info.add_child(gap)
-	# Room for a comparison of two or three lines without shifting the counter.
-	details.fit_lines(gap, 64)
-	# The counter: quantity, the price as one large figure, and a quiet line
-	# of what changes, on one raised plate instead of a form and a formula.
-	var counter := PanelContainer.new()
-	counter.theme_type_variation = &"ItemPanel"
-	info.add_child(counter)
+	details.fit_lines(gap, 48)
+	# The counter: where the goods go, how many, one large price and one
+	# quiet line of what changes, right above the trade, parted by a rule.
+	HubUI.rule(info)
 	var counter_stack := VBoxContainer.new()
 	counter_stack.theme_type_variation = &"CompactStack"
-	counter.add_child(counter_stack)
+	info.add_child(counter_stack)
+	_place_row = HBoxContainer.new()
+	_place_row.theme_type_variation = &"CompactRow"
+	counter_stack.add_child(_place_row)
+	var place_caption := HubUI.label(_place_row, "購入先", &"NoteLabel")
+	place_caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+	place_caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	place_caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var quantity_row := HBoxContainer.new()
 	counter_stack.add_child(quantity_row)
-	quantity_label = _label(quantity_row, "", &"MutedLabel")
+	quantity_label = HubUI.label(quantity_row, "", &"NoteLabel")
 	quantity_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	quantity_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	quantity = QuantityStepper.new()
 	quantity_row.add_child(quantity)
 	quantity.value_changed.connect(func(_value: float): _update_quote())
-	total_label = _label(counter_stack, "", &"PriceLabel")
+	total_label = HubUI.label(counter_stack, "", &"PriceLabel")
 	total_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	possession = _label(counter_stack, "", &"MutedLabel")
+	possession = HubUI.label(counter_stack, "", &"NoteLabel")
 	possession.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	# The trades share one row, so the record above keeps the height for a
-	# comparison of three lines without scrolling.
-	var trades := HBoxContainer.new()
-	trades.theme_type_variation = &"CompactRow"
-	info.add_child(trades)
-	sell_button = _button(trades, "売却する", &"GoldButton", _transact)
-	sell_button.custom_minimum_size.y = 54
-	sell_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	sell_button.size_flags_stretch_ratio = 1.2
-	sell_all_button = _button(trades, "全部売却", &"SecondaryButton", _sell_all)
-	sell_all_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sell_all_button = HubUI.button(info, "全部売却", _sell_all, &"SecondaryButton")
 	sell_all_button.tooltip_text = "選択品を全部売却"
+	sell_button = HubUI.primary_action(info, "売却する", _transact)
 
 
-func _column(parent: Container, stretch: float) -> VBoxContainer:
-	return HubUI.section(parent, stretch)
+# Unframed, like the lobby: the heroine from the knees up, cut by the page's
+# foot and the screen's right edge, with what the goods do to her whole stats
+# laid over her legs.
+func _build_hero(columns: HBoxContainer) -> void:
+	_hero_holder = Control.new()
+	_hero_holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_hero_holder.size_flags_stretch_ratio = 0.95
+	_hero_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	columns.add_child(_hero_holder)
+	# Reaches past the page to the screen's right edge, and clips there and
+	# at the page's foot.
+	_hero_frame = Control.new()
+	_hero_frame.clip_contents = true
+	_hero_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hero_holder.add_child(_hero_frame)
+	hero = LobbyHero.new()
+	hero.texture = HubLobby.HERO_TEXTURE
+	hero.modulate = get_theme_color(&"hero_tint", &"HubLobby")
+	_hero_frame.add_child(hero)
+	_hero_holder.resized.connect(_place_hero)
+	var band := PanelContainer.new()
+	band.theme_type_variation = &"ShopHeroBand"
+	_hero_holder.add_child(band)
+	band.anchor_left = 0.0
+	band.anchor_right = 1.0
+	band.anchor_top = 1.0
+	band.anchor_bottom = 1.0
+	band.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	var stack := VBoxContainer.new()
+	stack.theme_type_variation = &"CompactStack"
+	band.add_child(stack)
+	HubUI.label(stack, "次の冒険の能力", &"NoteLabel")
+	swap_label = HubUI.label(stack, "", &"NoteLabel")
+	hero_specs = StatBars.new()
+	stack.add_child(hero_specs)
 
 
-func _label(parent: Node, text: String, role: StringName) -> Label:
-	return HubUI.label(parent, text, role)
-
-
-func _button(parent: Node, text: String, role: StringName, action: Callable) -> Button:
-	return HubUI.button(parent, text, action, role)
+func _place_hero() -> void:
+	# The page leaves this much of the screen on its right.
+	var screen_margin := 80.0
+	_hero_frame.position = Vector2.ZERO
+	_hero_frame.size = Vector2(_hero_holder.size.x + screen_margin, _hero_holder.size.y)
+	var texture := hero.texture
+	var width := HERO_HEIGHT * texture.get_width() / texture.get_height()
+	hero.size = Vector2(width, HERO_HEIGHT)
+	# Knees on the page's foot, her face over the middle of the column.
+	hero.position = Vector2(_hero_holder.size.x * 0.5 - width * HERO_FACE_X, _hero_holder.size.y - HERO_HEIGHT * HERO_KNEES)
+	hero.pivot_offset = Vector2(width * 0.5, HERO_HEIGHT)
 
 
 func set_buying(value: bool) -> void:
 	buying = value
-	buy_tab.button_pressed = buying
-	sell_tab.button_pressed = not buying
+	buy_tab.set_pressed_no_signal(buying)
+	sell_tab.set_pressed_no_signal(not buying)
 	refresh(state)
 	mode_changed.emit()
 
@@ -143,16 +215,19 @@ func refresh(current: RunCarryover) -> void:
 	state = current
 	for target: Control in [item_list, showcase, details, possession]:
 		UIMotion.of(target).reset()
+	_place_choice()
 	rows.clear()
 	item_list.clear()
+	var kind: int = CATEGORY_KINDS[category_tabs.selected]
 	if buying:
 		for item in ItemCatalog.shop_items():
-			rows.append({"item": item, "count": _owned(item.id), "index": -1})
+			if kind < 0 or item.kind == kind:
+				rows.append({"item": item, "count": _owned(item.id), "index": -1})
 	else:
 		var groups := {}
 		for index in _source().entries.size():
 			var entry := _source().entries[index]
-			if entry.item.socketed_scroll != null:
+			if entry.item.socketed_scroll != null or (kind >= 0 and entry.item.kind != kind):
 				continue
 			if groups.has(entry.item.id):
 				rows[groups[entry.item.id]].count += entry.count
@@ -162,17 +237,23 @@ func refresh(current: RunCarryover) -> void:
 	for row in rows:
 		var item: ItemData = row.item
 		item_list.add_card(item, row.count, item.buy_price if buying else item.sell_price)
-	if rows.is_empty():
-		item_list.add_item("購入できるアイテムはありません" if buying else "売却できるアイテムはありません")
-		item_list.set_item_disabled(0, true)
-	heading.text = "次の冒険に備える" if buying else "次の旅の資金に"
-	source_label.text = "購入先" if buying else "売却元"
-	quantity_label.text = "購入数" if buying else "売却数"
+	item_list.empty_text = ("この分類の品は扱っていない" if buying else "売れる品はここにない")
 	help_label.text = "" if buying else "装備中の品と、魔法を込めた杖は売れません。"
+	help_label.visible = not buying
 	sell_all_button.visible = not buying
 	quantity.value = 1
 	showcase.present(null)
 	_update_quote()
+	_show_hero_specs(null)
+
+
+# One choice, two homes: by the list when selling, in the counter when buying.
+func _place_choice() -> void:
+	var home := _place_row if buying else _source_row
+	if source_choice.get_parent() != home:
+		source_choice.reparent(home)
+	_source_row.visible = not buying
+	_place_row.visible = buying
 
 
 func _source() -> Inventory:
@@ -201,6 +282,7 @@ func _select(index: int, animate: bool = true) -> void:
 	quantity.value = 1
 	showcase.present(row.item)
 	_update_quote()
+	_show_hero_specs(row.item)
 	if animate:
 		UIMotion.reveal_selection([showcase, details, possession])
 
@@ -209,8 +291,12 @@ func _update_quote() -> void:
 	var selected := item_list.get_selected_items()
 	quantity_label.text = "購入数" if buying else "売却数"
 	if selected.is_empty():
-		details.text = "品を選んでください。"
-		possession.text = "所持金  %d G" % state.gold
+		# Assigning text equal to the last assignment would keep appended
+		# lines; reset clears whatever the previous goods wrote.
+		details.reset()
+		details.line("品を選んでください。", &"MutedLabel")
+		# The balance is in the header; nothing chosen, nothing changes.
+		possession.text = ""
 		total_label.text = "—"
 		sell_button.text = "購入する" if buying else "売却する"
 		sell_button.disabled = true
@@ -224,16 +310,14 @@ func _update_quote() -> void:
 	var total := price * amount
 	quantity.editable = true
 	details.reset()
-	details.item_text(item, showcase)
-	_compare_equipment(item)
-	_holdings(item)
+	details.item_text(item, showcase, &"NoteLabel")
 	quantity_label.text = "%s　最大 %d" % ["数量" if buying else "売る数", int(quantity.max_value)]
 	var place := source_choice.get_item_text(source_choice.selected)
 	var after: int = row.count + amount if buying else row.count - amount
 	if buying:
 		var limit := _purchase_limit(item)
-		total_label.text = "%d G" % total
-		possession.text = "%s %d → %d個　·　所持金 %d → %d G" % [place, row.count, after, state.gold, state.gold - total]
+		total_label.text = UIFormat.gold(total)
+		possession.text = "%s %d → %d個　·　購入後 %s" % [place, row.count, after, UIFormat.gold(state.gold - total)]
 		sell_button.text = "%d個を購入する" % amount
 		sell_button.disabled = limit < amount
 		quantity.editable = limit > 0
@@ -241,58 +325,70 @@ func _update_quote() -> void:
 			total_label.text = "買えません"
 			possession.text = "所持金か、%sの空きが足りません" % place
 	else:
-		total_label.text = "+%d G" % total
-		possession.text = "%s %d → %d個　·　所持金 %d → %d G" % [place, row.count, after, state.gold, state.gold + total]
+		total_label.text = "+%s" % UIFormat.gold(total)
+		possession.text = "%s %d → %d個　·　売却後 %s" % [place, row.count, after, UIFormat.gold(state.gold + total)]
 		sell_button.text = "%d個を売却する" % amount
 		sell_button.disabled = total <= 0 or state.gold + total > SaveCodec.MAX_GOLD
 		var all_value: int = price * row.count
-		sell_all_button.text = "全部売却  %d個・%d G" % [row.count, all_value]
+		sell_all_button.text = "全部売却  %d個・%s" % [row.count, UIFormat.gold(all_value)]
 		sell_all_button.disabled = price <= 0 or state.gold + all_value > SaveCodec.MAX_GOLD
 
 
-func _holdings(item: ItemData) -> void:
-	var equipped := 0
-	for slot_item in state.equipment.slots:
-		if slot_item != null and slot_item.id == item.id:
-			equipped += 1
-	details.line("手元に　倉庫 %d　·　持ち込み %d　·　装備 %d" % [_count_in(state.storage, item), _count_in(state.inventory, item), equipped], &"MutedLabel")
-
-
-func _count_in(inventory: Inventory, item: ItemData) -> int:
-	var total := 0
-	for entry in inventory.entries:
-		if entry.item.id == item.id:
-			total += entry.count
-	return total
-
-
-# Equipment shows what equipping it would change for the next run, against an
-# empty compatible slot first, otherwise the first one (Main for weapons).
-func _compare_equipment(item: ItemData) -> void:
+# The slot equipment would go to: an empty compatible one first, otherwise
+# the first (Main for weapons). -1 for goods that are not worn.
+func _slot_for(item: ItemData) -> int:
+	if item == null or item.kind == ItemData.Kind.SCROLL:
+		return -1
 	var slot := -1
 	for candidate in 5:
 		if state.equipment.accepts(item, candidate):
 			if state.equipment.slots[candidate] == null:
-				slot = candidate
-				break
+				return candidate
 			if slot < 0:
 				slot = candidate
-	if slot < 0 or item.kind == ItemData.Kind.SCROLL:
-		return
-	var gear := Equipment.new()
-	gear.slots.assign(state.equipment.slots)
-	gear.slots[slot] = item
+	return slot
+
+
+# Her whole stats for the next run, as they are and if the goods were worn.
+func _show_hero_specs(item: ItemData) -> void:
 	var before := state.preparation_stats()
-	var after := state.preparation_stats(gear)
-	var current: ItemData = state.equipment.slots[slot]
-	details.line("%sに装備した場合（現在：%s）" % [HudEquipment.CAPTIONS[slot], current.label() if current != null else "なし"], &"MutedLabel")
-	var changed := false
-	for stat: Array in COMPARED_STATS:
-		if before[stat[0]] != after[stat[0]]:
-			details.delta(stat[1], before[stat[0]], after[stat[0]])
-			changed = true
-	if not changed:
-		details.line("能力値は変わりません", &"MutedLabel")
+	var after := before
+	# Only goods being bought would be worn; selling shows her as she is.
+	var slot := _slot_for(item) if buying else -1
+	if slot >= 0:
+		var gear := Equipment.new()
+		gear.slots.assign(state.equipment.slots)
+		gear.slots[slot] = item
+		after = state.preparation_stats(gear)
+	var current: ItemData = state.equipment.slots[slot] if slot >= 0 else null
+	swap_label.text = ("%sと入れ替え（今：%s）" % [Equipment.SLOT_NAMES[slot], current.label() if current != null else "なし"]) if slot >= 0 else ""
+	swap_label.visible = slot >= 0
+	var shown := []
+	for stat: Array in HERO_STATS:
+		# Bars leave room for the change against her current value.
+		shown.append([stat[1], before[stat[0]], after[stat[0]], maxi(before[stat[0]], after[stat[0]]) * 1.25 + 1])
+	hero_specs.show_rows(shown)
+
+
+func step_category(direction: int) -> void:
+	category_tabs.step(direction)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
+	var pad := event is InputEventJoypadButton
+	if pad or event is InputEventKey:
+		category_tabs.use_pad(pad)
+	var back: bool = (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_Q) or (pad and event.pressed and event.button_index == JOY_BUTTON_LEFT_SHOULDER)
+	var next: bool = (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E) or (pad and event.pressed and event.button_index == JOY_BUTTON_RIGHT_SHOULDER)
+	var swap: bool = (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R) or (pad and event.pressed and event.button_index == JOY_BUTTON_Y)
+	if back or next:
+		step_category(-1 if back else 1)
+		get_viewport().set_input_as_handled()
+	elif swap:
+		set_buying(not buying)
+		get_viewport().set_input_as_handled()
 
 
 # Success moment after saving: the traded item's glyph travels from the

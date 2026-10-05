@@ -62,11 +62,11 @@ func line(value: String, role: StringName = &"BodyLabel") -> void:
 
 # Only what the showcase does not already say. Its title always holds the full
 # name and its effect line the main effect; without a showcase, name the item.
-func item_text(item: ItemData, showcase: ItemShowcase = null) -> void:
+func item_text(item: ItemData, showcase: ItemShowcase = null, role: StringName = &"DescriptionLabel") -> void:
 	if showcase == null:
 		line(item.label(), &"MutedLabel")
 	if item.description() != ItemGlyph.main_effect(item):
-		line(item.description(), &"DescriptionLabel")
+		line(item.description(), role)
 
 
 # Changed values as aligned columns: caption, before, after, difference.

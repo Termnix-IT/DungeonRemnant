@@ -8,6 +8,9 @@ var visual: ItemVisual
 var title: Label
 var category: Label
 var effect: Label
+# Off where the main effect already reads elsewhere (the shop's list row and
+# its stat changes), so the name is not followed by the same numbers again.
+var show_effect := true
 
 
 func _init() -> void:
@@ -44,3 +47,4 @@ func present(item: ItemData) -> void:
 	title.text = item.label() if item != null else "アイテムを選択"
 	category.text = ItemGlyph.category(item) if item != null else "一覧で詳細を確認できます"
 	effect.text = ItemGlyph.main_effect(item) if item != null else ""
+	effect.visible = show_effect
