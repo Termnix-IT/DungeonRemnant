@@ -62,6 +62,7 @@ func run_tests() -> void:
 	for attempt in 10:
 		check(not state.purchase_upgrade() and state.gold == 999 and state.hp_upgrade_level == 3, "Repeated purchase cannot exceed cap or spend Gold")
 	var main := preload("res://game/main.tscn").instantiate()
+	main.run_seed = 47
 	main.saving_enabled = false
 	root.add_child(main)
 	var hub: CanvasLayer = main.get_node("Hub")

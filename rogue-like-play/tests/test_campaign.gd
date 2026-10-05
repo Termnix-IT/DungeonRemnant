@@ -75,6 +75,7 @@ func run_tests() -> void:
 	single.skills = {"vitality_2": 1}
 	check(SaveCodec.decode(single) == null, "Version 3 saves name no tiers")
 	var main := preload("res://game/main.tscn").instantiate()
+	main.run_seed = 47
 	main.saving_enabled = false
 	root.add_child(main)
 	main.state = state

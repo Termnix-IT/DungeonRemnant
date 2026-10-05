@@ -10,6 +10,7 @@ Godotを `godot` コマンドとして利用できる状態で、`rogue-like-pla
 
 - `godot --editor --path .`: エディターでプロジェクトを開き、ローカル開発とF5によるプレイテストを行う。
 - `godot --headless --path . --editor --import --quit`: アセットをimportし、ScriptとSceneを検証する。
+- `python tools/run_tests.py`: `tests/test_*.gd` をすべて並列（既定は4件ずつ）で実行し、スイートごとの成否・所要時間・失敗した検査を表示する。`python tools/run_tests.py hub shop` のように名前を渡すと対象を絞り、`--skip playthrough` で除外できる。Godotは `--godot`、環境変数 `GODOT`、PATH上の `godot` の順に探す。ログは `.godot/test-logs/` に出し、終わらないスイートは `--timeout`（既定180秒）で失敗として打ち切る。
 - `godot --headless --path . --log-file .godot/combat-tests.log --script res://tests/test_combat.gd`: 対象を絞ったテストスイートを1つ実行する。
 - `godot --headless --path . --log-file .godot/playthrough-tests.log --script res://tests/test_playthrough.gd`: 1Fから10Fまでのゲームループ全体を検証する。
 - `godot --headless --path . --log-file .godot/smoke-test.log --quit-after 5`: 短時間の起動確認を行う。
@@ -32,7 +33,7 @@ GDScriptはUTF-8で記述し、インデントにはタブを使用します。�
 
 ## テスト指針
 
-テストは `test_<area>.gd` という名前の独立した `SceneTree` Scriptです。挙動を変更するたびに対象機能のテストを更新し、その後に関連する回帰テストを実行します。`capture_<area>.gd` は、目視確認用の証跡が必要な場合に描画可能な環境でのみ使用します。ログは、Git管理対象外の `.godot/` 内に出力します。数値としてのカバレッジ目標は設けていないため、ルール、状態遷移、失敗経路、ターン順序の回帰を直接検証します。
+テストは `test_<area>.gd` という名前の独立した `SceneTree` Scriptです。挙動を変更するたびに対象機能のテストを更新し、その後に関連する回帰テストを実行します。`capture_<area>.gd` は、目視確認用の証跡が必要な場合に描画可能な環境でのみ使用します。ログは、Git管理対象外の `.godot/` 内に出力します。拠点から冒険を始めるテストは `main.run_seed` を固定し、ダンジョンの生成と死亡時に失うアイテムを毎回同じにします。乱数で結果が変わる検査は、実行ごとに成否が揺れて本当の回帰と見分けられなくなるため、シードを固定するか乱数に依存しない条件で書きます。数値としてのカバレッジ目標は設けていないため、ルール、状態遷移、失敗経路、ターン順序の回帰を直接検証します。
 
 - UI変更時は `tests/test_ui_theme.gd`、`tests/test_ui_layout.gd`、`tests/test_ui_motion.gd`、`tests/test_upgrade_ui.gd` を実行し、変更対象に応じて `tests/test_shop.gd`、`tests/test_preparation.gd`、`tests/test_save.gd` などを加える。以下のパス・コマンドはGodotプロジェクトルートを基準とする。
 - 一覧や選択面の外観を変えた場合は `tests/test_ui_selection.gd` を実行し、描画可能な環境で `tests/capture_ui_selection.gd` のショップ・装備・倉庫の選択状態を確認する。

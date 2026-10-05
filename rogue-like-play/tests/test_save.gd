@@ -142,6 +142,7 @@ func test_files() -> void:
 
 func test_game_integration() -> void:
 	var main := preload("res://game/main.tscn").instantiate()
+	main.run_seed = 47
 	main.save_store.path = test_dir + "/game.json"
 	root.add_child(main)
 	main.state.gold = 100
@@ -149,6 +150,7 @@ func test_game_integration() -> void:
 	check(main.purchase_upgrade() and main.state.gold == 70, "Purchase saved")
 	main.free()
 	main = preload("res://game/main.tscn").instantiate()
+	main.run_seed = 47
 	main.save_store.path = test_dir + "/game.json"
 	root.add_child(main)
 	check(main.state.gold == 70 and main.state.hp_upgrade_level == 1 and main.state.storage.entries[0].count == 75, "New Main restores purchase and warehouse")
@@ -159,6 +161,7 @@ func test_game_integration() -> void:
 	check(main.active_run.result_panel.save_label.text.contains("保存済み"), "Result saves before Hub return")
 	main.free()
 	main = preload("res://game/main.tscn").instantiate()
+	main.run_seed = 47
 	main.save_store.path = test_dir + "/game.json"
 	root.add_child(main)
 	check(main.state.gold == 51 and main.state.inventory.entries.is_empty() and main.state.hp_upgrade_level == 1, "Restart after result restores once-reduced possessions")
@@ -168,6 +171,7 @@ func test_game_integration() -> void:
 	main.active_run.turns.gold = 999
 	main.free()
 	main = preload("res://game/main.tscn").instantiate()
+	main.run_seed = 47
 	main.save_store.path = test_dir + "/game.json"
 	root.add_child(main)
 	check(main.state.gold == 51, "Interrupted adventure rolls back to departure state")

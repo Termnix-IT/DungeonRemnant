@@ -28,6 +28,7 @@ func run_tests() -> void:
 	check(StickDirections.direction_action(Vector2(0.7, 0.7)) == &"move_se" and StickDirections.direction_action(Vector2(-0.7, -0.7)) == &"move_nw", "Stick diagonals map to diagonal moves")
 	check(StickDirections.direction_action(Vector2(0.3, 0.2)).is_empty(), "Stick inside the deadzone moves nothing")
 	var main := preload("res://game/main.tscn").instantiate()
+	main.run_seed = 47
 	main.saving_enabled = false
 	main.state.inventory.add(LEATHER)
 	root.add_child(main)

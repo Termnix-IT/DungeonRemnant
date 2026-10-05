@@ -18,6 +18,7 @@ func check(ok: bool, label: String) -> void:
 
 func run_tests() -> void:
 	var main := preload("res://game/main.tscn").instantiate()
+	main.run_seed = 47
 	main.saving_enabled = false
 	root.add_child(main)
 	var hub = main.get_node("Hub")

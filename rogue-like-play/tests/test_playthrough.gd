@@ -123,6 +123,7 @@ func run_tests() -> void:
 		var save_path := "res://.godot/playthrough-%d-%d.json" % [seed_value, Time.get_ticks_usec()]
 		var main := preload("res://game/main.tscn").instantiate()
 		main.save_store.path = save_path
+		main.run_seed = seed_value
 		root.add_child(main)
 		main.start_run()
 		var run: Node2D = main.active_run

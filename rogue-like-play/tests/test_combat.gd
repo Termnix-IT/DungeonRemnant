@@ -111,6 +111,7 @@ func run_tests() -> void:
 	second.free()
 	var main := (load("res://game/main.tscn") as PackedScene).instantiate()
 	main.saving_enabled = false
+	main.run_seed = 47
 	root.add_child(main)
 	main.start_run()
 	var run = main.get_node("Run")

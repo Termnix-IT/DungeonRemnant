@@ -3,6 +3,9 @@ extends Node
 signal preparation_completed(kind: StringName, gold_delta: int, slots: Array[int])
 @export var run_scene: PackedScene = preload("res://game/run/run.tscn")
 @export var saving_enabled := true
+# Zero leaves every run random. Tests set it so a run started from the hub
+# lays out the same floors and loses the same goods each time.
+@export var run_seed := 0
 var save_store := SaveStore.new()
 var state := RunCarryover.new()
 var active_run: Node2D
@@ -150,6 +153,7 @@ func start_run() -> void:
 	active_run = run_scene.instantiate()
 	active_run.name = "Run"
 	active_run.initial_state = state
+	active_run.generation_seed = run_seed
 	if stage != null:
 		active_run.stage_data = stage
 		active_run.starting_floor = entry_floor

@@ -117,6 +117,8 @@ func _ready() -> void:
 	turns.progression = progression
 	if generation_seed != 0:
 		player.abilities.rng.seed = generation_seed
+		# A seeded run also loses the same goods on a fall.
+		loss_rng.seed = generation_seed
 	player.weapon = starting_weapon
 	if initial_state != null:
 		carryover = initial_state

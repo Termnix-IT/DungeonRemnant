@@ -175,7 +175,7 @@ func test_ten_floors() -> void:
 		check(run.floor_number == expected_floor + 1, "Stair move changes floor once")
 		check(run.turns.player == player and player.hp == 13 and player.weapon == HAMMER, "HP, weapon and player preserved")
 		check(run.turns.turn_count == turn_total, "Stairs cost exactly one move")
-		check(run.camera.global_position == player.global_position, "Camera follows player after transition")
+		check(run.camera.global_position == player.global_position + run.CAMERA_LEAD, "Camera follows player after transition")
 		check(not run.preview.visible and not player.aiming, "No stale attack preview")
 		var terrain: TileMapLayer = run.dungeon.get_node("Terrain")
 		check(terrain.position + terrain.map_to_local(player.cell) == player.position, "Tile and actor alignment")

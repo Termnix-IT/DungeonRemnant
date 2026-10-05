@@ -1,5 +1,15 @@
 extends "res://tests/capture_preparation.gd"
 
+# Pages bring their parts in one by one (the upgrade tree's fifteen nodes
+# take the longest); shots wait until all have arrived, so the images show
+# each screen as the player reads it, not mid-entrance.
+const ENTRANCE_SETTLE := 1.2
+
+
+func shot(name: String) -> void:
+	await create_timer(ENTRANCE_SETTLE).timeout
+	await super(name)
+
 
 func capture() -> void:
 	if DisplayServer.get_name() == "headless":
