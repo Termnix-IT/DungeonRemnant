@@ -162,6 +162,7 @@ func _build_info(info: VBoxContainer) -> void:
 	sell_all_button = HubUI.button(info, "全部売却", _sell_all, &"SecondaryButton")
 	sell_all_button.tooltip_text = "選択品を全部売却"
 	sell_button = HubUI.primary_action(info, "売却する", _transact)
+	HubUI.accept_to_action(item_list, sell_button)
 
 
 func set_buying(value: bool) -> void:

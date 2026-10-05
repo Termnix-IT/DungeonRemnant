@@ -69,6 +69,8 @@ func _build_slots(column: VBoxContainer) -> void:
 		var control := HubUI.button(slot_rows, "", select_slot.bind(slot), &"SlotRow")
 		control.custom_minimum_size = Vector2(0, SLOT_HEIGHT)
 		control.toggle_mode = true
+		# Enter on a slot goes on to its candidates.
+		control.gui_input.connect(_slot_accept.bind(control, slot))
 		control.draw.connect(_draw_slot_row.bind(control, slot))
 		slots.append(control)
 		_build_slot(control, slot)
@@ -116,6 +118,7 @@ func _build_candidates(column: VBoxContainer) -> void:
 		scroll_remove_requested.emit(selected_slot), &"TextAction")
 	swap_button = HubUI.button(lesser, "主武器と副武器を入れ替え", func(): swap_requested.emit(), &"TextAction")
 	equip_button = HubUI.primary_action(column, "装備する", _equip)
+	HubUI.accept_to_action(candidate_list, equip_button)
 
 
 func refresh(current: RunCarryover) -> void:
@@ -248,6 +251,15 @@ func select_slot(slot: int) -> void:
 	if not candidate_list.get_selected_items().is_empty():
 		UIMotion.of(candidate_list).select_card()
 	UIMotion.reveal_selection([showcase, comparison])
+
+
+func _slot_accept(event: InputEvent, control: Button, slot: int) -> void:
+	if not event.is_action_pressed("ui_accept") or event.is_echo():
+		return
+	control.accept_event()
+	select_slot(slot)
+	if candidate_list.item_count > 0:
+		candidate_list.grab_focus()
 
 
 func step_slot(direction: int) -> void:

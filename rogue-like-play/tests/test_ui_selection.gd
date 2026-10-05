@@ -20,6 +20,52 @@ func select(list: ItemList, index: int) -> void:
 	list.item_selected.emit(index)
 
 
+func press_enter() -> void:
+	var enter := InputEventKey.new()
+	enter.keycode = KEY_ENTER
+	enter.physical_keycode = KEY_ENTER
+	enter.pressed = true
+	Input.parse_input_event(enter)
+	var release := enter.duplicate() as InputEventKey
+	release.pressed = false
+	Input.parse_input_event(release)
+	for frame in 2:
+		await process_frame
+
+
+# Enter on a chosen row goes to the screen's primary action without acting;
+# on an equipment slot it goes on to the slot's candidates.
+func check_enter_to_action(hub, main) -> void:
+	main.state.gold = 300
+	hub.refresh(main.state)
+	hub.show_page("sell")
+	var shop: HubSell = hub.sell_page
+	shop.set_buying(true)
+	shop.item_list.grab_focus()
+	select(shop.item_list, 0)
+	var gold: int = main.state.gold
+	await press_enter()
+	check(shop.sell_button.has_focus() and main.state.gold == gold, "Enter on a shop row goes to the trade without trading")
+	hub.show_page("equipment")
+	var equipment: HubEquipment = hub.equipment_page
+	equipment.select_slot(Equipment.Slot.ARMOR)
+	equipment.slots[Equipment.Slot.ARMOR].grab_focus()
+	await press_enter()
+	check(equipment.candidate_list.has_focus(), "Enter on a slot goes on to its candidates")
+	var worn: ItemData = main.state.equipment.slots[Equipment.Slot.ARMOR]
+	await press_enter()
+	check(equipment.equip_button.has_focus() and main.state.equipment.slots[Equipment.Slot.ARMOR] == worn, "Enter on a candidate goes to the equip action without equipping")
+	hub.open_warehouse()
+	var warehouse: HubWarehouse = hub.warehouse_page
+	warehouse.inventory_list.grab_focus()
+	select(warehouse.inventory_list, 0)
+	var carried: int = main.state.inventory.entries.size()
+	await press_enter()
+	check(warehouse.move_button.has_focus() and main.state.inventory.entries.size() == carried, "Enter on a stock row goes to the move without moving")
+	hub.show_page("home")
+	main.state.gold = 300
+
+
 func check_alpha(targets: Array[Control], value: float, message: String) -> void:
 	for target in targets:
 		check(is_equal_approx(target.modulate.a, value), message + ": " + target.name)
@@ -84,6 +130,7 @@ func run_tests() -> void:
 	hub.go_back()
 	check_alpha([help, showcase, direction], 1.0, "Closing warehouse resets fades")
 	check(inventory_list.selection_strength == 1.0, "Closing resets accent")
+	await check_enter_to_action(hub, main)
 	check(SaveCodec.encode(main.state) == before, "Selection never trades, equips, or changes persisted data")
 	main.free()
 	await process_frame

@@ -54,6 +54,15 @@ static func primary_action(parent: Node, text: String, action: Callable) -> Butt
 	return button
 
 
+# Enter (A) on a chosen row moves to the screen's primary action, and the
+# next press acts there: choosing never acts by itself (docs/MVP_SPEC.md,
+# 個別画面のUI文法). A double click lands there too.
+static func accept_to_action(list: ItemList, action: Button) -> void:
+	list.item_activated.connect(func(_index: int):
+		if action.is_visible_in_tree() and not action.disabled:
+			action.grab_focus())
+
+
 # A column laid on the hall without a framed box: a dark slab whose right
 # edge melts into the background, like the lobby menu (SlabColumn), or only
 # a soft shade behind the text (ShadeColumn).

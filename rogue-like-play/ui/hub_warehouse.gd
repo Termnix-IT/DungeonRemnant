@@ -57,6 +57,8 @@ func _ready() -> void:
 	var note := HubUI.label(kept, STORAGE_NOTE, &"NoteLabel")
 	note.custom_minimum_size.y = 44
 	note.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	HubUI.accept_to_action(inventory_list, move_button)
+	HubUI.accept_to_action(storage_list, move_button)
 	# Left and right step between the two stocks.
 	inventory_list.gui_input.connect(_cross.bind(inventory_list))
 	storage_list.gui_input.connect(_cross.bind(storage_list))
