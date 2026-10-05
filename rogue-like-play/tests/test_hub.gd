@@ -183,6 +183,9 @@ func run_tests() -> void:
 	# Facts lie on a band, not in a sunken box; Gold reads as a coin and an amount.
 	check(lobby.find_children("*", "PanelContainer", true, false).all(func(box: PanelContainer): return box == lobby.panel), "The lobby panel holds no boxed fields")
 	check(lobby.equipment_label.custom_minimum_size.x > 0.0, "The main weapon's name keeps its width")
+	# No hover popup repeats what is already on screen.
+	check(lobby.buttons.all(func(button: Button): return button.tooltip_text.is_empty()) and lobby.decide_button.tooltip_text.is_empty(), "Menu entries and the decide button have no tooltip")
+	check(lobby.equipment_label.tooltip_text.is_empty() and lobby.description_label.tooltip_text.is_empty(), "Whole texts need no tooltip")
 	check(GoldPurse.amount(0) == "0" and GoldPurse.amount(1280) == "1,280" and GoldPurse.amount(1234567) == "1,234,567" and GoldPurse.amount(999) == "999", "Gold amounts group thousands")
 	var purse_row: HBoxContainer = hub.gold_label.get_parent()
 	check(purse_row.get_children().filter(func(node: Node): return node is Label).size() == 1, "Gold shows no word beside the amount")

@@ -141,7 +141,6 @@ func _build_menu() -> void:
 		button.text = entry[1]
 		button.theme_type_variation = &"LobbyMenuButton"
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.tooltip_text = entry[1]
 		add_child(button)
 		var row := _row_rect(index)
 		button.position = row.position
@@ -219,7 +218,8 @@ func _build_panel() -> void:
 	title_label = HubUI.label(heading, "", &"LobbyTitle")
 	title_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	title_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	# One line: a longer description is cut short, whole in the tooltip.
+	# One line: a longer description is cut short, whole in a tooltip that
+	# appears only then.
 	description_label = HubUI.label(stack, "", &"DescriptionLabel")
 	description_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	description_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -443,7 +443,7 @@ func refresh(state: RunCarryover, stage: StageData) -> void:
 	var font := equipment_label.get_theme_font(&"font")
 	var name_width := font.get_string_size(equipment_label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, equipment_label.get_theme_font_size(&"font_size")).x
 	equipment_label.custom_minimum_size.x = minf(ceilf(name_width) + 2.0, WEAPON_NAME_WIDTH)
-	equipment_label.tooltip_text = equipment_label.text
+	equipment_label.tooltip_text = equipment_label.text if name_width + 2.0 > WEAPON_NAME_WIDTH else ""
 	equipment_label.mouse_filter = Control.MOUSE_FILTER_PASS
 	main_glyph.queue_redraw()
 	carried_label.text = "%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries]
@@ -534,12 +534,14 @@ func _show_entry() -> void:
 		title_label.text = ENTRIES[selected][1]
 		description_label.text = DESCRIPTIONS.get(id, "")
 		_art.texture = ART.get(id)
-	description_label.tooltip_text = description_label.text
+	# Only a line cut short needs its whole text on hover.
+	var line_font := description_label.get_theme_font(&"font")
+	var line_width := line_font.get_string_size(description_label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, description_label.get_theme_font_size(&"font_size")).x
+	description_label.tooltip_text = description_label.text if line_width > PANEL_WIDTH - 60.0 else ""
 	title_icon.kind = ENTRIES[selected][2]
 	title_icon.queue_redraw()
 	decide_button.visible = ACTIONS.has(id)
 	decide_button.text = ACTIONS.get(id, "")
-	decide_button.tooltip_text = decide_button.text
 	# Right from the menu reaches the panel's button.
 	for button in buttons:
 		button.focus_neighbor_right = decide_button.get_path()
