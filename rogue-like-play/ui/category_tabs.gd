@@ -25,7 +25,6 @@ func setup(names: Array[String]) -> void:
 		tab.theme_type_variation = &"CategoryTab"
 		tab.toggle_mode = true
 		tab.button_group = _group
-		tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		tab.pressed.connect(func(): select(index, true))
 		add_child(tab)
 		tabs.append(tab)

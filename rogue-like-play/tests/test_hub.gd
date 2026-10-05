@@ -213,7 +213,7 @@ func run_tests() -> void:
 	# The shop: no framed panels, one stat display, buying and selling at the title's place.
 	var shop: HubSell = hub.sell_page
 	check(shop.mode_tabs.visible and not hub.title_label.visible, "The shop switches buying and selling at the title's place")
-	check(shop.find_children("*", "PanelContainer", true, false).all(func(box: PanelContainer): return box.theme_type_variation in [&"SlabColumn", &"ShadeColumn", &"ShopHeroBand"]), "The shop has no framed panels")
+	check(shop.find_children("*", "PanelContainer", true, false).all(func(box: PanelContainer): return box.theme_type_variation in [&"SlabSolid", &"SlabColumn", &"ShopHeroBand"]), "The shop has no framed panels")
 	shop.set_buying(true)
 	shop.category_tabs.select(2, true)
 	check(shop.rows.all(func(row: Dictionary): return row.item.kind == ItemData.Kind.ARMOR), "The armor tab lists only armor")

@@ -13,7 +13,7 @@ signal sell_requested(from_storage: bool, index: int, amount: int)
 signal buy_requested(to_storage: bool, item_id: StringName, amount: int)
 signal mode_changed
 
-const SHOWCASE_SIZE := 128.0
+const SHOWCASE_SIZE := 192.0
 const CATEGORIES: Array[String] = ["すべて", "武器", "防具", "装飾", "消耗品", "魔法"]
 const CATEGORY_KINDS := [-1, ItemData.Kind.WEAPON, ItemData.Kind.ARMOR, ItemData.Kind.ACCESSORY, ItemData.Kind.CONSUMABLE, ItemData.Kind.SCROLL]
 # The heroine from the knees up: her height in screen pixels, the share of
@@ -62,8 +62,10 @@ func _ready() -> void:
 	columns.theme_type_variation = &"ShopColumns"
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_build_catalog(HubUI.open_column(columns, 1.1, &"SlabColumn"))
-	_build_info(HubUI.open_column(columns, 1.15, &"ShadeColumn"))
+	# The list and the details share one dark slab, melting into the hall
+	# only at its right edge; the background shows above it and round her.
+	_build_catalog(HubUI.open_column(columns, 1.1, &"SlabSolid"))
+	_build_info(HubUI.open_column(columns, 1.15, &"SlabColumn"))
 	_build_hero(columns)
 
 
@@ -96,11 +98,13 @@ func _build_catalog(catalog: VBoxContainer) -> void:
 	source_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	source_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	source_choice = SegmentedChoice.new()
+	source_choice.option_role = &"CategoryTab"
 	_source_row.add_child(source_choice)
 	source_choice.add_item("倉庫")
 	source_choice.add_item("持ち込み")
 	source_choice.item_selected.connect(func(_index: int): refresh(state))
 	item_list = ItemCardList.new()
+	item_list.theme_type_variation = &"OpenCardList"
 	item_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	catalog.add_child(item_list)
 	item_list.item_selected.connect(_select)
@@ -111,9 +115,11 @@ func _build_info(info: VBoxContainer) -> void:
 	info.theme_type_variation = &"DetailStack"
 	heading = HubUI.label(info, "", &"MutedLabel")
 	heading.visible = false
+	# The goods on display: large, on a glow, the name under them.
 	showcase = ItemShowcase.new()
 	showcase.show_effect = false
-	showcase.visual.custom_minimum_size = Vector2.ONE * SHOWCASE_SIZE
+	showcase.stack(SHOWCASE_SIZE)
+	showcase.visual.framed = false
 	info.add_child(showcase)
 	details = ItemDetails.new()
 	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -143,6 +149,7 @@ func _build_info(info: VBoxContainer) -> void:
 	quantity_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	quantity = QuantityStepper.new()
 	quantity_row.add_child(quantity)
+	quantity.use_selector()
 	quantity.value_changed.connect(func(_value: float): _update_quote())
 	total_label = HubUI.label(counter_stack, "", &"PriceLabel")
 	total_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT

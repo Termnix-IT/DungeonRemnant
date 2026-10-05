@@ -47,6 +47,11 @@ var _state: RunCarryover
 var _content: Control
 var _page_host: Control
 var _shell: VBoxContainer
+var _frame: Control
+# How close the header and the footer come to the screen's edges.
+const EDGE_X := 40.0
+const EDGE_TOP := 22.0
+const EDGE_BOTTOM := 16.0
 var _warehouse_focus: Control
 var _ambience: HubAmbience
 var _title_block: HBoxContainer
@@ -81,9 +86,26 @@ func _ready() -> void:
 	_shell = VBoxContainer.new()
 	_content.add_child(_shell)
 	_shell.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# The header and the footer stand near the screen's edges, outside the
+	# page block, in a layer of their own above the lobby; the shell keeps
+	# their room so the pages sit where they did.
+	_frame = Control.new()
+	_frame.name = "Frame"
+	_frame.theme = _content.theme
+	_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_frame)
+	_frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var header_room := Control.new()
+	header_room.custom_minimum_size.y = 86
+	header_room.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_shell.add_child(header_room)
 	var header := HBoxContainer.new()
-	header.custom_minimum_size.y = 86
-	_shell.add_child(header)
+	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_frame.add_child(header)
+	header.anchor_right = 1.0
+	header.offset_left = EDGE_X
+	header.offset_right = -EDGE_X
+	header.offset_top = EDGE_TOP
 	# Header: the screen's name and line on the left, Gold on the right. The
 	# lobby keeps only Gold, and no screen carries the game's logo.
 	_title_block = HBoxContainer.new()
@@ -114,6 +136,9 @@ func _ready() -> void:
 	equipment_page.warehouse_requested.connect(open_warehouse)
 	equipment_page.done_requested.connect(func(): show_page(equipment_return))
 	sell_page = _page(HubSell.new()) as HubSell
+	# The shop's slab runs off the screen's left edge, its list lined up
+	# with the title above it.
+	sell_page.offset_left = EDGE_X - (get_viewport().get_visible_rect().size.x - CONTENT_SIZE.x) * 0.5
 	sell_page.sell_requested.connect(func(source: bool, index: int, amount: int): sell_requested.emit(source, index, amount))
 	sell_page.buy_requested.connect(func(destination: bool, item_id: StringName, amount: int): buy_requested.emit(destination, item_id, amount))
 	sell_page.mode_changed.connect(func():
@@ -138,9 +163,21 @@ func _ready() -> void:
 	purchase_button = tree.upgrade_button
 	upgrade_label = tree.root_label
 	# Footer: the key guide at the bottom left, the same on every screen.
+	var footer_room := Control.new()
+	footer_room.custom_minimum_size.y = 44
+	footer_room.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_shell.add_child(footer_room)
 	var footer := HBoxContainer.new()
 	footer.theme_type_variation = &"KeyGuide"
-	_shell.add_child(footer)
+	footer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_frame.add_child(footer)
+	footer.anchor_top = 1.0
+	footer.anchor_bottom = 1.0
+	footer.anchor_right = 1.0
+	footer.offset_left = EDGE_X
+	footer.offset_right = -EDGE_X
+	footer.offset_top = -EDGE_BOTTOM - 44
+	footer.offset_bottom = -EDGE_BOTTOM
 	key_guide = KeyGuide.new()
 	key_guide.custom_minimum_size.y = 44
 	footer.add_child(key_guide)
@@ -149,12 +186,15 @@ func _ready() -> void:
 	feedback.custom_minimum_size.y = 44
 	feedback.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	save_label = HubUI.label(_shell, "", &"MutedLabel")
+	# Above the lobby, below the warehouse.
+	move_child(_frame, get_child_count() - 1)
 	warehouse_panel.theme = _content.theme
 	warehouse_panel.transfer_requested.connect(func(source: bool, index: int): storage_transfer_requested.emit(source, index))
 	warehouse_panel.closed.connect(_warehouse_closed)
 	warehouse_panel.equipment_requested.connect(func(): show_page("equipment"))
 	move_child(warehouse_panel, get_child_count() - 1)
 	UIMotion.bind_buttons(_content)
+	UIMotion.bind_buttons(_frame)
 	UIMotion.bind_buttons(home_page)
 	UIMotion.bind_buttons(warehouse_panel)
 

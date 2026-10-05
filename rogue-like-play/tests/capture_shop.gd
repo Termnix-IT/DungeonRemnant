@@ -17,12 +17,11 @@ func capture() -> void:
 	await enter(hub, hub.sell_button)
 	await shot("shop_disabled")
 	await click(shop.item_list, Vector2(35, 25))
-	await click(shop.quantity.get_line_edit())
-	shop.quantity.get_line_edit().text = "2"
-	await key(KEY_ENTER)
+	# The quantity is a 〈 n 〉 selector: click its right arrow once.
+	await click(shop.quantity.plus)
 	await shot("shop_sell")
 	await click(shop.sell_button)
-	check(main.state.gold == 310 and shop.rows[0].count == 3, "Mouse and typed quantity sell two grouped armor")
+	check(main.state.gold == 310 and shop.rows[0].count == 3, "Mouse quantity selector sells two grouped armor")
 	await click(shop.item_list, Vector2(35, 25))
 	await click(shop.sell_all_button)
 	check(main.state.gold == 325 and main.state.storage.entries.size() == 1, "Mouse sells remainder of selected group")

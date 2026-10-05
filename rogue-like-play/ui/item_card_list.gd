@@ -1,6 +1,8 @@
 class_name ItemCardList
 extends ItemTooltipList
 
+const OPEN_TIP := 18.0
+
 var selection_strength := 1.0:
 	set(value):
 		selection_strength = value
@@ -15,6 +17,31 @@ var empty_text := "":
 
 func _ready() -> void:
 	item_selected.connect(func(_index: int): UIMotion.of(self).select_card())
+
+
+# Open rows (theme constant open_rows): no card round each row, only a faint
+# rule between them; the chosen row is the lobby menu's warm band, pointed at
+# its right end towards the details, with gold text.
+func _open_rows() -> bool:
+	return get_theme_constant(&"open_rows") > 0
+
+
+func _draw_open_row(rect: Rect2, selected: bool, hovered: bool, last: bool) -> void:
+	var rail := get_theme_color(&"rail", &"HubLobby")
+	if selected:
+		var band := get_theme_color(&"band", &"HubLobby")
+		var tip := rect.end.x
+		var middle := rect.get_center().y
+		var shape := PackedVector2Array([rect.position, Vector2(tip - OPEN_TIP, rect.position.y), Vector2(tip, middle), Vector2(tip - OPEN_TIP, rect.end.y), Vector2(rect.position.x, rect.end.y)])
+		var strength := clampf(selection_strength, 0.0, 1.0)
+		draw_polygon(shape, PackedColorArray([Color(band, band.a * 0.5 * strength), Color(band, band.a * 1.6 * strength), Color(band, band.a * 1.8 * strength), Color(band, band.a * 1.6 * strength), Color(band, band.a * 0.5 * strength)]))
+		draw_polyline_colors(PackedVector2Array([rect.position, Vector2(tip - OPEN_TIP, rect.position.y), Vector2(tip, middle), Vector2(tip - OPEN_TIP, rect.end.y), Vector2(rect.position.x, rect.end.y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.85 * strength), Color(rail, strength), Color(rail, 0.85 * strength), Color(rail, 0.0)]), 1.5, true)
+		return
+	if hovered:
+		draw_rect(rect, get_theme_color(&"open_hover"))
+	if not last:
+		var y := rect.end.y
+		draw_polyline_colors(PackedVector2Array([Vector2(rect.position.x, y), Vector2(rect.get_center().x, y), Vector2(rect.end.x, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.22), Color(rail, 0.0)]), 1.0, true)
 
 
 func draw_selection_accent(rect: Rect2) -> void:
@@ -58,9 +85,14 @@ func _draw() -> void:
 		rect = rect.grow_individual(-2, -2, -2, -get_theme_constant(&"row_gap"))
 		var selected := is_selected(index)
 		var hovered := rect.has_point(get_local_mouse_position())
-		draw_style_box(get_theme_stylebox(&"card_selected" if selected else (&"card_hover" if hovered else &"card")), rect)
-		if selected:
-			draw_selection_accent(rect)
+		if _open_rows():
+			_draw_open_row(rect, selected, hovered, index == item_count - 1)
+			# Keep the text clear of the band's point.
+			rect.size.x -= OPEN_TIP
+		else:
+			draw_style_box(get_theme_stylebox(&"card_selected" if selected else (&"card_hover" if hovered else &"card")), rect)
+			if selected:
+				draw_selection_accent(rect)
 		var price_width := get_theme_constant(&"price_width" if data.price >= 0 else &"quantity_width")
 		var glyph := Rect2(rect.position + Vector2(inset, (rect.size.y - glyph_size) / 2.0), Vector2.ONE * glyph_size)
 		var color := get_theme_color(&"font_color", &"GoldLabel" if is_selected(index) else &"Label")

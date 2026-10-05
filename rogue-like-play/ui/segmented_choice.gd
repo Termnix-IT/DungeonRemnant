@@ -10,6 +10,8 @@ extends HBoxContainer
 signal item_selected(index: int)
 
 var selected := -1
+# The buttons' look; CategoryTab gives underlined text tabs with no boxes.
+var option_role := &"ItemButton"
 var _buttons: Array[Button] = []
 var _ids: Array[int] = []
 var _group := ButtonGroup.new()
@@ -26,7 +28,7 @@ var item_count: int:
 
 func add_item(text: String, id: int = -1) -> void:
 	var index := _buttons.size()
-	var button := HubUI.button(self, text, _press.bind(index), &"ItemButton")
+	var button := HubUI.button(self, text, _press.bind(index), option_role)
 	button.toggle_mode = true
 	button.button_group = _group
 	button.custom_minimum_size.x = 72
