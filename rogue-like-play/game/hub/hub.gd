@@ -348,6 +348,9 @@ func show_page(target: String) -> void:
 	for control in [home_page, equipment_page, sell_page, departure_page, upgrade_page, settings_page]:
 		if control.visible:
 			UIMotion.of(control).enter(0.0, Vector2(side * UIMotion.PAGE_DISTANCE, 0), UIMotion.WINDOW_TIME)
+			# Pages built in the screen grammar bring their parts in one by one.
+			if control.has_method(&"play_entrance"):
+				control.play_entrance()
 
 
 # Routine save notes ("保存済み" and the like) stay out of sight so the hub

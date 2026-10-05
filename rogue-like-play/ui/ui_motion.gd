@@ -27,6 +27,17 @@ const SEQUENCE_STEP_TIME := 0.12
 const COUNT_MIN_TIME := 0.25
 const COUNT_MAX_TIME := 0.6
 const TRAVEL_TIME := 0.38
+# Drawn marks: a selection band or underline slides from the last choice to
+# the next; list rows arrive top first, each a little after the one above.
+const SLIDE_TIME := 0.12
+const ROW_TIME := 0.2
+const ROW_STAGGER := 0.035
+const ROW_DISTANCE := 14.0
+# A stat bar moves to its new length instead of jumping.
+const BLEND_TIME := 0.22
+# The goods on display drift up and down and their glow breathes.
+const IDLE_PERIOD := 3.2
+const IDLE_RISE := 3.0
 const META := &"ui_motion"
 
 var control: Control
@@ -38,6 +49,13 @@ var position_tween: Tween
 var glow_tween: Tween
 var count_tween: Tween
 var flash_tween: Tween
+var mark_tween: Tween
+var rows_tween: Tween
+var blend_tween: Tween
+var _mark_from := Rect2()
+var _mark_to := Rect2()
+var _mark_progress := 1.0
+var _mark_placed := false
 var _base_color := Color.WHITE
 var _base_glow := 0.0
 var _count_text := ""
@@ -198,6 +216,87 @@ func select_card() -> void:
 	control.selection_strength = 0.0
 	selection_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	selection_tween.tween_property(control, "selection_strength", 1.0, SELECT_TIME)
+
+
+# A mark the control draws itself (a selection band, a tab's underline):
+# give the rect where it now belongs, draw the returned one. A new place
+# starts a slide from wherever the mark is shown now; the first place, and
+# any after drop_mark() or hiding, is taken at once.
+func follow_mark(target: Rect2) -> Rect2:
+	if not _mark_placed or not control.is_visible_in_tree():
+		_stop(mark_tween)
+		_mark_to = target
+		_mark_progress = 1.0
+		_mark_placed = true
+	elif target != _mark_to:
+		_mark_from = mark()
+		_mark_to = target
+		_stop(mark_tween)
+		_mark_progress = 0.0
+		mark_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		mark_tween.tween_method(_move_mark, 0.0, 1.0, SLIDE_TIME)
+	return mark()
+
+
+func mark() -> Rect2:
+	if _mark_progress >= 1.0:
+		return _mark_to
+	return Rect2(_mark_from.position.lerp(_mark_to.position, _mark_progress), _mark_from.size.lerp(_mark_to.size, _mark_progress))
+
+
+func has_mark() -> bool:
+	return _mark_placed
+
+
+# The next mark appears where it belongs instead of sliding there.
+func drop_mark() -> void:
+	_stop(mark_tween)
+	_mark_progress = 1.0
+	_mark_placed = false
+
+
+func _move_mark(progress: float) -> void:
+	_mark_progress = progress
+	control.queue_redraw()
+
+
+# Lists that draw their own rows (ItemCardList) bring them in top first:
+# tweens the control's `intro` from 0 to 1 over the rows' cascade.
+func intro_rows(count: int) -> void:
+	if not &"intro" in control or not control.is_visible_in_tree():
+		return
+	_stop(rows_tween)
+	control.intro = 0.0
+	rows_tween = create_tween()
+	rows_tween.tween_property(control, "intro", 1.0, rows_time(count))
+
+
+# How long rows takes to arrive, the last starting ROW_STAGGER after the one above it.
+static func rows_time(count: int) -> float:
+	return ROW_TIME + ROW_STAGGER * maxi(0, count - 1)
+
+
+# A row's arrival, 0 to 1 and eased, at a list's intro progress.
+static func row_arrival(intro: float, row: int, count: int) -> float:
+	if intro >= 1.0:
+		return 1.0
+	var at := (intro * rows_time(count) - ROW_STAGGER * row) / ROW_TIME
+	var t := clampf(at, 0.0, 1.0)
+	return 1.0 - pow(1.0 - t, 3.0)
+
+
+# Controls that draw a value between two states (StatBars) blend from what
+# they show now to their new values: tweens `blend` from 0 to 1.
+func blend_in() -> void:
+	if not &"blend" in control:
+		return
+	_stop(blend_tween)
+	if not control.is_visible_in_tree():
+		control.blend = 1.0
+		return
+	control.blend = 0.0
+	blend_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	blend_tween.tween_property(control, "blend", 1.0, BLEND_TIME)
 
 
 # Display layers only: the Control must not be positioned by a Container.
@@ -432,6 +531,13 @@ func reset() -> void:
 	if count_tween != null and count_tween.is_valid():
 		count_tween.kill()
 		(control as Label).text = _count_text
+	drop_mark()
+	if rows_tween != null:
+		rows_tween.kill()
+		control.intro = 1.0
+	if blend_tween != null:
+		blend_tween.kill()
+		control.blend = 1.0
 	_down = false
 	_press_animating = false
 	_pulsing = false

@@ -20,6 +20,7 @@ var candidates: Array[Dictionary] = []
 var slots: Array[Button] = []
 var slot_names: Array[Label] = []
 var slot_glyphs: Array[Control] = []
+var slot_rows: VBoxContainer
 var candidate_heading: Label
 var candidate_list: ItemCardList
 var carried_label: Label
@@ -30,6 +31,7 @@ var swap_button: Button
 var scroll_remove_button: Button
 var showcase: ItemShowcase
 var hero_stats: HeroStats
+var _candidates_column: VBoxContainer
 # The candidate of the last equip request, for the success moment after saving.
 var equipped_item: ItemData
 const SLOT_CAPTIONS := Equipment.SLOT_NAMES
@@ -47,7 +49,8 @@ func _ready() -> void:
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_build_slots(HubUI.open_column(columns, 0.72, &"SlabSolid"))
-	_build_candidates(HubUI.open_column(columns, 1.15, &"SlabColumn"))
+	_candidates_column = HubUI.open_column(columns, 1.15, &"SlabColumn")
+	_build_candidates(_candidates_column)
 	hero_stats = HeroStats.new()
 	hero_stats.size_flags_stretch_ratio = 0.95
 	columns.add_child(hero_stats)
@@ -56,11 +59,14 @@ func _ready() -> void:
 func _build_slots(column: VBoxContainer) -> void:
 	column.theme_type_variation = &"DetailStack"
 	HubUI.label(column, "装備枠", &"NoteLabel")
-	var rows := VBoxContainer.new()
-	rows.theme_type_variation = &"SlotRows"
-	column.add_child(rows)
+	slot_rows = VBoxContainer.new()
+	slot_rows.theme_type_variation = &"SlotRows"
+	column.add_child(slot_rows)
+	# The band is the rows' own drawing under the slots, so it can slide.
+	UIMotion.of(slot_rows)
+	slot_rows.draw.connect(_draw_slot_band)
 	for slot in 5:
-		var control := HubUI.button(rows, "", select_slot.bind(slot), &"SlotRow")
+		var control := HubUI.button(slot_rows, "", select_slot.bind(slot), &"SlotRow")
 		control.custom_minimum_size = Vector2(0, SLOT_HEIGHT)
 		control.toggle_mode = true
 		control.draw.connect(_draw_slot_row.bind(control, slot))
@@ -90,6 +96,7 @@ func _build_candidates(column: VBoxContainer) -> void:
 	showcase = ItemShowcase.new()
 	showcase.show_effect = false
 	showcase.visual.framed = false
+	showcase.visual.idle = true
 	showcase.visual.custom_minimum_size = Vector2.ONE * SHOWCASE_SIZE
 	column.add_child(showcase)
 	comparison = ItemDetails.new()
@@ -122,6 +129,7 @@ func refresh(current: RunCarryover) -> void:
 		slot_names[index].text = item.label() if item != null else "未装備"
 		slot_glyphs[index].queue_redraw()
 		slots[index].queue_redraw()
+	slot_rows.queue_redraw()
 	carried_label.text = "持ち込み　%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries]
 	candidate_heading.text = "%sの候補" % SLOT_CAPTIONS[selected_slot]
 	_fill_candidates()
@@ -160,23 +168,42 @@ func _build_slot(button: Button, slot: int) -> void:
 	button.toggled.connect(func(_on: bool): glyph.queue_redraw())
 
 
-# The chosen slot is the lobby menu's warm band pointed at the candidates;
-# the others are parted by faint rules.
+# The slots other than the chosen one are parted by faint rules.
 func _draw_slot_row(button: Button, slot: int) -> void:
 	var rect := Rect2(Vector2.ZERO, button.size)
 	var rail := button.get_theme_color(&"rail", &"HubLobby")
-	if button.button_pressed:
-		var band := button.get_theme_color(&"band", &"HubLobby")
-		var tip := rect.end.x
-		var middle := rect.get_center().y
-		var top := rect.position.y + 4
-		var bottom := rect.end.y - 4
-		var outline := PackedVector2Array([Vector2(0, top), Vector2(tip - BAND_TIP, top), Vector2(tip, middle), Vector2(tip - BAND_TIP, bottom), Vector2(0, bottom)])
-		button.draw_polygon(outline, PackedColorArray([Color(band, band.a * 0.5), Color(band, band.a * 1.6), Color(band, band.a * 1.8), Color(band, band.a * 1.6), Color(band, band.a * 0.5)]))
-		button.draw_polyline_colors(outline, PackedColorArray([Color(rail, 0.0), Color(rail, 0.85), rail, Color(rail, 0.85), Color(rail, 0.0)]), 1.5, true)
-	elif slot < SLOT_CAPTIONS.size() - 1:
+	if not button.button_pressed and slot < SLOT_CAPTIONS.size() - 1:
 		var y := rect.end.y - 0.5
 		button.draw_polyline_colors(PackedVector2Array([Vector2(0, y), Vector2(rect.size.x * 0.5, y), Vector2(rect.size.x, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.22), Color(rail, 0.0)]), 1.0, true)
+
+
+# The chosen slot is the lobby menu's warm band pointed at the candidates,
+# sliding from the slot chosen before (UIMotion.follow_mark).
+func _draw_slot_band() -> void:
+	var chosen := slots[selected_slot]
+	var target := Rect2(chosen.position + Vector2(0, 4), chosen.size - Vector2(0, 8))
+	var rect := UIMotion.of(slot_rows).follow_mark(target)
+	var rail := slot_rows.get_theme_color(&"rail", &"HubLobby")
+	var band := slot_rows.get_theme_color(&"band", &"HubLobby")
+	# It arrives with its slot when the page opens.
+	var alpha := chosen.modulate.a
+	var tip := rect.end.x
+	var middle := rect.get_center().y
+	var outline := PackedVector2Array([rect.position, Vector2(tip - BAND_TIP, rect.position.y), Vector2(tip, middle), Vector2(tip - BAND_TIP, rect.end.y), Vector2(rect.position.x, rect.end.y)])
+	slot_rows.draw_polygon(outline, PackedColorArray([Color(band, band.a * 0.5 * alpha), Color(band, band.a * 1.6 * alpha), Color(band, band.a * 1.8 * alpha), Color(band, band.a * 1.6 * alpha), Color(band, band.a * 0.5 * alpha)]))
+	slot_rows.draw_polyline_colors(outline, PackedColorArray([Color(rail, 0.0), Color(rail, 0.85 * alpha), Color(rail, alpha), Color(rail, 0.85 * alpha), Color(rail, 0.0)]), 1.5, true)
+
+
+# Opening the page: the slots arrive top first, the candidates a beat later,
+# the heroine last from the screen's right edge.
+func play_entrance() -> void:
+	for index in slots.size():
+		UIMotion.of(slots[index]).appear(UIMotion.ROW_STAGGER * index, UIMotion.ROW_TIME)
+	# The band reads its slot's fade, so the rows redraw while they arrive.
+	slot_rows.create_tween().tween_method(func(_at: float): slot_rows.queue_redraw(), 0.0, 1.0, UIMotion.rows_time(slots.size()))
+	candidate_list.play_intro()
+	UIMotion.of(_candidates_column).appear(UIMotion.STAGGER_TIME)
+	hero_stats.play_entrance(UIMotion.STAGGER_TIME * 2)
 
 
 func _draw_slot_glyph(slot: int, glyph: Control) -> void:
@@ -216,6 +243,8 @@ func select_slot(slot: int) -> void:
 	var focused := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
 	if focused is Button and slots.has(focused):
 		slots[slot].grab_focus()
+	# Another slot's candidates: their rows arrive anew.
+	candidate_list.play_intro()
 	if not candidate_list.get_selected_items().is_empty():
 		UIMotion.of(candidate_list).select_card()
 	UIMotion.reveal_selection([showcase, comparison])

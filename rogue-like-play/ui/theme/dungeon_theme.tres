@@ -594,15 +594,12 @@ content_margin_top = 8.0
 content_margin_right = 6.0
 content_margin_bottom = 8.0
 
-[sub_resource type="StyleBoxFlat" id="TabChosen"]
+[sub_resource type="StyleBoxEmpty" id="TabChosen"]
 resource_name = "TabChosen"
 content_margin_left = 6.0
 content_margin_top = 8.0
 content_margin_right = 6.0
 content_margin_bottom = 8.0
-bg_color = Color(0, 0, 0, 0)
-border_width_bottom = 2
-border_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
 
 [sub_resource type="StyleBoxFlat" id="TabHover"]
 resource_name = "TabHover"
@@ -1157,6 +1154,8 @@ CategoryTab/colors/font_pressed_color = Color(0.96, 0.85, 0.6, 1)
 CategoryTab/colors/font_hover_pressed_color = Color(0.96, 0.85, 0.6, 1)
 CategoryTab/colors/font_focus_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
 CategoryTab/colors/font_disabled_color = Color(0.36, 0.35, 0.33, 1)
+CategoryTab/colors/underline = Color(0.8392157, 0.7176471, 0.48235294, 1)
+CategoryTab/constants/underline_width = 2
 CategoryTab/font_sizes/font_size = 17
 CategoryTab/styles/normal = SubResource("TabRest")
 CategoryTab/styles/hover = SubResource("TabHover")

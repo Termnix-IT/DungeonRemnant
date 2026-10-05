@@ -9,6 +9,14 @@ var selection_strength := 1.0:
 		queue_redraw()
 
 
+# 0 to 1 while the rows arrive (UIMotion.intro_rows); 1 when settled.
+var intro := 1.0:
+	set(value):
+		intro = value
+		queue_redraw()
+# The arriving row being drawn: its fade, shared by every colour it uses.
+var _row_alpha := 1.0
+
 # Said in the middle of an empty list instead of leaving it blank.
 var empty_text := "":
 	set(value):
@@ -16,7 +24,36 @@ var empty_text := "":
 		queue_redraw()
 
 func _ready() -> void:
-	item_selected.connect(func(_index: int): UIMotion.of(self).select_card())
+	# Made here, not first in _draw, where the tree must not change.
+	UIMotion.of(self)
+	item_selected.connect(_on_selected)
+
+
+func _on_selected(_index: int) -> void:
+	# An open row's band already on show slides to the new row; a first
+	# selection fades in where it lands.
+	if not (_open_rows() and UIMotion.of(self).has_mark()):
+		UIMotion.of(self).select_card()
+
+
+# The rows arrive top first, from the left. Call where the list's content
+# changes for the player (a page opening, a new filter), not on refresh.
+func play_intro() -> void:
+	UIMotion.of(self).intro_rows(_visible_rows())
+
+
+func _visible_rows() -> int:
+	if item_count == 0:
+		return 0
+	var height := get_item_rect(0).size.y
+	return mini(item_count, ceili(size.y / maxf(height, 1.0)))
+
+
+# The first row in view, which arrives first.
+func _first_row() -> int:
+	if item_count == 0:
+		return 0
+	return floori(get_v_scroll_bar().value / maxf(get_item_rect(0).size.y, 1.0))
 
 
 # Open rows (theme constant open_rows): no card round each row, only a faint
@@ -27,21 +64,30 @@ func _open_rows() -> bool:
 
 
 func _draw_open_row(rect: Rect2, selected: bool, hovered: bool, last: bool) -> void:
-	var rail := get_theme_color(&"rail", &"HubLobby")
+	# The chosen row's band is drawn on its own, where it slides.
 	if selected:
-		var band := get_theme_color(&"band", &"HubLobby")
-		var tip := rect.end.x
-		var middle := rect.get_center().y
-		var shape := PackedVector2Array([rect.position, Vector2(tip - OPEN_TIP, rect.position.y), Vector2(tip, middle), Vector2(tip - OPEN_TIP, rect.end.y), Vector2(rect.position.x, rect.end.y)])
-		var strength := clampf(selection_strength, 0.0, 1.0)
-		draw_polygon(shape, PackedColorArray([Color(band, band.a * 0.5 * strength), Color(band, band.a * 1.6 * strength), Color(band, band.a * 1.8 * strength), Color(band, band.a * 1.6 * strength), Color(band, band.a * 0.5 * strength)]))
-		draw_polyline_colors(PackedVector2Array([rect.position, Vector2(tip - OPEN_TIP, rect.position.y), Vector2(tip, middle), Vector2(tip - OPEN_TIP, rect.end.y), Vector2(rect.position.x, rect.end.y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.85 * strength), Color(rail, strength), Color(rail, 0.85 * strength), Color(rail, 0.0)]), 1.5, true)
 		return
+	var rail := get_theme_color(&"rail", &"HubLobby")
 	if hovered:
-		draw_rect(rect, get_theme_color(&"open_hover"))
+		draw_rect(rect, _faded(get_theme_color(&"open_hover")))
 	if not last:
 		var y := rect.end.y
-		draw_polyline_colors(PackedVector2Array([Vector2(rect.position.x, y), Vector2(rect.get_center().x, y), Vector2(rect.end.x, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.22), Color(rail, 0.0)]), 1.0, true)
+		draw_polyline_colors(PackedVector2Array([Vector2(rect.position.x, y), Vector2(rect.get_center().x, y), Vector2(rect.end.x, y)]), PackedColorArray([Color(rail, 0.0), _faded(Color(rail, 0.22)), Color(rail, 0.0)]), 1.0, true)
+
+
+# The warm band, pointed at its right end towards the details.
+func _draw_band(rect: Rect2, strength: float) -> void:
+	var rail := get_theme_color(&"rail", &"HubLobby")
+	var band := get_theme_color(&"band", &"HubLobby")
+	var tip := rect.end.x
+	var middle := rect.get_center().y
+	var outline := PackedVector2Array([rect.position, Vector2(tip - OPEN_TIP, rect.position.y), Vector2(tip, middle), Vector2(tip - OPEN_TIP, rect.end.y), Vector2(rect.position.x, rect.end.y)])
+	draw_polygon(outline, PackedColorArray([Color(band, band.a * 0.5 * strength), Color(band, band.a * 1.6 * strength), Color(band, band.a * 1.8 * strength), Color(band, band.a * 1.6 * strength), Color(band, band.a * 0.5 * strength)]))
+	draw_polyline_colors(outline, PackedColorArray([Color(rail, 0.0), Color(rail, 0.85 * strength), Color(rail, strength), Color(rail, 0.85 * strength), Color(rail, 0.0)]), 1.5, true)
+
+
+func _faded(color: Color) -> Color:
+	return Color(color, color.a * _row_alpha)
 
 
 func draw_selection_accent(rect: Rect2) -> void:
@@ -72,12 +118,27 @@ func _draw() -> void:
 	var inset := get_theme_constant(&"card_inset")
 	var glyph_size := get_theme_constant(&"glyph_size")
 	var gap := get_theme_constant(&"card_gap")
+	var motion := UIMotion.of(self)
+	var chosen := get_selected_items()
+	if _open_rows() and not chosen.is_empty() and get_item_metadata(chosen[0]) is Dictionary:
+		# The band lives in the list's content, so it scrolls with the rows,
+		# and it arrives with its row.
+		var band := motion.follow_mark(get_item_rect(chosen[0]).grow_individual(-2, -2, -2, -get_theme_constant(&"row_gap")))
+		band.position.y -= get_v_scroll_bar().value
+		var arrival := UIMotion.row_arrival(intro, chosen[0] - _first_row(), _visible_rows())
+		draw_set_transform(Vector2(-UIMotion.ROW_DISTANCE * (1.0 - arrival), 0))
+		_draw_band(band, clampf(selection_strength, 0.0, 1.0) * arrival)
+		draw_set_transform(Vector2.ZERO)
+	elif _open_rows():
+		motion.drop_mark()
 	for index in item_count:
 		var rect := card_rect(index)
 		if rect.size.x <= 0 or rect.size.y <= 0 or size.x <= 0 or size.y <= 0:
 			continue
 		if not rect.intersects(Rect2(Vector2.ZERO, size)):
 			continue
+		_row_alpha = UIMotion.row_arrival(intro, index - _first_row(), _visible_rows())
+		draw_set_transform(Vector2(-UIMotion.ROW_DISTANCE * (1.0 - _row_alpha), 0))
 		var data: Variant = get_item_metadata(index)
 		if not data is Dictionary:
 			_line(get_item_text(index), rect.position + Vector2(inset, gap), rect.size.x - inset * 2, &"MutedLabel")
@@ -96,7 +157,7 @@ func _draw() -> void:
 		var price_width := get_theme_constant(&"price_width" if data.price >= 0 else &"quantity_width")
 		var glyph := Rect2(rect.position + Vector2(inset, (rect.size.y - glyph_size) / 2.0), Vector2.ONE * glyph_size)
 		var color := get_theme_color(&"font_color", &"GoldLabel" if is_selected(index) else &"Label")
-		ItemGlyph.paint(self, glyph, data.item, color)
+		ItemGlyph.paint(self, glyph, data.item, _faded(color))
 		var text_x := glyph.end.x + gap
 		var price_x := rect.end.x - inset - price_width
 		var text_width := maxf(0, price_x - gap - text_x)
@@ -108,6 +169,8 @@ func _draw() -> void:
 		# selection and the money that the choice now spends.
 		_line(UIFormat.gold(data.price) if data.price >= 0 else "×%d" % data.count, Vector2(price_x, top), price_width, &"GoldLabel", HORIZONTAL_ALIGNMENT_RIGHT, &"GoldLabel" if selected else &"Label")
 		_line("所持 ×%d" % data.count if data.price >= 0 else data.get("context", ""), Vector2(price_x, second), price_width, &"MutedLabel", HORIZONTAL_ALIGNMENT_RIGHT)
+	_row_alpha = 1.0
+	draw_set_transform(Vector2.ZERO)
 	if item_count == 0 and not empty_text.is_empty():
 		_line(empty_text, Vector2(0, size.y * 0.5 - 12), size.x, &"MutedLabel", HORIZONTAL_ALIGNMENT_CENTER)
 	if has_focus():
@@ -125,4 +188,4 @@ func _line(value: String, at: Vector2, width: float, role: StringName, alignment
 	line.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	if color_role.is_empty():
 		color_role = role if has_theme_color(&"font_color", role) else &"Label"
-	line.draw(get_canvas_item(), at, get_theme_color(&"font_color", color_role))
+	line.draw(get_canvas_item(), at, _faded(get_theme_color(&"font_color", color_role)))

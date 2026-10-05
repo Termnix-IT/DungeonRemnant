@@ -144,7 +144,8 @@ func capture() -> void:
 		await frame_shot("upgrade_%d" % resolution.y)
 		await settle()
 	hub.show_page("equipment")
-	await create_timer(0.4).timeout
+	# The page's entrance ends with the heroine's stats arriving.
+	await create_timer(UIMotion.STAGGER_TIME * 3 + UIMotion.ENTER_TIME + 0.2).timeout
 	check(get_processed_tweens().is_empty(), "Stress capture leaves no tween running")
 	root.size = Vector2i(1280, 720)
 	await key(KEY_ESCAPE)

@@ -46,6 +46,8 @@ var traded_item: ItemData
 var _source_row: HBoxContainer
 var _place_row: HBoxContainer
 var hero_stats: HeroStats
+var _catalog: VBoxContainer
+var _info: VBoxContainer
 
 
 func _ready() -> void:
@@ -56,8 +58,10 @@ func _ready() -> void:
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	# The list and the details share one dark slab, melting into the hall
 	# only at its right edge; the background shows above it and round her.
-	_build_catalog(HubUI.open_column(columns, 1.1, &"SlabSolid"))
-	_build_info(HubUI.open_column(columns, 1.15, &"SlabColumn"))
+	_catalog = HubUI.open_column(columns, 1.1, &"SlabSolid")
+	_build_catalog(_catalog)
+	_info = HubUI.open_column(columns, 1.15, &"SlabColumn")
+	_build_info(_info)
 	# Unframed, like the lobby: the heroine and what the goods do to her.
 	hero_stats = HeroStats.new()
 	hero_stats.size_flags_stretch_ratio = 0.95
@@ -71,6 +75,7 @@ func _ready() -> void:
 func _build_mode_tabs() -> void:
 	mode_tabs = HBoxContainer.new()
 	mode_tabs.theme_type_variation = &"ModeTabs"
+	TabUnderline.attach(mode_tabs)
 	var group := ButtonGroup.new()
 	buy_tab = HubUI.button(mode_tabs, "購入", set_buying.bind(true), &"ModeTab")
 	sell_tab = HubUI.button(mode_tabs, "売却", set_buying.bind(false), &"ModeTab")
@@ -85,7 +90,7 @@ func _build_catalog(catalog: VBoxContainer) -> void:
 	category_tabs = CategoryTabs.new()
 	catalog.add_child(category_tabs)
 	category_tabs.setup(CATEGORIES)
-	category_tabs.changed.connect(func(_index: int): refresh(state))
+	category_tabs.changed.connect(func(_index: int): _show_stock())
 	# Selling chooses which stock to show, so the choice stands by the list;
 	# buying chooses where the goods go, so it stands by the counter.
 	_source_row = HBoxContainer.new()
@@ -100,7 +105,7 @@ func _build_catalog(catalog: VBoxContainer) -> void:
 	_source_row.add_child(source_choice)
 	source_choice.add_item("倉庫")
 	source_choice.add_item("持ち込み")
-	source_choice.item_selected.connect(func(_index: int): refresh(state))
+	source_choice.item_selected.connect(func(_index: int): _show_stock())
 	item_list = ItemCardList.new()
 	item_list.theme_type_variation = &"OpenCardList"
 	item_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -118,6 +123,7 @@ func _build_info(info: VBoxContainer) -> void:
 	showcase.show_effect = false
 	showcase.stack(SHOWCASE_SIZE)
 	showcase.visual.framed = false
+	showcase.visual.idle = true
 	info.add_child(showcase)
 	details = ItemDetails.new()
 	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -162,8 +168,24 @@ func set_buying(value: bool) -> void:
 	buying = value
 	buy_tab.set_pressed_no_signal(buying)
 	sell_tab.set_pressed_no_signal(not buying)
-	refresh(state)
+	_show_stock()
 	mode_changed.emit()
+
+
+# Another stock for the player (buying or selling, a category, a source):
+# the list's rows arrive anew.
+func _show_stock() -> void:
+	refresh(state)
+	item_list.play_intro()
+
+
+# Opening the page: the list's rows arrive top first, the counter a beat
+# later, the heroine last from the screen's right edge.
+func play_entrance() -> void:
+	item_list.play_intro()
+	UIMotion.of(_catalog).appear(0.0, UIMotion.WINDOW_TIME)
+	UIMotion.of(_info).appear(UIMotion.STAGGER_TIME)
+	hero_stats.play_entrance(UIMotion.STAGGER_TIME * 2)
 
 
 func refresh(current: RunCarryover) -> void:

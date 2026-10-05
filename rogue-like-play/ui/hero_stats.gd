@@ -19,6 +19,7 @@ var hero: LobbyHero
 var specs: StatBars
 var swap_label: Label
 var _frame: Control
+var _band: PanelContainer
 
 
 func _init() -> void:
@@ -36,16 +37,16 @@ func _ready() -> void:
 	hero.modulate = get_theme_color(&"hero_tint", &"HubLobby")
 	_frame.add_child(hero)
 	resized.connect(_place)
-	var band := PanelContainer.new()
-	band.theme_type_variation = &"ShopHeroBand"
-	add_child(band)
-	band.anchor_right = 1.0
-	band.anchor_top = 1.0
-	band.anchor_bottom = 1.0
-	band.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_band = PanelContainer.new()
+	_band.theme_type_variation = &"ShopHeroBand"
+	add_child(_band)
+	_band.anchor_right = 1.0
+	_band.anchor_top = 1.0
+	_band.anchor_bottom = 1.0
+	_band.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	var stack := VBoxContainer.new()
 	stack.theme_type_variation = &"CompactStack"
-	band.add_child(stack)
+	_band.add_child(stack)
 	HubUI.label(stack, "次の冒険の能力", &"NoteLabel")
 	swap_label = HubUI.label(stack, "", &"NoteLabel")
 	specs = StatBars.new()
@@ -61,6 +62,13 @@ func _place() -> void:
 	# Knees on the page's foot, her face over the middle of the column.
 	hero.position = Vector2(size.x * 0.5 - width * HERO_FACE_X, size.y - HERO_HEIGHT * HERO_KNEES)
 	hero.pivot_offset = Vector2(width * 0.5, HERO_HEIGHT)
+
+
+# Opening a page: she steps in from the screen's right edge after delay,
+# her stats a beat later.
+func play_entrance(delay: float) -> void:
+	UIMotion.of(_frame).enter(delay, Vector2(UIMotion.ENTER_DISTANCE * 2, 0), UIMotion.ENTER_TIME)
+	UIMotion.of(_band).appear(delay + UIMotion.STAGGER_TIME)
 
 
 # Her stats as they are, or before and after a change; swap names the slot

@@ -21,6 +21,12 @@ func _init() -> void:
 	theme_type_variation = &"CompactRow"
 
 
+func _ready() -> void:
+	# Text tabs underline the chosen option, sliding between them.
+	if option_role == &"CategoryTab":
+		TabUnderline.attach(self)
+
+
 var item_count: int:
 	get:
 		return _buttons.size()

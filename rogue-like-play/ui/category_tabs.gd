@@ -3,7 +3,8 @@ extends HBoxContainer
 
 # A row of text tabs that filter a list, with the keys that step through
 # them shown at either end (Q / E, LB / RB on a gamepad). The chosen tab is
-# underlined in gold; the others are quiet text with no box round them.
+# underlined in gold (TabUnderline, sliding between tabs); the others are
+# quiet text with no box round them.
 
 signal changed(index: int)
 
@@ -15,6 +16,7 @@ var _caps: Array[Label] = []
 
 func _init() -> void:
 	theme_type_variation = &"CategoryTabs"
+	TabUnderline.attach(self)
 
 
 func setup(names: Array[String]) -> void:

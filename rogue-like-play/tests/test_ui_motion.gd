@@ -21,6 +21,54 @@ func settle(seconds: float = 0.35) -> void:
 	await process_frame
 
 
+# The everyday motion of the screens in the grammar: marks slide, rows
+# arrive, bars move, the goods on display drift. None of it holds input.
+func check_screen_motion(hub) -> void:
+	var host := Control.new()
+	hub.add_child(host)
+	var mark := UIMotion.of(host)
+	var first := Rect2(0, 0, 100, 40)
+	var second := Rect2(0, 80, 100, 40)
+	check(mark.follow_mark(first) == first, "A first mark is placed at once")
+	check(mark.follow_mark(second) == first, "A new place starts from the shown mark")
+	await create_timer(UIMotion.SLIDE_TIME * 0.5).timeout
+	var halfway := mark.mark()
+	check(halfway.position.y > first.position.y and halfway.position.y < second.position.y, "The mark slides between places")
+	await settle(UIMotion.SLIDE_TIME)
+	check(mark.mark() == second, "The mark settles on its place")
+	host.hide()
+	host.show()
+	check(not mark.has_mark() and mark.follow_mark(first) == first, "Hiding drops the mark so it does not slide in from a stale place")
+	host.free()
+	check(UIMotion.row_arrival(0.0, 0, 6) == 0.0 and UIMotion.row_arrival(1.0, 5, 6) == 1.0, "Rows arrive from nothing to settled")
+	check(UIMotion.row_arrival(0.3, 0, 6) > UIMotion.row_arrival(0.3, 3, 6), "Upper rows arrive first")
+	hub.show_page("sell")
+	var shop: HubSell = hub.sell_page
+	check(shop.item_list.intro < 1.0 and shop.hero_stats._frame.modulate.a < 1.0, "Opening the shop brings rows and the heroine in")
+	check(shop.item_list.focus_mode != Control.FOCUS_NONE and shop.item_list.mouse_filter == Control.MOUSE_FILTER_STOP, "Arriving rows still take input")
+	await settle(UIMotion.rows_time(10) + UIMotion.ENTER_TIME + UIMotion.STAGGER_TIME * 3)
+	check(is_equal_approx(shop.item_list.intro, 1.0) and is_equal_approx(shop.hero_stats._frame.modulate.a, 1.0), "The entrance settles")
+	shop.step_category(1)
+	check(shop.item_list.intro < 1.0, "Another category brings its rows in")
+	hub.show_page("home")
+	check(is_equal_approx(shop.item_list.intro, 1.0), "Leaving resets arriving rows")
+	var bars := StatBars.new()
+	hub.add_child(bars)
+	bars.show_rows([["攻撃力", 4, 4, 10]])
+	await process_frame
+	bars.show_rows([["攻撃力", 4, 8, 10]])
+	check(bars.blend == 0.0 and bars._shown()[0][1] < bars._to[0][1], "A bar starts its move from what it showed")
+	await settle(UIMotion.BLEND_TIME)
+	check(bars.blend == 1.0 and is_equal_approx(bars._shown()[0][1], bars._to[0][1]), "A bar settles on the new value")
+	bars.free()
+	var visual: ItemVisual = hub.equipment_page.showcase.visual
+	check(visual.idle and not visual.is_processing(), "The goods on display rest while their page is hidden")
+	hub.show_page("equipment")
+	await process_frame
+	check(visual.is_processing() == (visual.item != null), "The goods on display drift only while shown")
+	hub.show_page("home")
+
+
 func near_scale(control: Control, value: float) -> bool:
 	return control.scale.distance_to(Vector2.ONE * value) < 0.002
 
@@ -157,6 +205,7 @@ func run_tests() -> void:
 	await settle(0.08)
 	check(near_scale(tree.root_button, 1.0) and near_scale(tree.nodes[&"mana"], 1.0) and near_scale(tree.current_value, 1.0), "Failed saves cannot pulse upgrades")
 	main.saving_enabled = false
+	await check_screen_motion(hub)
 	for index in 20:
 		hub.show_page("sell")
 		hub.show_page("equipment")
@@ -164,6 +213,9 @@ func run_tests() -> void:
 	await settle()
 	for page: Control in [hub.home_page, hub.sell_page, hub.equipment_page]:
 		check(is_equal_approx(page.modulate.a, 1.0) and near_scale(page, 1.0), "Rapid navigation restores page alpha and scale")
+	for part: Control in [hub.sell_page._catalog, hub.sell_page._info, hub.sell_page.hero_stats._frame, hub.equipment_page._candidates_column] + hub.equipment_page.slots:
+		check(is_equal_approx(part.modulate.a, 1.0), "Rapid navigation settles every arriving part")
+	check(hub.sell_page.hero_stats._frame.position == Vector2.ZERO, "The heroine settles where she stands")
 	check(not motion.is_processing(), "Helper has no idle per-frame polling")
 	# The hall light fades between lobby entries after a page change.
 	await settle(HubAmbience.FOCUS_TIME * 1.5 + 0.05)
