@@ -95,6 +95,7 @@ func check_stages(hub, main) -> void:
 			locked_index = index
 			check(node.hint.contains("踏破で解放"), "Locked stage explains how to open it")
 	check(locked_index >= 0, "A locked stage is on the map")
+	check(page.stage_nodes[locked_index].size.x < page.stage_nodes[0].size.x, "A locked stage stands smaller than an open one")
 	var descriptions := {}
 	for node: StageMapNode in page.stage_nodes:
 		var stage := node.stage
@@ -117,6 +118,12 @@ func check_stages(hub, main) -> void:
 	check(page.selected_stage == page.stages[1] and page.stage_nodes[1].has_focus(), "Right moves to the next stage on the map and chooses it")
 	page._select_stage(0)
 	check(page.stage_details.get_parsed_text().contains("守護者"), "Stage details list guardians by floor")
+	var ruins: StageData = page.stages[0]
+	check("|".join(page.guardian_lines(ruins)) == "守護者　0 / 5 撃破|次　10F ？？？", "Unknown guardians fold into a count and the next floor")
+	main.state.record_boss(ruins.id, 10, false)
+	check("|".join(page.guardian_lines(ruins)) == "守護者　1 / 5 撃破|10F %s|次　20F ？？？" % ruins.bosses[0].display_name, "A fallen guardian is named; the next stays unknown")
+	main.state.defeated_bosses.erase(String(ruins.id))
+	check(page.stage_art.texture == ruins.illustration, "The right column shows the chosen stage's painting")
 	page.next_button.pressed.emit()
 	await process_frame
 	check(hub.page == "confirm", "The action on an open stage goes to the sortie check")

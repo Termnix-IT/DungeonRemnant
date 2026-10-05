@@ -5,8 +5,10 @@ extends Control
 # Stage selection is a map on a slab from the screen's left edge: each stage
 # a diorama (its dungeon on an oval island) set off the straight line, the
 # second higher than the first, joined by a dotted road that is lit as far
-# as the stages are open. The right column describes the chosen stage and
-# holds the one primary action.
+# as the stages are open; a stage not yet open stands smaller and dark, so
+# the eye goes to the ones that can be played. The right column shows the
+# chosen stage's painting (what lies inside, where the map shows it from
+# outside), describes it and holds the one primary action.
 # The sortie check shows what she takes (equipment and carried goods) on the
 # left, the chosen stage and its start floor with the one action in the
 # middle, and the heroine with her stats for the run on the right.
@@ -20,6 +22,9 @@ signal departure_requested
 const MAP_ROWS := [0.62, 0.3, 0.58, 0.34]
 const ROAD_DOT_GAP := 16.0
 const BANNER_SIZE := 220.0
+# A stage not yet open, against an open one.
+const LOCKED_SCALE := 0.74
+const EDGE_FADE := preload("res://ui/edge_fade.gdshader")
 
 var stages: Array[StageData] = []
 var state: RunCarryover
@@ -31,6 +36,7 @@ var stage_nodes: Array[StageMapNode] = []
 var stage_details: ItemDetails
 var stage_title: Label
 var stage_facts: Label
+var stage_art: TextureRect
 var equipment_rows: HudEquipment
 var stage_banner: TextureRect
 var banner_title: Label
@@ -82,6 +88,16 @@ func _build_stage_detail(column: VBoxContainer) -> void:
 	stage_facts.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	HintMark.make(facts_row, "10階ごとに中ボス、50階に主がいる。中ボスを倒すと脱出口から帰れる。", HubSettings.TOPIC_RUN)
 	HubUI.rule(column)
+	# The painting melts into the slab instead of reading as a framed picture.
+	stage_art = TextureRect.new()
+	stage_art.material = ShaderMaterial.new()
+	(stage_art.material as ShaderMaterial).shader = EDGE_FADE
+	stage_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	stage_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	stage_art.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	stage_art.size_flags_stretch_ratio = 1.4
+	stage_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(stage_art)
 	stage_details = ItemDetails.new()
 	stage_details.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	# Long guardian lists scroll from the keyboard too.
@@ -213,7 +229,8 @@ func _place_stages() -> void:
 	var extent := minf(width * 1.15, map.size.y * 0.66)
 	for index in count:
 		var node := stage_nodes[index]
-		node.size = Vector2(extent, extent / StageMapNode.ART_SHARE * 0.98)
+		var share := 1.0 if node.unlocked else LOCKED_SCALE
+		node.size = Vector2(extent, extent / StageMapNode.ART_SHARE * 0.98) * share
 		var centre := Vector2(width * (index + 0.5), map.size.y * MAP_ROWS[index % MAP_ROWS.size()])
 		node.position = (centre - node.size * 0.5).round()
 	map.queue_redraw()
@@ -250,20 +267,38 @@ func _select_stage(index: int) -> void:
 	var stage := selected_stage
 	stage_title.text = stage.display_name
 	stage_facts.text = "全%d階　·　難易度 %s" % [stage.floor_count, stage.difficulty] if stage.available else "まだ道は開いていない"
+	stage_art.texture = stage.illustration
+	stage_art.modulate.a = 0.7 if state.stage_available(stage) else 0.3
 	stage_details.reset()
 	stage_details.line(stage.description, &"BodyLabel")
 	if stage.available:
-		if not stage.bosses.is_empty():
-			var defeated: Array = state.defeated_bosses.get(String(stage.id), [])
-			var guardians: Array[String] = []
-			for guardian in stage.bosses.size():
-				var floor_number := mini((guardian + 1) * 10, stage.floor_count)
-				guardians.append("%dF %s" % [floor_number, stage.bosses[guardian].display_name if floor_number in defeated else "？？？"])
-			stage_details.line("守護者", &"NoteLabel")
-			stage_details.line("
-".join(guardians))
+		stage_details.line("
+".join(guardian_lines(stage)))
 	UIMotion.reveal_selection([_selection_detail])
 	next_button.disabled = not state.stage_available(stage) or stage.settings == null
+
+
+# The guardians in a few lines: how many have fallen, those by name, and the
+# next one still unknown. A line per unknown floor would only repeat that
+# one stands every tenth floor.
+func guardian_lines(stage: StageData) -> Array[String]:
+	var lines: Array[String] = []
+	if stage.bosses.is_empty():
+		return lines
+	var defeated: Array = state.defeated_bosses.get(String(stage.id), [])
+	var fallen: Array[String] = []
+	var next := ""
+	for guardian in stage.bosses.size():
+		var floor_number := mini((guardian + 1) * 10, stage.floor_count)
+		if floor_number in defeated:
+			fallen.append("%dF %s" % [floor_number, stage.bosses[guardian].display_name])
+		elif next.is_empty():
+			next = "次　%dF ？？？" % floor_number
+	lines.append("守護者　%d / %d 撃破" % [fallen.size(), stage.bosses.size()])
+	lines.append_array(fallen)
+	if not next.is_empty():
+		lines.append(next)
+	return lines
 
 
 func present_confirmation(current: RunCarryover) -> void:

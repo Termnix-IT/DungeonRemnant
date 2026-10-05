@@ -4,7 +4,8 @@ extends Button
 # One stage on the stage-select map: its diorama (the dungeon on an oval
 # island) standing on a soft shadow, its name and floors under it. The chosen
 # stage floats a little on a warm glow with its name in gold; the others rest
-# a step darker; a stage not yet open is dark and says how to open it. The
+# a step darker; a stage not yet open is dark, carries a padlock and says how
+# to open it (the map also sets it smaller). The
 # Button keeps focus and input; the map draws the road between stages.
 
 const ART_SHARE := 0.82
@@ -102,6 +103,11 @@ func _draw() -> void:
 	var top := art.end.y + font.get_ascent(name_size) - art.size.y * 0.04
 	var name_tone := get_theme_color(&"font_color", &"GoldLabel") if chosen else get_theme_color(&"font_color", &"Label" if unlocked else &"MutedLabel")
 	draw_string(font, Vector2(0, top), stage.display_name, HORIZONTAL_ALIGNMENT_CENTER, size.x, name_size, name_tone)
+	# A stage not yet open carries the same padlock as the upgrade tree's
+	# shut nodes, before its name.
+	if not unlocked:
+		var name_width := font.get_string_size(stage.display_name, HORIZONTAL_ALIGNMENT_LEFT, -1, name_size).x
+		StateMark.lock(self, Vector2((size.x - name_width) * 0.5 - 14.0, top - font.get_ascent(name_size) * 0.42), 15.0, Color(get_theme_color(&"font_color", &"MutedLabel"), 0.85))
 	var note := "全%d階　%s" % [stage.floor_count, stage.difficulty] if unlocked else (hint if not hint.is_empty() else "まだ道は開いていない")
 	if not stage.available:
 		note = "まだ道は開いていない"
