@@ -163,6 +163,16 @@ func run_tests() -> void:
 	await create_timer(HubAmbience.FOCUS_TIME + 0.1).timeout
 	check(ambience.focus_id == &"equipment", "Choosing equipment lights the weapon rack")
 	check(lobby.equipment_label.is_visible_in_tree() and not lobby.carried_label.is_visible_in_tree(), "Panel shows only the chosen entry's information")
+	# Every entry shows the same panel: one rect, the button in one place.
+	var panel_rects := {}
+	var button_rects := {}
+	for index in lobby.buttons.size():
+		lobby.select(index)
+		await process_frame
+		panel_rects[lobby.panel.get_global_rect()] = true
+		button_rects[lobby.decide_button.get_global_rect()] = true
+	check(panel_rects.size() == 1 and button_rects.size() == 1, "Every lobby entry keeps the same panel size and button place")
+	lobby.select(1)
 	hub.equipment_button.pressed.emit()
 	check(hub.page == "equipment", "Pressing the chosen entry enters it")
 	await create_timer(HubAmbience.FOCUS_TIME + 0.1).timeout

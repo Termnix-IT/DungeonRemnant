@@ -61,6 +61,10 @@ const ROW_HEIGHT := 80.0
 const PANEL_CENTER_X := 0.465
 const PANEL_WIDTH := 600.0
 const PANEL_BOTTOM := 96.0
+# Every entry shows the same panel: one size, the name and line at the top,
+# the facts and the button at the bottom, so switching entries moves nothing.
+const PANEL_HEIGHT := 300.0
+const STRIP_HEIGHT := 60.0
 # The texture keeps clear margins for swaying hair, so the figure itself
 # stands about 78% of the screen tall.
 const HERO_HEIGHT := 0.8
@@ -85,7 +89,8 @@ var carried_label: Label
 var stored_label: Label
 var gold_value: Label
 var upgrade_value: Label
-var stage_strip: Label
+var floors_value: Label
+var difficulty_value: Label
 var volume_value: Label
 var display_value: Label
 var settings: GameSettings
@@ -156,8 +161,7 @@ func _build_panel() -> void:
 	panel.name = "InfoPanel"
 	panel.theme_type_variation = &"LobbyInfoPanel"
 	add_child(panel)
-	# Anchored to the bottom and growing upwards, so the panel keeps to the
-	# floor whatever the chosen entry needs.
+	# A fixed size on the floor, the same for every entry.
 	panel.anchor_top = 1.0
 	panel.anchor_bottom = 1.0
 	panel.anchor_left = PANEL_CENTER_X
@@ -165,8 +169,7 @@ func _build_panel() -> void:
 	panel.offset_left = -PANEL_WIDTH * 0.5
 	panel.offset_right = PANEL_WIDTH * 0.5
 	panel.offset_bottom = -PANEL_BOTTOM
-	panel.offset_top = -PANEL_BOTTOM
-	panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	panel.offset_top = -PANEL_BOTTOM - PANEL_HEIGHT
 	_art = TextureRect.new()
 	_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
@@ -199,20 +202,31 @@ func _build_panel() -> void:
 	title_label = HubUI.label(stack, "", &"LobbyTitle")
 	title_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	description_label = HubUI.label(stack, "", &"DescriptionLabel")
-	_details[&"departure"] = _strip(stack)
-	stage_strip = HubUI.label(_details[&"departure"], "", &"BodyLabel")
-	stage_strip.autowrap_mode = TextServer.AUTOWRAP_OFF
-	stage_strip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	description_label.max_lines_visible = 2
+	# One line or two, the description's spare height sits here, so the facts
+	# and the button keep their place at the bottom.
+	HubUI.space(stack)
+	var route: HBoxContainer = _strip(stack)
+	_details[&"departure"] = route
+	floors_value = _fact(route, "階層")
+	_divider(route)
+	difficulty_value = _fact(route, "難易度")
 	var gear: HBoxContainer = _strip(stack)
 	_details[&"equipment"] = gear
+	var gear_caption := HubUI.label(gear, "主武器", &"MutedLabel")
+	gear_caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+	gear_caption.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	main_glyph = Control.new()
 	main_glyph.custom_minimum_size = Vector2(26, 26)
 	main_glyph.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	main_glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	main_glyph.draw.connect(_draw_main_glyph)
 	gear.add_child(main_glyph)
-	equipment_label = HubUI.label(gear, "", &"ItemNameLabel")
+	equipment_label = HubUI.label(gear, "", &"ValueLabel")
 	equipment_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	equipment_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	equipment_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	equipment_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	var room: HBoxContainer = _strip(stack)
 	_details[&"storage"] = room
 	carried_label = _fact(room, "持ち込み")
@@ -220,7 +234,8 @@ func _build_panel() -> void:
 	stored_label = _fact(room, "倉庫")
 	var purse: HBoxContainer = _strip(stack)
 	_details[&"shop"] = purse
-	gold_value = _fact(purse, "所持金", &"GoldLabel")
+	# Money keeps its gold, at the same size as every other value.
+	gold_value = _fact(purse, "所持金", &"MoneyValueLabel")
 	var growth: HBoxContainer = _strip(stack)
 	_details[&"upgrade"] = growth
 	upgrade_value = _fact(growth, "習得した強化")
@@ -242,6 +257,7 @@ func _build_panel() -> void:
 func _strip(parent: Node) -> HBoxContainer:
 	var inset := PanelContainer.new()
 	inset.theme_type_variation = &"InsetPanel"
+	inset.custom_minimum_size.y = STRIP_HEIGHT
 	parent.add_child(inset)
 	var margin := MarginContainer.new()
 	margin.theme_type_variation = &"CompactMargin"
@@ -355,6 +371,9 @@ func refresh(state: RunCarryover, stage: StageData) -> void:
 	_state = state
 	_stage = stage
 	equipment_label.text = state.equipment.slots[Equipment.Slot.MAIN].display_name
+	# A long name is cut short in the strip; the full name stays in the tooltip.
+	equipment_label.tooltip_text = equipment_label.text
+	equipment_label.mouse_filter = Control.MOUSE_FILTER_PASS
 	main_glyph.queue_redraw()
 	carried_label.text = "%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries]
 	stored_label.text = "%d / %d 枠" % [state.storage.entries.size(), state.storage.max_entries]
@@ -364,7 +383,8 @@ func refresh(state: RunCarryover, stage: StageData) -> void:
 		ranks += int(state.skill_levels[id])
 	upgrade_value.text = "%d 段階" % ranks
 	if stage != null:
-		stage_strip.text = "全%d階    難易度  %s" % [stage.floor_count, stage.difficulty]
+		floors_value.text = "全%d階" % stage.floor_count
+		difficulty_value.text = stage.difficulty
 	if settings != null:
 		volume_value.text = "%d%%" % settings.volume_percent()
 		display_value.text = GameSettings.DISPLAY_NAMES[1 if settings.fullscreen else 0]
