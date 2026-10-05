@@ -43,19 +43,21 @@ func run_tests() -> void:
 	hub.equipment_page.select_slot(Equipment.Slot.ARMOR)
 	check(hub.equipment_page.candidates.size() == 1 and hub.equipment_page.candidates[0].from_storage, "Equipment candidates include matching warehouse gear")
 	var preview_text: String = hub.equipment_page.comparison.get_parsed_text()
-	check(preview_text.contains("防御力") and not preview_text.contains("攻撃力"), "Equipment comparison lists only changed values")
+	var hero_rows: Array = hub.equipment_page.hero_stats.specs.rows
+	var changed: Array = hero_rows.filter(func(row: Array): return row[1] != row[2])
+	check(changed.size() == 1 and changed[0][0] == "防御力" and changed[0][2] > changed[0][1], "Her stats preview only the rising defense")
 	check(hub.equipment_page.showcase.title.text == ARMOR.label() and not preview_text.contains(ARMOR.label()), "The full name shows once, in the showcase title")
-	check(hub.equipment_page.stat_values[2].theme_type_variation == &"StatUp" and hub.equipment_page.stat_values[1].theme_type_variation == &"StatValue", "The stat sheet previews only the rising value, in the rise colour")
-	check(hub.equipment_page.stat_caption.text.contains("変更後"), "A previewed change is labelled as the result after changing")
+	check(hub.equipment_page.hero_stats.swap_label.text.begins_with("防具と入れ替え"), "A previewed change names the slot it replaces")
 	hub.equipment_page.equip_button.pressed.emit()
 	var flying: Array = hub.equipment_page.get_children().filter(func(child: Node): return child is Control and child.top_level)
 	check(flying.size() == 1 and hub.equipment_page.equipped_item == null, "Equipping sends one glyph to its slot and clears the pending item")
 	await create_timer(UIMotion.TRAVEL_TIME + 0.1).timeout
 	check(hub.equipment_page.get_children().filter(func(child: Node): return child is Control and child.top_level).is_empty(), "Equip glyph frees itself on landing")
 	# Check that the acknowledgement started, not a timing-dependent sample.
-	check(UIMotion.of(hub.equipment_page.portrait).flash_tween != null, "Landing brightens the adventurer")
+	check(UIMotion.of(hub.equipment_page.hero_stats.hero).flash_tween != null, "Landing brightens the adventurer")
 	check(main.state.equipment.slots[2] == ARMOR and main.state.storage.entries.size() == 1, "Equip directly from warehouse without transfer detour")
-	check(hub.equipment_page.stat_text().contains("防御力 %d" % main.state.preparation_stats().defense), "Equipment sheet reflects defense")
+	var defense_row: Array = hub.equipment_page.hero_stats.specs.rows.filter(func(row: Array): return row[0] == "防御力")[0]
+	check(defense_row[1] == main.state.preparation_stats().defense, "Her stats reflect the new defense")
 	check(not main.unequip_item(0), "Main weapon cannot be removed")
 	check(main.unequip_item(2) and main.state.inventory.entries.size() == 2, "Unequip returns item to carried inventory")
 	check(main.equip_item(false, 1, 2), "Re-equip from carried inventory")
@@ -119,7 +121,8 @@ func run_tests() -> void:
 	check(hub.title_label.text.contains("全2階"), "Selected stage floor count appears in confirmation")
 	hub.departure_page.equipment_requested.emit()
 	check(hub.page == "equipment" and hub.equipment_return == "confirm", "Review shortcut preserves confirmation destination")
-	hub.equipment_page.done_button.pressed.emit()
+	# Leaving is the back key; from the review it returns to the confirmation.
+	hub.back_button.pressed.emit()
 	check(hub.page == "confirm" and hub.departure_page.selected_stage == short_stage, "Preparation returns to same stage confirmation")
 	hub.departure_page.confirm_button.pressed.emit()
 	var run = main.active_run
@@ -142,8 +145,8 @@ func run_tests() -> void:
 	hub.open_warehouse()
 	hub.warehouse_panel.get_node("%Equipment").pressed.emit()
 	check(hub.page == "equipment" and hub.equipment_return == "stages", "Home warehouse equipment shortcut does not return to stale confirmation")
-	hub.equipment_page.done_button.pressed.emit()
-	check(hub.page == "stages", "Warehouse preparation continues to stage selection")
+	hub.back_button.pressed.emit()
+	check(hub.page == "home", "Back from equipment opened at home returns to the lobby")
 	short_stage.available = false
 	hub.show_page("stages")
 	hub.departure_page._select_stage(hub.stages.size() - 1)

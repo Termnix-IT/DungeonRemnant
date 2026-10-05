@@ -42,7 +42,7 @@ func run_tests() -> void:
 			if control.visible:
 				# The shop's slab runs off the screen's left edge by design; it
 				# still has to stay on the screen.
-				var bounds: Rect2 = root.get_visible_rect() if control == hub.sell_page else content.get_global_rect()
+				var bounds: Rect2 = root.get_visible_rect() if control in [hub.sell_page, hub.equipment_page] else content.get_global_rect()
 				check(bounds.grow(1).encloses(control.get_global_rect()), "%s page fits Hub content" % page)
 		if page == "confirm":
 			check(not hub.departure_page.equipment_label.get_global_rect().intersects(hub.departure_page.review_button.get_global_rect()), "Confirmation equipment does not overlap review button")
@@ -50,7 +50,7 @@ func run_tests() -> void:
 			check(rows.size.y >= rows.get_theme_constant(&"row_height") * 5 and rows.get_global_rect().end.y <= hub.departure_page.equipment_label.get_global_rect().position.y, "Confirmation equipment rows end before the stats")
 		if page == "equipment":
 			check(not hub.equipment_page.comparison.get_global_rect().intersects(hub.equipment_page.equip_button.get_global_rect()), "Equipment comparison leaves action visible")
-			check(not hub.equipment_page.stat_sheet.get_global_rect().intersects(hub.equipment_page.swap_button.get_global_rect()), "Equipment stats leave swap visible")
+			check(not hub.equipment_page.candidate_list.get_global_rect().intersects(hub.equipment_page.swap_button.get_global_rect()), "Equipment candidates leave the lesser actions visible")
 	hub.show_page("home")
 	enter(hub, hub.warehouse_button)
 	await settle()

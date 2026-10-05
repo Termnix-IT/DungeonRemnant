@@ -687,6 +687,17 @@ content_margin_top = 4.0
 content_margin_right = 4.0
 content_margin_bottom = 4.0
 
+[sub_resource type="StyleBoxFlat" id="SlotHover"]
+resource_name = "SlotHover"
+bg_color = Color(1, 1, 1, 0.04)
+
+[sub_resource type="StyleBoxEmpty" id="TextActionRest"]
+resource_name = "TextActionRest"
+content_margin_left = 2.0
+content_margin_top = 8.0
+content_margin_right = 2.0
+content_margin_bottom = 8.0
+
 [resource]
 StageCardList/base_type = &"ItemCardList"
 StageCardList/constants/v_separation = 122
@@ -1177,3 +1188,27 @@ SelectorValue/fonts/font = SubResource("DisplayBoldKana")
 SelectorValue/styles/normal = SubResource("SelectorPlain")
 SelectorValue/styles/read_only = SubResource("SelectorPlain")
 SelectorValue/styles/focus = SubResource("Invisible")
+SlotRow/base_type = &"Button"
+SlotRow/styles/normal = SubResource("Invisible")
+SlotRow/styles/hover = SubResource("SlotHover")
+SlotRow/styles/pressed = SubResource("Invisible")
+SlotRow/styles/hover_pressed = SubResource("Invisible")
+SlotRow/styles/disabled = SubResource("Invisible")
+SlotRow/styles/focus = SubResource("ListFocus")
+TextActions/base_type = &"HBoxContainer"
+TextActions/constants/separation = 26
+TextAction/base_type = &"Button"
+TextAction/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
+TextAction/colors/font_hover_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+TextAction/colors/font_focus_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+TextAction/colors/font_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+TextAction/colors/font_hover_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+TextAction/colors/font_disabled_color = Color(0.36, 0.35, 0.33, 1)
+TextAction/font_sizes/font_size = 16
+TextAction/styles/normal = SubResource("TextActionRest")
+TextAction/styles/hover = SubResource("TabHover")
+TextAction/styles/pressed = SubResource("TextActionRest")
+TextAction/styles/hover_pressed = SubResource("TabHover")
+TextAction/styles/disabled = SubResource("TextActionRest")
+SlotRows/base_type = &"VBoxContainer"
+SlotRows/constants/separation = 0

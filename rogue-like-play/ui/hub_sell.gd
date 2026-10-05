@@ -16,13 +16,6 @@ signal mode_changed
 const SHOWCASE_SIZE := 192.0
 const CATEGORIES: Array[String] = ["すべて", "武器", "防具", "装飾", "消耗品", "魔法"]
 const CATEGORY_KINDS := [-1, ItemData.Kind.WEAPON, ItemData.Kind.ARMOR, ItemData.Kind.ACCESSORY, ItemData.Kind.CONSUMABLE, ItemData.Kind.SCROLL]
-# The heroine from the knees up: her height in screen pixels, the share of
-# it from the texture's top down to her knees, and where her face sits across.
-const HERO_HEIGHT := 960.0
-const HERO_KNEES := 0.72
-const HERO_FACE_X := 0.4
-# Her whole stats for the next run.
-const HERO_STATS := [["hp", "最大HP"], ["attack", "攻撃力"], ["defense", "防御力"], ["reach", "射程"]]
 
 var state: RunCarryover
 var mode_tabs: HBoxContainer
@@ -52,8 +45,7 @@ var rows: Array[Dictionary] = []
 var traded_item: ItemData
 var _source_row: HBoxContainer
 var _place_row: HBoxContainer
-var _hero_holder: Control
-var _hero_frame: Control
+var hero_stats: HeroStats
 
 
 func _ready() -> void:
@@ -66,7 +58,13 @@ func _ready() -> void:
 	# only at its right edge; the background shows above it and round her.
 	_build_catalog(HubUI.open_column(columns, 1.1, &"SlabSolid"))
 	_build_info(HubUI.open_column(columns, 1.15, &"SlabColumn"))
-	_build_hero(columns)
+	# Unframed, like the lobby: the heroine and what the goods do to her.
+	hero_stats = HeroStats.new()
+	hero_stats.size_flags_stretch_ratio = 0.95
+	columns.add_child(hero_stats)
+	hero = hero_stats.hero
+	hero_specs = hero_stats.specs
+	swap_label = hero_stats.swap_label
 
 
 # Two title-sized tabs the hub shows in its header in place of the title.
@@ -158,56 +156,6 @@ func _build_info(info: VBoxContainer) -> void:
 	sell_all_button = HubUI.button(info, "全部売却", _sell_all, &"SecondaryButton")
 	sell_all_button.tooltip_text = "選択品を全部売却"
 	sell_button = HubUI.primary_action(info, "売却する", _transact)
-
-
-# Unframed, like the lobby: the heroine from the knees up, cut by the page's
-# foot and the screen's right edge, with what the goods do to her whole stats
-# laid over her legs.
-func _build_hero(columns: HBoxContainer) -> void:
-	_hero_holder = Control.new()
-	_hero_holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_hero_holder.size_flags_stretch_ratio = 0.95
-	_hero_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	columns.add_child(_hero_holder)
-	# Reaches past the page to the screen's right edge, and clips there and
-	# at the page's foot.
-	_hero_frame = Control.new()
-	_hero_frame.clip_contents = true
-	_hero_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hero_holder.add_child(_hero_frame)
-	hero = LobbyHero.new()
-	hero.texture = HubLobby.HERO_TEXTURE
-	hero.modulate = get_theme_color(&"hero_tint", &"HubLobby")
-	_hero_frame.add_child(hero)
-	_hero_holder.resized.connect(_place_hero)
-	var band := PanelContainer.new()
-	band.theme_type_variation = &"ShopHeroBand"
-	_hero_holder.add_child(band)
-	band.anchor_left = 0.0
-	band.anchor_right = 1.0
-	band.anchor_top = 1.0
-	band.anchor_bottom = 1.0
-	band.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	var stack := VBoxContainer.new()
-	stack.theme_type_variation = &"CompactStack"
-	band.add_child(stack)
-	HubUI.label(stack, "次の冒険の能力", &"NoteLabel")
-	swap_label = HubUI.label(stack, "", &"NoteLabel")
-	hero_specs = StatBars.new()
-	stack.add_child(hero_specs)
-
-
-func _place_hero() -> void:
-	# The page leaves this much of the screen on its right.
-	var screen_margin := 80.0
-	_hero_frame.position = Vector2.ZERO
-	_hero_frame.size = Vector2(_hero_holder.size.x + screen_margin, _hero_holder.size.y)
-	var texture := hero.texture
-	var width := HERO_HEIGHT * texture.get_width() / texture.get_height()
-	hero.size = Vector2(width, HERO_HEIGHT)
-	# Knees on the page's foot, her face over the middle of the column.
-	hero.position = Vector2(_hero_holder.size.x * 0.5 - width * HERO_FACE_X, _hero_holder.size.y - HERO_HEIGHT * HERO_KNEES)
-	hero.pivot_offset = Vector2(width * 0.5, HERO_HEIGHT)
 
 
 func set_buying(value: bool) -> void:
@@ -359,23 +307,15 @@ func _slot_for(item: ItemData) -> int:
 # Her whole stats for the next run, as they are and if the goods were worn.
 func _show_hero_specs(item: ItemData) -> void:
 	var before := state.preparation_stats()
-	var after := before
 	# Only goods being bought would be worn; selling shows her as she is.
 	var slot := _slot_for(item) if buying else -1
-	if slot >= 0:
-		var gear := Equipment.new()
-		gear.slots.assign(state.equipment.slots)
-		gear.slots[slot] = item
-		after = state.preparation_stats(gear)
-	var current: ItemData = state.equipment.slots[slot] if slot >= 0 else null
-	swap_label.text = ("%sと入れ替え（今：%s）" % [Equipment.SLOT_NAMES[slot], current.label() if current != null else "なし"]) if slot >= 0 else ""
-	swap_label.visible = slot >= 0
-	var shown := []
-	for stat: Array in HERO_STATS:
-		# Bars leave room for the change against her current value.
-		shown.append([stat[1], before[stat[0]], after[stat[0]], maxi(before[stat[0]], after[stat[0]]) * 1.25 + 1])
-	hero_specs.show_rows(shown)
-
+	if slot < 0:
+		hero_stats.show_stats(before)
+		return
+	var gear := Equipment.new()
+	gear.slots.assign(state.equipment.slots)
+	gear.slots[slot] = item
+	hero_stats.show_stats(before, state.preparation_stats(gear), HeroStats.swap_text(slot, state.equipment.slots[slot]))
 
 func step_category(direction: int) -> void:
 	category_tabs.step(direction)

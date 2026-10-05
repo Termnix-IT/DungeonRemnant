@@ -134,11 +134,11 @@ func _ready() -> void:
 	equipment_page.scroll_remove_requested.connect(func(slot: int): scroll_remove_requested.emit(slot))
 	equipment_page.swap_requested.connect(func(): swap_requested.emit())
 	equipment_page.warehouse_requested.connect(open_warehouse)
-	equipment_page.done_requested.connect(func(): show_page(equipment_return))
 	sell_page = _page(HubSell.new()) as HubSell
-	# The shop's slab runs off the screen's left edge, its list lined up
-	# with the title above it.
-	sell_page.offset_left = EDGE_X - (get_viewport().get_visible_rect().size.x - CONTENT_SIZE.x) * 0.5
+	# The shop's and the equipment's slabs run off the screen's left edge,
+	# their lists lined up with the title above them.
+	for bleeding: Control in [sell_page, equipment_page]:
+		bleeding.offset_left = EDGE_X - (get_viewport().get_visible_rect().size.x - CONTENT_SIZE.x) * 0.5
 	sell_page.sell_requested.connect(func(source: bool, index: int, amount: int): sell_requested.emit(source, index, amount))
 	sell_page.buy_requested.connect(func(destination: bool, item_id: StringName, amount: int): buy_requested.emit(destination, item_id, amount))
 	sell_page.mode_changed.connect(func():
@@ -318,8 +318,9 @@ func show_page(target: String) -> void:
 			title_label.text = "装備・持ち込み準備"
 			equipment_page.show()
 			equipment_page.refresh(_state)
-			equipment_page.done_button.text = "出撃確認へ戻る" if equipment_return == "confirm" else "準備完了・ステージ選択へ"
-			equipment_page.slots[0].grab_focus()
+			key_guide.add_hint("Enter", "A", "装備")
+			key_guide.add_hint("Q / E", "LB / RB", "装備枠")
+			equipment_page.slots[equipment_page.selected_slot].grab_focus()
 		"sell":
 			title_label.text = "ショップ"
 			subtitle_label.text = "薬も武具も、金次第。"

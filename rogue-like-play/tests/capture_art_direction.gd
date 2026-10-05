@@ -45,7 +45,7 @@ func capture() -> void:
 		hub.show_page("equipment")
 		hub.equipment_page.select_slot(Equipment.Slot.ARMOR)
 		await shot("art_equipment_%d" % resolution.y)
-		for control: Control in [hub.equipment_page.candidate_list, hub.equipment_page.carried_list, hub.equipment_page.comparison, hub.equipment_page.equip_button, hub.equipment_page.done_button]:
+		for control: Control in [hub.equipment_page.candidate_list, hub.equipment_page.carried_label, hub.equipment_page.comparison, hub.equipment_page.equip_button, hub.equipment_page.swap_button, hub.equipment_page.hero_stats.specs]:
 			fits(control, "Equipment")
 		for slot: Button in hub.equipment_page.slots:
 			fits(slot, "Equipment slot")

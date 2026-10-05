@@ -1,12 +1,18 @@
 class_name HubEquipment
 extends Control
 
+# The equipment page, in the shop's order: choose a slot (the five slots as
+# open rows on a slab like the lobby menu), learn its candidates (their list,
+# the chosen one's art and note, the lesser actions and the one equip
+# action), then see what they do to her (the heroine from the knees up with
+# her whole stats before and after). Leaving is the back key; this page holds
+# no button that only moves elsewhere.
+
 signal equip_requested(from_storage: bool, index: int, slot: int)
 signal unequip_requested(slot: int)
 signal scroll_remove_requested(slot: int)
 signal swap_requested
 signal warehouse_requested
-signal done_requested
 
 var state: RunCarryover
 var selected_slot := 0
@@ -14,112 +20,95 @@ var candidates: Array[Dictionary] = []
 var slots: Array[Button] = []
 var slot_names: Array[Label] = []
 var slot_glyphs: Array[Control] = []
+var candidate_heading: Label
 var candidate_list: ItemCardList
-var carried_list: ItemCardList
-var stat_caption: Label
-var stat_sheet: GridContainer
-var stat_values: Array[Label] = []
+var carried_label: Label
 var comparison: ItemDetails
 var equip_button: Button
 var unequip_button: Button
-var done_button: Button
 var swap_button: Button
 var scroll_remove_button: Button
 var showcase: ItemShowcase
-var portrait: CharacterPreview
+var hero_stats: HeroStats
 # The candidate of the last equip request, for the success moment after saving.
 var equipped_item: ItemData
 const SLOT_CAPTIONS := Equipment.SLOT_NAMES
-const STAT_ROWS: Array = [["HP", "hp"], ["攻撃力", "attack"], ["防御力", "defense"], ["主武器の射程", "reach"]]
 # Slot art is the 48px item icon at its native size, so it is never blurred.
 const SLOT_ICON := 48
-# The candidate shown at 3x its icon above its name.
-const SHOWCASE_SIZE := 176.0
+const SLOT_HEIGHT := 72.0
+# The chosen candidate at twice its 48px icon beside its name.
+const SHOWCASE_SIZE := 120.0
+const BAND_TIP := 18.0
 
 
 func _ready() -> void:
-	var columns := HubUI.columns(self)
-	# The adventurer's column is the widest, so she stands at twice her pixel
-	# size as the page's focus; candidates and the comparison flank her.
-	var catalog := HubUI.section(columns, 1.0)
-	HubUI.label(catalog, "装備候補", &"HeadingLabel")
-	candidate_list = ItemCardList.new()
-	candidate_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	catalog.add_child(candidate_list)
-	candidate_list.item_selected.connect(_select_candidate)
-	HubUI.label(catalog, "持ち込みアイテム", &"BodyLabel")
-	carried_list = ItemCardList.new()
-	carried_list.custom_minimum_size.y = 112
-	catalog.add_child(carried_list)
-	HubUI.button(catalog, "倉庫で持ち込みを整理", func(): warehouse_requested.emit())
-	var detail := HubUI.section(columns, 0.9)
-	showcase = ItemShowcase.new()
-	showcase.stack(SHOWCASE_SIZE)
-	detail.add_child(showcase)
-	# The comparison keeps to its lines; the spare height sits above the
-	# actions instead of stretching into an empty well.
-	var compare_box := PanelContainer.new()
-	compare_box.theme_type_variation = &"InsetPanel"
-	detail.add_child(compare_box)
-	comparison = ItemDetails.new()
-	compare_box.add_child(comparison)
-	var gap := Control.new()
-	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	detail.add_child(gap)
-	comparison.fit_lines(gap, 96)
-	equip_button = HubUI.button(detail, "選択した装備に変更", _equip, &"GoldButton")
-	unequip_button = HubUI.button(detail, "選択枠の装備を外す", func():
-		equipped_item = null
-		unequip_requested.emit(selected_slot))
-	var build := HubUI.section(columns, 1.45)
-	build.theme_type_variation = &"DetailStack"
-	HubUI.label(build, "冒険者の装備", &"HeadingLabel")
-	var body := HBoxContainer.new()
-	body.theme_type_variation = &"CompactRow"
-	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	build.add_child(body)
-	var left := VBoxContainer.new()
-	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	left.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	body.add_child(left)
-	portrait = CharacterPreview.new()
-	portrait.custom_minimum_size = Vector2(180, 280)
-	portrait.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	portrait.size_flags_stretch_ratio = 1.2
-	body.add_child(portrait)
-	var right := VBoxContainer.new()
-	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	right.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	body.add_child(right)
+	var columns := HBoxContainer.new()
+	columns.theme_type_variation = &"ShopColumns"
+	add_child(columns)
+	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_build_slots(HubUI.open_column(columns, 0.72, &"SlabSolid"))
+	_build_candidates(HubUI.open_column(columns, 1.15, &"SlabColumn"))
+	hero_stats = HeroStats.new()
+	hero_stats.size_flags_stretch_ratio = 0.95
+	columns.add_child(hero_stats)
+
+
+func _build_slots(column: VBoxContainer) -> void:
+	column.theme_type_variation = &"DetailStack"
+	HubUI.label(column, "装備枠", &"NoteLabel")
+	var rows := VBoxContainer.new()
+	rows.theme_type_variation = &"SlotRows"
+	column.add_child(rows)
 	for slot in 5:
-		var parent := left if slot < 2 else right
-		var control := HubUI.button(parent, "", select_slot.bind(slot), &"ItemButton")
-		control.custom_minimum_size = Vector2(112, 88)
+		var control := HubUI.button(rows, "", select_slot.bind(slot), &"SlotRow")
+		control.custom_minimum_size = Vector2(0, SLOT_HEIGHT)
 		control.toggle_mode = true
+		control.draw.connect(_draw_slot_row.bind(control, slot))
 		slots.append(control)
 		_build_slot(control, slot)
-	# The next run's four numbers, shown as a sheet; a selected candidate
-	# previews its change in place, coloured by rise or fall.
-	stat_caption = HubUI.label(build, "", &"MutedLabel")
-	stat_sheet = GridContainer.new()
-	stat_sheet.theme_type_variation = &"StatSheet"
-	stat_sheet.columns = 2
-	build.add_child(stat_sheet)
-	for row: Array in STAT_ROWS:
-		var cell := VBoxContainer.new()
-		cell.theme_type_variation = &"CompactStack"
-		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		stat_sheet.add_child(cell)
-		HubUI.label(cell, row[0], &"HudSmall")
-		var value := HubUI.label(cell, "", &"StatValue")
-		value.autowrap_mode = TextServer.AUTOWRAP_OFF
-		stat_values.append(value)
-	scroll_remove_button = HubUI.button(build, "選択枠の魔法を外す", func():
+	HubUI.space(column)
+	# What she carries is the warehouse's to arrange; here only its count.
+	HubUI.rule(column)
+	var carried := HBoxContainer.new()
+	carried.theme_type_variation = &"CompactRow"
+	column.add_child(carried)
+	carried_label = HubUI.label(carried, "", &"NoteLabel")
+	carried_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	carried_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	HubUI.button(carried, "倉庫で整える", func(): warehouse_requested.emit(), &"TextAction")
+
+
+func _build_candidates(column: VBoxContainer) -> void:
+	column.theme_type_variation = &"DetailStack"
+	candidate_heading = HubUI.label(column, "", &"NoteLabel")
+	candidate_list = ItemCardList.new()
+	candidate_list.theme_type_variation = &"OpenCardList"
+	candidate_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	column.add_child(candidate_list)
+	candidate_list.item_selected.connect(_select_candidate)
+	HubUI.rule(column)
+	showcase = ItemShowcase.new()
+	showcase.show_effect = false
+	showcase.visual.framed = false
+	showcase.visual.custom_minimum_size = Vector2.ONE * SHOWCASE_SIZE
+	column.add_child(showcase)
+	comparison = ItemDetails.new()
+	comparison.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_child(comparison)
+	# A fixed height: a long note scrolls instead of taking the list's room.
+	comparison.custom_minimum_size.y = 72
+	# The lesser actions read as words; the one equip action is the plate.
+	var lesser := HBoxContainer.new()
+	lesser.theme_type_variation = &"TextActions"
+	column.add_child(lesser)
+	unequip_button = HubUI.button(lesser, "外す", func():
 		equipped_item = null
-		scroll_remove_requested.emit(selected_slot))
-	swap_button = HubUI.button(build, "主武器と副武器を入れ替え", func(): swap_requested.emit())
-	done_button = HubUI.button(build, "準備完了・ステージ選択へ", func(): done_requested.emit())
+		unequip_requested.emit(selected_slot), &"TextAction")
+	scroll_remove_button = HubUI.button(lesser, "魔法を外す", func():
+		equipped_item = null
+		scroll_remove_requested.emit(selected_slot), &"TextAction")
+	swap_button = HubUI.button(lesser, "主武器と副武器を入れ替え", func(): swap_requested.emit(), &"TextAction")
+	equip_button = HubUI.primary_action(column, "装備する", _equip)
 
 
 func refresh(current: RunCarryover) -> void:
@@ -132,74 +121,62 @@ func refresh(current: RunCarryover) -> void:
 		var item := state.equipment.slots[index]
 		slot_names[index].text = item.label() if item != null else "未装備"
 		slot_glyphs[index].queue_redraw()
-		slots[index].tooltip_text = Equipment.SLOT_NAMES[index] + "：" + (ItemTooltipList.description(item) if item != null else "未装備")
-	_show_stats(state.preparation_stats())
-	carried_list.clear()
-	for entry in state.inventory.entries:
-		carried_list.add_card(entry.item, entry.count)
-	if carried_list.item_count == 0:
-		carried_list.add_item("持ち込みアイテムはありません")
-		carried_list.set_item_disabled(0, true)
+		slots[index].queue_redraw()
+	carried_label.text = "持ち込み　%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries]
+	candidate_heading.text = "%sの候補" % SLOT_CAPTIONS[selected_slot]
 	_fill_candidates()
 
 
-# Before and after for the next run; without an after, the current values.
-func _show_stats(before: Dictionary, after: Dictionary = {}) -> void:
-	var changes := false
-	for row: Array in STAT_ROWS:
-		changes = changes or after.get(row[1], before[row[1]]) != before[row[1]]
-	stat_caption.text = "次の冒険（変更後）" if changes else "次の冒険"
-	for index in STAT_ROWS.size():
-		var key: String = STAT_ROWS[index][1]
-		var value := stat_values[index]
-		var next: int = after.get(key, before[key])
-		value.text = "%d" % before[key] if next == before[key] else "%d → %d" % [before[key], next]
-		value.theme_type_variation = &"StatValue" if next == before[key] else (&"StatUp" if next > before[key] else &"StatDown")
-
-
-# The sheet as plain text, for tests and accessibility checks.
-func stat_text() -> String:
-	var parts: Array[String] = []
-	for index in STAT_ROWS.size():
-		parts.append("%s %s" % [STAT_ROWS[index][0], stat_values[index].text])
-	return " / ".join(parts)
-
-
-# A slot shows the equipped item's icon beside its caption, with the name on
-# the full width below, laid out by Containers inside the Button; the Button
-# keeps input and focus.
+# A slot reads as the equipped item's icon, the slot's name small above the
+# item's; the Button keeps input and focus.
 func _build_slot(button: Button, slot: int) -> void:
-	var margin := MarginContainer.new()
-	margin.theme_type_variation = &"CompactMargin"
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	button.add_child(margin)
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# Glyph and caption share the top line; the name gets the full width below.
-	var stack := VBoxContainer.new()
-	stack.theme_type_variation = &"CompactStack"
-	stack.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	margin.add_child(stack)
-	var header := HBoxContainer.new()
-	header.theme_type_variation = &"CompactRow"
-	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	stack.add_child(header)
+	var row := HBoxContainer.new()
+	row.theme_type_variation = &"CompactRow"
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(row)
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 8
+	row.offset_right = -BAND_TIP - 6
 	var glyph := Control.new()
 	glyph.custom_minimum_size = Vector2.ONE * SLOT_ICON
 	glyph.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	glyph.draw.connect(_draw_slot_glyph.bind(slot, glyph))
-	header.add_child(glyph)
+	row.add_child(glyph)
 	slot_glyphs.append(glyph)
-	var caption := HubUI.label(header, SLOT_CAPTIONS[slot], &"HudSmall")
+	var text := VBoxContainer.new()
+	text.theme_type_variation = &"CompactStack"
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(text)
+	var caption := HubUI.label(text, SLOT_CAPTIONS[slot], &"NoteLabel")
 	caption.autowrap_mode = TextServer.AUTOWRAP_OFF
-	caption.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var name_label := HubUI.label(stack, "", &"")
+	var name_label := HubUI.label(text, "", &"ItemNameLabel")
 	name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	name_label.clip_text = true
 	slot_names.append(name_label)
 	button.toggled.connect(func(_on: bool): glyph.queue_redraw())
+
+
+# The chosen slot is the lobby menu's warm band pointed at the candidates;
+# the others are parted by faint rules.
+func _draw_slot_row(button: Button, slot: int) -> void:
+	var rect := Rect2(Vector2.ZERO, button.size)
+	var rail := button.get_theme_color(&"rail", &"HubLobby")
+	if button.button_pressed:
+		var band := button.get_theme_color(&"band", &"HubLobby")
+		var tip := rect.end.x
+		var middle := rect.get_center().y
+		var top := rect.position.y + 4
+		var bottom := rect.end.y - 4
+		var outline := PackedVector2Array([Vector2(0, top), Vector2(tip - BAND_TIP, top), Vector2(tip, middle), Vector2(tip - BAND_TIP, bottom), Vector2(0, bottom)])
+		button.draw_polygon(outline, PackedColorArray([Color(band, band.a * 0.5), Color(band, band.a * 1.6), Color(band, band.a * 1.8), Color(band, band.a * 1.6), Color(band, band.a * 0.5)]))
+		button.draw_polyline_colors(outline, PackedColorArray([Color(rail, 0.0), Color(rail, 0.85), rail, Color(rail, 0.85), Color(rail, 0.0)]), 1.5, true)
+	elif slot < SLOT_CAPTIONS.size() - 1:
+		var y := rect.end.y - 0.5
+		button.draw_polyline_colors(PackedVector2Array([Vector2(0, y), Vector2(rect.size.x * 0.5, y), Vector2(rect.size.x, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.22), Color(rail, 0.0)]), 1.0, true)
 
 
 func _draw_slot_glyph(slot: int, glyph: Control) -> void:
@@ -208,10 +185,10 @@ func _draw_slot_glyph(slot: int, glyph: Control) -> void:
 	var item: ItemData = state.equipment.slots[slot]
 	if item == null:
 		# An empty slot shows the faint common symbol of what it accepts.
-		ItemGlyph.paint(glyph, Rect2(Vector2.ONE * 8, glyph.size - Vector2.ONE * 16), ItemGlyph.slot_symbol(slot), glyph.get_theme_color(&"font_color", &"HudSmall"))
+		ItemGlyph.paint(glyph, Rect2(Vector2.ONE * 8, glyph.size - Vector2.ONE * 16), ItemGlyph.slot_symbol(slot), glyph.get_theme_color(&"font_color", &"NoteLabel"))
 		return
-	# Equipped art stays at full colour; only the drawn fallback symbol dims.
-	var role := &"GoldLabel" if slots[slot].button_pressed or slot == Equipment.Slot.MAIN else &"Label"
+	# Gold only marks the chosen slot.
+	var role := &"GoldLabel" if slots[slot].button_pressed else &"Label"
 	ItemGlyph.paint(glyph, Rect2(Vector2.ZERO, glyph.size), item, glyph.get_theme_color(&"font_color", role))
 
 
@@ -224,8 +201,8 @@ func present_equip(changed: Array[int]) -> void:
 		UIMotion.fly_glyph(self, equipped_item, showcase.visual, slot).finished.connect(func():
 			if is_instance_valid(slot) and slot.is_visible_in_tree():
 				UIMotion.of(slot).pulse()
-				UIMotion.of(portrait).flash()
-				UIMotion.of(stat_sheet).pulse(1.04, UIMotion.GOLD_TIME))
+				UIMotion.of(hero_stats.hero).flash()
+				UIMotion.of(hero_stats.specs).pulse(1.04, UIMotion.GOLD_TIME))
 	else:
 		for index in changed:
 			UIMotion.of(slots[index]).pulse()
@@ -235,9 +212,17 @@ func present_equip(changed: Array[int]) -> void:
 func select_slot(slot: int) -> void:
 	selected_slot = slot
 	refresh(state)
+	# Focus follows the choice, so the focus edge never sits on another slot.
+	var focused := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
+	if focused is Button and slots.has(focused):
+		slots[slot].grab_focus()
 	if not candidate_list.get_selected_items().is_empty():
 		UIMotion.of(candidate_list).select_card()
 	UIMotion.reveal_selection([showcase, comparison])
+
+
+func step_slot(direction: int) -> void:
+	select_slot(posmod(selected_slot + direction, slots.size()))
 
 
 func _select_candidate(_index: int) -> void:
@@ -256,57 +241,41 @@ func _fill_candidates() -> void:
 				candidates.append({"from_storage": from_storage, "index": index, "item": item})
 				candidate_list.add_card(item, source.entries[index].count, -1, "倉庫" if from_storage else "所持")
 				candidate_list.set_item_tooltip(candidate_list.item_count - 1, ItemTooltipList.description(item))
-	if candidates.is_empty():
-		candidate_list.add_item("この枠に装備できる候補はありません")
-		candidate_list.set_item_disabled(0, true)
-	else:
+	candidate_list.empty_text = "この枠に付けられる品はない"
+	if not candidates.is_empty():
 		candidate_list.select(0)
 	_compare()
 
 
 func _compare() -> void:
 	comparison.reset()
-	scroll_remove_button.visible = state.equipment.can_socket(selected_slot) and state.equipment.slots[selected_slot].socketed_scroll != null
-	equip_button.text = "選択した装備に変更"
-	unequip_button.disabled = selected_slot == Equipment.Slot.MAIN or state.equipment.slots[selected_slot] == null
+	var current := state.equipment.slots[selected_slot]
+	scroll_remove_button.visible = state.equipment.can_socket(selected_slot) and current.socketed_scroll != null
+	equip_button.text = "装備する"
+	# The Main weapon cannot be taken off; an empty slot has nothing to take.
+	unequip_button.visible = selected_slot != Equipment.Slot.MAIN
+	unequip_button.disabled = current == null
 	var selected := candidate_list.get_selected_items()
 	equip_button.disabled = selected.is_empty() or candidates.is_empty()
+	var before := state.preparation_stats()
 	if equip_button.disabled:
-		showcase.present(state.equipment.slots[selected_slot])
-		comparison.text = "候補を選ぶと、変更前後の差分を表示します。\n主武器は外せません。"
+		showcase.present(current)
+		comparison.line("今の装備です。" if current != null else "この枠は空いています。", &"NoteLabel")
+		hero_stats.show_stats(before)
 		return
 	var candidate: ItemData = candidates[selected[0]].item
 	showcase.present(candidate)
 	if candidate.kind == ItemData.Kind.SCROLL:
-		comparison.line(candidate.label(), &"HeadingLabel")
-		comparison.line(candidate.description())
-		comparison.line("交換前の魔法は選択元に戻ります。", &"MutedLabel")
-		equip_button.text = "選択枠の杖に魔法を装着"
+		comparison.line(candidate.description(), &"NoteLabel")
+		comparison.line("交換前の魔法は選択元に戻ります。", &"NoteLabel")
+		equip_button.text = "杖に魔法を込める"
+		hero_stats.show_stats(before)
 		return
 	var preview := Equipment.new()
 	preview.slots.assign(state.equipment.slots)
 	preview.slots[selected_slot] = candidate
-	var before := state.preparation_stats()
-	var after := state.preparation_stats(preview)
-	var current := state.equipment.slots[selected_slot]
-	_show_stats(before, after)
-	comparison.line("%sに装備した場合（現在：%s）" % [SLOT_CAPTIONS[selected_slot], current.label() if current != null else "なし"], &"MutedLabel")
-	# Only values that change; an unchanged list hides the one that matters.
-	var rows: Array = []
-	for stat: Array in [["HP", "hp"], ["攻撃力", "attack"], ["防御力", "defense"]]:
-		if before[stat[1]] != after[stat[1]]:
-			rows.append([stat[0], before[stat[1]], after[stat[1]]])
-	if candidate.kind == ItemData.Kind.WEAPON:
-		var old_reach := current.weapon.reach if current != null else 0
-		if old_reach != candidate.weapon.reach:
-			rows.append(["この枠の射程", old_reach, candidate.weapon.reach])
-	comparison.stat_table(rows)
-	if rows.is_empty():
-		comparison.line("能力値は変わりません", &"MutedLabel")
-	comparison.item_text(candidate, showcase)
-	if current != null:
-		comparison.line("外す装備", &"ItemNameLabel")
-		comparison.line("%s　%s" % [current.label(), ItemGlyph.main_effect(current)], &"MutedLabel")
+	hero_stats.show_stats(before, state.preparation_stats(preview), HeroStats.swap_text(selected_slot, current))
+	comparison.item_text(candidate, showcase, &"NoteLabel")
 
 
 func _equip() -> void:
@@ -316,3 +285,15 @@ func _equip() -> void:
 	var candidate := candidates[selected[0]]
 	equipped_item = candidate.item
 	equip_requested.emit(candidate.from_storage, candidate.index, selected_slot)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
+	var key: bool = event is InputEventKey and event.pressed and not event.echo
+	var pad: bool = event is InputEventJoypadButton and event.pressed
+	var back: bool = (key and event.keycode == KEY_Q) or (pad and event.button_index == JOY_BUTTON_LEFT_SHOULDER)
+	var next: bool = (key and event.keycode == KEY_E) or (pad and event.button_index == JOY_BUTTON_RIGHT_SHOULDER)
+	if back or next:
+		step_slot(-1 if back else 1)
+		get_viewport().set_input_as_handled()

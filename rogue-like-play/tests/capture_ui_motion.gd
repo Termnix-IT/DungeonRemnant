@@ -126,8 +126,8 @@ func capture() -> void:
 	await frame_shot("equip")
 	await settle()
 	await create_timer(1.0).timeout
-	await sample_cost(hub.equipment_page.done_button, false)
-	await sample_cost(hub.equipment_page.done_button, true)
+	await sample_cost(hub.equipment_page.equip_button, false)
+	await sample_cost(hub.equipment_page.equip_button, true)
 	hub.show_page("upgrade")
 	var tree: SkillTreePanel = hub.upgrade_page
 	for resolution in [Vector2i(1600, 900), Vector2i(1280, 720), Vector2i(1920, 1080)]:
