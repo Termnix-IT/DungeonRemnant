@@ -48,13 +48,15 @@ func check_enter_to_action(hub, main) -> void:
 	check(shop.sell_button.has_focus() and main.state.gold == gold, "Enter on a shop row goes to the trade without trading")
 	hub.show_page("equipment")
 	var equipment: HubEquipment = hub.equipment_page
-	equipment.select_slot(Equipment.Slot.ARMOR)
-	equipment.slots[Equipment.Slot.ARMOR].grab_focus()
-	await press_enter()
-	check(equipment.candidate_list.has_focus(), "Enter on a slot goes on to its candidates")
+	var armor_at := equipment.candidates.find_custom(func(candidate: Dictionary): return candidate.item.kind == ItemData.Kind.ARMOR)
 	var worn: ItemData = main.state.equipment.slots[Equipment.Slot.ARMOR]
+	equipment.cells[armor_at].grab_focus()
 	await press_enter()
-	check(equipment.equip_button.has_focus() and main.state.equipment.slots[Equipment.Slot.ARMOR] == worn, "Enter on a candidate goes to the equip action without equipping")
+	check(equipment.slots[Equipment.Slot.ARMOR].has_focus() and main.state.equipment.slots[Equipment.Slot.ARMOR] == worn, "Enter on gear moves to the slot it would take, wearing nothing")
+	await press_enter()
+	check(equipment.prompt.visible and equipment.equip_button.has_focus() and main.state.equipment.slots[Equipment.Slot.ARMOR] == worn, "Enter on the slot asks first, with the answer in reach")
+	equipment.prompt.cancel_button.pressed.emit()
+	check(not equipment.prompt.visible and equipment.cells[armor_at].has_focus(), "Declining returns to the gear")
 	hub.open_warehouse()
 	var warehouse: HubWarehouse = hub.warehouse_page
 	warehouse.inventory_list.grab_focus()
@@ -104,13 +106,12 @@ func run_tests() -> void:
 	hub.show_page("equipment")
 	var equipment: HubEquipment = hub.equipment_page
 	equipment.select_slot(Equipment.Slot.ARMOR)
-	check(equipment.candidate_list.selection_strength == 0.0, "Slot change animates automatic candidate selection")
-	check_alpha([equipment.comparison], 0.65, "Equipment details start together")
-	check(not equipment.equip_button.disabled, "Candidate and equip action update immediately")
+	check(equipment.selected_candidate == -1 and equipment.slots[Equipment.Slot.ARMOR].button_pressed, "Choosing a slot holds no gear")
+	equipment.cells[0].pressed.emit()
+	check(equipment.selected_candidate == 0 and equipment.cells[0].button_pressed and not equipment.slots[Equipment.Slot.ARMOR].button_pressed, "One thing is chosen at a time: the gear, not the slot")
 	equipment.select_slot(Equipment.Slot.ACCESSORY_1)
-	check(equipment.candidate_list.get_selected_items().is_empty() and equipment.equip_button.disabled, "Empty slot has no actionable stale candidate")
+	check(equipment.selected_candidate == -1 and equipment.unequip_button.disabled and not equipment.cells[0].button_pressed, "An empty slot holds no stale gear and has nothing to take off")
 	hub.show_page("home")
-	check_alpha([equipment.comparison], 1.0, "Leaving equipment resets fades")
 	hub.open_warehouse()
 	var warehouse: HubWarehouse = hub.warehouse_page
 	var inventory_list := warehouse.inventory_list

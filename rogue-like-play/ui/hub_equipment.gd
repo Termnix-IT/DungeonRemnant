@@ -1,49 +1,50 @@
 class_name HubEquipment
 extends Control
 
-# The equipment page, in the shop's order: choose a slot (the five slots as
-# open rows on a slab like the lobby menu), learn its candidates (their list,
-# the chosen one's note, the lesser actions and the one equip
-# action), then see what they do to her (her stats before and after, beside the
-# equip action). Leaving is the back key; this page holds
-# no button that only moves elsewhere.
+# The equipment page, as an inventory: the five slots down the left and, beside
+# them, the gear the adventurer can wear (carried and stored together) as icons
+# alone. The name and main effect of what the pointer or the focus rests on
+# stand in one line under them; the full text is the tooltip. Gear goes into a
+# slot by dragging its icon there, or by choosing it and then the slot (Enter
+# on the icon moves to the slot it would take); either way a prompt names the
+# change to her stats before anything is worn. Taking a slot's icon out onto
+# the gear takes it off, and dropping the main weapon on the sub weapon (or
+# the reverse) swaps them. The page leads nowhere else: the warehouse is its
+# own screen from the lobby.
 
 signal equip_requested(from_storage: bool, index: int, slot: int)
 signal unequip_requested(slot: int)
 signal scroll_remove_requested(slot: int)
 signal swap_requested
-signal warehouse_requested
+
+const SLOT_CAPTIONS := Equipment.SLOT_NAMES
+const GRID_COLUMNS := 7
 
 var state: RunCarryover
 var selected_slot := 0
+# Index into candidates of the chosen gear icon, or -1 while a slot is chosen.
+var selected_candidate := -1
+# The gear that can be worn, carried first: {from_storage, index, item, count}.
 var candidates: Array[Dictionary] = []
 var slots: Array[Button] = []
-var slot_names: Array[Label] = []
-var slot_glyphs: Array[Control] = []
-var slot_rows: VBoxContainer
-var candidate_heading: Label
-var candidate_list: ItemCardList
-var carried_label: Label
-var comparison: ItemDetails
+var cells: Array[ItemCell] = []
+var grid: GridContainer
+var prompt: ChoicePrompt
+# The prompt's accept button, which wears what was asked about.
 var equip_button: Button
 var unequip_button: Button
 var swap_button: Button
 var scroll_remove_button: Button
-var hero_stats: HeroStats
-var _candidates_column: VBoxContainer
+var detail_name: Label
+var detail_note: Label
 # The candidate of the last equip request, for the success moment after saving,
-# and where its list row stood (global) for the glyph to fly from.
+# and where its icon stood (global) for the glyph to fly from.
 var equipped_item: ItemData
 var _equipped_from := Rect2()
-const SLOT_CAPTIONS := Equipment.SLOT_NAMES
-# Slot art is the 48px item icon at its native size, so it is never blurred.
-const SLOT_ICON := 48
-const SLOT_HEIGHT := 64.0
-# The chosen candidate has no art of its own: its row in the list already shows
-# icon, name and main effect, so the note under the list names it and says the
-# rest, and the candidates keep the column's height.
-const COMPARISON_HEIGHT := 72.0
-const BAND_TIP := 18.0
+var _pending := {}
+var _slab: Control
+var _gear_scroll: ScrollContainer
+var _gear_heading: Label
 
 
 func _ready() -> void:
@@ -51,179 +52,333 @@ func _ready() -> void:
 	columns.theme_type_variation = &"ShopColumns"
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_build_slots(HubUI.open_column(columns, 0.62, &"SlabSolid"))
-	_candidates_column = HubUI.open_column(columns, 1.3, &"SlabColumn")
-	_build_candidates(_candidates_column)
-	hero_stats = HeroStats.new()
-	hero_stats.size_flags_stretch_ratio = 0.95
-	columns.add_child(hero_stats)
-	# What the candidate would change stands under its note, right above
-	# the equip action; she stays on the right.
-	hero_stats.move_stats_to(comparison.get_parent(), comparison.get_index() + 1)
+	var slab := HubUI.open_column(columns, 1.0, &"SlabColumn")
+	_slab = slab.get_parent()
+	slab.theme_type_variation = &"DetailStack"
+	_build_body(slab)
+	# The hall stays open on the right, with its painting of the armoury.
+	var hall := Control.new()
+	hall.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hall.size_flags_stretch_ratio = 0.8
+	hall.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	columns.add_child(hall)
+	prompt = ChoicePrompt.new()
+	add_child(prompt)
+	equip_button = prompt.accept_button
+	prompt.confirmed.connect(_confirm)
+	prompt.canceled.connect(_cancel)
+	visibility_changed.connect(func():
+		if not is_visible_in_tree():
+			prompt.hide())
 
 
-func _build_slots(column: VBoxContainer) -> void:
-	column.theme_type_variation = &"DetailStack"
-	HubUI.label(column, "装備枠", &"NoteLabel")
-	slot_rows = VBoxContainer.new()
-	slot_rows.theme_type_variation = &"SlotRows"
-	column.add_child(slot_rows)
-	# The band is the rows' own drawing under the slots, so it can slide.
-	UIMotion.of(slot_rows)
-	slot_rows.draw.connect(_draw_slot_band)
+func _build_body(column: VBoxContainer) -> void:
+	var top := HBoxContainer.new()
+	top.theme_type_variation = &"ShopColumns"
+	column.add_child(top)
+	# The slots: an icon and the slot's name beside it.
+	var slot_column := VBoxContainer.new()
+	slot_column.theme_type_variation = &"DetailStack"
+	top.add_child(slot_column)
+	HubUI.label(slot_column, "装備", &"NoteLabel")
 	for slot in 5:
-		var control := HubUI.button(slot_rows, "", select_slot.bind(slot), &"SlotRow")
-		control.custom_minimum_size = Vector2(0, SLOT_HEIGHT)
-		control.toggle_mode = true
-		# Enter on a slot goes on to its candidates.
-		control.gui_input.connect(_slot_accept.bind(control, slot))
-		control.draw.connect(_draw_slot_row.bind(control, slot))
-		slots.append(control)
-		_build_slot(control, slot)
-	HubUI.space(column)
-	# What she carries is the warehouse's to arrange; here only its count.
+		var row := HBoxContainer.new()
+		row.theme_type_variation = &"CompactRow"
+		slot_column.add_child(row)
+		var cell := ItemCell.new()
+		cell.symbol = ItemGlyph.slot_symbol(slot)
+		cell.pressed.connect(_slot_pressed.bind(slot))
+		cell.can_accept = _slot_accepts.bind(slot)
+		cell.dropped.connect(_dropped_on_slot.bind(slot))
+		cell.mouse_entered.connect(_preview_slot.bind(slot))
+		cell.focus_entered.connect(_preview_slot.bind(slot))
+		cell.mouse_exited.connect(_restore_detail)
+		cell.focus_exited.connect(_restore_detail)
+		row.add_child(cell)
+		slots.append(cell)
+		var caption := HubUI.label(row, SLOT_CAPTIONS[slot], &"NoteLabel")
+		caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+		caption.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		caption.custom_minimum_size.x = 56
+	# The gear: every icon that can be worn, a scroll if there are many.
+	var gear_column := VBoxContainer.new()
+	gear_column.theme_type_variation = &"DetailStack"
+	gear_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(gear_column)
+	_gear_heading = HubUI.label(gear_column, "身につけられる品", &"NoteLabel")
+	_gear_scroll = ScrollContainer.new()
+	_gear_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_gear_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	gear_column.add_child(_gear_scroll)
+	grid = GridContainer.new()
+	grid.columns = GRID_COLUMNS
+	grid.theme_type_variation = &"GearGrid"
+	_gear_scroll.add_child(grid)
+	# Taking a worn icon out onto the gear takes it off.
+	_gear_scroll.set_drag_forwarding(Callable(), _can_drop_on_gear, _drop_on_gear)
 	HubUI.rule(column)
-	var carried := HBoxContainer.new()
-	carried.theme_type_variation = &"CompactRow"
-	column.add_child(carried)
-	carried_label = HubUI.label(carried, "", &"NoteLabel")
-	carried_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	carried_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	HubUI.button(carried, "倉庫で整える  ›", func(): warehouse_requested.emit(), &"TextAction")
-
-
-func _build_candidates(column: VBoxContainer) -> void:
-	column.theme_type_variation = &"DetailStack"
-	candidate_heading = HubUI.label(column, "", &"NoteLabel")
-	candidate_list = ItemCardList.new()
-	candidate_list.theme_type_variation = &"OpenCardList"
-	candidate_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	column.add_child(candidate_list)
-	candidate_list.item_selected.connect(_select_candidate)
-	HubUI.rule(column)
-	comparison = ItemDetails.new()
-	comparison.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	column.add_child(comparison)
-	# A fixed height: a long note scrolls instead of taking the list's room.
-	comparison.custom_minimum_size.y = COMPARISON_HEIGHT
-	# The lesser actions read as words; the one equip action is the plate.
+	detail_name = HubUI.label(column, "", &"HeadingLabel")
+	detail_name.autowrap_mode = TextServer.AUTOWRAP_OFF
+	detail_note = HubUI.label(column, "", &"NoteLabel")
+	detail_note.autowrap_mode = TextServer.AUTOWRAP_OFF
 	var lesser := HBoxContainer.new()
 	lesser.theme_type_variation = &"TextActions"
 	column.add_child(lesser)
-	unequip_button = HubUI.button(lesser, "外す", func():
-		equipped_item = null
-		unequip_requested.emit(selected_slot), &"TextAction")
-	scroll_remove_button = HubUI.button(lesser, "魔法を外す", func():
-		equipped_item = null
-		scroll_remove_requested.emit(selected_slot), &"TextAction")
+	unequip_button = HubUI.button(lesser, "外す", func(): unequip_requested.emit(selected_slot), &"TextAction")
+	scroll_remove_button = HubUI.button(lesser, "魔法を外す", func(): scroll_remove_requested.emit(selected_slot), &"TextAction")
 	swap_button = HubUI.button(lesser, "主武器と副武器を入れ替え", func(): swap_requested.emit(), &"TextAction")
-	equip_button = HubUI.primary_action(column, "装備する", _equip)
-	HubUI.accept_to_action(candidate_list, equip_button)
 
 
 func refresh(current: RunCarryover) -> void:
 	state = current
-	for target: Control in [candidate_list, comparison]:
-		UIMotion.of(target).reset()
-	swap_button.disabled = state.equipment.slots[Equipment.Slot.SUB] == null
+	var kept: ItemData = candidates[selected_candidate].item if selected_candidate >= 0 and selected_candidate < candidates.size() else null
+	var focused := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
+	var focus_index := cells.find(focused) if focused is ItemCell else -1
 	for index in slots.size():
-		slots[index].set_pressed_no_signal(index == selected_slot)
 		var item := state.equipment.slots[index]
-		slot_names[index].text = item.label() if item != null else "未装備"
-		slot_glyphs[index].queue_redraw()
-		slots[index].queue_redraw()
-	slot_rows.queue_redraw()
-	carried_label.text = "持ち込み　%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries]
-	candidate_heading.text = "%sの候補" % SLOT_CAPTIONS[selected_slot]
-	_fill_candidates()
+		(slots[index] as ItemCell).show_item(item)
+		slots[index].tooltip_text = ItemTooltipList.description(item) if item != null else SLOT_CAPTIONS[index]
+	_fill_gear()
+	selected_candidate = -1
+	for index in candidates.size():
+		if candidates[index].item == kept:
+			selected_candidate = index
+			break
+	swap_button.disabled = state.equipment.slots[Equipment.Slot.SUB] == null
+	_mark()
+	if focus_index >= 0 and not cells.is_empty():
+		cells[mini(focus_index, cells.size() - 1)].grab_focus()
 
 
-# A slot reads as the equipped item's icon, the slot's name small above the
-# item's; the Button keeps input and focus.
-func _build_slot(button: Button, slot: int) -> void:
-	var row := HBoxContainer.new()
-	row.theme_type_variation = &"CompactRow"
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	button.add_child(row)
-	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	row.offset_left = 8
-	row.offset_right = -BAND_TIP - 6
-	var glyph := Control.new()
-	glyph.custom_minimum_size = Vector2.ONE * SLOT_ICON
-	glyph.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	glyph.draw.connect(_draw_slot_glyph.bind(slot, glyph))
-	row.add_child(glyph)
-	slot_glyphs.append(glyph)
-	var text := VBoxContainer.new()
-	text.theme_type_variation = &"CompactStack"
-	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	text.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(text)
-	var caption := HubUI.label(text, SLOT_CAPTIONS[slot], &"NoteLabel")
-	caption.autowrap_mode = TextServer.AUTOWRAP_OFF
-	var name_label := HubUI.label(text, "", &"ItemNameLabel")
-	name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	name_label.clip_text = true
-	slot_names.append(name_label)
-	button.toggled.connect(func(_on: bool): glyph.queue_redraw())
+func _fill_gear() -> void:
+	for cell in cells:
+		grid.remove_child(cell)
+		cell.queue_free()
+	cells.clear()
+	candidates.clear()
+	for from_storage in [false, true]:
+		var source := state.storage if from_storage else state.inventory
+		for index in source.entries.size():
+			var item := source.entries[index].item
+			if _slots_for(item).is_empty():
+				continue
+			var at := candidates.size()
+			candidates.append({"from_storage": from_storage, "index": index, "item": item, "count": source.entries[index].count})
+			var cell := ItemCell.new()
+			cell.show_item(item, source.entries[index].count)
+			cell.tooltip_text = ItemTooltipList.description(item)
+			cell.pressed.connect(_candidate_pressed.bind(at))
+			cell.gui_input.connect(_candidate_input.bind(at))
+			cell.mouse_entered.connect(_preview_candidate.bind(at))
+			cell.focus_entered.connect(_preview_candidate.bind(at))
+			cell.mouse_exited.connect(_restore_detail)
+			cell.focus_exited.connect(_restore_detail)
+			grid.add_child(cell)
+			cells.append(cell)
+	_gear_heading.text = "身につけられる品" if not candidates.is_empty() else "身につけられる品はない"
 
 
-# The slots other than the chosen one are parted by faint rules.
-func _draw_slot_row(button: Button, slot: int) -> void:
-	var rect := Rect2(Vector2.ZERO, button.size)
-	var rail := button.get_theme_color(&"rail", &"HubLobby")
-	if not button.button_pressed and slot < SLOT_CAPTIONS.size() - 1:
-		var y := rect.end.y - 0.5
-		button.draw_polyline_colors(PackedVector2Array([Vector2(0, y), Vector2(rect.size.x * 0.5, y), Vector2(rect.size.x, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.22), Color(rail, 0.0)]), 1.0, true)
+# The slots an item could go into: its kind's slots, or a staff's for a scroll.
+func _slots_for(item: ItemData) -> Array[int]:
+	var found: Array[int] = []
+	for slot in slots.size():
+		if state.equipment.accepts(item, slot) or (item.kind == ItemData.Kind.SCROLL and state.equipment.can_socket(slot)):
+			found.append(slot)
+	return found
 
 
-# The chosen slot is the lobby menu's warm band pointed at the candidates,
-# sliding from the slot chosen before (UIMotion.follow_mark).
-func _draw_slot_band() -> void:
-	var chosen := slots[selected_slot]
-	var target := Rect2(chosen.position + Vector2(0, 4), chosen.size - Vector2(0, 8))
-	var rect := UIMotion.of(slot_rows).follow_mark(target)
-	var rail := slot_rows.get_theme_color(&"rail", &"HubLobby")
-	var band := slot_rows.get_theme_color(&"band", &"HubLobby")
-	# It arrives with its slot when the page opens.
-	var alpha := chosen.modulate.a
-	var tip := rect.end.x
-	var middle := rect.get_center().y
-	var outline := PackedVector2Array([rect.position, Vector2(tip - BAND_TIP, rect.position.y), Vector2(tip, middle), Vector2(tip - BAND_TIP, rect.end.y), Vector2(rect.position.x, rect.end.y)])
-	slot_rows.draw_polygon(outline, PackedColorArray([Color(band, band.a * 0.5 * alpha), Color(band, band.a * 1.6 * alpha), Color(band, band.a * 1.8 * alpha), Color(band, band.a * 1.6 * alpha), Color(band, band.a * 0.5 * alpha)]))
-	slot_rows.draw_polyline_colors(outline, PackedColorArray([Color(rail, 0.0), Color(rail, 0.85 * alpha), Color(rail, alpha), Color(rail, 0.85 * alpha), Color(rail, 0.0)]), 1.5, true)
+# What is chosen shows its frame; slots that the chosen gear does not fit dim;
+# the lesser actions follow the chosen slot.
+func _mark() -> void:
+	var item: ItemData = candidates[selected_candidate].item if selected_candidate >= 0 else null
+	var fits: Array[int] = []
+	if item != null:
+		fits = _slots_for(item)
+	for index in slots.size():
+		(slots[index] as ItemCell).dimmed = item != null and index not in fits
+		slots[index].set_pressed_no_signal(item == null and index == selected_slot)
+	for index in cells.size():
+		cells[index].set_pressed_no_signal(index == selected_candidate)
+	var current := state.equipment.slots[selected_slot]
+	unequip_button.visible = selected_slot != Equipment.Slot.MAIN and selected_candidate < 0
+	unequip_button.disabled = current == null
+	scroll_remove_button.visible = selected_candidate < 0 and state.equipment.can_socket(selected_slot) and current.socketed_scroll != null
+	swap_button.visible = selected_candidate < 0
+	_restore_detail()
 
 
-# Opening the page: the slots arrive top first, the candidates a beat later,
-# then the rest.
+func select_slot(slot: int) -> void:
+	selected_slot = slot
+	selected_candidate = -1
+	_mark()
+	var focused := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
+	if focused is ItemCell and (slots.has(focused) or cells.has(focused)):
+		slots[slot].grab_focus()
+
+
+func step_slot(direction: int) -> void:
+	select_slot(posmod(selected_slot + direction, slots.size()))
+
+
+# The slot a gear icon would take: the first empty one that fits, else the
+# first that fits.
+func _default_slot(index: int) -> int:
+	var fits := _slots_for(candidates[index].item)
+	for slot in fits:
+		if state.equipment.slots[slot] == null:
+			return slot
+	return fits[0]
+
+
+# Choosing a gear icon holds it for a slot; Enter or A moves on to the slot it
+# would take, without wearing anything; a double click asks about it at once.
+func _candidate_pressed(index: int) -> void:
+	selected_candidate = index
+	_mark()
+
+
+func _candidate_input(event: InputEvent, index: int) -> void:
+	var enter: bool = event.is_action_pressed("ui_accept") and not event.is_echo()
+	var double: bool = event is InputEventMouseButton and event.double_click and event.button_index == MOUSE_BUTTON_LEFT
+	if not enter and not double:
+		return
+	cells[index].accept_event()
+	selected_candidate = index
+	selected_slot = _default_slot(index)
+	_mark()
+	if enter:
+		slots[selected_slot].grab_focus()
+	else:
+		ask_equip(index, selected_slot)
+
+
+func _slot_pressed(slot: int) -> void:
+	selected_slot = slot
+	if selected_candidate >= 0 and slot in _slots_for(candidates[selected_candidate].item):
+		ask_equip(selected_candidate, slot)
+		return
+	selected_candidate = -1
+	_mark()
+
+
+func _slot_accepts(source: ItemCell, slot: int) -> bool:
+	var from_gear := cells.find(source)
+	if from_gear >= 0:
+		return slot in _slots_for(candidates[from_gear].item)
+	var from_slot := slots.find(source)
+	var weapons := [Equipment.Slot.MAIN, Equipment.Slot.SUB]
+	return from_slot >= 0 and from_slot != slot and from_slot in weapons and slot in weapons and state.equipment.slots[Equipment.Slot.SUB] != null
+
+
+func _dropped_on_slot(source: ItemCell, slot: int) -> void:
+	var from_gear := cells.find(source)
+	if from_gear >= 0:
+		selected_candidate = from_gear
+		selected_slot = slot
+		_mark()
+		ask_equip(from_gear, slot)
+	elif slots.has(source):
+		swap_requested.emit()
+
+
+func _can_drop_on_gear(_at: Vector2, data: Variant) -> bool:
+	return data is ItemCell and slots.has(data) and (data as ItemCell).item != null and slots.find(data) != Equipment.Slot.MAIN
+
+
+func _drop_on_gear(_at: Vector2, data: Variant) -> void:
+	unequip_requested.emit(slots.find(data))
+
+
+# The prompt: which slot, what it holds now, and how her stats would change.
+func ask_equip(index: int, slot: int) -> void:
+	var item: ItemData = candidates[index].item
+	var current := state.equipment.slots[slot]
+	var caption := "%s（今：%s）" % [SLOT_CAPTIONS[slot], current.label() if current != null else "なし"]
+	_pending = {"candidate": index, "slot": slot}
+	if item.kind == ItemData.Kind.SCROLL:
+		prompt.ask(caption, "杖に「%s」を込める" % item.label(), "込めてあった魔法は、元の場所へ戻る。", "杖に魔法を込める", "やめる")
+	else:
+		prompt.ask(caption, "%sを装備する" % item.label(), _change_text(slot, item), "装備する", "やめる")
+
+
+func _change_text(slot: int, item: ItemData) -> String:
+	var before := state.preparation_stats()
+	var preview := Equipment.new()
+	preview.slots.assign(state.equipment.slots)
+	preview.slots[slot] = item
+	var after := state.preparation_stats(preview)
+	var lines: Array[String] = []
+	for stat: Array in HeroStats.STATS:
+		if before[stat[0]] != after[stat[0]]:
+			lines.append("%s　%d → %d（%+d）" % [stat[1], before[stat[0]], after[stat[0]], after[stat[0]] - before[stat[0]]])
+	return "\n".join(lines) if not lines.is_empty() else "能力は変わらない"
+
+
+func _confirm() -> void:
+	prompt.hide()
+	if _pending.is_empty():
+		return
+	var candidate: Dictionary = candidates[_pending.candidate]
+	var slot: int = _pending.slot
+	var cell: ItemCell = cells[_pending.candidate]
+	_pending = {}
+	equipped_item = candidate.item
+	_equipped_from = Rect2(cell.get_global_rect().position + (cell.size - Vector2.ONE * ItemCell.ICON) * 0.5, Vector2.ONE * ItemCell.ICON)
+	selected_slot = slot
+	equip_requested.emit(candidate.from_storage, candidate.index, slot)
+
+
+func _cancel() -> void:
+	prompt.hide()
+	if not _pending.is_empty() and _pending.candidate < cells.size():
+		cells[_pending.candidate].grab_focus()
+	_pending = {}
+
+
+func _preview_slot(slot: int) -> void:
+	var item := state.equipment.slots[slot] if state != null else null
+	_show_detail(item, SLOT_CAPTIONS[slot] if item == null else "")
+
+
+func _preview_candidate(index: int) -> void:
+	var candidate: Dictionary = candidates[index]
+	_show_detail(candidate.item, "倉庫" if candidate.from_storage else "持ち込み")
+
+
+# What the pointer or the focus left: the chosen gear, else the chosen slot.
+func _restore_detail() -> void:
+	if state == null:
+		return
+	if selected_candidate >= 0 and selected_candidate < candidates.size():
+		_preview_candidate(selected_candidate)
+	else:
+		_preview_slot(selected_slot)
+
+
+# One line of name, one of kind and main effect; the tooltip has the rest.
+func _show_detail(item: ItemData, tag: String) -> void:
+	if item == null:
+		detail_name.text = "未装備"
+		detail_note.text = tag
+		return
+	detail_name.text = item.label()
+	var parts: Array[String] = [ItemGlyph.category(item), ItemGlyph.main_effect(item)]
+	if not tag.is_empty():
+		parts.append(tag)
+	detail_note.text = "　".join(parts)
+
+
+# Opening the page: the slots arrive top first, the gear a beat later.
 func play_entrance() -> void:
 	for index in slots.size():
 		UIMotion.of(slots[index]).appear(UIMotion.ROW_STAGGER * index, UIMotion.ROW_TIME)
-	# The band reads its slot's fade, so the rows redraw while they arrive.
-	slot_rows.create_tween().tween_method(func(_at: float): slot_rows.queue_redraw(), 0.0, 1.0, UIMotion.rows_time(slots.size()))
-	candidate_list.play_intro()
-	UIMotion.of(_candidates_column).appear(UIMotion.STAGGER_TIME)
+	UIMotion.of(_slab).appear(0.0, UIMotion.WINDOW_TIME)
+	UIMotion.of(_gear_scroll).appear(UIMotion.STAGGER_TIME)
 
 
-func _draw_slot_glyph(slot: int, glyph: Control) -> void:
-	if state == null:
-		return
-	var item: ItemData = state.equipment.slots[slot]
-	if item == null:
-		# An empty slot shows the faint common symbol of what it accepts.
-		ItemGlyph.paint(glyph, Rect2(Vector2.ONE * 8, glyph.size - Vector2.ONE * 16), ItemGlyph.slot_symbol(slot), glyph.get_theme_color(&"font_color", &"NoteLabel"))
-		return
-	# Gold only marks the chosen slot.
-	var role := &"GoldLabel" if slots[slot].button_pressed else &"Label"
-	ItemGlyph.paint(glyph, Rect2(Vector2.ZERO, glyph.size), item, glyph.get_theme_color(&"font_color", role))
-
-
-# Success moment after saving: the chosen candidate flies into its slot, which
-# then acknowledges it while the adventurer brightens. Swaps and removals
-# have no single item to carry and only pulse their slots.
+# Success moment after saving: the gear's icon flies into its slot, which
+# then acknowledges it. Swaps and removals have no single item to carry and
+# only pulse their slots.
 func present_equip(changed: Array[int]) -> void:
 	if equipped_item != null and changed.size() == 1 and is_visible_in_tree():
 		var slot := slots[changed[0]]
@@ -236,104 +391,11 @@ func present_equip(changed: Array[int]) -> void:
 		origin.queue_free()
 		flight.finished.connect(func():
 			if is_instance_valid(slot) and slot.is_visible_in_tree():
-				UIMotion.of(slot).pulse()
-				UIMotion.of(hero_stats.specs).pulse(1.04, UIMotion.GOLD_TIME))
+				UIMotion.of(slot).pulse())
 	else:
 		for index in changed:
 			UIMotion.of(slots[index]).pulse()
 	equipped_item = null
-
-
-func select_slot(slot: int) -> void:
-	selected_slot = slot
-	refresh(state)
-	# Focus follows the choice, so the focus edge never sits on another slot.
-	var focused := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
-	if focused is Button and slots.has(focused):
-		slots[slot].grab_focus()
-	# Another slot's candidates: their rows arrive anew.
-	candidate_list.play_intro()
-	if not candidate_list.get_selected_items().is_empty():
-		UIMotion.of(candidate_list).select_card()
-	UIMotion.reveal_selection([comparison])
-
-
-func _slot_accept(event: InputEvent, control: Button, slot: int) -> void:
-	if not event.is_action_pressed("ui_accept") or event.is_echo():
-		return
-	control.accept_event()
-	select_slot(slot)
-	if candidate_list.item_count > 0:
-		candidate_list.grab_focus()
-
-
-func step_slot(direction: int) -> void:
-	select_slot(posmod(selected_slot + direction, slots.size()))
-
-
-func _select_candidate(_index: int) -> void:
-	_compare()
-	UIMotion.reveal_selection([comparison])
-
-
-func _fill_candidates() -> void:
-	candidates.clear()
-	candidate_list.clear()
-	for from_storage in [false, true]:
-		var source := state.storage if from_storage else state.inventory
-		for index in source.entries.size():
-			var item := source.entries[index].item
-			if state.equipment.accepts(item, selected_slot) or (item.kind == ItemData.Kind.SCROLL and state.equipment.can_socket(selected_slot)):
-				candidates.append({"from_storage": from_storage, "index": index, "item": item})
-				candidate_list.add_card(item, source.entries[index].count, -1, "倉庫" if from_storage else "所持")
-				candidate_list.set_item_tooltip(candidate_list.item_count - 1, ItemTooltipList.description(item))
-	candidate_list.empty_text = "この枠に付けられる品はない"
-	if not candidates.is_empty():
-		candidate_list.select(0)
-	_compare()
-
-
-func _compare() -> void:
-	comparison.reset()
-	var current := state.equipment.slots[selected_slot]
-	scroll_remove_button.visible = state.equipment.can_socket(selected_slot) and current.socketed_scroll != null
-	equip_button.text = "装備する"
-	equip_button.tooltip_text = ""
-	# The Main weapon cannot be taken off; an empty slot has nothing to take.
-	unequip_button.visible = selected_slot != Equipment.Slot.MAIN
-	unequip_button.disabled = current == null
-	var selected := candidate_list.get_selected_items()
-	equip_button.disabled = selected.is_empty() or candidates.is_empty()
-	var before := state.preparation_stats()
-	if equip_button.disabled:
-		if current != null:
-			comparison.line(current.label(), &"MutedLabel")
-		comparison.line("今の装備です。" if current != null else "この枠は空いています。", &"NoteLabel")
-		hero_stats.show_stats(before)
-		return
-	var candidate: ItemData = candidates[selected[0]].item
-	if candidate.kind == ItemData.Kind.SCROLL:
-		comparison.item_text(candidate, null, &"NoteLabel")
-		equip_button.text = "杖に魔法を込める"
-		equip_button.tooltip_text = "込めてあった魔法は、元の場所へ戻る"
-		hero_stats.show_stats(before)
-		return
-	var preview := Equipment.new()
-	preview.slots.assign(state.equipment.slots)
-	preview.slots[selected_slot] = candidate
-	hero_stats.show_stats(before, state.preparation_stats(preview), HeroStats.swap_text(selected_slot, current))
-	comparison.item_text(candidate, null, &"NoteLabel")
-
-
-func _equip() -> void:
-	var selected := candidate_list.get_selected_items()
-	if selected.is_empty() or candidates.is_empty():
-		return
-	var candidate := candidates[selected[0]]
-	equipped_item = candidate.item
-	var row := candidate_list.get_item_rect(selected[0])
-	_equipped_from = Rect2(candidate_list.global_position + row.position + Vector2(8, (row.size.y - SLOT_ICON) * 0.5), Vector2.ONE * SLOT_ICON)
-	equip_requested.emit(candidate.from_storage, candidate.index, selected_slot)
 
 
 func _unhandled_input(event: InputEvent) -> void:

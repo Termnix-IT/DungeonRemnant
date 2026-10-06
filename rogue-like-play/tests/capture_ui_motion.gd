@@ -116,6 +116,7 @@ func capture() -> void:
 		Input.flush_buffered_events()
 	check(hub.equipment_button.has_focus() and hub.home_page.selected_id() == &"equipment", "Gamepad D-pad moves up the lobby menu and chooses")
 	await enter(hub, hub.equipment_button)
+	await click(hub.equipment_page.cells[hub.equipment_page.candidates.find_custom(func(candidate: Dictionary): return candidate.item.kind == ItemData.Kind.ARMOR)])
 	await click(hub.equipment_page.slots[2])
 	hub.equipment_page.equip_button.grab_focus()
 	await key(KEY_ENTER)
@@ -126,8 +127,8 @@ func capture() -> void:
 	await frame_shot("equip")
 	await settle()
 	await create_timer(1.0).timeout
-	await sample_cost(hub.equipment_page.equip_button, false)
-	await sample_cost(hub.equipment_page.equip_button, true)
+	await sample_cost(hub.equipment_page.swap_button, false)
+	await sample_cost(hub.equipment_page.swap_button, true)
 	hub.show_page("upgrade")
 	var tree: SkillTreePanel = hub.upgrade_page
 	for resolution in [Vector2i(1600, 900), Vector2i(1280, 720), Vector2i(1920, 1080)]:

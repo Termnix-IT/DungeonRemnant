@@ -211,7 +211,7 @@ func run_tests() -> void:
 	await settle()
 	for page: Control in [hub.home_page, hub.sell_page, hub.equipment_page]:
 		check(is_equal_approx(page.modulate.a, 1.0) and near_scale(page, 1.0), "Rapid navigation restores page alpha and scale")
-	for part: Control in [hub.sell_page._catalog, hub.sell_page._info, hub.equipment_page._candidates_column] + hub.equipment_page.slots:
+	for part: Control in [hub.sell_page._catalog, hub.sell_page._info, hub.equipment_page._slab] + hub.equipment_page.slots:
 		check(is_equal_approx(part.modulate.a, 1.0), "Rapid navigation settles every arriving part")
 	check(is_zero_approx(hub._page_background.modulate.a) and is_equal_approx(hub._ambience.lights_mix, 1.0), "The lobby shows its own hall and its lamps")
 	hub.show_page("equipment")

@@ -23,21 +23,10 @@ func capture() -> void:
 	await shot("details_shop")
 	await key(KEY_ESCAPE)
 	await enter(hub, hub.equipment_button)
-	await click(hub.equipment_page.slots[Equipment.Slot.ARMOR])
-	var comparison: ItemDetails = hub.equipment_page.comparison
-	# The change reads in her stats; the details keep to the goods' note.
-	var defense: Array = hub.equipment_page.hero_stats.specs.rows.filter(func(row: Array): return row[0] == "防御力")[0]
-	check(defense[2] - defense[1] == armor.defense_bonus, "Her stats preserve the numeric bonus")
-	# Exercise actual overflow independently of the available panel height.
-	for index in 24:
-		comparison.line("長文の装備説明と比較値をキーボードで確認します。")
-	await settle()
-	comparison.grab_focus()
-	await key(KEY_END)
-	check(comparison.get_v_scroll_bar().value > 0, "Keyboard can scroll long details")
-	await shot("details_equipment_scrolled")
-	hub.equipment_page.select_slot(Equipment.Slot.ARMOR)
-	check(comparison.get_v_scroll_bar().value == 0, "New comparison resets scroll")
+	var worn: HubEquipment = hub.equipment_page
+	var armor_at := worn.candidates.find_custom(func(candidate: Dictionary): return candidate.item == armor)
+	await click(worn.cells[armor_at])
+	check(worn.detail_name.text == armor.label(), "The chosen gear is named in the detail line")
 	await shot("details_equipment")
 	hub.open_warehouse()
 	await settle()

@@ -8,7 +8,6 @@ extends Control
 # middle. Leaving is the back key.
 
 signal transfer_requested(from_storage: bool, index: int)
-signal equipment_requested
 
 const STORAGE_NOTE := "倉庫の品は冒険へ持っていかず、倒れても失わない。"
 const SHOWCASE_SIZE := 192.0
@@ -29,7 +28,6 @@ var result_label: Label
 var amount_label: Label
 var change_label: Label
 var move_button: Button
-var equipment_link: Button
 var storage_rule: HintMark
 var _middle: VBoxContainer
 
@@ -43,10 +41,6 @@ func _ready() -> void:
 	inventory_title = _stock_heading(carried, "持ち込み")
 	inventory_list = _stock_list(carried, "持ち込みの品はない", false)
 	inventory_list.item_selected.connect(_select_inventory)
-	# Arranging what she wears is the equipment page's; here only the way there.
-	HubUI.rule(carried)
-	equipment_link = HubUI.button(carried, "装備を整える  ›", func(): equipment_requested.emit(), &"TextAction")
-	equipment_link.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_middle = HubUI.open_column(columns, 0.9, &"SlabVeil")
 	_build_middle(_middle)
 	var kept := HubUI.open_column(columns, 1.0, &"SlabSolidEnd")

@@ -50,8 +50,11 @@ func run_tests() -> void:
 			check(not hub.departure_page.inventory_list.get_global_rect().intersects(hub.departure_page.review_button.get_global_rect()), "Carried goods leave the review action clear")
 			check(root.get_visible_rect().encloses(hub.departure_page.confirm_button.get_global_rect()), "The sortie action stays on the screen")
 		if page == "equipment":
-			check(not hub.equipment_page.comparison.get_global_rect().intersects(hub.equipment_page.equip_button.get_global_rect()), "Equipment comparison leaves action visible")
-			check(not hub.equipment_page.candidate_list.get_global_rect().intersects(hub.equipment_page.swap_button.get_global_rect()), "Equipment candidates leave the lesser actions visible")
+			var worn: HubEquipment = hub.equipment_page
+			var screen: Rect2 = root.get_visible_rect()
+			check(worn.slots.all(func(slot: Button): return screen.encloses(slot.get_global_rect())) and screen.encloses(worn.detail_note.get_global_rect()), "Every slot and the detail line stay on the screen")
+			check(not worn._gear_scroll.get_global_rect().intersects(worn.detail_name.get_global_rect()) and not worn.detail_note.get_global_rect().intersects(worn.swap_button.get_global_rect()), "The gear icons leave the detail line and the lesser actions clear")
+			check(worn.grid.get_global_rect().position.x >= worn.slots[0].get_global_rect().end.x, "The gear stands beside the slots")
 	hub.show_page("home")
 	enter(hub, hub.warehouse_button)
 	await create_timer(UIMotion.WINDOW_TIME + 0.05).timeout

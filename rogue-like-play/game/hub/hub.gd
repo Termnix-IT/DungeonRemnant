@@ -41,8 +41,6 @@ var upgrade_page: Control
 var settings_page: HubSettings
 var page := "home"
 var equipment_return := "stages"
-# The page the warehouse goes back to: the lobby or the equipment page.
-var warehouse_return := "home"
 # The page a "?" mark opened the help from, which back returns to.
 var help_return := ""
 var _state: RunCarryover
@@ -149,11 +147,9 @@ func _ready() -> void:
 	equipment_page.unequip_requested.connect(func(slot: int): unequip_requested.emit(slot))
 	equipment_page.scroll_remove_requested.connect(func(slot: int): scroll_remove_requested.emit(slot))
 	equipment_page.swap_requested.connect(func(): swap_requested.emit())
-	equipment_page.warehouse_requested.connect(open_warehouse)
 	sell_page = _page(HubSell.new()) as HubSell
 	warehouse_page = _page(HubWarehouse.new()) as HubWarehouse
 	warehouse_page.transfer_requested.connect(func(source: bool, index: int): storage_transfer_requested.emit(source, index))
-	warehouse_page.equipment_requested.connect(func(): show_page("equipment"))
 	# The shop's, the equipment's and the warehouse's slabs run off the
 	# screen's left edge (the warehouse's also off its right), their lists
 	# lined up with the title and the Gold above them.
@@ -458,12 +454,7 @@ func present_action(kind: StringName, gold_delta: int, slots: Array[int]) -> voi
 			warehouse_page.present_move(kind == &"deposit")
 
 
-# The warehouse goes back to where it was opened from: the lobby, or the
-# equipment page that asked for it.
 func open_warehouse() -> void:
-	if page == "home":
-		equipment_return = "stages"
-	warehouse_return = "equipment" if page == "equipment" else "home"
 	show_page("warehouse")
 
 
@@ -499,8 +490,6 @@ func go_back() -> void:
 		show_page("stages")
 	elif page == "equipment" and equipment_return == "confirm":
 		show_page("confirm")
-	elif page == "warehouse":
-		show_page(warehouse_return)
 	else:
 		show_page("home")
 

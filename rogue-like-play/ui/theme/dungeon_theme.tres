@@ -761,6 +761,47 @@ content_margin_top = 8.0
 content_margin_right = 2.0
 content_margin_bottom = 8.0
 
+[sub_resource type="StyleBoxFlat" id="ItemCellRest"]
+resource_name = "ItemCellRest"
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(1, 1, 1, 0.05)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="ItemCellHover"]
+resource_name = "ItemCellHover"
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(1, 1, 1, 0.1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="ItemCellChosen"]
+resource_name = "ItemCellChosen"
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.84, 0.72, 0.48, 0.14)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+
 [resource]
 DetailStack/base_type = &"VBoxContainer"
 DetailStack/constants/separation = 8
@@ -1330,3 +1371,13 @@ TextAction/styles/hover_pressed = SubResource("TextActionHover")
 TextAction/styles/disabled = SubResource("TextActionRest")
 SlotRows/base_type = &"VBoxContainer"
 SlotRows/constants/separation = 0
+ItemCell/base_type = &"Button"
+ItemCell/styles/normal = SubResource("ItemCellRest")
+ItemCell/styles/hover = SubResource("ItemCellHover")
+ItemCell/styles/pressed = SubResource("ItemCellChosen")
+ItemCell/styles/hover_pressed = SubResource("ItemCellChosen")
+ItemCell/styles/disabled = SubResource("ItemCellRest")
+ItemCell/styles/focus = SubResource("FocusOutline")
+GearGrid/base_type = &"GridContainer"
+GearGrid/constants/h_separation = 8
+GearGrid/constants/v_separation = 8

@@ -25,8 +25,12 @@ func capture() -> void:
 	hub.refresh(main.state)
 	hub.show_page("equipment")
 	await settle()
+	var page: HubEquipment = hub.equipment_page
+	page.cells[page.candidates.find_custom(func(candidate: Dictionary): return candidate.item.kind == ItemData.Kind.SCROLL)].pressed.emit()
+	page.slots[0].pressed.emit()
+	await settle()
 	var ok := root.get_texture().get_image().save_png("res://.godot/magic_hub.png") == OK
-	hub.equipment_page.equip_button.pressed.emit()
+	page.equip_button.pressed.emit()
 	ok = main.state.equipment.slots[0].socketed_scroll != null and ok
 	main.start_run()
 	var run: Node2D = main.active_run

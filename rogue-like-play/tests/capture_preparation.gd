@@ -73,6 +73,7 @@ func capture() -> void:
 	await key(KEY_ESCAPE)
 	await key(KEY_ESCAPE)
 	await enter(hub, hub.equipment_button)
+	await click(hub.equipment_page.cells[hub.equipment_page.candidates.find_custom(func(candidate: Dictionary): return candidate.item.kind == ItemData.Kind.ARMOR)])
 	await click(hub.equipment_page.slots[2])
 	await shot("equipment")
 	await click(hub.equipment_page.equip_button)

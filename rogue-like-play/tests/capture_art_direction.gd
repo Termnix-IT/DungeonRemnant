@@ -53,9 +53,9 @@ func capture() -> void:
 		check(not warehouse.move_button.disabled and warehouse.move_button.text.contains("持ち出す"), "The move action turns to the selected side")
 		hub.go_back()
 		hub.show_page("equipment")
-		hub.equipment_page.select_slot(Equipment.Slot.ARMOR)
+		hub.equipment_page.cells[0].pressed.emit()
 		await shot("art_equipment_%d" % resolution.y)
-		for control: Control in [hub.equipment_page.candidate_list, hub.equipment_page.carried_label, hub.equipment_page.comparison, hub.equipment_page.equip_button, hub.equipment_page.swap_button, hub.equipment_page.hero_stats.specs]:
+		for control: Control in [hub.equipment_page.grid, hub.equipment_page.detail_name, hub.equipment_page.detail_note, hub.equipment_page.swap_button]:
 			fits(control, "Equipment")
 		for slot: Button in hub.equipment_page.slots:
 			fits(slot, "Equipment slot")
