@@ -43,6 +43,12 @@ var dust: CPUParticles2D
 var time := 0.0
 var focus_id := &""
 var focus_strength := 0.0
+# 1 over the lobby painting, whose lamps LIGHTS marks; 0 over a page's own
+# painting, where those positions mean nothing. The dust drifts either way.
+var lights_mix := 1.0:
+	set(value):
+		lights_mix = value
+		queue_redraw()
 var _focus_tween: Tween
 
 
@@ -142,8 +148,10 @@ func _draw() -> void:
 		var tint: Color = target[2]
 		draw_texture_rect(focus_glow, light_rect(target[0], target[1]), false, Color(tint, FOCUS_STRENGTH * focus_strength * breath))
 		draw_texture_rect(focus_glow, light_rect(target[0], target[1] * 0.45), false, Color(tint, FOCUS_STRENGTH * 0.6 * focus_strength * breath))
+	if lights_mix <= 0.0:
+		return
 	for index in LIGHTS.size():
 		var light: Array = LIGHTS[index]
 		var wave := noise.get_noise_2d(time, index * 37.0)
-		var strength: float = light[2] * (1.0 + FLICKER * wave)
+		var strength: float = light[2] * (1.0 + FLICKER * wave) * lights_mix
 		draw_texture_rect(glow, light_rect(light[0], light[1]), false, Color(1, 1, 1, strength))

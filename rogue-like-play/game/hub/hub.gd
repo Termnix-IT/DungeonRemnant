@@ -50,11 +50,16 @@ var _content: Control
 var _page_host: Control
 var _shell: VBoxContainer
 var _frame: Control
+# The screens that stand in a place of their own rather than in the lobby's
+# hall: the weapon rack for the equipment page.
+const PAGE_BACKGROUNDS := {"equipment": preload("res://art/hub/pages/equipment.png")}
 # How close the header and the footer come to the screen's edges.
 const EDGE_X := 40.0
 const EDGE_TOP := 22.0
 const EDGE_BOTTOM := 16.0
 var _ambience: HubAmbience
+var _page_background: TextureRect
+var _page_background_tween: Tween
 var _title_block: HBoxContainer
 var purse: GoldPurse
 var key_guide: KeyGuide
@@ -71,6 +76,14 @@ func _ready() -> void:
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(background)
+	# A screen with a painting of its own fades it in over the lobby hall.
+	_page_background = TextureRect.new()
+	_page_background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_page_background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_page_background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_page_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_page_background.modulate.a = 0.0
+	add_child(_page_background)
 	var shade := ColorRect.new()
 	shade.color = Color(0, 0, 0, 0.16)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -300,6 +313,20 @@ func refresh(state: RunCarryover, message: String = "") -> void:
 		show_page("home")
 
 
+# Crossfades to the page's own painting, or back to the lobby hall when it has
+# none; the lobby's lamp flicker belongs to the hall alone.
+func _show_page_background() -> void:
+	var texture: Texture2D = PAGE_BACKGROUNDS.get(page)
+	if _page_background_tween != null:
+		_page_background_tween.kill()
+	if texture != null:
+		_page_background.texture = texture
+	var shown := 1.0 if texture != null else 0.0
+	_page_background_tween = create_tween().set_trans(Tween.TRANS_SINE).set_parallel()
+	_page_background_tween.tween_property(_page_background, "modulate:a", shown, UIMotion.WINDOW_TIME)
+	_page_background_tween.tween_property(_ambience, "lights_mix", 1.0 - shown, UIMotion.WINDOW_TIME)
+
+
 func show_page(target: String) -> void:
 	if target == "confirm" and (departure_page.selected_stage == null or not _state.stage_available(departure_page.selected_stage)):
 		return
@@ -320,6 +347,7 @@ func show_page(target: String) -> void:
 	# On the lobby the left edge belongs to the menu.
 	save_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if page == "home" else HORIZONTAL_ALIGNMENT_LEFT
 	_ambience.focus(home_page.selected_id() if page == "home" else &"")
+	_show_page_background()
 	feedback.text = ""
 	match page:
 		"home":

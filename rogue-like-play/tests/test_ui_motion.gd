@@ -213,6 +213,14 @@ func run_tests() -> void:
 		check(is_equal_approx(page.modulate.a, 1.0) and near_scale(page, 1.0), "Rapid navigation restores page alpha and scale")
 	for part: Control in [hub.sell_page._catalog, hub.sell_page._info, hub.equipment_page._candidates_column] + hub.equipment_page.slots:
 		check(is_equal_approx(part.modulate.a, 1.0), "Rapid navigation settles every arriving part")
+	check(is_zero_approx(hub._page_background.modulate.a) and is_equal_approx(hub._ambience.lights_mix, 1.0), "The lobby shows its own hall and its lamps")
+	hub.show_page("equipment")
+	await settle(UIMotion.WINDOW_TIME + 0.1)
+	check(hub._page_background.texture == hub.PAGE_BACKGROUNDS["equipment"] and is_equal_approx(hub._page_background.modulate.a, 1.0) and is_zero_approx(hub._ambience.lights_mix), "The equipment page fades its own painting in and the lobby's lamps out")
+	hub.show_page("sell")
+	await settle(UIMotion.WINDOW_TIME + 0.1)
+	check(is_zero_approx(hub._page_background.modulate.a) and is_equal_approx(hub._ambience.lights_mix, 1.0), "A page without a painting of its own returns to the hall")
+	hub.show_page("home")
 	check(not motion.is_processing(), "Helper has no idle per-frame polling")
 	# The hall light fades between lobby entries after a page change.
 	await settle(HubAmbience.FOCUS_TIME * 1.5 + 0.05)
