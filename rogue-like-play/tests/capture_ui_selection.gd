@@ -59,7 +59,7 @@ func capture() -> void:
 		Input.parse_input_event(release)
 		Input.flush_buffered_events()
 		check(equipment.selected_slot == Equipment.Slot.ARMOR, "Native mouse slot selection")
-		await selection_shot("equipment_%d" % resolution.y, [equipment.showcase, equipment.comparison])
+		await selection_shot("equipment_%d" % resolution.y, [equipment.comparison])
 		hub.open_warehouse()
 		var warehouse: HubWarehouse = hub.warehouse_page
 		warehouse.storage_list.grab_focus()

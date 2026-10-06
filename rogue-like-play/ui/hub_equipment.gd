@@ -3,7 +3,7 @@ extends Control
 
 # The equipment page, in the shop's order: choose a slot (the five slots as
 # open rows on a slab like the lobby menu), learn its candidates (their list,
-# the chosen one's art and note, the lesser actions and the one equip
+# the chosen one's note, the lesser actions and the one equip
 # action), then see what they do to her (the heroine from the knees up with
 # her whole stats before and after). Leaving is the back key; this page holds
 # no button that only moves elsewhere.
@@ -29,17 +29,20 @@ var equip_button: Button
 var unequip_button: Button
 var swap_button: Button
 var scroll_remove_button: Button
-var showcase: ItemShowcase
 var hero_stats: HeroStats
 var _candidates_column: VBoxContainer
-# The candidate of the last equip request, for the success moment after saving.
+# The candidate of the last equip request, for the success moment after saving,
+# and where its list row stood (global) for the glyph to fly from.
 var equipped_item: ItemData
+var _equipped_from := Rect2()
 const SLOT_CAPTIONS := Equipment.SLOT_NAMES
 # Slot art is the 48px item icon at its native size, so it is never blurred.
 const SLOT_ICON := 48
-const SLOT_HEIGHT := 72.0
-# The chosen candidate at twice its 48px icon beside its name.
-const SHOWCASE_SIZE := 120.0
+const SLOT_HEIGHT := 64.0
+# The chosen candidate has no art of its own: its row in the list already shows
+# icon, name and main effect, so the note under the list names it and says the
+# rest, and the candidates keep the column's height.
+const COMPARISON_HEIGHT := 72.0
 const BAND_TIP := 18.0
 
 
@@ -48,8 +51,8 @@ func _ready() -> void:
 	columns.theme_type_variation = &"ShopColumns"
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_build_slots(HubUI.open_column(columns, 0.72, &"SlabSolid"))
-	_candidates_column = HubUI.open_column(columns, 1.15, &"SlabColumn")
+	_build_slots(HubUI.open_column(columns, 0.62, &"SlabSolid"))
+	_candidates_column = HubUI.open_column(columns, 1.3, &"SlabColumn")
 	_build_candidates(_candidates_column)
 	hero_stats = HeroStats.new()
 	hero_stats.size_flags_stretch_ratio = 0.95
@@ -98,17 +101,11 @@ func _build_candidates(column: VBoxContainer) -> void:
 	column.add_child(candidate_list)
 	candidate_list.item_selected.connect(_select_candidate)
 	HubUI.rule(column)
-	showcase = ItemShowcase.new()
-	showcase.show_effect = false
-	showcase.visual.framed = false
-	showcase.visual.idle = true
-	showcase.visual.custom_minimum_size = Vector2.ONE * SHOWCASE_SIZE
-	column.add_child(showcase)
 	comparison = ItemDetails.new()
 	comparison.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.add_child(comparison)
 	# A fixed height: a long note scrolls instead of taking the list's room.
-	comparison.custom_minimum_size.y = 72
+	comparison.custom_minimum_size.y = COMPARISON_HEIGHT
 	# The lesser actions read as words; the one equip action is the plate.
 	var lesser := HBoxContainer.new()
 	lesser.theme_type_variation = &"TextActions"
@@ -126,7 +123,7 @@ func _build_candidates(column: VBoxContainer) -> void:
 
 func refresh(current: RunCarryover) -> void:
 	state = current
-	for target: Control in [candidate_list, showcase, comparison]:
+	for target: Control in [candidate_list, comparison]:
 		UIMotion.of(target).reset()
 	swap_button.disabled = state.equipment.slots[Equipment.Slot.SUB] == null
 	for index in slots.size():
@@ -231,7 +228,14 @@ func _draw_slot_glyph(slot: int, glyph: Control) -> void:
 func present_equip(changed: Array[int]) -> void:
 	if equipped_item != null and changed.size() == 1 and is_visible_in_tree():
 		var slot := slots[changed[0]]
-		UIMotion.fly_glyph(self, equipped_item, showcase.visual, slot).finished.connect(func():
+		var origin := Control.new()
+		origin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(origin)
+		origin.global_position = _equipped_from.position
+		origin.size = _equipped_from.size
+		var flight := UIMotion.fly_glyph(self, equipped_item, origin, slot)
+		origin.queue_free()
+		flight.finished.connect(func():
 			if is_instance_valid(slot) and slot.is_visible_in_tree():
 				UIMotion.of(slot).pulse()
 				UIMotion.of(hero_stats.hero).flash()
@@ -253,7 +257,7 @@ func select_slot(slot: int) -> void:
 	candidate_list.play_intro()
 	if not candidate_list.get_selected_items().is_empty():
 		UIMotion.of(candidate_list).select_card()
-	UIMotion.reveal_selection([showcase, comparison])
+	UIMotion.reveal_selection([comparison])
 
 
 func _slot_accept(event: InputEvent, control: Button, slot: int) -> void:
@@ -271,7 +275,7 @@ func step_slot(direction: int) -> void:
 
 func _select_candidate(_index: int) -> void:
 	_compare()
-	UIMotion.reveal_selection([showcase, comparison])
+	UIMotion.reveal_selection([comparison])
 
 
 func _fill_candidates() -> void:
@@ -304,14 +308,14 @@ func _compare() -> void:
 	equip_button.disabled = selected.is_empty() or candidates.is_empty()
 	var before := state.preparation_stats()
 	if equip_button.disabled:
-		showcase.present(current)
+		if current != null:
+			comparison.line(current.label(), &"MutedLabel")
 		comparison.line("今の装備です。" if current != null else "この枠は空いています。", &"NoteLabel")
 		hero_stats.show_stats(before)
 		return
 	var candidate: ItemData = candidates[selected[0]].item
-	showcase.present(candidate)
 	if candidate.kind == ItemData.Kind.SCROLL:
-		comparison.line(candidate.description(), &"NoteLabel")
+		comparison.item_text(candidate, null, &"NoteLabel")
 		equip_button.text = "杖に魔法を込める"
 		equip_button.tooltip_text = "込めてあった魔法は、元の場所へ戻る"
 		hero_stats.show_stats(before)
@@ -320,7 +324,7 @@ func _compare() -> void:
 	preview.slots.assign(state.equipment.slots)
 	preview.slots[selected_slot] = candidate
 	hero_stats.show_stats(before, state.preparation_stats(preview), HeroStats.swap_text(selected_slot, current))
-	comparison.item_text(candidate, showcase, &"NoteLabel")
+	comparison.item_text(candidate, null, &"NoteLabel")
 
 
 func _equip() -> void:
@@ -329,6 +333,8 @@ func _equip() -> void:
 		return
 	var candidate := candidates[selected[0]]
 	equipped_item = candidate.item
+	var row := candidate_list.get_item_rect(selected[0])
+	_equipped_from = Rect2(candidate_list.global_position + row.position + Vector2(8, (row.size.y - SLOT_ICON) * 0.5), Vector2.ONE * SLOT_ICON)
 	equip_requested.emit(candidate.from_storage, candidate.index, selected_slot)
 
 

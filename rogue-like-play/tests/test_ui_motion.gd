@@ -61,11 +61,6 @@ func check_screen_motion(hub) -> void:
 	await settle(UIMotion.BLEND_TIME)
 	check(bars.blend == 1.0 and is_equal_approx(bars._shown()[0][1], bars._to[0][1]), "A bar settles on the new value")
 	bars.free()
-	var visual: ItemVisual = hub.equipment_page.showcase.visual
-	check(visual.idle and not visual.is_processing(), "The goods on display rest while their page is hidden")
-	hub.show_page("equipment")
-	await process_frame
-	check(visual.is_processing() == (visual.item != null), "The goods on display drift only while shown")
 	hub.show_page("home")
 
 

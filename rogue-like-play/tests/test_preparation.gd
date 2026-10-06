@@ -49,7 +49,7 @@ func run_tests() -> void:
 	check(changed.size() == 1 and changed[0][0] == "防御力" and changed[0][2] > changed[0][1], "Her stats preview only the rising defense")
 	var specs: StatBars = hub.equipment_page.hero_stats.specs
 	check(specs.changed_only and specs.custom_minimum_size.y == StatBars.ROW_HEIGHT and specs.get_parent().get_index() > hub.equipment_page.comparison.get_index() and specs.get_parent().get_index() < hub.equipment_page.equip_button.get_index(), "Only the changing row shows, between the note and the equip action")
-	check(hub.equipment_page.showcase.title.text == ARMOR.label() and not preview_text.contains(ARMOR.label()), "The full name shows once, in the showcase title")
+	check(preview_text.count(ARMOR.label()) == 1, "The full name shows once, in the note under the list")
 	check(hub.equipment_page.hero_stats.swap_label.text.begins_with("防具と入れ替え"), "A previewed change names the slot it replaces")
 	hub.equipment_page.equip_button.pressed.emit()
 	var flying: Array = hub.equipment_page.get_children().filter(func(child: Node): return child is Control and child.top_level)

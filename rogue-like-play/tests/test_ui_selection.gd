@@ -105,13 +105,12 @@ func run_tests() -> void:
 	var equipment: HubEquipment = hub.equipment_page
 	equipment.select_slot(Equipment.Slot.ARMOR)
 	check(equipment.candidate_list.selection_strength == 0.0, "Slot change animates automatic candidate selection")
-	check_alpha([equipment.showcase, equipment.comparison], 0.65, "Equipment details start together")
-	check(equipment.showcase.visual.item == equipment.candidates[0].item and not equipment.equip_button.disabled, "Candidate and equip action update immediately")
+	check_alpha([equipment.comparison], 0.65, "Equipment details start together")
+	check(not equipment.equip_button.disabled, "Candidate and equip action update immediately")
 	equipment.select_slot(Equipment.Slot.ACCESSORY_1)
 	check(equipment.candidate_list.get_selected_items().is_empty() and equipment.equip_button.disabled, "Empty slot has no actionable stale candidate")
-	check(equipment.showcase.visual.item == null, "Empty slot clears previous art")
 	hub.show_page("home")
-	check_alpha([equipment.showcase, equipment.comparison], 1.0, "Leaving equipment resets fades")
+	check_alpha([equipment.comparison], 1.0, "Leaving equipment resets fades")
 	hub.open_warehouse()
 	var warehouse: HubWarehouse = hub.warehouse_page
 	var inventory_list := warehouse.inventory_list
