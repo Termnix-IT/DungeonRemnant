@@ -66,6 +66,8 @@ func show_item(value: ItemData, amount: int = 1) -> void:
 
 
 func _draw() -> void:
+	if button_pressed:
+		draw_rect(Rect2(Vector2.ZERO, size).grow(-3), get_theme_color(&"font_color", &"GoldLabel"), false, 2.0)
 	var shown := item if item != null else symbol
 	if shown == null:
 		return

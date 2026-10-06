@@ -91,6 +91,7 @@ func _ready() -> void:
 # A cell that only shows: it takes no pointer and no focus.
 func _display_cell(parent: Control) -> ItemCell:
 	var cell := ItemCell.new()
+	cell.theme_type_variation = &"SlotCell"
 	cell.custom_minimum_size = Vector2.ONE * BIG_CELL
 	cell.icon_size = BIG_ICON
 	cell.draggable = false
