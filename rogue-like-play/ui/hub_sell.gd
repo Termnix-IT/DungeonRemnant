@@ -38,7 +38,6 @@ var total_label: Label
 var possession: Label
 var sell_all_button: Button
 var sell_button: Button
-var hero: LobbyHero
 var hero_specs: StatBars
 var heading: Label
 var buying := false
@@ -66,13 +65,12 @@ func _ready() -> void:
 	_build_catalog(_catalog)
 	_info = HubUI.open_column(columns, 1.15, &"SlabColumn")
 	_build_info(_info)
-	# Unframed, like the lobby: the heroine. What the goods would change in
-	# her stands in the middle, right above the counter and the trade.
+	# The right is the open hall; what the goods would change in her stands in
+	# the middle, right above the counter and the trade.
 	hero_stats = HeroStats.new()
 	hero_stats.size_flags_stretch_ratio = 0.95
 	columns.add_child(hero_stats)
 	hero_stats.move_stats_to(_info, _counter_rule.get_index())
-	hero = hero_stats.hero
 	hero_specs = hero_stats.specs
 	swap_label = hero_stats.swap_label
 
@@ -190,12 +188,11 @@ func _show_stock() -> void:
 
 
 # Opening the page: the list's rows arrive top first, the counter a beat
-# later, the heroine last from the screen's right edge.
+# later.
 func play_entrance() -> void:
 	item_list.play_intro()
 	UIMotion.of(_catalog).appear(0.0, UIMotion.WINDOW_TIME)
 	UIMotion.of(_info).appear(UIMotion.STAGGER_TIME)
-	hero_stats.play_entrance(UIMotion.STAGGER_TIME * 2)
 
 
 func refresh(current: RunCarryover) -> void:

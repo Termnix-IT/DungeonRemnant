@@ -11,7 +11,7 @@ extends Control
 # outside), describes it and holds the one primary action.
 # The sortie check shows what she takes (equipment and carried goods) on the
 # left, the chosen stage and its start floor with the one action in the
-# middle, and the heroine with her stats for the run on the right.
+# middle, her stats for the run above the floor choice, and the open hall on the right.
 
 signal confirm_requested
 signal equipment_requested
@@ -141,7 +141,7 @@ func _build_confirmation(parent: Control) -> void:
 	review_button = HubUI.button(kit, "装備・持ち込みを見直す  ›", func(): equipment_requested.emit(), &"TextAction")
 	review_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	# Middle: where she goes, from which floor, and the one action.
-	var trip := HubUI.open_column(columns, 1.1, &"SlabVeil")
+	var trip := HubUI.open_column(columns, 1.1, &"SlabColumn")
 	trip.theme_type_variation = &"DetailStack"
 	stage_banner = TextureRect.new()
 	stage_banner.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -172,8 +172,8 @@ func _build_confirmation(parent: Control) -> void:
 	start_row.move_child(start_rule, 1)
 	start_choice.item_selected.connect(func(index: int): starting_floor = start_choice.get_item_id(index); _update_start_label())
 	confirm_button = HubUI.primary_action(trip, "挑戦する", func(): departure_requested.emit())
-	# Right: the heroine. Her stats for this run stand in the middle column,
-	# above the floor choice, so they are not laid over her legs.
+	# Right: the open hall. Her stats for this run stand in the middle column,
+	# above the floor choice.
 	hero_stats = HeroStats.new()
 	hero_stats.size_flags_stretch_ratio = 0.95
 	columns.add_child(hero_stats)
@@ -347,4 +347,3 @@ func play_entrance() -> void:
 		UIMotion.of(_selection_detail).appear(UIMotion.STAGGER_TIME)
 	else:
 		inventory_list.play_intro()
-		hero_stats.play_entrance(UIMotion.STAGGER_TIME * 2)

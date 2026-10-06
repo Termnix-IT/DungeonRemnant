@@ -4,8 +4,8 @@ extends Control
 # The equipment page, in the shop's order: choose a slot (the five slots as
 # open rows on a slab like the lobby menu), learn its candidates (their list,
 # the chosen one's note, the lesser actions and the one equip
-# action), then see what they do to her (the heroine from the knees up with
-# her whole stats before and after). Leaving is the back key; this page holds
+# action), then see what they do to her (her stats before and after, beside the
+# equip action). Leaving is the back key; this page holds
 # no button that only moves elsewhere.
 
 signal equip_requested(from_storage: bool, index: int, slot: int)
@@ -198,7 +198,7 @@ func _draw_slot_band() -> void:
 
 
 # Opening the page: the slots arrive top first, the candidates a beat later,
-# the heroine last from the screen's right edge.
+# then the rest.
 func play_entrance() -> void:
 	for index in slots.size():
 		UIMotion.of(slots[index]).appear(UIMotion.ROW_STAGGER * index, UIMotion.ROW_TIME)
@@ -206,7 +206,6 @@ func play_entrance() -> void:
 	slot_rows.create_tween().tween_method(func(_at: float): slot_rows.queue_redraw(), 0.0, 1.0, UIMotion.rows_time(slots.size()))
 	candidate_list.play_intro()
 	UIMotion.of(_candidates_column).appear(UIMotion.STAGGER_TIME)
-	hero_stats.play_entrance(UIMotion.STAGGER_TIME * 2)
 
 
 func _draw_slot_glyph(slot: int, glyph: Control) -> void:
@@ -238,7 +237,6 @@ func present_equip(changed: Array[int]) -> void:
 		flight.finished.connect(func():
 			if is_instance_valid(slot) and slot.is_visible_in_tree():
 				UIMotion.of(slot).pulse()
-				UIMotion.of(hero_stats.hero).flash()
 				UIMotion.of(hero_stats.specs).pulse(1.04, UIMotion.GOLD_TIME))
 	else:
 		for index in changed:

@@ -57,7 +57,7 @@ func run_tests() -> void:
 	await create_timer(UIMotion.TRAVEL_TIME + 0.1).timeout
 	check(hub.equipment_page.get_children().filter(func(child: Node): return child is Control and child.top_level).is_empty(), "Equip glyph frees itself on landing")
 	# Check that the acknowledgement started, not a timing-dependent sample.
-	check(UIMotion.of(hub.equipment_page.hero_stats.hero).flash_tween != null, "Landing brightens the adventurer")
+	check(UIMotion.of(hub.equipment_page.slots[2]).scale_tween != null, "Landing makes the slot acknowledge it")
 	check(main.state.equipment.slots[2] == ARMOR and main.state.storage.entries.size() == 1, "Equip directly from warehouse without transfer detour")
 	var defense_row: Array = hub.equipment_page.hero_stats.specs.rows.filter(func(row: Array): return row[0] == "防御力")[0]
 	check(defense_row[1] == main.state.preparation_stats().defense, "Her stats reflect the new defense")

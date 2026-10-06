@@ -44,10 +44,10 @@ func check_screen_motion(hub) -> void:
 	check(UIMotion.row_arrival(0.3, 0, 6) > UIMotion.row_arrival(0.3, 3, 6), "Upper rows arrive first")
 	hub.show_page("sell")
 	var shop: HubSell = hub.sell_page
-	check(shop.item_list.intro < 1.0 and shop.hero_stats._frame.modulate.a < 1.0, "Opening the shop brings rows and the heroine in")
+	check(shop.item_list.intro < 1.0, "Opening the shop brings its rows in")
 	check(shop.item_list.focus_mode != Control.FOCUS_NONE and shop.item_list.mouse_filter == Control.MOUSE_FILTER_STOP, "Arriving rows still take input")
 	await settle(UIMotion.rows_time(10) + UIMotion.ENTER_TIME + UIMotion.STAGGER_TIME * 3)
-	check(is_equal_approx(shop.item_list.intro, 1.0) and is_equal_approx(shop.hero_stats._frame.modulate.a, 1.0), "The entrance settles")
+	check(is_equal_approx(shop.item_list.intro, 1.0), "The entrance settles")
 	shop.step_category(1)
 	check(shop.item_list.intro < 1.0, "Another category brings its rows in")
 	hub.show_page("home")
@@ -211,9 +211,8 @@ func run_tests() -> void:
 	await settle()
 	for page: Control in [hub.home_page, hub.sell_page, hub.equipment_page]:
 		check(is_equal_approx(page.modulate.a, 1.0) and near_scale(page, 1.0), "Rapid navigation restores page alpha and scale")
-	for part: Control in [hub.sell_page._catalog, hub.sell_page._info, hub.sell_page.hero_stats._frame, hub.equipment_page._candidates_column] + hub.equipment_page.slots:
+	for part: Control in [hub.sell_page._catalog, hub.sell_page._info, hub.equipment_page._candidates_column] + hub.equipment_page.slots:
 		check(is_equal_approx(part.modulate.a, 1.0), "Rapid navigation settles every arriving part")
-	check(hub.sell_page.hero_stats._frame.position == Vector2.ZERO, "The heroine settles where she stands")
 	check(not motion.is_processing(), "Helper has no idle per-frame polling")
 	# The hall light fades between lobby entries after a page change.
 	await settle(HubAmbience.FOCUS_TIME * 1.5 + 0.05)
