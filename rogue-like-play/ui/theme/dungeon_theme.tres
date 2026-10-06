@@ -1,5 +1,6 @@
 [gd_resource type="Theme" format=3]
 
+[ext_resource type="Script" path="res://ui/slab_style.gd" id="SlabStyleScript"]
 [ext_resource type="FontFile" path="res://ui/fonts/ShipporiMincho-Bold.ttf" id="DisplayBold"]
 [ext_resource type="FontFile" path="res://ui/fonts/ShipporiMincho-Medium.ttf" id="DisplayMedium"]
 [ext_resource type="Texture2D" path="res://art/ui/frame_panel.png" id="FramePanelTexture"]
@@ -625,63 +626,61 @@ border_color = Color(0.72, 0.58, 0.36, 0.45)
 offsets = PackedFloat32Array(0, 0.84, 1)
 colors = PackedColorArray(0.03, 0.028, 0.03, 0.88, 0.03, 0.028, 0.03, 0.82, 0.03, 0.028, 0.03, 0)
 
-[sub_resource type="GradientTexture2D" id="SlabTexture"]
-gradient = SubResource("SlabFade")
-width = 64
-height = 4
-
-[sub_resource type="StyleBoxTexture" id="SlabSurface"]
+[sub_resource type="StyleBox" id="SlabSurface"]
 resource_name = "SlabSurface"
-texture = SubResource("SlabTexture")
+script = ExtResource("SlabStyleScript")
+horizontal = SubResource("SlabFade")
 content_margin_left = 22.0
 content_margin_top = 18.0
 content_margin_right = 34.0
 content_margin_bottom = 18.0
-
 [sub_resource type="Gradient" id="VeilFade"]
 offsets = PackedFloat32Array(0, 0.5, 1)
 colors = PackedColorArray(0.03, 0.028, 0.03, 0.88, 0.03, 0.028, 0.03, 0.62, 0.03, 0.028, 0.03, 0.88)
 
-[sub_resource type="GradientTexture2D" id="VeilTexture"]
-gradient = SubResource("VeilFade")
-width = 64
-height = 4
-
-[sub_resource type="StyleBoxTexture" id="SlabVeilSurface"]
+[sub_resource type="StyleBox" id="SlabVeilSurface"]
 resource_name = "SlabVeilSurface"
-texture = SubResource("VeilTexture")
+script = ExtResource("SlabStyleScript")
+horizontal = SubResource("VeilFade")
 content_margin_left = 34.0
 content_margin_top = 18.0
 content_margin_right = 34.0
 content_margin_bottom = 18.0
+[sub_resource type="Gradient" id="SlabFlatWide"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(0.03, 0.028, 0.03, 0.7, 0.03, 0.028, 0.03, 0.7)
 
-[sub_resource type="StyleBoxFlat" id="SlabVeilWideSurface"]
+[sub_resource type="StyleBox" id="SlabVeilWideSurface"]
 resource_name = "SlabVeilWideSurface"
-expand_margin_left = 80.0
+script = ExtResource("SlabStyleScript")
+horizontal = SubResource("SlabFlatWide")
+expand_left = 80.0
 content_margin_left = 0.0
 content_margin_top = 18.0
 content_margin_right = 24.0
 content_margin_bottom = 18.0
-bg_color = Color(0.03, 0.028, 0.03, 0.7)
-
-[sub_resource type="StyleBoxTexture" id="SlabBandSurface"]
+[sub_resource type="StyleBox" id="SlabBandSurface"]
 resource_name = "SlabBandSurface"
-texture = SubResource("SlabTexture")
-expand_margin_left = 80.0
+script = ExtResource("SlabStyleScript")
+horizontal = SubResource("SlabFade")
+expand_left = 80.0
 content_margin_left = 0.0
 content_margin_top = 18.0
 content_margin_right = 120.0
 content_margin_bottom = 18.0
+[sub_resource type="Gradient" id="SlabFlat"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(0.03, 0.028, 0.03, 0.88, 0.03, 0.028, 0.03, 0.88)
 
-[sub_resource type="StyleBoxFlat" id="SlabSolidEndSurface"]
+[sub_resource type="StyleBox" id="SlabSolidEndSurface"]
 resource_name = "SlabSolidEndSurface"
-expand_margin_right = 80.0
+script = ExtResource("SlabStyleScript")
+horizontal = SubResource("SlabFlat")
+expand_right = 80.0
 content_margin_left = 14.0
 content_margin_top = 18.0
 content_margin_right = 0.0
 content_margin_bottom = 18.0
-bg_color = Color(0.03, 0.028, 0.03, 0.88)
-
 [sub_resource type="Gradient" id="ShadeFade"]
 offsets = PackedFloat32Array(0, 0.62, 1)
 colors = PackedColorArray(0.02, 0.018, 0.02, 0.66, 0.02, 0.018, 0.02, 0.5, 0.02, 0.018, 0.02, 0)
@@ -725,15 +724,15 @@ content_margin_top = 40.0
 content_margin_right = 20.0
 content_margin_bottom = 16.0
 
-[sub_resource type="StyleBoxFlat" id="SlabSolidSurface"]
+[sub_resource type="StyleBox" id="SlabSolidSurface"]
 resource_name = "SlabSolidSurface"
-expand_margin_left = 80.0
+script = ExtResource("SlabStyleScript")
+horizontal = SubResource("SlabFlat")
+expand_left = 80.0
 content_margin_left = 0.0
 content_margin_top = 18.0
 content_margin_right = 14.0
 content_margin_bottom = 18.0
-bg_color = Color(0.03, 0.028, 0.03, 0.88)
-
 [sub_resource type="StyleBoxEmpty" id="SelectorPlain"]
 resource_name = "SelectorPlain"
 content_margin_left = 4.0
