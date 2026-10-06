@@ -55,7 +55,7 @@ func capture() -> void:
 		hub.show_page("equipment")
 		hub.equipment_page.cells[0].pressed.emit()
 		await shot("art_equipment_%d" % resolution.y)
-		for control: Control in [hub.equipment_page.grid, hub.equipment_page.detail_name, hub.equipment_page.detail_note, hub.equipment_page.swap_button]:
+		for control: Control in [hub.equipment_page.grid, hub.equipment_page.detail_name, hub.equipment_page.detail_note, hub.equipment_page.filter_tabs, hub.equipment_page.sort_cycler]:
 			fits(control, "Equipment")
 		for slot: Button in hub.equipment_page.slots:
 			fits(slot, "Equipment slot")

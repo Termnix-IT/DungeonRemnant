@@ -110,7 +110,7 @@ func run_tests() -> void:
 	equipment.cells[0].pressed.emit()
 	check(equipment.selected_candidate == 0 and equipment.cells[0].button_pressed and not equipment.slots[Equipment.Slot.ARMOR].button_pressed, "One thing is chosen at a time: the gear, not the slot")
 	equipment.select_slot(Equipment.Slot.ACCESSORY_1)
-	check(equipment.selected_candidate == -1 and equipment.unequip_button.disabled and not equipment.cells[0].button_pressed, "An empty slot holds no stale gear and has nothing to take off")
+	check(equipment.selected_candidate == -1 and equipment.slot_menu(Equipment.Slot.ACCESSORY_1).is_empty() and not equipment.cells[0].button_pressed, "An empty slot holds no stale gear and has nothing to take off")
 	hub.show_page("home")
 	hub.open_warehouse()
 	var warehouse: HubWarehouse = hub.warehouse_page

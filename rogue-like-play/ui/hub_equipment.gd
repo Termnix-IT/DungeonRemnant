@@ -10,7 +10,8 @@ extends Control
 # kind and main effect; the full text is the tooltip). Gear goes into a slot by
 # dragging its icon there, by choosing it and then the slot (Enter on the icon
 # moves to the slot it would take), or by the right-click menu on the icon;
-# right-clicking a worn icon offers taking it off. Either way a prompt shows
+# right-clicking a worn icon offers taking it off (or swapping the weapons,
+# or taking a spell out). The icons can be filtered by kind and sorted. Either way a prompt shows
 # the change to her stats before anything is worn. Taking a slot's icon out
 # onto the gear takes it off too, and dropping the main weapon on the sub
 # weapon (or the reverse) swaps them. The page leads nowhere else: the
@@ -27,11 +28,16 @@ const GRID_COLUMNS := 7
 const SLOT_SIZE := 104.0
 const SLOT_ICON := 96.0
 const SLAB_WIDTH := 830.0
+const FILTERS: Array[String] = ["すべて", "武器", "防具", "装飾", "魔法"]
+const SORTS: Array[String] = ["標準", "名前順", "種類順"]
 
 var state: RunCarryover
 var selected_slot := 0
 # Index into candidates of the chosen gear icon, or -1 while a slot is chosen.
 var selected_candidate := -1
+# What the icons show: the kind (an index of FILTERS) and the order (of SORTS).
+var filter_index := 0
+var sort_index := 0
 # The gear that can be worn, carried first: {from_storage, index, item, count}.
 var candidates: Array[Dictionary] = []
 var slots: Array[Button] = []
@@ -41,9 +47,8 @@ var storage_grid: GridContainer
 var prompt: EquipPrompt
 # The prompt's accept button, which wears what was asked about.
 var equip_button: Button
-var unequip_button: Button
-var swap_button: Button
-var scroll_remove_button: Button
+var filter_tabs: CategoryTabs
+var sort_cycler: OptionCycler
 var detail_name: Label
 var detail_note: Label
 # The candidate of the last equip request, for the success moment after saving,
@@ -97,13 +102,36 @@ func _ready() -> void:
 			_close_menu())
 
 
-# What she carries, then what is stored: icons in a grid each, one scroll.
+# What she carries, then what is stored: icons in a grid each, one scroll,
+# under a row that filters them by kind and sorts them.
 func _build_gear(parent: Control) -> void:
+	var gear := VBoxContainer.new()
+	gear.theme_type_variation = &"DetailStack"
+	gear.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent.add_child(gear)
+	var controls := HBoxContainer.new()
+	controls.theme_type_variation = &"ShopColumns"
+	gear.add_child(controls)
+	filter_tabs = CategoryTabs.new()
+	filter_tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	controls.add_child(filter_tabs)
+	filter_tabs.setup(FILTERS, false)
+	filter_tabs.changed.connect(func(index: int):
+		filter_index = index
+		_regear())
+	sort_cycler = OptionCycler.new()
+	sort_cycler.custom_minimum_size = Vector2(190, 44)
+	sort_cycler.tooltip_text = "並べ替え"
+	controls.add_child(sort_cycler)
+	sort_cycler.setup(SORTS)
+	sort_cycler.item_selected.connect(func(index: int):
+		sort_index = index
+		_regear())
 	_gear_scroll = ScrollContainer.new()
 	_gear_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_gear_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_gear_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	parent.add_child(_gear_scroll)
+	gear.add_child(_gear_scroll)
 	var blocks := VBoxContainer.new()
 	blocks.theme_type_variation = &"DetailStack"
 	blocks.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -154,7 +182,7 @@ func _build_slots(column: VBoxContainer) -> void:
 
 
 # The plaque under the knight's plinth, on the same slab as the rest: the
-# name, the kind and effect, and the lesser actions of the chosen slot.
+# name, and the kind and effect.
 func _build_plaque(hall: VBoxContainer) -> void:
 	HubUI.space(hall)
 	var plaque := PanelContainer.new()
@@ -171,13 +199,6 @@ func _build_plaque(hall: VBoxContainer) -> void:
 	detail_note = HubUI.label(stack, "", &"PlaqueNote")
 	detail_note.autowrap_mode = TextServer.AUTOWRAP_OFF
 	detail_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var lesser := HBoxContainer.new()
-	lesser.theme_type_variation = &"TextActions"
-	lesser.alignment = BoxContainer.ALIGNMENT_CENTER
-	stack.add_child(lesser)
-	unequip_button = HubUI.button(lesser, "外す", func(): unequip_requested.emit(selected_slot), &"TextAction")
-	scroll_remove_button = HubUI.button(lesser, "魔法を外す", func(): scroll_remove_requested.emit(selected_slot), &"TextAction")
-	swap_button = HubUI.button(lesser, "主武器と副武器を入れ替え", func(): swap_requested.emit(), &"TextAction")
 	var floor_gap := Control.new()
 	floor_gap.custom_minimum_size.y = 14
 	floor_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -286,7 +307,6 @@ func refresh(current: RunCarryover) -> void:
 		if candidates[index].item == kept:
 			selected_candidate = index
 			break
-	swap_button.disabled = state.equipment.slots[Equipment.Slot.SUB] == null
 	_mark()
 	if focus_index >= 0 and not cells.is_empty():
 		cells[mini(focus_index, cells.size() - 1)].grab_focus()
@@ -300,15 +320,22 @@ func _fill_gear() -> void:
 	candidates.clear()
 	for from_storage in [false, true]:
 		var source := state.storage if from_storage else state.inventory
+		var wearable := 0
+		var block := []
 		for index in source.entries.size():
 			var item := source.entries[index].item
 			if _slots_for(item).is_empty():
 				continue
+			wearable += 1
+			if _passes_filter(item):
+				block.append({"from_storage": from_storage, "index": index, "item": item, "count": source.entries[index].count})
+		_sort(block)
+		for candidate: Dictionary in block:
 			var at := candidates.size()
-			candidates.append({"from_storage": from_storage, "index": index, "item": item, "count": source.entries[index].count})
+			candidates.append(candidate)
 			var cell := ItemCell.new()
-			cell.show_item(item, source.entries[index].count)
-			cell.tooltip_text = ItemTooltipList.description(item)
+			cell.show_item(candidate.item, candidate.count)
+			cell.tooltip_text = ItemTooltipList.description(candidate.item)
 			cell.pressed.connect(_candidate_pressed.bind(at))
 			cell.gui_input.connect(_candidate_input.bind(at))
 			cell.context_requested.connect(_gear_context.bind(at))
@@ -318,8 +345,38 @@ func _fill_gear() -> void:
 			cell.focus_exited.connect(_restore_detail)
 			(storage_grid if from_storage else grid).add_child(cell)
 			cells.append(cell)
-	_carried_heading.text = "持ち込み　%d / %d 枠%s" % [state.inventory.entries.size(), state.inventory.max_entries, "" if grid.get_child_count() > 0 else "　身につけられる品はない"]
-	_storage_heading.text = "倉庫　%d / %d 枠%s" % [state.storage.entries.size(), state.storage.max_entries, "" if storage_grid.get_child_count() > 0 else "　身につけられる品はない"]
+		var heading := "%s　%d / %d 枠" % ["倉庫" if from_storage else "持ち込み", source.entries.size(), source.max_entries]
+		# An empty block has nothing to explain; a full one with nothing to wear
+		# or nothing of the chosen kind says so.
+		if not source.entries.is_empty() and block.is_empty():
+			heading += "　身につけられる品はない" if wearable == 0 else "　この種類の品はない"
+		(_storage_heading if from_storage else _carried_heading).text = heading
+
+
+func _passes_filter(item: ItemData) -> bool:
+	match filter_index:
+		1: return item.kind == ItemData.Kind.WEAPON
+		2: return item.kind == ItemData.Kind.ARMOR
+		3: return item.kind == ItemData.Kind.ACCESSORY
+		4: return item.kind == ItemData.Kind.SCROLL
+	return true
+
+
+# 標準 keeps the bag's own order; 名前順 and 種類順 reorder within each block.
+func _sort(block: Array) -> void:
+	if sort_index == 1:
+		block.sort_custom(func(a: Dictionary, b: Dictionary): return a.item.label() < b.item.label())
+	elif sort_index == 2:
+		block.sort_custom(func(a: Dictionary, b: Dictionary):
+			var kind_a: String = ItemGlyph.category(a.item)
+			var kind_b: String = ItemGlyph.category(b.item)
+			return a.item.label() < b.item.label() if kind_a == kind_b else kind_a < kind_b)
+
+
+# The filter or the order changed: the icons again, the chosen one kept.
+func _regear() -> void:
+	if state != null:
+		refresh(state)
 
 
 # The slots an item could go into: its kind's slots, or a staff's for a scroll.
@@ -343,11 +400,6 @@ func _mark() -> void:
 		slots[index].set_pressed_no_signal(item == null and index == selected_slot)
 	for index in cells.size():
 		cells[index].set_pressed_no_signal(index == selected_candidate)
-	var current := state.equipment.slots[selected_slot]
-	unequip_button.visible = selected_slot != Equipment.Slot.MAIN and selected_candidate < 0
-	unequip_button.disabled = current == null
-	scroll_remove_button.visible = selected_candidate < 0 and state.equipment.can_socket(selected_slot) and current.socketed_scroll != null
-	swap_button.visible = selected_candidate < 0
 	_restore_detail()
 
 

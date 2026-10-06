@@ -19,8 +19,9 @@ func _init() -> void:
 	TabUnderline.attach(self)
 
 
-func setup(names: Array[String]) -> void:
-	_caps.append(_cap("Q"))
+func setup(names: Array[String], with_caps := true) -> void:
+	if with_caps:
+		_caps.append(_cap("Q"))
 	for index in names.size():
 		var tab := Button.new()
 		tab.text = names[index]
@@ -30,7 +31,8 @@ func setup(names: Array[String]) -> void:
 		tab.pressed.connect(func(): select(index, true))
 		add_child(tab)
 		tabs.append(tab)
-	_caps.append(_cap("E"))
+	if with_caps:
+		_caps.append(_cap("E"))
 	select(0)
 
 
@@ -45,6 +47,8 @@ func _cap(text: String) -> Label:
 
 # The caps follow the device: Q / E on keys, LB / RB on a gamepad.
 func use_pad(pad: bool) -> void:
+	if _caps.is_empty():
+		return
 	_caps[0].text = "LB" if pad else "Q"
 	_caps[1].text = "RB" if pad else "E"
 

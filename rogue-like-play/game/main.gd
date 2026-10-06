@@ -90,12 +90,12 @@ func transfer_storage(from_storage: bool, index: int) -> bool:
 func equip_item(from_storage: bool, index: int, slot: int) -> bool:
 	var source := state.storage if from_storage else state.inventory
 	if index >= 0 and index < source.entries.size() and source.entries[index].item.kind == ItemData.Kind.SCROLL:
-		return _prepare(func() -> bool: return state.equipment.socket(source, index, slot), "魔法を装着しました。", &"equip", [slot])
-	return _prepare(func() -> bool: return state.equipment.equip(state.storage if from_storage else state.inventory, index, slot), "装備を変更しました。交換前の装備は選択元に戻しました。", &"equip", [slot])
+		return _prepare(func() -> bool: return state.equipment.socket(source, index, slot), "", &"equip", [slot])
+	return _prepare(func() -> bool: return state.equipment.equip(state.storage if from_storage else state.inventory, index, slot), "", &"equip", [slot])
 
 
 func unequip_item(slot: int) -> bool:
-	return _prepare(func() -> bool: return state.equipment.unequip(state.inventory, slot), "装備を外し、持ち込み所持品に戻しました。", &"equip", [slot])
+	return _prepare(func() -> bool: return state.equipment.unequip(state.inventory, slot), "", &"equip", [slot])
 
 
 func sell_item(from_storage: bool, index: int, amount: int) -> bool:
@@ -103,7 +103,7 @@ func sell_item(from_storage: bool, index: int, amount: int) -> bool:
 
 
 func swap_weapons() -> bool:
-	return _prepare(state.equipment.swap_weapons, "Main / Sub Weaponを入れ替えました。", &"equip", [0, 1])
+	return _prepare(state.equipment.swap_weapons, "", &"equip", [0, 1])
 
 
 func buy_item(to_storage: bool, item_id: StringName, amount: int) -> bool:
@@ -250,7 +250,7 @@ func _enter_tree() -> void:
 
 
 func unsocket_scroll(slot: int) -> bool:
-	return _prepare(func() -> bool: return state.equipment.unsocket(state.inventory, slot), "魔法を取り外し、所持品に戻しました。", &"equip", [slot])
+	return _prepare(func() -> bool: return state.equipment.unsocket(state.inventory, slot), "", &"equip", [slot])
 
 
 func purchase_skill(id: StringName) -> bool:
