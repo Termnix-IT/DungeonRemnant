@@ -55,7 +55,7 @@ func run_tests() -> void:
 	check(page.prompt.visible and main.state.equipment.slots[Equipment.Slot.ARMOR] == null, "Dropping gear on its slot asks before wearing it")
 	page.prompt.cancel_button.pressed.emit()
 	page.slots[Equipment.Slot.ARMOR].pressed.emit()
-	check(page.prompt.visible and page.prompt.title_label.text.contains(ARMOR.label()) and page.prompt.body_label.text.begins_with("防御力") and page.prompt.caption_label.text.begins_with("防具"), "Choosing the slot asks first, naming the change to her stats")
+	check(page.prompt.visible and page.prompt.title_label.text.contains(ARMOR.label()) and page.prompt.stat_box.get_child_count() == 1 and (page.prompt.stat_box.get_child(0).get_child(0) as Label).text == "防御力" and page.prompt.caption_label.text.begins_with("防具"), "Choosing the slot asks first, naming the change to her stats")
 	check(main.state.equipment.slots[Equipment.Slot.ARMOR] == null, "Asking wears nothing")
 	page.prompt.cancel_button.pressed.emit()
 	check(not page.prompt.visible and main.state.equipment.slots[Equipment.Slot.ARMOR] == null, "Declining leaves the slot as it was")
