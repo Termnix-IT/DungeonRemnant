@@ -54,6 +54,9 @@ func _ready() -> void:
 	hero_stats = HeroStats.new()
 	hero_stats.size_flags_stretch_ratio = 0.95
 	columns.add_child(hero_stats)
+	# What the candidate would change stands under its note, right above
+	# the equip action; she stays on the right.
+	hero_stats.move_stats_to(comparison.get_parent(), comparison.get_index() + 1)
 
 
 func _build_slots(column: VBoxContainer) -> void:

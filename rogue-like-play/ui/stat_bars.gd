@@ -15,6 +15,8 @@ const NUMBER_WIDTH := 44.0
 # Each row: [caption, before, after, scale]; scale is the bar's full value.
 var rows: Array = []
 var bars := true
+# Draw only the rows whose value changes; the rows themselves stay whole.
+var changed_only := false
 # 0 to 1 while the bars move from what they showed to the new rows
 # (UIMotion.blend_in); the numbers are always the new ones.
 var blend := 1.0:
@@ -39,8 +41,8 @@ func show_rows(values: Array) -> void:
 		_to.append(_bar(row))
 	# The bars move from where they are only when the same rows are on show.
 	_from = shown if shown.size() == _to.size() else _to.duplicate()
-	custom_minimum_size.y = ROW_HEIGHT * rows.size()
-	visible = not rows.is_empty()
+	custom_minimum_size.y = ROW_HEIGHT * _drawn_count()
+	visible = _drawn_count() > 0
 	UIMotion.of(self).blend_in()
 	queue_redraw()
 
@@ -51,6 +53,14 @@ func _bar(row: Array) -> Array:
 	var full := maxf(1.0, float(row[3]))
 	var tone := &"StatUp" if after > before else (&"StatDown" if after < before else &"")
 	return [clampf(minf(before, after) / full, 0, 1) * BAR_WIDTH, clampf(maxf(before, after) / full, 0, 1) * BAR_WIDTH, tone]
+
+
+func _drawn(row: Array) -> bool:
+	return not changed_only or row[1] != row[2]
+
+
+func _drawn_count() -> int:
+	return rows.filter(_drawn).size()
 
 
 # The bars as drawn now, partway through a move.
@@ -73,11 +83,15 @@ func _draw() -> void:
 	var rise := get_theme_color(&"font_color", &"StatUp")
 	var fall := get_theme_color(&"font_color", &"StatDown")
 	var shown := _shown()
+	var line := 0
 	for index in rows.size():
 		var row: Array = rows[index]
+		if not _drawn(row):
+			continue
 		var before: int = row[1]
 		var after: int = row[2]
-		var top := index * ROW_HEIGHT
+		var top := line * ROW_HEIGHT
+		line += 1
 		var middle := top + ROW_HEIGHT * 0.5
 		var baseline := middle + (font.get_ascent(value_size) - font.get_descent(value_size)) * 0.5
 		var tone := rise if after > before else (fall if after < before else muted)

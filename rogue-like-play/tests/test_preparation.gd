@@ -47,6 +47,8 @@ func run_tests() -> void:
 	var hero_rows: Array = hub.equipment_page.hero_stats.specs.rows
 	var changed: Array = hero_rows.filter(func(row: Array): return row[1] != row[2])
 	check(changed.size() == 1 and changed[0][0] == "防御力" and changed[0][2] > changed[0][1], "Her stats preview only the rising defense")
+	var specs: StatBars = hub.equipment_page.hero_stats.specs
+	check(specs.changed_only and specs.custom_minimum_size.y == StatBars.ROW_HEIGHT and specs.get_parent().get_index() > hub.equipment_page.comparison.get_index() and specs.get_parent().get_index() < hub.equipment_page.equip_button.get_index(), "Only the changing row shows, between the note and the equip action")
 	check(hub.equipment_page.showcase.title.text == ARMOR.label() and not preview_text.contains(ARMOR.label()), "The full name shows once, in the showcase title")
 	check(hub.equipment_page.hero_stats.swap_label.text.begins_with("防具と入れ替え"), "A previewed change names the slot it replaces")
 	hub.equipment_page.equip_button.pressed.emit()

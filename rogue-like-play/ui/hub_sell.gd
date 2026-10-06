@@ -13,7 +13,10 @@ signal sell_requested(from_storage: bool, index: int, amount: int)
 signal buy_requested(to_storage: bool, item_id: StringName, amount: int)
 signal mode_changed
 
-const SHOWCASE_SIZE := 192.0
+# The goods share the middle with what they would change in her, so they
+# stand a little under the warehouse's 192px: 172px is the least that still
+# draws the 48px art at three times (ItemVisual fills 84% in 48px steps).
+const SHOWCASE_SIZE := 172.0
 const CATEGORIES: Array[String] = ["すべて", "武器", "防具", "装飾", "消耗品", "魔法"]
 const CATEGORY_KINDS := [-1, ItemData.Kind.WEAPON, ItemData.Kind.ARMOR, ItemData.Kind.ACCESSORY, ItemData.Kind.CONSUMABLE, ItemData.Kind.SCROLL]
 
@@ -48,6 +51,7 @@ var _place_row: HBoxContainer
 var hero_stats: HeroStats
 var _catalog: VBoxContainer
 var _info: VBoxContainer
+var _counter_rule: Control
 
 
 func _ready() -> void:
@@ -62,10 +66,12 @@ func _ready() -> void:
 	_build_catalog(_catalog)
 	_info = HubUI.open_column(columns, 1.15, &"SlabColumn")
 	_build_info(_info)
-	# Unframed, like the lobby: the heroine and what the goods do to her.
+	# Unframed, like the lobby: the heroine. What the goods would change in
+	# her stands in the middle, right above the counter and the trade.
 	hero_stats = HeroStats.new()
 	hero_stats.size_flags_stretch_ratio = 0.95
 	columns.add_child(hero_stats)
+	hero_stats.move_stats_to(_info, _counter_rule.get_index())
 	hero = hero_stats.hero
 	hero_specs = hero_stats.specs
 	swap_label = hero_stats.swap_label
@@ -138,7 +144,7 @@ func _build_info(info: VBoxContainer) -> void:
 	details.fit_lines(gap, 48)
 	# The counter: where the goods go, how many, one large price and one
 	# quiet line of what changes, right above the trade, parted by a rule.
-	HubUI.rule(info)
+	_counter_rule = HubUI.rule(info)
 	var counter_stack := VBoxContainer.new()
 	counter_stack.theme_type_variation = &"CompactStack"
 	info.add_child(counter_stack)

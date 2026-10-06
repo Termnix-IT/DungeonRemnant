@@ -18,8 +18,12 @@ const STATS := [["hp", "最大HP"], ["attack", "攻撃力"], ["defense", "防御
 var hero: LobbyHero
 var specs: StatBars
 var swap_label: Label
+# Lent to a page's middle column (move_stats_to): only a change shows there.
+var lent := false
 var _frame: Control
 var _band: PanelContainer
+var _stack: VBoxContainer
+var _unchanged: Label
 
 
 func _init() -> void:
@@ -45,10 +49,13 @@ func _ready() -> void:
 	_band.anchor_bottom = 1.0
 	_band.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	var stack := VBoxContainer.new()
+	_stack = stack
 	stack.theme_type_variation = &"CompactStack"
 	_band.add_child(stack)
 	HubUI.label(stack, "次の冒険の能力", &"NoteLabel")
 	swap_label = HubUI.label(stack, "", &"NoteLabel")
+	_unchanged = HubUI.label(stack, "能力は変わらない", &"BodyLabel")
+	_unchanged.visible = false
 	specs = StatBars.new()
 	# No bars: gear has no fixed ceiling, so a bar's length could only be
 	# measured against her own value and would say nothing about its size.
@@ -74,6 +81,20 @@ func play_entrance(delay: float) -> void:
 	UIMotion.of(_band).appear(delay + UIMotion.STAGGER_TIME)
 
 
+# Where a page decides on goods (the shop, the equipment), what they would
+# change belongs beside the action that buys or wears them, not in the
+# screen's far corner: the stats leave her band for parent at index, show
+# only the rows that change, and hide while nothing is compared. She stays
+# on the right, unlabelled.
+func move_stats_to(parent: Control, index: int) -> void:
+	lent = true
+	_band.hide()
+	_stack.reparent(parent, false)
+	parent.move_child(_stack, index)
+	specs.changed_only = true
+	_stack.visible = false
+
+
 # Her stats as they are, or before and after a change; swap names the slot
 # and what she wears there now, or is empty.
 func show_stats(before: Dictionary, after: Dictionary = {}, swap: String = "") -> void:
@@ -84,6 +105,9 @@ func show_stats(before: Dictionary, after: Dictionary = {}, swap: String = "") -
 		var next: int = after.get(stat[0], before[stat[0]])
 		shown.append([stat[1], before[stat[0]], next, 0])
 	specs.show_rows(shown)
+	if lent:
+		_stack.visible = not swap.is_empty()
+		_unchanged.visible = _stack.visible and not specs.visible
 
 
 # The swap line for wearing goods in a slot.

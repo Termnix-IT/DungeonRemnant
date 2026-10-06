@@ -76,10 +76,15 @@ func run_tests() -> void:
 			shop.item_list.item_selected.emit(index)
 	# She already wears this armor, so the slot is named and nothing changes.
 	check(shop.swap_label.visible and shop.swap_label.text == "防具と入れ替え（今：革の防具）" and shop.hero_specs.rows.all(func(row: Array): return row[1] == row[2]), "Equipment in the shop names its slot and what she wears there")
+	# The change stands in the middle, above the counter; she stands alone.
+	var stack: Control = shop.hero_specs.get_parent()
+	check(stack.get_parent() == shop._info and stack.get_index() < shop._counter_rule.get_index() and not shop.hero_stats._band.visible, "What the goods would change sits right above the counter, not in her corner")
+	check(stack.visible and not shop.hero_specs.visible and shop.hero_stats._unchanged.visible, "Goods that change nothing say so in one line")
 	shop.set_buying(false)
 	shop.item_list.select(0)
 	shop.item_list.item_selected.emit(0)
 	check(not shop.swap_label.visible and shop.hero_specs.rows.all(func(row: Array): return row[1] == row[2]), "Selling shows her stats as they are")
+	check(not stack.visible, "Selling compares nothing, so the middle shows no stats")
 	# Gear has no fixed ceiling, so her stats carry no bar to misread.
 	check(not shop.hero_specs.bars, "Her stats are numbers without bars")
 	shop.set_buying(true)
