@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://ui/slab_style.gd" id="SlabStyleScript"]
 [ext_resource type="Texture2D" path="res://art/ui/cell_frame.png" id="CellFrameTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/slot_frame.png" id="SlotFrameTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/popup_frame.png" id="PopupFrameTexture"]
 [ext_resource type="FontFile" path="res://ui/fonts/ShipporiMincho-Bold.ttf" id="DisplayBold"]
 [ext_resource type="FontFile" path="res://ui/fonts/ShipporiMincho-Medium.ttf" id="DisplayMedium"]
 [ext_resource type="Texture2D" path="res://art/ui/frame_panel.png" id="FramePanelTexture"]
@@ -763,19 +764,6 @@ content_margin_top = 8.0
 content_margin_right = 2.0
 content_margin_bottom = 8.0
 
-[sub_resource type="Gradient" id="SlabFadeRev"]
-offsets = PackedFloat32Array(0, 0.16, 1)
-colors = PackedColorArray(0.03, 0.028, 0.03, 0, 0.03, 0.028, 0.03, 0.82, 0.03, 0.028, 0.03, 0.88)
-
-[sub_resource type="StyleBox" id="SlabSurfaceRev"]
-resource_name = "SlabSurfaceRev"
-script = ExtResource("SlabStyleScript")
-horizontal = SubResource("SlabFadeRev")
-content_margin_left = 34.0
-content_margin_top = 18.0
-content_margin_right = 22.0
-content_margin_bottom = 18.0
-
 [sub_resource type="StyleBoxTexture" id="ItemCellRest"]
 resource_name = "ItemCellRest"
 texture = ExtResource("CellFrameTexture")
@@ -805,6 +793,67 @@ modulate_color = Color(1.2, 1.12, 1, 1)
 resource_name = "SlotCellChosen"
 texture = ExtResource("SlotFrameTexture")
 modulate_color = Color(1.5, 1.25, 0.8, 1)
+
+[sub_resource type="Gradient" id="PlaqueFade"]
+offsets = PackedFloat32Array(0, 0.2, 0.8, 1)
+colors = PackedColorArray(0.03, 0.028, 0.03, 0, 0.03, 0.028, 0.03, 0.86, 0.03, 0.028, 0.03, 0.86, 0.03, 0.028, 0.03, 0)
+
+[sub_resource type="StyleBox" id="SlabPlaqueSurface"]
+resource_name = "SlabPlaqueSurface"
+script = ExtResource("SlabStyleScript")
+horizontal = SubResource("PlaqueFade")
+feather = 22.0
+content_margin_left = 70.0
+content_margin_top = 14.0
+content_margin_right = 70.0
+content_margin_bottom = 14.0
+
+[sub_resource type="StyleBoxFlat" id="MenuSurface"]
+resource_name = "MenuSurface"
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+bg_color = Color(0.04, 0.035, 0.035, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.62, 0.48, 0.27, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="MenuItemRest"]
+resource_name = "MenuItemRest"
+content_margin_left = 16.0
+content_margin_top = 9.0
+content_margin_right = 16.0
+content_margin_bottom = 9.0
+bg_color = Color(0, 0, 0, 0)
+
+[sub_resource type="StyleBoxFlat" id="MenuItemHover"]
+resource_name = "MenuItemHover"
+content_margin_left = 16.0
+content_margin_top = 9.0
+content_margin_right = 16.0
+content_margin_bottom = 9.0
+bg_color = Color(0.84, 0.72, 0.48, 0.16)
+
+[sub_resource type="StyleBoxTexture" id="PopupFrame"]
+resource_name = "PopupFrame"
+texture = ExtResource("PopupFrameTexture")
+texture_margin_left = 96.0
+texture_margin_top = 96.0
+texture_margin_right = 96.0
+texture_margin_bottom = 96.0
+content_margin_left = 112.0
+content_margin_top = 100.0
+content_margin_right = 112.0
+content_margin_bottom = 96.0
 
 [resource]
 DetailStack/base_type = &"VBoxContainer"
@@ -1383,16 +1432,14 @@ ItemCell/styles/hover_pressed = SubResource("ItemCellChosen")
 ItemCell/styles/disabled = SubResource("ItemCellRest")
 ItemCell/styles/focus = SubResource("FocusOutline")
 GearGrid/base_type = &"GridContainer"
-GearGrid/constants/h_separation = 8
-GearGrid/constants/v_separation = 8
+GearGrid/constants/h_separation = 4
+GearGrid/constants/v_separation = 4
 SlotCell/base_type = &"ItemCell"
 SlotCell/styles/normal = SubResource("SlotCellRest")
 SlotCell/styles/hover = SubResource("SlotCellHover")
 SlotCell/styles/pressed = SubResource("SlotCellChosen")
 SlotCell/styles/hover_pressed = SubResource("SlotCellChosen")
 SlotCell/styles/disabled = SubResource("SlotCellRest")
-SlabColumnRev/base_type = &"PanelContainer"
-SlabColumnRev/styles/panel = SubResource("SlabSurfaceRev")
 PromptPictures/base_type = &"HBoxContainer"
 PromptPictures/constants/separation = 36
 PromptStat/base_type = &"HBoxContainer"
@@ -1402,3 +1449,30 @@ PromptArrow/font_sizes/font_size = 40
 NegativeLabel/base_type = &"Label"
 NegativeLabel/colors/font_color = Color(0.86, 0.52, 0.48, 1)
 NegativeLabel/font_sizes/font_size = 18
+SlabPlaque/base_type = &"PanelContainer"
+SlabPlaque/styles/panel = SubResource("SlabPlaqueSurface")
+SectionLabel/base_type = &"Label"
+SectionLabel/colors/font_color = Color(0.82, 0.71, 0.5, 1)
+SectionLabel/font_sizes/font_size = 18
+SectionLabel/fonts/font = SubResource("DisplayMediumKana")
+PlaqueNote/base_type = &"Label"
+PlaqueNote/colors/font_color = Color(0.86, 0.8, 0.68, 1)
+PlaqueNote/font_sizes/font_size = 18
+PlaqueNote/fonts/font = SubResource("DisplayMediumKana")
+ContextMenu/base_type = &"PanelContainer"
+ContextMenu/styles/panel = SubResource("MenuSurface")
+MenuItem/base_type = &"Button"
+MenuItem/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+MenuItem/colors/font_hover_color = Color(0.96, 0.85, 0.6, 1)
+MenuItem/colors/font_focus_color = Color(0.96, 0.85, 0.6, 1)
+MenuItem/colors/font_pressed_color = Color(0.96, 0.85, 0.6, 1)
+MenuItem/colors/font_disabled_color = Color(0.36, 0.35, 0.33, 1)
+MenuItem/font_sizes/font_size = 20
+MenuItem/styles/normal = SubResource("MenuItemRest")
+MenuItem/styles/hover = SubResource("MenuItemHover")
+MenuItem/styles/pressed = SubResource("MenuItemHover")
+MenuItem/styles/hover_pressed = SubResource("MenuItemHover")
+MenuItem/styles/disabled = SubResource("MenuItemRest")
+MenuItem/styles/focus = SubResource("MenuItemHover")
+PromptPanel/base_type = &"PanelContainer"
+PromptPanel/styles/panel = SubResource("PopupFrame")

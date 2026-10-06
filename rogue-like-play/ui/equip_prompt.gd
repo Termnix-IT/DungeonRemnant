@@ -41,15 +41,13 @@ func _ready() -> void:
 	root.add_child(center)
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	panel = PanelContainer.new()
-	panel.theme_type_variation = &"MainPanel"
-	panel.custom_minimum_size.x = 720
+	panel.theme_type_variation = &"PromptPanel"
+	panel.custom_minimum_size.x = 900
 	center.add_child(panel)
-	var margin := MarginContainer.new()
-	panel.add_child(margin)
 	var column := VBoxContainer.new()
 	column.theme_type_variation = &"DetailStack"
-	margin.add_child(column)
-	caption_label = HubUI.label(column, "", &"MutedLabel")
+	panel.add_child(column)
+	caption_label = HubUI.label(column, "", &"SectionLabel")
 	caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	# Now, an arrow, then the gear.
 	var pictures := HBoxContainer.new()
@@ -64,7 +62,7 @@ func _ready() -> void:
 	to_cell.set_pressed_no_signal(true)
 	title_label = HubUI.label(column, "", &"TitleLabel")
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	kind_label = HubUI.label(column, "", &"MutedLabel")
+	kind_label = HubUI.label(column, "", &"PlaqueNote")
 	kind_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	HubUI.rule(column)
 	stat_box = VBoxContainer.new()
@@ -72,6 +70,10 @@ func _ready() -> void:
 	column.add_child(stat_box)
 	note_label = HubUI.label(column, "", &"NoteLabel")
 	note_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var gap := Control.new()
+	gap.custom_minimum_size.y = 12
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(gap)
 	var actions := HBoxContainer.new()
 	actions.alignment = BoxContainer.ALIGNMENT_CENTER
 	column.add_child(actions)
@@ -109,7 +111,7 @@ func ask(caption: String, current: ItemData, symbol: ItemData, item: ItemData, c
 	from_cell.show_item(current)
 	to_cell.show_item(item)
 	title_label.text = title
-	kind_label.text = "%s　%s" % [ItemGlyph.category(item), ItemGlyph.main_effect(item)]
+	kind_label.text = "%s　◆　%s" % [ItemGlyph.category(item), ItemGlyph.main_effect(item)]
 	for row in stat_box.get_children():
 		stat_box.remove_child(row)
 		row.queue_free()

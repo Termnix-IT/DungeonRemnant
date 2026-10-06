@@ -157,7 +157,6 @@ func _ready() -> void:
 	for bleeding: Control in [sell_page, equipment_page, warehouse_page]:
 		bleeding.offset_left = bleed
 	warehouse_page.offset_right = -bleed
-	equipment_page.offset_right = -bleed
 	sell_page.sell_requested.connect(func(source: bool, index: int, amount: int): sell_requested.emit(source, index, amount))
 	sell_page.buy_requested.connect(func(destination: bool, item_id: StringName, amount: int): buy_requested.emit(destination, item_id, amount))
 	sell_page.mode_changed.connect(func():

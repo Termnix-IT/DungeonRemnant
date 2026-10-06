@@ -1,16 +1,19 @@
 class_name HubEquipment
 extends Control
 
-# The equipment page, as an inventory: the gear the adventurer can wear (what
-# she carries and what is stored, each in its own block) as icons alone on the
-# left, the five slots on the right as large lit squares, and between them the
-# hall with a plaque naming what the pointer or the focus rests on (one line
-# of name, one of kind and main effect; the full text is the tooltip). Gear
-# goes into a slot by dragging its icon there, or by choosing it and then the
-# slot (Enter on the icon moves to the slot it would take); either way a
-# prompt shows the change to her stats before anything is worn. Taking a
-# slot's icon out onto the gear takes it off, and dropping the main weapon on
-# the sub weapon (or the reverse) swaps them. The page leads nowhere else: the
+# The equipment page, as an inventory: on one slab from the left edge, the gear
+# the adventurer can wear (what she carries and what is stored, each in its own
+# block) as icons alone, and right beside it the five slots as large lit
+# squares, so gear is only a short way from where it goes. The hall stays open
+# for the painting of the armoury, with a plaque under the knight's plinth
+# naming what the pointer or the focus rests on (a line of name, a line of
+# kind and main effect; the full text is the tooltip). Gear goes into a slot by
+# dragging its icon there, by choosing it and then the slot (Enter on the icon
+# moves to the slot it would take), or by the right-click menu on the icon;
+# right-clicking a worn icon offers taking it off. Either way a prompt shows
+# the change to her stats before anything is worn. Taking a slot's icon out
+# onto the gear takes it off too, and dropping the main weapon on the sub
+# weapon (or the reverse) swaps them. The page leads nowhere else: the
 # warehouse is its own screen from the lobby.
 
 signal equip_requested(from_storage: bool, index: int, slot: int)
@@ -23,8 +26,7 @@ const GRID_COLUMNS := 7
 # The slots' icons are shown at the art's own size.
 const SLOT_SIZE := 104.0
 const SLOT_ICON := 96.0
-const GEAR_WIDTH := 640.0
-const SLOT_COLUMN_WIDTH := 300.0
+const SLAB_WIDTH := 830.0
 
 var state: RunCarryover
 var selected_slot := 0
@@ -50,7 +52,9 @@ var equipped_item: ItemData
 var _equipped_from := Rect2()
 var _pending := {}
 var _slab: Control
-var _slot_slab: Control
+var _menu_layer: Control
+var _menu: PanelContainer
+var _menu_items: VBoxContainer
 var _gear_scroll: ScrollContainer
 var _carried_heading: Label
 var _storage_heading: Label
@@ -61,26 +65,27 @@ func _ready() -> void:
 	columns.theme_type_variation = &"ShopColumns"
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# The gear on a slab from the left edge, the slots on one from the right.
-	var gear := HubUI.open_column(columns, 1.0, &"SlabColumn")
-	_slab = gear.get_parent()
+	var slab := HubUI.open_column(columns, 1.0, &"SlabColumn")
+	_slab = slab.get_parent()
 	_slab.size_flags_horizontal = Control.SIZE_FILL
-	_slab.custom_minimum_size.x = GEAR_WIDTH
-	gear.theme_type_variation = &"DetailStack"
-	_build_gear(gear)
-	# The hall stays open between them, with its painting of the armoury and,
-	# low in it, the plaque of what is looked at.
+	_slab.custom_minimum_size.x = SLAB_WIDTH
+	var both := HBoxContainer.new()
+	both.theme_type_variation = &"ShopColumns"
+	both.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	slab.add_child(both)
+	_build_gear(both)
+	var slot_column := VBoxContainer.new()
+	slot_column.theme_type_variation = &"DetailStack"
+	both.add_child(slot_column)
+	_build_slots(slot_column)
+	# The hall stays open, with its painting of the armoury and, under the
+	# plinth, the plaque of what is looked at.
 	var hall := VBoxContainer.new()
 	hall.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hall.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	columns.add_child(hall)
 	_build_plaque(hall)
-	var slot_column := HubUI.open_column(columns, 1.0, &"SlabColumnRev")
-	_slot_slab = slot_column.get_parent()
-	_slot_slab.size_flags_horizontal = Control.SIZE_FILL
-	_slot_slab.custom_minimum_size.x = SLOT_COLUMN_WIDTH
-	slot_column.theme_type_variation = &"DetailStack"
-	_build_slots(slot_column)
+	_build_menu()
 	prompt = EquipPrompt.new()
 	add_child(prompt)
 	equip_button = prompt.accept_button
@@ -88,22 +93,24 @@ func _ready() -> void:
 	prompt.canceled.connect(_cancel)
 	visibility_changed.connect(func():
 		if not is_visible_in_tree():
-			prompt.hide())
+			prompt.hide()
+			_close_menu())
 
 
 # What she carries, then what is stored: icons in a grid each, one scroll.
-func _build_gear(column: VBoxContainer) -> void:
+func _build_gear(parent: Control) -> void:
 	_gear_scroll = ScrollContainer.new()
+	_gear_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_gear_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_gear_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	column.add_child(_gear_scroll)
+	parent.add_child(_gear_scroll)
 	var blocks := VBoxContainer.new()
 	blocks.theme_type_variation = &"DetailStack"
 	blocks.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_gear_scroll.add_child(blocks)
-	_carried_heading = HubUI.label(blocks, "", &"NoteLabel")
+	_carried_heading = HubUI.label(blocks, "", &"SectionLabel")
 	grid = _new_grid(blocks)
-	_storage_heading = HubUI.label(blocks, "", &"NoteLabel")
+	_storage_heading = HubUI.label(blocks, "", &"SectionLabel")
 	storage_grid = _new_grid(blocks)
 	# Taking a worn icon out onto the gear takes it off.
 	_gear_scroll.set_drag_forwarding(Callable(), _can_drop_on_gear, _drop_on_gear)
@@ -118,15 +125,14 @@ func _new_grid(parent: Control) -> GridContainer:
 
 
 func _build_slots(column: VBoxContainer) -> void:
-	column.alignment = BoxContainer.ALIGNMENT_CENTER
-	var heading := HubUI.label(column, "装備", &"NoteLabel")
+	var heading := HubUI.label(column, "装備", &"SectionLabel")
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	for slot in 5:
 		var row := HBoxContainer.new()
 		row.theme_type_variation = &"CompactRow"
 		row.alignment = BoxContainer.ALIGNMENT_END
 		column.add_child(row)
-		var caption := HubUI.label(row, SLOT_CAPTIONS[slot], &"NoteLabel")
+		var caption := HubUI.label(row, SLOT_CAPTIONS[slot], &"SectionLabel")
 		caption.autowrap_mode = TextServer.AUTOWRAP_OFF
 		caption.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -138,6 +144,7 @@ func _build_slots(column: VBoxContainer) -> void:
 		cell.pressed.connect(_slot_pressed.bind(slot))
 		cell.can_accept = _slot_accepts.bind(slot)
 		cell.dropped.connect(_dropped_on_slot.bind(slot))
+		cell.context_requested.connect(_slot_context.bind(slot))
 		cell.mouse_entered.connect(_preview_slot.bind(slot))
 		cell.focus_entered.connect(_preview_slot.bind(slot))
 		cell.mouse_exited.connect(_restore_detail)
@@ -146,31 +153,122 @@ func _build_slots(column: VBoxContainer) -> void:
 		slots.append(cell)
 
 
-# The plaque low in the hall: the name, the kind and effect, and the lesser
-# actions of the chosen slot.
+# The plaque under the knight's plinth, on the same slab as the rest: the
+# name, the kind and effect, and the lesser actions of the chosen slot.
 func _build_plaque(hall: VBoxContainer) -> void:
 	HubUI.space(hall)
-	var shade := HubUI.open_column(hall, 0.0, &"ShadeColumn")
-	shade.get_parent().size_flags_vertical = Control.SIZE_SHRINK_END
-	shade.get_parent().size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	shade.get_parent().custom_minimum_size.x = 460
-	detail_name = HubUI.label(shade, "", &"TitleLabel")
+	var plaque := PanelContainer.new()
+	plaque.theme_type_variation = &"SlabPlaque"
+	plaque.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	plaque.custom_minimum_size.x = 560
+	hall.add_child(plaque)
+	var stack := VBoxContainer.new()
+	stack.theme_type_variation = &"CompactStack"
+	plaque.add_child(stack)
+	detail_name = HubUI.label(stack, "", &"TitleLabel")
 	detail_name.autowrap_mode = TextServer.AUTOWRAP_OFF
 	detail_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	detail_note = HubUI.label(shade, "", &"MutedLabel")
+	detail_note = HubUI.label(stack, "", &"PlaqueNote")
 	detail_note.autowrap_mode = TextServer.AUTOWRAP_OFF
 	detail_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var lesser := HBoxContainer.new()
 	lesser.theme_type_variation = &"TextActions"
 	lesser.alignment = BoxContainer.ALIGNMENT_CENTER
-	shade.add_child(lesser)
+	stack.add_child(lesser)
 	unequip_button = HubUI.button(lesser, "外す", func(): unequip_requested.emit(selected_slot), &"TextAction")
 	scroll_remove_button = HubUI.button(lesser, "魔法を外す", func(): scroll_remove_requested.emit(selected_slot), &"TextAction")
 	swap_button = HubUI.button(lesser, "主武器と副武器を入れ替え", func(): swap_requested.emit(), &"TextAction")
 	var floor_gap := Control.new()
-	floor_gap.custom_minimum_size.y = 12
+	floor_gap.custom_minimum_size.y = 14
 	floor_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hall.add_child(floor_gap)
+
+
+# The right-click menu: a small list at the pointer; a click anywhere else, or
+# Esc, closes it.
+func _build_menu() -> void:
+	_menu_layer = Control.new()
+	_menu_layer.mouse_filter = Control.MOUSE_FILTER_STOP
+	_menu_layer.z_index = 50
+	add_child(_menu_layer)
+	_menu_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_menu_layer.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.pressed:
+			_close_menu())
+	_menu = PanelContainer.new()
+	_menu.theme_type_variation = &"ContextMenu"
+	_menu_layer.add_child(_menu)
+	_menu_items = VBoxContainer.new()
+	_menu.add_child(_menu_items)
+	_menu_layer.hide()
+
+
+# entries: [[text, Callable]]. Nothing to offer, nothing opens.
+func show_menu(at: Vector2, entries: Array) -> void:
+	if entries.is_empty():
+		return
+	for item in _menu_items.get_children():
+		_menu_items.remove_child(item)
+		item.queue_free()
+	for entry: Array in entries:
+		var button := HubUI.button(_menu_items, entry[0], func():
+			_close_menu()
+			entry[1].call(), &"MenuItem")
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.custom_minimum_size = Vector2(220, 0)
+	_menu_layer.show()
+	_menu.reset_size()
+	var room := get_global_rect()
+	var corner := at - room.position
+	_menu.position = Vector2(clampf(corner.x, 0.0, maxf(0.0, room.size.x - _menu.size.x)), clampf(corner.y, 0.0, maxf(0.0, room.size.y - _menu.size.y)))
+	(_menu_items.get_child(0) as Button).grab_focus()
+
+
+func _close_menu() -> void:
+	if _menu_layer != null and _menu_layer.visible:
+		_menu_layer.hide()
+
+
+func menu_open() -> bool:
+	return _menu_layer != null and _menu_layer.visible
+
+
+# What the right-click offers on gear: each slot it could go into.
+func gear_menu(index: int) -> Array:
+	var item: ItemData = candidates[index].item
+	var entries := []
+	for slot in _slots_for(item):
+		var text := "%sの杖に魔法を込める" % SLOT_CAPTIONS[slot] if item.kind == ItemData.Kind.SCROLL else "%sに装備" % SLOT_CAPTIONS[slot]
+		entries.append([text, func(): ask_equip(index, slot)])
+	return entries
+
+
+# On a worn icon: take it off, take its spell out, or swap the two weapons.
+func slot_menu(slot: int) -> Array:
+	var worn := state.equipment.slots[slot]
+	var entries := []
+	if worn == null:
+		return entries
+	if slot != Equipment.Slot.MAIN:
+		entries.append(["外す", func(): unequip_requested.emit(slot)])
+	if state.equipment.can_socket(slot) and worn.socketed_scroll != null:
+		entries.append(["魔法を外す", func(): scroll_remove_requested.emit(slot)])
+	if slot <= Equipment.Slot.SUB and state.equipment.slots[Equipment.Slot.SUB] != null:
+		entries.append(["主武器と副武器を入れ替え", func(): swap_requested.emit()])
+	return entries
+
+
+func _gear_context(at: Vector2, index: int) -> void:
+	selected_candidate = index
+	_mark()
+	show_menu(at, gear_menu(index))
+
+
+func _slot_context(at: Vector2, slot: int) -> void:
+	selected_slot = slot
+	selected_candidate = -1
+	_mark()
+	show_menu(at, slot_menu(slot))
 
 
 func refresh(current: RunCarryover) -> void:
@@ -213,6 +311,7 @@ func _fill_gear() -> void:
 			cell.tooltip_text = ItemTooltipList.description(item)
 			cell.pressed.connect(_candidate_pressed.bind(at))
 			cell.gui_input.connect(_candidate_input.bind(at))
+			cell.context_requested.connect(_gear_context.bind(at))
 			cell.mouse_entered.connect(_preview_candidate.bind(at))
 			cell.focus_entered.connect(_preview_candidate.bind(at))
 			cell.mouse_exited.connect(_restore_detail)
@@ -412,7 +511,7 @@ func _show_detail(item: ItemData, tag: String) -> void:
 	var parts: Array[String] = [ItemGlyph.category(item), ItemGlyph.main_effect(item)]
 	if not tag.is_empty():
 		parts.append(tag)
-	detail_note.text = "　".join(parts)
+	detail_note.text = "　◆　".join(parts)
 
 
 # Opening the page: the slots arrive top first, the gear a beat later.
@@ -420,7 +519,6 @@ func play_entrance() -> void:
 	for index in slots.size():
 		UIMotion.of(slots[index]).appear(UIMotion.ROW_STAGGER * index, UIMotion.ROW_TIME)
 	UIMotion.of(_slab).appear(0.0, UIMotion.WINDOW_TIME)
-	UIMotion.of(_slot_slab).appear(0.0, UIMotion.WINDOW_TIME)
 	UIMotion.of(_gear_scroll).appear(UIMotion.STAGGER_TIME)
 
 
@@ -444,6 +542,12 @@ func present_equip(changed: Array[int]) -> void:
 		for index in changed:
 			UIMotion.of(slots[index]).pulse()
 	equipped_item = null
+
+
+func _input(event: InputEvent) -> void:
+	if menu_open() and event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		_close_menu()
 
 
 func _unhandled_input(event: InputEvent) -> void:

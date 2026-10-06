@@ -54,7 +54,7 @@ func run_tests() -> void:
 			var screen: Rect2 = root.get_visible_rect()
 			check(worn.slots.all(func(slot: Button): return screen.encloses(slot.get_global_rect())) and screen.encloses(worn.detail_note.get_global_rect()), "Every slot and the detail line stay on the screen")
 			check(not worn._gear_scroll.get_global_rect().intersects(worn.detail_name.get_global_rect()) and not worn.detail_note.get_global_rect().intersects(worn.swap_button.get_global_rect()), "The gear icons leave the plaque and the lesser actions clear")
-			check(worn.grid.get_global_rect().end.x <= worn.detail_name.get_global_rect().position.x + worn.detail_name.size.x and worn.grid.get_global_rect().end.x <= worn.slots[0].get_global_rect().position.x, "The gear stands left of the slots, the hall between")
+			check(worn.grid.get_global_rect().end.x <= worn.slots[0].get_global_rect().position.x and worn.slots[0].get_global_rect().end.x < worn.detail_name.get_global_rect().get_center().x, "The slots stand right beside the gear, the plaque out in the hall")
 	hub.show_page("home")
 	enter(hub, hub.warehouse_button)
 	await create_timer(UIMotion.WINDOW_TIME + 0.05).timeout

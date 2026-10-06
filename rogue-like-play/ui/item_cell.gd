@@ -8,6 +8,8 @@ extends Button
 # Appearance (the surface, the gold of the chosen one) belongs to the Theme.
 
 signal dropped(source: ItemCell)
+# A right click: the menu of what can be done with this cell, at the pointer.
+signal context_requested(at: Vector2)
 
 const SIZE := 72.0
 # The icons are 96px art: drawn at 48 or at 96 they stay crisp.
@@ -87,6 +89,12 @@ func _draw() -> void:
 		var text := "×%d" % count
 		var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 		draw_string(font, Vector2(size.x - width - 6, size.y - 7), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, get_theme_color(&"font_color", &"Label"))
+
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		accept_event()
+		context_requested.emit(get_global_mouse_position())
 
 
 func _get_drag_data(_at_position: Vector2) -> Variant:
