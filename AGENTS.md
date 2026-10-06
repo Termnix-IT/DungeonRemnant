@@ -2,7 +2,7 @@
 
 ## プロジェクト構成とモジュール分割
 
-`rogue-like-play/` がGodot 4.6プロジェクトのルートです。ゲームを実行する際は、このディレクトリの `project.godot` を開きます。ゲームプレイコードは責務ごとに分けています。`actors/` はプレイヤーと敵の挙動、`combat/` は攻撃処理、`game/` は拠点・冒険のライフサイクル・セーブ・ターンの調整、`world/` はグリッド・ダンジョン生成・視界・レイアウトを担当します。Inventoryと進行処理は `items/` と `progression/` にあります。調整可能なバランス定義は `data/` 配下のGodot Resourceとして管理します。UIのSceneとScriptは `ui/`、自動テストと目視確認用Scriptは `tests/` に置きます。製品仕様と受け入れ確認は、リポジトリ直下の `docs/` にあります。
+`rogue-like-play/` がGodot 4.7プロジェクトのルートです。ゲームを実行する際は、このディレクトリの `project.godot` を開きます。ゲームプレイコードは責務ごとに分けています。`actors/` はプレイヤーと敵の挙動、`combat/` は攻撃処理、`game/` は拠点・冒険のライフサイクル・セーブ・ターンの調整、`world/` はグリッド・ダンジョン生成・視界・レイアウトを担当します。Inventoryと進行処理は `items/` と `progression/` にあります。調整可能なバランス定義は `data/` 配下のGodot Resourceとして管理します。UIのSceneとScriptは `ui/`、自動テストと目視確認用Scriptは `tests/` に置きます。製品仕様と受け入れ確認は、リポジトリ直下の `docs/` にあります。
 
 ## ビルド・テスト・開発コマンド
 

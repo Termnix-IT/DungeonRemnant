@@ -35,6 +35,12 @@ func run_tests() -> void:
 	var hub = main.get_node("Hub")
 	var shop: HubSell = hub.sell_page
 	hub.show_page("sell")
+	# The source row is hidden while buying, and a hidden label keeps whatever
+	# size it last had, so the caption is measured while selling.
+	shop.set_buying(false)
+	for frame in 3:
+		await process_frame
+	check(shop.source_label.size.y <= shop.source_choice.size.y, "Source caption stays on one row")
 	shop.set_buying(true)
 	for frame in 3:
 		await process_frame
@@ -44,7 +50,6 @@ func run_tests() -> void:
 	check(not shop.sell_button.disabled, "Valid purchase enables transaction")
 	for control: Control in [shop.item_list, shop.details, shop.quantity, shop.total_label, shop.sell_button, shop.source_choice]:
 		check(shop.get_global_rect().grow(1).encloses(control.get_global_rect()), "%s fits shop" % control.get_class())
-	check(shop.source_label.size.y <= shop.source_choice.size.y, "Source caption stays on one row")
 	check(not shop.total_label.get_global_rect().intersects(shop.sell_button.get_global_rect()), "Quote leaves action visible")
 	inspect_styles(hub.get_node("Content"))
 	var normal := shop.sell_button.get_theme_stylebox("normal")

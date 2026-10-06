@@ -29,7 +29,7 @@ SOFTWARE.
 
 Godot Engine license and attribution guidance: <https://godotengine.org/license/>
 
-Godot Engine also contains third-party components under compatible licenses. Include the `COPYRIGHT.txt` file from the matching Godot Engine release with desktop distributions. The complete notice for Godot 4.6.2 is available at <https://github.com/godotengine/godot/blob/4.6.2-stable/COPYRIGHT.txt>.
+Godot Engine also contains third-party components under compatible licenses. Include the `COPYRIGHT.txt` file from the matching Godot Engine release with desktop distributions. The complete notice for Godot 4.7.2 is available at <https://github.com/godotengine/godot/blob/4.7.2-stable/COPYRIGHT.txt>.
 
 ## Godot Engine Icon
 

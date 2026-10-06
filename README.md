@@ -35,12 +35,12 @@ Godot製の2Dターン制ローグライクです。拠点で準備を整え、�
 
 ## 開発環境
 
-- Engine: Godot 4.6系
+- Engine: Godot 4.7系
 - Project root: `rogue-like-play/`
 - Main scene: `rogue-like-play/game/main.tscn`
 - Target platform: Windows 64-bit
 
-Godot 4.6系で `rogue-like-play/project.godot` を開き、`F5` でプロジェクトを実行します。
+Godot 4.7系で `rogue-like-play/project.godot` を開き、`F5` でプロジェクトを実行します。
 
 ## 公開予定
 

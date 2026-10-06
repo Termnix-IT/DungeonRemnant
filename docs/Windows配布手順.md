@@ -2,7 +2,7 @@
 
 ## 対象
 
-Godot 4.6系で、このMVPを64ビット版Windows向けに書き出す手順です。ゲーム仕様、セーブ形式、ゲーム内データは変更しません。
+Godot 4.7系で、このMVPを64ビット版Windows向けに書き出す手順です。ゲーム仕様、セーブ形式、ゲーム内データは変更しません。
 
 登録済みの `Windows Desktop` プリセットは次の構成です。
 
@@ -15,7 +15,7 @@ Godot 4.6系で、このMVPを64ビット版Windows向けに書き出す手順�
 
 ## 書き出し前の準備
 
-1. Godot 4.6系で `rogue-like-play/project.godot` を開きます。
+1. Godot 4.7系で `rogue-like-play/project.godot` を開きます。
 2. `Editor > Manage Export Templates...` を開き、使用中のGodotと同じバージョンの Export Templates をインストールします。
 3. `Project > Export...` を開き、`Windows Desktop` プリセットが表示され、エラーがないことを確認します。
 4. 書き出し前の確認として、F5で起動し、拠点画面が表示されることを確認します。
@@ -49,7 +49,7 @@ Windows版へ同梱する通知文書を、`rogue-like-play/`から次のコマ�
 ```powershell
 Copy-Item ..\THIRD_PARTY_NOTICES.md build\windows\THIRD_PARTY_NOTICES.md
 Copy-Item ui\fonts\OFL.txt build\windows\SHIPPORI_MINCHO_OFL.txt
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/godotengine/godot/4.6.2-stable/COPYRIGHT.txt" -OutFile "build\windows\GODOT_COPYRIGHT.txt"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/godotengine/godot/4.7.2-stable/COPYRIGHT.txt" -OutFile "build\windows\GODOT_COPYRIGHT.txt"
 ```
 
 `THIRD_PARTY_NOTICES.md`にはGodot EngineのMIT License、既定アイコンのCC BY 4.0表記と、見出しに使う書体しっぽり明朝の表記、`SHIPPORI_MINCHO_OFL.txt`には書体に同梱が義務づけられているSIL Open Font Licenseの全文、`GODOT_COPYRIGHT.txt`にはGodot Engineが含む第三者コンポーネントの著作権・ライセンス情報が記載されています。
