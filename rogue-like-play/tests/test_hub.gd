@@ -346,6 +346,7 @@ func run_tests() -> void:
 	check(GameAudio.play(hub, &"confirm") == null or GameAudio.play(hub, &"confirm").bus == GameSettings.EFFECTS_BUS, "Cues play on the effects bus")
 	page.shake_cycler.grab_focus()
 	check(page.focused_row == 3 and page.note.text.contains("揺れ"), "The shake row has its own note")
+	check(page._hall.is_ancestor_of(page.note), "The note stands in the hall beside the band, not under the rows")
 	root.push_input(step_right)
 	check(hub.settings.shake_level == 1 and page.shake_cycler.text == "弱め" and is_equal_approx(hub.settings.shake_scale(), 0.5), "Right on the shake selector softens the shake")
 	page.display_cycler.grab_focus()

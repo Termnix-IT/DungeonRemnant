@@ -86,11 +86,15 @@ func play_entrance(delay: float) -> void:
 # screen's far corner: the stats leave her band for parent at index, show
 # only the rows that change, and hide while nothing is compared. She stays
 # on the right, unlabelled.
-func move_stats_to(parent: Control, index: int) -> void:
-	lent = true
+func move_stats_to(parent: Control, index: int, always := false) -> void:
 	_band.hide()
 	_stack.reparent(parent, false)
 	parent.move_child(_stack, index)
+	# A page whose decision is the stats themselves (the departure check)
+	# keeps all four rows in view instead of only what changes.
+	if always:
+		return
+	lent = true
 	specs.changed_only = true
 	_stack.visible = false
 

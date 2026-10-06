@@ -138,7 +138,7 @@ func _build_confirmation(parent: Control) -> void:
 	inventory_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	kit.add_child(inventory_list)
 	HubUI.rule(kit)
-	review_button = HubUI.button(kit, "装備・持ち込みを見直す", func(): equipment_requested.emit(), &"TextAction")
+	review_button = HubUI.button(kit, "装備・持ち込みを見直す  ›", func(): equipment_requested.emit(), &"TextAction")
 	review_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	# Middle: where she goes, from which floor, and the one action.
 	var trip := HubUI.open_column(columns, 1.1, &"SlabVeil")
@@ -172,10 +172,12 @@ func _build_confirmation(parent: Control) -> void:
 	start_row.move_child(start_rule, 1)
 	start_choice.item_selected.connect(func(index: int): starting_floor = start_choice.get_item_id(index); _update_start_label())
 	confirm_button = HubUI.primary_action(trip, "挑戦する", func(): departure_requested.emit())
-	# Right: the heroine, and her stats for this run.
+	# Right: the heroine. Her stats for this run stand in the middle column,
+	# above the floor choice, so they are not laid over her legs.
 	hero_stats = HeroStats.new()
 	hero_stats.size_flags_stretch_ratio = 0.95
 	columns.add_child(hero_stats)
+	hero_stats.move_stats_to(trip, start_row.get_index(), true)
 
 
 func present_selection(available_stages: Array[StageData], progress: RunCarryover = null) -> void:

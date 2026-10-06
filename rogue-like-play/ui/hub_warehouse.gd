@@ -45,7 +45,7 @@ func _ready() -> void:
 	inventory_list.item_selected.connect(_select_inventory)
 	# Arranging what she wears is the equipment page's; here only the way there.
 	HubUI.rule(carried)
-	equipment_link = HubUI.button(carried, "装備を整える", func(): equipment_requested.emit(), &"TextAction")
+	equipment_link = HubUI.button(carried, "装備を整える  ›", func(): equipment_requested.emit(), &"TextAction")
 	equipment_link.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_middle = HubUI.open_column(columns, 0.9, &"SlabVeil")
 	_build_middle(_middle)

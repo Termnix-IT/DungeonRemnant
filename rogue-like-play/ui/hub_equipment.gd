@@ -86,7 +86,7 @@ func _build_slots(column: VBoxContainer) -> void:
 	carried_label = HubUI.label(carried, "", &"NoteLabel")
 	carried_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	carried_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	HubUI.button(carried, "倉庫で整える", func(): warehouse_requested.emit(), &"TextAction")
+	HubUI.button(carried, "倉庫で整える  ›", func(): warehouse_requested.emit(), &"TextAction")
 
 
 func _build_candidates(column: VBoxContainer) -> void:
