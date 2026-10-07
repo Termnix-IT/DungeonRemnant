@@ -647,6 +647,10 @@ func _input(event: InputEvent) -> void:
 		elif not result_panel.confirming and event.is_action_pressed("restart"):
 			retry_run()
 		return
+	# The spell picker over the inventory answers its own keys (cards take
+	# Enter, Esc leaves it); nothing reaches the inventory behind it.
+	if inventory_panel.visible and inventory_panel.picking():
+		return
 	if event.is_action_pressed("inventory"):
 		get_viewport().set_input_as_handled()
 		if presentation.playing or turns.busy or turns.ended or turns.paused:
@@ -667,6 +671,9 @@ func _input(event: InputEvent) -> void:
 	elif inventory_panel.visible and event.is_action_pressed("switch_weapon"):
 		get_viewport().set_input_as_handled()
 		inventory_panel.switch_weapons()
+	elif inventory_panel.visible and InputMap.has_action("magic") and event.is_action_pressed("magic"):
+		get_viewport().set_input_as_handled()
+		inventory_panel.open_magic(inventory_panel.magic_slot())
 
 
 func _unhandled_input(event: InputEvent) -> void:

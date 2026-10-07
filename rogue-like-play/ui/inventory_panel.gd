@@ -4,6 +4,7 @@ signal action_requested(kind: String, index: int, slot: int)
 signal close_requested
 
 const EMPTY_HINT := "左の所持品を選択してください。装備中の5枠は所持品の上限に含みません。"
+const NAME_WIDTH := 150.0
 const COMPARED_STATS := [["hp", "最大HP"], ["attack", "攻撃"], ["defense", "防御"], ["reach", "射程"], ["vision", "視界"]]
 
 var player: Node2D
@@ -12,7 +13,12 @@ var equip_buttons: Array[Button] = []
 var slot_labels: Array[Label] = []
 var slot_glyphs: Array[Control] = []
 var remove_buttons: Array[Button] = []
-var scroll_remove_buttons: Array[Button] = []
+# A staff's row carries the round socket of its spell; the socket or M (RB)
+# opens the MagicPicker of the scrolls carried.
+var sockets: Array[MagicSocket] = []
+var magic_picker: MagicPicker
+var magic_hint: Button
+var _picking_slot := -1
 # Slot the comparison describes; hovering an equip action previews that slot.
 var preview_slot := -1
 @onready var list: ItemCardList = $Panel/List
@@ -34,6 +40,15 @@ func _ready() -> void:
 	key_guide.size = Vector2(600, 34)
 	switch_hint = key_guide.add_hint("Tab", "Y", "武器切替", func(): action_requested.emit("switch", -1, -1))
 	key_guide.add_hint("Esc", "B", "閉じる", func(): close_requested.emit())
+	magic_hint = key_guide.add_hint("M", "RB", "魔法", func(): open_magic(magic_slot()))
+	magic_picker = MagicPicker.new()
+	add_child(magic_picker)
+	magic_picker.chosen.connect(func(index: int): _apply_magic("socket", index))
+	magic_picker.removed.connect(func(): _apply_magic("unsocket", -1))
+	magic_picker.canceled.connect(close_magic)
+	visibility_changed.connect(func():
+		if not visible:
+			close_magic())
 	$Panel/Use.pressed.connect(func(): action_requested.emit("use", selected_index, -1))
 	for slot in 5:
 		var row := HBoxContainer.new()
@@ -52,17 +67,22 @@ func _ready() -> void:
 		caption.custom_minimum_size.x = 64
 		var label := HubUI.label(row, "", &"BodyLabel")
 		label.autowrap_mode = TextServer.AUTOWRAP_OFF
-		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		# A trimming label has no width of its own; this keeps the name column.
+		label.custom_minimum_size.x = NAME_WIDTH
 		label.mouse_filter = Control.MOUSE_FILTER_PASS
 		slot_labels.append(label)
-		var scroll_remove := Button.new()
-		scroll_remove.text = "魔法を外す"
-		scroll_remove.theme_type_variation = &"SecondaryButton"
-		scroll_remove.focus_mode = Control.FOCUS_NONE
-		scroll_remove.pressed.connect(func(): action_requested.emit("unsocket", -1, slot))
-		row.add_child(scroll_remove)
-		scroll_remove_buttons.append(scroll_remove)
+		if slot <= Equipment.Slot.SUB:
+			var socket := MagicSocket.new()
+			socket.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			socket.pressed.connect(open_magic.bind(slot))
+			row.add_child(socket)
+			sockets.append(socket)
+		# The socket sits right after the staff's name; the actions keep the right edge.
+		var spacer := Control.new()
+		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(spacer)
 		var remove := Button.new()
 		remove.text = "外す"
 		remove.theme_type_variation = &"SecondaryButton"
@@ -105,10 +125,13 @@ func refresh(feedback: String = "") -> void:
 		slot_labels[slot].text = item.label() if item != null else "—"
 		slot_labels[slot].tooltip_text = "%s：%s" % [HudEquipment.CAPTIONS[slot], item.label() if item != null else "なし"]
 		slot_glyphs[slot].queue_redraw()
-		scroll_remove_buttons[slot].visible = item != null and item.socketed_scroll != null
 		remove_buttons[slot].visible = item != null
 		remove_buttons[slot].disabled = slot == Equipment.Slot.MAIN
 	switch_hint.disabled = player.equipment.slots[Equipment.Slot.SUB] == null
+	for slot in sockets.size():
+		sockets[slot].visible = player.equipment.can_socket(slot)
+		sockets[slot].scroll = player.equipment.slots[slot].socketed_scroll if sockets[slot].visible else null
+	magic_hint.visible = magic_slot() >= 0
 	$Panel/Feedback.text = feedback
 	if selected_index >= player.inventory.entries.size():
 		selected_index = -1
@@ -249,3 +272,44 @@ func _equip(slot: int) -> void:
 
 func _remove(slot: int) -> void:
 	action_requested.emit("unequip", -1, slot)
+
+
+# The staff M opens the picker for: the main weapon if it is a staff, else
+# the sub weapon; -1 when neither is.
+func magic_slot() -> int:
+	if player == null:
+		return -1
+	for slot in [Equipment.Slot.MAIN, Equipment.Slot.SUB]:
+		if player.equipment.can_socket(slot):
+			return slot
+	return -1
+
+
+func picking() -> bool:
+	return magic_picker.visible
+
+
+# Each scroll carried is a card; choosing it costs no turn, as before.
+func open_magic(slot: int) -> void:
+	if not visible or slot < 0 or not player.equipment.can_socket(slot):
+		return
+	_picking_slot = slot
+	var choices: Array[Dictionary] = []
+	for index in player.inventory.entries.size():
+		var entry: InventoryEntry = player.inventory.entries[index]
+		if entry.item.kind == ItemData.Kind.SCROLL:
+			choices.append({"key": index, "item": entry.item, "count": entry.count, "place": "所持品"})
+	magic_picker.open("%sの杖に魔法を込める" % HudEquipment.CAPTIONS[slot], player.equipment.slots[slot].socketed_scroll, choices)
+
+
+func _apply_magic(kind: String, index: int) -> void:
+	var slot := _picking_slot
+	close_magic()
+	action_requested.emit(kind, index, slot)
+
+
+func close_magic() -> void:
+	magic_picker.hide()
+	_picking_slot = -1
+	if visible:
+		list.grab_focus()

@@ -359,6 +359,9 @@ func show_page(target: String) -> void:
 			equipment_page.refresh(_state)
 			key_guide.add_hint("Enter", "A", "装備")
 			key_guide.add_hint("Q / E", "LB / RB", "装備枠")
+			# Shown only while a weapon slot holds a staff (the page keeps it current).
+			equipment_page.magic_hint = key_guide.add_hint("M", "Y", "魔法", func(): equipment_page.open_magic(equipment_page.magic_slot()))
+			equipment_page.magic_hint.visible = equipment_page.magic_slot() >= 0
 			equipment_page.slots[equipment_page.selected_slot].grab_focus()
 		"sell":
 			title_label.text = "ショップ"

@@ -220,6 +220,7 @@ func _enter_tree() -> void:
 		"restart": [KEY_R],
 		"inventory": [KEY_I],
 		"switch_weapon": [KEY_TAB],
+		"magic": [KEY_M],
 	}
 	for action: String in bindings:
 		if InputMap.has_action(action):
@@ -241,6 +242,7 @@ func _enter_tree() -> void:
 		"cancel_attack": JOY_BUTTON_B,
 		"inventory": JOY_BUTTON_X,
 		"switch_weapon": JOY_BUTTON_Y,
+		"magic": JOY_BUTTON_RIGHT_SHOULDER,
 		"restart": JOY_BUTTON_START,
 	}
 	for action: String in pad:

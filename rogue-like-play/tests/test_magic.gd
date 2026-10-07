@@ -127,9 +127,63 @@ func test_hub() -> void:
 	main.free()
 
 
+# The staff's own socket leads to the spells: in the hub (carried and stored
+# scrolls, the socket, the M key and the right-click menu) and in the dungeon.
+func test_staff_side() -> void:
+	var main := preload("res://game/main.tscn").instantiate()
+	main.saving_enabled = false
+	root.add_child(main)
+	main.state.equipment.slots[0] = ItemData.from_weapon(STAFF)
+	main.state.inventory.add(BOLT)
+	main.state.storage.add(FLAME)
+	var hub = main.get_node("Hub")
+	hub.show_page("equipment")
+	var page: HubEquipment = hub.equipment_page
+	var picker: MagicPicker = page.magic_picker
+	check(page.sockets[0].visible and page.sockets[0].scroll == null and not page.sockets[1].visible, "An empty staff shows its socket; other weapons none")
+	check(page.magic_hint.visible and page.magic_slot() == 0, "The magic key cap shows while a staff is worn")
+	check(page.slot_menu(0).any(func(entry: Array) -> bool: return entry[0] == "魔法を込める"), "The staff's menu offers choosing a spell")
+	page.sockets[0].pressed.emit()
+	check(picker.visible and picker.cards.size() == 2 and not picker.remove_button.visible, "The socket opens the picker with carried and stored scrolls")
+	picker.cards[0].pressed.emit()
+	check(not picker.visible and main.state.equipment.slots[0].socketed_scroll == BOLT and page.sockets[0].scroll == BOLT, "Picking a card puts the spell in the staff")
+	var key := InputEventKey.new()
+	key.keycode = KEY_M
+	key.pressed = true
+	page._unhandled_input(key)
+	check(picker.visible and picker.remove_button.visible and picker.cards.size() == 1, "M opens the picker; a held spell can be taken out")
+	picker.removed.emit()
+	check(not picker.visible and main.state.equipment.slots[0].socketed_scroll == null and main.state.inventory.entries[0].item == BOLT, "Taking the spell out returns its scroll")
+	main.state.equipment.slots[0] = ItemData.from_weapon(preload("res://data/weapons/sword.tres"))
+	hub.refresh(main.state)
+	check(not page.sockets[0].visible and not page.magic_hint.visible and page.magic_slot() == -1, "Without a staff there is no socket or key cap")
+	main.free()
+	var run := preload("res://game/run/run.tscn").instantiate()
+	run.generation_seed = 47
+	root.add_child(run)
+	var player: Node2D = run.turns.player
+	player.equipment.slots[0] = ItemData.from_weapon(STAFF)
+	player.inventory.add(HEAL)
+	var panel = run.inventory_panel
+	panel.present(player)
+	check(panel.sockets[0].visible and panel.sockets[0].scroll == null and panel.magic_hint.visible, "The dungeon inventory shows the staff's socket")
+	panel.open_magic(panel.magic_slot())
+	check(panel.picking() and panel.magic_picker.cards.size() == 1, "The socket key opens the picker over the inventory")
+	var accept := InputEventAction.new()
+	accept.action = "ui_accept"
+	accept.pressed = true
+	run._input(accept)
+	check(panel.picking() and panel.visible, "The inventory's keys wait while the picker is open")
+	var turns: int = run.turns.turn_count
+	panel.magic_picker.cards[0].pressed.emit()
+	check(not panel.picking() and player.equipment.slots[0].socketed_scroll == HEAL and run.turns.turn_count == turns and panel.sockets[0].scroll == HEAL, "Picking in the dungeon sockets the spell without a turn")
+	run.free()
+
+
 func run_tests() -> void:
 	test_socket_and_save()
 	test_casting()
 	test_hub()
+	test_staff_side()
 	print("Magic tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)

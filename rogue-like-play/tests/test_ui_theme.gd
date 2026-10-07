@@ -16,6 +16,10 @@ func check(ok: bool, message: String) -> void:
 
 
 func inspect_styles(node: Node) -> void:
+	# A key cap's hint widens its own left padding to fit its cap (KeyGuide._fit):
+	# a layout measure of the cap, not a style chosen per screen.
+	if node is Control and (node as Control).theme_type_variation == &"KeyGuideButton":
+		return
 	if node is Control:
 		var overrides: Array[String] = []
 		for property in node.get_property_list():

@@ -11,7 +11,9 @@ extends Control
 # dragging its icon there, by choosing it and then the slot (Enter on the icon
 # moves to the slot it would take), or by the right-click menu on the icon;
 # right-clicking a worn icon offers taking it off (or swapping the weapons,
-# or taking a spell out). The icons can be filtered by kind and sorted. Either way a prompt shows
+# or choosing or taking out a spell). A staff's slot also carries a round
+# socket showing its spell (a breathing "+" while empty); the socket, M or Y
+# opens the MagicPicker of the spells at hand. The icons can be filtered by kind and sorted. Either way a prompt shows
 # the change to her stats before anything is worn. Taking a slot's icon out
 # onto the gear takes it off too, and dropping the main weapon on the sub
 # weapon (or the reverse) swaps them. The page leads nowhere else: the
@@ -61,6 +63,12 @@ var _menu: ContextMenu
 var _gear_scroll: ScrollContainer
 var _carried_heading: Label
 var _storage_heading: Label
+# The weapon slots' sockets (main, sub), the picker they open, and the slot
+# being given a spell. magic_hint is the footer's key cap, set by the hub.
+var sockets: Array[MagicSocket] = []
+var magic_picker: MagicPicker
+var magic_hint: Button
+var _picking_slot := -1
 
 
 func _ready() -> void:
@@ -95,9 +103,15 @@ func _ready() -> void:
 	equip_button = prompt.accept_button
 	prompt.confirmed.connect(_confirm)
 	prompt.canceled.connect(_cancel)
+	magic_picker = MagicPicker.new()
+	add_child(magic_picker)
+	magic_picker.chosen.connect(_spell_chosen)
+	magic_picker.removed.connect(_spell_removed)
+	magic_picker.canceled.connect(_close_picker)
 	visibility_changed.connect(func():
 		if not is_visible_in_tree():
 			prompt.hide()
+			magic_picker.hide()
 			_close_menu())
 
 
@@ -178,6 +192,12 @@ func _build_slots(column: VBoxContainer) -> void:
 		cell.focus_exited.connect(_restore_detail)
 		row.add_child(cell)
 		slots.append(cell)
+		if slot <= Equipment.Slot.SUB:
+			var socket := MagicSocket.new()
+			cell.add_child(socket)
+			socket.position = Vector2.ONE * (SLOT_SIZE - MagicSocket.SIZE - 4.0)
+			socket.pressed.connect(open_magic.bind(slot))
+			sockets.append(socket)
 
 
 # The plaque under the knight's plinth, on the same slab as the rest: the
@@ -218,6 +238,8 @@ func slot_menu(slot: int) -> Array:
 		return entries
 	if slot != Equipment.Slot.MAIN:
 		entries.append(["外す", func(): unequip_requested.emit(slot)])
+	if state.equipment.can_socket(slot):
+		entries.append(["魔法を込める", func(): open_magic(slot)])
 	if state.equipment.can_socket(slot) and worn.socketed_scroll != null:
 		entries.append(["魔法を外す", func(): scroll_remove_requested.emit(slot)])
 	if slot <= Equipment.Slot.SUB and state.equipment.slots[Equipment.Slot.SUB] != null:
@@ -247,6 +269,11 @@ func refresh(current: RunCarryover) -> void:
 		var item := state.equipment.slots[index]
 		(slots[index] as ItemCell).show_item(item)
 		slots[index].tooltip_text = ItemTooltipList.description(item) if item != null else SLOT_CAPTIONS[index]
+	for index in sockets.size():
+		sockets[index].visible = state.equipment.can_socket(index)
+		sockets[index].scroll = state.equipment.slots[index].socketed_scroll if sockets[index].visible else null
+	if is_instance_valid(magic_hint):
+		magic_hint.visible = magic_slot() >= 0
 	_fill_gear()
 	selected_candidate = -1
 	for index in candidates.size():
@@ -510,6 +537,8 @@ func _show_detail(item: ItemData, tag: String) -> void:
 		return
 	detail_name.text = item.label()
 	var parts: Array[String] = [ItemGlyph.category(item), ItemGlyph.main_effect(item)]
+	if item.kind == ItemData.Kind.WEAPON and item.weapon.kind == WeaponData.Kind.STAFF:
+		parts.append("魔法：%s" % item.socketed_scroll.weapon.display_name if item.socketed_scroll != null else "魔法なし")
 	if not tag.is_empty():
 		parts.append(tag)
 	detail_note.text = HubUI.plaque_note(parts)
@@ -546,7 +575,7 @@ func present_equip(changed: Array[int]) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_visible_in_tree():
+	if not is_visible_in_tree() or prompt.visible or magic_picker.visible:
 		return
 	var key: bool = event is InputEventKey and event.pressed and not event.echo
 	var pad: bool = event is InputEventJoypadButton and event.pressed
@@ -555,3 +584,59 @@ func _unhandled_input(event: InputEvent) -> void:
 	if back or next:
 		step_slot(-1 if back else 1)
 		get_viewport().set_input_as_handled()
+	elif (key and event.keycode == KEY_M) or (pad and event.button_index == JOY_BUTTON_Y):
+		get_viewport().set_input_as_handled()
+		open_magic(magic_slot())
+
+
+# The staff a key opens the picker for: the chosen slot if it holds a staff,
+# else the first weapon slot that does; -1 when neither does.
+func magic_slot() -> int:
+	if state == null:
+		return -1
+	if state.equipment.can_socket(selected_slot):
+		return selected_slot
+	for slot in [Equipment.Slot.MAIN, Equipment.Slot.SUB]:
+		if state.equipment.can_socket(slot):
+			return slot
+	return -1
+
+
+# Every scroll carried or stored is a card; the carried come first.
+func open_magic(slot: int) -> void:
+	if state == null or slot < 0 or not state.equipment.can_socket(slot):
+		return
+	_close_menu()
+	_picking_slot = slot
+	selected_slot = slot
+	selected_candidate = -1
+	_mark()
+	var choices: Array[Dictionary] = []
+	for from_storage in [false, true]:
+		var source := state.storage if from_storage else state.inventory
+		for index in source.entries.size():
+			var entry := source.entries[index]
+			if entry.item.kind == ItemData.Kind.SCROLL:
+				choices.append({"key": {"from_storage": from_storage, "index": index}, "item": entry.item, "count": entry.count, "place": "倉庫" if from_storage else "持ち込み"})
+	magic_picker.open("%sの杖に魔法を込める" % SLOT_CAPTIONS[slot], state.equipment.slots[slot].socketed_scroll, choices)
+
+
+# Picking a card is the decision; the slot pulses once it is saved.
+func _spell_chosen(key: Dictionary) -> void:
+	var slot := _picking_slot
+	_close_picker()
+	equipped_item = null
+	equip_requested.emit(key.from_storage, key.index, slot)
+
+
+func _spell_removed() -> void:
+	var slot := _picking_slot
+	_close_picker()
+	scroll_remove_requested.emit(slot)
+
+
+func _close_picker() -> void:
+	magic_picker.hide()
+	if _picking_slot >= 0 and is_visible_in_tree():
+		slots[_picking_slot].grab_focus()
+	_picking_slot = -1
