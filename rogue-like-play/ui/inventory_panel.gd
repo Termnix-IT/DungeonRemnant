@@ -18,13 +18,22 @@ var preview_slot := -1
 @onready var list: ItemCardList = $Panel/List
 @onready var showcase: ItemShowcase = $Panel/Showcase
 @onready var details: ItemDetails = $Panel/Description
+# The footer's key caps double as the switch and close actions (clickable),
+# in place of text buttons labelled with their keys.
+var key_guide: KeyGuide
+var switch_hint: Button
 
 
 func _ready() -> void:
 	hide()
 	list.item_selected.connect(_select_item)
-	$Panel/Close.pressed.connect(func(): close_requested.emit())
-	$Panel/Switch.pressed.connect(func(): action_requested.emit("switch", -1, -1))
+	key_guide = KeyGuide.new()
+	key_guide.name = "KeyGuide"
+	$Panel.add_child(key_guide)
+	key_guide.position = Vector2(24, 610)
+	key_guide.size = Vector2(600, 34)
+	switch_hint = key_guide.add_hint("Tab", "Y", "武器切替", func(): action_requested.emit("switch", -1, -1))
+	key_guide.add_hint("Esc", "B", "閉じる", func(): close_requested.emit())
 	$Panel/Use.pressed.connect(func(): action_requested.emit("use", selected_index, -1))
 	for slot in 5:
 		var row := HBoxContainer.new()
@@ -99,7 +108,7 @@ func refresh(feedback: String = "") -> void:
 		scroll_remove_buttons[slot].visible = item != null and item.socketed_scroll != null
 		remove_buttons[slot].visible = item != null
 		remove_buttons[slot].disabled = slot == Equipment.Slot.MAIN
-	$Panel/Switch.disabled = player.equipment.slots[Equipment.Slot.SUB] == null
+	switch_hint.disabled = player.equipment.slots[Equipment.Slot.SUB] == null
 	$Panel/Feedback.text = feedback
 	if selected_index >= player.inventory.entries.size():
 		selected_index = -1
@@ -226,7 +235,7 @@ func activate_selected() -> bool:
 
 
 func switch_weapons() -> bool:
-	var switch: Button = $Panel/Switch
+	var switch: Button = switch_hint
 	if not visible or switch.disabled:
 		return false
 	switch.pressed.emit()

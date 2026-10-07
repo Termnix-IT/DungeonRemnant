@@ -105,8 +105,9 @@ func run_tests() -> void:
 	run.dungeon.ground_items[player.cell] = InventoryEntry.new(preload("res://data/items/healing_potion.tres"), 2)
 	run._collect_items()
 	var pickup_seen := false
-	for child in run.presentation.get_children():
-		if child is Label and child.text.contains("×2"):
+	# The quantity rides under the item's icon, inside the pickup popup.
+	for label: Label in run.presentation.find_children("*", "Label", true, false):
+		if label.text.contains("×2"):
 			pickup_seen = true
 	check(pickup_seen, "Pickup feedback includes accepted quantity")
 	var log_before: Array = run.hud.log_history.duplicate()

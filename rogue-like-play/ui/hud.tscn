@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://ui/hud.gd" id="1"]
 [ext_resource type="Script" path="res://ui/minimap.gd" id="2"]
 [ext_resource type="Theme" path="res://ui/theme/dungeon_theme.tres" id="3"]
 [ext_resource type="Texture2D" path="res://art/ui/hud_rule.png" id="5"]
+[ext_resource type="Script" path="res://ui/boss_gauge.gd" id="6"]
 
 [node name="HUD" type="CanvasLayer"]
 layer = 5
@@ -65,7 +66,7 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 16.0
-offset_top = -248.0
+offset_top = -256.0
 offset_right = 376.0
 offset_bottom = -16.0
 grow_vertical = 0
@@ -190,14 +191,6 @@ text = "0 G"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="Hint" type="Label" parent="BottomLeft"]
-offset_left = 14.0
-offset_top = 202.0
-offset_right = 344.0
-offset_bottom = 222.0
-theme_type_variation = &"HudSmall"
-text = "I 所持品  ·  Tab 武器切替"
-
 [node name="Log" type="Panel" parent="."]
 anchors_preset = 7
 anchor_left = 0.5
@@ -224,18 +217,15 @@ theme_type_variation = &"HudLog"
 scroll_active = false
 autowrap_mode = 3
 
-[node name="Boss" type="Label" parent="."]
-visible = false
-anchors_preset = 10
+[node name="Boss" type="Control" parent="."]
+anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -220.0
-offset_top = 14.0
-offset_right = 220.0
-offset_bottom = 50.0
+offset_left = -380.0
+offset_top = 4.0
+offset_right = 380.0
+offset_bottom = 106.0
 grow_horizontal = 2
+mouse_filter = 2
 theme = ExtResource("3")
-theme_type_variation = &"BossLabel"
-text = "深層の守護者  HP 100 / 100"
-horizontal_alignment = 1
-vertical_alignment = 1
+script = ExtResource("6")

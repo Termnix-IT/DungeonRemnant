@@ -7,6 +7,7 @@ const EMPHASIZED_LOG_ENTRIES := 2
 const PORTRAIT_SIZE := 104
 const PORTRAIT_INSET := 14
 const EFFECTS_POSITION := Vector2(16, 16)
+const HINT_RECT := Rect2(10, 200, 334, 30)
 const EFFECTS_WIDTH := 238.0
 
 @onready var status: Label = $Status
@@ -29,10 +30,19 @@ var last_log_text := ""
 var last_log_key := -1
 var turn_count := 0
 var inventory_count := 0
+var _gold := -1
 
 
 func _ready() -> void:
 	var vitals: Panel = $BottomLeft
+	# Key caps rather than "I 所持品 · Tab 武器切替" as plain text.
+	var hint := KeyGuide.new()
+	hint.name = "Hint"
+	vitals.add_child(hint)
+	hint.position = HINT_RECT.position
+	hint.size = HINT_RECT.size
+	hint.add_hint("I", "X", "所持品")
+	hint.add_hint("Tab", "Y", "武器切替")
 	portrait = HudPortrait.new()
 	portrait.name = "Portrait"
 	vitals.add_child(portrait)
@@ -88,8 +98,19 @@ func show_inventory(count: int) -> void:
 	_refresh_meta()
 
 
+# A gain counts up from the old amount and glints; a drop (a new run, a
+# loss) shows at once.
 func show_gold(gold: int) -> void:
-	gold_value.text = "%s G" % UIFormat.amount(gold)
+	if gold == _gold:
+		return
+	var format := func(value: int) -> String: return "%s G" % UIFormat.amount(value)
+	if _gold >= 0 and gold > _gold and gold_value.is_visible_in_tree():
+		UIMotion.of(gold_value).count(_gold, gold, format)
+		UIMotion.of(gold_value).flash()
+	else:
+		UIMotion.of(gold_value).reset()
+		gold_value.text = format.call(gold)
+	_gold = gold
 
 
 func show_minimap(
@@ -104,9 +125,9 @@ func show_minimap(
 	minimap.refresh(grid, explored, visible_cells, player_cell, stairs_cell, enemy_cells, item_cells)
 
 
-func show_boss(text: String) -> void:
-	$Boss.text = text
-	$Boss.visible = not text.is_empty()
+# An empty name hides the boss gauge.
+func show_boss(boss_name: String, hp: int = 0, max_hp: int = 0) -> void:
+	($Boss as BossGauge).present(boss_name, hp, max_hp)
 
 
 func reset_log() -> void:

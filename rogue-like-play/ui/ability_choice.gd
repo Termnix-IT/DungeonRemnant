@@ -13,6 +13,8 @@ var cards: Array[AbilityCard] = []
 # Plays the chosen moment after the dialog has already closed, so the turn
 # resumes immediately. It never receives input and replaces itself.
 var afterglow: CanvasLayer
+var key_guide: KeyGuide
+var pick_hint: Button
 @onready var panel: PanelContainer = $Panel
 @onready var shade: ColorRect = $Shade
 @onready var buttons: Array[Button] = [$Panel/Margin/Stack/Choices/First, $Panel/Margin/Stack/Choices/Second, $Panel/Margin/Stack/Choices/Third]
@@ -20,6 +22,12 @@ var afterglow: CanvasLayer
 
 func _ready() -> void:
 	hide()
+	# Key caps under the cards rather than an instruction sentence.
+	key_guide = KeyGuide.new()
+	key_guide.alignment = BoxContainer.ALIGNMENT_CENTER
+	key_guide.custom_minimum_size.y = 40
+	$Panel/Margin/Stack.add_child(key_guide)
+	pick_hint = key_guide.add_hint("1・2・3", "A", "選ぶ")
 	for index in buttons.size():
 		var card := AbilityCard.new()
 		buttons[index].add_child(card)
@@ -40,7 +48,10 @@ func present(candidates: Array[AbilityData], abilities: AbilitySystem, level: in
 	var keys: Array[String] = []
 	for index in offers.size():
 		keys.append(str(index + 1))
-	$Panel/Margin/Stack/Hint.text = "クリック または %sキーで選択（残り%d回）" % ["・".join(keys), pending]
+	$Panel/Margin/Stack/Hint.text = "あと%d回選べます" % pending
+	$Panel/Margin/Stack/Hint.visible = pending > 1
+	pick_hint.set_meta(&"keys", "・".join(keys))
+	key_guide.refresh()
 	for index in buttons.size():
 		buttons[index].visible = index < offers.size()
 		if index < offers.size():

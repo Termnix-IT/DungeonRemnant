@@ -33,22 +33,6 @@ offset_top = 20.0
 offset_right = 500.0
 offset_bottom = 54.0
 theme_type_variation = &"HeadingLabel"
-[node name="Switch" type="Button" parent="Panel"]
-offset_left = 584.0
-offset_top = 16.0
-offset_right = 872.0
-offset_bottom = 56.0
-focus_mode = 0
-theme_type_variation = &"SecondaryButton"
-text = "主武器・副武器を切替（Tab）"
-[node name="Close" type="Button" parent="Panel"]
-offset_left = 884.0
-offset_top = 16.0
-offset_right = 1016.0
-offset_bottom = 56.0
-focus_mode = 0
-theme_type_variation = &"SecondaryButton"
-text = "閉じる (I / Esc)"
 [node name="List" type="ItemList" parent="Panel"]
 offset_left = 24.0
 offset_top = 72.0
@@ -88,7 +72,7 @@ offset_top = 378.0
 offset_right = 1016.0
 offset_bottom = 402.0
 theme_type_variation = &"MutedLabel"
-text = "装備中（変更・取り外しはターン消費なし）"
+text = "装備中"
 [node name="Equipment" type="VBoxContainer" parent="Panel"]
 offset_left = 468.0
 offset_top = 406.0
@@ -103,10 +87,11 @@ offset_bottom = 608.0
 autowrap_mode = 3
 theme_type_variation = &"BodyLabel"
 [node name="Help" type="Label" parent="Panel"]
-offset_left = 24.0
-offset_top = 614.0
+offset_left = 640.0
+offset_top = 610.0
 offset_right = 1016.0
-offset_bottom = 640.0
+offset_bottom = 644.0
 theme_type_variation = &"MutedLabel"
-text = "アイテムの使用は1ターン消費します。装備の変更・取り外し・武器切替、確認・選択はターンを消費しません。主武器は交換のみ可能です。"
-text_overrun_behavior = 3
+text = "ターンが進むのは使用だけ"
+horizontal_alignment = 2
+vertical_alignment = 1

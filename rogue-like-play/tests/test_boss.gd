@@ -50,7 +50,8 @@ func run_tests() -> void:
 		boss.hp = 1
 		run.turns.player.hp = 1
 		run._refresh()
-		check(run.hud.get_node("Boss").text.contains("深層の守護者"), "Visible boss name and HP in HUD")
+		var gauge: BossGauge = run.hud.get_node("Boss")
+		check(gauge.visible and gauge.name_label.text.contains("深層の守護者") and gauge.value_label.text == "1 / %d" % boss.stats.max_hp and is_equal_approx(gauge.bar.value, 1.0), "Visible boss name and HP gauge in HUD")
 		run.turns.submit("attack", Vector2i.RIGHT)
 		check(run.result.get("cleared", false) and run.turns.player.hp == 1, "Boss killing blow clears before enemy counterattack")
 		check(run.turns.gold == 60 and run.result.gold_lost == 0, "Boss reward claimed before lossless clear")

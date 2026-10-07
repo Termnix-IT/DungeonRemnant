@@ -10,6 +10,11 @@ const StrikeEffect := preload("res://combat/strike_effect.gd")
 # Engine.time_scale is untouched so audio, UI and timers keep running.
 const HIT_STOP_TIME := 0.05
 const DAMAGE_FONT_SIZE := 30
+const ITEM_POPUP_ICON := 36.0
+const ITEM_POPUP_FONT_SIZE := 16
+const ITEM_POPUP_POP := 0.22
+const ITEM_POPUP_RISE := 40.0
+const ITEM_POPUP_TIME := 0.9
 # Damage the hero takes reads hotter and larger than damage dealt; a killing
 # blow is the largest. Each keeps a dark outline in its own hue.
 const DEALT_COLOR := Color("ffe9b0")
@@ -316,6 +321,48 @@ func hit_stop(duration: float = HIT_STOP_TIME) -> void:
 
 
 func popup(text: String, center: Vector2, color: Color, font_size: int = 24, outline: Color = Color("12141e")) -> Label:
+	var label := _popup_label(text, color, font_size, outline)
+	popup_serial += 1
+	label.position = center - label.size * 0.5 + Vector2((popup_serial % 3 - 1) * 8, 0)
+	label.z_index = 30
+	add_child(label)
+	var tween := create_tween()
+	tweens.append(tween)
+	tween.tween_property(label, "position:y", label.position.y - 26, 0.65)
+	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.25).set_delay(0.4)
+	tween.tween_callback(label.queue_free)
+	return label
+
+
+# A picked-up item pops out of the floor as its icon with its name beneath,
+# rises and fades: the pickup reads as the thing gained, not a log sentence.
+func item_popup(item: ItemData, text: String, center: Vector2, color: Color) -> Control:
+	var holder := Control.new()
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.z_index = 30
+	holder.position = center
+	var icon := Control.new()
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.size = Vector2.ONE * ITEM_POPUP_ICON
+	icon.position = Vector2(-ITEM_POPUP_ICON * 0.5, -ITEM_POPUP_ICON - 4)
+	icon.draw.connect(func(): ItemGlyph.paint(icon, Rect2(Vector2.ZERO, icon.size), item, Color.WHITE))
+	holder.add_child(icon)
+	var label := _popup_label(text, color, ITEM_POPUP_FONT_SIZE, Color("12141e"))
+	label.position = Vector2(-label.size.x * 0.5, 0)
+	holder.add_child(label)
+	add_child(holder)
+	holder.scale = Vector2.ONE * 0.5
+	var tween := create_tween()
+	tweens.append(tween)
+	tween.tween_property(holder, "scale", Vector2.ONE, ITEM_POPUP_POP).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(holder, "position:y", center.y - ITEM_POPUP_RISE, ITEM_POPUP_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(holder, "modulate:a", 0.0, 0.3).set_delay(ITEM_POPUP_TIME - 0.3)
+	tween.tween_callback(holder.queue_free)
+	return holder
+
+
+func _popup_label(text: String, color: Color, font_size: int, outline: Color) -> Label:
 	var label := Label.new()
 	label.text = text
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -328,15 +375,6 @@ func popup(text: String, center: Vector2, color: Color, font_size: int = 24, out
 	label.add_theme_font_size_override("font_size", font_size)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.size = Vector2(320, font_size + 12)
-	popup_serial += 1
-	label.position = center - label.size * 0.5 + Vector2((popup_serial % 3 - 1) * 8, 0)
-	label.z_index = 30
-	add_child(label)
-	var tween := create_tween()
-	tweens.append(tween)
-	tween.tween_property(label, "position:y", label.position.y - 26, 0.65)
-	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.25).set_delay(0.4)
-	tween.tween_callback(label.queue_free)
 	return label
 
 

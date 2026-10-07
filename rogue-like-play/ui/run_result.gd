@@ -4,7 +4,6 @@ signal retry_requested
 signal abort_confirmed
 signal abort_cancelled
 
-const KEPT_NOTE := "装備中の5枠は保持されます。"
 # After a defeat the dungeon darkens slowly before the panel rises, so the
 # fall registers. Input waits for the panel; the result is already saved.
 const DEFEAT_BEAT := 0.7
@@ -12,6 +11,9 @@ const DEFEAT_BEAT := 0.7
 # lighter than the plain veil so the scene shows around the panel.
 const CLEAR_ART := preload("res://art/results/clear.png")
 const DEFEAT_ART := preload("res://art/results/defeat.png")
+# Lost items show as their icons in a faint red cast.
+const LOST_COLUMNS := 5
+const LOST_TINT := Color(1.0, 0.72, 0.68)
 const VEIL := Color(0.01, 0.02, 0.04, 0.9)
 const SCENE_VEIL := Color(0.01, 0.02, 0.04, 0.42)
 
@@ -25,11 +27,13 @@ var _accept_after_msec := 0
 var details: Label
 var accept: Button
 var cancel: Button
+var key_guide: KeyGuide
+var back_hint: Button
 var save_label: Label
 var presentation_panel: PanelContainer
 var details_scroll: ScrollContainer
 # Result-only sections. The abort confirmation shows `details` alone.
-var summary: HBoxContainer
+var summary: VBoxContainer
 var stat_rows: Array[Control] = []
 var floor_value: Label
 var earned_value: Label
@@ -41,7 +45,7 @@ var turns_value: Label
 var kept_box: VBoxContainer
 var kept_equipment: HudEquipment
 var lost_box: VBoxContainer
-var lost_list: ItemCardList
+var lost_grid: IconGrid
 var lost_none: Label
 
 
@@ -72,8 +76,10 @@ func _ready() -> void:
 	margin.add_child(panel)
 	title_label = Label.new()
 	title_label.theme_type_variation = &"TitleLabel"
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	panel.add_child(title_label)
 	cause_label = HubUI.label(panel, "", &"DescriptionLabel")
+	cause_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	details_scroll = ScrollContainer.new()
 	# Tall enough for the stats, kept slots and two lost cards without scrolling.
 	details_scroll.custom_minimum_size.y = 440
@@ -82,36 +88,44 @@ func _ready() -> void:
 	var body := VBoxContainer.new()
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	details_scroll.add_child(body)
-	summary = HBoxContainer.new()
+	# The outcome reads as a few large figures in two rows (the journey, then
+	# the Gold) rather than a column of caption-and-value lines, with what came
+	# home and what was lost side by side beneath.
+	summary = VBoxContainer.new()
+	summary.theme_type_variation = &"DetailStack"
 	body.add_child(summary)
-	var stats := VBoxContainer.new()
-	stats.theme_type_variation = &"DetailStack"
-	stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	summary.add_child(stats)
-	floor_value = _stat(stats, "到達階")
-	earned_value = _stat(stats, "今回獲得")
+	var journey := _tile_row(summary)
+	floor_value = _stat(journey, "到達階")
+	level_value = _stat(journey, "到達Lv")
+	kills_value = _stat(journey, "倒した敵")
+	turns_value = _stat(journey, "経過ターン")
+	var purse := _tile_row(summary)
+	earned_value = _stat(purse, "今回獲得")
 	earned_value.theme_type_variation = &"MoneyValueLabel"
-	lost_value = _stat(stats, "失ったGold")
-	balance_value = _stat(stats, "残高")
+	lost_value = _stat(purse, "失ったGold")
+	balance_value = _stat(purse, "残高")
 	balance_value.theme_type_variation = &"MoneyValueLabel"
-	level_value = _stat(stats, "到達Lv")
-	kills_value = _stat(stats, "倒した敵")
-	turns_value = _stat(stats, "経過ターン")
+	var goods := HBoxContainer.new()
+	goods.theme_type_variation = &"DetailStack"
+	body.add_child(goods)
 	kept_box = VBoxContainer.new()
 	kept_box.theme_type_variation = &"DetailStack"
-	summary.add_child(kept_box)
+	goods.add_child(kept_box)
 	HubUI.label(kept_box, "持ち帰る装備", &"MutedLabel")
 	kept_equipment = HudEquipment.new()
 	kept_equipment.custom_minimum_size = Vector2(260, 150)
 	kept_box.add_child(kept_equipment)
 	lost_box = VBoxContainer.new()
 	lost_box.theme_type_variation = &"DetailStack"
-	body.add_child(lost_box)
+	lost_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	goods.add_child(lost_box)
 	HubUI.label(lost_box, "失ったアイテム", &"MutedLabel")
-	lost_list = ItemCardList.new()
-	lost_list.auto_height = true
-	lost_list.focus_mode = Control.FOCUS_NONE
-	lost_box.add_child(lost_list)
+	lost_grid = IconGrid.new()
+	lost_grid.read_only = true
+	lost_grid.columns = LOST_COLUMNS
+	lost_grid.custom_minimum_size.y = 150
+	lost_grid.modulate = LOST_TINT
+	lost_box.add_child(lost_grid)
 	lost_none = HubUI.label(lost_box, "なし", &"DescriptionLabel")
 	details = Label.new()
 	details.theme_type_variation = &"DescriptionLabel"
@@ -126,11 +140,17 @@ func _ready() -> void:
 	panel.add_child(accept)
 	cancel = Button.new()
 	cancel.theme_type_variation = &"SecondaryButton"
-	cancel.text = "探索に戻る（Esc）"
+	cancel.text = "探索に戻る"
 	cancel.custom_minimum_size.y = 44
 	cancel.focus_mode = Control.FOCUS_NONE
 	cancel.pressed.connect(func(): abort_cancelled.emit())
 	panel.add_child(cancel)
+	# Keys show as caps under the buttons instead of "(R)" in their labels.
+	key_guide = KeyGuide.new()
+	key_guide.alignment = BoxContainer.ALIGNMENT_END
+	panel.add_child(key_guide)
+	key_guide.add_hint("R", "Start", "決定")
+	back_hint = key_guide.add_hint("Esc", "B", "戻る")
 	save_label = Label.new()
 	save_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	save_label.theme_type_variation = &"MutedLabel"
@@ -139,16 +159,25 @@ func _ready() -> void:
 	hide()
 
 
-func _stat(parent: Node, caption: String) -> Label:
+func _tile_row(parent: Node) -> HBoxContainer:
 	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	parent.add_child(row)
-	var caption_label := HubUI.label(row, caption, &"MutedLabel")
-	caption_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	caption_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var value := HubUI.label(row, "", &"ValueLabel")
+	return row
+
+
+# One figure: a small caption above a large value, centred in an equal share
+# of its row.
+func _stat(parent: Node, caption: String) -> Label:
+	var tile := VBoxContainer.new()
+	tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent.add_child(tile)
+	var caption_label := HubUI.label(tile, caption, &"MutedLabel")
+	caption_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var value := HubUI.label(tile, "", &"ValueLabel")
 	value.autowrap_mode = TextServer.AUTOWRAP_OFF
-	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	stat_rows.append(row)
+	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stat_rows.append(tile)
 	return value
 
 
@@ -181,11 +210,12 @@ func present(result: Dictionary) -> void:
 	kept_box.visible = not equipment.is_empty()
 	kept_equipment.show_slots(equipment)
 	_show_losses(result)
-	details.text = KEPT_NOTE
+	details.text = ""
 	summary.show()
 	lost_box.show()
-	accept.text = "拠点へ戻る（R）" if return_to_hub else "Lv1から再挑戦（R）"
+	accept.text = "拠点へ戻る" if return_to_hub else "Lv1から再挑戦"
 	cancel.hide()
+	back_hint.hide()
 	var beat := DEFEAT_BEAT if result.get("defeated", false) else 0.0
 	_accept_after_msec = Time.get_ticks_msec() + int(beat * 1000)
 	show()
@@ -218,18 +248,17 @@ func _cause(result: Dictionary) -> String:
 
 
 func _show_losses(result: Dictionary) -> void:
-	lost_list.clear()
+	var rows: Array[Dictionary] = []
 	for entry: Dictionary in result.get("lost_entries", []):
-		var index := lost_list.item_count
-		lost_list.add_card(entry.item, entry.count, -1, "消失")
-		lost_list.set_item_selectable(index, false)
-	lost_list.visible = lost_list.item_count > 0
-	lost_none.visible = lost_list.item_count == 0
+		rows.append({"index": rows.size(), "item": entry.item, "count": entry.count})
+	lost_grid.show_rows(rows)
+	lost_grid.visible = not rows.is_empty()
+	lost_none.visible = rows.is_empty()
 	# Results without item identity still list every loss by name.
 	var names: PackedStringArray = []
 	for label: String in result.items_lost:
 		names.append("%s ×%d" % [label, result.items_lost[label]])
-	lost_none.text = "、".join(names) if lost_list.item_count == 0 and not names.is_empty() else "なし"
+	lost_none.text = "、".join(names) if rows.is_empty() and not names.is_empty() else "なし"
 
 
 # Values are final before this runs; the sequence only replays them in order.
@@ -267,6 +296,7 @@ func confirm_abort() -> void:
 	details.text = "死亡時と同じペナルティが適用されます。\n\n・所持Goldの50%を失います。\n・非装備の所持枠の半数をランダムに失います（切り上げ）。\n・装備中の5枠は保持されます。\n\nGoldの端数は切り捨て。Lv・EXP・能力は再挑戦時にリセットされます。"
 	accept.text = "中断してリザルトへ"
 	cancel.show()
+	back_hint.show()
 	show()
 	_reveal()
 

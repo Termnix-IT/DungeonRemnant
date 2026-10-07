@@ -120,7 +120,7 @@ func run_tests() -> void:
 	var defeat := defeat_summary()
 	result.present(defeat)
 	check(result.title_label.theme_type_variation == &"DefeatTitle" and result.lost_value.text == "−50 G", "Defeat result uses loss tone and signed Gold loss")
-	check(result.lost_list.item_count == 2 and not result.lost_none.visible and result.kept_box.visible, "Lost items are listed as cards beside kept equipment")
+	check(result.lost_grid.entries.size() == 2 and result.lost_grid.visible and not result.lost_none.visible and result.kept_box.visible, "Lost items are shown as icons beside kept equipment")
 	check(result.balance_value.text == "70 G", "Balance replays from the run's starting Gold")
 	result.hide()
 	check(result.balance_value.text == "50 G" and result.stat_rows[3].modulate.a == 1.0, "Hiding mid-sequence settles final values and visibility")

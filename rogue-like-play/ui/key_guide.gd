@@ -63,6 +63,13 @@ func _input(event: InputEvent) -> void:
 			hint.queue_redraw()
 
 
+# Refits every cap after a hint's "keys" or "buttons" meta changes.
+func refresh() -> void:
+	for hint in _hints:
+		_fit(hint)
+		hint.queue_redraw()
+
+
 func cap_text(hint: Button) -> String:
 	return hint.get_meta(&"buttons" if pad else &"keys")
 

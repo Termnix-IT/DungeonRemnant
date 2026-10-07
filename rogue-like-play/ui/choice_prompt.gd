@@ -12,6 +12,7 @@ var title_label: Label
 var body_label: Label
 var accept_button: Button
 var cancel_button: Button
+var key_guide: KeyGuide
 
 
 func _ready() -> void:
@@ -63,6 +64,12 @@ func _ready() -> void:
 		button.focus_neighbor_right = accept_button.get_path()
 		button.focus_neighbor_top = button.get_path()
 		button.focus_neighbor_bottom = button.get_path()
+	# Keys show as caps under the buttons instead of "(Esc)" in their labels.
+	key_guide = KeyGuide.new()
+	key_guide.alignment = BoxContainer.ALIGNMENT_END
+	column.add_child(key_guide)
+	key_guide.add_hint("Enter", "A", "決定")
+	key_guide.add_hint("Esc", "B", "戻る")
 	UIMotion.bind_buttons(actions)
 	hide()
 

@@ -542,19 +542,6 @@ border_width_bottom = 2
 shadow_color = Color(0, 0, 0, 0.5)
 shadow_size = 12
 
-[sub_resource type="StyleBoxFlat" id="BossSurface"]
-resource_name = "BossSurface"
-bg_color = Color(0.08, 0.035, 0.025, 0.92)
-border_color = Color(0.68, 0.32, 0.19, 0.95)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
 [sub_resource type="StyleBoxTexture" id="ExperienceFill"]
 texture = ExtResource("VitalExperienceTexture")
 
@@ -1166,10 +1153,23 @@ HudEquipment/constants/row_height = 38
 HudEquipment/constants/glyph_size = 32
 HudEquipment/constants/caption_width = 64
 HudEquipment/font_sizes/font_size = 15
-BossLabel/base_type = &"Label"
-BossLabel/colors/font_color = Color(0.94, 0.7, 0.46, 1)
-BossLabel/font_sizes/font_size = 18
-BossLabel/styles/normal = SubResource("BossSurface")
+BossHp/base_type = &"ProgressBar"
+BossHp/styles/background = SubResource("VitalEmpty")
+BossHp/styles/fill = SubResource("VitalHealth")
+BossHpTrail/base_type = &"ProgressBar"
+BossHpTrail/styles/background = SubResource("VitalEmpty")
+BossHpTrail/styles/fill = SubResource("VitalHealthTrail")
+BossGaugeName/base_type = &"Label"
+BossGaugeName/colors/font_color = Color(0.94, 0.7, 0.46, 1)
+BossGaugeName/colors/font_outline_color = Color(0.03, 0.015, 0.01, 0.9)
+BossGaugeName/constants/outline_size = 5
+BossGaugeName/font_sizes/font_size = 24
+BossGaugeName/fonts/font = SubResource("DisplayBoldKana")
+BossGaugeValue/base_type = &"Label"
+BossGaugeValue/colors/font_color = Color(0.86, 0.8, 0.72, 1)
+BossGaugeValue/colors/font_outline_color = Color(0, 0, 0, 0.8)
+BossGaugeValue/constants/outline_size = 4
+BossGaugeValue/font_sizes/font_size = 16
 BossBand/base_type = &"PanelContainer"
 BossBand/styles/panel = SubResource("BossBand")
 BossCutInTitle/base_type = &"Label"

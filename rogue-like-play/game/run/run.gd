@@ -234,6 +234,7 @@ func _load_floor() -> void:
 	# In the hall the boss cut-in announces the floor instead.
 	if floor_kind != DungeonGenerator.Kind.BOSS_HALL:
 		journey_banner.present("%dF  ·  %s" % [floor_number, "守護者の領域" if is_boss_floor() else "探索開始"], place, arrival_banner_delay)
+	vignette.bloom(arrival_banner_delay)
 	ambience.start(dungeon_settings.forest)
 	GameAudio.play(journey_banner, &"floor", -22.0)
 
@@ -281,11 +282,11 @@ func _request_transition(kind: String) -> void:
 	turns.paused = true
 	var place := "%s  ·  %dF" % [stage_data.display_name if stage_data != null else "古代遺跡", floor_number]
 	if kind == "stairs" and floor_kind == DungeonGenerator.Kind.ANTECHAMBER:
-		transition_dialog.ask(place, "守護者の扉", "扉の先で%sが待っています。  進むとこの部屋には戻れません。" % ("最深部の主" if floor_number == final_floor else "守護者"), "進む", "とどまる（Esc）")
+		transition_dialog.ask(place, "守護者の扉", "扉の先で%sが待っています。  進むとこの部屋には戻れません。" % ("最深部の主" if floor_number == final_floor else "守護者"), "進む", "とどまる")
 	elif kind == "stairs":
-		transition_dialog.ask(place, "下り階段", "%dFへ降りますか？  この階には戻れません。" % (floor_number + 1), "降りる", "とどまる（Esc）")
+		transition_dialog.ask(place, "下り階段", "%dFへ降りますか？  この階には戻れません。" % (floor_number + 1), "降りる", "とどまる")
 	else:
-		transition_dialog.ask(place, "脱出口", "拠点へ帰還しますか？  所持品とGoldは失いません。", "帰還する", "探索を続ける（Esc）")
+		transition_dialog.ask(place, "脱出口", "拠点へ帰還しますか？  所持品とGoldは失いません。", "帰還する", "探索を続ける")
 
 
 # The prompt's accept path darkens the last frame before the floor changes.
@@ -537,11 +538,15 @@ func _refresh() -> void:
 			discovered_items.append(item_cell)
 	var known_stairs: Vector2i = dungeon.stairs_cell if stairs_discovered else Vector2i(-1, -1)
 	hud.show_minimap(dungeon.grid, dungeon.fog.explored, dungeon.fog.visible, turns.player.cell, known_stairs, visible_enemy_cells, discovered_items)
-	var boss_text := ""
+	var boss_name := ""
+	var boss_hp := 0
+	var boss_max := 0
 	for enemy: Node2D in turns.enemies:
 		if enemy.stats.is_boss and enemy.visible:
-			boss_text = "%s  HP %d / %d" % [enemy.stats.display_name, enemy.hp, enemy.stats.max_hp]
-	hud.show_boss(boss_text)
+			boss_name = enemy.stats.display_name
+			boss_hp = enemy.hp
+			boss_max = enemy.stats.max_hp
+	hud.show_boss(boss_name, boss_hp, boss_max)
 
 
 func _displayed_hp() -> int:
@@ -593,12 +598,19 @@ func _record_discoveries() -> void:
 
 
 func _collect_items() -> void:
+	var entry: InventoryEntry = dungeon.ground_items.get(turns.player.cell)
+	var before: int = entry.count if entry != null else 0
 	var message: String = dungeon.collect_items(turns.player)
 	turns.last_message += message
 	if not message.is_empty():
 		var center: Vector2 = Vector2(turns.player.cell * dungeon.TILE_SIZE) + Vector2.ONE * dungeon.TILE_SIZE / 2.0
-		var feedback := message.replace(" 所持上限のため残りは床に置いたままです。", "\n収納がいっぱい（残りは床）").strip_edges()
-		presentation.popup(feedback, center + Vector2(0, 34), Color("9de3c3"), 16)
+		var left_behind: bool = dungeon.ground_items.has(turns.player.cell)
+		var taken: int = before - (entry.count if left_behind else 0)
+		if entry != null and taken > 0:
+			var full := "  収納がいっぱい" if left_behind else ""
+			presentation.item_popup(entry.item, "%s ×%d%s" % [entry.item.display_name, taken, full], center + Vector2(0, -52), Color("9de3c3"))
+		else:
+			presentation.popup("収納がいっぱい", center + Vector2(0, 34), Color("9de3c3"), 16)
 		if message.contains("取得"):
 			GameAudio.play(presentation, &"pickup", -20.0)
 
