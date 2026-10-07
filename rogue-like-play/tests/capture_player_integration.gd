@@ -19,7 +19,7 @@ func capture() -> void:
 	)
 	board.queue_redraw()
 	var camera := Camera2D.new()
-	camera.zoom = Vector2(1.25, 1.25)
+	camera.zoom = Vector2(1.5, 1.5)
 	camera.position = Vector2(576, 360)
 	board.add_child(camera)
 	var directions := [Vector2i.DOWN, Vector2i.UP, Vector2i.LEFT, Vector2i.RIGHT,
@@ -44,7 +44,7 @@ func capture() -> void:
 	await create_timer(0.22).timeout
 	await RenderingServer.frame_post_draw
 	error |= root.get_texture().get_image().save_png("res://.godot/player_integration_walk.png")
-	print("Captured player integration: 8 directions, 3 weapons, 48px tiles, 1.25 camera.")
+	print("Captured player integration: 8 directions, 3 weapons, 48px tiles, 1.5 camera.")
 	board.free()
 	root.add_child(preload("res://game/main.gd").new())
 	var run := preload("res://game/run/run.tscn").instantiate()

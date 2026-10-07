@@ -25,6 +25,7 @@ func capture() -> void:
 	var run: Node2D = main.active_run
 	# Only the final floor's boss clears the run; stages have fifty floors.
 	run.floor_number = run.final_floor
+	run.boss_hall = true
 	run.rng.seed = 47
 	run._load_floor()
 	var boss: Node2D = run.turns.enemies.back()

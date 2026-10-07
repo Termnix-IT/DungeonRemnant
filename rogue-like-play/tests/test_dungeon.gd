@@ -66,7 +66,7 @@ func test_generation() -> void:
 					enemies_ok = enemies_ok and reached.has(cell) and not placed.has(cell) and int(steps[cell]) >= settings.enemy_start_distance
 					placed[cell] = true
 				check(enemies_ok, label + " enemies reachable, separated, safe start")
-				check(data.layout == DungeonGenerator.LAYOUT_NAMES[layout - 1], label + " layout type")
+				check(data.layout == DungeonGenerator.ROOM_LAYOUT, label + " is rooms and corridors")
 			check(signatures.size() > 1, "Different seeds change each layout")
 	# Both terrain and spawn selection must be reproducible.
 	rng.seed = 31415
@@ -76,7 +76,6 @@ func test_generation() -> void:
 	check(first.grid.walls == second.grid.walls and first.start == second.start and first.stairs == second.stairs and first.enemies == second.enemies, "Seed reproducibility")
 	settings.width = 20
 	settings.height = 20
-	settings.cave_wall_chance = 0.55
 	settings.enemy_count = 20
 	settings.enemy_start_distance = 12
 	for layout in range(1, 4):
@@ -84,6 +83,19 @@ func test_generation() -> void:
 		var data := DungeonGenerator.generate(settings, layout, rng)
 		check(cardinal_region(data.grid, data.start).has(data.stairs), "Dense settings keep stairs reachable")
 		check(data.enemies.size() <= 20, "Crowded settings never overpopulate")
+	# A boss floor is a fixed antechamber, then the boss's hall: no random
+	# terrain, enemies or monster house, and the goal is always reachable.
+	for kind in [DungeonGenerator.Kind.ANTECHAMBER, DungeonGenerator.Kind.BOSS_HALL]:
+		rng.seed = 5
+		var data := DungeonGenerator.generate(settings, 10, rng, false, kind)
+		var name := "Antechamber" if kind == DungeonGenerator.Kind.ANTECHAMBER else "Boss hall"
+		check(data.layout == (DungeonGenerator.ANTECHAMBER_LAYOUT if kind == DungeonGenerator.Kind.ANTECHAMBER else DungeonGenerator.BOSS_HALL_LAYOUT), name + " names its layout")
+		check(data.start != data.stairs and LayoutUtils.distances(data.grid, data.start).has(data.stairs), name + " goal is reachable from the entrance")
+		check(data.enemies.is_empty() and data.house_enemies.is_empty() and data.house == Rect2i(), name + " holds no generated enemies or monster house")
+		var pillars_block := true
+		for cell: Vector2i in data.grid.pillars:
+			pillars_block = pillars_block and not data.grid.is_floor(cell) and cell != data.start and cell != data.stairs
+		check(pillars_block, name + " pillars block movement and keep the entrance and goal clear")
 
 
 func new_run(enemy_count: int = 2) -> Node2D:
@@ -158,7 +170,8 @@ func test_ten_floors() -> void:
 	player.hp = 13
 	player.weapon = HAMMER
 	var turn_total := 0
-	for expected_floor in range(1, 10):
+	# The tenth walk is the antechamber's door, which stays on 10F.
+	for expected_floor in range(1, 11):
 		check(run.floor_number == expected_floor, "Floor progression order")
 		var pathfinder := AStarGrid2D.new()
 		pathfinder.region = Rect2i(Vector2i.ZERO, run.dungeon.grid.size)
@@ -172,14 +185,14 @@ func test_ten_floors() -> void:
 			check(run.turns.submit("move", path[index] - path[index - 1]), "Route step accepted")
 			turn_total += 1
 		run.resolve_transition(true)
-		check(run.floor_number == expected_floor + 1, "Stair move changes floor once")
+		check(run.floor_number == mini(expected_floor + 1, 10), "Stair move changes floor once")
 		check(run.turns.player == player and player.hp == 13 and player.weapon == HAMMER, "HP, weapon and player preserved")
 		check(run.turns.turn_count == turn_total, "Stairs cost exactly one move")
 		check(run.camera.global_position == player.global_position + run.CAMERA_LEAD, "Camera follows player after transition")
 		check(not run.preview.visible and not player.aiming, "No stale attack preview")
 		var terrain: TileMapLayer = run.dungeon.get_node("Terrain")
 		check(terrain.position + terrain.map_to_local(player.cell) == player.position, "Tile and actor alignment")
-	check(not run.dungeon.has_stairs and run.floor_number == 10, "10F has no exit to 11F")
+	check(run.boss_hall and run.floor_kind == DungeonGenerator.Kind.BOSS_HALL and not run.dungeon.has_stairs and run.floor_number == 10, "The 10F door leads into the boss hall, with no exit to 11F")
 	var count: int = run.turns.turn_count
 	run.turns.submit("attack", Vector2i.RIGHT)
 	check(run.floor_number == 10 and run.turns.turn_count == count + 1, "Final floor remains playable")

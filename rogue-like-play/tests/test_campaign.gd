@@ -95,6 +95,7 @@ func run_tests() -> void:
 	run._load_floor()
 	check(run.turns.player.stats.attack == attack, "Floor change does not stack permanent stats")
 	run.floor_number = 10
+	run.boss_hall = true
 	run._load_floor()
 	check(not run.dungeon.has_stairs, "Midboss locks descent")
 	run.turns.floor_turn_count = 5000
@@ -120,7 +121,14 @@ func run_tests() -> void:
 		root.add_child(campaign)
 		for floor_number in range(1, 51):
 			campaign.floor_number = floor_number
+			campaign.boss_hall = false
 			campaign._load_floor()
+			if floor_number % 10 == 0:
+				# The antechamber's door leads on to the boss's hall.
+				var door := LayoutUtils.distances(campaign.dungeon.grid, campaign.dungeon.start_cell)
+				check(door.has(campaign.dungeon.stairs_cell) and campaign.dungeon.has_stairs and campaign.turns.enemies.is_empty(), "%s %dF antechamber leads on" % [stage.id, floor_number])
+				campaign.boss_hall = true
+				campaign._load_floor()
 			var reached := LayoutUtils.distances(campaign.dungeon.grid, campaign.dungeon.start_cell)
 			check(reached.has(campaign.dungeon.stairs_cell), "%s %dF connected" % [stage.id, floor_number])
 			var bosses := 0

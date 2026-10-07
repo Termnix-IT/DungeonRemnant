@@ -17,8 +17,6 @@ extends Resource
 @export_range(0, 20) var item_count: int = 6
 @export_range(1, 12) var enemy_start_distance: int = 6
 @export_range(4, 16) var room_count: int = 9
-@export_range(0.35, 0.55) var cave_wall_chance: float = 0.45
-@export_range(0.02, 0.2) var obstacle_chance: float = 0.08
 @export_range(1, 100) var reinforcement_interval: int = 18
 @export_range(0.0, 1.0) var reinforcement_chance: float = 0.65
 @export_range(0, 20) var reinforcement_alive_cap: int = 5

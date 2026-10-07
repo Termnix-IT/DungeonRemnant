@@ -55,12 +55,12 @@ func _ready() -> void:
 	move_child(mist, 0)
 
 
-func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenerator, final_floor: bool) -> void:
+func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenerator, final_floor: bool, kind: DungeonGenerator.Kind = DungeonGenerator.Kind.EXPLORATION) -> void:
 	ambient_details.refresh(null, {}, Vector2i.ZERO, false, Vector2i.ZERO, false)
 	lights.refresh(null, {}, Vector2i.ZERO, false, false, 0)
 	forest = settings.forest
 	escape_cell = Vector2i(-1, -1)
-	var generated := DungeonGenerator.generate(settings, floor_number, rng, final_floor)
+	var generated := DungeonGenerator.generate(settings, floor_number, rng, final_floor, kind)
 	grid = generated.grid
 	start_cell = generated.start
 	stairs_cell = generated.stairs
@@ -71,7 +71,8 @@ func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenera
 	layout_name = generated.layout
 	terrain_theme_index = 1 if forest else _terrain_theme_index(floor_number)
 	terrain_theme_name = "Forest" if forest else TERRAIN_THEME_NAMES[terrain_theme_index]
-	has_stairs = not final_floor
+	# The antechamber's door always leads on, even on the final floor.
+	has_stairs = kind == DungeonGenerator.Kind.ANTECHAMBER or not final_floor
 	fog.reset()
 	ground_items.clear()
 	var terrain: TileMapLayer = $Terrain

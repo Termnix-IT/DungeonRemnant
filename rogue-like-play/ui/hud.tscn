@@ -1,9 +1,8 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://ui/hud.gd" id="1"]
 [ext_resource type="Script" path="res://ui/minimap.gd" id="2"]
 [ext_resource type="Theme" path="res://ui/theme/dungeon_theme.tres" id="3"]
-[ext_resource type="Script" path="res://ui/hud_equipment.gd" id="4"]
 [ext_resource type="Texture2D" path="res://art/ui/hud_rule.png" id="5"]
 
 [node name="HUD" type="CanvasLayer"]
@@ -13,58 +12,6 @@ script = ExtResource("1")
 [node name="Status" type="Label" parent="."]
 visible = false
 
-[node name="TopLeft" type="Panel" parent="."]
-offset_left = 16.0
-offset_top = 16.0
-offset_right = 254.0
-offset_bottom = 116.0
-mouse_filter = 2
-theme = ExtResource("3")
-theme_type_variation = &"HudPanel"
-
-[node name="FloorCaption" type="Label" parent="TopLeft"]
-offset_left = 16.0
-offset_top = 15.0
-offset_right = 110.0
-offset_bottom = 39.0
-theme_type_variation = &"HudCaption"
-text = "階層"
-
-[node name="Floor" type="Label" parent="TopLeft"]
-offset_left = 100.0
-offset_top = 8.0
-offset_right = 222.0
-offset_bottom = 41.0
-theme_type_variation = &"HudValue"
-text = "1 / 10"
-horizontal_alignment = 2
-
-[node name="Divider" type="TextureRect" parent="TopLeft"]
-offset_left = 16.0
-offset_top = 49.0
-offset_right = 222.0
-offset_bottom = 50.0
-mouse_filter = 2
-texture = ExtResource("5")
-expand_mode = 1
-
-[node name="GoldCaption" type="Label" parent="TopLeft"]
-offset_left = 16.0
-offset_top = 63.0
-offset_right = 110.0
-offset_bottom = 87.0
-theme_type_variation = &"HudGoldCaption"
-text = "Gold"
-
-[node name="Gold" type="Label" parent="TopLeft"]
-offset_left = 100.0
-offset_top = 56.0
-offset_right = 222.0
-offset_bottom = 89.0
-theme_type_variation = &"HudValue"
-text = "0"
-horizontal_alignment = 2
-
 [node name="TopRight" type="Panel" parent="."]
 anchors_preset = 1
 anchor_left = 1.0
@@ -72,44 +19,61 @@ anchor_right = 1.0
 offset_left = -276.0
 offset_top = 16.0
 offset_right = -16.0
-offset_bottom = 260.0
+offset_bottom = 286.0
 grow_horizontal = 0
 mouse_filter = 2
 theme = ExtResource("3")
 theme_type_variation = &"HudPanel"
 
-[node name="Heading" type="Label" parent="TopRight"]
-offset_left = 14.0
+[node name="FloorCaption" type="Label" parent="TopRight"]
+offset_left = 16.0
+offset_top = 15.0
+offset_right = 110.0
+offset_bottom = 39.0
+theme_type_variation = &"HudCaption"
+text = "階層"
+
+[node name="Floor" type="Label" parent="TopRight"]
+offset_left = 100.0
 offset_top = 8.0
+offset_right = 244.0
+offset_bottom = 41.0
+theme_type_variation = &"HudValue"
+text = "1 / 10"
+horizontal_alignment = 2
+
+[node name="FloorDivider" type="TextureRect" parent="TopRight"]
+offset_left = 14.0
+offset_top = 49.0
 offset_right = 246.0
-offset_bottom = 30.0
-theme_type_variation = &"HudSmall"
-text = "MAP"
-horizontal_alignment = 1
+offset_bottom = 50.0
+mouse_filter = 2
+texture = ExtResource("5")
+expand_mode = 1
 
 [node name="Minimap" type="Control" parent="TopRight"]
 clip_contents = true
 offset_left = 15.0
-offset_top = 34.0
+offset_top = 60.0
 offset_right = 245.0
-offset_bottom = 198.0
+offset_bottom = 224.0
 mouse_filter = 2
 script = ExtResource("2")
 
 [node name="Divider" type="TextureRect" parent="TopRight"]
 offset_left = 14.0
-offset_top = 206.0
+offset_top = 232.0
 offset_right = 246.0
-offset_bottom = 207.0
+offset_bottom = 233.0
 mouse_filter = 2
 texture = ExtResource("5")
 expand_mode = 1
 
 [node name="Area" type="Label" parent="TopRight"]
 offset_left = 10.0
-offset_top = 213.0
+offset_top = 239.0
 offset_right = 250.0
-offset_bottom = 236.0
+offset_bottom = 262.0
 theme_type_variation = &"HudSmall"
 text = "蒼灰の遺跡・部屋群"
 horizontal_alignment = 1
@@ -120,7 +84,7 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 16.0
-offset_top = -222.0
+offset_top = -248.0
 offset_right = 376.0
 offset_bottom = -16.0
 grow_vertical = 0
@@ -229,10 +193,29 @@ show_percentage = false
 [node name="Meta" type="Label" parent="BottomLeft"]
 offset_left = 14.0
 offset_top = 174.0
-offset_right = 344.0
-offset_bottom = 196.0
+offset_right = 240.0
+offset_bottom = 198.0
 theme_type_variation = &"HudSmall"
 text = "TURN 0  ·  所持品 0 / 40"
+vertical_alignment = 1
+
+[node name="Gold" type="Label" parent="BottomLeft"]
+offset_left = 240.0
+offset_top = 174.0
+offset_right = 344.0
+offset_bottom = 198.0
+theme_type_variation = &"HudGoldCaption"
+text = "0 G"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Hint" type="Label" parent="BottomLeft"]
+offset_left = 14.0
+offset_top = 202.0
+offset_right = 344.0
+offset_bottom = 222.0
+theme_type_variation = &"HudSmall"
+text = "I 所持品  ·  Tab 武器切替"
 
 [node name="Log" type="Panel" parent="."]
 anchors_preset = 7
@@ -259,55 +242,6 @@ mouse_filter = 2
 theme_type_variation = &"HudLog"
 scroll_active = false
 autowrap_mode = 3
-
-[node name="BottomRight" type="Panel" parent="."]
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -316.0
-offset_top = -172.0
-offset_right = -16.0
-offset_bottom = -16.0
-grow_horizontal = 0
-grow_vertical = 0
-mouse_filter = 2
-theme = ExtResource("3")
-theme_type_variation = &"HudPanel"
-
-[node name="Title" type="Label" parent="BottomRight"]
-offset_left = 14.0
-offset_top = 9.0
-offset_right = 286.0
-offset_bottom = 34.0
-theme_type_variation = &"HudCaption"
-text = "装備"
-
-[node name="Divider" type="TextureRect" parent="BottomRight"]
-offset_left = 14.0
-offset_top = 38.0
-offset_right = 286.0
-offset_bottom = 39.0
-mouse_filter = 2
-texture = ExtResource("5")
-expand_mode = 1
-
-[node name="Rows" type="Control" parent="BottomRight"]
-offset_left = 14.0
-offset_top = 46.0
-offset_right = 286.0
-offset_bottom = 114.0
-mouse_filter = 2
-script = ExtResource("4")
-
-[node name="Hint" type="Label" parent="BottomRight"]
-offset_left = 14.0
-offset_top = 122.0
-offset_right = 286.0
-offset_bottom = 142.0
-theme_type_variation = &"HudSmall"
-text = "I 所持品  ·  Tab 武器切替"
 
 [node name="Boss" type="Label" parent="."]
 visible = false

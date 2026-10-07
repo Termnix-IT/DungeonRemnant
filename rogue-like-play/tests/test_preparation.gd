@@ -170,6 +170,7 @@ func run_tests() -> void:
 	check(run.turns.player.stats.attack + run.turns.player.weapon.damage_bonus == stats.attack, "Preparation ATK agrees with runtime attack")
 	check(not main.sell_item(true, 1, 1) and not main.unequip_item(2), "Preparation mutations blocked during run")
 	run.floor_number = 2
+	run.boss_hall = true
 	run._load_floor()
 	var bosses := 0
 	for enemy in run.turns.enemies:

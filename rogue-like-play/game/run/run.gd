@@ -41,6 +41,11 @@ var preview: Node2D
 var stage_data: StageData
 var starting_floor := 1
 var floor_number := 1
+# A boss floor is an antechamber first; its door leads into the boss's hall
+# on the same floor number. Tests set boss_hall before _load_floor to start
+# in the hall.
+var boss_hall := false
+var floor_kind := DungeonGenerator.Kind.EXPLORATION
 var floor_limit := 5000
 var exit_cell := Vector2i(-1, -1)
 var transition_kind := ""
@@ -183,7 +188,10 @@ func _load_floor() -> void:
 		enemy.get_parent().remove_child(enemy)
 		enemy.queue_free()
 	turns.enemies.clear()
-	dungeon.build(dungeon_settings, floor_number, rng, floor_number == final_floor)
+	floor_kind = DungeonGenerator.Kind.EXPLORATION
+	if is_boss_floor():
+		floor_kind = DungeonGenerator.Kind.BOSS_HALL if boss_hall else DungeonGenerator.Kind.ANTECHAMBER
+	dungeon.build(dungeon_settings, floor_number, rng, floor_number == final_floor, floor_kind)
 	turns.grid = dungeon.grid
 	turns.player.aiming = false
 	dungeon.grid.place(turns.player, dungeon.start_cell)
@@ -195,8 +203,8 @@ func _load_floor() -> void:
 		dungeon.get_node("Actors").add_child(enemy)
 		dungeon.grid.place(enemy, cell)
 		turns.enemies.append(enemy)
-	if floor_number % 10 == 0 or floor_number == final_floor:
-		# The unused exit is the farthest reachable cell, never an enemy spawn.
+	if floor_kind == DungeonGenerator.Kind.BOSS_HALL:
+		# The boss waits on the hall's throne, where the stairs open once it falls.
 		var boss := ENEMY_SCENE.instantiate()
 		boss.stats = preload("res://data/enemies/boss.tres")
 		if stage_data != null and not stage_data.bosses.is_empty():
@@ -205,24 +213,34 @@ func _load_floor() -> void:
 		dungeon.get_node("Actors").add_child(boss)
 		dungeon.grid.place(boss, dungeon.stairs_cell)
 		turns.enemies.append(boss)
-	dungeon.spawn_items(dungeon_settings, floor_number, rng)
+	if floor_kind == DungeonGenerator.Kind.EXPLORATION:
+		dungeon.spawn_items(dungeon_settings, floor_number, rng)
+	if floor_kind == DungeonGenerator.Kind.BOSS_HALL:
+		if floor_number == final_floor:
+			turns.begin_message("%dF：最深部の主を倒すとクリアです。中断確認はR。" % final_floor)
+		else:
+			turns.begin_message("%dF：守護者を倒すと階段と帰還用の脱出口が開きます。" % floor_number)
 	# The stair hint is for the first floor of a run; later floors just arrive.
-	if floor_number == starting_floor:
+	elif floor_number == starting_floor:
 		turns.begin_message("%dFに到着。金色の階段から次の階へ進めます。" % floor_number)
 	else:
 		turns.begin_message("%dFに到着した。" % floor_number)
-	if floor_number % 10 == 0:
-		turns.begin_message("%dF：中ボスを倒すと階段と帰還用の脱出口が開きます。" % floor_number)
-	if floor_number == final_floor:
-		turns.begin_message("%dF：最深部の主を倒すとクリアです。中断確認はR。" % final_floor)
+	if floor_kind == DungeonGenerator.Kind.ANTECHAMBER:
+		turns.begin_message("%dF：奥の扉の先で%sが待っている。" % [floor_number, "最深部の主" if floor_number == final_floor else "守護者"])
 	# Name the stage and the depth band together, as the minimap does, so the
 	# banner and the map never disagree on where the player is.
 	var stage_name: String = stage_data.display_name if stage_data != null else "古代遺跡"
 	var band_name: String = hud.terrain_label(dungeon.terrain_theme_name)
 	var place := stage_name if band_name == stage_name else "%s  ·  %s" % [stage_name, band_name]
-	journey_banner.present("%dF  ·  %s" % [floor_number, "守護者の領域" if floor_number % 10 == 0 else "探索開始"], place, arrival_banner_delay)
+	# In the hall the boss cut-in announces the floor instead.
+	if floor_kind != DungeonGenerator.Kind.BOSS_HALL:
+		journey_banner.present("%dF  ·  %s" % [floor_number, "守護者の領域" if is_boss_floor() else "探索開始"], place, arrival_banner_delay)
 	ambience.start(dungeon_settings.forest)
 	GameAudio.play(journey_banner, &"floor", -22.0)
+
+
+func is_boss_floor() -> bool:
+	return floor_number % 10 == 0 or floor_number == final_floor
 
 
 func _on_turn_finished() -> void:
@@ -263,7 +281,9 @@ func _request_transition(kind: String) -> void:
 	last_prompt_cell = turns.player.cell
 	turns.paused = true
 	var place := "%s  ·  %dF" % [stage_data.display_name if stage_data != null else "古代遺跡", floor_number]
-	if kind == "stairs":
+	if kind == "stairs" and floor_kind == DungeonGenerator.Kind.ANTECHAMBER:
+		transition_dialog.ask(place, "守護者の扉", "扉の先で%sが待っています。  進むとこの部屋には戻れません。" % ("最深部の主" if floor_number == final_floor else "守護者"), "進む", "とどまる（Esc）")
+	elif kind == "stairs":
 		transition_dialog.ask(place, "下り階段", "%dFへ降りますか？  この階には戻れません。" % (floor_number + 1), "降りる", "とどまる（Esc）")
 	else:
 		transition_dialog.ask(place, "脱出口", "拠点へ帰還しますか？  所持品とGoldは失いません。", "帰還する", "探索を続ける（Esc）")
@@ -298,7 +318,11 @@ func resolve_transition(accepted: bool) -> void:
 	turns.paused = false
 	if accepted:
 		if kind == "stairs":
-			floor_number += 1
+			if floor_kind == DungeonGenerator.Kind.ANTECHAMBER:
+				boss_hall = true
+			else:
+				floor_number += 1
+				boss_hall = false
 			_load_floor()
 		else:
 			finish_run(false, true)
@@ -506,7 +530,6 @@ func _refresh() -> void:
 	if not turns.ended:
 		hud.show_effects(turns.player.active_effects.entries())
 	hud.show_gold(turns.gold)
-	hud.show_equipment(turns.player.equipment)
 	var visible_enemy_cells: Array[Vector2i] = []
 	for enemy: Node2D in turns.enemies:
 		if enemy.visible:
@@ -737,6 +760,7 @@ func retry_run() -> void:
 	turns.paused = false
 	result = {}
 	floor_number = starting_floor
+	boss_hall = false
 	hud.reset_log()
 	danger.clear()
 	_load_floor()

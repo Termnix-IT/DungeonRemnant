@@ -253,16 +253,20 @@ func test_scene_visibility() -> void:
 	run = RUN.instantiate()
 	run.generation_seed = 47
 	root.add_child(run)
-	for floor_value in range(1, 11):
+	for floor_value in range(1, 10):
 		run.floor_number = floor_value
 		run._load_floor()
-		check(run.turns.enemies.size() == (4 if floor_value == 10 else 3), "Three regular enemies per floor plus final boss")
+		check(run.turns.enemies.size() == 3, "Three regular enemies per exploration floor")
 		for index in 3:
 			var expected: EnemyStats = run.ENEMY_TYPES[(floor_value - 1 + index) % run.ENEMY_TYPES.size()]
 			check(run.turns.enemies[index].stats.detection == expected.detection and run.turns.enemies[index].stats.behavior == expected.behavior, "Floor composition rotates through five enemy types")
-	run.floor_number = 3
+	run.floor_number = 10
 	run._load_floor()
-	check(not run.dungeon.grid.pillars.is_empty(), "OpenArea generates pillars")
+	check(run.turns.enemies.is_empty() and run.dungeon.has_stairs and run.dungeon.ground_items.is_empty(), "The boss floor opens on an empty antechamber with its door")
+	run.boss_hall = true
+	run._load_floor()
+	check(run.turns.enemies.size() == 1 and run.turns.enemies[0].stats.is_boss and not run.dungeon.has_stairs, "The boss hall holds only the boss, stairs closed")
+	check(not run.dungeon.grid.pillars.is_empty(), "The boss hall stands on pillars")
 	var pillars_valid := true
 	for cell: Vector2i in run.dungeon.grid.pillars:
 		pillars_valid = pillars_valid and run.dungeon.grid.walls.has(cell) and not run.dungeon.grid.is_floor(cell)

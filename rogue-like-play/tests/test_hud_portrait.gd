@@ -29,12 +29,11 @@ func run_tests() -> void:
 		check(not face_rect.intersects((vitals.get_node(node_name) as Control).get_global_rect()), "The portrait leaves %s clear" % node_name)
 	check(face_rect.end.x < (vitals.get_node("HpBar") as Control).get_global_rect().position.x, "HP and MP sit beside the face")
 	check(portrait.theme_type_variation == &"HudPortraitFrame", "The face uses the HUD portrait frame role")
-	var equipment: HudEquipment = hud.equipment_rows
-	check(equipment.strip, "The dungeon HUD shows equipment as one compact row")
-	check((hud.get_node("BottomRight") as Control).size.y <= 180.0, "The equipment panel leaves the floor above it clear")
-	var rows := HudEquipment.new()
-	check(not rows.strip, "Other screens keep the captioned equipment rows")
-	rows.free()
+	check(hud.get_node_or_null("BottomRight") == null and hud.get_node_or_null("TopLeft") == null, "The dungeon HUD has no equipment or floor/Gold panel")
+	check(hud.gold_value.get_parent() == vitals and hud.floor_value.get_parent() == hud.get_node("TopRight"), "Gold sits with the vitals and the floor with the map")
+	for node_name in ["Gold", "Hint"]:
+		check(not face_rect.intersects((vitals.get_node(node_name) as Control).get_global_rect()), "The portrait leaves %s clear" % node_name)
+	check(not (vitals.get_node("Meta") as Control).get_global_rect().intersects((vitals.get_node("Gold") as Control).get_global_rect()), "Gold sits beside the turn line")
 
 	for bar_name in ["HpBar", "MpBar"]:
 		var bar: ProgressBar = vitals.get_node(bar_name)

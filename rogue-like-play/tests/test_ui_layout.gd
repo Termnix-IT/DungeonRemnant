@@ -82,7 +82,7 @@ func run_tests() -> void:
 	var run = main.active_run
 	var hud = run.get_node("HUD")
 	var panels: Array[Control] = []
-	for path in ["TopLeft", "TopRight", "BottomLeft", "Log", "BottomRight"]:
+	for path in ["TopRight", "BottomLeft", "Log"]:
 		var panel: Control = hud.get_node(path)
 		var safe_rect := root.get_visible_rect().grow(-15.0)
 		check(safe_rect.encloses(panel.get_global_rect()), "%s keeps edge padding" % path)

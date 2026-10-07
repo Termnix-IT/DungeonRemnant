@@ -249,7 +249,9 @@ func test_pickup_and_generation() -> void:
 				run.floor_number = floor_value
 				run._load_floor()
 			var reachable := LayoutUtils.distances(run.dungeon.grid, run.dungeon.start_cell)
-			check(run.dungeon.ground_items.size() == 6, "Configured floor item count")
+			# A monster house (5% per floor) adds its own drops on top.
+			var house_drops: int = run.dungeon_settings.monster_house_items if run.dungeon.monster_house.has_area() else 0
+			check(run.dungeon.ground_items.size() >= 6 and run.dungeon.ground_items.size() <= 6 + house_drops, "Configured floor item count")
 			var valid := true
 			for cell: Vector2i in run.dungeon.ground_items:
 				valid = valid and reachable.has(cell) and not run.dungeon.grid.occupants.has(cell) and cell != run.dungeon.stairs_cell

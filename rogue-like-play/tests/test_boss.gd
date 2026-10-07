@@ -26,6 +26,9 @@ func run_tests() -> void:
 		check(not run.turns.enemies.any(func(enemy): return enemy.stats.is_boss), "No boss before 10F")
 		run.floor_number = 10
 		run._load_floor()
+		check(not run.turns.enemies.any(func(enemy): return enemy.stats.is_boss) and run.dungeon.has_stairs, "The final floor opens on the antechamber, its door open")
+		run.boss_hall = true
+		run._load_floor()
 		run._refresh()
 		var bosses: Array = run.turns.enemies.filter(func(enemy): return enemy.stats.is_boss)
 		check(bosses.size() == 1 and not run.dungeon.has_stairs, "Exactly one boss on final floor")
@@ -38,10 +41,12 @@ func run_tests() -> void:
 		grid.occupants.clear()
 		grid.place(run.turns.player, Vector2i(3, 3))
 		grid.place(boss, Vector2i(4, 3))
-		var bystander: Node2D = run.turns.enemies[0]
+		# The hall holds only the boss, so bring in an ordinary enemy that
+		# would strike back if the killing blow did not end the run first.
+		var bystander: Node2D = preload("res://actors/enemy/enemy.tscn").instantiate()
+		run.dungeon.get_node("Actors").add_child(bystander)
+		run.turns.enemies.append(bystander)
 		grid.place(bystander, Vector2i(3, 4))
-		for index in range(1, run.turns.enemies.size() - 1):
-			grid.place(run.turns.enemies[index], Vector2i(20, 20 + index))
 		boss.hp = 1
 		run.turns.player.hp = 1
 		run._refresh()

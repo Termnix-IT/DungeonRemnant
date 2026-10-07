@@ -69,6 +69,7 @@ func run_tests() -> void:
 	run.free()
 	run = make_run()
 	run.floor_number = 10
+	run.boss_hall = true
 	run._load_floor()
 	var boss: Node2D = run.turns.enemies.back()
 	run.dungeon.grid.walls.clear()

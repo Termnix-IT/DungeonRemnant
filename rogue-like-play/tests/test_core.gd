@@ -89,9 +89,14 @@ func run_tests() -> void:
 	# Scene integration: enemy turns, fresh start, and clean occupancy.
 	var run_scene := load("res://game/run/run.tscn") as PackedScene
 	var run_instance := run_scene.instantiate()
+	# The fixture places exactly three enemies, so a 5% monster house must not
+	# add more; the seed keeps the rest of the floor reproducible.
+	run_instance.generation_seed = 47
+	run_instance.dungeon_settings = run_instance.dungeon_settings.duplicate()
+	run_instance.dungeon_settings.monster_house_chance = 0.0
 	root.add_child(run_instance)
 	preload("res://tests/run_fixture.gd").arrange(run_instance)
-	check(run_instance.dungeon.TILE_SIZE == 48 and run_instance.camera.zoom == Vector2(1.25, 1.25), "Dungeon presents 48-pixel tiles at a readable scale")
+	check(run_instance.dungeon.TILE_SIZE == 48 and run_instance.camera.zoom == Vector2(1.5, 1.5), "Dungeon presents 48-pixel tiles at a readable scale")
 	check(ProjectSettings.get_setting("rendering/2d/snap/snap_2d_transforms_to_pixel"), "2D transforms snap animated pixels to the screen grid")
 	check(run_instance.turns.enemies.size() == 3, "Run spawns three enemies")
 	var terrain: TileMapLayer = run_instance.dungeon.get_node("Terrain")

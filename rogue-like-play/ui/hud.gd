@@ -6,10 +6,12 @@ const EMPHASIZED_LOG_ENTRIES := 2
 # The face frame sits in the vitals plate's top-left, beside the HP and MP bars.
 const PORTRAIT_SIZE := 104
 const PORTRAIT_INSET := 14
+const EFFECTS_POSITION := Vector2(16, 16)
+const EFFECTS_WIDTH := 238.0
 
 @onready var status: Label = $Status
-@onready var floor_value: Label = $TopLeft/Floor
-@onready var gold_value: Label = $TopLeft/Gold
+@onready var floor_value: Label = $TopRight/Floor
+@onready var gold_value: Label = $BottomLeft/Gold
 @onready var area: Label = $TopRight/Area
 @onready var minimap: DungeonMinimap = $TopRight/Minimap
 @onready var hp_value: Label = $BottomLeft/HpValue
@@ -21,7 +23,6 @@ const PORTRAIT_INSET := 14
 @onready var exp_bar: ProgressBar = $BottomLeft/ExpBar
 @onready var meta: Label = $BottomLeft/Meta
 @onready var log_entries: RichTextLabel = $Log/Entries
-@onready var equipment_rows: HudEquipment = $BottomRight/Rows
 
 var portrait: HudPortrait
 var log_history: Array[String] = []
@@ -32,7 +33,6 @@ var inventory_count := 0
 
 
 func _ready() -> void:
-	equipment_rows.strip = true
 	var vitals: Panel = $BottomLeft
 	portrait = HudPortrait.new()
 	portrait.name = "Portrait"
@@ -53,7 +53,9 @@ func _ready() -> void:
 func refresh(hp: int, max_hp: int, turns: int, visible_enemies: int, log_text: String, floor_number: int, layout_name: String, terrain_name: String = "", total_floors: int = 10, log_key: int = -1) -> void:
 	status.text = "%d / %dF  %s     HP %d / %d     TURN %d     視界内の敵 %d" % [floor_number, total_floors, layout_name, hp, max_hp, turns, visible_enemies]
 	floor_value.text = "%d / %d" % [floor_number, total_floors]
-	area.text = "%s・%s" % [terrain_label(terrain_name), _layout_label(layout_name)]
+	var place := terrain_label(terrain_name)
+	var room := _layout_label(layout_name)
+	area.text = place if room.is_empty() else "%s・%s" % [place, room]
 	show_health(hp, max_hp)
 	turn_count = turns
 	_refresh_meta()
@@ -68,8 +70,6 @@ func show_health(hp: int, max_hp: int) -> void:
 	portrait.show_health(hp, max_hp)
 
 
-# The equipment strip already names the main and sub weapons, so the panel
-# title stays "装備".
 func show_aim(aiming: bool) -> void:
 	if aiming:
 		_render_log("攻撃方向を選択中：方向キーで変更 / Spaceで確定 / Escでキャンセル")
@@ -93,11 +93,7 @@ func show_inventory(count: int) -> void:
 
 
 func show_gold(gold: int) -> void:
-	gold_value.text = str(gold)
-
-
-func show_equipment(equipment: Equipment) -> void:
-	equipment_rows.show_equipment(equipment)
+	gold_value.text = "%s G" % UIFormat.amount(gold)
 
 
 func show_minimap(
@@ -196,24 +192,25 @@ func terrain_label(value: String) -> String:
 	return value if not value.is_empty() else "未踏の迷宮"
 
 
+# Every exploration floor is rooms and corridors, so only the boss floor's
+# two maps get a name of their own.
 func _layout_label(value: String) -> String:
 	match value:
-		"Room": return "部屋群"
-		"OpenArea": return "大広間"
-		"Cave": return "洞穴"
-	return value
+		"Antechamber": return "前室"
+		"BossHall": return "守護者の間"
+	return ""
 
 
-# Sits under the floor/Gold panel, matching its width.
+# Takes the otherwise empty top-left corner.
 func show_effects(active: Array[Dictionary]) -> void:
 	var panel := get_node_or_null("ActiveEffects") as HudEffects
 	if panel == null:
 		panel = HudEffects.new()
 		panel.name = "ActiveEffects"
-		panel.theme = $TopLeft.theme
+		panel.theme = $TopRight.theme
 		add_child(panel)
-		panel.position = Vector2($TopLeft.position.x, $TopLeft.position.y + $TopLeft.size.y + 8)
-		panel.size.x = $TopLeft.size.x
+		panel.position = EFFECTS_POSITION
+		panel.size.x = EFFECTS_WIDTH
 	panel.show_entries(active)
 
 
