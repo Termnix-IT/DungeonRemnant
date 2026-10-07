@@ -18,10 +18,12 @@ signal mode_changed
 # least that still draws the 48px art at three times (ItemVisual fills 84% in
 # 48px steps).
 const SHOWCASE_SIZE := 172.0
-# The goods' icons are shown at the art's own size.
-const GRID_COLUMNS := 4
-const CELL_SIZE := 104.0
-const CELL_ICON := 96.0
+# The goods are small icons, each with its name and price beside it, two
+# to a row.
+const GRID_COLUMNS := 2
+const CELL_WIDTH := 254.0
+const CELL_SIZE := 72.0
+const CELL_ICON := 48.0
 const CATEGORIES: Array[String] = ["すべて", "武器", "防具", "装飾", "消耗品", "魔法"]
 const CATEGORY_KINDS := [-1, ItemData.Kind.WEAPON, ItemData.Kind.ARMOR, ItemData.Kind.ACCESSORY, ItemData.Kind.CONSUMABLE, ItemData.Kind.SCROLL]
 
@@ -122,6 +124,7 @@ func _build_catalog(catalog: VBoxContainer) -> void:
 	grid = IconGrid.new()
 	grid.columns = GRID_COLUMNS
 	grid.cell_size = CELL_SIZE
+	grid.cell_width = CELL_WIDTH
 	grid.icon_size = CELL_ICON
 	# Looking at an icon with the focus previews it, as arrowing down the old
 	# list did; Enter or a double click moves on to the trade.
@@ -226,7 +229,9 @@ func refresh(current: RunCarryover) -> void:
 				shown.append({"item": entry.item, "count": entry.count, "index": index})
 	for row in shown:
 		var item: ItemData = row.item
-		row.tooltip = "%s\n\n%s %s" % [ItemTooltipList.description(item), "購入" if buying else "売却", UIFormat.gold(item.buy_price if buying else item.sell_price)]
+		var price := UIFormat.gold(item.buy_price if buying else item.sell_price)
+		row.note = price
+		row.tooltip = "%s\n\n%s %s" % [ItemTooltipList.description(item), "購入" if buying else "売却", price]
 	grid.clear_choice()
 	grid.show_rows(shown, "この分類の品は扱っていない" if buying else "売れる品はここにない")
 	rows = grid.entries

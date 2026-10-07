@@ -512,7 +512,7 @@ func _show_detail(item: ItemData, tag: String) -> void:
 	var parts: Array[String] = [ItemGlyph.category(item), ItemGlyph.main_effect(item)]
 	if not tag.is_empty():
 		parts.append(tag)
-	detail_note.text = "　◆　".join(parts)
+	detail_note.text = HubUI.plaque_note(parts)
 
 
 # Opening the page: the slots arrive top first, the gear a beat later.

@@ -8,7 +8,7 @@ extends VBoxContainer
 # the grid sideways with the arrow keys is the page's too (crossed). A row is
 # {index, item, count}; index is whatever the page uses to name it, unique among
 # the rows. "tooltip" may replace the item's description, "badge" the count in
-# the icon's corner.
+# the icon's corner, "caption" and "note" are the lines beside the icon of a wide cell.
 
 signal chosen(place: int)
 signal activated(place: int)
@@ -28,6 +28,9 @@ var cells: Array[ItemCell] = []
 var selected := -1
 var columns := 6
 var cell_size := ItemCell.SIZE
+# A wider cell than it is high (0 for a square one) names each item beside its
+# icon, on a plain row instead of the square's frame.
+var cell_width := 0.0
 # True where reaching an icon with the focus chooses it (a page that previews the choice).
 var choose_on_focus := false
 var icon_size := ItemCell.ICON
@@ -80,7 +83,11 @@ func show_rows(rows: Array[Dictionary], empty_text := "") -> void:
 		if entry.item == kept:
 			selected = entry.index
 		var cell := ItemCell.new()
-		cell.custom_minimum_size = Vector2.ONE * cell_size
+		cell.custom_minimum_size = Vector2(cell_width if cell_width > 0.0 else cell_size, cell_size)
+		if cell_width > 0.0:
+			cell.theme_type_variation = &"ItemRow"
+			cell.caption = entry.get("caption", entry.item.label())
+			cell.note = entry.get("note", "")
 		cell.icon_size = icon_size
 		cell.show_item(entry.item, entry.get("badge", entry.count))
 		cell.tooltip_text = entry.get("tooltip", ItemTooltipList.description(entry.item))

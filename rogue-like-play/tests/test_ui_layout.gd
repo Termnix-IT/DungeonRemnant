@@ -67,6 +67,13 @@ func run_tests() -> void:
 	check(absf((left.position.x - middle) + (right.end.x - middle)) < 2.0, "Warehouse stocks mirror about the centre")
 	var plaque := warehouse.detail_name.get_global_rect().merge(warehouse.detail_note.get_global_rect())
 	check(root.get_visible_rect().encloses(plaque) and left.end.x <= plaque.position.x and plaque.end.x <= right.position.x, "The plaque stands in the hall between the two slabs")
+	# Whatever the plaque says, nothing round it moves.
+	var steady := true
+	for item in ItemCatalog.shop_items():
+		warehouse._show_item(item)
+		await settle()
+		steady = steady and is_equal_approx(warehouse.storage.get_global_rect().position.x, right.position.x) and is_equal_approx(warehouse.carried.get_global_rect().end.x, left.end.x)
+	check(steady, "A long plaque line never pushes the slabs aside")
 	hub.go_back()
 	enter(hub, hub.start_button)
 	hub.departure_page.next_button.pressed.emit()

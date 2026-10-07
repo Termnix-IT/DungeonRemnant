@@ -132,7 +132,7 @@ func _restore() -> void:
 # One line of name, one of kind and main effect; the tooltip has the rest.
 func _show_item(item: ItemData) -> void:
 	detail_name.text = item.label()
-	detail_note.text = "　◆　".join([ItemGlyph.category(item), ItemGlyph.main_effect(item)])
+	detail_note.text = HubUI.plaque_note([ItemGlyph.category(item), ItemGlyph.main_effect(item)])
 
 
 # The whole stack at a place of a stock goes to the other one.

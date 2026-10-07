@@ -96,7 +96,7 @@ static func rule(parent: Node) -> Control:
 
 
 # A plaque at the foot of a hall that is left open to its painting: a slab
-# with an item's name and, beneath, one line of what it is. Returns the name
+# with an item's name and, beneath, a line of what it is. Returns the name
 # and the note, for the page to fill.
 static func plaque(hall: VBoxContainer, width: float) -> Array[Label]:
 	space(hall)
@@ -108,17 +108,27 @@ static func plaque(hall: VBoxContainer, width: float) -> Array[Label]:
 	var stack := VBoxContainer.new()
 	stack.theme_type_variation = &"CompactStack"
 	plate.add_child(stack)
+	# The plate keeps its width whatever it says: a long name is trimmed and a
+	# long line wraps, so the hall's other parts never move for it.
 	var name_label := label(stack, "", &"TitleLabel")
 	name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	name_label.clip_text = true
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var note := label(stack, "", &"PlaqueNote")
-	note.autowrap_mode = TextServer.AUTOWRAP_OFF
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var floor_gap := Control.new()
 	floor_gap.custom_minimum_size.y = 14
 	floor_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hall.add_child(floor_gap)
 	return [name_label, note]
+
+
+# The plaque's second line: the parts parted by a diamond, or one to a line
+# when together they would be too long for the plate.
+static func plaque_note(parts: Array[String]) -> String:
+	var joined := "　◆　".join(parts)
+	return joined if joined.length() <= 22 else "\n".join(parts)
 
 
 static func space(parent: Node) -> Control:

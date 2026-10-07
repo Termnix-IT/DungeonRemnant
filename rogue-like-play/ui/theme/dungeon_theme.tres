@@ -180,6 +180,19 @@ corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
+[sub_resource type="StyleBoxTexture" id="PlateGoldDisabled"]
+resource_name = "PlateGoldDisabled"
+texture = ExtResource("ButtonGoldTexture")
+texture_margin_left = 19.0
+texture_margin_top = 21.0
+texture_margin_right = 19.0
+texture_margin_bottom = 21.0
+content_margin_left = 24.0
+content_margin_top = 6.0
+content_margin_right = 24.0
+content_margin_bottom = 6.0
+modulate_color = Color(0.42, 0.42, 0.44, 0.85)
+
 [sub_resource type="StyleBoxTexture" id="PlateGold"]
 resource_name = "PlateGold"
 texture = ExtResource("ButtonGoldTexture")
@@ -777,6 +790,24 @@ content_margin_top = 8.0
 content_margin_right = 2.0
 content_margin_bottom = 8.0
 
+[sub_resource type="StyleBoxFlat" id="ItemRowRest"]
+resource_name = "ItemRowRest"
+bg_color = Color(1, 1, 1, 0.035)
+border_width_bottom = 1
+border_color = Color(0.72, 0.58, 0.36, 0.22)
+
+[sub_resource type="StyleBoxFlat" id="ItemRowHover"]
+resource_name = "ItemRowHover"
+bg_color = Color(1, 1, 1, 0.08)
+border_width_bottom = 1
+border_color = Color(0.72, 0.58, 0.36, 0.45)
+
+[sub_resource type="StyleBoxFlat" id="ItemRowChosen"]
+resource_name = "ItemRowChosen"
+bg_color = Color(0.72, 0.58, 0.36, 0.14)
+border_width_bottom = 1
+border_color = Color(0.72, 0.58, 0.36, 0.6)
+
 [sub_resource type="StyleBoxTexture" id="ItemCellRest"]
 resource_name = "ItemCellRest"
 texture = ExtResource("CellFrameTexture")
@@ -906,7 +937,7 @@ GoldButton/styles/hover = SubResource("PlateGoldHover")
 GoldButton/styles/normal = SubResource("PlateGold")
 GoldButton/styles/pressed = SubResource("PlateGoldPressed")
 GoldButton/styles/hover_pressed = SubResource("PlateGoldPressed")
-GoldButton/styles/disabled = SubResource("PlateDisabled")
+GoldButton/styles/disabled = SubResource("PlateGoldDisabled")
 GoldLabel/base_type = &"Label"
 GoldLabel/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
 GoldLabel/font_sizes/font_size = 21
@@ -995,7 +1026,7 @@ PrimaryButton/base_type = &"Button"
 PrimaryButton/styles/normal = SubResource("PlateGold")
 PrimaryButton/styles/pressed = SubResource("PlateGoldPressed")
 PrimaryButton/styles/hover_pressed = SubResource("PlateGoldPressed")
-PrimaryButton/styles/disabled = SubResource("PlateDisabled")
+PrimaryButton/styles/disabled = SubResource("PlateGoldDisabled")
 TabActive/base_type = &"Button"
 TabActive/colors/font_color = Color(0.91, 0.81, 0.6, 1)
 TabActive/styles/normal = SubResource("ButtonPressed")
@@ -1446,6 +1477,12 @@ ItemCell/styles/pressed = SubResource("ItemCellChosen")
 ItemCell/styles/hover_pressed = SubResource("ItemCellChosen")
 ItemCell/styles/disabled = SubResource("ItemCellRest")
 ItemCell/styles/focus = SubResource("FocusOutline")
+ItemRow/base_type = &"ItemCell"
+ItemRow/styles/normal = SubResource("ItemRowRest")
+ItemRow/styles/hover = SubResource("ItemRowHover")
+ItemRow/styles/pressed = SubResource("ItemRowChosen")
+ItemRow/styles/hover_pressed = SubResource("ItemRowChosen")
+ItemRow/styles/disabled = SubResource("ItemRowRest")
 GearGrid/base_type = &"GridContainer"
 GearGrid/constants/h_separation = 4
 GearGrid/constants/v_separation = 4

@@ -27,6 +27,10 @@ var item: ItemData
 # An empty slot's stand-in (ItemGlyph.slot_symbol) drawn faintly.
 var symbol: ItemData
 var count := 1
+# A wide cell (set custom_minimum_size) names the item beside its icon: the
+# name, and under it the note (the price in the shop).
+var caption := ""
+var note := ""
 var draggable := true
 # The icon's drawn size; a big cell sets 96 to show the art at its own size.
 var icon_size := ICON
@@ -75,6 +79,9 @@ func _draw() -> void:
 		return
 	var extent := icon_size if item != null else icon_size * 0.6
 	var rect := Rect2((size - Vector2.ONE * extent) * 0.5, Vector2.ONE * extent)
+	var captioned := item != null and not caption.is_empty()
+	if captioned:
+		rect.position.x = (size.y - extent) * 0.5
 	if item != null and not dimmed:
 		var strength := GLOW_CHOSEN if button_pressed else (GLOW_ACTIVE if (is_hovered() or has_focus()) else GLOW_REST)
 		draw_texture_rect(_glow, Rect2(rect.position - rect.size * 0.35, rect.size * 1.7), false, Color(GLOW_COLOR, strength))
@@ -83,12 +90,34 @@ func _draw() -> void:
 	if dimmed:
 		color.a *= 0.35
 	ItemGlyph.paint(self, rect, shown, color)
+	if captioned:
+		_draw_caption(rect.end.x + 12.0, role)
 	if item != null and count > 1:
 		var font := get_theme_font(&"font", &"Label")
 		var font_size := get_theme_font_size(&"font_size", &"MutedLabel")
 		var text := "×%d" % count
 		var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 		draw_string(font, Vector2(size.x - width - 6, size.y - 7), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, get_theme_color(&"font_color", &"Label"))
+
+
+# The name and the note to the right of the icon, trimmed to the cell.
+func _draw_caption(left: float, role: StringName) -> void:
+	var width := size.x - left - 10.0
+	var name_size := get_theme_font_size(&"font_size", &"BodyLabel")
+	var note_size := get_theme_font_size(&"font_size", &"MutedLabel")
+	var name_font := get_theme_font(&"font", &"Label")
+	var top := (size.y - (name_size + note_size) * 1.3) * 0.5
+	_text_line(caption, name_font, name_size, Vector2(left, top), width, get_theme_color(&"font_color", role))
+	if not note.is_empty():
+		_text_line(note, name_font, note_size, Vector2(left, top + name_size * 1.35), width, get_theme_color(&"font_color", &"MutedLabel"))
+
+
+func _text_line(text: String, font: Font, font_size: int, at: Vector2, width: float, color: Color) -> void:
+	var line := TextLine.new()
+	line.add_string(text, font, font_size)
+	line.width = width
+	line.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	line.draw(get_canvas_item(), at, color)
 
 
 func _gui_input(event: InputEvent) -> void:
