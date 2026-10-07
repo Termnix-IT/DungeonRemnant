@@ -1,35 +1,35 @@
 class_name HubWarehouse
 extends Control
 
-# The warehouse page: one dark slab from the screen's left edge to its right,
-# what she carries on the left, the warehouse on the right, and between them,
-# where the slab thins to a veil over the hall, the chosen goods, which way
-# they would go and the one move action. Both lists' bands point at the
-# middle. Leaving is the back key.
+# The warehouse page, as two inventories either side of the hall: what she
+# carries on a slab from the left edge, the warehouse on a slab from the right,
+# each as icons alone (a StockGrid, which filters and sorts them), and between
+# them the open hall with the painting of the storeroom and, at its foot, a
+# plaque naming what the pointer or the focus rests on. Goods cross by being
+# dragged to the other side, by Enter, A or a double click on the icon, or by
+# the right-click menu; the whole stack goes, as much as the other side has
+# room for. Leaving is the back key.
 
 signal transfer_requested(from_storage: bool, index: int)
 
 const STORAGE_NOTE := "倉庫の品は冒険へ持っていかず、倒れても失わない。"
-const SHOWCASE_SIZE := 192.0
+const SLAB_WIDTH := 510.0
+const IDLE_NAME := "持ち込み　⇄　倉庫"
+const IDLE_NOTE := "品をドラッグして、預ける・持ち出す"
 
 var state: RunCarryover
-var inventory_index := -1
-var storage_index := -1
-# The item of the last requested move, for the success moment after saving.
-var moved_item: ItemData
-var inventory_list: ItemCardList
-var storage_list: ItemCardList
-var inventory_title: Label
-var storage_title: Label
-var direction: Label
-var showcase: ItemShowcase
-var details: ItemDetails
+var carried: StockGrid
+var storage: StockGrid
+var detail_name: Label
+var detail_note: Label
+# What went wrong with a move; a move that worked says nothing.
 var result_label: Label
-var amount_label: Label
-var change_label: Label
-var move_button: Button
-var storage_rule: HintMark
-var _middle: VBoxContainer
+# The item of the last requested move, for the success moment after saving,
+# and where its icon stood (global) for the glyph to fly from.
+var moved_item: ItemData
+var _moved_from := Rect2()
+var menu: ContextMenu
+var _slabs: Array[Control] = []
 
 
 func _ready() -> void:
@@ -37,233 +37,168 @@ func _ready() -> void:
 	columns.theme_type_variation = &"ShopColumns"
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var carried := HubUI.open_column(columns, 1.0, &"SlabSolid")
-	inventory_title = _stock_heading(carried, "持ち込み")
-	inventory_list = _stock_list(carried, "持ち込みの品はない", false)
-	inventory_list.item_selected.connect(_select_inventory)
-	_middle = HubUI.open_column(columns, 0.9, &"SlabVeil")
-	_build_middle(_middle)
-	var kept := HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
-	storage_title = _stock_heading(kept, "倉庫", STORAGE_NOTE)
-	storage_list = _stock_list(kept, "倉庫に品はない", true)
-	storage_list.item_selected.connect(_select_storage)
-	HubUI.accept_to_action(inventory_list, move_button)
-	HubUI.accept_to_action(storage_list, move_button)
-	# Left and right step between the two stocks.
-	inventory_list.gui_input.connect(_cross.bind(inventory_list))
-	storage_list.gui_input.connect(_cross.bind(storage_list))
+	carried = StockGrid.new("持ち込み")
+	_slab(columns, &"SlabColumn", carried)
+	# The hall stays open, with its painting of the storeroom and, at its foot,
+	# the plaque of what is looked at.
+	var hall := VBoxContainer.new()
+	hall.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hall.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	columns.add_child(hall)
+	result_label = HubUI.label(hall, "", &"BodyLabel")
+	result_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_label.hide()
+	var plaque := HubUI.plaque(hall, 460)
+	detail_name = plaque[0]
+	detail_note = plaque[1]
+	hall.move_child(result_label, hall.get_child_count() - 3)
+	storage = StockGrid.new("倉庫", STORAGE_NOTE)
+	_slab(columns, &"SlabColumnEnd", storage)
+	for pair: Array in [[carried, storage], [storage, carried]]:
+		var side: StockGrid = pair[0]
+		var other: StockGrid = pair[1]
+		side.can_receive = func(source: ItemCell) -> bool: return other.cells.has(source)
+		side.chosen.connect(func(_place: int):
+			other.clear_choice()
+			_restore())
+		side.activated.connect(func(place: int): _move(side, place))
+		side.context_requested.connect(func(place: int, at: Vector2): _open_menu(side, other, place, at))
+		side.looked_at.connect(func(place: int):
+			if place >= 0:
+				_show_item(side.entries[place].item)
+			else:
+				_restore())
+		# A filter can hide the chosen icon: the plaque follows.
+		side.refreshed.connect(_restore)
+		side.received.connect(func(source: ItemCell): _received(side, other, source))
+		side.crossed.connect(func(direction: int, row: int):
+			if (side == carried) == (direction > 0):
+				other.focus_row(row, direction > 0))
+	menu = ContextMenu.new()
+	add_child(menu)
+	visibility_changed.connect(func():
+		if not is_visible_in_tree():
+			menu.close())
 
 
-# A stock's name, with a ? for its rule if it has one, and its room at the
-# right, above its list.
-func _stock_heading(column: VBoxContainer, title: String, rule: String = "") -> Label:
-	column.theme_type_variation = &"DetailStack"
-	var row := HBoxContainer.new()
-	row.theme_type_variation = &"CompactRow"
-	column.add_child(row)
-	var name_label := HubUI.label(row, title, &"ItemNameLabel")
-	name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	if not rule.is_empty():
-		storage_rule = HintMark.make(row, rule, HubSettings.TOPIC_PREPARATION)
-	var count := HubUI.label(row, "", &"NoteLabel")
-	count.autowrap_mode = TextServer.AUTOWRAP_OFF
-	count.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	count.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	count.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	return count
-
-
-func _stock_list(column: VBoxContainer, empty: String, points_left: bool) -> ItemCardList:
-	var list := ItemCardList.new()
-	list.theme_type_variation = &"OpenCardList"
-	list.points_left = points_left
-	list.empty_text = empty
-	list.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	column.add_child(list)
-	return list
-
-
-func _build_middle(column: VBoxContainer) -> void:
-	column.theme_type_variation = &"DetailStack"
-	direction = HubUI.label(column, "", &"NoteLabel")
-	direction.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	showcase = ItemShowcase.new()
-	showcase.show_effect = false
-	showcase.stack(SHOWCASE_SIZE)
-	showcase.visual.framed = false
-	showcase.visual.idle = true
-	column.add_child(showcase)
-	details = ItemDetails.new()
-	details.centered = true
-	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	column.add_child(details)
-	var gap := Control.new()
-	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	column.add_child(gap)
-	details.fit_lines(gap, 48)
-	# The counter, as in the shop: how many go, one quiet line of what the
-	# move does to both stocks, and a move's result, right above the action.
-	HubUI.rule(column)
-	var counter := VBoxContainer.new()
-	counter.theme_type_variation = &"CompactStack"
-	column.add_child(counter)
-	var amount_row := HBoxContainer.new()
-	counter.add_child(amount_row)
-	var caption := HubUI.label(amount_row, "移動する数", &"NoteLabel")
-	caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	amount_label = HubUI.label(amount_row, "", &"ValueLabel")
-	amount_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	change_label = HubUI.label(counter, "", &"NoteLabel")
-	change_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	result_label = HubUI.label(counter, "", &"BodyLabel")
-	result_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	move_button = HubUI.primary_action(column, "移動する", _move)
-	move_button.tooltip_text = "選択した1スタックをまとめて移動"
+# A stock on its own slab of the given role, fixed in width so the hall keeps
+# the middle.
+func _slab(columns: HBoxContainer, role: StringName, stock: StockGrid) -> void:
+	var stack := HubUI.open_column(columns, 1.0, role)
+	var slab := stack.get_parent() as Control
+	slab.size_flags_horizontal = Control.SIZE_FILL
+	slab.custom_minimum_size.x = SLAB_WIDTH
+	stack.add_child(stock)
+	_slabs.append(slab)
 
 
 func present(current_state: RunCarryover) -> void:
-	inventory_index = -1
-	storage_index = -1
+	carried.clear_choice()
+	storage.clear_choice()
 	refresh(current_state)
-	inventory_list.grab_focus()
+	for stock: StockGrid in [carried, storage]:
+		if not stock.cells.is_empty():
+			stock.cells[0].grab_focus()
+			return
+	carried.filter_tabs.tabs[carried.filter_tabs.selected].grab_focus()
 
 
 func refresh(current_state: RunCarryover = state, message: String = "") -> void:
 	state = current_state
-	for target: Control in [inventory_list, storage_list, showcase, details, direction]:
-		UIMotion.of(target).reset()
-	inventory_title.text = "%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries]
-	storage_title.text = "%d / %d 枠" % [state.storage.entries.size(), state.storage.max_entries]
-	_fill_list(inventory_list, state.inventory)
-	_fill_list(storage_list, state.storage)
-	if inventory_index >= state.inventory.entries.size():
-		inventory_index = -1
-	if storage_index >= state.storage.entries.size():
-		storage_index = -1
-	if inventory_index >= 0:
-		inventory_list.select(inventory_index)
-	if storage_index >= 0:
-		storage_list.select(storage_index)
+	carried.set_stock(state.inventory)
+	storage.set_stock(state.storage)
 	result_label.text = message
 	result_label.visible = not message.is_empty()
-	_update_details()
+	_restore()
 
 
-func _fill_list(list: ItemCardList, inventory: Inventory) -> void:
-	list.clear()
-	for entry: InventoryEntry in inventory.entries:
-		list.add_card(entry.item, entry.count)
-		list.set_item_tooltip(list.item_count - 1, ItemTooltipList.description(entry.item))
+# The chosen icon of either stock, or null.
+func _chosen_item() -> ItemData:
+	for stock: StockGrid in [carried, storage]:
+		if stock.selected >= 0 and stock.selected < stock.inventory.entries.size():
+			return stock.inventory.entries[stock.selected].item
+	return null
 
 
-func _entry_item(source: Inventory, index: int) -> ItemData:
-	return source.entries[index].item if index >= 0 and index < source.entries.size() else null
-
-
-func _select_inventory(index: int) -> void:
-	inventory_index = index
-	storage_index = -1
-	storage_list.deselect_all()
-	UIMotion.of(storage_list).reset()
-	_update_details()
-	UIMotion.reveal_selection([showcase, details, direction])
-
-
-func _select_storage(index: int) -> void:
-	storage_index = index
-	inventory_index = -1
-	inventory_list.deselect_all()
-	UIMotion.of(inventory_list).reset()
-	_update_details()
-	UIMotion.reveal_selection([showcase, details, direction])
-
-
-# Left from the warehouse, right from what she carries: the other stock takes
-# focus and its row is chosen, so the middle follows.
-func _cross(event: InputEvent, list: ItemCardList) -> void:
-	var to_storage := list == inventory_list and event.is_action_pressed("ui_right")
-	var to_carried := list == storage_list and event.is_action_pressed("ui_left")
-	if not (to_storage or to_carried):
-		return
-	list.accept_event()
-	var other := storage_list if to_storage else inventory_list
-	other.grab_focus()
-	if other.item_count > 0:
-		var index := clampi(list.get_selected_items()[0] if not list.get_selected_items().is_empty() else 0, 0, other.item_count - 1)
-		other.select(index)
-		other.item_selected.emit(index)
-
-
-func _move() -> void:
-	if storage_index >= 0:
-		moved_item = _entry_item(state.storage, storage_index)
-		transfer_requested.emit(true, storage_index)
-	elif inventory_index >= 0:
-		moved_item = _entry_item(state.inventory, inventory_index)
-		transfer_requested.emit(false, inventory_index)
-
-
-func _update_details() -> void:
-	details.reset()
-	var from_storage := storage_index >= 0
-	var source := state.storage if from_storage else state.inventory
-	var index := storage_index if from_storage else inventory_index
-	var item := _entry_item(source, index)
-	showcase.present(item)
-	move_button.disabled = item == null
+func _restore() -> void:
+	var item := _chosen_item()
 	if item == null:
-		direction.text = "持ち込み　⇄　倉庫"
-		move_button.text = "移動する"
-		amount_label.text = "—"
-		change_label.text = ""
-		return
-	direction.text = "倉庫　→　持ち込み" if from_storage else "持ち込み　→　倉庫"
-	move_button.text = "← 持ち出す" if from_storage else "倉庫へ預ける →"
-	details.item_text(item, showcase, &"NoteLabel")
-	# The move tried on copies: what would arrive, and both stocks after it.
-	var carried := state.inventory.copy()
-	var kept := state.storage.copy()
-	var moved := state.transfer_item(kept if from_storage else carried, carried if from_storage else kept, index)
-	amount_label.text = "×%d" % moved
-	move_button.disabled = moved == 0
-	if moved == 0:
-		change_label.text = "%sに空きがありません" % ("持ち込み" if from_storage else "倉庫")
-		return
-	change_label.text = "持ち込み %d → %d 枠　·　倉庫 %d → %d 枠" % [state.inventory.entries.size(), carried.entries.size(), state.storage.entries.size(), kept.entries.size()]
-	if moved < source.entries[index].count:
-		change_label.text += "　·　%d個は残る" % (source.entries[index].count - moved)
+		detail_name.text = IDLE_NAME
+		detail_note.text = IDLE_NOTE
+	else:
+		_show_item(item)
 
 
-# Opening the page: both stocks' rows arrive from their edges, the middle a
-# beat later.
+# One line of name, one of kind and main effect; the tooltip has the rest.
+func _show_item(item: ItemData) -> void:
+	detail_name.text = item.label()
+	detail_note.text = "　◆　".join([ItemGlyph.category(item), ItemGlyph.main_effect(item)])
+
+
+# The whole stack at a place of a stock goes to the other one.
+func _move(side: StockGrid, place: int) -> void:
+	if place < 0 or place >= side.entries.size():
+		return
+	var entry := side.entries[place]
+	var cell := side.cells[place]
+	moved_item = entry.item
+	_moved_from = Rect2(cell.get_global_rect().position + (cell.size - Vector2.ONE * ItemCell.ICON) * 0.5, Vector2.ONE * ItemCell.ICON)
+	transfer_requested.emit(side == storage, entry.index)
+
+
+# An icon dropped on one stock that came from the other.
+func _received(side: StockGrid, other: StockGrid, source: ItemCell) -> void:
+	var place := other.cells.find(source)
+	if place >= 0 and side != other:
+		_move(other, place)
+
+
+func _open_menu(side: StockGrid, other: StockGrid, place: int, at: Vector2) -> void:
+	side.choose(place)
+	other.clear_choice()
+	_restore()
+	menu.open(at, move_menu(side, place))
+
+
+# What the right-click offers on an icon: to go to the other side.
+func move_menu(side: StockGrid, place: int) -> Array:
+	return [["持ち込みへ持ち出す" if side == storage else "倉庫へ預ける", func(): _move(side, place)]]
+
+
+# Opening the page: the slabs arrive from their edges, the icons a beat later.
 func play_entrance() -> void:
-	inventory_list.play_intro()
-	storage_list.play_intro()
-	UIMotion.of(_middle).appear(UIMotion.STAGGER_TIME)
+	for slab in _slabs:
+		UIMotion.of(slab).appear(0.0, UIMotion.WINDOW_TIME)
+	UIMotion.of(carried.scroll).appear(UIMotion.STAGGER_TIME)
+	UIMotion.of(storage.scroll).appear(UIMotion.STAGGER_TIME)
 
 
-# Success moment after saving: the moved item's glyph flies from the middle
-# to its row in the destination list, which then acknowledges the arrival.
+# Success moment after saving: the moved item's icon flies from where it stood
+# to its place in the other stock, which then acknowledges the arrival.
 func present_move(to_storage: bool) -> void:
 	var item := moved_item
 	moved_item = null
-	var list := storage_list if to_storage else inventory_list
+	var stock := storage if to_storage else carried
 	UIMotion.of(result_label).reveal()
 	if item == null or not is_visible_in_tree():
-		UIMotion.of(list).reveal()
 		return
-	var destination := state.storage if to_storage else state.inventory
-	var point := list.get_global_rect().get_center()
-	for index in destination.entries.size():
-		if destination.entries[index].item.id == item.id:
-			var row := list.card_rect(index)
-			# A row scrolled out of view, or not laid out yet, lands on the
-			# list's centre instead.
-			if row.size.x > 0 and row.size.y > 0 and Rect2(Vector2.ZERO, list.size).encloses(row):
-				point = list.global_position + row.get_center()
+	var landing: Control = stock.scroll
+	var point := stock.scroll.get_global_rect().get_center()
+	for place in stock.entries.size():
+		if stock.entries[place].item.id == item.id:
+			var cell := stock.cells[place]
+			# A cell scrolled out of view lands on the grid's centre instead.
+			if stock.scroll.get_global_rect().encloses(cell.get_global_rect()):
+				landing = cell
+				point = cell.get_global_rect().get_center()
 			break
-	UIMotion.fly_glyph_at(self, item, showcase.visual, point).finished.connect(func():
-		if is_instance_valid(list) and list.is_visible_in_tree():
-			UIMotion.of(list).reveal())
+	var origin := Control.new()
+	origin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(origin)
+	origin.global_position = _moved_from.position
+	origin.size = _moved_from.size
+	var flight := UIMotion.fly_glyph_at(self, item, origin, point)
+	origin.queue_free()
+	flight.finished.connect(func():
+		if is_instance_valid(landing) and landing.is_visible_in_tree():
+			UIMotion.of(landing).pulse())

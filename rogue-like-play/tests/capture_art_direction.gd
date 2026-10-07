@@ -44,13 +44,11 @@ func capture() -> void:
 			check(shop.details.size.y >= 48, "Shop keeps readable description height")
 		hub.open_warehouse()
 		var warehouse: HubWarehouse = hub.warehouse_page
-		warehouse.storage_list.select(0)
-		warehouse.storage_list.item_selected.emit(0)
+		warehouse.storage.cells[0].pressed.emit()
 		await shot("art_warehouse_%d" % resolution.y)
-		for control: Control in [warehouse.inventory_list, warehouse.storage_list, warehouse.showcase, warehouse.details, warehouse.move_button, warehouse.change_label, warehouse.direction]:
+		for control: Control in [warehouse.carried, warehouse.storage, warehouse.detail_name, warehouse.detail_note]:
 			fits(control, "Warehouse")
-		check(warehouse.direction.text == "倉庫　→　持ち込み", "Transfer direction matches selection")
-		check(not warehouse.move_button.disabled and warehouse.move_button.text.contains("持ち出す"), "The move action turns to the selected side")
+		check(warehouse.detail_name.text == warehouse.storage.entries[0].item.label(), "The plaque names the chosen icon")
 		hub.go_back()
 		hub.show_page("equipment")
 		hub.equipment_page.cells[0].pressed.emit()

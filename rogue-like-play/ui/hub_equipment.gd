@@ -57,9 +57,7 @@ var equipped_item: ItemData
 var _equipped_from := Rect2()
 var _pending := {}
 var _slab: Control
-var _menu_layer: Control
-var _menu: PanelContainer
-var _menu_items: VBoxContainer
+var _menu: ContextMenu
 var _gear_scroll: ScrollContainer
 var _carried_heading: Label
 var _storage_heading: Label
@@ -90,7 +88,8 @@ func _ready() -> void:
 	hall.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	columns.add_child(hall)
 	_build_plaque(hall)
-	_build_menu()
+	_menu = ContextMenu.new()
+	add_child(_menu)
 	prompt = EquipPrompt.new()
 	add_child(prompt)
 	equip_button = prompt.accept_button
@@ -184,74 +183,21 @@ func _build_slots(column: VBoxContainer) -> void:
 # The plaque under the knight's plinth, on the same slab as the rest: the
 # name, and the kind and effect.
 func _build_plaque(hall: VBoxContainer) -> void:
-	HubUI.space(hall)
-	var plaque := PanelContainer.new()
-	plaque.theme_type_variation = &"SlabPlaque"
-	plaque.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	plaque.custom_minimum_size.x = 560
-	hall.add_child(plaque)
-	var stack := VBoxContainer.new()
-	stack.theme_type_variation = &"CompactStack"
-	plaque.add_child(stack)
-	detail_name = HubUI.label(stack, "", &"TitleLabel")
-	detail_name.autowrap_mode = TextServer.AUTOWRAP_OFF
-	detail_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	detail_note = HubUI.label(stack, "", &"PlaqueNote")
-	detail_note.autowrap_mode = TextServer.AUTOWRAP_OFF
-	detail_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var floor_gap := Control.new()
-	floor_gap.custom_minimum_size.y = 14
-	floor_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hall.add_child(floor_gap)
+	var plaque := HubUI.plaque(hall, 560)
+	detail_name = plaque[0]
+	detail_note = plaque[1]
 
 
-# The right-click menu: a small list at the pointer; a click anywhere else, or
-# Esc, closes it.
-func _build_menu() -> void:
-	_menu_layer = Control.new()
-	_menu_layer.mouse_filter = Control.MOUSE_FILTER_STOP
-	_menu_layer.z_index = 50
-	add_child(_menu_layer)
-	_menu_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_menu_layer.gui_input.connect(func(event: InputEvent):
-		if event is InputEventMouseButton and event.pressed:
-			_close_menu())
-	_menu = PanelContainer.new()
-	_menu.theme_type_variation = &"ContextMenu"
-	_menu_layer.add_child(_menu)
-	_menu_items = VBoxContainer.new()
-	_menu.add_child(_menu_items)
-	_menu_layer.hide()
-
-
-# entries: [[text, Callable]]. Nothing to offer, nothing opens.
 func show_menu(at: Vector2, entries: Array) -> void:
-	if entries.is_empty():
-		return
-	for item in _menu_items.get_children():
-		_menu_items.remove_child(item)
-		item.queue_free()
-	for entry: Array in entries:
-		var button := HubUI.button(_menu_items, entry[0], func():
-			_close_menu()
-			entry[1].call(), &"MenuItem")
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.custom_minimum_size = Vector2(220, 0)
-	_menu_layer.show()
-	_menu.reset_size()
-	var room := get_global_rect()
-	var corner := at - room.position
-	_menu.position = Vector2(clampf(corner.x, 0.0, maxf(0.0, room.size.x - _menu.size.x)), clampf(corner.y, 0.0, maxf(0.0, room.size.y - _menu.size.y)))
-	(_menu_items.get_child(0) as Button).grab_focus()
+	_menu.open(at, entries)
 
 
 func _close_menu() -> void:
-	if _menu_layer != null and _menu_layer.visible:
-		_menu_layer.hide()
+	_menu.close()
 
 
 func menu_open() -> bool:
-	return _menu_layer != null and _menu_layer.visible
+	return _menu.is_open()
 
 
 # What the right-click offers on gear: each slot it could go into.
@@ -339,6 +285,9 @@ func _fill_gear() -> void:
 			cell.pressed.connect(_candidate_pressed.bind(at))
 			cell.gui_input.connect(_candidate_input.bind(at))
 			cell.context_requested.connect(_gear_context.bind(at))
+			# A worn icon dropped on the gear takes it off, whichever icon it lands on.
+			cell.can_accept = func(source: ItemCell) -> bool: return _can_drop_on_gear(Vector2.ZERO, source)
+			cell.dropped.connect(func(source: ItemCell): _drop_on_gear(Vector2.ZERO, source))
 			cell.mouse_entered.connect(_preview_candidate.bind(at))
 			cell.focus_entered.connect(_preview_candidate.bind(at))
 			cell.mouse_exited.connect(_restore_detail)
@@ -594,12 +543,6 @@ func present_equip(changed: Array[int]) -> void:
 		for index in changed:
 			UIMotion.of(slots[index]).pulse()
 	equipped_item = null
-
-
-func _input(event: InputEvent) -> void:
-	if menu_open() and event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
-		_close_menu()
 
 
 func _unhandled_input(event: InputEvent) -> void:

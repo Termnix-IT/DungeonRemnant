@@ -59,11 +59,10 @@ func check_enter_to_action(hub, main) -> void:
 	check(not equipment.prompt.visible and equipment.cells[armor_at].has_focus(), "Declining returns to the gear")
 	hub.open_warehouse()
 	var warehouse: HubWarehouse = hub.warehouse_page
-	warehouse.inventory_list.grab_focus()
-	select(warehouse.inventory_list, 0)
+	warehouse.carried.cells[0].grab_focus()
+	warehouse.carried.cells[0].pressed.emit()
 	var carried: int = main.state.inventory.entries.size()
-	await press_enter()
-	check(warehouse.move_button.has_focus() and main.state.inventory.entries.size() == carried, "Enter on a stock row goes to the move without moving")
+	check(warehouse.carried.cells[0].button_pressed and main.state.inventory.entries.size() == carried, "Choosing an icon moves nothing")
 	hub.show_page("home")
 	main.state.gold = 300
 
@@ -114,22 +113,14 @@ func run_tests() -> void:
 	hub.show_page("home")
 	hub.open_warehouse()
 	var warehouse: HubWarehouse = hub.warehouse_page
-	var inventory_list := warehouse.inventory_list
-	var storage_list := warehouse.storage_list
-	var help := warehouse.details
-	var showcase := warehouse.showcase
-	var direction := warehouse.direction
-	select(storage_list, 0)
-	check_alpha([help, showcase, direction], 0.65, "Warehouse details and direction start together")
-	check(direction.text == "倉庫　→　持ち込み" and showcase.visual.item == main.state.storage.entries[0].item, "Storage selection immediately shows matching content")
-	select(inventory_list, 0)
-	check(storage_list.get_selected_items().is_empty() and storage_list.selection_strength == 1.0, "Changing source clears old selection and motion")
-	check(direction.text == "持ち込み　→　倉庫" and showcase.visual.item == ItemCatalog.POTION, "Inventory selection immediately changes art and direction")
-	check(not warehouse.move_button.disabled and warehouse.move_button.text.contains("預ける"), "The one move action turns to the chosen side")
-	check_alpha([help, showcase, direction], 0.65, "New source starts synchronized fade")
+	var stored := warehouse.storage
+	var held := warehouse.carried
+	stored.cells[0].pressed.emit()
+	check(stored.cells[0].button_pressed and warehouse.detail_name.text == main.state.storage.entries[0].item.label(), "Storage selection immediately names the icon")
+	held.cells[0].pressed.emit()
+	check(stored.selected == -1 and not stored.cells[0].button_pressed and held.cells[0].button_pressed, "Choosing on the other side clears the old choice")
+	check(warehouse.detail_name.text == ItemCatalog.POTION.label(), "Inventory selection immediately changes the plaque")
 	hub.go_back()
-	check_alpha([help, showcase, direction], 1.0, "Closing warehouse resets fades")
-	check(inventory_list.selection_strength == 1.0, "Closing resets accent")
 	await check_enter_to_action(hub, main)
 	check(SaveCodec.encode(main.state) == before, "Selection never trades, equips, or changes persisted data")
 	main.free()

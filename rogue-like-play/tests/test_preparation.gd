@@ -77,7 +77,7 @@ func run_tests() -> void:
 	check(page.slot_menu(Equipment.Slot.ARMOR).is_empty() and page.slot_menu(Equipment.Slot.SUB).map(func(entry: Array): return entry[0]) == ["外す", "主武器と副武器を入れ替え"] and page.slot_menu(Equipment.Slot.MAIN).map(func(entry: Array): return entry[0]) == ["主武器と副武器を入れ替え"], "Right-clicking a worn icon offers taking it off, never for the main weapon")
 	page.show_menu(Vector2(300, 300), page.gear_menu(armor_at))
 	check(page.menu_open(), "The menu opens at the pointer")
-	(page._menu_items.get_child(0) as Button).pressed.emit()
+	(page._menu.items.get_child(0) as Button).pressed.emit()
 	check(not page.menu_open() and page.prompt.visible and main.state.equipment.slots[Equipment.Slot.ARMOR] == null, "Choosing a menu entry asks before wearing")
 	page.prompt.cancel_button.pressed.emit()
 	page.slots[Equipment.Slot.ARMOR].pressed.emit()
@@ -192,10 +192,9 @@ func run_tests() -> void:
 	hub.open_warehouse()
 	await create_timer(0.1).timeout
 	var shelf: HubWarehouse = hub.warehouse_page
-	shelf.inventory_list.select(0)
-	shelf.inventory_list.item_selected.emit(0)
+	shelf.carried.cells[0].pressed.emit()
 	var stored_before: int = main.state.storage.entries.size()
-	shelf.move_button.pressed.emit()
+	shelf.carried.activated.emit(0)
 	var moving: Array = shelf.get_children().filter(func(child: Node): return child is Control and child.top_level)
 	check(main.state.storage.entries.size() >= stored_before and moving.size() == 1 and shelf.moved_item == null, "Deposit sends one glyph toward the storage list")
 	await create_timer(UIMotion.TRAVEL_TIME + 0.1).timeout

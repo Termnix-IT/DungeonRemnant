@@ -49,8 +49,8 @@ var _page_host: Control
 var _shell: VBoxContainer
 var _frame: Control
 # The screens that stand in a place of their own rather than in the lobby's
-# hall: the weapon rack for the equipment page.
-const PAGE_BACKGROUNDS := {"equipment": preload("res://art/hub/pages/equipment.png")}
+# hall: the weapon rack for the equipment page, the storeroom for the warehouse.
+const PAGE_BACKGROUNDS := {"equipment": preload("res://art/hub/pages/equipment.png"), "warehouse": preload("res://art/hub/pages/warehouse.png")}
 # How close the header and the footer come to the screen's edges.
 const EDGE_X := 40.0
 const EDGE_TOP := 22.0

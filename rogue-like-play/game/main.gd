@@ -68,6 +68,7 @@ func transfer_storage(from_storage: bool, index: int) -> bool:
 	var previous_storage := state.storage.copy()
 	var source := state.storage if from_storage else state.inventory
 	var destination := state.inventory if from_storage else state.storage
+	var stack := source.entries[index].count if index >= 0 and index < source.entries.size() else 0
 	var moved := state.transfer_item(source, destination, index)
 	if moved == 0:
 		$Hub.warehouse_page.refresh(state, "移動できません。移動先の空き容量を確認してください。")
@@ -78,9 +79,9 @@ func transfer_storage(from_storage: bool, index: int) -> bool:
 		$Hub.warehouse_page.refresh(state, "保存に失敗したため、アイテム移動を取り消しました。")
 		_update_save_status()
 		return false
-	var action := "取り出しました" if from_storage else "預けました"
 	$Hub.refresh(state)
-	$Hub.warehouse_page.refresh(state, "%d個%s。" % [moved, action])
+	# The icons crossing show it worked; only a stack left short is told.
+	$Hub.warehouse_page.refresh(state, "" if moved == stack else "空きが足りず、%d個だけ移しました。" % moved)
 	_update_save_status()
 	var slots: Array[int] = []
 	preparation_completed.emit(&"withdraw" if from_storage else &"deposit", 0, slots)

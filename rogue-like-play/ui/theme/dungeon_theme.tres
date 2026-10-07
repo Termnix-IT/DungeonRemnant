@@ -629,6 +629,19 @@ border_color = Color(0.72, 0.58, 0.36, 0.45)
 offsets = PackedFloat32Array(0, 0.84, 1)
 colors = PackedColorArray(0.03, 0.028, 0.03, 0.88, 0.03, 0.028, 0.03, 0.82, 0.03, 0.028, 0.03, 0)
 
+[sub_resource type="Gradient" id="SlabFadeEnd"]
+offsets = PackedFloat32Array(0, 0.16, 1)
+colors = PackedColorArray(0.03, 0.028, 0.03, 0, 0.03, 0.028, 0.03, 0.82, 0.03, 0.028, 0.03, 0.88)
+
+[sub_resource type="StyleBox" id="SlabEndSurface"]
+resource_name = "SlabEndSurface"
+script = ExtResource("SlabStyleScript")
+horizontal = SubResource("SlabFadeEnd")
+content_margin_left = 34.0
+content_margin_top = 18.0
+content_margin_right = 22.0
+content_margin_bottom = 18.0
+
 [sub_resource type="StyleBox" id="SlabSurface"]
 resource_name = "SlabSurface"
 script = ExtResource("SlabStyleScript")
@@ -1308,6 +1321,8 @@ ShopHeroBand/base_type = &"PanelContainer"
 ShopHeroBand/styles/panel = SubResource("HeroBandFade")
 SlabColumn/base_type = &"PanelContainer"
 SlabColumn/styles/panel = SubResource("SlabSurface")
+SlabColumnEnd/base_type = &"PanelContainer"
+SlabColumnEnd/styles/panel = SubResource("SlabEndSurface")
 ShadeColumn/base_type = &"PanelContainer"
 ShadeColumn/styles/panel = SubResource("ShadeSurface")
 NoteLabel/base_type = &"MutedLabel"

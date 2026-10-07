@@ -95,6 +95,32 @@ static func rule(parent: Node) -> Control:
 	return rule
 
 
+# A plaque at the foot of a hall that is left open to its painting: a slab
+# with an item's name and, beneath, one line of what it is. Returns the name
+# and the note, for the page to fill.
+static func plaque(hall: VBoxContainer, width: float) -> Array[Label]:
+	space(hall)
+	var plate := PanelContainer.new()
+	plate.theme_type_variation = &"SlabPlaque"
+	plate.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	plate.custom_minimum_size.x = width
+	hall.add_child(plate)
+	var stack := VBoxContainer.new()
+	stack.theme_type_variation = &"CompactStack"
+	plate.add_child(stack)
+	var name_label := label(stack, "", &"TitleLabel")
+	name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var note := label(stack, "", &"PlaqueNote")
+	note.autowrap_mode = TextServer.AUTOWRAP_OFF
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var floor_gap := Control.new()
+	floor_gap.custom_minimum_size.y = 14
+	floor_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hall.add_child(floor_gap)
+	return [name_label, note]
+
+
 static func space(parent: Node) -> Control:
 	var space := Control.new()
 	space.mouse_filter = Control.MOUSE_FILTER_IGNORE

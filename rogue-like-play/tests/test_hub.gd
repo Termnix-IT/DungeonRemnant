@@ -393,14 +393,14 @@ func run_tests() -> void:
 	main.state.equipment.slots[3] = preload("res://data/items/vital_charm.tres")
 	hub.open_warehouse()
 	var warehouse: HubWarehouse = hub.warehouse_page
-	check(warehouse.visible and warehouse.inventory_list.item_count == 2, "Warehouse opens with carried inventory")
-	check(warehouse.move_button.disabled, "Nothing chosen, nothing to move")
-	warehouse.inventory_list.item_selected.emit(1)
-	check(warehouse.move_button.text.contains("預ける") and warehouse.direction.text == "持ち込み　→　倉庫", "Carried goods offer the deposit")
-	warehouse.move_button.pressed.emit()
+	check(warehouse.visible and warehouse.carried.cells.size() == 2, "Warehouse opens with carried inventory")
+	check(warehouse.detail_name.text == warehouse.carried.entries[0].item.label() and not warehouse.carried.cells[0].button_pressed, "Opening rests the focus on the first icon, which the plaque names without choosing it")
+	warehouse.carried.cells[1].pressed.emit()
+	check(warehouse.carried.cells[1].button_pressed and warehouse.move_menu(warehouse.carried, 1)[0][0] == "倉庫へ預ける", "Carried goods offer the deposit")
+	warehouse.carried.activated.emit(1)
 	check(main.state.storage.entries.size() == 1 and main.state.inventory.entries.size() == 1, "Hub UI deposits one equipment item")
-	# Right from what she carries crosses to the warehouse and chooses there.
-	warehouse.inventory_list.grab_focus()
+	# Right from the last icon of what she carries crosses to the warehouse.
+	warehouse.carried.cells[0].grab_focus()
 	var right := InputEventKey.new()
 	right.keycode = KEY_RIGHT
 	right.physical_keycode = KEY_RIGHT
@@ -408,10 +408,9 @@ func run_tests() -> void:
 	Input.parse_input_event(right)
 	await process_frame
 	await process_frame
-	check(warehouse.storage_list.has_focus() and warehouse.storage_index == 0 and warehouse.inventory_index == -1, "Right crosses from what she carries to the warehouse")
-	warehouse.storage_list.item_selected.emit(0)
-	check(warehouse.move_button.text.contains("持ち出す") and warehouse.direction.text == "倉庫　→　持ち込み", "The one action turns to the warehouse's side")
-	warehouse.move_button.pressed.emit()
+	check(warehouse.storage.cells[0].has_focus(), "Right crosses from what she carries to the warehouse")
+	check(warehouse.move_menu(warehouse.storage, 0)[0][0] == "持ち込みへ持ち出す", "The warehouse's icon offers the withdrawal")
+	warehouse.storage.activated.emit(0)
 	check(main.state.storage.entries.is_empty() and main.state.inventory.entries.size() == 2, "Hub UI withdraws deposited item")
 	main.state.inventory.remove(1)
 	main.state.storage.add(ItemCatalog.POTION, 12)

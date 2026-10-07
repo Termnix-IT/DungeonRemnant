@@ -30,15 +30,17 @@ func capture() -> void:
 	await shot("details_equipment")
 	hub.open_warehouse()
 	await settle()
-	await click(hub.warehouse_page.storage_list, Vector2(35, 25))
-	check(shows_name(hub.warehouse_page.showcase, hub.warehouse_page.details, armor), "Warehouse selection exposes the full name without hover")
+	var stored := hub.warehouse_page.storage
+	var stored_at := stored.entries.find_custom(func(entry: Dictionary): return entry.item == armor)
+	await click(stored.cells[stored_at])
+	check(hub.warehouse_page.detail_name.text == armor.label(), "Warehouse selection names the icon without hover")
 	await shot("details_warehouse")
 	for resolution in [Vector2i(1600, 900), Vector2i(1280, 720)]:
 		root.size = resolution
 		await settle()
-		var list: ItemList = hub.warehouse_page.storage_list
+		var cell: ItemCell = hub.warehouse_page.storage.cells[stored_at]
 		var motion := InputEventMouseMotion.new()
-		motion.position = root.get_final_transform() * (list.get_global_rect().position + Vector2(35, 25))
+		motion.position = root.get_final_transform() * cell.get_global_rect().get_center()
 		Input.parse_input_event(motion)
 		Input.flush_buffered_events()
 		await create_timer(1.0).timeout

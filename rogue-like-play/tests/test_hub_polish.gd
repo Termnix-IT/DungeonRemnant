@@ -139,19 +139,30 @@ func check_details(hub, main) -> void:
 	check(shop.possession.text.contains("倉庫") and shop.possession.text.contains("→") and not shop.details.get_parsed_text().contains("手元に"), "The shop counter says where the copies go")
 	hub.open_warehouse()
 	var warehouse: HubWarehouse = hub.warehouse_page
-	var visual: ItemVisual = warehouse.showcase.visual
-	check(visual.custom_minimum_size == Vector2.ONE * HubWarehouse.SHOWCASE_SIZE and not visual.framed and visual.idle, "The middle shows the goods large, unframed, drifting")
-	check(warehouse.details.centered, "The middle centres the item's lines under its art")
-	check(warehouse.move_button.tooltip_text.contains("1") and warehouse.move_button.theme_type_variation == &"PrimaryAction", "One primary move action carries the one-stack rule")
-	check(warehouse.storage_list.points_left and not warehouse.inventory_list.points_left, "Both stocks' bands point at the middle")
 	var spelled := false
 	for label in warehouse.find_children("*", "Label", true, false):
 		spelled = spelled or (label as Label).text == HubWarehouse.STORAGE_NOTE
-	check(not spelled and warehouse.storage_rule.tooltip_text == HubWarehouse.STORAGE_NOTE and not warehouse.result_label.visible, "The warehouse rule waits behind a ? by its name; no result before a move")
-	var stock := warehouse.storage_list if main.state.inventory.entries.is_empty() else warehouse.inventory_list
-	var entries: Array[InventoryEntry] = main.state.storage.entries if main.state.inventory.entries.is_empty() else main.state.inventory.entries
-	check(not entries.is_empty(), "The polish fixture has goods to move")
-	if not entries.is_empty():
-		stock.item_selected.emit(0)
-		check(warehouse.amount_label.text == "×%d" % entries[0].count and warehouse.change_label.text.contains("→"), "The counter says how many go and what it does to both stocks")
+	check(not spelled and warehouse.storage.rule.tooltip_text == HubWarehouse.STORAGE_NOTE and not warehouse.result_label.visible, "The warehouse rule waits behind a ? by its name; no result before a move")
+	var side: StockGrid = warehouse.storage if main.state.inventory.entries.is_empty() else warehouse.carried
+	var other: StockGrid = warehouse.carried if side == warehouse.storage else warehouse.storage
+	check(not side.cells.is_empty(), "The polish fixture has goods to move")
+	if not side.cells.is_empty():
+		side.cells[0].pressed.emit()
+		check(warehouse.detail_name.text == side.entries[0].item.label() and side.cells[0].button_pressed, "Choosing an icon names it on the plaque")
+		check(warehouse.move_menu(side, 0)[0][0] == ("持ち込みへ持ち出す" if side == warehouse.storage else "倉庫へ預ける"), "The right-click menu offers the other side")
+		check(other.can_receive.call(side.cells[0]) and not side.can_receive.call(side.cells[0]), "A stock takes only what is dragged from the other")
+	# The filter and the order apply to each stock alone.
+	var stored: StockGrid = warehouse.storage
+	stored.filter_tabs.select(5, true)
+	check(not stored.entries.is_empty() and stored.entries.all(func(entry: Dictionary): return entry.item.kind == ItemData.Kind.CONSUMABLE), "The consumables tab shows only consumables")
+	check(warehouse.carried.filter_index == 0, "The other stock keeps its own filter")
+	stored.filter_tabs.select(2, true)
+	check(stored.entries.all(func(entry: Dictionary): return entry.item.kind == ItemData.Kind.ARMOR) and not stored.entries.is_empty(), "The armor tab shows only armor")
+	stored.filter_tabs.select(0, true)
+	stored.sort_cycler.step(1)
+	var names: Array = stored.entries.map(func(entry: Dictionary): return entry.item.label())
+	var sorted_names := names.duplicate()
+	sorted_names.sort()
+	check(names == sorted_names, "Sorting by name orders the icons")
+	stored.sort_cycler.step(-1)
 	hub.go_back()

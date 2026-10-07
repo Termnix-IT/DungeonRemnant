@@ -62,8 +62,11 @@ func run_tests() -> void:
 	var warehouse: HubWarehouse = hub.warehouse_page
 	# The two stocks mirror each other about the screen's centre.
 	var middle := root.get_visible_rect().get_center().x
-	check(absf((warehouse.inventory_list.get_global_rect().position.x - middle) + (warehouse.storage_list.get_global_rect().end.x - middle)) < 2.0, "Warehouse stocks mirror about the centre")
-	check(root.get_visible_rect().encloses(warehouse.move_button.get_global_rect()), "Warehouse action stays on the screen")
+	var left := warehouse.carried.get_global_rect()
+	var right := warehouse.storage.get_global_rect()
+	check(absf((left.position.x - middle) + (right.end.x - middle)) < 2.0, "Warehouse stocks mirror about the centre")
+	var plaque := warehouse.detail_name.get_global_rect().merge(warehouse.detail_note.get_global_rect())
+	check(root.get_visible_rect().encloses(plaque) and left.end.x <= plaque.position.x and plaque.end.x <= right.position.x, "The plaque stands in the hall between the two slabs")
 	hub.go_back()
 	enter(hub, hub.start_button)
 	hub.departure_page.next_button.pressed.emit()
