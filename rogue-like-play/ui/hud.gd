@@ -53,7 +53,7 @@ func _ready() -> void:
 func refresh(hp: int, max_hp: int, turns: int, visible_enemies: int, log_text: String, floor_number: int, layout_name: String, terrain_name: String = "", total_floors: int = 10, log_key: int = -1) -> void:
 	status.text = "%d / %dF  %s     HP %d / %d     TURN %d     視界内の敵 %d" % [floor_number, total_floors, layout_name, hp, max_hp, turns, visible_enemies]
 	floor_value.text = "%d / %d" % [floor_number, total_floors]
-	area.text = "%s・%s" % [_terrain_label(terrain_name), _layout_label(layout_name)]
+	area.text = "%s・%s" % [terrain_label(terrain_name), _layout_label(layout_name)]
 	show_health(hp, max_hp)
 	turn_count = turns
 	_refresh_meta()
@@ -68,10 +68,11 @@ func show_health(hp: int, max_hp: int) -> void:
 	portrait.show_health(hp, max_hp)
 
 
-func show_aim(weapon_name: String, aiming: bool) -> void:
+# The equipment strip already names the main and sub weapons, so the panel
+# title stays "装備".
+func show_aim(aiming: bool) -> void:
 	if aiming:
 		_render_log("攻撃方向を選択中：方向キーで変更 / Spaceで確定 / Escでキャンセル")
-	$BottomRight/Title.text = "装備  ·  %s" % weapon_name
 
 
 func show_progress(level: int, exp: int, required: int) -> void:
@@ -156,6 +157,15 @@ func _render_log(temporary_message: String = "") -> void:
 		if lines.size() >= MAX_LOG_ENTRIES:
 			lines.pop_front()
 		lines.append("◆ %s" % temporary_message)
+	# Long lines wrap; when the wrapped text overflows the box, the oldest
+	# entries give way so the newest line is never cut off at the bottom.
+	_write_log(lines)
+	while lines.size() > 1 and log_entries.get_content_height() > log_entries.size.y:
+		lines.pop_front()
+		_write_log(lines)
+
+
+func _write_log(lines: Array[String]) -> void:
 	# Text is appended, never parsed as BBCode, so messages stay literal.
 	var recent := _log_color(&"Label")
 	var older := _log_color(&"HudSmall")
@@ -176,7 +186,7 @@ func _refresh_meta() -> void:
 	meta.text = "TURN %d  ·  所持品 %d / 40" % [turn_count, inventory_count]
 
 
-func _terrain_label(value: String) -> String:
+func terrain_label(value: String) -> String:
 	match value:
 		"Forest": return "深緑の森林"
 		"Slate Ruins": return "蒼灰の遺跡"

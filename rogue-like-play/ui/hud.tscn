@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://ui/hud.gd" id="1"]
 [ext_resource type="Script" path="res://ui/minimap.gd" id="2"]
 [ext_resource type="Theme" path="res://ui/theme/dungeon_theme.tres" id="3"]
 [ext_resource type="Script" path="res://ui/hud_equipment.gd" id="4"]
+[ext_resource type="Texture2D" path="res://art/ui/hud_rule.png" id="5"]
 
 [node name="HUD" type="CanvasLayer"]
 layer = 5
@@ -38,13 +39,14 @@ theme_type_variation = &"HudValue"
 text = "1 / 10"
 horizontal_alignment = 2
 
-[node name="Divider" type="ColorRect" parent="TopLeft"]
+[node name="Divider" type="TextureRect" parent="TopLeft"]
 offset_left = 16.0
 offset_top = 49.0
 offset_right = 222.0
 offset_bottom = 50.0
 mouse_filter = 2
-color = Color(0.32, 0.32, 0.32, 0.9)
+texture = ExtResource("5")
+expand_mode = 1
 
 [node name="GoldCaption" type="Label" parent="TopLeft"]
 offset_left = 16.0
@@ -94,13 +96,14 @@ offset_bottom = 198.0
 mouse_filter = 2
 script = ExtResource("2")
 
-[node name="Divider" type="ColorRect" parent="TopRight"]
+[node name="Divider" type="TextureRect" parent="TopRight"]
 offset_left = 14.0
 offset_top = 206.0
 offset_right = 246.0
 offset_bottom = 207.0
 mouse_filter = 2
-color = Color(0.32, 0.32, 0.32, 0.9)
+texture = ExtResource("5")
+expand_mode = 1
 
 [node name="Area" type="Label" parent="TopRight"]
 offset_left = 10.0
@@ -255,7 +258,7 @@ offset_bottom = 92.0
 mouse_filter = 2
 theme_type_variation = &"HudLog"
 scroll_active = false
-autowrap_mode = 0
+autowrap_mode = 3
 
 [node name="BottomRight" type="Panel" parent="."]
 anchors_preset = 3
@@ -281,13 +284,14 @@ offset_bottom = 34.0
 theme_type_variation = &"HudCaption"
 text = "装備"
 
-[node name="Divider" type="ColorRect" parent="BottomRight"]
+[node name="Divider" type="TextureRect" parent="BottomRight"]
 offset_left = 14.0
 offset_top = 38.0
 offset_right = 286.0
 offset_bottom = 39.0
 mouse_filter = 2
-color = Color(0.32, 0.32, 0.32, 0.9)
+texture = ExtResource("5")
+expand_mode = 1
 
 [node name="Rows" type="Control" parent="BottomRight"]
 offset_left = 14.0

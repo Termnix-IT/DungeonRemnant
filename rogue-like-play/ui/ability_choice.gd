@@ -37,11 +37,17 @@ func present(candidates: Array[AbilityData], abilities: AbilitySystem, level: in
 	clear_afterglow()
 	offers = candidates.duplicate()
 	$Panel/Margin/Stack/Title.text = "Lv %d  能力を1つ選択" % (level - pending + 1)
-	$Panel/Margin/Stack/Hint.text = "クリック または 1・2・3キーで選択（残り%d回）" % pending
+	var keys: Array[String] = []
+	for index in offers.size():
+		keys.append(str(index + 1))
+	$Panel/Margin/Stack/Hint.text = "クリック または %sキーで選択（残り%d回）" % ["・".join(keys), pending]
 	for index in buttons.size():
 		buttons[index].visible = index < offers.size()
 		if index < offers.size():
 			cards[index].setup(offers[index], abilities.level_of(offers[index]), index + 1)
+	# A container grows to fit but never shrinks on its own, so fit the
+	# dialog to the cards on offer and keep it centred.
+	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER, Control.PRESET_MODE_MINSIZE)
 	show()
 	UIMotion.of(panel).reveal(UIMotion.WINDOW_TIME)
 	for index in offers.size():

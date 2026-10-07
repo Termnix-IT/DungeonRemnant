@@ -25,6 +25,7 @@
 [ext_resource type="Texture2D" path="res://art/ui/vital_experience.png" id="VitalExperienceTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/speech_bubble.png" id="SpeechBubbleTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/ink_plate.png" id="InkPlateTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud_ink.png" id="HudInkTexture"]
 
 [sub_resource type="StyleBoxTexture" id="FramePanel"]
 resource_name = "FramePanel"
@@ -475,20 +476,21 @@ texture = ExtResource("VitalHealthTrailTexture")
 [sub_resource type="StyleBoxTexture" id="VitalManaTrail"]
 texture = ExtResource("VitalManaTrailTexture")
 
-[sub_resource type="StyleBoxFlat" id="HudSurface"]
+[sub_resource type="StyleBoxTexture" id="HudSurface"]
 resource_name = "HudSurface"
-bg_color = Color(0.11, 0.11, 0.11, 0.9)
-border_color = Color(0.32, 0.32, 0.32, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-shadow_color = Color(0, 0, 0, 0.45)
-shadow_size = 6
+texture = ExtResource("HudInkTexture")
+texture_margin_left = 56.0
+texture_margin_top = 56.0
+texture_margin_right = 56.0
+texture_margin_bottom = 56.0
+expand_margin_left = 40.0
+expand_margin_top = 40.0
+expand_margin_right = 40.0
+expand_margin_bottom = 40.0
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
 
 [sub_resource type="StyleBoxFlat" id="HudPortraitFrame"]
 resource_name = "HudPortraitFrame"

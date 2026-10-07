@@ -35,6 +35,7 @@ theme_type_variation = &"MutedLabel"
 horizontal_alignment = 1
 [node name="Choices" type="HBoxContainer" parent="Panel/Margin/Stack"]
 layout_mode = 2
+alignment = 1
 [node name="First" type="Button" parent="Panel/Margin/Stack/Choices"]
 custom_minimum_size = Vector2(248, 300)
 layout_mode = 2

@@ -215,7 +215,12 @@ func _load_floor() -> void:
 		turns.begin_message("%dF：中ボスを倒すと階段と帰還用の脱出口が開きます。" % floor_number)
 	if floor_number == final_floor:
 		turns.begin_message("%dF：最深部の主を倒すとクリアです。中断確認はR。" % final_floor)
-	journey_banner.present("%dF  ·  %s" % [floor_number, "守護者の領域" if floor_number % 10 == 0 else "探索開始"], stage_data.display_name if stage_data != null else "古代遺跡", arrival_banner_delay)
+	# Name the stage and the depth band together, as the minimap does, so the
+	# banner and the map never disagree on where the player is.
+	var stage_name: String = stage_data.display_name if stage_data != null else "古代遺跡"
+	var band_name: String = hud.terrain_label(dungeon.terrain_theme_name)
+	var place := stage_name if band_name == stage_name else "%s  ·  %s" % [stage_name, band_name]
+	journey_banner.present("%dF  ·  %s" % [floor_number, "守護者の領域" if floor_number % 10 == 0 else "探索開始"], place, arrival_banner_delay)
 	ambience.start(dungeon_settings.forest)
 	GameAudio.play(journey_banner, &"floor", -22.0)
 
@@ -493,7 +498,7 @@ func _refresh() -> void:
 				preview.target_cells.append(cell)
 	preview.visible = turns.player.aiming and not turns.ended and not turns.busy
 	preview.queue_redraw()
-	hud.show_aim(turns.player.weapon.display_name, preview.visible)
+	hud.show_aim(preview.visible)
 	hud.show_inventory(turns.player.inventory.entries.size())
 	hud.show_mana(turns.player.mp, turns.player.stats.max_mp)
 	# finish_run clears effects in rules; keep the last list on screen through
