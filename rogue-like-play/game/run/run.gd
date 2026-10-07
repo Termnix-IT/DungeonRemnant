@@ -227,8 +227,7 @@ func _load_floor() -> void:
 		turns.begin_message("%dFに到着した。" % floor_number)
 	if floor_kind == DungeonGenerator.Kind.ANTECHAMBER:
 		turns.begin_message("%dF：奥の扉の先で%sが待っている。" % [floor_number, "最深部の主" if floor_number == final_floor else "守護者"])
-	# Name the stage and the depth band together, as the minimap does, so the
-	# banner and the map never disagree on where the player is.
+	# Name the stage and the depth band together.
 	var stage_name: String = stage_data.display_name if stage_data != null else "古代遺跡"
 	var band_name: String = hud.terrain_label(dungeon.terrain_theme_name)
 	var place := stage_name if band_name == stage_name else "%s  ·  %s" % [stage_name, band_name]
@@ -509,8 +508,6 @@ func _refresh() -> void:
 			visible_enemies += 1
 	# The log line describes the whole action, so it waits for the playback.
 	hud.refresh(_displayed_hp(), turns.player.stats.max_hp, turns.turn_count, visible_enemies, "" if presentation.playing else turns.last_message, floor_number, dungeon.layout_name, dungeon.terrain_theme_name, final_floor, turns.message_serial)
-	if dungeon.house_discovered and dungeon.monster_house.has_point(turns.player.cell):
-		hud.area.text = "モンスターハウス"
 	hud.show_progress(progression.level, progression.exp, progression.required_exp())
 	preview.cells.clear()
 	preview.target_cells.clear()

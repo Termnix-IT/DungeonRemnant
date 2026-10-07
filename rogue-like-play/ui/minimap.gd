@@ -8,15 +8,19 @@ const FLOOR_COLOR := Color("3a434b")
 const VISIBLE_FLOOR_COLOR := Color("56626c")
 const WALL_COLOR := Color("1a2025")
 const VISIBLE_WALL_COLOR := Color("2b333a")
+# Each marker differs from the others in both colour and shape: the player is
+# a blue disc in a white ring, enemies red discs, items small green squares
+# and the stairs a gold diamond.
 const PLAYER_COLOR := Color("6aa6ff")
-const ENEMY_COLOR := Color("ef615b")
+const PLAYER_RING := Color("f2f4f8")
+const ENEMY_COLOR := Color("f0524c")
+const ITEM_COLOR := Color("7fd26a")
 const STAIRS_COLOR := Color("e8bd55")
-const ITEM_COLOR := Color("d9903d")
 const OUTLINE_COLOR := Color("101010")
-# The view frames the known area, never smaller than this many cells, so a
-# fresh floor is not blown up to a few giant tiles.
-const MIN_VIEW_CELLS := Vector2i(20, 14)
-const MAX_CELL_SIZE := 10.0
+# A fixed scale centred on the player: the map scrolls as the floor is
+# explored instead of shrinking to fit everything seen so far. Whole pixels
+# keep cells tiling without seams.
+const CELL_SIZE := 8.0
 
 var grid_size := Vector2i.ZERO
 var walls: Dictionary = {}
@@ -26,7 +30,6 @@ var player_cell := UNKNOWN_CELL
 var stairs_cell := UNKNOWN_CELL
 var enemy_cells: Array[Vector2i] = []
 var item_cells: Array[Vector2i] = []
-var view := Rect2i()
 
 
 func refresh(
@@ -46,66 +49,48 @@ func refresh(
 	stairs_cell = discovered_stairs
 	enemy_cells = visible_enemies.duplicate()
 	item_cells = discovered_items.duplicate()
-	view = _known_view()
 	queue_redraw()
-
-
-func _known_view() -> Rect2i:
-	var bounds := Rect2i(player_cell, Vector2i.ONE)
-	for value: Variant in explored:
-		bounds = bounds.merge(Rect2i(value as Vector2i, Vector2i.ONE))
-	bounds = bounds.grow(1)
-	var extent := Vector2i(maxi(bounds.size.x, MIN_VIEW_CELLS.x), maxi(bounds.size.y, MIN_VIEW_CELLS.y))
-	return Rect2i(bounds.get_center() - extent / 2, extent)
 
 
 func _draw() -> void:
 	if explored.is_empty() or grid_size == Vector2i.ZERO:
 		return
-	var padding := 6.0
-	# Whole-pixel cells on a whole-pixel origin tile without seams; a
-	# fractional size let the background show through as thin dark lines
-	# wherever a cell edge fell between pixels.
-	var cell_size := minf((size.x - padding * 2.0) / view.size.x, (size.y - padding * 2.0) / view.size.y)
-	cell_size = clampf(floorf(cell_size), 1.0, MAX_CELL_SIZE)
-	var origin := (size * 0.5 - (Vector2(view.position) + Vector2(view.size) * 0.5) * cell_size).round()
+	var origin := (size * 0.5 - (Vector2(player_cell) + Vector2.ONE * 0.5) * CELL_SIZE).round()
+	var bounds := Rect2(Vector2.ZERO, size)
 	for value: Variant in explored:
 		var cell := value as Vector2i
+		var rect := Rect2(origin + Vector2(cell) * CELL_SIZE, Vector2.ONE * CELL_SIZE)
+		if not bounds.intersects(rect):
+			continue
 		var seen_now := visible_cells.has(cell)
 		var color := VISIBLE_FLOOR_COLOR if seen_now else FLOOR_COLOR
 		if walls.has(cell):
 			color = VISIBLE_WALL_COLOR if seen_now else WALL_COLOR
-		_draw_cell(cell, origin, cell_size, color)
+		draw_rect(rect, color)
 	for cell: Vector2i in item_cells:
 		if explored.has(cell):
-			_draw_marker(cell, origin, cell_size, ITEM_COLOR, 0.52)
+			var center := _center(cell, origin)
+			var half := CELL_SIZE * 0.3
+			draw_rect(Rect2(center - Vector2.ONE * (half + 1.0), Vector2.ONE * (half + 1.0) * 2.0), OUTLINE_COLOR)
+			draw_rect(Rect2(center - Vector2.ONE * half, Vector2.ONE * half * 2.0), ITEM_COLOR)
 	if stairs_cell != UNKNOWN_CELL and explored.has(stairs_cell):
-		var center := _center(stairs_cell, origin, cell_size)
-		var radius := maxf(3.5, cell_size * 0.75)
+		var center := _center(stairs_cell, origin)
+		var radius := CELL_SIZE * 0.75
 		var diamond := PackedVector2Array([center + Vector2(0, -radius), center + Vector2(radius, 0), center + Vector2(0, radius), center + Vector2(-radius, 0)])
 		draw_colored_polygon(diamond, STAIRS_COLOR)
 		draw_polyline(diamond + PackedVector2Array([diamond[0]]), OUTLINE_COLOR, 1.0, true)
 	for cell: Vector2i in enemy_cells:
-		_draw_marker(cell, origin, cell_size, ENEMY_COLOR, 0.62)
+		var center := _center(cell, origin)
+		var radius := CELL_SIZE * 0.45
+		draw_circle(center, radius + 1.0, OUTLINE_COLOR)
+		draw_circle(center, radius, ENEMY_COLOR)
 	if explored.has(player_cell):
-		var center := _center(player_cell, origin, cell_size)
-		var radius := maxf(3.0, cell_size * 0.5)
-		draw_circle(center, radius + 1.5, OUTLINE_COLOR)
+		var center := _center(player_cell, origin)
+		var radius := CELL_SIZE * 0.5
+		draw_circle(center, radius + 2.0, OUTLINE_COLOR)
+		draw_circle(center, radius + 1.0, PLAYER_RING)
 		draw_circle(center, radius, PLAYER_COLOR)
 
 
-func _draw_cell(cell: Vector2i, origin: Vector2, cell_size: float, color: Color) -> void:
-	var rect := Rect2(origin + Vector2(cell) * cell_size, Vector2.ONE * cell_size)
-	draw_rect(rect, color)
-
-
-func _draw_marker(cell: Vector2i, origin: Vector2, cell_size: float, color: Color, scale: float) -> void:
-	if not explored.has(cell):
-		return
-	var center := _center(cell, origin, cell_size)
-	var radius := maxf(1.5, cell_size * scale * 0.5)
-	draw_circle(center, radius, color)
-
-
-func _center(cell: Vector2i, origin: Vector2, cell_size: float) -> Vector2:
-	return origin + (Vector2(cell) + Vector2.ONE * 0.5) * cell_size
+func _center(cell: Vector2i, origin: Vector2) -> Vector2:
+	return origin + (Vector2(cell) + Vector2.ONE * 0.5) * CELL_SIZE

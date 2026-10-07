@@ -12,7 +12,6 @@ const EFFECTS_WIDTH := 238.0
 @onready var status: Label = $Status
 @onready var floor_value: Label = $TopRight/Floor
 @onready var gold_value: Label = $BottomLeft/Gold
-@onready var area: Label = $TopRight/Area
 @onready var minimap: DungeonMinimap = $TopRight/Minimap
 @onready var hp_value: Label = $BottomLeft/HpValue
 @onready var hp_bar: ProgressBar = $BottomLeft/HpBar
@@ -50,12 +49,9 @@ func _ready() -> void:
 
 # log_key identifies the action the text belongs to: text that grows within one
 # action replaces its entry, and a repeated line from a new action is kept.
-func refresh(hp: int, max_hp: int, turns: int, visible_enemies: int, log_text: String, floor_number: int, layout_name: String, terrain_name: String = "", total_floors: int = 10, log_key: int = -1) -> void:
+func refresh(hp: int, max_hp: int, turns: int, visible_enemies: int, log_text: String, floor_number: int, layout_name: String, _terrain_name: String = "", total_floors: int = 10, log_key: int = -1) -> void:
 	status.text = "%d / %dF  %s     HP %d / %d     TURN %d     視界内の敵 %d" % [floor_number, total_floors, layout_name, hp, max_hp, turns, visible_enemies]
 	floor_value.text = "%d / %d" % [floor_number, total_floors]
-	var place := terrain_label(terrain_name)
-	var room := _layout_label(layout_name)
-	area.text = place if room.is_empty() else "%s・%s" % [place, room]
 	show_health(hp, max_hp)
 	turn_count = turns
 	_refresh_meta()
@@ -190,15 +186,6 @@ func terrain_label(value: String) -> String:
 		"Ember Depths": return "熾火の深層"
 		"Obsidian Sanctum": return "黒曜の聖域"
 	return value if not value.is_empty() else "未踏の迷宮"
-
-
-# Every exploration floor is rooms and corridors, so only the boss floor's
-# two maps get a name of their own.
-func _layout_label(value: String) -> String:
-	match value:
-		"Antechamber": return "前室"
-		"BossHall": return "守護者の間"
-	return ""
 
 
 # Takes the otherwise empty top-left corner.

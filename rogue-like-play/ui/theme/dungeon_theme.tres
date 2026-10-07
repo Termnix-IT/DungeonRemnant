@@ -492,6 +492,23 @@ content_margin_top = 10.0
 content_margin_right = 14.0
 content_margin_bottom = 10.0
 
+[sub_resource type="StyleBoxTexture" id="HudMapSurface"]
+resource_name = "HudMapSurface"
+texture = ExtResource("HudInkTexture")
+texture_margin_left = 56.0
+texture_margin_top = 56.0
+texture_margin_right = 56.0
+texture_margin_bottom = 56.0
+expand_margin_left = 40.0
+expand_margin_top = 40.0
+expand_margin_right = 40.0
+expand_margin_bottom = 40.0
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+modulate_color = Color(1, 1, 1, 0.7)
+
 [sub_resource type="StyleBoxFlat" id="HudPortraitFrame"]
 resource_name = "HudPortraitFrame"
 bg_color = Color(0.06, 0.06, 0.06, 1)
@@ -1112,13 +1129,19 @@ MpTrail/styles/fill = SubResource("VitalManaTrail")
 
 HudPanel/base_type = &"Panel"
 HudPanel/styles/panel = SubResource("HudSurface")
+HudMapPanel/base_type = &"Panel"
+HudMapPanel/styles/panel = SubResource("HudMapSurface")
 HudPortraitFrame/base_type = &"Panel"
 HudPortraitFrame/styles/panel = SubResource("HudPortraitFrame")
 HudCaption/base_type = &"Label"
 HudCaption/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
 HudCaption/font_sizes/font_size = 14
+HudCaption/colors/font_outline_color = Color(0, 0, 0, 0.7)
+HudCaption/constants/outline_size = 4
 HudValue/base_type = &"Label"
 HudValue/font_sizes/font_size = 22
+HudValue/colors/font_outline_color = Color(0, 0, 0, 0.7)
+HudValue/constants/outline_size = 4
 HudSmall/base_type = &"Label"
 HudSmall/colors/font_color = Color(0.6, 0.6, 0.57, 1)
 HudSmall/font_sizes/font_size = 13
