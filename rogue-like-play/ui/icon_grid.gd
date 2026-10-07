@@ -28,6 +28,8 @@ var cells: Array[ItemCell] = []
 var selected := -1
 var columns := 6
 var cell_size := ItemCell.SIZE
+# True where the icons only show: nothing to pick up, choose or focus.
+var read_only := false
 # A wider cell than it is high (0 for a square one) names each item beside its
 # icon, on a plain row instead of the square's frame.
 var cell_width := 0.0
@@ -92,6 +94,10 @@ func show_rows(rows: Array[Dictionary], empty_text := "") -> void:
 		cell.show_item(entry.item, entry.get("badge", entry.count))
 		cell.tooltip_text = entry.get("tooltip", ItemTooltipList.description(entry.item))
 		cell.set_pressed_no_signal(entry.index == selected)
+		if read_only:
+			cell.draggable = false
+			cell.toggle_mode = false
+			cell.focus_mode = Control.FOCUS_NONE
 		cell.pressed.connect(_pressed.bind(place))
 		cell.gui_input.connect(_cell_input.bind(place))
 		cell.context_requested.connect(func(at: Vector2): context_requested.emit(place, at))

@@ -9,9 +9,11 @@ extends Control
 # the eye goes to the ones that can be played. The right column shows the
 # chosen stage's painting (what lies inside, where the map shows it from
 # outside), describes it and holds the one primary action.
-# The sortie check shows what she takes (equipment and carried goods) on the
-# left, the chosen stage and its start floor with the one action in the
-# middle, her stats for the run above the floor choice, and the open hall on the right.
+# The sortie check shows what she takes on the left as icons alone (the five
+# equipment slots, then the carried goods; what the pointer rests on is named
+# in a line under them, the rest is the tooltip), the chosen stage and its
+# start floor with the one action in the middle, her stats for the run above
+# the floor choice, and on the right the open hall with the painting of the gate.
 
 signal confirm_requested
 signal equipment_requested
@@ -22,6 +24,11 @@ signal departure_requested
 const MAP_ROWS := [0.62, 0.3, 0.58, 0.34]
 const ROAD_DOT_GAP := 16.0
 const BANNER_SIZE := 220.0
+# What she takes: five slots in a row, then the carried goods, on one slab.
+const KIT_WIDTH := 570.0
+const SLOT_SIZE := 104.0
+const SLOT_ICON := 96.0
+const CARRIED_COLUMNS := 7
 # A stage not yet open, against an open one.
 const LOCKED_SCALE := 0.74
 const EDGE_FADE := preload("res://ui/edge_fade.gdshader")
@@ -39,13 +46,14 @@ var stage_details: ItemDetails
 var stage_title: Label
 var stage_facts: Label
 var stage_art: TextureRect
-var equipment_rows: HudEquipment
+var slot_cells: Array[ItemCell] = []
+var carried: IconGrid
+var kit_note: Label
 var stage_banner: TextureRect
 var banner_title: Label
 var carried_rule: HintMark
 var start_rule: HintMark
 var carried_count: Label
-var inventory_list: ItemCardList
 var hero_stats: HeroStats
 var selection_page: Control
 var confirmation_page: Control
@@ -115,15 +123,17 @@ func _build_confirmation(parent: Control) -> void:
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	# Left: what she takes.
 	var kit := HubUI.open_column(columns, 0.95, &"SlabSolid")
+	var kit_slab := kit.get_parent() as Control
+	kit_slab.size_flags_horizontal = Control.SIZE_FILL
+	kit_slab.custom_minimum_size.x = KIT_WIDTH
 	kit.theme_type_variation = &"DetailStack"
-	HubUI.label(kit, "装備", &"NoteLabel")
-	equipment_rows = HudEquipment.new()
-	kit.add_child(equipment_rows)
+	HubUI.label(kit, "装備", &"SectionLabel")
+	_build_slots(kit)
 	HubUI.rule(kit)
 	var carried_heading := HBoxContainer.new()
 	carried_heading.theme_type_variation = &"CompactRow"
 	kit.add_child(carried_heading)
-	var carried_title := HubUI.label(carried_heading, "持ち込み", &"NoteLabel")
+	var carried_title := HubUI.label(carried_heading, "持ち込み", &"SectionLabel")
 	carried_title.autowrap_mode = TextServer.AUTOWRAP_OFF
 	carried_rule = HintMark.make(carried_heading, "倒れたり中断したりすると、持ち込みのおよそ半分を失う。装備中の5枠は失わない。", HubSettings.TOPIC_LOSS)
 	var carried_gap := Control.new()
@@ -132,11 +142,21 @@ func _build_confirmation(parent: Control) -> void:
 	carried_heading.add_child(carried_gap)
 	carried_count = HubUI.label(carried_heading, "", &"NoteLabel")
 	carried_count.autowrap_mode = TextServer.AUTOWRAP_OFF
-	inventory_list = ItemCardList.new()
-	inventory_list.theme_type_variation = &"OpenCardList"
-	inventory_list.empty_text = "持ち込みの品はない"
-	inventory_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	kit.add_child(inventory_list)
+	carried = IconGrid.new()
+	carried.columns = CARRIED_COLUMNS
+	carried.read_only = true
+	carried.looked_at.connect(func(place: int):
+		if place >= 0:
+			_name_item(carried.entries[place].item)
+		else:
+			kit_note.text = "")
+	kit.add_child(carried)
+	kit_note = HubUI.label(kit, "", &"PlaqueNote")
+	kit_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	kit_note.clip_text = true
+	kit_note.autowrap_mode = TextServer.AUTOWRAP_OFF
+	kit_note.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	kit_note.custom_minimum_size.y = 28
 	HubUI.rule(kit)
 	review_button = HubUI.button(kit, "装備・持ち込みを見直す  ›", func(): equipment_requested.emit(), &"TextAction")
 	review_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
@@ -178,6 +198,40 @@ func _build_confirmation(parent: Control) -> void:
 	hero_stats.size_flags_stretch_ratio = 0.95
 	columns.add_child(hero_stats)
 	hero_stats.move_stats_to(trip, start_row.get_index(), true)
+
+
+# The five slots as a row of lit squares, each with its name under it.
+func _build_slots(kit: VBoxContainer) -> void:
+	var row := GridContainer.new()
+	row.columns = Equipment.SLOT_NAMES.size()
+	row.theme_type_variation = &"GearGrid"
+	kit.add_child(row)
+	for slot in Equipment.SLOT_NAMES.size():
+		var box := VBoxContainer.new()
+		box.theme_type_variation = &"CompactStack"
+		row.add_child(box)
+		var cell := ItemCell.new()
+		cell.theme_type_variation = &"SlotCell"
+		cell.custom_minimum_size = Vector2.ONE * SLOT_SIZE
+		cell.icon_size = SLOT_ICON
+		cell.symbol = ItemGlyph.slot_symbol(slot)
+		cell.draggable = false
+		cell.toggle_mode = false
+		cell.focus_mode = Control.FOCUS_NONE
+		cell.mouse_entered.connect(func():
+			if cell.item != null:
+				_name_item(cell.item))
+		cell.mouse_exited.connect(func(): kit_note.text = "")
+		box.add_child(cell)
+		var caption := HubUI.label(box, Equipment.SLOT_NAMES[slot], &"SectionLabel")
+		caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+		caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		slot_cells.append(cell)
+
+
+# One line: the name and the main effect of what the pointer rests on.
+func _name_item(item: ItemData) -> void:
+	kit_note.text = "%s　◆　%s" % [item.label(), ItemGlyph.main_effect(item)]
 
 
 func present_selection(available_stages: Array[StageData], progress: RunCarryover = null) -> void:
@@ -312,13 +366,18 @@ func present_confirmation(current: RunCarryover) -> void:
 	state = current
 	selection_page.hide()
 	confirmation_page.show()
-	equipment_rows.show_equipment(state.equipment)
+	for slot in slot_cells.size():
+		var worn := state.equipment.slots[slot]
+		slot_cells[slot].show_item(worn)
+		slot_cells[slot].tooltip_text = ItemTooltipList.description(worn) if worn != null else Equipment.SLOT_NAMES[slot]
 	hero_stats.show_stats(state.preparation_stats())
 	stage_banner.texture = selected_stage.diorama if selected_stage.diorama != null else selected_stage.illustration
 	banner_title.text = "%s　全%d階" % [selected_stage.display_name, selected_stage.floor_count]
-	inventory_list.clear()
-	for entry in state.inventory.entries:
-		inventory_list.add_card(entry.item, entry.count)
+	var rows: Array[Dictionary] = []
+	for index in state.inventory.entries.size():
+		rows.append({"index": index, "item": state.inventory.entries[index].item, "count": state.inventory.entries[index].count})
+	carried.show_rows(rows, "持ち込みの品はない")
+	kit_note.text = ""
 	carried_count.text = "%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries]
 	start_choice.clear()
 	for floor_number in [1, 11, 21, 31, 41]:
@@ -346,4 +405,6 @@ func play_entrance() -> void:
 			UIMotion.of(stage_nodes[index]).appear(UIMotion.STAGGER_TIME * index, UIMotion.ENTER_TIME)
 		UIMotion.of(_selection_detail).appear(UIMotion.STAGGER_TIME)
 	else:
-		inventory_list.play_intro()
+		for index in slot_cells.size():
+			UIMotion.of(slot_cells[index]).appear(UIMotion.ROW_STAGGER * index, UIMotion.ROW_TIME)
+		UIMotion.of(carried.scroll).appear(UIMotion.STAGGER_TIME)

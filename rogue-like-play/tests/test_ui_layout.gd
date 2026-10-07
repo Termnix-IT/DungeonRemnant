@@ -45,9 +45,9 @@ func run_tests() -> void:
 				var bounds: Rect2 = root.get_visible_rect() if control in [hub.sell_page, hub.equipment_page, hub.warehouse_page, hub.upgrade_page, hub.departure_page] else content.get_global_rect()
 				check(bounds.grow(1).encloses(control.get_global_rect()), "%s page fits Hub content" % page)
 		if page == "confirm":
-			var rows: Control = hub.departure_page.equipment_rows
-			check(rows.size.y >= rows.get_theme_constant(&"row_height") * 5 and rows.get_global_rect().end.y <= hub.departure_page.inventory_list.get_global_rect().position.y, "Confirmation equipment rows end before the carried goods")
-			check(not hub.departure_page.inventory_list.get_global_rect().intersects(hub.departure_page.review_button.get_global_rect()), "Carried goods leave the review action clear")
+			var slots: Array[ItemCell] = hub.departure_page.slot_cells
+			check(slots.all(func(cell: ItemCell): return cell.get_global_rect().end.y <= hub.departure_page.carried.get_global_rect().position.y) and slots[4].get_global_rect().end.x <= hub.departure_page.confirm_button.get_global_rect().position.x, "Confirmation slots end before the carried goods and the middle column")
+			check(not hub.departure_page.carried.get_global_rect().intersects(hub.departure_page.review_button.get_global_rect()), "Carried goods leave the review action clear")
 			check(root.get_visible_rect().encloses(hub.departure_page.confirm_button.get_global_rect()), "The sortie action stays on the screen")
 		if page == "equipment":
 			var worn: HubEquipment = hub.equipment_page

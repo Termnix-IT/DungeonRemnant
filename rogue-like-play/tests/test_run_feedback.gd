@@ -202,15 +202,15 @@ func check_confirmation_page() -> void:
 	hub.show_page("stages")
 	hub.show_page("confirm")
 	var page: HubDeparture = hub.departure_page
-	check(page.inventory_list.item_count == 0 and page.inventory_list.empty_text == "持ち込みの品はない" and page.carried_rule.tooltip_text.contains("半分を失う"), "An empty loadout reads as a note, not a disabled row")
-	check(page.equipment_rows.row_text(0) == main.state.equipment.slots[0].label(), "Confirmation lists equipment with glyph rows")
+	check(page.carried.cells.is_empty() and page.carried.empty_label.visible and page.carried.empty_label.text == "持ち込みの品はない" and page.carried_rule.tooltip_text.contains("半分を失う"), "An empty loadout reads as a note, not a disabled row")
+	check(page.slot_cells[0].item == main.state.equipment.slots[0] and page.slot_cells.size() == 5, "Confirmation shows the five slots as icons")
 	check(page.hero_stats.specs.rows.size() == 4 and page.hero_stats.specs.rows[0][1] == main.state.preparation_stats().hp, "Confirmation shows departure stats")
 	var stats_stack := page.hero_stats.specs.get_parent()
 	check(stats_stack.get_parent() == page.confirm_button.get_parent() and stats_stack.get_index() < page.confirm_button.get_index() and stats_stack.visible and not page.hero_stats.specs.changed_only, "All four stats stand in the middle column above the action, not over her")
 	check(page.stage_banner.texture == page.selected_stage.diorama, "Confirmation shows the destination's diorama")
 	main.state.inventory.add(ItemCatalog.POTION, 3)
 	hub.show_page("confirm")
-	check(page.inventory_list.item_count == 1 and page.carried_count.text == "1 / 40 枠", "Carried items list with capacity")
+	check(page.carried.cells.size() == 1 and page.carried_count.text == "1 / 40 枠", "Carried items show as icons with capacity")
 	check(page.start_only.visible and not page.start_choice.visible and page.start_only.text == "1F", "A single start floor reads as text, not a tab of one")
 	main.state.unlocked_entries[String(page.selected_stage.id)] = [11]
 	hub.show_page("confirm")
