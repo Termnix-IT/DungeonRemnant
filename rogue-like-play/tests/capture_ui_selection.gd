@@ -40,11 +40,10 @@ func capture() -> void:
 		hub.show_page("sell")
 		var shop: HubSell = hub.sell_page
 		shop.set_buying(true)
-		shop.item_list.grab_focus()
+		shop.grid.cells[0].grab_focus()
 		await settle()
-		down()
-		check(shop.item_list.get_selected_items() == PackedInt32Array([0]), "Native keyboard selection")
-		await selection_shot("shop_%d" % resolution.y, [shop.showcase, shop.details, shop.possession])
+		check(shop.chosen_place() == 0, "Keyboard focus chooses the icon")
+		await selection_shot("shop_%d" % resolution.y, [shop.showcase, shop.possession])
 		hub.show_page("equipment")
 		await settle()
 		var equipment: HubEquipment = hub.equipment_page

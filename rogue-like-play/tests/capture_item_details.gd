@@ -16,8 +16,8 @@ func capture() -> void:
 	var hub = main.get_node("Hub")
 	await settle()
 	await enter(hub, hub.sell_button)
-	await click(hub.sell_page.item_list, Vector2(35, 25))
-	check(shows_name(hub.sell_page.showcase, hub.sell_page.details, armor), "BBCode-like names remain literal")
+	await click(hub.sell_page.grid.cells[0])
+	check(hub.sell_page.showcase.title.text == armor.label(), "BBCode-like names remain literal")
 	# The counter shows one total, not a unit-price formula.
 	check(hub.sell_page.total_label.text == "+%d G" % (armor.sell_price * int(hub.sell_page.quantity.value)), "Price matches item data")
 	await shot("details_shop")

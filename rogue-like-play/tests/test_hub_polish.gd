@@ -133,10 +133,9 @@ func check_details(hub, main) -> void:
 	hub.show_page("sell")
 	var shop: HubSell = hub.sell_page
 	shop.set_buying(true)
-	shop.item_list.select(0)
-	shop.item_list.item_selected.emit(0)
+	shop.pick(0)
 	# Owned copies read once in the counter (and in the row), not again in the details.
-	check(shop.possession.text.contains("倉庫") and shop.possession.text.contains("→") and not shop.details.get_parsed_text().contains("手元に"), "The shop counter says where the copies go")
+	check(shop.possession.text.contains("倉庫") and shop.possession.text.contains("→"), "The shop counter says where the copies go")
 	hub.open_warehouse()
 	var warehouse: HubWarehouse = hub.warehouse_page
 	var spelled := false

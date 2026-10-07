@@ -87,7 +87,7 @@ func capture() -> void:
 	await key(KEY_ESCAPE)
 	check(hub.page == "home", "Esc returns home")
 	await enter(hub, hub.sell_button)
-	await click(hub.sell_page.item_list, Vector2(35, 25))
+	await click(hub.sell_page.grid.cells[0])
 	await shot("sale")
 	var gold_before: int = main.state.gold
 	await click(hub.sell_page.sell_button)

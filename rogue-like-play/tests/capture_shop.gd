@@ -16,17 +16,17 @@ func capture() -> void:
 	await settle()
 	await enter(hub, hub.sell_button)
 	await shot("shop_disabled")
-	await click(shop.item_list, Vector2(35, 25))
+	await click(shop.grid.cells[0])
 	# The quantity is a 〈 n 〉 selector: click its right arrow once.
 	await click(shop.quantity.plus)
 	await shot("shop_sell")
 	await click(shop.sell_button)
 	check(main.state.gold == 310 and shop.rows[0].count == 3, "Mouse quantity selector sells two grouped armor")
-	await click(shop.item_list, Vector2(35, 25))
+	await click(shop.grid.cells[0])
 	await click(shop.sell_all_button)
 	check(main.state.gold == 325 and main.state.storage.entries.size() == 1, "Mouse sells remainder of selected group")
 	await click(shop.buy_tab)
-	await click(shop.item_list, Vector2(35, 25))
+	await click(shop.grid.cells[0])
 	shop.quantity.value = 3
 	await shot("shop_buy")
 	check_shop_layout(shop)
@@ -35,8 +35,7 @@ func capture() -> void:
 	check(main.state.gold == 265 and main.state.storage.entries[0].count == 10, "Mouse purchase updates stack and Gold")
 	for index in shop.rows.size():
 		if shop.rows[index].item.id == ItemCatalog.floor_item(1).id:
-			shop.item_list.select(index)
-			shop.item_list.item_selected.emit(index)
+			shop.pick(index)
 	await create_timer(0.3).timeout
 	await shot("shop_compare")
 	# The travelling glyph lasts UIMotion.TRAVEL_TIME; capture it in flight.

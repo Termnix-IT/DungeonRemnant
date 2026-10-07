@@ -444,7 +444,7 @@ func present_action(kind: StringName, gold_delta: int, slots: Array[int]) -> voi
 	match kind:
 		&"buy", &"sell":
 			UIMotion.of(sell_page.total_label).pulse(1.025, UIMotion.GOLD_TIME)
-			UIMotion.of(sell_page.item_list).reveal()
+			UIMotion.of(sell_page.grid.scroll).reveal()
 			sell_page.present_trade(sell_page.possession if kind == &"buy" else gold_label)
 		&"equip":
 			equipment_page.present_equip(slots)

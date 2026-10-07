@@ -35,13 +35,11 @@ func capture() -> void:
 		var shop: HubSell = hub.sell_page
 		for buying in [true, false]:
 			shop.set_buying(buying)
-			shop.item_list.select(0)
-			shop.item_list.item_selected.emit(0)
+			shop.pick(0)
 			await shot("art_%s_%d" % ["buy" if buying else "sell", resolution.y])
-			for control: Control in [shop.item_list, shop.showcase, shop.details, shop.possession, shop.quantity, shop.total_label, shop.sell_button, shop.sell_all_button]:
+			for control: Control in [shop.grid, shop.showcase, shop.possession, shop.quantity, shop.total_label, shop.sell_button, shop.sell_all_button]:
 				if control.is_visible_in_tree():
 					fits(control, "Shop")
-			check(shop.details.size.y >= 48, "Shop keeps readable description height")
 		hub.open_warehouse()
 		var warehouse: HubWarehouse = hub.warehouse_page
 		warehouse.storage.cells[0].pressed.emit()

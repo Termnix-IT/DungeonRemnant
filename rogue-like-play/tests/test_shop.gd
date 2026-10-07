@@ -30,16 +30,14 @@ func run_tests() -> void:
 	enter(hub, hub.sell_button)
 	check(hub.title_label.text == "ショップ", "Home opens shop")
 	check(shop.rows.size() == 2 and shop.rows[0].count == 5, "Five separate armor entries become one shop row")
-	check(shop.item_list.get_item_text(0).contains("×5"), "Grouped row shows aggregate quantity")
-	shop.item_list.select(0)
-	shop.item_list.item_selected.emit(0)
+	check(shop.grid.cells[0].count == 5, "Grouped row shows aggregate quantity in the icon's corner")
+	shop.pick(0)
 	check(shop.quantity.max_value == 5, "Quantity upper bound uses whole item group")
 	shop.quantity.value = 3
 	shop.sell_button.pressed.emit()
 	check(main.state.gold == 15 and main.state.storage.entries.size() == 3, "Partial grouped sale removes exactly three equipment entries")
 	check(shop.rows[0].count == 2, "Grouped count refreshes after partial sale")
-	shop.item_list.select(0)
-	shop.item_list.item_selected.emit(0)
+	shop.pick(0)
 	shop.sell_all_button.pressed.emit()
 	check(main.state.gold == 25 and main.state.storage.entries.size() == 1 and main.state.storage.entries[0].count == 7, "Sell all only sells selected item type")
 	check(main.state.inventory.entries.size() == 2 and main.state.equipment.slots[2] == ARMOR, "Other source and equipped armor are preserved")
@@ -47,15 +45,13 @@ func run_tests() -> void:
 	shop.source_choice.select(1)
 	shop.source_choice.item_selected.emit(1)
 	check(shop.rows.size() == 1 and shop.rows[0].count == 2, "Carried equipment also groups")
-	shop.item_list.select(0)
-	shop.item_list.item_selected.emit(0)
+	shop.pick(0)
 	shop.sell_all_button.pressed.emit()
 	check(main.state.inventory.entries.is_empty() and main.state.gold == 35, "Sell all works on carried source")
 	main.state.gold = 100
 	shop.buy_tab.pressed.emit()
 	check(shop.buying and not shop.sell_all_button.visible and shop.rows.size() == ItemCatalog.shop_items().size(), "Purchase tab exposes catalog and hides sell-all")
-	shop.item_list.select(0)
-	shop.item_list.item_selected.emit(0)
+	shop.pick(0)
 	var selector_size := shop.quantity.get_combined_minimum_size()
 	shop.quantity.plus.pressed.emit()
 	check(shop.quantity.value == 2 and not shop.quantity.minus.disabled, "Plus steps the quantity")
@@ -67,13 +63,12 @@ func run_tests() -> void:
 	shop.quantity.value = 3
 	shop.sell_button.pressed.emit()
 	check(main.state.gold == 40 and main.state.inventory.entries[0].count == 3, "Purchase charges price times quantity into selected destination")
-	check(shop.item_list.get_selected_items() == PackedInt32Array([0]) and shop.showcase.visual.item == shop.rows[0].item, "Purchase keeps its item selected for another purchase")
+	check(shop.chosen_place() == 0 and shop.showcase.visual.item == shop.rows[0].item, "Purchase keeps its item selected for another purchase")
 	await create_timer(UIMotion.TRAVEL_TIME + 0.15).timeout
 	check(shop.get_children().filter(func(child: Node): return child is Control and child.top_level).is_empty(), "Travelling glyph frees itself after arriving")
 	for index in shop.rows.size():
 		if shop.rows[index].item.id == ARMOR.id:
-			shop.item_list.select(index)
-			shop.item_list.item_selected.emit(index)
+			shop.pick(index)
 	# She already wears this armor, so the slot is named and nothing changes.
 	check(shop.swap_label.visible and shop.swap_label.text == "防具と入れ替え（今：革の防具）" and shop.hero_specs.rows.all(func(row: Array): return row[1] == row[2]), "Equipment in the shop names its slot and what she wears there")
 	# The change stands in the middle, above the counter; she stands alone.
@@ -81,8 +76,7 @@ func run_tests() -> void:
 	check(stack.get_parent() == shop._info and stack.get_index() < shop._counter_rule.get_index(), "What the goods would change sits right above the counter, not in her corner")
 	check(stack.visible and not shop.hero_specs.visible and shop.hero_stats._unchanged.visible, "Goods that change nothing say so in one line")
 	shop.set_buying(false)
-	shop.item_list.select(0)
-	shop.item_list.item_selected.emit(0)
+	shop.pick(0)
 	check(not shop.swap_label.visible and shop.hero_specs.rows.all(func(row: Array): return row[1] == row[2]), "Selling shows her stats as they are")
 	check(not stack.visible, "Selling compares nothing, so the middle shows no stats")
 	# Gear has no fixed ceiling, so her stats carry no bar to misread.

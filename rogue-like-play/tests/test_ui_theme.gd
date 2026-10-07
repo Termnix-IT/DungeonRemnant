@@ -45,10 +45,9 @@ func run_tests() -> void:
 	for frame in 3:
 		await process_frame
 	check(shop.sell_button.disabled, "Transaction is disabled until selection")
-	shop.item_list.select(0)
-	shop.item_list.item_selected.emit(0)
+	shop.pick(0)
 	check(not shop.sell_button.disabled, "Valid purchase enables transaction")
-	for control: Control in [shop.item_list, shop.details, shop.quantity, shop.total_label, shop.sell_button, shop.source_choice]:
+	for control: Control in [shop.grid, shop.quantity, shop.total_label, shop.sell_button, shop.source_choice]:
 		check(shop.get_global_rect().grow(1).encloses(control.get_global_rect()), "%s fits shop" % control.get_class())
 	check(not shop.total_label.get_global_rect().intersects(shop.sell_button.get_global_rect()), "Quote leaves action visible")
 	inspect_styles(hub.get_node("Content"))

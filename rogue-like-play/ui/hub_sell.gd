@@ -1,22 +1,27 @@
 class_name HubSell
 extends Control
 
-# The shop, laid out so the eye runs left to right: choose the goods (a list
-# filtered by category tabs, on a slab like the lobby menu), learn them (name,
-# a short note, the counter and the one trade action, on the hall with only a
-# shade behind), then see what they do to her (the heroine from the knees up,
-# her whole stats before and after over her). No framed box parts the
-# screen, and each number shows once or twice rather than four times.
+# The shop, laid out so the eye runs left to right: choose the goods (icons
+# alone in a grid, filtered by category tabs, on a slab like the lobby menu;
+# the full text is each icon's tooltip), learn them (the goods large, their
+# name and main effect, what they would change in her, the counter and the one
+# trade action, on a slab melting into the hall). The merchant's counter on
+# the right is the painting's own. No framed box parts the screen, and each
+# number shows once or twice rather than four times.
 # Buying and selling switch at the header's title place (mode_tabs).
 
 signal sell_requested(from_storage: bool, index: int, amount: int)
 signal buy_requested(to_storage: bool, item_id: StringName, amount: int)
 signal mode_changed
 
-# The goods share the middle with what they would change in her, so they
-# stand a little under the warehouse's 192px: 172px is the least that still
-# draws the 48px art at three times (ItemVisual fills 84% in 48px steps).
+# The goods share the middle with what they would change in her: 172px is the
+# least that still draws the 48px art at three times (ItemVisual fills 84% in
+# 48px steps).
 const SHOWCASE_SIZE := 172.0
+# The goods' icons are shown at the art's own size.
+const GRID_COLUMNS := 4
+const CELL_SIZE := 104.0
+const CELL_ICON := 96.0
 const CATEGORIES: Array[String] = ["すべて", "武器", "防具", "装飾", "消耗品", "魔法"]
 const CATEGORY_KINDS := [-1, ItemData.Kind.WEAPON, ItemData.Kind.ARMOR, ItemData.Kind.ACCESSORY, ItemData.Kind.CONSUMABLE, ItemData.Kind.SCROLL]
 
@@ -27,10 +32,9 @@ var sell_tab: Button
 var category_tabs: CategoryTabs
 var source_choice: SegmentedChoice
 var source_label: Label
-var item_list: ItemCardList
+var grid: IconGrid
 var sell_rule: HintMark
 var showcase: ItemShowcase
-var details: ItemDetails
 var swap_label: Label
 var quantity: QuantityStepper
 var quantity_label: Label
@@ -42,6 +46,7 @@ var hero_specs: StatBars
 var heading: Label
 var buying := false
 # Inventory keeps individual equipment entries; the shop groups only its view.
+# The rows shown, in the grid's order: {item, count, index}.
 var rows: Array[Dictionary] = []
 # The item of the last requested trade, for the success moment after saving.
 var traded_item: ItemData
@@ -114,11 +119,19 @@ func _build_catalog(catalog: VBoxContainer) -> void:
 	source_choice.add_item("倉庫")
 	source_choice.add_item("持ち込み")
 	source_choice.item_selected.connect(func(_index: int): _show_stock())
-	item_list = ItemCardList.new()
-	item_list.theme_type_variation = &"OpenCardList"
-	item_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	catalog.add_child(item_list)
-	item_list.item_selected.connect(_select)
+	grid = IconGrid.new()
+	grid.columns = GRID_COLUMNS
+	grid.cell_size = CELL_SIZE
+	grid.icon_size = CELL_ICON
+	# Looking at an icon with the focus previews it, as arrowing down the old
+	# list did; Enter or a double click moves on to the trade.
+	grid.choose_on_focus = true
+	catalog.add_child(grid)
+	grid.chosen.connect(_select)
+	grid.activated.connect(func(place: int):
+		_select(place)
+		if sell_button.is_visible_in_tree() and not sell_button.disabled:
+			sell_button.grab_focus())
 
 
 func _build_info(info: VBoxContainer) -> void:
@@ -127,19 +140,14 @@ func _build_info(info: VBoxContainer) -> void:
 	heading.visible = false
 	# The goods on display: large, on a glow, the name under them.
 	showcase = ItemShowcase.new()
-	showcase.show_effect = false
 	showcase.stack(SHOWCASE_SIZE)
 	showcase.visual.framed = false
 	showcase.visual.idle = true
 	info.add_child(showcase)
-	details = ItemDetails.new()
-	details.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info.add_child(details)
 	var gap := Control.new()
 	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	info.add_child(gap)
-	details.fit_lines(gap, 48)
 	# The counter: where the goods go, how many, one large price and one
 	# quiet line of what changes, right above the trade, parted by a rule.
 	_counter_rule = HubUI.rule(info)
@@ -169,7 +177,6 @@ func _build_info(info: VBoxContainer) -> void:
 	sell_all_button = HubUI.button(info, "全部売却", _sell_all, &"SecondaryButton")
 	sell_all_button.tooltip_text = "選択品を全部売却"
 	sell_button = HubUI.primary_action(info, "売却する", _transact)
-	HubUI.accept_to_action(item_list, sell_button)
 
 
 func set_buying(value: bool) -> void:
@@ -184,29 +191,28 @@ func set_buying(value: bool) -> void:
 # the list's rows arrive anew.
 func _show_stock() -> void:
 	refresh(state)
-	item_list.play_intro()
+	UIMotion.of(grid.scroll).appear(0.0, UIMotion.ROW_TIME)
 
 
 # Opening the page: the list's rows arrive top first, the counter a beat
 # later.
 func play_entrance() -> void:
-	item_list.play_intro()
 	UIMotion.of(_catalog).appear(0.0, UIMotion.WINDOW_TIME)
 	UIMotion.of(_info).appear(UIMotion.STAGGER_TIME)
 
 
 func refresh(current: RunCarryover) -> void:
 	state = current
-	for target: Control in [item_list, showcase, details, possession]:
+	for target: Control in [grid.scroll, showcase, possession]:
 		UIMotion.of(target).reset()
 	_place_choice()
-	rows.clear()
-	item_list.clear()
+	var shown: Array[Dictionary] = []
 	var kind: int = CATEGORY_KINDS[category_tabs.selected]
 	if buying:
 		for item in ItemCatalog.shop_items():
 			if kind < 0 or item.kind == kind:
-				rows.append({"item": item, "count": _owned(item.id), "index": -1})
+				# Owned copies read in the counter; the icon's corner stays bare.
+				shown.append({"item": item, "count": _owned(item.id), "index": shown.size(), "badge": 1})
 	else:
 		var groups := {}
 		for index in _source().entries.size():
@@ -214,14 +220,16 @@ func refresh(current: RunCarryover) -> void:
 			if entry.item.socketed_scroll != null or (kind >= 0 and entry.item.kind != kind):
 				continue
 			if groups.has(entry.item.id):
-				rows[groups[entry.item.id]].count += entry.count
+				shown[groups[entry.item.id]].count += entry.count
 			else:
-				groups[entry.item.id] = rows.size()
-				rows.append({"item": entry.item, "count": entry.count, "index": index})
-	for row in rows:
+				groups[entry.item.id] = shown.size()
+				shown.append({"item": entry.item, "count": entry.count, "index": index})
+	for row in shown:
 		var item: ItemData = row.item
-		item_list.add_card(item, row.count, item.buy_price if buying else item.sell_price)
-	item_list.empty_text = ("この分類の品は扱っていない" if buying else "売れる品はここにない")
+		row.tooltip = "%s\n\n%s %s" % [ItemTooltipList.description(item), "購入" if buying else "売却", UIFormat.gold(item.buy_price if buying else item.sell_price)]
+	grid.clear_choice()
+	grid.show_rows(shown, "この分類の品は扱っていない" if buying else "売れる品はここにない")
+	rows = grid.entries
 	sell_all_button.visible = not buying
 	quantity.value = 1
 	showcase.present(null)
@@ -258,6 +266,17 @@ func _purchase_limit(item: ItemData) -> int:
 	return mini(capacity, int(state.gold / item.buy_price))
 
 
+# The place among the icons shown of the chosen goods, or -1.
+func chosen_place() -> int:
+	return grid.place_of(grid.selected)
+
+
+# Chooses the goods at a place, as a click on the icon does.
+func pick(place: int) -> void:
+	grid.choose(place)
+	_select(place)
+
+
 func _select(index: int, animate: bool = true) -> void:
 	var row := rows[index]
 	quantity.max_value = maxi(1, _purchase_limit(row.item)) if buying else row.count
@@ -266,16 +285,13 @@ func _select(index: int, animate: bool = true) -> void:
 	_update_quote()
 	_show_hero_specs(row.item)
 	if animate:
-		UIMotion.reveal_selection([showcase, details, possession])
+		UIMotion.reveal_selection([showcase, possession])
 
 
 func _update_quote() -> void:
-	var selected := item_list.get_selected_items()
+	var place := chosen_place()
 	quantity_label.text = "購入数" if buying else "売却数"
-	if selected.is_empty():
-		# Assigning text equal to the last assignment would keep appended
-		# lines; reset clears whatever the previous goods wrote.
-		details.reset()
+	if place < 0:
 		# The balance is in the header; nothing chosen, nothing changes.
 		possession.text = ""
 		total_label.text = "—"
@@ -284,30 +300,28 @@ func _update_quote() -> void:
 		sell_all_button.disabled = true
 		quantity.editable = false
 		return
-	var row := rows[selected[0]]
+	var row := rows[place]
 	var item: ItemData = row.item
 	var price := item.buy_price if buying else item.sell_price
 	var amount := int(quantity.value)
 	var total := price * amount
 	quantity.editable = true
-	details.reset()
-	details.item_text(item, showcase, &"NoteLabel")
 	quantity_label.text = "%s　最大 %d" % ["数量" if buying else "売る数", int(quantity.max_value)]
-	var place := source_choice.get_item_text(source_choice.selected)
+	var where := source_choice.get_item_text(source_choice.selected)
 	var after: int = row.count + amount if buying else row.count - amount
 	if buying:
 		var limit := _purchase_limit(item)
 		total_label.text = UIFormat.gold(total)
-		possession.text = "%s %d → %d個　·　購入後 %s" % [place, row.count, after, UIFormat.gold(state.gold - total)]
+		possession.text = "%s %d → %d個　·　購入後 %s" % [where, row.count, after, UIFormat.gold(state.gold - total)]
 		sell_button.text = "%d個を購入する" % amount
 		sell_button.disabled = limit < amount
 		quantity.editable = limit > 0
 		if limit == 0:
 			total_label.text = "買えません"
-			possession.text = "所持金か、%sの空きが足りません" % place
+			possession.text = "所持金か、%sの空きが足りません" % where
 	else:
 		total_label.text = "+%s" % UIFormat.gold(total)
-		possession.text = "%s %d → %d個　·　売却後 %s" % [place, row.count, after, UIFormat.gold(state.gold + total)]
+		possession.text = "%s %d → %d個　·　売却後 %s" % [where, row.count, after, UIFormat.gold(state.gold + total)]
 		sell_button.text = "%d個を売却する" % amount
 		sell_button.disabled = total <= 0 or state.gold + total > SaveCodec.MAX_GOLD
 		var all_value: int = price * row.count
@@ -374,7 +388,7 @@ func present_trade(target: Control) -> void:
 	if buying:
 		for index in rows.size():
 			if rows[index].item.id == traded_item.id:
-				item_list.select(index)
+				grid.choose(index)
 				_select(index, false)
 				break
 	UIMotion.fly_glyph(self, traded_item, showcase.visual, target).finished.connect(func():
@@ -386,10 +400,10 @@ func _transact() -> void:
 	# Commit typed SpinBox text before reading its value.
 	if quantity.get_line_edit().has_focus():
 		quantity.apply()
-	var selected := item_list.get_selected_items()
-	if selected.is_empty():
+	var place := chosen_place()
+	if place < 0:
 		return
-	var row := rows[selected[0]]
+	var row := rows[place]
 	traded_item = row.item
 	if buying:
 		buy_requested.emit(source_choice.selected == 0, row.item.id, int(quantity.value))
@@ -398,8 +412,8 @@ func _transact() -> void:
 
 
 func _sell_all() -> void:
-	var selected := item_list.get_selected_items()
-	if not buying and not selected.is_empty():
-		var row := rows[selected[0]]
+	var place := chosen_place()
+	if not buying and place >= 0:
+		var row := rows[place]
 		traded_item = row.item
 		sell_requested.emit(source_choice.selected == 0, row.index, row.count)

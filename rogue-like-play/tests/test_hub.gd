@@ -268,15 +268,14 @@ func run_tests() -> void:
 	# The shop: no framed panels, one stat display, buying and selling at the title's place.
 	var shop: HubSell = hub.sell_page
 	check(shop.mode_tabs.visible and not hub.title_label.visible, "The shop switches buying and selling at the title's place")
-	check(shop.find_children("*", "PanelContainer", true, false).all(func(box: PanelContainer): return box.theme_type_variation in [&"SlabSolid", &"SlabColumn", &"ShopHeroBand"]), "The shop has no framed panels")
+	check(shop.find_children("*", "PanelContainer", true, false).all(func(box: PanelContainer): return box.get_parent() is ScrollContainer or box.theme_type_variation in [&"SlabSolid", &"SlabColumn", &"ShopHeroBand"]), "The shop has no framed panels")
 	shop.set_buying(true)
 	shop.category_tabs.select(2, true)
 	check(shop.rows.all(func(row: Dictionary): return row.item.kind == ItemData.Kind.ARMOR), "The armor tab lists only armor")
-	shop.item_list.select(0)
-	shop.item_list.item_selected.emit(0)
+	shop.pick(0)
 	var raised: Array = shop.hero_specs.rows.filter(func(row: Array): return row[2] > row[1])
 	check(not raised.is_empty() and shop.swap_label.text.begins_with("防具と入れ替え"), "New armor shows her defense rising")
-	check(not shop.showcase.effect.visible, "The name is not followed by its effect again")
+	check(shop.showcase.effect.visible and shop.showcase.effect.text == ItemGlyph.main_effect(shop.rows[0].item), "The name is followed by its main effect, the rest being the icon's tooltip")
 	var r_key := InputEventKey.new()
 	r_key.keycode = KEY_R
 	r_key.pressed = true

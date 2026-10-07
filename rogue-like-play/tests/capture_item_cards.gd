@@ -14,64 +14,44 @@ func capture() -> void:
 	await settle()
 	await enter(hub, hub.sell_button)
 	await shot("cards_empty")
-	check(shop.item_list.item_count == 0 and not shop.item_list.empty_text.is_empty(), "An empty list says why instead of a row")
+	check(shop.grid.cells.is_empty() and shop.grid.empty_label.visible and not shop.grid.empty_label.text.is_empty(), "An empty shop says why instead of an icon")
 	await click(shop.buy_tab)
-	shop.item_list.grab_focus()
+	shop.grid.cells[0].grab_focus()
+	await key(KEY_RIGHT)
+	check(shop.chosen_place() == 1 and shop.showcase.title.text == shop.rows[1].item.label(), "Native Right moves the focus to the next icon and shows it")
 	await key(KEY_DOWN)
-	check(shop.item_list.get_selected_items() == PackedInt32Array([0]), "Native Down selects first card")
-	await key(KEY_DOWN)
-	check(shop.item_list.get_selected_items() == PackedInt32Array([1]), "Native arrow selects next card")
-	check(shows_name(shop.showcase, shop.details, shop.rows[1].item), "Keyboard selection updates correct details")
+	check(shop.chosen_place() == GRID_ROW + 1, "Native Down moves a row down")
 	await shot("cards_top")
-	for page in ceili(shop.rows.size() / 4.0):
-		await key(KEY_PAGEDOWN)
 	var last := shop.rows.size() - 1
-	check(shop.item_list.get_selected_items() == PackedInt32Array([last]) and shop.item_list.get_v_scroll_bar().value > 0, "Native PageDown scrolls to last card")
-	await shot("cards_magic")
+	shop.grid.cells[last].grab_focus()
+	await settle()
+	check(shop.chosen_place() == last and shop.grid.scroll.get_v_scroll_bar().value >= 0, "The last icon can be reached")
+	await shot("cards_last")
 	var target := last - 1
-	var rect := shop.item_list.card_rect(target)
-	await click(shop.item_list, rect.position + Vector2(30, rect.size.y / 2))
-	check(shop.item_list.get_selected_items() == PackedInt32Array([target]), "Scrolled glyph hit selects correct item")
-	check(shows_name(shop.showcase, shop.details, shop.rows[target].item), "Scrolled item metadata matches details")
-	var index := 12
-	shop.item_list.select(index)
-	shop.item_list.item_selected.emit(index)
-	shop.item_list.ensure_current_is_visible()
-	await shot("cards_talismans")
+	await click(shop.grid.cells[target])
+	check(shop.chosen_place() == target and shop.showcase.title.text == shop.rows[target].item.label(), "A click on an icon chooses it")
 	main.state.storage.add(ItemCatalog.POTION, 999)
 	var long_item := preload("res://data/items/leather_armor.tres").duplicate() as ItemData
 	long_item.display_name = "Z [b]長いアイテム名を省略表示するための防具・価格と重ならないことを確認[/b]"
 	main.state.storage.add(long_item, 3)
 	hub.refresh(main.state)
 	await click(shop.sell_tab)
-	shop.item_list.grab_focus()
-	var search := InputEventKey.new()
-	search.keycode = KEY_Z
-	search.unicode = 90
-	search.pressed = true
-	Input.parse_input_event(search)
-	var release := search.duplicate() as InputEventKey
-	release.pressed = false
-	Input.parse_input_event(release)
-	await settle()
-	check(shop.item_list.get_selected_items() == PackedInt32Array([1]), "Native incremental search still uses full card name")
-	check(shows_name(shop.showcase, shop.details, long_item), "Full name remains available in the detail area as literal text")
-	check(shop.item_list.get_item_metadata(0).count == 999 and shop.item_list.get_item_metadata(1).count == 3, "Card quantity reflects grouped inventory")
+	var long_at := shop.rows.find_custom(func(row: Dictionary): return row.item == long_item)
+	await click(shop.grid.cells[long_at])
+	check(shop.showcase.title.text == long_item.label(), "The full name stays available as literal text")
+	check(shop.rows[0].count == 999 and shop.rows[long_at].count == 3, "Icon quantity reflects grouped inventory")
 	await shot("cards_long_name")
 	root.size = Vector2i(1280, 720)
 	await shot("cards_720")
 	var before: int = main.state.gold
 	await click(shop.sell_button)
-	check(main.state.gold == before + long_item.sell_price and shop.rows[1].count == 2, "Card selection sells the intended group")
-	check(shop.item_list.get_selected_items().is_empty(), "Refresh clears stale selection after sale")
+	check(main.state.gold == before + long_item.sell_price and shop.rows[long_at].count == 2, "Icon selection sells the intended group")
+	check(shop.chosen_place() == -1, "Refresh clears stale selection after sale")
 	await key(KEY_ESCAPE)
 	check(hub.page == "home", "Esc still returns home")
 	main.free()
-	print("Item card render/input checks: ", "passed" if failures == 0 else "FAILED")
+	print("Item icon render/input checks: ", "passed" if failures == 0 else "FAILED")
 	quit(0 if failures == 0 else 1)
 
 
-# The full name must be readable in the detail area: the showcase title wraps
-# without a limit, and details name the item when there is no showcase.
-func shows_name(showcase: ItemShowcase, details: ItemDetails, item: ItemData) -> bool:
-	return showcase.title.text == item.label() or details.get_parsed_text().contains(item.label())
+const GRID_ROW := HubSell.GRID_COLUMNS

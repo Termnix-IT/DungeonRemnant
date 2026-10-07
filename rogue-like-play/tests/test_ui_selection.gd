@@ -41,11 +41,11 @@ func check_enter_to_action(hub, main) -> void:
 	hub.show_page("sell")
 	var shop: HubSell = hub.sell_page
 	shop.set_buying(true)
-	shop.item_list.grab_focus()
-	select(shop.item_list, 0)
+	shop.grid.cells[0].grab_focus()
+	check(shop.chosen_place() == 0, "Reaching an icon with the focus chooses it")
 	var gold: int = main.state.gold
 	await press_enter()
-	check(shop.sell_button.has_focus() and main.state.gold == gold, "Enter on a shop row goes to the trade without trading")
+	check(shop.sell_button.has_focus() and main.state.gold == gold, "Enter on a shop icon goes to the trade without trading")
 	hub.show_page("equipment")
 	var equipment: HubEquipment = hub.equipment_page
 	var armor_at := equipment.candidates.find_custom(func(candidate: Dictionary): return candidate.item.kind == ItemData.Kind.ARMOR)
@@ -86,22 +86,20 @@ func run_tests() -> void:
 	var shop: HubSell = hub.sell_page
 	shop.set_buying(true)
 	await create_timer(0.3).timeout
-	select(shop.item_list, 0)
-	check(shop.item_list.selection_strength == 0.0, "Native selection starts accent")
-	check_alpha([shop.showcase, shop.details, shop.possession], 0.65, "Shop details start together")
-	check(shop.showcase.visual.item == shop.rows[0].item and shows_name(shop.showcase, shop.details, shop.rows[0].item), "Shop content updates before fade")
-	var old_tween := UIMotion.of(shop.details).alpha_tween
+	shop.pick(0)
+	check_alpha([shop.showcase, shop.possession], 0.65, "Shop details start together")
+	check(shop.showcase.visual.item == shop.rows[0].item and shop.showcase.title.text == shop.rows[0].item.label(), "Shop content updates before fade")
+	var old_tween := UIMotion.of(shop.possession).alpha_tween
 	for index in 20:
-		select(shop.item_list, index % 2)
+		shop.pick(index % 2)
 	check(not old_tween.is_valid(), "Rapid selection cancels old fade")
 	check(shop.showcase.visual.item == shop.rows[1].item and not shop.sell_button.disabled, "Final selection is immediately usable")
 	await create_timer(0.2).timeout
-	check_alpha([shop.showcase, shop.details, shop.possession], 1.0, "Shop fades settle")
-	check(shop.item_list.selection_strength == 1.0, "Accent settles")
-	select(shop.item_list, 0)
+	check_alpha([shop.showcase, shop.possession], 1.0, "Shop fades settle")
+	shop.pick(0)
 	shop.refresh(main.state)
-	check_alpha([shop.showcase, shop.details, shop.possession], 1.0, "Ordinary refresh resets without replay")
-	check(shop.item_list.get_selected_items().is_empty() and shop.showcase.visual.item == null, "Shop refresh clears stale selected content")
+	check_alpha([shop.showcase, shop.possession], 1.0, "Ordinary refresh resets without replay")
+	check(shop.chosen_place() == -1 and shop.showcase.visual.item == null, "Shop refresh clears stale selected content")
 	hub.show_page("equipment")
 	var equipment: HubEquipment = hub.equipment_page
 	equipment.select_slot(Equipment.Slot.ARMOR)

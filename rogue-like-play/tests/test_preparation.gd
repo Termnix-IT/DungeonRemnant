@@ -108,8 +108,7 @@ func run_tests() -> void:
 	main.state.storage.add(ItemCatalog.POTION, 70)
 	check(main.transfer_storage(true, 1) and main.state.inventory.entries[0].count == 50 and main.state.storage.entries[1].count == 24, "Taking supplies respects stack limit and preserves leftovers")
 	hub.show_page("sell")
-	hub.sell_page.item_list.select(1)
-	hub.sell_page.item_list.item_selected.emit(1)
+	hub.sell_page.pick(1)
 	hub.sell_page.quantity.value = 3
 	check(hub.sell_page.total_label.text.contains(str(ItemCatalog.POTION.sell_price * 3)), "Sale quote uses selected quantity")
 	hub.sell_page.sell_button.pressed.emit()
