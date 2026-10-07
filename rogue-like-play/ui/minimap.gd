@@ -63,9 +63,12 @@ func _draw() -> void:
 	if explored.is_empty() or grid_size == Vector2i.ZERO:
 		return
 	var padding := 6.0
+	# Whole-pixel cells on a whole-pixel origin tile without seams; a
+	# fractional size let the background show through as thin dark lines
+	# wherever a cell edge fell between pixels.
 	var cell_size := minf((size.x - padding * 2.0) / view.size.x, (size.y - padding * 2.0) / view.size.y)
-	cell_size = clampf(cell_size, 1.0, MAX_CELL_SIZE)
-	var origin := size * 0.5 - (Vector2(view.position) + Vector2(view.size) * 0.5) * cell_size
+	cell_size = clampf(floorf(cell_size), 1.0, MAX_CELL_SIZE)
+	var origin := (size * 0.5 - (Vector2(view.position) + Vector2(view.size) * 0.5) * cell_size).round()
 	for value: Variant in explored:
 		var cell := value as Vector2i
 		var seen_now := visible_cells.has(cell)
@@ -92,7 +95,7 @@ func _draw() -> void:
 
 
 func _draw_cell(cell: Vector2i, origin: Vector2, cell_size: float, color: Color) -> void:
-	var rect := Rect2(origin + Vector2(cell) * cell_size, Vector2.ONE * maxf(cell_size - 0.35, 1.0))
+	var rect := Rect2(origin + Vector2(cell) * cell_size, Vector2.ONE * cell_size)
 	draw_rect(rect, color)
 
 
