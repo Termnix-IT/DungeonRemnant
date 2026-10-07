@@ -12,6 +12,14 @@ const FOREST_TREES := preload("res://art/tiles/forest_trees.png")
 # the floor and actors; remembered but unseen trees go darker still.
 const TREE_TINT := Color(0.74, 0.77, 0.74)
 const REMEMBERED_TREE_TINT := Color(0.34, 0.36, 0.36)
+# Boss floors draw their passages over the floor instead of the stairs tile:
+# the guardian's door in the antechamber, the stairs on the throne once the
+# boss falls, and the door back to the base at the hall's entrance. They are
+# built by tools/build_passage_art.py at 2x for nearest sampling.
+const GUARDIAN_DOOR := preload("res://art/tiles/guardian_door.png")
+const DESCENT_STAIRS := preload("res://art/tiles/descent_stairs.png")
+const RETURN_DOOR := preload("res://art/tiles/return_door.png")
+const REMEMBERED_PASSAGE_TINT := Color(0.45, 0.45, 0.5)
 const TERRAIN_THEME_NAMES: Array[String] = ["Slate Ruins", "Moss Caverns", "Ember Depths", "Obsidian Sanctum"]
 const FLOOR_TILES: Array[int] = [0, 3, 4]
 const STAIRS_TILE := 1
@@ -23,6 +31,7 @@ var start_cell := Vector2i.ZERO
 var stairs_cell := Vector2i(-1, -1)
 var enemy_cells: Array[Vector2i] = []
 var layout_name := ""
+var map_kind := DungeonGenerator.Kind.EXPLORATION
 var terrain_theme_index := 0
 var terrain_theme_name := ""
 var has_stairs := true
@@ -33,6 +42,7 @@ var escape_cell := Vector2i(-1, -1)
 var fog := FogOfWar.new()
 var ground_items: Dictionary = {}
 var decorations: Node2D
+var passages: Node2D
 var ambient_details := preload("res://world/dungeon/ambient_details.gd").new()
 var lights := preload("res://world/dungeon/dungeon_lights.gd").new()
 var mist := preload("res://world/dungeon/unexplored_mist.gd").new()
@@ -48,6 +58,11 @@ func _ready() -> void:
 	add_child(decorations)
 	move_child(decorations, 2)
 	decorations.draw.connect(_draw_decorations)
+	passages = Node2D.new()
+	passages.name = "Passages"
+	passages.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	decorations.add_child(passages)
+	passages.draw.connect(_draw_passages)
 	# Added last so the fixed layer indices above stay as they were; the mist
 	# then moves under every terrain layer, so known tiles cover it.
 	mist.name = "Mist"
@@ -60,6 +75,7 @@ func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenera
 	lights.refresh(null, {}, Vector2i.ZERO, false, false, 0)
 	forest = settings.forest
 	escape_cell = Vector2i(-1, -1)
+	map_kind = kind
 	var generated := DungeonGenerator.generate(settings, floor_number, rng, final_floor, kind)
 	grid = generated.grid
 	start_cell = generated.start
@@ -141,6 +157,7 @@ func update_visibility(origin: Vector2i, radius: int) -> void:
 	$Items.visible_cells = fog.visible
 	$Items.queue_redraw()
 	decorations.queue_redraw()
+	passages.queue_redraw()
 	ambient_details.refresh(grid, fog.visible, stairs_cell, has_stairs, escape_cell, forest, terrain_theme_index)
 	lights.refresh(grid, fog.visible, stairs_cell, has_stairs, forest, terrain_theme_index)
 
@@ -180,7 +197,7 @@ func _terrain_theme_index(floor_number: int) -> int:
 
 
 func _terrain_tile(cell: Vector2i) -> int:
-	if has_stairs and cell == stairs_cell:
+	if has_stairs and cell == stairs_cell and map_kind == DungeonGenerator.Kind.EXPLORATION:
 		return STAIRS_TILE
 	if grid.pillars.has(cell):
 		return PILLAR_TILE
@@ -250,10 +267,17 @@ func _draw_decorations() -> void:
 			decorations.draw_line(from, from + Vector2(side).orthogonal() * TILE_SIZE, seam, 2.0)
 	if forest:
 		_draw_forest_trees()
-	if escape_cell.x < 0 or not fog.visible.has(escape_cell):
+
+
+func _draw_passages() -> void:
+	if has_stairs and map_kind != DungeonGenerator.Kind.EXPLORATION:
+		_draw_passage(GUARDIAN_DOOR if map_kind == DungeonGenerator.Kind.ANTECHAMBER else DESCENT_STAIRS, stairs_cell)
+	if escape_cell.x >= 0:
+		_draw_passage(RETURN_DOOR, escape_cell)
+
+
+func _draw_passage(texture: Texture2D, cell: Vector2i) -> void:
+	if not fog.explored.has(cell):
 		return
-	var center := Vector2(escape_cell * TILE_SIZE) + Vector2.ONE * TILE_SIZE / 2.0
-	decorations.draw_circle(center, 19, Color("5df1c3"), false, 4)
-	decorations.draw_line(center + Vector2(0, 12), center + Vector2(0, -12), Color.WHITE, 3)
-	decorations.draw_line(center + Vector2(0, -12), center + Vector2(-7, -5), Color.WHITE, 3)
-	decorations.draw_line(center + Vector2(0, -12), center + Vector2(7, -5), Color.WHITE, 3)
+	var tint := Color.WHITE if fog.visible.has(cell) else REMEMBERED_PASSAGE_TINT
+	passages.draw_texture_rect(texture, Rect2(Vector2(cell * TILE_SIZE), Vector2.ONE * TILE_SIZE), false, tint)
