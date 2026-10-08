@@ -1,0 +1,15 @@
+素材名: Impact Sounds
+作者: Kenney (Kenney Vleugels, kenney.nl)
+入手元: https://kenney.nl/assets/impact-sounds
+ダウンロードURL: https://kenney.nl/media/pages/assets/impact-sounds/87b4ddecda-1677589768/kenney_impact-sounds.zip
+ライセンス: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
+ライセンスの確認: 作者の配布ページの表記で確認（2026-10-08）
+入手日: 2026-10-08
+
+使用ファイルと加工:
+- source/impactPlate_heavy_000.ogg（Audio/impactPlate_heavy_000.ogg）→ heavy.ogg
+- source/footstep_carpet_000.ogg（Audio/footstep_carpet_000.ogg）→ step.ogg
+
+加工の内容: tools/build_sound_effects.py で、置き換え前の合成音と同じ平均音量へ調整し、ピークをリミッターで抑えて Ogg Vorbis に変換した（効果音は冒頭の無音も詰めた）。source/ の元ファイルは改変していない。
+
+備考: 配布物に同梱のライセンス文をLICENSE.txtとして置いている。

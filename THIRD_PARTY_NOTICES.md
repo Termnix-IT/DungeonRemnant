@@ -51,3 +51,54 @@ Copyright 2021 The Shippori Mincho Project Authors (https://github.com/fontdasu/
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1. The full license text is `rogue-like-play/ui/fonts/OFL.txt`, which is distributed with the game as `SHIPPORI_MINCHO_OFL.txt`.
 
+## Sound effects and ambience
+
+The sound effects and room tones below are third-party recordings. Each original is kept unmodified in `rogue-like-play/audio/third_party/<pack>/source/`; the game plays copies that `rogue-like-play/tools/build_sound_effects.py` level-matches, peak-limits and encodes as Ogg Vorbis (one-shot effects also have their leading silence trimmed). Each folder's `SOURCE.txt` records the download and the files used. Hit and victory sounds remain the game's own synthesized placeholders.
+
+### RPG sound pack
+
+RPG sound pack by artisticdude: <https://opengameart.org/content/rpg-sound-pack>
+
+Used: `battle/swing.wav` (sword swing) and `interface/interface6.wav` (confirm), in `rogue-like-play/audio/third_party/artisticdude_rpg_sound_pack/`.
+
+License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>
+
+### 80 CC0 RPG SFX
+
+80 CC0 RPG SFX by rubberduck: <https://opengameart.org/content/80-cc0-rpg-sfx>
+
+Used: `blade_03.ogg` (spear thrust), `spell_01.ogg` (spell), `creature_misc_01.ogg` (enemy defeated), `item_gem_01.ogg` (pickup) and `creature_roar_03.ogg` (boss appears), in `rogue-like-play/audio/third_party/rubberduck_80_cc0_rpg_sfx/`.
+
+License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>
+
+### Impact Sounds
+
+Impact Sounds by Kenney (www.kenney.nl): <https://kenney.nl/assets/impact-sounds>
+
+Used: `impactPlate_heavy_000.ogg` (hammer) and `footstep_carpet_000.ogg` (footstep), in `rogue-like-play/audio/third_party/kenney_impact_sounds/`.
+
+License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>
+
+### Music Jingles
+
+Music Jingles by Kenney (www.kenney.nl): <https://kenney.nl/assets/music-jingles>
+
+Used: `jingles_NES13.ogg` (level up), `jingles_PIZZI06.ogg` (floor arrival), `jingles_HIT15.ogg` (monster house warning) and `jingles_NES05.ogg` (defeat), in `rogue-like-play/audio/third_party/kenney_music_jingles/`.
+
+License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>
+
+### Dark Cavern Ambient
+
+Dark Cavern Ambient by Paul Wortmann: <https://opengameart.org/content/dark-cavern-ambient>
+
+Used: `dark_cavern_ambient_002.ogg` (ruins room tone), in `rogue-like-play/audio/third_party/paul_wortmann_dark_cavern_ambient/`.
+
+License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>
+
+### Forest Ambience
+
+Forest Ambience by TinyWorlds: <https://opengameart.org/content/forest-ambience>
+
+Used: `Forest_Ambience.mp3` (forest room tone), in `rogue-like-play/audio/third_party/tinyworlds_forest_ambience/`.
+
+License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>

@@ -1,0 +1,15 @@
+素材名: RPG sound pack
+作者: artisticdude
+入手元: https://opengameart.org/content/rpg-sound-pack
+ダウンロードURL: https://opengameart.org/sites/default/files/rpg_sound_pack.zip
+ライセンス: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
+ライセンスの確認: 作者の配布ページの表記で確認（2026-10-08）
+入手日: 2026-10-08
+
+使用ファイルと加工:
+- source/swing.wav（RPG Sound Pack/battle/swing.wav）→ slash.ogg
+- source/interface6.wav（RPG Sound Pack/interface/interface6.wav）→ confirm.ogg
+
+加工の内容: tools/build_sound_effects.py で、置き換え前の合成音と同じ平均音量へ調整し、ピークをリミッターで抑えて Ogg Vorbis に変換した（効果音は冒頭の無音も詰めた）。source/ の元ファイルは改変していない。
+
+備考: 作者表記は任意（作者のコメントによる）。

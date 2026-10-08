@@ -1,6 +1,9 @@
 class_name GameAudio
 extends RefCounted
-## Temporary synthesized cues. Supply real assets with set_override() when available.
+## Sound cues. A cue plays its recorded sound when it has one (ASSETS: third-party
+## recordings matched to the synthesized level by tools/build_sound_effects.py;
+## see THIRD_PARTY_NOTICES.md), else its synthesized placeholder (PROFILES).
+## set_override() replaces either, e.g. in tests.
 
 const SAMPLE_RATE := 22050
 const MAX_VOICES := 8
@@ -24,7 +27,24 @@ const PROFILES := {
 	&"defeat": [0.62, 0.0, 0.0, 0.04, 1.8, [392.0, 329.63, 261.63, 196.0]],
 }
 
+const ASSETS := {
+	&"slash": "res://audio/third_party/artisticdude_rpg_sound_pack/slash.ogg",
+	&"thrust": "res://audio/third_party/rubberduck_80_cc0_rpg_sfx/thrust.ogg",
+	&"heavy": "res://audio/third_party/kenney_impact_sounds/heavy.ogg",
+	&"magic": "res://audio/third_party/rubberduck_80_cc0_rpg_sfx/magic.ogg",
+	&"death": "res://audio/third_party/rubberduck_80_cc0_rpg_sfx/death.ogg",
+	&"pickup": "res://audio/third_party/rubberduck_80_cc0_rpg_sfx/pickup.ogg",
+	&"step": "res://audio/third_party/kenney_impact_sounds/step.ogg",
+	&"confirm": "res://audio/third_party/artisticdude_rpg_sound_pack/confirm.ogg",
+	&"level_up": "res://audio/third_party/kenney_music_jingles/level_up.ogg",
+	&"floor": "res://audio/third_party/kenney_music_jingles/floor.ogg",
+	&"warning": "res://audio/third_party/kenney_music_jingles/warning.ogg",
+	&"boss": "res://audio/third_party/rubberduck_80_cc0_rpg_sfx/boss.ogg",
+	&"defeat": "res://audio/third_party/kenney_music_jingles/defeat.ogg",
+}
+
 static var _streams: Dictionary = {}
+static var _assets: Dictionary = {}
 static var _overrides: Dictionary = {}
 
 
@@ -42,6 +62,19 @@ static func clear_overrides() -> void:
 static func stream_for(cue: StringName) -> AudioStream:
 	if _overrides.has(cue):
 		return _overrides[cue]
+	var sound := recorded(cue)
+	return sound if sound != null else synthesized(cue)
+
+
+static func recorded(cue: StringName) -> AudioStream:
+	if not ASSETS.has(cue):
+		return null
+	if not _assets.has(cue):
+		_assets[cue] = load(ASSETS[cue])
+	return _assets[cue]
+
+
+static func synthesized(cue: StringName) -> AudioStream:
 	if not PROFILES.has(cue):
 		return null
 	if not _streams.has(cue):

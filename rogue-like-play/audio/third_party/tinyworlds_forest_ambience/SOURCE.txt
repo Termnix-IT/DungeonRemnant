@@ -1,0 +1,14 @@
+素材名: Forest Ambience
+作者: TinyWorlds
+入手元: https://opengameart.org/content/forest-ambience
+ダウンロードURL: https://opengameart.org/sites/default/files/Forest_Ambience.mp3
+ライセンス: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
+ライセンスの確認: 作者の配布ページの表記で確認（2026-10-08）
+入手日: 2026-10-08
+
+使用ファイルと加工:
+- source/Forest_Ambience.mp3 → ambience_forest.ogg
+
+加工の内容: tools/build_sound_effects.py で、置き換え前の合成音と同じ平均音量へ調整し、ピークをリミッターで抑えて Ogg Vorbis に変換した（効果音は冒頭の無音も詰めた）。source/ の元ファイルは改変していない。
+
+備考: 作者はつなぎ目なく繰り返せると記載している。

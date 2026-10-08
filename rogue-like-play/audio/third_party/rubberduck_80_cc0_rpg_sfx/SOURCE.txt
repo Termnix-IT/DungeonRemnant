@@ -1,0 +1,16 @@
+素材名: 80 CC0 RPG SFX
+作者: rubberduck
+入手元: https://opengameart.org/content/80-cc0-rpg-sfx
+ダウンロードURL: https://opengameart.org/sites/default/files/80-CC0-RPG-SFX_0.zip
+ライセンス: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
+ライセンスの確認: 作者の配布ページの表記で確認（2026-10-08）
+入手日: 2026-10-08
+
+使用ファイルと加工:
+- source/blade_03.ogg → thrust.ogg
+- source/spell_01.ogg → magic.ogg
+- source/creature_misc_01.ogg → death.ogg
+- source/item_gem_01.ogg → pickup.ogg
+- source/creature_roar_03.ogg → boss.ogg
+
+加工の内容: tools/build_sound_effects.py で、置き換え前の合成音と同じ平均音量へ調整し、ピークをリミッターで抑えて Ogg Vorbis に変換した（効果音は冒頭の無音も詰めた）。source/ の元ファイルは改変していない。

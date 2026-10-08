@@ -1,14 +1,25 @@
 extends AudioStreamPlayer
-## Quiet provisional room tone. Replace with a looping ambience asset when available.
+## The room tone under the dungeon: a looping recording per environment (built by
+## tools/build_sound_effects.py; see THIRD_PARTY_NOTICES.md), with the generated
+## tone as the fallback.
 
 @export var stream_override: AudioStream
 const SAMPLE_RATE := 22050
 const DURATION := 2.0
+const LOOPS := {
+	false: "res://audio/third_party/paul_wortmann_dark_cavern_ambient/ambience_ruins.ogg",
+	true: "res://audio/third_party/tinyworlds_forest_ambience/ambience_forest.ogg",
+}
 static var _streams: Dictionary = {}
+static var _recordings: Dictionary = {}
 
 
 func start(forest: bool = false) -> void:
-	var next_stream: AudioStream = stream_override if stream_override != null else stream_for(forest)
+	var next_stream: AudioStream = stream_override
+	if next_stream == null:
+		next_stream = recorded(forest)
+	if next_stream == null:
+		next_stream = synthesized(forest)
 	volume_db = -32.0
 	bus = GameSettings.AMBIENCE_BUS
 	if stream != next_stream:
@@ -17,7 +28,17 @@ func start(forest: bool = false) -> void:
 		play()
 
 
-static func stream_for(forest: bool = false) -> AudioStreamWAV:
+# The recording loops whole: the build never trims a loop, so its seam is the author's.
+static func recorded(forest: bool = false) -> AudioStream:
+	if not _recordings.has(forest):
+		var loop := load(LOOPS[forest]) as AudioStreamOggVorbis
+		if loop != null:
+			loop.loop = true
+		_recordings[forest] = loop
+	return _recordings[forest]
+
+
+static func synthesized(forest: bool = false) -> AudioStreamWAV:
 	if _streams.has(forest):
 		return _streams[forest]
 	var sample_count := int(SAMPLE_RATE * DURATION)

@@ -23,7 +23,7 @@ func run_tests() -> void:
 	seed(1729)
 	var signatures: Array[int] = []
 	for cue in Audio.PROFILES:
-		var stream := Audio.stream_for(cue) as AudioStreamWAV
+		var stream := Audio.synthesized(cue) as AudioStreamWAV
 		check(stream != null, "%s generated" % cue)
 		check(stream.get_length() > 0.04 and stream.get_length() < 0.8, "%s bounded duration" % cue)
 		check(stream.loop_mode == AudioStreamWAV.LOOP_DISABLED, "%s finite playback" % cue)
@@ -33,11 +33,19 @@ func run_tests() -> void:
 			peak = maxi(peak, absi(bytes.decode_s16(i)))
 		check(peak > 100 and peak < 30000, "%s audible without clipping" % cue)
 		check(bytes.decode_s16(0) == 0 and bytes.decode_s16(bytes.size() - 2) == 0, "%s clean endpoints" % cue)
-		check(Audio.stream_for(cue) == stream, "%s cached" % cue)
+		check(Audio.synthesized(cue) == stream, "%s cached" % cue)
 		check(not signatures.has(hash(bytes)), "%s distinct waveform" % cue)
 		signatures.append(hash(bytes))
 	check(randi() == expected_random, "Synthesis does not consume gameplay random state")
 	check(Audio.stream_for(&"unknown") == null, "Unknown cues are silent")
+	# Recorded cues replace their placeholders; the rest keep the synthesized sound.
+	for cue: StringName in Audio.ASSETS:
+		var sound := Audio.stream_for(cue)
+		check(sound is AudioStreamOggVorbis and sound == Audio.recorded(cue), "%s plays its recording" % cue)
+		check(not (sound as AudioStreamOggVorbis).loop and sound.get_length() > 0.05 and sound.get_length() < 4.8, "%s is a finite one-shot inside the voice lifetime" % cue)
+		check(Audio.PROFILES.has(cue), "%s keeps a synthesized fallback" % cue)
+	for cue: StringName in [&"hit", &"victory"]:
+		check(not Audio.ASSETS.has(cue) and Audio.stream_for(cue) == Audio.synthesized(cue), "%s stays synthesized" % cue)
 	var default_stream := Audio.stream_for(&"slash")
 	var replacement := AudioStreamWAV.new()
 	Audio.set_override(&"slash", replacement)
@@ -70,18 +78,20 @@ func run_tests() -> void:
 	var ambience := Ambience.new()
 	parent.add_child(ambience)
 	for forest in [false, true]:
-		var loop := Ambience.stream_for(forest)
+		var loop := Ambience.synthesized(forest)
 		check(is_equal_approx(loop.get_length(), 2.0), "Ambience has a bounded two second buffer")
 		check(loop.loop_mode == AudioStreamWAV.LOOP_FORWARD and loop.loop_end == loop.data.size() / 2, "Ambience loops entire buffer")
 		var samples := loop.data
 		var seam_delta := absi(samples.decode_s16(0) - samples.decode_s16(samples.size() - 2))
 		var initial_delta := absi(samples.decode_s16(2) - samples.decode_s16(0))
 		check(absi(seam_delta - initial_delta) <= 2, "Ambience loop seam follows waveform slope")
-		check(loop == Ambience.stream_for(forest), "Ambience caches generated stream")
+		check(loop == Ambience.synthesized(forest), "Ambience caches generated stream")
 		ambience.start(forest)
 		ambience.start(forest)
 		check(parent.get_child_count() == 1 and ambience.get_child_count() == 0, "Restarting ambience creates no voices or children")
-		check(ambience.volume_db == -32.0 and ambience.stream == loop, "Ambience stays subdued and uses selected environment")
+		var recording := Ambience.recorded(forest) as AudioStreamOggVorbis
+		check(recording != null and recording.loop and recording.get_length() > 10.0, "Ambience has a looping recording per environment")
+		check(ambience.volume_db == -32.0 and ambience.stream == recording, "Ambience stays subdued and plays the selected recording")
 		check(ambience.playing == (DisplayServer.get_name() != "headless"), "Ambient playback follows headless mode")
 		ambience.stop()
 		check(not ambience.playing, "Ambience stops immediately")
