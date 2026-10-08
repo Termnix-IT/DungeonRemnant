@@ -3,9 +3,10 @@ extends Control
 
 # The upgrade page, in the shared grammar: its two modes (能力の成長 and
 # 開始地点) switch at the header's title place, like the shop's buying and
-# selling. Growth is a wired tree on a slab from the screen's left edge:
-# base HP at its centre, and four branches wired out of it, each a chain of
-# tiers that opens when the one before it is capped. A wire lights from its
+# selling. Growth is a wired tree on a slab from the screen's left edge,
+# laid out like a folder tree: base HP at the far left, and four branches
+# wired out of it, one row each, running to the right as a chain of tiers
+# that opens when the one before it is capped. The tree carries no words. A wire lights from its
 # source as that node grows, so how far the next tier is reads on the wire.
 # The right column says what the chosen node is and does, and holds the one
 # primary action. Start floors are rows chosen the same way.
@@ -17,12 +18,10 @@ signal mode_changed
 
 const EFFECT_NAMES := {&"hp": "最大HP", &"attack": "攻撃力", &"defense": "防御力", &"mp": "最大MP"}
 const TOTALS := [[&"hp", "最大HP"], [&"attack", "攻撃力"], [&"defense", "防御力"], [&"mp", "最大MP"]]
-# Every other tier steps this far further out, so the wires between tiers
-# bend like traces and stay long enough to show how far they are lit.
-const TIER_STAGGER := 64.0
-# Where each branch runs from the centre: across (-1 left, 1 right) and the
-# row above or below it. The order follows SkillCatalog.BRANCHES.
-const BRANCH_SIDES := [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]
+# The widest step between columns and between branch rows, so the tree stays
+# compact on a wide slab.
+const COLUMN_STEP := 190.0
+const ROW_STEP := 140.0
 const CENTRE_EMBLEM := 96.0
 const TIER_EMBLEM := 48.0
 const ENTRY_FLOORS := [11, 21, 31, 41]
@@ -40,7 +39,7 @@ var growth_tab: Button
 var entry_tab: Button
 var canvas: Control
 var root_button: SkillNodeButton
-# Every node by id, the centre included under &"hp".
+# Every node by id, base HP included under &"hp".
 var buttons: Dictionary = {}
 # The tiers only, as the branch nodes.
 var nodes: Dictionary = {}
@@ -140,6 +139,7 @@ func _build_tree(parent: VBoxContainer) -> void:
 	for branch: Array in SkillCatalog.BRANCHES:
 		for node: SkillNode in branch:
 			nodes[node.id] = _node_button(node.id, EmblemIcons.upgrade_key(node.effect, true), TIER_EMBLEM)
+	_link_focus()
 
 
 func _node_button(id: StringName, key: String, extent: float) -> SkillNodeButton:
@@ -160,24 +160,45 @@ func _node_button(id: StringName, key: String, extent: float) -> SkillNodeButton
 	return button
 
 
-# The centre in the middle of the canvas; each branch's tiers on its row
-# above or below, stepping outwards.
+# Base HP at the far left, level with the middle of the branches; each
+# branch on its own row, its tiers in columns to the right, so the same tier
+# of every branch lines up.
 func _place_nodes() -> void:
-	var middle := canvas.size * 0.5
+	var rows := SkillCatalog.BRANCHES.size()
 	var longest := 0
 	for branch: Array in SkillCatalog.BRANCHES:
 		longest = maxi(longest, branch.size())
 	var sample: SkillNodeButton = nodes[SkillCatalog.NODES[0].id]
-	var across := minf(122.0, (canvas.size.x * 0.5 - sample.size.x * 0.5) / longest)
-	# The outer tiers' names end at the canvas's foot.
-	var down := minf(170.0, middle.y - TIER_STAGGER - sample.foot() - 4.0)
-	_put(root_button, middle)
-	for index in SkillCatalog.BRANCHES.size():
-		var side: Vector2 = BRANCH_SIDES[index]
-		var branch: Array = SkillCatalog.BRANCHES[index]
+	var start := Vector2(root_button.size.x * 0.5, canvas.size.y * 0.5)
+	var across := minf(COLUMN_STEP, (canvas.size.x - start.x - sample.size.x * 0.5) / longest)
+	var down := minf(ROW_STEP, (canvas.size.y - sample.size.y) / maxf(rows - 1, 1))
+	_put(root_button, start)
+	for row in rows:
+		var branch: Array = SkillCatalog.BRANCHES[row]
+		var y := start.y + (row - (rows - 1) * 0.5) * down
 		for tier in branch.size():
-			_put(nodes[branch[tier].id], middle + Vector2(side.x * across * (tier + 1), side.y * (down + TIER_STAGGER * (tier % 2))))
+			_put(nodes[branch[tier].id], Vector2(start.x + across * (tier + 1), y))
 	canvas.queue_redraw()
+
+
+# Arrows follow the grid: along a branch left and right, base HP at the left
+# end; up and down to the same tier of the next branch, or its last tier.
+func _link_focus() -> void:
+	var branches := SkillCatalog.BRANCHES
+	var first: SkillNodeButton = nodes[branches[0][0].id]
+	root_button.focus_neighbor_right = root_button.get_path_to(first)
+	for row in branches.size():
+		var branch: Array = branches[row]
+		for tier in branch.size():
+			var button: SkillNodeButton = nodes[branch[tier].id]
+			var left: Control = root_button if tier == 0 else nodes[branch[tier - 1].id]
+			var right: Control = nodes[branch[tier + 1].id] if tier + 1 < branch.size() else button
+			var up: Array = branches[maxi(row - 1, 0)]
+			var down: Array = branches[mini(row + 1, branches.size() - 1)]
+			button.focus_neighbor_left = button.get_path_to(left)
+			button.focus_neighbor_right = button.get_path_to(right)
+			button.focus_neighbor_top = button.get_path_to(nodes[up[mini(tier, up.size() - 1)].id])
+			button.focus_neighbor_bottom = button.get_path_to(nodes[down[mini(tier, down.size() - 1)].id])
 
 
 func _put(button: SkillNodeButton, point: Vector2) -> void:
@@ -189,31 +210,17 @@ func _point(id: StringName) -> Vector2:
 	return button.position + button.centre()
 
 
-# A wire as a circuit trace from the edge of one disc to the edge of the
-# next: straight out of its source, then the last stretch on a 45° bend. A
-# wire running mostly up or down meets a node under its name instead, so it
-# never crosses the words.
+# A wire from the right edge of one disc to the left edge of the next, like
+# the lines of a folder tree: along a branch it runs straight; from base HP
+# it runs out to a trunk halfway, along the trunk to the branch's row, and on
+# into the first tier at right angles.
 func _route(source: StringName, target: StringName) -> PackedVector2Array:
-	var from_node: SkillNodeButton = buttons[source]
-	var to_node: SkillNodeButton = buttons[target]
-	var from := _point(source)
-	var to := _point(target)
-	var vertical := absf(to.y - from.y) > absf(to.x - from.x)
-	var leave_foot := vertical and to.y > from.y
-	var reach_foot := vertical and to.y < from.y
-	if leave_foot:
-		from.y += from_node.foot()
-	if reach_foot:
-		to.y += to_node.foot()
-	var delta := to - from
-	var bend := minf(absf(delta.x), absf(delta.y))
-	var straight := delta - Vector2(signf(delta.x), signf(delta.y)) * bend
-	var path := PackedVector2Array([from, from + straight, to])
-	if not leave_foot:
-		path[0] = path[0].move_toward(path[1] if path[0].distance_to(path[1]) > 1.0 else path[2], from_node.radius())
-	if not reach_foot:
-		path[2] = path[2].move_toward(path[1] if path[1].distance_to(path[2]) > 1.0 else path[0], to_node.radius())
-	return path
+	var from := _point(source) + Vector2((buttons[source] as SkillNodeButton).radius(), 0)
+	var to := _point(target) - Vector2((buttons[target] as SkillNodeButton).radius(), 0)
+	if absf(to.y - from.y) < 1.0:
+		return PackedVector2Array([from, to])
+	var trunk := roundf((from.x + to.x) * 0.5)
+	return PackedVector2Array([from, Vector2(trunk, from.y), Vector2(trunk, to.y), to])
 
 
 func _draw_wires() -> void:

@@ -1,15 +1,14 @@
 class_name SkillNodeButton
 extends Button
 
-# One node of the permanent tree: its emblem in a ring of rank marks, its
-# name and rank under it. The tree draws the wires between nodes; a node's
-# dark disc covers their ends. A node not yet open is dim and carries a
+# One node of the permanent tree: its emblem in a ring of rank marks, with no
+# words on the tree (the name and rank are in its tooltip and the detail
+# column). The tree draws the wires between nodes; a node's dark disc covers
+# their ends. A node not yet open is dim and carries a
 # padlock; a node that can be grown with the Gold at hand carries a gold
 # diamond (StateMark), so where to grow next reads before choosing; a capped
 # node's ring is whole and bright; the chosen node stands on the lobby band's
-# warm glow with its name in gold. The Button keeps focus and input.
-
-const NAME_GAP := 6.0
+# warm glow. The Button keeps focus and input.
 
 var id: StringName
 var emblem := ""
@@ -42,23 +41,15 @@ func radius() -> float:
 
 # The middle of the disc, where the wires meet the node.
 func centre() -> Vector2:
-	return Vector2(size.x * 0.5, radius() + 4.0)
-
-
-# From the disc's middle down to the foot of the name and rank, where a wire
-# leaving downwards starts so it never crosses them.
-func foot() -> float:
-	return size.y - centre().y
+	return size * 0.5
 
 
 func setup(node_id: StringName, key: String, extent: float) -> void:
 	id = node_id
 	emblem = key
 	emblem_size = extent
-	var font := get_theme_font(&"font")
-	var lines := font.get_height(get_theme_font_size(&"font_size")) + font.get_height(get_theme_font_size(&"rank_font_size"))
-	# Narrow enough that neighbouring tiers never share a pointer target.
-	custom_minimum_size = Vector2(maxf(radius() * 2.0 + 8.0, 100.0), radius() * 2.0 + 4.0 + NAME_GAP + lines + 4.0)
+	# The disc and its focus ring only, so neighbours never share a pointer target.
+	custom_minimum_size = Vector2.ONE * (radius() * 2.0 + 8.0)
 	size = custom_minimum_size
 
 
@@ -77,7 +68,6 @@ func _draw() -> void:
 	var ring := radius()
 	var rail := get_theme_color(&"rail", &"HubLobby")
 	var muted := get_theme_color(&"font_color", &"MutedLabel")
-	var body := get_theme_color(&"font_color", &"Label")
 	var capped := rank >= max_rank
 	if button_pressed:
 		if _halo == null:
@@ -117,12 +107,3 @@ func _draw() -> void:
 		StateMark.lock(self, corner, 14.0, Color(muted, 0.85))
 	elif growable:
 		StateMark.ready(self, corner, 6.0, get_theme_color(&"font_color", &"GoldLabel"))
-	# Name and rank under the disc, centred.
-	var font := get_theme_font(&"font")
-	var name_size := get_theme_font_size(&"font_size")
-	var rank_size := get_theme_font_size(&"rank_font_size")
-	var top := middle.y + ring + NAME_GAP + font.get_ascent(name_size)
-	var name_tone := get_theme_color(&"font_color", &"GoldLabel") if button_pressed else (body if open else muted)
-	draw_string(font, Vector2(0, top), title, HORIZONTAL_ALIGNMENT_CENTER, size.x, name_size, name_tone)
-	var rank_text := "上限" if capped else "Lv %d / %d" % [rank, max_rank]
-	draw_string(font, Vector2(0, top + font.get_descent(name_size) + font.get_ascent(rank_size) + 2.0), rank_text, HORIZONTAL_ALIGNMENT_CENTER, size.x, rank_size, muted)

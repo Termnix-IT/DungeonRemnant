@@ -94,7 +94,7 @@ func run_tests() -> void:
 # at 1080p, above the 18px floor of Xbox Accessibility Guideline 101 for PC.
 # The dungeon HUD (Hud*) keeps its own sizes for the floor it must not cover.
 func check_readable_floor(theme: Theme) -> void:
-	for pair: Array in [[&"font_size", &"NoteLabel"], [&"font_size", &"MutedLabel"], [&"font_size", &"LobbyFactCaption"], [&"cap_font_size", &"KeyGuideButton"], [&"font_size", &"KeyGuideButton"], [&"font_size", &"CategoryCap"], [&"note_font_size", &"StageNode"], [&"font_size", &"HintMark"], [&"font_size", &"SkillNode"], [&"rank_font_size", &"SkillNode"], [&"font_size", &"TextAction"], [&"font_size", &"SecondaryButton"]]:
+	for pair: Array in [[&"font_size", &"NoteLabel"], [&"font_size", &"MutedLabel"], [&"font_size", &"LobbyFactCaption"], [&"cap_font_size", &"KeyGuideButton"], [&"font_size", &"KeyGuideButton"], [&"font_size", &"CategoryCap"], [&"note_font_size", &"StageNode"], [&"font_size", &"HintMark"], [&"font_size", &"TextAction"], [&"font_size", &"SecondaryButton"]]:
 		check(theme.get_font_size(pair[0], pair[1]) >= 16, "%s %s stays at 16px or more" % [pair[1], pair[0]])
 	# Notes share the muted size, so they step down by tone instead.
 	check(theme.get_color(&"font_color", &"NoteLabel") != theme.get_color(&"font_color", &"MutedLabel"), "Notes stay a step quieter than muted text")

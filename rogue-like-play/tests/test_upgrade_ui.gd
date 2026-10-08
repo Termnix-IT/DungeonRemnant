@@ -59,6 +59,22 @@ func check_layout(panel: SkillTreePanel) -> void:
 		for other in placed:
 			check(not other.intersects(rect.grow(-2)), "Nodes do not overlap: %s" % id)
 		placed.append(rect)
+	# A folder tree read left to right: base HP leftmost, each branch on its
+	# own row below the one before, its tiers running right in shared columns.
+	var root_point: Vector2 = panel.root_button.get_global_rect().get_center()
+	var last_row := -INF
+	for branch: Array in SkillCatalog.BRANCHES:
+		var row: float = panel.nodes[branch[0].id].get_global_rect().get_center().y
+		check(row > last_row, "Branches stack top to bottom in catalogue order")
+		last_row = row
+		for tier in branch.size():
+			var point: Vector2 = panel.nodes[branch[tier].id].get_global_rect().get_center()
+			check(absf(point.y - row) < 1.0 and point.x > root_point.x, "A branch keeps one row to the right of base HP: " + branch[tier].id)
+			check(absf(point.x - panel.nodes[SkillCatalog.BRANCHES[0][mini(tier, SkillCatalog.BRANCHES[0].size() - 1)].id].get_global_rect().get_center().x) < 1.0, "Tiers line up in columns: " + branch[tier].id)
+			if tier > 0:
+				check(point.x > panel.nodes[branch[tier - 1].id].get_global_rect().get_center().x, "A tier stands right of the one before it: " + branch[tier].id)
+	check(root_point.y > panel.nodes[SkillCatalog.BRANCHES[0][0].id].get_global_rect().get_center().y and root_point.y < last_row, "Base HP sits level with the middle of the branches")
+	check(panel.root_button.get_node(panel.root_button.focus_neighbor_right) == panel.nodes[SkillCatalog.BRANCHES[0][0].id], "Right from base HP goes to the first branch")
 	check(screen.encloses(panel.upgrade_button.get_global_rect()), "Primary action fits the screen")
 	check(not panel.canvas.get_global_rect().intersects(panel.upgrade_button.get_global_rect()), "The tree leaves the action clear")
 	panel.set_entries(true)
@@ -77,9 +93,9 @@ func run_tests() -> void:
 	var state: RunCarryover = main.state
 	hub.show_page("upgrade")
 	await settle()
-	check(panel.selected_id == &"hp" and panel.root_button.has_focus(), "The page opens on the centre")
+	check(panel.selected_id == &"hp" and panel.root_button.has_focus(), "The page opens on base HP")
 	check(panel.upgrade_button.text.contains("あと30 G"), "Base upgrade explains exact Gold shortage")
-	check(panel.root_button.emblem_size > panel.nodes[&"attack"].emblem_size, "The centre stands larger than the tiers")
+	check(panel.root_button.emblem_size > panel.nodes[&"attack"].emblem_size, "Base HP stands larger than the tiers")
 	panel.select_upgrade(&"vitality")
 	check(panel.requirement.text.contains("基礎HP を上限（Lv 3）") and panel.requirement.text.contains("生命力 II"), "A node says what opens it and what it opens")
 	panel.select_upgrade(&"defense_2")
@@ -109,8 +125,8 @@ func run_tests() -> void:
 	hub.refresh(state)
 	purchase(panel, &"hp")
 	purchase(panel, &"hp")
-	check(state.hp_upgrade_level == 3 and panel.nodes[&"attack"].open and panel.nodes[&"mana"].open, "Capping the centre opens all four branches")
-	check(panel.upgrade_button.text.contains("上限"), "The capped centre says so")
+	check(state.hp_upgrade_level == 3 and panel.nodes[&"attack"].open and panel.nodes[&"mana"].open, "Capping base HP opens all four branches")
+	check(panel.upgrade_button.text.contains("上限"), "Capped base HP says so")
 	purchase(panel, &"attack")
 	check(state.skill_rank(&"attack") == 1 and state.gold == 1000 - 60 - 90 - 100, "Primary action buys the chosen branch")
 	panel.select_upgrade(&"attack")
