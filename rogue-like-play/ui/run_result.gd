@@ -236,11 +236,11 @@ func ready_for_input() -> bool:
 
 func _cause(result: Dictionary) -> String:
 	if result.cleared:
-		return "最深部の主を討ち果たした。"
+		return "最深部の主を倒した。"
 	if result.get("safe_return", false):
 		return "%dFの脱出口から拠点へ帰還した。" % result.floor
 	if result.get("forced_return", false):
-		return "%dFで滞在の限界を迎え、拠点へ引き戻された。" % result.floor
+		return "%dFで滞在ターンの上限に達し、拠点へ強制帰還した。" % result.floor
 	if result.get("defeated", false):
 		var by: String = result.get("defeated_by", "")
 		return "%dFで%sに倒された。" % [result.floor, by] if not by.is_empty() else "%dFで力尽きた。" % result.floor

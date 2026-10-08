@@ -31,11 +31,11 @@ const ACTIONS := {
 	&"settings": "設定を開く",
 }
 const DESCRIPTIONS := {
-	&"equipment": "身につけるもの、背負っていくもの。",
-	&"storage": "使うもの、残すものを選ぶ。冒険で失うことはない。",
-	&"shop": "薬も武具も、金次第。",
-	&"upgrade": "冒険の記憶は、この身に残る。",
-	&"settings": "音と画面を整える。",
+	&"equipment": "武具を5つの枠に装備し、杖に魔法を込める。",
+	&"storage": "持ち込みと倉庫の間で品を移す。倉庫の品は冒険で失わない。",
+	&"shop": "Goldで薬や武具を買い、要らない品を売る。",
+	&"upgrade": "Goldで能力を永久に強化し、開始階を解放する。",
+	&"settings": "音量と画面モードを変え、遊び方を確認する。",
 }
 # Each panel shows the illustration of what it opens.
 const ART := {

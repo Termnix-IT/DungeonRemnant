@@ -108,7 +108,7 @@ func _draw() -> void:
 	if not unlocked:
 		var name_width := font.get_string_size(stage.display_name, HORIZONTAL_ALIGNMENT_LEFT, -1, name_size).x
 		StateMark.lock(self, Vector2((size.x - name_width) * 0.5 - 14.0, top - font.get_ascent(name_size) * 0.42), 15.0, Color(get_theme_color(&"font_color", &"MutedLabel"), 0.85))
-	var note := "全%d階　%s" % [stage.floor_count, stage.difficulty] if unlocked else (hint if not hint.is_empty() else "まだ道は開いていない")
+	var note := "全%d階　%s" % [stage.floor_count, stage.difficulty] if unlocked else (hint if not hint.is_empty() else "未解放")
 	if not stage.available:
-		note = "まだ道は開いていない"
+		note = "未解放"
 	draw_string(font, Vector2(0, top + font.get_descent(name_size) + font.get_ascent(note_size) + 4.0), note, HORIZONTAL_ALIGNMENT_CENTER, size.x, note_size, get_theme_color(&"font_color", &"MutedLabel"))

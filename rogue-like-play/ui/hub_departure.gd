@@ -327,7 +327,7 @@ func _select_stage(index: int) -> void:
 		stage_nodes[other].queue_redraw()
 	var stage := selected_stage
 	stage_title.text = stage.display_name
-	stage_facts.text = "全%d階　·　難易度 %s" % [stage.floor_count, stage.difficulty] if stage.available else "まだ道は開いていない"
+	stage_facts.text = "全%d階　·　難易度 %s" % [stage.floor_count, stage.difficulty] if stage.available else "未解放"
 	stage_art.texture = stage.illustration
 	stage_art.modulate.a = 0.7 if state.stage_available(stage) else 0.3
 	stage_details.reset()

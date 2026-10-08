@@ -5,6 +5,6 @@
 script = ExtResource("1")
 id = &"unknown"
 display_name = "？？？"
-description = "この先にも、まだ見ぬダンジョンが待っている。"
+description = "古代遺跡と深緑の森林に続くステージ。"
 available = false
 diorama = ExtResource("diorama")
