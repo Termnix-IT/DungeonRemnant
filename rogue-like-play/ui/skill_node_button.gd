@@ -3,15 +3,22 @@ extends Button
 
 # One node of the permanent tree: its emblem in a ring of rank marks, with no
 # words on the tree (the name and rank are in its tooltip and the detail
-# column). The tree draws the wires between nodes; a node's dark disc covers
-# their ends. A node not yet open is dim and carries a
-# padlock; a node that can be grown with the Gold at hand carries a gold
+# column). The start floor tree uses the same node with a picture in place of
+# the emblem: a stage's island, or the guardian whose defeat opens a floor.
+# The tree draws the wires between nodes; a node's dark disc covers their
+# ends. A node not yet open is dim and carries a padlock; a node that can be grown with the Gold at hand carries a gold
 # diamond (StateMark), so where to grow next reads before choosing; a capped
 # node's ring is whole and bright; the chosen node stands on the lobby band's
 # warm glow. The Button keeps focus and input.
 
 var id: StringName
 var emblem := ""
+# Drawn in place of the emblem when set: the region of the texture to show,
+# or the whole texture when the region is empty.
+var picture: Texture2D
+var picture_region := Rect2()
+# The picture as a dark shadow, for what has not been met yet.
+var picture_hidden := false
 var title := ""
 var rank := 0
 var max_rank := 1
@@ -54,12 +61,19 @@ func setup(node_id: StringName, key: String, extent: float) -> void:
 
 
 func show_rank(name_text: String, current: int, cap: int, available: bool, affordable: bool = false) -> void:
-	title = name_text
-	rank = current
-	max_rank = maxi(cap, 1)
-	open = available
-	growable = available and current < max_rank and affordable
+	show_state(name_text, current, cap, available, available and current < maxi(cap, 1) and affordable)
 	tooltip_text = "%s　Lv %d / %d%s" % [title, rank, max_rank, "" if available else "（未解放）"]
+
+
+# The ring's lit marks out of its marks, whether it is open, and whether it
+# carries the ready mark; the caller words the tooltip.
+func show_state(name_text: String, lit: int, marks: int, available: bool, ready: bool) -> void:
+	title = name_text
+	tooltip_text = name_text
+	rank = lit
+	max_rank = maxi(marks, 1)
+	open = available
+	growable = ready
 	queue_redraw()
 
 
@@ -93,12 +107,14 @@ func _draw() -> void:
 		var tone := Color(rail, 1.0) if lit else Color(muted, 0.35 if open else 0.18)
 		if lit and (capped or glow > 0.0):
 			tone = tone.lerp(Color.WHITE, 0.25 * maxf(glow, 0.4 if capped else 0.0))
-		draw_arc(middle, ring - 2.0, start, start + step - gap, 12, tone, 3.0, true)
+		draw_arc(middle, ring - 2.0, start, start + step - gap, maxi(12, 48 / max_rank), tone, 3.0, true)
 	var art := Rect2((middle - Vector2.ONE * emblem_size * 0.5).round(), Vector2.ONE * emblem_size)
-	var picture := EmblemIcons.texture(emblem)
 	var shade := Color(1, 1, 1, 1.0 if open else 0.32)
 	if picture != null:
-		draw_texture_rect(picture, art, false, shade)
+		var region := picture_region if picture_region.has_area() else Rect2(Vector2.ZERO, picture.get_size())
+		draw_texture_rect_region(picture, art, region, Color(0.24, 0.22, 0.2, 0.9) if picture_hidden else shade)
+	elif EmblemIcons.texture(emblem) != null:
+		draw_texture_rect(EmblemIcons.texture(emblem), art, false, shade)
 	if has_focus():
 		draw_arc(middle, ring + 4.0, 0, TAU, 48, get_theme_color(&"focus_ring"), 1.5, true)
 	# The state mark sits on the disc's upper right, clear of the wires.

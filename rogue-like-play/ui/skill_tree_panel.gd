@@ -3,13 +3,16 @@ extends Control
 
 # The upgrade page, in the shared grammar: its two modes (能力の成長 and
 # 開始地点) switch at the header's title place, like the shop's buying and
-# selling. Growth is a wired tree on a slab from the screen's left edge,
-# laid out like a folder tree: base HP at the far left, and four branches
-# wired out of it, one row each, running to the right as a chain of tiers
-# that opens when the one before it is capped. The tree carries no words. A wire lights from its
-# source as that node grows, so how far the next tier is reads on the wire.
+# selling. Both are wired trees on a slab from the screen's left edge, laid
+# out like a folder tree and read left to right, with no words on them.
+# Growth: base HP at the far left, and four branches wired out of it, one row
+# each, running to the right as a chain of tiers that opens when the one
+# before it is capped. A wire lights from its source as that node grows, so
+# how far the next tier is reads on the wire. Start floors: each stage's
+# island heads a row (a stage opens below the one it follows), and its start
+# floors run to the right, each shown by the guardian whose defeat opens it.
 # The right column says what the chosen node is and does, and holds the one
-# primary action. Start floors are rows chosen the same way.
+# primary action.
 
 signal hp_requested
 signal skill_requested(id: StringName)
@@ -25,9 +28,10 @@ const ROW_STEP := 140.0
 const CENTRE_EMBLEM := 96.0
 const TIER_EMBLEM := 48.0
 const ENTRY_FLOORS := [11, 21, 31, 41]
-const ENTRY_HEIGHT := 72.0
-const BAND_TIP := 18.0
-const EDGE_FADE := preload("res://ui/edge_fade.gdshader")
+# A start floor's guardian stands larger than a tier's emblem, so the
+# portrait reads; the stages sit further apart than the branches.
+const ENTRY_EMBLEM := 64.0
+const STAGE_ROW_STEP := 220.0
 
 var state: RunCarryover
 var stages: Array[StageData] = [preload("res://data/stages/ancient_ruins.tres"), preload("res://data/stages/forest.tres")]
@@ -54,11 +58,13 @@ var requirement: Label
 var totals: StatBars
 var price_label: Label
 var after_label: Label
-var stage_choice: SegmentedChoice
 var stage_status: Label
-var entry_rows: Array[Button] = []
-var entry_list: VBoxContainer
-var stage_art: TextureRect
+var entry_canvas: Control
+# Each stage's island, heading its row; it is read, not chosen.
+var stage_nodes: Array[SkillNodeButton] = []
+# Per stage, its start floors' nodes in ENTRY_FLOORS order.
+var entry_nodes: Array = []
+var selected_stage := 0
 var growth_rule: HintMark
 var entry_rule: HintMark
 # Each wire's lit share as drawn: from, to, and the blend between them.
@@ -102,7 +108,7 @@ func _ready() -> void:
 	_build_detail(_detail_column)
 	set_entries(false)
 	set_process(false)
-	visibility_changed.connect(func(): set_process(is_visible_in_tree() and not entries_shown))
+	visibility_changed.connect(func(): set_process(is_visible_in_tree()))
 
 
 # Two title-sized tabs the hub shows in its header in place of the title.
@@ -146,18 +152,22 @@ func _node_button(id: StringName, key: String, extent: float) -> SkillNodeButton
 	var button := SkillNodeButton.new()
 	canvas.add_child(button)
 	button.setup(id, key, extent)
-	# Moving to a node chooses it; Enter on the chosen node goes to the
-	# action, so choosing never spends Gold by itself.
-	button.focus_entered.connect(select_upgrade.bind(id))
-	button.pressed.connect(select_upgrade.bind(id))
+	_choose_on(button, select_upgrade.bind(id))
+	buttons[id] = button
+	return button
+
+
+# Moving to a node or clicking it chooses it; Enter on the chosen node goes
+# to the action, so choosing never spends Gold by itself.
+func _choose_on(button: SkillNodeButton, choose: Callable) -> void:
+	button.focus_entered.connect(choose)
+	button.pressed.connect(choose)
 	button.gui_input.connect(func(event: InputEvent):
 		if event.is_action_pressed("ui_accept") and not event.is_echo():
 			button.accept_event()
-			select_upgrade(id)
+			choose.call()
 			if not upgrade_button.disabled:
 				upgrade_button.grab_focus())
-	buttons[id] = button
-	return button
 
 
 # Base HP at the far left, level with the middle of the branches; each
@@ -206,8 +216,19 @@ func _put(button: SkillNodeButton, point: Vector2) -> void:
 
 
 func _point(id: StringName) -> Vector2:
-	var button: SkillNodeButton = buttons[id]
+	return _middle(buttons[id])
+
+
+func _middle(button: SkillNodeButton) -> Vector2:
 	return button.position + button.centre()
+
+
+# A straight wire between two nodes in a row or a column, edge to edge.
+func _span(from: SkillNodeButton, to: SkillNodeButton) -> PackedVector2Array:
+	var start := _middle(from)
+	var end := _middle(to)
+	var way := start.direction_to(end)
+	return PackedVector2Array([start + way * from.radius(), end - way * to.radius()])
 
 
 # A wire from the right edge of one disc to the left edge of the next, like
@@ -226,27 +247,47 @@ func _route(source: StringName, target: StringName) -> PackedVector2Array:
 func _draw_wires() -> void:
 	if state == null:
 		return
-	var rail := canvas.get_theme_color(&"rail", &"HubLobby")
-	var muted := canvas.get_theme_color(&"font_color", &"MutedLabel")
 	for node in SkillCatalog.NODES:
-		var path := _route(node.prerequisite, node.id)
 		var lit := lerpf(_lit_from.get(node.id, 0.0), _lit_to.get(node.id, 0.0), blend)
-		# A wire arrives with the later of its two nodes on the page's entrance.
-		var shown := minf((buttons[node.prerequisite] as Control).modulate.a, (buttons[node.id] as Control).modulate.a)
-		if shown <= 0.0:
-			continue
-		rail.a = shown
-		canvas.draw_polyline(path, Color(muted, 0.28 * shown), 2.0, true)
-		if lit <= 0.0:
-			continue
-		var part := _part(path, lit)
-		if lit >= 1.0:
-			# An opened wire glows a little, and a spark runs along it.
-			canvas.draw_polyline(part, Color(rail, 0.22 * shown), 6.0, true)
-		canvas.draw_polyline(part, rail, 2.0, true)
-		if lit >= 1.0:
-			var spark := _part(path, fposmod(_flow + node.id.hash() % 97 / 97.0, 1.0))
-			canvas.draw_circle(spark[spark.size() - 1], 2.5, Color(rail.lerp(Color.WHITE, 0.5), 0.8 * shown))
+		_draw_wire(canvas, _route(node.prerequisite, node.id), lit, buttons[node.prerequisite], buttons[node.id])
+
+
+# A stage opens below the one it follows; a start floor's wire lights once
+# that floor is unlocked.
+func _draw_entry_wires() -> void:
+	if state == null:
+		return
+	for row in stages.size():
+		for parent in stages.size():
+			if stages[parent].id == stages[row].previous_stage:
+				_draw_wire(entry_canvas, _span(stage_nodes[parent], stage_nodes[row]), 1.0 if state.stage_available(stages[row]) else 0.0, stage_nodes[parent], stage_nodes[row])
+		var previous: SkillNodeButton = stage_nodes[row]
+		for index in ENTRY_FLOORS.size():
+			var node: SkillNodeButton = entry_nodes[row][index]
+			_draw_wire(entry_canvas, _span(previous, node), 1.0 if _entry(index, row).unlocked else 0.0, previous, node)
+			previous = node
+
+
+# One wire: a faint rail, and the lit share drawn over it from the source.
+func _draw_wire(target: Control, path: PackedVector2Array, lit: float, source: SkillNodeButton, sink: SkillNodeButton) -> void:
+	# A wire arrives with the later of its two nodes on the page's entrance.
+	var shown := minf(source.modulate.a, sink.modulate.a)
+	if shown <= 0.0:
+		return
+	var rail := target.get_theme_color(&"rail", &"HubLobby")
+	var muted := target.get_theme_color(&"font_color", &"MutedLabel")
+	rail.a = shown
+	target.draw_polyline(path, Color(muted, 0.28 * shown), 2.0, true)
+	if lit <= 0.0:
+		return
+	var part := _part(path, lit)
+	if lit >= 1.0:
+		# An opened wire glows a little, and a spark runs along it.
+		target.draw_polyline(part, Color(rail, 0.22 * shown), 6.0, true)
+	target.draw_polyline(part, rail, 2.0, true)
+	if lit >= 1.0:
+		var spark := _part(path, fposmod(_flow + sink.id.hash() % 97 / 97.0, 1.0))
+		target.draw_circle(spark[spark.size() - 1], 2.5, Color(rail.lerp(Color.WHITE, 0.5), 0.8 * shown))
 
 
 # The first share of a path's length.
@@ -269,7 +310,7 @@ func _part(path: PackedVector2Array, share: float) -> PackedVector2Array:
 
 func _process(delta: float) -> void:
 	_flow = fmod(_flow + delta / UIMotion.IDLE_PERIOD, 1.0)
-	canvas.queue_redraw()
+	(entry_canvas if entries_shown else canvas).queue_redraw()
 
 
 func _build_detail(column: VBoxContainer) -> void:
@@ -328,47 +369,83 @@ func _build_detail(column: VBoxContainer) -> void:
 
 
 func _build_entries(parent: VBoxContainer) -> void:
-	var choice_row := HBoxContainer.new()
-	choice_row.theme_type_variation = &"CompactRow"
-	parent.add_child(choice_row)
-	stage_choice = SegmentedChoice.new()
-	stage_choice.option_role = &"CategoryTab"
-	choice_row.add_child(stage_choice)
-	entry_rule = HintMark.make(choice_row, "中ボスを倒した階の次から始められる。どの階から始めてもLv 1。", HubSettings.TOPIC_GROWTH)
-	for stage in stages:
-		stage_choice.add_item(stage.display_name)
-	stage_choice.item_selected.connect(func(_index: int):
-		_refresh_entries()
-		UIMotion.reveal_selection([_entry_detail]))
-	# The rows on the left half, the dungeon's picture faint beside them.
-	var split := HBoxContainer.new()
-	split.theme_type_variation = &"ShopColumns"
-	split.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	parent.add_child(split)
-	entry_list = VBoxContainer.new()
-	entry_list.theme_type_variation = &"SlotRows"
-	entry_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	split.add_child(entry_list)
-	stage_art = TextureRect.new()
-	# Its edges melt into the slab instead of reading as a framed picture.
-	stage_art.material = ShaderMaterial.new()
-	(stage_art.material as ShaderMaterial).shader = EDGE_FADE
-	stage_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	stage_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	stage_art.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stage_art.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	stage_art.custom_minimum_size.y = ENTRY_HEIGHT * ENTRY_FLOORS.size()
-	stage_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	split.add_child(stage_art)
-	UIMotion.of(entry_list)
-	entry_list.draw.connect(_draw_entry_band)
-	for index in ENTRY_FLOORS.size():
-		var row := HubUI.button(entry_list, "", select_entry.bind(index), &"SlotRow")
-		row.custom_minimum_size.y = ENTRY_HEIGHT
-		row.toggle_mode = true
-		row.focus_entered.connect(select_entry.bind(index))
-		row.draw.connect(_draw_entry_row.bind(row, index))
-		entry_rows.append(row)
+	# The rule's mark beside a caption, as on the growth tree.
+	var heading := HBoxContainer.new()
+	heading.theme_type_variation = &"CompactRow"
+	parent.add_child(heading)
+	var caption := HubUI.label(heading, "開始地点の開き方", &"NoteLabel")
+	caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	entry_rule = HintMark.make(heading, "中ボスを倒した階の次から始められる。どの階から始めてもLv 1。", HubSettings.TOPIC_GROWTH)
+	entry_canvas = Control.new()
+	entry_canvas.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	entry_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(entry_canvas)
+	entry_canvas.draw.connect(_draw_entry_wires)
+	entry_canvas.resized.connect(_place_entries)
+	for row in stages.size():
+		var stage := stages[row]
+		var island := SkillNodeButton.new()
+		entry_canvas.add_child(island)
+		island.setup(stage.id, "", CENTRE_EMBLEM)
+		island.picture = stage.diorama
+		# Clicking the island chooses its first floor; arrows pass it by.
+		island.toggle_mode = false
+		island.focus_mode = Control.FOCUS_NONE
+		island.pressed.connect(func():
+			select_entry(0, row)
+			(entry_nodes[row][0] as Control).grab_focus())
+		stage_nodes.append(island)
+		var floors: Array[SkillNodeButton] = []
+		for index in ENTRY_FLOORS.size():
+			var node := SkillNodeButton.new()
+			entry_canvas.add_child(node)
+			node.setup(StringName("%s_%d" % [stage.id, ENTRY_FLOORS[index]]), "", ENTRY_EMBLEM)
+			_show_guardian(node, stage.bosses[index] if index < stage.bosses.size() else null)
+			_choose_on(node, select_entry.bind(index, row))
+			floors.append(node)
+		entry_nodes.append(floors)
+	_link_entry_focus()
+
+
+# The guardian's first idle frame, cropped to the body in the frame's lower
+# part; the strip leaves room above it for the strike.
+func _show_guardian(node: SkillNodeButton, stats: EnemyStats) -> void:
+	var strip := EnemySprites.sheet_for(stats)
+	if strip == null:
+		return
+	var frame := float(strip.get_height())
+	node.picture = strip
+	node.picture_region = Rect2(frame * 0.15, frame * 0.3, frame * 0.7, frame * 0.7)
+	node.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
+
+# Each stage's island at the far left of its row, the stages stacked down
+# the left edge; its start floors in columns to the right.
+func _place_entries() -> void:
+	var island := stage_nodes[0]
+	var sample: SkillNodeButton = entry_nodes[0][0]
+	var start := Vector2(island.size.x * 0.5, entry_canvas.size.y * 0.5)
+	var across := minf(COLUMN_STEP, (entry_canvas.size.x - start.x - sample.size.x * 0.5) / ENTRY_FLOORS.size())
+	var down := minf(STAGE_ROW_STEP, (entry_canvas.size.y - island.size.y) / maxf(stages.size() - 1, 1))
+	for row in stages.size():
+		var y := start.y + (row - (stages.size() - 1) * 0.5) * down
+		_put(stage_nodes[row], Vector2(start.x, y))
+		for index in ENTRY_FLOORS.size():
+			_put(entry_nodes[row][index], Vector2(start.x + across * (index + 1), y))
+	entry_canvas.queue_redraw()
+
+
+# Arrows follow the grid: left and right along a stage's floors, up and down
+# to the same floor of the stage above or below.
+func _link_entry_focus() -> void:
+	for row in entry_nodes.size():
+		for index in ENTRY_FLOORS.size():
+			var node: SkillNodeButton = entry_nodes[row][index]
+			node.focus_neighbor_left = node.get_path_to(entry_nodes[row][maxi(index - 1, 0)])
+			node.focus_neighbor_right = node.get_path_to(entry_nodes[row][mini(index + 1, ENTRY_FLOORS.size() - 1)])
+			node.focus_neighbor_top = node.get_path_to(entry_nodes[maxi(row - 1, 0)][index])
+			node.focus_neighbor_bottom = node.get_path_to(entry_nodes[mini(row + 1, entry_nodes.size() - 1)][index])
 
 
 func set_entries(value: bool) -> void:
@@ -379,7 +456,6 @@ func set_entries(value: bool) -> void:
 	_entries.visible = value
 	_growth_detail.visible = not value
 	_entry_detail.visible = value
-	set_process(is_visible_in_tree() and not value)
 	if state != null:
 		_refresh_detail()
 		UIMotion.reveal_selection([_detail_column])
@@ -400,12 +476,16 @@ func select_upgrade(id: StringName) -> void:
 	UIMotion.reveal_selection([_growth_detail])
 
 
-func select_entry(index: int) -> void:
+# A start floor of the given stage's row, or else of the chosen stage's.
+func select_entry(index: int, stage_index: int = -1) -> void:
 	selected_entry = index
-	for other in entry_rows.size():
-		entry_rows[other].set_pressed_no_signal(other == index)
-		entry_rows[other].queue_redraw()
-	entry_list.queue_redraw()
+	if stage_index >= 0:
+		selected_stage = stage_index
+	for row in entry_nodes.size():
+		for other in ENTRY_FLOORS.size():
+			var node: SkillNodeButton = entry_nodes[row][other]
+			node.set_pressed_no_signal(row == selected_stage and other == index)
+			node.queue_redraw()
 	if state != null:
 		_refresh_detail()
 	UIMotion.reveal_selection([_entry_detail])
@@ -413,7 +493,7 @@ func select_entry(index: int) -> void:
 
 func _act() -> void:
 	if entries_shown:
-		entry_requested.emit(stages[stage_choice.selected], ENTRY_FLOORS[selected_entry])
+		entry_requested.emit(stages[selected_stage], ENTRY_FLOORS[selected_entry])
 	elif selected_id == &"hp":
 		hp_requested.emit()
 	else:
@@ -537,23 +617,25 @@ func _counter(cost: int, met: bool, allowed: bool, verb: String, complete: Strin
 
 
 func _refresh_entries() -> void:
-	var stage := stages[stage_choice.selected]
-	var available := state.stage_available(stage)
-	stage_status.text = "" if available else "ステージ未解放：%sをクリア" % _stage_name(stage.previous_stage)
-	stage_status.visible = not available
-	stage_art.texture = stage.illustration
-	_stage_text.text = "%s　全%d階　%s
-%s" % [stage.display_name, stage.floor_count, stage.difficulty, stage.description]
-	stage_art.modulate.a = 0.55 if available else 0.25
-	for row in entry_rows:
-		row.queue_redraw()
-	entry_list.queue_redraw()
+	for row in stages.size():
+		var stage := stages[row]
+		var available := state.stage_available(stage)
+		var island_note := stage.display_name if available else "%s（%sを踏破で解放）" % [stage.display_name, _stage_name(stage.previous_stage)]
+		stage_nodes[row].show_state(island_note, 1 if available else 0, 1, available, false)
+		for index in ENTRY_FLOORS.size():
+			var entry := _entry(index, row)
+			var node: SkillNodeButton = entry_nodes[row][index]
+			var note := "%s　%dFから開始\n%s" % [stage.display_name, entry.floor, "解放済み" if entry.unlocked else entry.condition]
+			node.show_state(note, 1 if entry.unlocked else 0, 1, entry.met or entry.unlocked, entry.allowed)
+			# A guardian not yet beaten stays a shadow, as it stays ？？？ on the map.
+			node.picture_hidden = not entry.met and not entry.unlocked
+	entry_canvas.queue_redraw()
 	if entries_shown:
 		_refresh_entry_detail()
 
 
-func _entry(index: int) -> Dictionary:
-	var stage := stages[stage_choice.selected]
+func _entry(index: int, stage_index: int = -1) -> Dictionary:
+	var stage := stages[selected_stage if stage_index < 0 else stage_index]
 	var floor_number: int = ENTRY_FLOORS[index]
 	var available := state.stage_available(stage)
 	var unlocked: bool = floor_number in state.unlocked_entries.get(String(stage.id), [])
@@ -565,59 +647,15 @@ func _entry(index: int) -> Dictionary:
 
 
 func _refresh_entry_detail() -> void:
+	var stage := stages[selected_stage]
+	var available := state.stage_available(stage)
 	var entry := _entry(selected_entry)
 	_entry_title.text = "%dFから開始" % entry.floor
 	_entry_condition.text = "解放済み" if entry.unlocked else entry.condition
+	stage_status.text = "" if available else "ステージ未解放：%sをクリア" % _stage_name(stage.previous_stage)
+	stage_status.visible = not available
+	_stage_text.text = "%s　全%d階　%s\n%s" % [stage.display_name, stage.floor_count, stage.difficulty, stage.description]
 	_counter(entry.cost, entry.met, entry.allowed, "解放する", "解放済み")
-
-
-# A start floor's row: the floor, its condition, and its state at the right.
-func _draw_entry_row(row: Button, index: int) -> void:
-	if state == null:
-		return
-	var entry := _entry(index)
-	var font := row.get_theme_font(&"font")
-	var name_size := row.get_theme_font_size(&"font_size", &"ItemNameLabel")
-	var note_size := row.get_theme_font_size(&"font_size", &"NoteLabel")
-	var body := row.get_theme_color(&"font_color", &"Label")
-	var muted := row.get_theme_color(&"font_color", &"MutedLabel")
-	var chosen := row.button_pressed
-	# A floor that cannot be opened yet sits a step darker than the rest.
-	var title_tone := row.get_theme_color(&"font_color", &"GoldLabel") if chosen else (body if entry.met or entry.unlocked else Color(muted, 0.75))
-	var width := row.size.x - BAND_TIP - 24.0
-	draw_text(row, font, Vector2(16, 30), "%dFから開始" % entry.floor, width, name_size, title_tone, HORIZONTAL_ALIGNMENT_LEFT)
-	draw_text(row, font, Vector2(16, 54), entry.condition, width, note_size, muted, HORIZONTAL_ALIGNMENT_LEFT)
-	var tag := "解放済み" if entry.unlocked else UIFormat.gold(entry.cost)
-	var reachable: bool = entry.met or entry.unlocked
-	draw_text(row, font, Vector2(16, 30), tag, width, note_size + 2, body if reachable else Color(muted, 0.7), HORIZONTAL_ALIGNMENT_RIGHT)
-	# The row's state before it is chosen: a padlock before the price of a
-	# floor whose boss still stands, a gold diamond on one Gold can open now.
-	var mark_x := 16.0 + width - font.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, note_size + 2).x - 14.0
-	if not reachable:
-		StateMark.lock(row, Vector2(mark_x, 25), 14.0, Color(muted, 0.85))
-	elif entry.allowed:
-		StateMark.ready(row, Vector2(mark_x, 25), 6.0, row.get_theme_color(&"font_color", &"GoldLabel"))
-	if index < entry_rows.size() - 1 and not chosen:
-		var rail := row.get_theme_color(&"rail", &"HubLobby")
-		var y := row.size.y - 0.5
-		row.draw_polyline_colors(PackedVector2Array([Vector2(0, y), Vector2(row.size.x * 0.5, y), Vector2(row.size.x, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.22), Color(rail, 0.0)]), 1.0, true)
-
-
-func draw_text(canvas_item: CanvasItem, font: Font, at: Vector2, text: String, width: float, font_size: int, tone: Color, alignment: HorizontalAlignment) -> void:
-	canvas_item.draw_string(font, at, text, alignment, width, font_size, tone)
-
-
-# The chosen start floor's warm band, sliding between rows like the slots'.
-func _draw_entry_band() -> void:
-	var chosen := entry_rows[selected_entry]
-	var rect := UIMotion.of(entry_list).follow_mark(Rect2(chosen.position + Vector2(0, 4), chosen.size - Vector2(0, 8)))
-	var rail := entry_list.get_theme_color(&"rail", &"HubLobby")
-	var band := entry_list.get_theme_color(&"band", &"HubLobby")
-	var tip := rect.end.x
-	var middle := rect.get_center().y
-	var outline := PackedVector2Array([rect.position, Vector2(tip - BAND_TIP, rect.position.y), Vector2(tip, middle), Vector2(tip - BAND_TIP, rect.end.y), Vector2(rect.position.x, rect.end.y)])
-	entry_list.draw_polygon(outline, PackedColorArray([Color(band, band.a * 0.5), Color(band, band.a * 1.6), Color(band, band.a * 1.8), Color(band, band.a * 1.6), Color(band, band.a * 0.5)]))
-	entry_list.draw_polyline_colors(outline, PackedColorArray([Color(rail, 0.0), Color(rail, 0.85), rail, Color(rail, 0.85), Color(rail, 0.0)]), 1.5, true)
 
 
 func _stage_name(id: StringName) -> String:
@@ -667,7 +705,10 @@ func play_entrance() -> void:
 			if tier < branch.size():
 				order.append(nodes[branch[tier].id])
 	if entries_shown:
-		order = entry_rows
+		order = stage_nodes.duplicate()
+		for index in ENTRY_FLOORS.size():
+			for row in entry_nodes.size():
+				order.append(entry_nodes[row][index])
 	for index in order.size():
 		UIMotion.of(order[index]).appear(UIMotion.ROW_STAGGER * index, UIMotion.ROW_TIME)
 	UIMotion.of(_detail_column).appear(UIMotion.STAGGER_TIME)
@@ -686,6 +727,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func focus_first_action() -> void:
 	if entries_shown:
-		entry_rows[selected_entry].grab_focus()
+		(entry_nodes[selected_stage][selected_entry] as Control).grab_focus()
 	else:
 		(buttons[selected_id] as Button).grab_focus()

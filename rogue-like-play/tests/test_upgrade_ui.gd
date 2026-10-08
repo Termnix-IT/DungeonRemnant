@@ -30,9 +30,12 @@ func check_actions(panel: SkillTreePanel) -> void:
 		check(not panel.nodes[node.id].disabled, "Locked and capped abilities remain inspectable")
 		check(panel.nodes[node.id].open == (panel.state.skill_rank(node.prerequisite) >= node.prerequisite_rank), "A node is open exactly when its source is capped: " + node.id)
 	panel.set_entries(true)
-	for index in panel.entry_rows.size():
-		panel.select_entry(index)
-		check(panel.upgrade_button.disabled == not panel.state.can_unlock_entry(panel.stages[panel.stage_choice.selected], 11 + index * 10), "Entry eligibility matches domain: %d" % index)
+	var chosen_stage := panel.selected_stage
+	for row in panel.stages.size():
+		for index in SkillTreePanel.ENTRY_FLOORS.size():
+			panel.select_entry(index, row)
+			check(panel.upgrade_button.disabled == not panel.state.can_unlock_entry(panel.stages[row], 11 + index * 10), "Entry eligibility matches domain: %d %d" % [row, index])
+	panel.select_entry(0, chosen_stage)
 	panel.set_entries(false)
 
 
@@ -79,8 +82,25 @@ func check_layout(panel: SkillTreePanel) -> void:
 	check(not panel.canvas.get_global_rect().intersects(panel.upgrade_button.get_global_rect()), "The tree leaves the action clear")
 	panel.set_entries(true)
 	await settle()
-	for row in panel.entry_rows:
-		check(screen.encloses(row.get_global_rect()), "Entry row fits the screen")
+	# The start floors read the same way: each stage's island at the left,
+	# stacked in order, its floors running right in shared columns.
+	var shown: Array[Rect2] = []
+	for row in panel.stages.size():
+		var island: Vector2 = panel.stage_nodes[row].get_global_rect().get_center()
+		check(row == 0 or island.y > panel.stage_nodes[row - 1].get_global_rect().get_center().y and absf(island.x - panel.stage_nodes[0].get_global_rect().get_center().x) < 1.0, "Stages stack down the left edge")
+		var west := island.x
+		for index in SkillTreePanel.ENTRY_FLOORS.size():
+			var point: Vector2 = panel.entry_nodes[row][index].get_global_rect().get_center()
+			check(absf(point.y - island.y) < 1.0 and point.x > west, "A stage's floors run right along its row: %d %d" % [row, index])
+			check(absf(point.x - panel.entry_nodes[0][index].get_global_rect().get_center().x) < 1.0, "Start floors line up in columns: %d" % index)
+			west = point.x
+		for node: Control in [panel.stage_nodes[row]] + panel.entry_nodes[row]:
+			var rect := node.get_global_rect()
+			check(screen.encloses(rect) and panel.entry_canvas.get_global_rect().grow(1).encloses(rect), "Start floor node fits the tree")
+			for other in shown:
+				check(not other.intersects(rect.grow(-2)), "Start floor nodes do not overlap")
+			shown.append(rect)
+	check(panel.entry_nodes[1][0].get_node(panel.entry_nodes[1][0].focus_neighbor_top) == panel.entry_nodes[0][0] and panel.entry_nodes[0][0].get_node(panel.entry_nodes[0][0].focus_neighbor_right) == panel.entry_nodes[0][1], "Arrows move along a stage's floors and between stages")
 	panel.set_entries(false)
 
 
@@ -145,14 +165,14 @@ func run_tests() -> void:
 	panel.set_entries(true)
 	panel.select_entry(0)
 	check(not panel.upgrade_button.disabled and panel.upgrade_button.text == "解放する", "Boss victory opens the matching start floor")
+	check(not panel.entry_nodes[0][0].picture_hidden and panel.entry_nodes[0][1].picture_hidden and panel.entry_nodes[0][0].growable, "A beaten guardian shows; the next stays a shadow")
 	panel.select_entry(1)
 	check(panel.upgrade_button.disabled, "Only the matching start floor opens")
 	check(panel.price_label.theme_type_variation == &"PriceLabelLocked", "A start floor whose boss still stands shows its price out of gold")
 	unlock(panel, 0)
 	check(state.gold == 850 and state.can_start(RUINS, 11), "The primary action unlocks the chosen floor")
 	check(panel.upgrade_button.disabled and panel.upgrade_button.text == "解放済み", "An owned floor cannot be bought again")
-	panel.stage_choice.select(1)
-	panel.stage_choice.item_selected.emit(1)
+	panel.select_entry(0, 1)
 	check(panel.stage_status.text.contains("古代遺跡をクリア"), "Locked stage explains prerequisite dungeon")
 	check_actions(panel)
 	state.record_boss(RUINS.id, 50, true)
