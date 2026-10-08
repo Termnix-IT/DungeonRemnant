@@ -1,0 +1,18 @@
+素材名: PVFX Foundry 0.10.0
+作者: nerijs
+入手元: https://nerijs.itch.io/pvfx-foundry
+ダウンロード: itch.ioの無料ダウンロード（PVFX-Foundry-0.10.0.zip）
+ライセンス: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
+ライセンスの確認: 作者の配布ページと同梱のライセンス文で確認（2026-10-08）
+入手日: 2026-10-08
+
+使用ファイルと加工:
+- source/crescent-slash/（grid/sprite-sheet.png・manifest.json）→ slash.png
+- source/earth-rupture/ → heavy.png
+- source/solar-shrapnel/ → hit.png
+- source/radiant-heal/ → heal.png
+- source/smoke-puff/ → death.png（いずれも96pxのコマ）
+
+加工の内容: tools/build_effect_sheets.py で、各エフェクトのコマを左から再生順に横1列へ並べた。画素は変えていない。source/ の元ファイルは改変していない。
+
+備考: 配布物に同梱のLICENSE.txtを置いている。CC0の対象はsprite-sheet.pngとmanifest.jsonなどの同梱ファイルに限られ、使用しているのはその範囲。作者は絵が手続き的な描画による出力で、生成画像モデルの出力を含まないと記載している。

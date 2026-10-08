@@ -102,3 +102,31 @@ Forest Ambience by TinyWorlds: <https://opengameart.org/content/forest-ambience>
 Used: `Forest_Ambience.mp3` (forest room tone), in `rogue-like-play/audio/third_party/tinyworlds_forest_ambience/`.
 
 License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>
+
+## Battle effects
+
+The battle effects below are third-party pixel art. Each original is kept unmodified in `rogue-like-play/art/third_party/<pack>/source/`; `rogue-like-play/tools/build_effect_sheets.py` lays the frames of each effect out as one strip, which the game plays without changing the pixels. Each folder's `SOURCE.txt` records the download and the files used. The spear thrust remains drawn by the game.
+
+### Pixel Art Spells
+
+Pixel Art Spells by DevWizard: <https://opengameart.org/content/pixel-art-spells>
+
+Used: `Arcane Bolt.png` (magic bolt), in `rogue-like-play/art/third_party/devwizard_pixel_art_spells/`.
+
+License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>
+
+### Pixel Magic Effects
+
+Pixel Magic Effects by Foozle (commissioned from lordfitoi): <https://foozlecc.itch.io/pixel-magic-sprite-effects>
+
+Used: the `Fire_Ball` frames (flame wave), in `rogue-like-play/art/third_party/foozle_pixel_magic_effects/`. The pack's license text is that folder's `LICENSE.txt`.
+
+License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>
+
+### PVFX Foundry
+
+PVFX Foundry by nerijs: <https://nerijs.itch.io/pvfx-foundry>
+
+Used: the grid sprite sheets and manifests of `crescent-slash` (sword slash), `earth-rupture` (hammer), `solar-shrapnel` (hit), `radiant-heal` (heal) and `smoke-puff` (enemy defeated), in `rogue-like-play/art/third_party/pvfx_foundry/`. The pack's license text, which limits the dedication to those sheets and manifests, is that folder's `LICENSE.txt`.
+
+License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>

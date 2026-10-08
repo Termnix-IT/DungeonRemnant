@@ -1,5 +1,23 @@
 extends Node2D
 
+# One attack's effect on each cell it reaches. A kind with a frame strip in
+# SHEETS plays it (third-party pixel art built by tools/build_effect_sheets.py;
+# see THIRD_PARTY_NOTICES.md); the rest are drawn as lines. On a line of cells
+# (a bolt) each later cell starts a beat after the one before.
+const TP := "res://art/third_party/"
+# kind: [strip, frames per second, world px per art px, pivot in art px, turns with the attack]
+const SHEETS := {
+	&"magic": [TP + "devwizard_pixel_art_spells/magic.png", 15.0, 3.0, Vector2(8, 8), true],
+	&"flame": [TP + "foozle_pixel_magic_effects/flame.png", 20.0, 1.0, Vector2(32, 32), true],
+	&"slash": [TP + "pvfx_foundry/slash.png", 20.0, 1.0, Vector2(48, 50), true],
+	&"heavy": [TP + "pvfx_foundry/heavy.png", 20.0, 1.0, Vector2(48, 71), false],
+	&"hit": [TP + "pvfx_foundry/hit.png", 20.0, 1.0, Vector2(48, 56), false],
+	&"heal": [TP + "pvfx_foundry/heal.png", 20.0, 1.0, Vector2(48, 67), false],
+	&"death": [TP + "pvfx_foundry/death.png", 20.0, 1.0, Vector2(48, 48), false],
+}
+const STAGGER := 0.04
+static var _strips: Dictionary = {}
+
 var kind: StringName = &"slash"
 var points: Array[Vector2] = []
 var direction := Vector2.RIGHT
@@ -7,6 +25,8 @@ var phase := 0.0:
 	set(value):
 		phase = value
 		queue_redraw()
+var _strip: Texture2D
+var _duration := 0.22
 
 
 func start(effect_kind: StringName, cells: Array[Vector2], facing: Vector2, duration: float = 0.22) -> void:
@@ -14,12 +34,68 @@ func start(effect_kind: StringName, cells: Array[Vector2], facing: Vector2, dura
 	points = cells
 	direction = facing.normalized()
 	z_index = 12
+	_strip = strip(kind)
+	_duration = duration
+	if _strip != null:
+		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		var fps: float = SHEETS[kind][1]
+		_duration = frame_count(_strip) / fps + STAGGER * maxi(points.size() - 1, 0)
 	var tween := create_tween()
-	tween.tween_property(self, "phase", 1.0, duration)
+	tween.tween_property(self, "phase", 1.0, _duration)
 	tween.tween_callback(queue_free)
 
 
+static func strip(effect_kind: StringName) -> Texture2D:
+	if not SHEETS.has(effect_kind):
+		return null
+	if not _strips.has(effect_kind):
+		_strips[effect_kind] = load(SHEETS[effect_kind][0])
+	return _strips[effect_kind]
+
+
+# How long the longest strip plays, for callers that wait for effects to clear.
+static func longest_duration() -> float:
+	var longest := 0.0
+	for effect_kind: StringName in SHEETS:
+		var fps: float = SHEETS[effect_kind][1]
+		longest = maxf(longest, frame_count(strip(effect_kind)) / fps)
+	return longest
+
+
+static func frame_count(texture: Texture2D) -> int:
+	return maxi(1, texture.get_width() / texture.get_height())
+
+
+# The strip is drawn mirrored rather than upside down for attacks to the left,
+# so fire and arcs keep their top side up.
+func _draw_frames() -> void:
+	var spec: Array = SHEETS[kind]
+	var fps: float = spec[1]
+	var world_scale: float = spec[2]
+	var pivot: Vector2 = spec[3]
+	var turns: bool = spec[4]
+	var side := float(_strip.get_height())
+	var count := frame_count(_strip)
+	var flip := turns and direction.x < -0.01
+	var aim := Vector2(-direction.x, direction.y) if flip else direction
+	var angle := 0.0
+	if turns:
+		angle = -aim.angle() if flip else aim.angle()
+	var scale := Vector2(-world_scale if flip else world_scale, world_scale)
+	var elapsed := phase * _duration
+	for index in points.size():
+		var local := (elapsed - index * STAGGER) * fps
+		if local < 0.0 or local >= count:
+			continue
+		draw_set_transform(points[index], angle, scale)
+		draw_texture_rect_region(_strip, Rect2(-pivot, Vector2.ONE * side), Rect2(floorf(local) * side, 0, side, side))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
 func _draw() -> void:
+	if _strip != null:
+		_draw_frames()
+		return
 	var tint := Color("f3dfb2")
 	if kind == &"magic":
 		tint = Color("bdb1f1")

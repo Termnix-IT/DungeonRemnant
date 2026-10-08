@@ -72,7 +72,9 @@ func run_tests() -> void:
 			await run.presentation.finished
 		await process_frame
 		check(player.input_enabled and player.combat_visual.position.is_zero_approx(), "Input and attack pose recover")
-		await create_timer(0.45).timeout
+		# Effect strips play at their authored rate; the defeat smoke starts a beat late.
+		var effects_clear: float = preload("res://combat/strike_effect.gd").longest_duration() + run.presentation.DEATH_SMOKE_DELAY
+		await create_timer(maxf(0.45, effects_clear + 0.1)).timeout
 		check(run.presentation.get_child_count() == 0, "Transient damage, death and sound nodes expire")
 	# Surviving target, knockback and retaliation exercise chained visual events.
 	player.weapon = weapons[2]

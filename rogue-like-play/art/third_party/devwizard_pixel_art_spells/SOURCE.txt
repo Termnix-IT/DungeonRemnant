@@ -1,0 +1,14 @@
+素材名: Pixel Art Spells
+作者: DevWizard
+入手元: https://opengameart.org/content/pixel-art-spells
+ダウンロード: https://opengameart.org/sites/default/files/pixelart_spells_1.zip
+ライセンス: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
+ライセンスの確認: 作者の配布ページと同梱のライセンス文で確認（2026-10-08）
+入手日: 2026-10-08
+
+使用ファイルと加工:
+- source/Arcane Bolt.png（Pixelart Spells/PNG Files/）→ magic.png（16pxの6コマ）
+
+加工の内容: tools/build_effect_sheets.py で、各エフェクトのコマを左から再生順に横1列へ並べた。画素は変えていない。source/ の元ファイルは改変していない。
+
+備考: 作者表記は任意（作者のページによる）。

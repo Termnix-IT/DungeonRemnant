@@ -10,6 +10,7 @@ const StrikeEffect := preload("res://combat/strike_effect.gd")
 # Engine.time_scale is untouched so audio, UI and timers keep running.
 const HIT_STOP_TIME := 0.05
 const DAMAGE_FONT_SIZE := 30
+const DEATH_SMOKE_DELAY := 0.12
 const ITEM_POPUP_ICON := 36.0
 const ITEM_POPUP_FONT_SIZE := 16
 const ITEM_POPUP_POP := 0.22
@@ -156,7 +157,7 @@ func present(events: Array[Dictionary], player: Node2D, visible_cells: Dictionar
 					effect_points.append(Vector2(cell * tile_size) + Vector2.ONE * tile_size / 2)
 			timeline.tween_callback(_attack.bind(actor, event.direction, event.weapon)).set_delay(at)
 			if not effect_points.is_empty():
-				timeline.tween_callback(_effect.bind(_weapon_cue(event.weapon), effect_points, Vector2(event.direction))).set_delay(hit_at)
+				timeline.tween_callback(_effect.bind(_effect_kind(event.weapon), effect_points, Vector2(event.direction))).set_delay(hit_at)
 			at += 0.26
 		else:
 			has_hit = true
@@ -272,6 +273,11 @@ func _hit(event: Dictionary, player: Node2D, tile_size: int) -> void:
 	punch.tween_property(damage, "scale", Vector2.ONE, 0.14)
 	if event.dead and actor != player:
 		GameAudio.play(self, &"death", -20.0)
+		# Smoke rises as the defeated enemy drops and fades.
+		var smoke := create_tween()
+		tweens.append(smoke)
+		var smoke_at: Array[Vector2] = [center]
+		smoke.tween_callback(_effect.bind(&"death", smoke_at, Vector2(event.direction))).set_delay(DEATH_SMOKE_DELAY)
 		popup("EXP +%d  Gold +%d" % [actor.stats.exp_reward, actor.stats.gold_reward], center + Vector2(0, 48), Color("f1d581"), 16)
 	_track(actor)
 	_effect(&"hit", [center], Vector2(event.direction))
@@ -414,6 +420,18 @@ static func _weapon_cue(weapon: WeaponData) -> StringName:
 		WeaponData.Kind.HAMMER: return &"heavy"
 		WeaponData.Kind.STAFF: return &"magic"
 	return &"slash"
+
+
+# The effect an attack plays: a staff shows its spell (bolt, flame wave or
+# heal) or, without one, the sword-like swing it makes.
+static func _effect_kind(weapon: WeaponData) -> StringName:
+	if weapon != null and weapon.kind == WeaponData.Kind.STAFF:
+		if weapon.mana_cost == 0:
+			return &"slash"
+		if weapon.spell_heal > 0:
+			return &"heal"
+		return &"flame" if weapon.sweeps_sides else &"magic"
+	return _weapon_cue(weapon)
 
 
 func _effect(kind: StringName, points: Array[Vector2], direction: Vector2) -> void:

@@ -1,0 +1,14 @@
+素材名: Pixel Magic Effects
+作者: Foozle（lordfitoiへの依頼制作）
+入手元: https://foozlecc.itch.io/pixel-magic-sprite-effects
+ダウンロード: itch.ioの無料ダウンロード（Foozle_2DE0001_Pixel_Magic_Effects.zip）
+ライセンス: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
+ライセンスの確認: 作者の配布ページと同梱のライセンス文で確認（2026-10-08）
+入手日: 2026-10-08
+
+使用ファイルと加工:
+- source/Fire_Ball/001〜010.png（Foozle_2DE0001_Pixel_Magic_Effects/Fire_Ball/）→ flame.png（64pxの10コマ）
+
+加工の内容: tools/build_effect_sheets.py で、各エフェクトのコマを左から再生順に横1列へ並べた。画素は変えていない。source/ の元ファイルは改変していない。
+
+備考: 配布物に同梱のReadme.txt（ライセンス記載）をLICENSE.txtとして置いている。作者は生成AI不使用と記載している。
