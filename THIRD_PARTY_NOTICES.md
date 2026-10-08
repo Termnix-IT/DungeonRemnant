@@ -53,7 +53,7 @@ This Font Software is licensed under the SIL Open Font License, Version 1.1. The
 
 ## Sound effects and ambience
 
-The sound effects and room tones below are third-party recordings. Each original is kept unmodified in `rogue-like-play/audio/third_party/<pack>/source/`; the game plays copies that `rogue-like-play/tools/build_sound_effects.py` level-matches, peak-limits and encodes as Ogg Vorbis (one-shot effects also have their leading silence trimmed). Each folder's `SOURCE.txt` records the download and the files used. Hit and victory sounds remain the game's own synthesized placeholders.
+The sound effects and room tones below are third-party recordings. Each original is kept unmodified in `rogue-like-play/audio/third_party/<pack>/source/`; the game plays copies that `rogue-like-play/tools/build_sound_effects.py` level-matches, peak-limits and encodes as Ogg Vorbis (one-shot effects also have their leading silence trimmed). Each folder's `SOURCE.txt` records the download and the files used. Hit, level-up and victory sounds remain the game's own synthesized placeholders.
 
 ### RPG sound pack
 
@@ -83,7 +83,7 @@ License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons
 
 Music Jingles by Kenney (www.kenney.nl): <https://kenney.nl/assets/music-jingles>
 
-Used: `jingles_NES13.ogg` (level up), `jingles_PIZZI06.ogg` (floor arrival), `jingles_HIT15.ogg` (monster house warning) and `jingles_NES05.ogg` (defeat), in `rogue-like-play/audio/third_party/kenney_music_jingles/`.
+Used: `jingles_PIZZI06.ogg` (floor arrival), `jingles_HIT15.ogg` (monster house warning) and `jingles_NES05.ogg` (defeat), in `rogue-like-play/audio/third_party/kenney_music_jingles/`.
 
 License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>
 

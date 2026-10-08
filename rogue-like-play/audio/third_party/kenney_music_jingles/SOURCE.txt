@@ -7,7 +7,6 @@
 入手日: 2026-10-08
 
 使用ファイルと加工:
-- source/jingles_NES13.ogg（Audio/8-Bit jingles/）→ level_up.ogg
 - source/jingles_PIZZI06.ogg（Audio/Pizzicato jingles/）→ floor.ogg
 - source/jingles_HIT15.ogg（Audio/Hit jingles/）→ warning.ogg
 - source/jingles_NES05.ogg（Audio/8-Bit jingles/）→ defeat.ogg

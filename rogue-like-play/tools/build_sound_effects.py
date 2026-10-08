@@ -33,7 +33,6 @@ CUES = {
 	"pickup": ("rubberduck_80_cc0_rpg_sfx", "item_gem_01.ogg", -14.4),
 	"step": ("kenney_impact_sounds", "footstep_carpet_000.ogg", -21.3),
 	"confirm": ("artisticdude_rpg_sound_pack", "interface6.wav", -13.6),
-	"level_up": ("kenney_music_jingles", "jingles_NES13.ogg", -15.9),
 	"floor": ("kenney_music_jingles", "jingles_PIZZI06.ogg", -16.6),
 	"warning": ("kenney_music_jingles", "jingles_HIT15.ogg", -16.8),
 	"boss": ("rubberduck_80_cc0_rpg_sfx", "creature_roar_03.ogg", -17.0),

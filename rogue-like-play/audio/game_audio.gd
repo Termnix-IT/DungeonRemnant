@@ -36,7 +36,6 @@ const ASSETS := {
 	&"pickup": "res://audio/third_party/rubberduck_80_cc0_rpg_sfx/pickup.ogg",
 	&"step": "res://audio/third_party/kenney_impact_sounds/step.ogg",
 	&"confirm": "res://audio/third_party/artisticdude_rpg_sound_pack/confirm.ogg",
-	&"level_up": "res://audio/third_party/kenney_music_jingles/level_up.ogg",
 	&"floor": "res://audio/third_party/kenney_music_jingles/floor.ogg",
 	&"warning": "res://audio/third_party/kenney_music_jingles/warning.ogg",
 	&"boss": "res://audio/third_party/rubberduck_80_cc0_rpg_sfx/boss.ogg",

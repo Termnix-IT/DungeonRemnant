@@ -44,7 +44,7 @@ func run_tests() -> void:
 		check(sound is AudioStreamOggVorbis and sound == Audio.recorded(cue), "%s plays its recording" % cue)
 		check(not (sound as AudioStreamOggVorbis).loop and sound.get_length() > 0.05 and sound.get_length() < 4.8, "%s is a finite one-shot inside the voice lifetime" % cue)
 		check(Audio.PROFILES.has(cue), "%s keeps a synthesized fallback" % cue)
-	for cue: StringName in [&"hit", &"victory"]:
+	for cue: StringName in [&"hit", &"victory", &"level_up"]:
 		check(not Audio.ASSETS.has(cue) and Audio.stream_for(cue) == Audio.synthesized(cue), "%s stays synthesized" % cue)
 	var default_stream := Audio.stream_for(&"slash")
 	var replacement := AudioStreamWAV.new()
