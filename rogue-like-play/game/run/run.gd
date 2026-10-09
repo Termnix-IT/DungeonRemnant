@@ -94,6 +94,8 @@ var _summon_count := 0
 
 
 func _ready() -> void:
+	# Announcements run in one lane under the boss gauge, never over it.
+	journey_banner.lane_top = hud.notice_lane_top()
 	add_child(journey_banner)
 	add_child(boss_cut_in)
 	add_child(ambience)
@@ -522,6 +524,8 @@ func _refresh() -> void:
 	preview.queue_redraw()
 	hud.show_aim(preview.visible)
 	hud.show_inventory(turns.player.inventory.entries.size())
+	var main_weapon: ItemData = turns.player.equipment.slots[Equipment.Slot.MAIN]
+	hud.show_weapons(main_weapon, turns.player.equipment.slots[Equipment.Slot.SUB], turns.player.effective_weapon() if main_weapon != null else null)
 	hud.show_mana(turns.player.mp, turns.player.stats.max_mp)
 	# finish_run clears effects in rules; keep the last list on screen through
 	# the defeat and result instead of emptying it before the killing blow shows.

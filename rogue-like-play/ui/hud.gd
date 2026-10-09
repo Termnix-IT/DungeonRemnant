@@ -7,8 +7,12 @@ const EMPHASIZED_LOG_ENTRIES := 2
 const PORTRAIT_SIZE := 104
 const PORTRAIT_INSET := 14
 const EFFECTS_POSITION := Vector2(16, 16)
-const HINT_RECT := Rect2(10, 200, 334, 30)
+const HINT_RECT := Rect2(10, 254, 334, 30)
+# The weapon in hand, between the EXP bar and the turn line.
+const WEAPON_RECT := Rect2(14, 172, 330, 46)
 const EFFECTS_WIDTH := 238.0
+# Announcements run in one lane this far below the boss gauge's area.
+const NOTICE_GAP := 6.0
 
 @onready var status: Label = $Status
 @onready var floor_value: Label = $TopRight/Floor
@@ -25,6 +29,7 @@ const EFFECTS_WIDTH := 238.0
 @onready var log_entries: RichTextLabel = $Log/Entries
 
 var portrait: HudPortrait
+var weapon: HudWeapon
 var log_history: Array[String] = []
 var last_log_text := ""
 var last_log_key := -1
@@ -35,14 +40,19 @@ var _gold := -1
 
 func _ready() -> void:
 	var vitals: Panel = $BottomLeft
-	# Key caps rather than "I 所持品 · Tab 武器切替" as plain text.
+	weapon = HudWeapon.new()
+	weapon.name = "Weapon"
+	vitals.add_child(weapon)
+	weapon.position = WEAPON_RECT.position
+	weapon.size = WEAPON_RECT.size
+	# Key caps rather than "I 所持品" as plain text. Tab sits on the weapon row,
+	# beside the weapon it swaps in.
 	var hint := KeyGuide.new()
 	hint.name = "Hint"
 	vitals.add_child(hint)
 	hint.position = HINT_RECT.position
 	hint.size = HINT_RECT.size
 	hint.add_hint("I", "X", "所持品")
-	hint.add_hint("Tab", "Y", "武器切替")
 	portrait = HudPortrait.new()
 	portrait.name = "Portrait"
 	vitals.add_child(portrait)
@@ -128,6 +138,17 @@ func show_minimap(
 # An empty name hides the boss gauge.
 func show_boss(boss_name: String, hp: int = 0, max_hp: int = 0) -> void:
 	($Boss as BossGauge).present(boss_name, hp, max_hp)
+
+
+# attack is the weapon the attack code uses for main, so its range matches.
+func show_weapons(main: ItemData, sub: ItemData, attack: WeaponData) -> void:
+	weapon.show_weapons(main, sub, attack)
+
+
+# Where announcement banners start: below the boss gauge's area whether or not
+# the gauge is showing, so a banner never covers it.
+func notice_lane_top() -> float:
+	return ($Boss as Control).offset_bottom + NOTICE_GAP
 
 
 func reset_log() -> void:

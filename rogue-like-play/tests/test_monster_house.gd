@@ -67,7 +67,8 @@ func run_tests() -> void:
 	run.dungeon.grid.remove_actor(run.turns.player)
 	run.dungeon.grid.place(run.turns.player, safe_cell)
 	run._refresh()
-	check(run.dungeon.house_discovered and run.journey_banner.visible and run.journey_banner.title_label.text == "モンスターハウス", "Discovery is announced by the banner")
+	# The floor's arrival banner may still be up; the warning then follows it.
+	check(run.dungeon.house_discovered and run.journey_banner.visible and run.journey_banner.announces("モンスターハウス"), "Discovery is announced by the banner")
 	var revision: int = run.discovery_revision
 	run._refresh()
 	check(run.discovery_revision == revision, "Discovery recorded once")
