@@ -94,7 +94,7 @@ func _ready() -> void:
 	columns.theme_type_variation = &"ShopColumns"
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var left := HubUI.open_column(columns, 2.1, &"SlabVeilWide")
+	var left := HubUI.open_column(columns, 2.1, &"SlabSolid")
 	_growth = VBoxContainer.new()
 	_growth.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	left.add_child(_growth)

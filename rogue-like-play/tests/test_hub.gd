@@ -172,7 +172,7 @@ func run_tests() -> void:
 	hero.advance(LobbyHero.REACT_TIME)
 	check(is_equal_approx(hero.scale.y, 1.0) and is_equal_approx(hero.scale.x, 1.0), "The hop settles back to rest")
 	check(hero.get_rect().get_center().x > viewport.x * 0.66, "Heroine stands on the right side of the lobby")
-	check(lobby.buttons.map(func(button: Button): return button.text) == ["出撃", "装備", "倉庫", "ショップ", "強化", "設定"], "Lobby menu lists the six entries in order")
+	check(lobby.buttons.map(func(button: Button): return button.text) == ["出撃", "準備", "ショップ", "強化", "設定"], "Lobby menu lists the five entries in order")
 	check(lobby.selected_id() == &"departure" and hub.start_button.has_focus(), "Lobby starts on departure with focus")
 	for button in lobby.buttons:
 		check(button.get_global_rect().end.x <= viewport.x * 0.22, "Menu entry stays within about a fifth of the width: " + button.text)
@@ -190,17 +190,19 @@ func run_tests() -> void:
 	# the pointer by resting on an entry; a press enters.
 	await create_timer(HubAmbience.FOCUS_TIME + 0.1).timeout
 	check(ambience.focus_id == &"departure" and ambience.focus_strength > 0.9, "Departure lights the gate")
-	hub.equipment_button.mouse_entered.emit()
+	check(HubLobby.ENTRIES.map(func(entry: Array): return entry[1]) == ["出撃", "準備", "ショップ", "強化", "設定"], "The lobby offers five entries, equipment and warehouse as one preparation")
+	check(hub.decide_button.text == "%sへ向かう" % hub.featured_stage().display_name, "The departure's button sets out for the stage shown")
+	hub.prepare_button.mouse_entered.emit()
 	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
-	check(hub.page == "home" and lobby.selected_id() == &"equipment" and hub.decide_button.text == "装備を整える" and hub.equipment_button.has_focus(), "Resting the pointer on equipment chooses it without leaving")
-	hub.equipment_button.mouse_exited.emit()
-	hub.warehouse_button.mouse_entered.emit()
-	hub.warehouse_button.mouse_exited.emit()
+	check(hub.page == "home" and lobby.selected_id() == &"prepare" and hub.decide_button.text == "準備を整える" and hub.prepare_button.has_focus(), "Resting the pointer on the preparation chooses it without leaving")
+	hub.prepare_button.mouse_exited.emit()
+	hub.sell_button.mouse_entered.emit()
+	hub.sell_button.mouse_exited.emit()
 	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
-	check(lobby.selected_id() == &"equipment", "An entry the pointer only crosses is not chosen")
+	check(lobby.selected_id() == &"prepare", "An entry the pointer only crosses is not chosen")
 	await create_timer(HubAmbience.FOCUS_TIME + 0.1).timeout
-	check(ambience.focus_id == &"equipment", "Choosing equipment lights the weapon rack")
-	check(lobby.equipment_label.is_visible_in_tree() and not lobby.carried_label.is_visible_in_tree(), "Panel shows only the chosen entry's information")
+	check(ambience.focus_id == &"prepare", "Choosing the preparation lights the weapon rack")
+	check(lobby.equipment_label.is_visible_in_tree() and lobby.carried_label.is_visible_in_tree() and not lobby.carried_room.is_visible_in_tree(), "Panel shows only the chosen entry's information")
 	# Every entry shows the same panel: one rect, the button in one place.
 	var panel_rects := {}
 	var button_rects := {}
@@ -217,7 +219,7 @@ func run_tests() -> void:
 		check(lobby._art.texture != null, "Entry %s shows its illustration" % lobby.selected_id())
 		check(lobby.title_icon.kind == HubLobby.ENTRIES[index][2], "Entry %s shows its menu mark" % lobby.selected_id())
 	check(lobby.carried_room.text == "%d 枠" % (main.state.inventory.max_entries - main.state.inventory.entries.size()), "Shop shows the free carry slots")
-	check(lobby.worn_value.text.ends_with("/ 5") and lobby.upgrade_ready.text.ends_with("件"), "Equipment and upgrade show their second facts")
+	check(lobby.carried_label.text.ends_with("枠") and lobby.upgrade_ready.text.ends_with("件"), "Preparation and upgrade show their second facts")
 	# Facts lie on a band, not in a sunken box; Gold reads as a coin and an amount.
 	check(lobby.find_children("*", "PanelContainer", true, false).all(func(box: PanelContainer): return box == lobby.panel), "The lobby panel holds no boxed fields")
 	check(lobby.equipment_label.custom_minimum_size.x > 0.0, "The main weapon's name keeps its width")
@@ -231,7 +233,7 @@ func run_tests() -> void:
 		tip.free()
 	# Shared screen parts (docs/MVP_SPEC.md, 個別画面のUI文法).
 	check(hub.find_children("*", "Label", true, false).all(func(label: Label): return label.text != "Dungeon Remnant"), "No screen carries the game's logo")
-	hub.show_page("equipment")
+	hub.show_page("prepare")
 	check(hub.key_guide.visible and hub.back_button.get_parent() == hub.key_guide and hub.key_guide.cap_text(hub.back_button) == "Esc", "Pages show the key guide with Esc to go back")
 	check(hub.purse.quiet and hub.gold_label.theme_type_variation == &"PurseValueQuiet", "Gold is quiet where nothing costs")
 	var pad_press := InputEventJoypadButton.new()
@@ -257,7 +259,7 @@ func run_tests() -> void:
 		for hint: Button in hub.key_guide.get_children():
 			var cap_left: float = hint.get_theme_stylebox(&"normal").content_margin_left - hint.get_theme_constant(&"cap_gap") - hint.get_meta(&"cap_width")
 			check(is_equal_approx(cap_left, KeyGuide.CAP_INSET), "The %s cap starts at its hint's edge" % hub.key_guide.cap_text(hint))
-	hub.show_page("warehouse")
+	hub.show_page("prepare")
 	check(hub.back_button.visible, "Pages bring the back hint again")
 	hub.show_page("home")
 	# One click on an entry not yet chosen enters it.
@@ -268,7 +270,7 @@ func run_tests() -> void:
 	# The shop: no framed panels, one stat display, buying and selling at the title's place.
 	var shop: HubSell = hub.sell_page
 	check(shop.mode_tabs.visible and not hub.title_label.visible, "The shop switches buying and selling at the title's place")
-	check(shop.find_children("*", "PanelContainer", true, false).all(func(box: PanelContainer): return box.get_parent() is ScrollContainer or box.theme_type_variation in [&"SlabSolid", &"SlabColumn", &"ShopHeroBand"]), "The shop has no framed panels")
+	check(shop.find_children("*", "PanelContainer", true, false).all(func(box: PanelContainer): return box.get_parent() is ScrollContainer or box.theme_type_variation in [&"SlabSolid", &"SlabSolidEnd", &"SlabColumn", &"ShopHeroBand"]), "The shop has no framed panels")
 	shop.set_buying(true)
 	shop.category_tabs.select(2, true)
 	check(shop.rows.all(func(row: Dictionary): return row.item.kind == ItemData.Kind.ARMOR), "The armor tab lists only armor")
@@ -301,18 +303,18 @@ func run_tests() -> void:
 	var purse_row: HBoxContainer = hub.gold_label.get_parent()
 	check(purse_row.get_children().filter(func(node: Node): return node is Label).size() == 1, "Gold shows no word beside the amount")
 	lobby.select(1)
-	hub.equipment_button.pressed.emit()
-	check(hub.page == "equipment", "Pressing the chosen entry enters it")
+	hub.prepare_button.pressed.emit()
+	check(hub.page == "prepare", "Pressing the chosen entry enters it")
 	await create_timer(HubAmbience.FOCUS_TIME + 0.1).timeout
 	check(ambience.focus_id == &"", "Pages away from the lobby clear the hall light")
 	hub.show_page("home")
-	check(lobby.selected_id() == &"equipment" and hub.equipment_button.has_focus(), "Returning home keeps the chosen entry")
+	check(lobby.selected_id() == &"prepare" and hub.prepare_button.has_focus(), "Returning home keeps the chosen entry")
 	hub.decide_button.pressed.emit()
-	check(hub.page == "equipment", "Panel button enters the chosen entry")
+	check(hub.page == "prepare", "Panel button enters the chosen entry")
 	hub.show_page("home")
 	# Keyboard and gamepad focus chooses directly.
-	hub.warehouse_button.grab_focus()
-	check(lobby.selected_id() == &"storage" and lobby.stored_label.is_visible_in_tree(), "Focus chooses an entry")
+	hub.sell_button.grab_focus()
+	check(lobby.selected_id() == &"shop" and lobby.carried_room.is_visible_in_tree(), "Focus chooses an entry")
 	# Settings open as their own page, entered like the others.
 	var settings_entry: Button = lobby.buttons[-1]
 	settings_entry.grab_focus()
@@ -379,37 +381,39 @@ func run_tests() -> void:
 	hub.show_page("home")
 	check(not hub.hero_speech.visible, "Returning home resets speech")
 	hub.hero_button.pressed.emit()
-	hub.open_warehouse()
-	check(not hub.hero_speech.visible, "Warehouse closes speech")
-	check(hub.page == "warehouse" and hub.warehouse_page.visible and not hub.home_page.visible, "The warehouse is a page of its own")
+	hub.show_page("prepare")
+	check(not hub.hero_speech.visible, "The preparation closes speech")
+	check(hub.page == "prepare" and hub.prepare_page.visible and not hub.home_page.visible, "The preparation is a page of its own")
 	hub.go_back()
-	check(hub.page == "home", "Back from the warehouse opened at home returns to the lobby")
+	check(hub.page == "home", "Back from the preparation opened at home returns to the lobby")
 	check(hub.visible and main.active_run == null and hub.purchase_button.disabled, "Game starts in Hub with no active dungeon")
 	check(hub.gold_label.text.contains("0") and hub.equipment_label.text.contains("剣"), "Hub displays initial Gold and equipment")
 	main.state.gold = 101
 	main.state.inventory.add(ItemCatalog.POTION, 10)
 	main.state.inventory.add(preload("res://data/items/leather_armor.tres"))
 	main.state.equipment.slots[3] = preload("res://data/items/vital_charm.tres")
-	hub.open_warehouse()
-	var warehouse: HubWarehouse = hub.warehouse_page
-	check(warehouse.visible and warehouse.carried.cells.size() == 2, "Warehouse opens with carried inventory")
-	check(warehouse.detail_name.text == warehouse.carried.entries[0].item.label() and not warehouse.carried.cells[0].button_pressed, "Opening rests the focus on the first icon, which the plaque names without choosing it")
+	hub.show_page("prepare")
+	var warehouse: HubPrepare = hub.prepare_page
+	check(warehouse.visible and warehouse.carried.cells.size() == 2 and warehouse.carried.cells[0].has_focus(), "The preparation opens on what she carries when the warehouse is empty")
+	check(not warehouse.carried.cells[0].button_pressed and warehouse.detail_name.text == main.state.equipment.slots[0].label(), "Opening chooses nothing; the column shows the main weapon")
 	warehouse.carried.cells[1].pressed.emit()
-	check(warehouse.carried.cells[1].button_pressed and warehouse.move_menu(warehouse.carried, 1)[0][0] == "倉庫へ預ける", "Carried goods offer the deposit")
+	check(warehouse.carried.cells[1].button_pressed and warehouse.move_button.visible and warehouse.move_button.text == "倉庫へ預ける", "Carried gear offers the deposit beside wearing it")
 	warehouse.carried.activated.emit(1)
+	check(warehouse.primary_button.has_focus() and main.state.storage.entries.is_empty(), "Enter on an icon moves to the action without acting")
+	warehouse.move_button.pressed.emit()
 	check(main.state.storage.entries.size() == 1 and main.state.inventory.entries.size() == 1, "Hub UI deposits one equipment item")
-	# Right from the last icon of what she carries crosses to the warehouse.
+	check(warehouse.storage.cells[0].button_pressed and warehouse.move_button.text == "持ち込みへ移す", "The moved item stays chosen on its new side")
+	# Left from the first icon of what she carries crosses to the warehouse.
 	warehouse.carried.cells[0].grab_focus()
-	var right := InputEventKey.new()
-	right.keycode = KEY_RIGHT
-	right.physical_keycode = KEY_RIGHT
-	right.pressed = true
-	Input.parse_input_event(right)
+	var left := InputEventKey.new()
+	left.keycode = KEY_LEFT
+	left.physical_keycode = KEY_LEFT
+	left.pressed = true
+	Input.parse_input_event(left)
 	await process_frame
 	await process_frame
-	check(warehouse.storage.cells[0].has_focus(), "Right crosses from what she carries to the warehouse")
-	check(warehouse.move_menu(warehouse.storage, 0)[0][0] == "持ち込みへ持ち出す", "The warehouse's icon offers the withdrawal")
-	warehouse.storage.activated.emit(0)
+	check(warehouse.storage.cells[0].has_focus(), "Left crosses from what she carries to the warehouse")
+	warehouse.move_button.pressed.emit()
 	check(main.state.storage.entries.is_empty() and main.state.inventory.entries.size() == 2, "Hub UI withdraws deposited item")
 	main.state.inventory.remove(1)
 	main.state.storage.add(ItemCatalog.POTION, 12)

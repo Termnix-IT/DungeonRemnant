@@ -137,8 +137,8 @@ func test_staff_side() -> void:
 	main.state.inventory.add(BOLT)
 	main.state.storage.add(FLAME)
 	var hub = main.get_node("Hub")
-	hub.show_page("equipment")
-	var page: HubEquipment = hub.equipment_page
+	hub.show_page("prepare")
+	var page: HubPrepare = hub.prepare_page
 	var picker: MagicPicker = page.magic_picker
 	check(page.sockets[0].visible and page.sockets[0].scroll == null and not page.sockets[1].visible, "An empty staff shows its socket; other weapons none")
 	check(page.magic_hint.visible and page.magic_slot() == 0, "The magic key cap shows while a staff is worn")

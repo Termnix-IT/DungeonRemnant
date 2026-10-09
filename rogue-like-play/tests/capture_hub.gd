@@ -54,19 +54,19 @@ func capture() -> void:
 	ok = ok and main.state.gold == 71 and main.state.hp_upgrade_level == 1
 	ok = root.get_texture().get_image().save_png("res://.godot/hub_purchased.png") == OK and ok
 	await click(hub.back_button)
-	await enter(hub, hub.warehouse_button)
-	var warehouse: HubWarehouse = hub.warehouse_page
+	await enter(hub, hub.prepare_button)
+	var warehouse: HubPrepare = hub.prepare_page
 	ok = ok and warehouse.visible
-	ok = root.get_texture().get_image().save_png("res://.godot/hub_warehouse.png") == OK and ok
+	ok = root.get_texture().get_image().save_png("res://.godot/hub_prepare.png") == OK and ok
 	await click(warehouse.carried.cells[0])
-	warehouse.carried.activated.emit(0)
+	await click(warehouse.primary_button)
 	ok = ok and main.state.inventory.entries.is_empty() and main.state.storage.entries[0].count == 10
 	await click(warehouse.storage.cells[0])
-	warehouse.storage.activated.emit(0)
+	await click(warehouse.primary_button)
 	ok = ok and main.state.inventory.entries[0].count == 10 and main.state.storage.entries.is_empty()
 	await click(hub.back_button)
 	ok = ok and not warehouse.visible
-	await enter(hub, hub.warehouse_button)
+	await enter(hub, hub.prepare_button)
 	var escape := InputEventKey.new()
 	escape.keycode = KEY_ESCAPE
 	escape.pressed = true
@@ -77,7 +77,6 @@ func capture() -> void:
 	await settle()
 	ok = ok and not warehouse.visible
 	await enter(hub, hub.start_button)
-	await click(hub.departure_page.next_button)
 	await click(hub.departure_page.confirm_button)
 	ok = ok and main.active_run != null and not hub.visible
 	var run: Node2D = main.active_run
@@ -99,7 +98,6 @@ func capture() -> void:
 	# The return cover swallows input until it reveals the hub.
 	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
 	await enter(hub, hub.start_button)
-	await click(hub.departure_page.next_button)
 	await click(hub.departure_page.confirm_button)
 	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
 	ok = ok and main.active_run.turns.player.hp == 25 and main.active_run.turns.gold == 36
@@ -107,7 +105,7 @@ func capture() -> void:
 	await settle()
 	await click(main.active_run.result_panel.accept)
 	ok = ok and hub.visible and main.active_run == null and main.state.gold == 36
-	print("Hub capture, mouse warehouse/purchase/start/return and keyboard R return: ", "passed" if ok else "FAILED")
+	print("Hub capture, mouse preparation/purchase/start/return and keyboard R return: ", "passed" if ok else "FAILED")
 	quit(0 if ok else 1)
 
 

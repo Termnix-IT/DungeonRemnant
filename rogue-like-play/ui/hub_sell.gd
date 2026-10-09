@@ -2,12 +2,13 @@ class_name HubSell
 extends Control
 
 # The shop, laid out so the eye runs left to right: choose the goods (icons
-# alone in a grid, filtered by category tabs, on a slab like the lobby menu;
-# the full text is each icon's tooltip), learn them (the goods large, their
-# name and main effect, what they would change in her, the counter and the one
-# trade action, on a slab melting into the hall). The merchant's counter on
-# the right is the painting's own. No framed box parts the screen, and each
-# number shows once or twice rather than four times.
+# with their names and prices in a grid, filtered by category tabs, on a slab
+# from the left edge; the full text is each icon's tooltip), see them (the
+# goods large on a glow in the open hall, where the merchant's counter shows
+# behind them), and decide in the right column as on every hub screen: their
+# name and main effect, what they would change in her, the counter and the
+# one trade action at its foot. Each number shows once or twice rather than
+# four times.
 # Buying and selling switch at the header's title place (mode_tabs).
 
 signal sell_requested(from_storage: bool, index: int, amount: int)
@@ -17,7 +18,7 @@ signal mode_changed
 # The goods share the middle with what they would change in her: 172px is the
 # least that still draws the 48px art at three times (ItemVisual fills 84% in
 # 48px steps).
-const SHOWCASE_SIZE := 172.0
+const SHOWCASE_SIZE := 240.0
 # The goods are small icons, each with its name and price beside it, two
 # to a row.
 const GRID_COLUMNS := 2
@@ -57,6 +58,7 @@ var _place_row: HBoxContainer
 var hero_stats: HeroStats
 var _catalog: VBoxContainer
 var _info: VBoxContainer
+var _stage: VBoxContainer
 var _counter_rule: Control
 
 
@@ -68,15 +70,28 @@ func _ready() -> void:
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	# The list and the details share one dark slab, melting into the hall
 	# only at its right edge; the background shows above it and round her.
-	_catalog = HubUI.open_column(columns, 1.1, &"SlabSolid")
+	# The list and the display share the left two thirds, so the right column
+	# stands where it does on every hub screen.
+	var choosing := HBoxContainer.new()
+	choosing.theme_type_variation = &"ShopColumns"
+	choosing.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	choosing.size_flags_stretch_ratio = 2.1
+	columns.add_child(choosing)
+	_catalog = HubUI.open_column(choosing, 1.1, &"SlabSolid")
 	_build_catalog(_catalog)
-	_info = HubUI.open_column(columns, 1.15, &"SlabColumn")
+	# The middle is the open hall, with the goods on display in it.
+	_stage = VBoxContainer.new()
+	_stage.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_stage.size_flags_stretch_ratio = 0.8
+	_stage.alignment = BoxContainer.ALIGNMENT_CENTER
+	_stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	choosing.add_child(_stage)
+	_info = HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
 	_build_info(_info)
-	# The right is the open hall; what the goods would change in her stands in
-	# the middle, right above the counter and the trade.
+	# What the goods would change in her stands right above the counter.
 	hero_stats = HeroStats.new()
-	hero_stats.size_flags_stretch_ratio = 0.95
-	columns.add_child(hero_stats)
+	hero_stats.visible = false
+	add_child(hero_stats)
 	hero_stats.move_stats_to(_info, _counter_rule.get_index())
 	hero_specs = hero_stats.specs
 	swap_label = hero_stats.swap_label
@@ -141,12 +156,16 @@ func _build_info(info: VBoxContainer) -> void:
 	info.theme_type_variation = &"DetailStack"
 	heading = HubUI.label(info, "", &"MutedLabel")
 	heading.visible = false
-	# The goods on display: large, on a glow, the name under them.
+	# The goods on display stand large on a glow in the hall; their name and
+	# main effect head the column.
 	showcase = ItemShowcase.new()
-	showcase.stack(SHOWCASE_SIZE)
 	showcase.visual.framed = false
 	showcase.visual.idle = true
 	info.add_child(showcase)
+	showcase.visual.custom_minimum_size = Vector2.ONE * SHOWCASE_SIZE
+	showcase.visual.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	showcase.visual.reparent(_stage, false)
+	HubUI.rule(info)
 	var gap := Control.new()
 	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -201,6 +220,7 @@ func _show_stock() -> void:
 # later.
 func play_entrance() -> void:
 	UIMotion.of(_catalog).appear(0.0, UIMotion.WINDOW_TIME)
+	UIMotion.of(_stage).appear(UIMotion.STAGGER_TIME)
 	UIMotion.of(_info).appear(UIMotion.STAGGER_TIME)
 
 

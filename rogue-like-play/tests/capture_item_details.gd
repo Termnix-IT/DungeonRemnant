@@ -22,23 +22,17 @@ func capture() -> void:
 	check(hub.sell_page.total_label.text == "+%d G" % (armor.sell_price * int(hub.sell_page.quantity.value)), "Price matches item data")
 	await shot("details_shop")
 	await key(KEY_ESCAPE)
-	await enter(hub, hub.equipment_button)
-	var worn: HubEquipment = hub.equipment_page
-	var armor_at := worn.candidates.find_custom(func(candidate: Dictionary): return candidate.item == armor)
-	await click(worn.cells[armor_at])
-	check(worn.detail_name.text == armor.label(), "The chosen gear is named in the detail line")
-	await shot("details_equipment")
-	hub.open_warehouse()
+	await enter(hub, hub.prepare_button)
 	await settle()
-	var stored := hub.warehouse_page.storage
-	var stored_at := stored.entries.find_custom(func(entry: Dictionary): return entry.item == armor)
+	var stored: StockGrid = hub.prepare_page.storage
+	var stored_at: int = stored.entries.find_custom(func(entry: Dictionary): return entry.item == armor)
 	await click(stored.cells[stored_at])
-	check(hub.warehouse_page.detail_name.text == armor.label(), "Warehouse selection names the icon without hover")
-	await shot("details_warehouse")
+	check(hub.prepare_page.detail_name.text == armor.label(), "The chosen gear is named in the column without hover")
+	await shot("details_prepare")
 	for resolution in [Vector2i(1600, 900), Vector2i(1280, 720)]:
 		root.size = resolution
 		await settle()
-		var cell: ItemCell = hub.warehouse_page.storage.cells[stored_at]
+		var cell: ItemCell = hub.prepare_page.storage.cells[stored_at]
 		var motion := InputEventMouseMotion.new()
 		motion.position = root.get_final_transform() * cell.get_global_rect().get_center()
 		Input.parse_input_event(motion)
@@ -48,7 +42,9 @@ func capture() -> void:
 		var tooltip := find_tooltip(root, ItemTooltipList.description(armor))
 		check(tooltip != null, "Native tooltip appears at %s" % resolution)
 		if tooltip != null:
-			check(tooltip.get_line_count() > 2, "Long tooltip wraps")
+			# Near the screen's edge a long name wraps; with room it keeps one
+			# line. Either way the name and the description stay whole.
+			check(tooltip.get_line_count() >= 2 and tooltip.text.contains(armor.label()), "Long tooltip keeps the whole name above the description")
 			var popup := tooltip.get_window()
 			check(root.get_visible_rect().encloses(Rect2(popup.position, popup.size)), "Tooltip remains inside viewport")
 		await shot("details_tooltip_%d" % resolution.y)

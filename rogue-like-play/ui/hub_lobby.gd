@@ -16,31 +16,27 @@ signal activated(id: StringName)
 # id, menu label, NavigationIcon kind
 const ENTRIES := [
 	[&"departure", "出撃", "出撃"],
-	[&"equipment", "装備", "装備"],
-	[&"storage", "倉庫", "倉庫"],
+	[&"prepare", "準備", "装備"],
 	[&"shop", "ショップ", "ショップ"],
 	[&"upgrade", "強化", "永久強化"],
 	[&"settings", "設定", "設定"],
 ]
 const ACTIONS := {
-	&"departure": "行き先を選ぶ",
-	&"equipment": "装備を整える",
-	&"storage": "倉庫を開く",
+	&"departure": "出撃する",
+	&"prepare": "準備を整える",
 	&"shop": "ショップに入る",
 	&"upgrade": "強化を選ぶ",
 	&"settings": "設定を開く",
 }
 const DESCRIPTIONS := {
-	&"equipment": "武具を5つの枠に装備し、杖に魔法を込める。",
-	&"storage": "持ち込みと倉庫の間で品を移す。倉庫の品は冒険で失わない。",
+	&"prepare": "武具を装備し、持ち込みと倉庫の間で品を移す。倉庫の品は冒険で失わない。",
 	&"shop": "Goldで薬や武具を買い、要らない品を売る。",
 	&"upgrade": "Goldで能力を永久に強化し、開始階を解放する。",
 	&"settings": "音量と画面モードを変え、遊び方を確認する。",
 }
 # Each panel shows the illustration of what it opens.
 const ART := {
-	&"equipment": preload("res://art/hub/cards/weapons.png"),
-	&"storage": preload("res://art/hub/cards/chests.png"),
+	&"prepare": preload("res://art/hub/cards/weapons.png"),
 	&"shop": preload("res://art/hub/cards/shop.png"),
 	&"upgrade": preload("res://art/hub/cards/books.png"),
 	&"settings": preload("res://art/hub/cards/settings.png"),
@@ -100,12 +96,10 @@ var hero_speech: Panel
 var equipment_label: Label
 var main_glyph: Control
 var carried_label: Label
-var stored_label: Label
 var gold_value: Label
 var carried_room: Label
 var upgrade_value: Label
 var upgrade_ready: Label
-var worn_value: Label
 var title_icon: NavigationIcon
 var floors_value: Label
 var difficulty_value: Label
@@ -242,8 +236,9 @@ func _build_panel() -> void:
 	floors_value = _fact(route, "階層")
 	_divider(route)
 	difficulty_value = _fact(route, "難易度")
+	# Preparation: the main weapon and how much she carries.
 	var gear: HBoxContainer = _strip(stack)
-	_details[&"equipment"] = gear
+	_details[&"prepare"] = gear
 	# The main weapon's value is its glyph and name side by side.
 	var weapon := _cell(gear, "主武器")
 	var named := HBoxContainer.new()
@@ -261,12 +256,7 @@ func _build_panel() -> void:
 	equipment_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	equipment_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_divider(gear)
-	worn_value = _fact(gear, "装備枠")
-	var room: HBoxContainer = _strip(stack)
-	_details[&"storage"] = room
-	carried_label = _fact(room, "持ち込み")
-	_divider(room)
-	stored_label = _fact(room, "倉庫")
+	carried_label = _fact(gear, "持ち込み")
 	var purse: HBoxContainer = _strip(stack)
 	_details[&"shop"] = purse
 	# Money keeps its gold, at the same size as every other value.
@@ -459,14 +449,8 @@ func refresh(state: RunCarryover, stage: StageData) -> void:
 	equipment_label.mouse_filter = Control.MOUSE_FILTER_PASS
 	main_glyph.queue_redraw()
 	carried_label.text = "%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries]
-	stored_label.text = "%d / %d 枠" % [state.storage.entries.size(), state.storage.max_entries]
 	gold_value.text = "%s G" % UIFormat.amount(state.gold)
 	carried_room.text = "%d 枠" % (state.inventory.max_entries - state.inventory.entries.size())
-	var worn := 0
-	for item in state.equipment.slots:
-		if item != null:
-			worn += 1
-	worn_value.text = "%d / %d" % [worn, state.equipment.slots.size()]
 	# What the current Gold can buy now, by the same rules the tree uses.
 	var ready := 1 if state.upgrade.price(state.hp_upgrade_level) >= 0 and state.gold >= state.upgrade.price(state.hp_upgrade_level) else 0
 	for node in SkillCatalog.NODES:
@@ -570,6 +554,10 @@ func _show_entry() -> void:
 	title_icon.queue_redraw()
 	decide_button.visible = ACTIONS.has(id)
 	decide_button.text = ACTIONS.get(id, "")
+	# The departure's button sets out for the stage shown: the departure
+	# screen opens with it chosen and waits on its action.
+	if id == &"departure" and _stage != null:
+		decide_button.text = "%sへ向かう" % _stage.display_name
 	# Right from the menu reaches the panel's button.
 	for button in buttons:
 		button.focus_neighbor_right = decide_button.get_path()

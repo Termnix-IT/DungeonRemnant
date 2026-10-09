@@ -46,23 +46,20 @@ func check_enter_to_action(hub, main) -> void:
 	var gold: int = main.state.gold
 	await press_enter()
 	check(shop.sell_button.has_focus() and main.state.gold == gold, "Enter on a shop icon goes to the trade without trading")
-	hub.show_page("equipment")
-	var equipment: HubEquipment = hub.equipment_page
-	var armor_at := equipment.candidates.find_custom(func(candidate: Dictionary): return candidate.item.kind == ItemData.Kind.ARMOR)
+	hub.show_page("prepare")
+	var equipment: HubPrepare = hub.prepare_page
+	var armor_at: int = equipment.storage.entries.find_custom(func(entry: Dictionary): return entry.item.kind == ItemData.Kind.ARMOR)
 	var worn: ItemData = main.state.equipment.slots[Equipment.Slot.ARMOR]
-	equipment.cells[armor_at].grab_focus()
+	equipment.storage.cells[armor_at].grab_focus()
 	await press_enter()
-	check(equipment.slots[Equipment.Slot.ARMOR].has_focus() and main.state.equipment.slots[Equipment.Slot.ARMOR] == worn, "Enter on gear moves to the slot it would take, wearing nothing")
+	check(equipment.primary_button.has_focus() and equipment.primary_button.text == "防具に装備" and main.state.equipment.slots[Equipment.Slot.ARMOR] == worn, "Enter on gear moves to the action for the slot it would take, wearing nothing")
+	equipment.slots[Equipment.Slot.MAIN].grab_focus()
 	await press_enter()
-	check(equipment.prompt.visible and equipment.equip_button.has_focus() and main.state.equipment.slots[Equipment.Slot.ARMOR] == worn, "Enter on the slot asks first, with the answer in reach")
-	equipment.prompt.cancel_button.pressed.emit()
-	check(not equipment.prompt.visible and equipment.cells[armor_at].has_focus(), "Declining returns to the gear")
-	hub.open_warehouse()
-	var warehouse: HubWarehouse = hub.warehouse_page
-	warehouse.carried.cells[0].grab_focus()
-	warehouse.carried.cells[0].pressed.emit()
+	check(equipment.slots[Equipment.Slot.MAIN].button_pressed and main.state.equipment.slots[Equipment.Slot.ARMOR] == worn, "Enter on a slot the gear does not fit chooses the slot instead")
+	equipment.carried.cells[0].grab_focus()
+	equipment.carried.cells[0].pressed.emit()
 	var carried: int = main.state.inventory.entries.size()
-	check(warehouse.carried.cells[0].button_pressed and main.state.inventory.entries.size() == carried, "Choosing an icon moves nothing")
+	check(equipment.carried.cells[0].button_pressed and main.state.inventory.entries.size() == carried, "Choosing an icon moves nothing")
 	hub.show_page("home")
 	main.state.gold = 300
 
@@ -100,24 +97,22 @@ func run_tests() -> void:
 	shop.refresh(main.state)
 	check_alpha([shop.showcase, shop.possession], 1.0, "Ordinary refresh resets without replay")
 	check(shop.chosen_place() == -1 and shop.showcase.visual.item == null, "Shop refresh clears stale selected content")
-	hub.show_page("equipment")
-	var equipment: HubEquipment = hub.equipment_page
+	hub.show_page("prepare")
+	var equipment: HubPrepare = hub.prepare_page
 	equipment.select_slot(Equipment.Slot.ARMOR)
-	check(equipment.selected_candidate == -1 and equipment.slots[Equipment.Slot.ARMOR].button_pressed, "Choosing a slot holds no gear")
-	equipment.cells[0].pressed.emit()
-	check(equipment.selected_candidate == 0 and equipment.cells[0].button_pressed and not equipment.slots[Equipment.Slot.ARMOR].button_pressed, "One thing is chosen at a time: the gear, not the slot")
+	check(equipment._chosen().is_empty() and equipment.slots[Equipment.Slot.ARMOR].button_pressed, "Choosing a slot holds no gear")
+	equipment.storage.cells[0].pressed.emit()
+	check(equipment.storage.cells[0].button_pressed and not equipment.slots[Equipment.Slot.ARMOR].button_pressed, "One thing is chosen at a time: the gear, not the slot")
 	equipment.select_slot(Equipment.Slot.ACCESSORY_1)
-	check(equipment.selected_candidate == -1 and equipment.slot_menu(Equipment.Slot.ACCESSORY_1).is_empty() and not equipment.cells[0].button_pressed, "An empty slot holds no stale gear and has nothing to take off")
-	hub.show_page("home")
-	hub.open_warehouse()
-	var warehouse: HubWarehouse = hub.warehouse_page
+	check(equipment._chosen().is_empty() and equipment.slot_menu(Equipment.Slot.ACCESSORY_1).is_empty() and not equipment.storage.cells[0].button_pressed and equipment.primary_button.disabled, "An empty slot holds no stale gear and has nothing to take off")
+	var warehouse: HubPrepare = equipment
 	var stored := warehouse.storage
 	var held := warehouse.carried
 	stored.cells[0].pressed.emit()
 	check(stored.cells[0].button_pressed and warehouse.detail_name.text == main.state.storage.entries[0].item.label(), "Storage selection immediately names the icon")
 	held.cells[0].pressed.emit()
 	check(stored.selected == -1 and not stored.cells[0].button_pressed and held.cells[0].button_pressed, "Choosing on the other side clears the old choice")
-	check(warehouse.detail_name.text == ItemCatalog.POTION.label(), "Inventory selection immediately changes the plaque")
+	check(warehouse.detail_name.text == ItemCatalog.POTION.label(), "Inventory selection immediately changes the column")
 	hub.go_back()
 	await check_enter_to_action(hub, main)
 	check(SaveCodec.encode(main.state) == before, "Selection never trades, equips, or changes persisted data")

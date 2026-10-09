@@ -29,7 +29,7 @@ func capture() -> void:
 		await settle()
 		hub.show_page("home")
 		await shot("art_home_%d" % resolution.y)
-		for button: Control in [hub.start_button, hub.equipment_button, hub.warehouse_button, hub.sell_button, hub.upgrade_button, hub.hero_button, hub.decide_button, hub.home_page.panel]:
+		for button: Control in [hub.start_button, hub.prepare_button, hub.sell_button, hub.upgrade_button, hub.hero_button, hub.decide_button, hub.home_page.panel]:
 			fits(button, "Home navigation")
 		hub.show_page("sell")
 		var shop: HubSell = hub.sell_page
@@ -40,35 +40,32 @@ func capture() -> void:
 			for control: Control in [shop.grid, shop.showcase, shop.possession, shop.quantity, shop.total_label, shop.sell_button, shop.sell_all_button]:
 				if control.is_visible_in_tree():
 					fits(control, "Shop")
-		hub.open_warehouse()
-		var warehouse: HubWarehouse = hub.warehouse_page
-		warehouse.storage.cells[0].pressed.emit()
-		await shot("art_warehouse_%d" % resolution.y)
-		for control: Control in [warehouse.carried, warehouse.storage, warehouse.detail_name, warehouse.detail_note]:
-			fits(control, "Warehouse")
-		check(warehouse.detail_name.text == warehouse.storage.entries[0].item.label(), "The plaque names the chosen icon")
-		hub.go_back()
-		hub.show_page("equipment")
-		hub.equipment_page.cells[0].pressed.emit()
-		await shot("art_equipment_%d" % resolution.y)
-		for control: Control in [hub.equipment_page.grid, hub.equipment_page.detail_name, hub.equipment_page.detail_note, hub.equipment_page.filter_tabs, hub.equipment_page.sort_cycler]:
-			fits(control, "Equipment")
-		for slot: Button in hub.equipment_page.slots:
-			fits(slot, "Equipment slot")
+		hub.show_page("prepare")
+		var prepare: HubPrepare = hub.prepare_page
+		# The hammer: worn gear, so the column compares it with the sword.
+		prepare.storage.cells[1].pressed.emit()
+		await shot("art_prepare_%d" % resolution.y)
+		for control: Control in [prepare.carried, prepare.storage, prepare.detail_name, prepare.primary_button, prepare.storage.filter_tabs, prepare.carried.filter_tabs]:
+			fits(control, "Preparation")
+		for slot: Button in prepare.slots:
+			fits(slot, "Preparation slot")
+		check(prepare.detail_name.text == prepare.storage.entries[1].item.label(), "The column names the chosen icon")
 		hub.show_page("upgrade")
 		await shot("art_upgrade_%d" % resolution.y)
 		fits(hub.purchase_button, "Upgrade action")
 		hub.show_page("stages")
 		await shot("art_stages_%d" % resolution.y)
 		var nodes: Array = hub.departure_page.stage_nodes
-		for control: Control in [hub.departure_page.map, hub.departure_page.stage_details, hub.departure_page.next_button] + nodes:
-			fits(control, "Stage selection")
+		for control: Control in [hub.departure_page.map, hub.departure_page.stage_details, hub.departure_page.confirm_button, hub.departure_page.review_button] + nodes:
+			fits(control, "Departure")
+		for cell: Control in hub.departure_page.slot_cells:
+			fits(cell, "Departure slot")
 		# The road never runs straight: the second stage stands higher.
 		check(nodes.size() >= 2 and nodes[1].position.y < nodes[0].position.y - 40, "Stages are set off a straight line")
 		hub.departure_page._select_stage(1)
-		check(hub.departure_page.next_button.disabled, "Locked destination cannot be started")
+		check(hub.departure_page.confirm_button.disabled, "Locked destination cannot be started")
 		hub.departure_page._select_stage(0)
-	check(SaveCodec.encode(main.state) == before, "Browsing all seven screens never changes gameplay state")
+	check(SaveCodec.encode(main.state) == before, "Browsing every screen never changes gameplay state")
 	main.free()
 	print("Art direction render/layout checks: ", "passed" if failures == 0 else "FAILED")
 	quit(0 if failures == 0 else 1)

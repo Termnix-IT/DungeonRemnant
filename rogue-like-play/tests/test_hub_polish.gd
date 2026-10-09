@@ -40,7 +40,7 @@ func run_tests() -> void:
 	var hub = main.get_node("Hub")
 	check(Equipment.SLOT_NAMES[0] == "主武器" and HudEquipment.CAPTIONS == Equipment.SLOT_NAMES, "Slot names are Japanese and shared")
 	var english := ["ATK", "DEF", "Run", "Main", "Sub", "Armor", "Accessory", "DungeonRemnant"]
-	for page in ["home", "equipment", "sell", "upgrade", "stages", "confirm"]:
+	for page in ["home", "prepare", "sell", "upgrade", "stages"]:
 		hub.show_page(page)
 		await process_frame
 		var found: Array[String] = []
@@ -103,9 +103,10 @@ func check_stages(hub, main) -> void:
 		descriptions[stage.description] = true
 		check(not (stage.description.contains("今後追加予定") and not stage.available), "Upcoming stage does not repeat its status")
 	page._select_stage(locked_index)
-	check(page.next_button.disabled and page.stage_nodes[locked_index].button_pressed, "A locked stage can be read but not started")
-	page.next_button.pressed.emit()
-	check(hub.page == "stages", "A locked stage stays on selection")
+	check(page.confirm_button.disabled and page.stage_nodes[locked_index].button_pressed, "A locked stage can be read but not started")
+	check(page.confirm_button.text.ends_with("未解放"), "A locked stage's action says why")
+	page.confirm_button.pressed.emit()
+	check(hub.page == "stages" and main.active_run == null, "A locked stage stays on the departure")
 	page._select_stage(0)
 	page.stage_nodes[0].grab_focus()
 	var right := InputEventKey.new()
@@ -123,10 +124,8 @@ func check_stages(hub, main) -> void:
 	main.state.record_boss(ruins.id, 10, false)
 	check("|".join(page.guardian_lines(ruins)) == "守護者　1 / 5 撃破|10F %s|次　20F ？？？" % ruins.bosses[0].display_name, "A fallen guardian is named; the next stays unknown")
 	main.state.defeated_bosses.erase(String(ruins.id))
-	check(page.stage_art.texture == ruins.illustration, "The right column shows the chosen stage's painting")
-	page.next_button.pressed.emit()
-	await process_frame
-	check(hub.page == "confirm", "The action on an open stage goes to the sortie check")
+	check(not page.confirm_button.disabled and page.confirm_button.text == "%s・1Fから挑戦する" % ruins.display_name, "An open stage's action names where and from which floor")
+	check(page.slot_cells.size() == 5 and page.slot_cells[0].item == main.state.equipment.slots[0], "The column shows what she takes beside the action")
 
 
 func check_details(hub, main) -> void:
@@ -136,19 +135,19 @@ func check_details(hub, main) -> void:
 	shop.pick(0)
 	# Owned copies read once in the counter (and in the row), not again in the details.
 	check(shop.possession.text.contains("倉庫") and shop.possession.text.contains("→"), "The shop counter says where the copies go")
-	hub.open_warehouse()
-	var warehouse: HubWarehouse = hub.warehouse_page
+	hub.show_page("prepare")
+	var warehouse: HubPrepare = hub.prepare_page
 	var spelled := false
 	for label in warehouse.find_children("*", "Label", true, false):
-		spelled = spelled or (label as Label).text == HubWarehouse.STORAGE_NOTE
-	check(not spelled and warehouse.storage.rule.tooltip_text == HubWarehouse.STORAGE_NOTE and not warehouse.result_label.visible, "The warehouse rule waits behind a ? by its name; no result before a move")
+		spelled = spelled or (label as Label).text == HubPrepare.STORAGE_NOTE
+	check(not spelled and warehouse.storage.rule.tooltip_text == HubPrepare.STORAGE_NOTE and not warehouse.result_label.visible, "The warehouse rule waits behind a ? by its name; no result before a move")
 	var side: StockGrid = warehouse.storage if main.state.inventory.entries.is_empty() else warehouse.carried
 	var other: StockGrid = warehouse.carried if side == warehouse.storage else warehouse.storage
 	check(not side.cells.is_empty(), "The polish fixture has goods to move")
 	if not side.cells.is_empty():
 		side.cells[0].pressed.emit()
-		check(warehouse.detail_name.text == side.entries[0].item.label() and side.cells[0].button_pressed, "Choosing an icon names it on the plaque")
-		check(warehouse.move_menu(side, 0)[0][0] == ("持ち込みへ持ち出す" if side == warehouse.storage else "倉庫へ預ける"), "The right-click menu offers the other side")
+		check(warehouse.detail_name.text == side.entries[0].item.label() and side.cells[0].button_pressed, "Choosing an icon names it in the column")
+		check(warehouse.stock_menu(side, 0)[-1][0] == ("持ち込みへ移す" if side == warehouse.storage else "倉庫へ預ける"), "The right-click menu offers the other side")
 		check(other.can_receive.call(side.cells[0]) and not side.can_receive.call(side.cells[0]), "A stock takes only what is dragged from the other")
 	# The filter and the order apply to each stock alone.
 	var stored: StockGrid = warehouse.storage

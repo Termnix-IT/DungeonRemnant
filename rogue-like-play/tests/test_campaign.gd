@@ -83,7 +83,6 @@ func run_tests() -> void:
 	hub.refresh(state)
 	hub.show_page("stages")
 	hub.departure_page._select_stage(0)
-	hub.show_page("confirm")
 	hub.departure_page.starting_floor = 11
 	main.start_run()
 	var run: Node2D = main.active_run

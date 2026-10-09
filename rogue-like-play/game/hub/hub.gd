@@ -17,19 +17,17 @@ signal settings_changed
 var gold_label: Label
 var equipment_label: Label
 var carried_label: Label
-var stored_label: Label
 var main_glyph: Control
 var feedback: Label
 var purchase_button: Button
 var start_button: Button
 var save_label: Label
-var warehouse_button: Button
-var equipment_button: Button
+var prepare_button: Button
 var sell_button: Button
 var upgrade_button: Button
 var back_button: Button
 var title_label: Label
-var equipment_page: HubEquipment
+var prepare_page: HubPrepare
 var sell_page: HubSell
 var departure_page: HubDeparture
 var home_page: HubLobby
@@ -40,7 +38,7 @@ var settings := GameSettings.new()
 var upgrade_page: Control
 var settings_page: HubSettings
 var page := "home"
-var equipment_return := "stages"
+var prepare_return := "home"
 # The page a "?" mark opened the help from, which back returns to.
 var help_return := ""
 var _state: RunCarryover
@@ -49,8 +47,8 @@ var _page_host: Control
 var _shell: VBoxContainer
 var _frame: Control
 # The screens that stand in a place of their own rather than in the lobby's
-# hall: the weapon rack for the equipment page, the storeroom for the warehouse, the gate for the sortie check.
-const PAGE_BACKGROUNDS := {"equipment": preload("res://art/hub/pages/equipment.png"), "warehouse": preload("res://art/hub/pages/warehouse.png"), "confirm": preload("res://art/hub/pages/confirm.png")}
+# hall: the armoury for the preparation screen.
+const PAGE_BACKGROUNDS := {"prepare": preload("res://art/hub/pages/equipment.png")}
 # How close the header and the footer come to the screen's edges.
 const EDGE_X := 40.0
 const EDGE_TOP := 22.0
@@ -61,7 +59,6 @@ var _page_background_tween: Tween
 var _title_block: HBoxContainer
 var purse: GoldPurse
 var key_guide: KeyGuide
-var warehouse_page: HubWarehouse
 
 
 func _ready() -> void:
@@ -142,21 +139,20 @@ func _ready() -> void:
 	_page_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_shell.add_child(_page_host)
 	_build_home()
-	equipment_page = _page(HubEquipment.new()) as HubEquipment
-	equipment_page.equip_requested.connect(func(source: bool, index: int, slot: int): equip_requested.emit(source, index, slot))
-	equipment_page.unequip_requested.connect(func(slot: int): unequip_requested.emit(slot))
-	equipment_page.scroll_remove_requested.connect(func(slot: int): scroll_remove_requested.emit(slot))
-	equipment_page.swap_requested.connect(func(): swap_requested.emit())
+	prepare_page = _page(HubPrepare.new()) as HubPrepare
+	prepare_page.equip_requested.connect(func(source: bool, index: int, slot: int): equip_requested.emit(source, index, slot))
+	prepare_page.unequip_requested.connect(func(slot: int): unequip_requested.emit(slot))
+	prepare_page.scroll_remove_requested.connect(func(slot: int): scroll_remove_requested.emit(slot))
+	prepare_page.swap_requested.connect(func(): swap_requested.emit())
+	prepare_page.transfer_requested.connect(func(source: bool, index: int): storage_transfer_requested.emit(source, index))
 	sell_page = _page(HubSell.new()) as HubSell
-	warehouse_page = _page(HubWarehouse.new()) as HubWarehouse
-	warehouse_page.transfer_requested.connect(func(source: bool, index: int): storage_transfer_requested.emit(source, index))
-	# The shop's, the equipment's and the warehouse's slabs run off the
-	# screen's left edge (the warehouse's also off its right), their lists
-	# lined up with the title and the Gold above them.
+	# The pages' slabs run off the screen's edges, their contents lined up
+	# with the title and the Gold above them.
 	var bleed := EDGE_X - (get_viewport().get_visible_rect().size.x - CONTENT_SIZE.x) * 0.5
-	for bleeding: Control in [sell_page, equipment_page, warehouse_page]:
-		bleeding.offset_left = bleed
-	warehouse_page.offset_right = -bleed
+	sell_page.offset_left = bleed
+	sell_page.offset_right = -bleed
+	prepare_page.offset_left = bleed
+	prepare_page.offset_right = -bleed
 	sell_page.sell_requested.connect(func(source: bool, index: int, amount: int): sell_requested.emit(source, index, amount))
 	sell_page.buy_requested.connect(func(destination: bool, item_id: StringName, amount: int): buy_requested.emit(destination, item_id, amount))
 	sell_page.mode_changed.connect(func():
@@ -171,8 +167,7 @@ func _ready() -> void:
 	# Its map's slab runs off the left edge; its detail and the heroine off the right.
 	departure_page.offset_left = bleed
 	departure_page.offset_right = -bleed
-	departure_page.confirm_requested.connect(func(): show_page("confirm"))
-	departure_page.equipment_requested.connect(func(): equipment_return = "confirm"; show_page("equipment"))
+	departure_page.equipment_requested.connect(func(): prepare_return = "stages"; show_page("prepare"))
 	departure_page.departure_requested.connect(func(): start_requested.emit())
 	var tree := SkillTreePanel.new()
 	upgrade_page = _page(tree)
@@ -240,28 +235,24 @@ func _build_home() -> void:
 	home_page.selection_changed.connect(func(id: StringName): _ambience.focus(id))
 	home_page.activated.connect(_enter)
 	start_button = home_page.buttons[0]
-	equipment_button = home_page.buttons[1]
-	warehouse_button = home_page.buttons[2]
-	sell_button = home_page.buttons[3]
-	upgrade_button = home_page.buttons[4]
+	prepare_button = home_page.buttons[1]
+	sell_button = home_page.buttons[2]
+	upgrade_button = home_page.buttons[3]
 	decide_button = home_page.decide_button
 	hero_button = home_page.hero_button
 	hero_speech = home_page.hero_speech
 	equipment_label = home_page.equipment_label
 	main_glyph = home_page.main_glyph
 	carried_label = home_page.carried_label
-	stored_label = home_page.stored_label
 
 
 func _enter(id: StringName) -> void:
 	match id:
 		&"departure":
-			show_page("stages")
-		&"equipment":
-			equipment_return = "stages"
-			show_page("equipment")
-		&"storage":
-			open_warehouse()
+			show_page("stages", true)
+		&"prepare":
+			prepare_return = "home"
+			show_page("prepare")
 		&"shop":
 			show_page("sell")
 		&"upgrade":
@@ -300,11 +291,10 @@ func refresh(state: RunCarryover, message: String = "") -> void:
 	home_page.refresh(state, featured_stage())
 	(upgrade_page as SkillTreePanel).refresh(state)
 	feedback.text = message
-	equipment_page.refresh(state)
+	prepare_page.refresh(state)
 	sell_page.refresh(state)
-	warehouse_page.refresh(state)
-	if page == "confirm":
-		departure_page.present_confirmation(state)
+	if page == "stages":
+		departure_page.refresh_kit(state)
 	if not home_page.visible and page == "home":
 		show_page("home")
 
@@ -323,12 +313,12 @@ func _show_page_background() -> void:
 	_page_background_tween.tween_property(_ambience, "lights_mix", 1.0 - shown, UIMotion.WINDOW_TIME)
 
 
-func show_page(target: String) -> void:
-	if target == "confirm" and (departure_page.selected_stage == null or not _state.stage_available(departure_page.selected_stage)):
-		return
+# to_action opens the departure with the last stage chosen and focus on its
+# action (the lobby's shortcut).
+func show_page(target: String, to_action := false) -> void:
 	page = target
 	hero_speech.hide()
-	for control in [home_page, equipment_page, sell_page, warehouse_page, departure_page, upgrade_page, settings_page]:
+	for control in [home_page, prepare_page, sell_page, departure_page, upgrade_page, settings_page]:
 		control.hide()
 	key_guide.clear_hints()
 	# The lobby has nowhere to go back to; it shows how to choose and enter.
@@ -353,28 +343,20 @@ func show_page(target: String) -> void:
 			home_page.focus_selected()
 			key_guide.add_hint("Enter", "A", "決定")
 			key_guide.add_hint("↑ / ↓", "▲ / ▼", "選ぶ")
-		"equipment":
-			title_label.text = "装備・持ち込み準備"
-			equipment_page.show()
-			equipment_page.refresh(_state)
-			key_guide.add_hint("Enter", "A", "装備")
-			key_guide.add_hint("Q / E", "LB / RB", "装備枠")
+		"prepare":
+			title_label.text = "準備"
+			prepare_page.show()
+			key_guide.add_hint("Enter", "A", "決定")
+			key_guide.add_hint("← / →", "◀ / ▶", "倉庫・持ち込み")
 			# Shown only while a weapon slot holds a staff (the page keeps it current).
-			equipment_page.magic_hint = key_guide.add_hint("M", "Y", "魔法", func(): equipment_page.open_magic(equipment_page.magic_slot()))
-			equipment_page.magic_hint.visible = equipment_page.magic_slot() >= 0
-			equipment_page.slots[equipment_page.selected_slot].grab_focus()
+			prepare_page.magic_hint = key_guide.add_hint("M", "Y", "魔法", func(): prepare_page.open_magic(prepare_page.magic_slot()))
+			prepare_page.present(_state)
 		"sell":
 			title_label.text = "ショップ"
 			sell_page.show()
 			sell_page.refresh(_state)
 			_shop_hints()
 			sell_page.source_choice.focus_selected()
-		"warehouse":
-			title_label.text = "倉庫"
-			warehouse_page.show()
-			warehouse_page.present(_state)
-			key_guide.add_hint("Enter", "A", "移動")
-			key_guide.add_hint("← / →", "◀ / ▶", "持ち込み・倉庫")
 		"upgrade":
 			title_label.text = "永久強化"
 			upgrade_page.show()
@@ -387,20 +369,16 @@ func show_page(target: String) -> void:
 			settings_page.focus_first()
 			_settings_hints()
 		"stages":
-			title_label.text = "ステージ選択"
+			title_label.text = "出撃"
 			departure_page.show()
-			departure_page.present_selection(stages, _state)
-			key_guide.add_hint("Enter", "A", "出撃準備")
-			key_guide.add_hint("← / →", "◀ / ▶", "ステージ")
-		"confirm":
-			title_label.text = "出撃確認"
-			departure_page.show()
-			departure_page.present_confirmation(_state)
+			departure_page.present_selection(stages, _state, to_action)
 			key_guide.add_hint("Enter", "A", "挑戦")
+			key_guide.add_hint("← / →", "◀ / ▶", "ステージ")
+			key_guide.add_hint("R", "Y", "準備を開く", func(): departure_page.equipment_requested.emit())
 	# Pages are anchored in a plain host, not laid out by a Container, so the
 	# whole page can slide: forward pages from the right, home from the left.
 	var side := -1.0 if page == "home" else 1.0
-	for control in [home_page, equipment_page, sell_page, warehouse_page, departure_page, upgrade_page, settings_page]:
+	for control in [home_page, prepare_page, sell_page, departure_page, upgrade_page, settings_page]:
 		if control.visible:
 			UIMotion.of(control).enter(0.0, Vector2(side * UIMotion.PAGE_DISTANCE, 0), UIMotion.WINDOW_TIME)
 			# Pages built in the screen grammar bring their parts in one by one.
@@ -450,15 +428,11 @@ func present_action(kind: StringName, gold_delta: int, slots: Array[int]) -> voi
 			UIMotion.of(sell_page.grid.scroll).reveal()
 			sell_page.present_trade(sell_page.possession if kind == &"buy" else gold_label)
 		&"equip":
-			equipment_page.present_equip(slots)
+			prepare_page.present_equip(slots)
 		&"upgrade":
 			(upgrade_page as SkillTreePanel).present_upgrade()
 		&"deposit", &"withdraw":
-			warehouse_page.present_move(kind == &"deposit")
-
-
-func open_warehouse() -> void:
-	show_page("warehouse")
+			prepare_page.present_move(kind == &"deposit")
 
 
 # Opens the settings' help at a topic, from a "?" mark anywhere in the hub;
@@ -489,10 +463,8 @@ func go_back() -> void:
 			help_return = ""
 			show_page(back)
 		return
-	if page == "confirm":
+	if page == "prepare" and prepare_return == "stages":
 		show_page("stages")
-	elif page == "equipment" and equipment_return == "confirm":
-		show_page("confirm")
 	else:
 		show_page("home")
 

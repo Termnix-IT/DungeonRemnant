@@ -1,21 +1,21 @@
 class_name HubDeparture
 extends Control
 
-# Departure, in the shared grammar, in two steps.
-# Stage selection is a map on a slab from the screen's left edge: each stage
+# Departure, in the shared grammar, on one screen: the stages on the left and
+# everything about setting out in the right column, so choosing where to go
+# and starting the run are one place instead of two steps.
+# The stages are a map on a dark slab from the screen's left edge: each stage
 # a diorama (its dungeon on an oval island) set off the straight line, the
 # second higher than the first, joined by a dotted road that is lit as far
 # as the stages are open; a stage not yet open stands smaller and dark, so
-# the eye goes to the ones that can be played. The right column shows the
-# chosen stage's painting (what lies inside, where the map shows it from
-# outside), describes it and holds the one primary action.
-# The sortie check shows what she takes on the left as icons alone (the five
-# equipment slots, then the carried goods; what the pointer rests on is named
-# in a line under them, the rest is the tooltip), the chosen stage and its
-# start floor with the one action in the middle, her stats for the run above
-# the floor choice, and on the right the open hall with the painting of the gate.
+# the eye goes to the ones that can be played. The slab is dark enough that
+# the hall's weapon racks and candles do not show between the islands.
+# The right column reads top to bottom in the order of the decision: the
+# chosen stage (its facts, description and guardians), what she takes (the
+# five equipment slots and how much she carries, with a way to the
+# preparation screen), her stats for the run, the start floor, and the one
+# primary action.
 
-signal confirm_requested
 signal equipment_requested
 signal departure_requested
 
@@ -23,15 +23,11 @@ signal departure_requested
 # road never runs straight.
 const MAP_ROWS := [0.62, 0.3, 0.58, 0.34]
 const ROAD_DOT_GAP := 16.0
-const BANNER_SIZE := 220.0
-# What she takes: five slots in a row, then the carried goods, on one slab.
-const KIT_WIDTH := 570.0
-const SLOT_SIZE := 104.0
-const SLOT_ICON := 96.0
-const CARRIED_COLUMNS := 7
+# The five slots in a row under the stage, small enough to share the column.
+const SLOT_SIZE := 64.0
+const SLOT_ICON := 48.0
 # A stage not yet open, against an open one.
 const LOCKED_SCALE := 0.74
-const EDGE_FADE := preload("res://ui/edge_fade.gdshader")
 
 var stages: Array[StageData] = []
 var state: RunCarryover
@@ -45,34 +41,23 @@ var stage_nodes: Array[StageMapNode] = []
 var stage_details: ItemDetails
 var stage_title: Label
 var stage_facts: Label
-var stage_art: TextureRect
 var slot_cells: Array[ItemCell] = []
-var carried: IconGrid
-var kit_note: Label
-var stage_banner: TextureRect
-var banner_title: Label
 var carried_rule: HintMark
 var start_rule: HintMark
 var carried_count: Label
 var hero_stats: HeroStats
-var selection_page: Control
-var confirmation_page: Control
-var next_button: Button
 var confirm_button: Button
 var review_button: Button
 var _selection_detail: VBoxContainer
-var _flow := 0.0
+var _start_row: HBoxContainer
 
 
 func _ready() -> void:
-	selection_page = Control.new()
-	add_child(selection_page)
-	selection_page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var columns := HBoxContainer.new()
 	columns.theme_type_variation = &"ShopColumns"
-	selection_page.add_child(columns)
+	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var left := HubUI.open_column(columns, 2.1, &"SlabVeilWide")
+	var left := HubUI.open_column(columns, 2.1, &"SlabSolid")
 	map = Control.new()
 	map.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	map.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -80,14 +65,10 @@ func _ready() -> void:
 	map.draw.connect(_draw_road)
 	map.resized.connect(_place_stages)
 	_selection_detail = HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
-	_build_stage_detail(_selection_detail)
-	confirmation_page = Control.new()
-	add_child(confirmation_page)
-	confirmation_page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_build_confirmation(confirmation_page)
+	_build_detail(_selection_detail)
 
 
-func _build_stage_detail(column: VBoxContainer) -> void:
+func _build_detail(column: VBoxContainer) -> void:
 	column.theme_type_variation = &"DetailStack"
 	stage_title = HubUI.label(column, "", &"HeadingLabel")
 	var facts_row := HBoxContainer.new()
@@ -97,119 +78,68 @@ func _build_stage_detail(column: VBoxContainer) -> void:
 	stage_facts.autowrap_mode = TextServer.AUTOWRAP_OFF
 	stage_facts.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	HintMark.make(facts_row, "10階ごとに中ボス、50階に主がいる。中ボスを倒すと脱出口から帰れる。", HubSettings.TOPIC_RUN)
-	HubUI.rule(column)
-	# The painting melts into the slab instead of reading as a framed picture.
-	stage_art = TextureRect.new()
-	stage_art.material = ShaderMaterial.new()
-	(stage_art.material as ShaderMaterial).shader = EDGE_FADE
-	stage_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	stage_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	stage_art.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	stage_art.size_flags_stretch_ratio = 1.4
-	stage_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	column.add_child(stage_art)
 	stage_details = ItemDetails.new()
-	stage_details.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	# Long guardian lists scroll from the keyboard too.
 	stage_details.focus_mode = Control.FOCUS_ALL
 	column.add_child(stage_details)
-	next_button = HubUI.primary_action(column, "出撃準備へ", func(): confirm_requested.emit())
-
-
-func _build_confirmation(parent: Control) -> void:
-	var columns := HBoxContainer.new()
-	columns.theme_type_variation = &"ShopColumns"
-	parent.add_child(columns)
-	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# Left: what she takes.
-	var kit := HubUI.open_column(columns, 0.95, &"SlabSolid")
-	var kit_slab := kit.get_parent() as Control
-	kit_slab.size_flags_horizontal = Control.SIZE_FILL
-	kit_slab.custom_minimum_size.x = KIT_WIDTH
-	kit.theme_type_variation = &"DetailStack"
-	HubUI.label(kit, "装備", &"SectionLabel")
-	_build_slots(kit)
-	HubUI.rule(kit)
-	var carried_heading := HBoxContainer.new()
-	carried_heading.theme_type_variation = &"CompactRow"
-	kit.add_child(carried_heading)
-	var carried_title := HubUI.label(carried_heading, "持ち込み", &"SectionLabel")
+	var gap := HubUI.space(column)
+	stage_details.fit_lines(gap, 60.0)
+	HubUI.rule(column)
+	# What she takes: the five slots, how much she carries, and the way to
+	# change either.
+	var kit_heading := HBoxContainer.new()
+	kit_heading.theme_type_variation = &"CompactRow"
+	column.add_child(kit_heading)
+	var kit_title := HubUI.label(kit_heading, "持ち込む装備", &"NoteLabel")
+	kit_title.autowrap_mode = TextServer.AUTOWRAP_OFF
+	kit_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	kit_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	review_button = HubUI.button(kit_heading, "準備を開く  ›", func(): equipment_requested.emit(), &"TextAction")
+	_build_slots(column)
+	var carried_row := HBoxContainer.new()
+	carried_row.theme_type_variation = &"CompactRow"
+	column.add_child(carried_row)
+	var carried_title := HubUI.label(carried_row, "持ち込み", &"NoteLabel")
 	carried_title.autowrap_mode = TextServer.AUTOWRAP_OFF
-	carried_rule = HintMark.make(carried_heading, "倒れたり中断したりすると、持ち込みのおよそ半分を失う。装備中の5枠は失わない。", HubSettings.TOPIC_LOSS)
+	carried_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	carried_rule = HintMark.make(carried_row, "倒れたり中断したりすると、持ち込みのおよそ半分を失う。装備中の5枠は失わない。", HubSettings.TOPIC_LOSS)
 	var carried_gap := Control.new()
 	carried_gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	carried_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	carried_heading.add_child(carried_gap)
-	carried_count = HubUI.label(carried_heading, "", &"NoteLabel")
+	carried_row.add_child(carried_gap)
+	carried_count = HubUI.label(carried_row, "", &"BodyLabel")
 	carried_count.autowrap_mode = TextServer.AUTOWRAP_OFF
-	carried = IconGrid.new()
-	carried.columns = CARRIED_COLUMNS
-	carried.read_only = true
-	carried.looked_at.connect(func(place: int):
-		if place >= 0:
-			_name_item(carried.entries[place].item)
-		else:
-			kit_note.text = "")
-	kit.add_child(carried)
-	kit_note = HubUI.label(kit, "", &"PlaqueNote")
-	kit_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	kit_note.clip_text = true
-	kit_note.autowrap_mode = TextServer.AUTOWRAP_OFF
-	kit_note.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	kit_note.custom_minimum_size.y = 28
-	HubUI.rule(kit)
-	review_button = HubUI.button(kit, "装備・持ち込みを見直す  ›", func(): equipment_requested.emit(), &"TextAction")
-	review_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	# Middle: where she goes, from which floor, and the one action.
-	var trip := HubUI.open_column(columns, 1.1, &"SlabColumn")
-	trip.theme_type_variation = &"DetailStack"
-	stage_banner = TextureRect.new()
-	stage_banner.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	stage_banner.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	# The island takes the column's spare height.
-	stage_banner.custom_minimum_size = Vector2.ONE * BANNER_SIZE
-	stage_banner.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	stage_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	trip.add_child(stage_banner)
-	banner_title = HubUI.label(trip, "", &"HeadingLabel")
-	banner_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	HubUI.rule(trip)
+	HubUI.rule(column)
+	# Her stats for this run, all four rows, above the floor choice.
+	hero_stats = HeroStats.new()
+	hero_stats.visible = false
+	add_child(hero_stats)
 	# The unlocked start floors as text tabs; what every start shares is said
 	# once beside them.
-	var start_row := HBoxContainer.new()
-	start_row.theme_type_variation = &"CompactRow"
-	trip.add_child(start_row)
-	var start_caption := HubUI.label(start_row, "開始階", &"NoteLabel")
+	_start_row = HBoxContainer.new()
+	_start_row.theme_type_variation = &"CompactRow"
+	column.add_child(_start_row)
+	var start_caption := HubUI.label(_start_row, "開始階", &"NoteLabel")
 	start_caption.autowrap_mode = TextServer.AUTOWRAP_OFF
 	start_caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	start_rule = HintMark.make(_start_row, "どの階から始めてもLv 1。永久強化と装備・持ち込みは引き継ぐ。", HubSettings.TOPIC_GROWTH)
 	start_choice = SegmentedChoice.new()
 	start_choice.option_role = &"CategoryTab"
-	start_row.add_child(start_choice)
-	start_only = HubUI.label(start_row, "", &"BodyLabel")
+	_start_row.add_child(start_choice)
+	start_only = HubUI.label(_start_row, "", &"BodyLabel")
 	start_only.autowrap_mode = TextServer.AUTOWRAP_OFF
 	start_only.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	start_rule = HintMark.make(start_row, "どの階から始めてもLv 1。永久強化と装備・持ち込みは引き継ぐ。", HubSettings.TOPIC_GROWTH)
-	start_row.move_child(start_rule, 1)
-	start_choice.item_selected.connect(func(index: int): starting_floor = start_choice.get_item_id(index); _update_start_label())
-	confirm_button = HubUI.primary_action(trip, "挑戦する", func(): departure_requested.emit())
-	# Right: the open hall. Her stats for this run stand in the middle column,
-	# above the floor choice.
-	hero_stats = HeroStats.new()
-	hero_stats.size_flags_stretch_ratio = 0.95
-	columns.add_child(hero_stats)
-	hero_stats.move_stats_to(trip, start_row.get_index(), true)
+	start_choice.item_selected.connect(func(index: int): starting_floor = start_choice.get_item_id(index); _update_action())
+	hero_stats.move_stats_to(column, _start_row.get_index(), true)
+	confirm_button = HubUI.primary_action(column, "挑戦する", func(): departure_requested.emit())
 
 
-# The five slots as a row of lit squares, each with its name under it.
-func _build_slots(kit: VBoxContainer) -> void:
-	var row := GridContainer.new()
-	row.columns = Equipment.SLOT_NAMES.size()
-	row.theme_type_variation = &"GearGrid"
-	kit.add_child(row)
+# The five slots as a row of lit squares, named by their tooltips.
+func _build_slots(column: VBoxContainer) -> void:
+	var row := HBoxContainer.new()
+	row.theme_type_variation = &"CompactRow"
+	column.add_child(row)
 	for slot in Equipment.SLOT_NAMES.size():
-		var box := VBoxContainer.new()
-		box.theme_type_variation = &"CompactStack"
-		row.add_child(box)
 		var cell := ItemCell.new()
 		cell.theme_type_variation = &"SlotCell"
 		cell.custom_minimum_size = Vector2.ONE * SLOT_SIZE
@@ -218,27 +148,15 @@ func _build_slots(kit: VBoxContainer) -> void:
 		cell.draggable = false
 		cell.toggle_mode = false
 		cell.focus_mode = Control.FOCUS_NONE
-		cell.mouse_entered.connect(func():
-			if cell.item != null:
-				_name_item(cell.item))
-		cell.mouse_exited.connect(func(): kit_note.text = "")
-		box.add_child(cell)
-		var caption := HubUI.label(box, Equipment.SLOT_NAMES[slot], &"SectionLabel")
-		caption.autowrap_mode = TextServer.AUTOWRAP_OFF
-		caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		row.add_child(cell)
 		slot_cells.append(cell)
 
 
-# One line: the name and the main effect of what the pointer rests on.
-func _name_item(item: ItemData) -> void:
-	kit_note.text = "%s　◆　%s" % [item.label(), ItemGlyph.main_effect(item)]
-
-
-func present_selection(available_stages: Array[StageData], progress: RunCarryover = null) -> void:
+# Shows the stages and what she takes; with to_action, the chosen stage is the
+# last one and focus waits on the primary action (the lobby's shortcut).
+func present_selection(available_stages: Array[StageData], progress: RunCarryover = null, to_action := false) -> void:
 	state = progress if progress != null else RunCarryover.new()
 	stages = available_stages
-	selection_page.show()
-	confirmation_page.hide()
 	for node in stage_nodes:
 		map.remove_child(node)
 		node.queue_free()
@@ -255,21 +173,36 @@ func present_selection(available_stages: Array[StageData], progress: RunCarryove
 			if event.is_action_pressed("ui_accept") and not event.is_echo():
 				node.accept_event()
 				_select_stage(index)
-				if not next_button.disabled:
-					next_button.grab_focus())
+				if not confirm_button.disabled:
+					confirm_button.grab_focus())
 		stage_nodes.append(node)
 		if stages[index] == selected_stage:
 			selected_index = index
 	_place_stages()
+	refresh_kit(state)
 	if not stages.is_empty():
 		_select_stage(selected_index)
-		stage_nodes[selected_index].grab_focus()
+		if to_action and not confirm_button.disabled:
+			confirm_button.grab_focus()
+		else:
+			stage_nodes[selected_index].grab_focus()
 	else:
 		selected_stage = null
 		stage_title.text = ""
 		stage_details.reset()
 		stage_details.line("挑戦できるステージはありません。", &"NoteLabel")
-		next_button.disabled = true
+		confirm_button.disabled = true
+
+
+# What she takes and her stats, again after the preparation screen changed them.
+func refresh_kit(current: RunCarryover) -> void:
+	state = current
+	for slot in slot_cells.size():
+		var worn := state.equipment.slots[slot]
+		slot_cells[slot].show_item(worn)
+		slot_cells[slot].tooltip_text = ItemTooltipList.description(worn) if worn != null else Equipment.SLOT_NAMES[slot]
+	carried_count.text = "%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries]
+	hero_stats.show_stats(state.preparation_stats())
 
 
 func _unlock_hint(stage: StageData) -> String:
@@ -328,15 +261,30 @@ func _select_stage(index: int) -> void:
 	var stage := selected_stage
 	stage_title.text = stage.display_name
 	stage_facts.text = "全%d階　·　難易度 %s" % [stage.floor_count, stage.difficulty] if stage.available else "未解放"
-	stage_art.texture = stage.illustration
-	stage_art.modulate.a = 0.7 if state.stage_available(stage) else 0.3
 	stage_details.reset()
 	stage_details.line(stage.description, &"BodyLabel")
 	if stage.available:
-		stage_details.line("
-".join(guardian_lines(stage)))
+		stage_details.line("\n".join(guardian_lines(stage)))
+	_fill_start_floors()
 	UIMotion.reveal_selection([_selection_detail])
-	next_button.disabled = not state.stage_available(stage) or stage.settings == null
+
+
+# The start floors the chosen stage has opened, and the action's words.
+func _fill_start_floors() -> void:
+	var open := state.stage_available(selected_stage) and selected_stage.settings != null
+	start_choice.clear()
+	if open:
+		for floor_number in [1, 11, 21, 31, 41]:
+			if state.can_start(selected_stage, floor_number):
+				start_choice.add_item("%dF" % floor_number, floor_number)
+				if floor_number == starting_floor:
+					start_choice.select(start_choice.item_count - 1)
+	starting_floor = start_choice.get_selected_id() if start_choice.item_count > 0 else 1
+	start_choice.visible = start_choice.item_count > 1
+	start_only.visible = not start_choice.visible
+	start_only.text = "%dF" % starting_floor if open else "—"
+	confirm_button.disabled = not open
+	_update_action()
 
 
 # The guardians in a few lines: how many have fallen, those by name, and the
@@ -362,49 +310,30 @@ func guardian_lines(stage: StageData) -> Array[String]:
 	return lines
 
 
-func present_confirmation(current: RunCarryover) -> void:
-	state = current
-	selection_page.hide()
-	confirmation_page.show()
-	for slot in slot_cells.size():
-		var worn := state.equipment.slots[slot]
-		slot_cells[slot].show_item(worn)
-		slot_cells[slot].tooltip_text = ItemTooltipList.description(worn) if worn != null else Equipment.SLOT_NAMES[slot]
-	hero_stats.show_stats(state.preparation_stats())
-	stage_banner.texture = selected_stage.diorama if selected_stage.diorama != null else selected_stage.illustration
-	banner_title.text = "%s　全%d階" % [selected_stage.display_name, selected_stage.floor_count]
-	var rows: Array[Dictionary] = []
-	for index in state.inventory.entries.size():
-		rows.append({"index": index, "item": state.inventory.entries[index].item, "count": state.inventory.entries[index].count})
-	carried.show_rows(rows, "持ち込みの品はない")
-	kit_note.text = ""
-	carried_count.text = "%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries]
-	start_choice.clear()
-	for floor_number in [1, 11, 21, 31, 41]:
-		if state.can_start(selected_stage, floor_number):
-			start_choice.add_item("%dF" % floor_number, floor_number)
-			if floor_number == starting_floor:
-				start_choice.select(start_choice.item_count - 1)
-	starting_floor = start_choice.get_selected_id() if start_choice.item_count > 0 else 1
-	start_choice.visible = start_choice.item_count > 1
-	start_only.visible = not start_choice.visible
-	start_only.text = "%dF" % starting_floor
-	_update_start_label()
-	confirm_button.grab_focus()
-
-
-func _update_start_label() -> void:
-	confirm_button.text = "%s・%dFから挑戦する" % [selected_stage.display_name, starting_floor]
-
-
-# Opening a step: the stages (or what she takes) arrive one by one, the
-# detail a beat later.
-func play_entrance() -> void:
-	if selection_page.visible:
-		for index in stage_nodes.size():
-			UIMotion.of(stage_nodes[index]).appear(UIMotion.STAGGER_TIME * index, UIMotion.ENTER_TIME)
-		UIMotion.of(_selection_detail).appear(UIMotion.STAGGER_TIME)
+func _update_action() -> void:
+	if selected_stage == null:
+		return
+	if confirm_button.disabled:
+		confirm_button.text = "%sは未解放" % selected_stage.display_name
 	else:
-		for index in slot_cells.size():
-			UIMotion.of(slot_cells[index]).appear(UIMotion.ROW_STAGGER * index, UIMotion.ROW_TIME)
-		UIMotion.of(carried.scroll).appear(UIMotion.STAGGER_TIME)
+		confirm_button.text = "%s・%dFから挑戦する" % [selected_stage.display_name, starting_floor]
+
+
+# Opening the screen: the stages arrive one by one, the column a beat later.
+func play_entrance() -> void:
+	for index in stage_nodes.size():
+		UIMotion.of(stage_nodes[index]).appear(UIMotion.STAGGER_TIME * index, UIMotion.ENTER_TIME)
+	UIMotion.of(_selection_detail).appear(UIMotion.STAGGER_TIME)
+	for index in slot_cells.size():
+		UIMotion.of(slot_cells[index]).appear(UIMotion.STAGGER_TIME + UIMotion.ROW_STAGGER * index, UIMotion.ROW_TIME)
+
+
+# R (Y on a gamepad) opens the preparation screen, as the key guide says.
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
+	var key: bool = event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R
+	var pad: bool = event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_Y
+	if key or pad:
+		get_viewport().set_input_as_handled()
+		equipment_requested.emit()

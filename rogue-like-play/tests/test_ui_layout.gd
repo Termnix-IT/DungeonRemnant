@@ -32,51 +32,53 @@ func run_tests() -> void:
 	await settle()
 	var hub = main.get_node("Hub")
 	centered(hub.get_node("Content"))
-	for page in ["equipment", "sell", "warehouse", "upgrade", "stages", "confirm"]:
+	var action_rects := {}
+	for page in ["prepare", "sell", "upgrade", "stages"]:
 		hub.show_page(page)
 		# Measure the resting layout, after the page has slid into place.
 		await create_timer(UIMotion.WINDOW_TIME + 0.05).timeout
 		await settle()
 		var content: Control = hub.get_node("Content")
-		for control: Control in [hub.equipment_page, hub.sell_page, hub.warehouse_page, hub.departure_page, hub.upgrade_page]:
+		for control: Control in [hub.prepare_page, hub.sell_page, hub.departure_page, hub.upgrade_page]:
 			if control.visible:
-				# The shop's slab runs off the screen's left edge by design; it
-				# still has to stay on the screen.
-				var bounds: Rect2 = root.get_visible_rect() if control in [hub.sell_page, hub.equipment_page, hub.warehouse_page, hub.upgrade_page, hub.departure_page] else content.get_global_rect()
-				check(bounds.grow(1).encloses(control.get_global_rect()), "%s page fits Hub content" % page)
-		if page == "confirm":
+				# The slabs run off the screen's edges by design; they still have
+				# to stay on the screen.
+				check(root.get_visible_rect().grow(1).encloses(control.get_global_rect()), "%s page fits Hub content" % page)
+		# Every screen keeps its decision column at the same place, its primary
+		# action at the foot of it (docs/MVP_SPEC.md, 個別画面のUI文法).
+		var action: Button = {"prepare": hub.prepare_page.primary_button, "sell": hub.sell_page.sell_button, "upgrade": hub.purchase_button, "stages": hub.departure_page.confirm_button}[page]
+		action_rects[page] = action.get_global_rect()
+		check(root.get_visible_rect().encloses(action.get_global_rect()), "The %s action stays on the screen" % page)
+		if page == "stages":
 			var slots: Array[ItemCell] = hub.departure_page.slot_cells
-			check(slots.all(func(cell: ItemCell): return cell.get_global_rect().end.y <= hub.departure_page.carried.get_global_rect().position.y) and slots[4].get_global_rect().end.x <= hub.departure_page.confirm_button.get_global_rect().position.x, "Confirmation slots end before the carried goods and the middle column")
-			check(not hub.departure_page.carried.get_global_rect().intersects(hub.departure_page.review_button.get_global_rect()), "Carried goods leave the review action clear")
-			check(root.get_visible_rect().encloses(hub.departure_page.confirm_button.get_global_rect()), "The sortie action stays on the screen")
-		if page == "equipment":
-			var worn: HubEquipment = hub.equipment_page
+			var stats_top: float = hub.departure_page.hero_stats.specs.get_global_rect().position.y
+			check(slots.all(func(cell: ItemCell): return cell.get_global_rect().end.y <= stats_top) and stats_top < hub.departure_page.confirm_button.get_global_rect().position.y, "The departure reads stage, kit, stats, then the action")
+			check(not hub.departure_page.stage_details.get_global_rect().intersects(hub.departure_page.review_button.get_global_rect()), "The stage text leaves the preparation link clear")
+		if page == "prepare":
+			var worn: HubPrepare = hub.prepare_page
 			var screen: Rect2 = root.get_visible_rect()
 			check(worn.slots.all(func(slot: Button): return screen.encloses(slot.get_global_rect())) and screen.encloses(worn.detail_note.get_global_rect()), "Every slot and the detail line stay on the screen")
-			check(not worn._gear_scroll.get_global_rect().intersects(worn.detail_name.get_global_rect()), "The gear icons leave the plaque clear")
-			check(worn.grid.get_global_rect().end.x <= worn.slots[0].get_global_rect().position.x and worn.slots[0].get_global_rect().end.x < worn.detail_name.get_global_rect().get_center().x, "The slots stand right beside the gear, the plaque out in the hall")
-	hub.show_page("home")
-	enter(hub, hub.warehouse_button)
+			check(worn.slots.all(func(slot: Button): return slot.get_global_rect().end.y <= worn.storage.get_global_rect().position.y), "The slots stand above the two grids")
+			check(worn.storage.get_global_rect().end.x <= worn.carried.get_global_rect().position.x and worn.carried.get_global_rect().end.x <= worn.detail_name.get_global_rect().position.x, "Warehouse, carried and the column read left to right")
+	var lefts := {}
+	for rect: Rect2 in action_rects.values():
+		lefts[roundi(rect.position.x)] = true
+	check(lefts.size() == 1, "Every screen's primary action starts at the same place: %s" % [action_rects])
+	hub.show_page("prepare")
 	await create_timer(UIMotion.WINDOW_TIME + 0.05).timeout
 	await settle()
-	var warehouse: HubWarehouse = hub.warehouse_page
-	# The two stocks mirror each other about the screen's centre.
-	var middle := root.get_visible_rect().get_center().x
-	var left := warehouse.carried.get_global_rect()
-	var right := warehouse.storage.get_global_rect()
-	check(absf((left.position.x - middle) + (right.end.x - middle)) < 2.0, "Warehouse stocks mirror about the centre")
-	var plaque := warehouse.detail_name.get_global_rect().merge(warehouse.detail_note.get_global_rect())
-	check(root.get_visible_rect().encloses(plaque) and left.end.x <= plaque.position.x and plaque.end.x <= right.position.x, "The plaque stands in the hall between the two slabs")
-	# Whatever the plaque says, nothing round it moves.
+	var warehouse: HubPrepare = hub.prepare_page
+	var left := warehouse.storage.get_global_rect()
+	var right := warehouse.carried.get_global_rect()
+	# Whatever the column says, nothing round it moves.
 	var steady := true
 	for item in ItemCatalog.shop_items():
-		warehouse._show_item(item)
+		warehouse._show_item(item, "倉庫")
 		await settle()
-		steady = steady and is_equal_approx(warehouse.storage.get_global_rect().position.x, right.position.x) and is_equal_approx(warehouse.carried.get_global_rect().end.x, left.end.x)
-	check(steady, "A long plaque line never pushes the slabs aside")
+		steady = steady and is_equal_approx(warehouse.carried.get_global_rect().position.x, right.position.x) and is_equal_approx(warehouse.storage.get_global_rect().end.x, left.end.x)
+	check(steady, "A long name in the column never pushes the grids aside")
 	hub.go_back()
 	enter(hub, hub.start_button)
-	hub.departure_page.next_button.pressed.emit()
 	hub.departure_page.confirm_button.pressed.emit()
 	await settle()
 	var run = main.active_run

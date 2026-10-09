@@ -23,8 +23,7 @@ const LIGHTS := [
 # pixels and the light's colour. The chosen entry's object glows softly.
 const FOCUS := {
 	&"departure": [Vector2(0.550, 0.300), 210.0, Color(0.45, 0.62, 1.0)],  # gate to the depths
-	&"equipment": [Vector2(0.250, 0.450), 150.0, Color(1.0, 0.70, 0.38)],  # weapon rack
-	&"storage": [Vector2(0.945, 0.700), 170.0, Color(1.0, 0.66, 0.34)],  # chests and crates
+	&"prepare": [Vector2(0.250, 0.450), 150.0, Color(1.0, 0.70, 0.38)],  # weapon rack
 	&"shop": [Vector2(0.690, 0.420), 150.0, Color(1.0, 0.72, 0.40)],  # merchant counter
 	&"upgrade": [Vector2(0.398, 0.330), 140.0, Color(0.55, 0.62, 1.0)],  # rune crystal on the altar
 	&"settings": [Vector2(0.291, 0.229), 110.0, Color(1.0, 0.70, 0.38)],  # lantern

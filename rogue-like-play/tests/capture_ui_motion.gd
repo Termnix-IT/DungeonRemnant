@@ -103,8 +103,8 @@ func capture() -> void:
 	await settle()
 	await key(KEY_ESCAPE)
 	check(hub.sell_button.has_focus(), "Returning to the lobby keeps the shop chosen")
-	# Two steps up the menu: shop, storage, equipment.
-	for step in 2:
+	# One step up the menu: shop, preparation.
+	for step in 1:
 		joy = joy.duplicate()
 		joy.button_index = JOY_BUTTON_DPAD_UP
 		joy.pressed = true
@@ -114,21 +114,22 @@ func capture() -> void:
 		joy.pressed = false
 		Input.parse_input_event(joy)
 		Input.flush_buffered_events()
-	check(hub.equipment_button.has_focus() and hub.home_page.selected_id() == &"equipment", "Gamepad D-pad moves up the lobby menu and chooses")
-	await enter(hub, hub.equipment_button)
-	await click(hub.equipment_page.cells[hub.equipment_page.candidates.find_custom(func(candidate: Dictionary): return candidate.item.kind == ItemData.Kind.ARMOR)])
-	await click(hub.equipment_page.slots[2])
-	hub.equipment_page.equip_button.grab_focus()
+	check(hub.prepare_button.has_focus() and hub.home_page.selected_id() == &"prepare", "Gamepad D-pad moves up the lobby menu and chooses")
+	await enter(hub, hub.prepare_button)
+	var prepare: HubPrepare = hub.prepare_page
+	await click(prepare.storage.cells[prepare.storage.entries.find_custom(func(entry: Dictionary): return entry.item.kind == ItemData.Kind.ARMOR)])
+	await click(prepare.slots[2])
+	prepare.primary_button.grab_focus()
 	await key(KEY_ENTER)
 	check(main.state.equipment.slots[2] != null, "Keyboard equip still works")
 	# Replay only the visual response to capture its peak after the input check.
-	UIMotion.of(hub.equipment_page.slots[2]).pulse()
+	UIMotion.of(prepare.slots[2]).pulse()
 	await wait_motion(0.05)
 	await frame_shot("equip")
 	await settle()
 	await create_timer(1.0).timeout
-	await sample_cost(hub.equipment_page.sort_cycler, false)
-	await sample_cost(hub.equipment_page.sort_cycler, true)
+	await sample_cost(prepare.storage.sort_cycler, false)
+	await sample_cost(prepare.storage.sort_cycler, true)
 	hub.show_page("upgrade")
 	var tree: SkillTreePanel = hub.upgrade_page
 	for resolution in [Vector2i(1600, 900), Vector2i(1280, 720), Vector2i(1920, 1080)]:
@@ -144,7 +145,7 @@ func capture() -> void:
 		check(tree.root_button.scale.x > 1.015, "Successful upgrade pulses changed card")
 		await frame_shot("upgrade_%d" % resolution.y)
 		await settle()
-	hub.show_page("equipment")
+	hub.show_page("prepare")
 	# The page's entrance ends with the heroine's stats arriving.
 	await create_timer(UIMotion.STAGGER_TIME * 3 + UIMotion.ENTER_TIME + 0.2).timeout
 	check(get_processed_tweens().is_empty(), "Stress capture leaves no tween running")
@@ -155,7 +156,9 @@ func capture() -> void:
 	await click(shop.grid.cells[0])
 	shop.sell_button.grab_focus()
 	await settle()
-	check(shop.get_global_rect().encloses(shop.sell_button.get_global_rect()), "Animated focused button fits at 720p")
+	# The action stands at the foot of the right column, flush with the Gold
+	# above it; its focus growth may pass the page's edge but never the screen's.
+	check(root.get_visible_rect().encloses(shop.sell_button.get_global_rect()), "Animated focused button stays on the screen at 720p")
 	await frame_shot("shop_720")
 	var edge := shop.sell_button.get_global_transform() * Vector2(1, shop.sell_button.size.y * 0.5)
 	var gold_before: int = main.state.gold

@@ -44,9 +44,9 @@ func capture() -> void:
 		await settle()
 		check(shop.chosen_place() == 0, "Keyboard focus chooses the icon")
 		await selection_shot("shop_%d" % resolution.y, [shop.showcase, shop.possession])
-		hub.show_page("equipment")
+		hub.show_page("prepare")
 		await settle()
-		var equipment: HubEquipment = hub.equipment_page
+		var equipment: HubPrepare = hub.prepare_page
 		var position := equipment.slots[Equipment.Slot.ARMOR].get_global_rect().get_center()
 		var event := InputEventMouseButton.new()
 		event.position = root.get_final_transform() * position
@@ -58,13 +58,12 @@ func capture() -> void:
 		Input.parse_input_event(release)
 		Input.flush_buffered_events()
 		check(equipment.selected_slot == Equipment.Slot.ARMOR, "Native mouse slot selection")
-		await shot("equipment_%d" % resolution.y)
-		hub.open_warehouse()
-		var warehouse: HubWarehouse = hub.warehouse_page
-		warehouse.storage.cells[0].grab_focus()
+		await shot("prepare_slot_%d" % resolution.y)
+		equipment.storage.cells[0].grab_focus()
+		equipment.storage.cells[0].pressed.emit()
 		await settle()
-		check(warehouse.detail_name.text == warehouse.storage.entries[0].item.label(), "Keyboard focus names the warehouse icon")
-		await selection_shot("warehouse_%d" % resolution.y, [warehouse.detail_name, warehouse.detail_note])
+		check(equipment.detail_name.text == equipment.storage.entries[0].item.label(), "Choosing a warehouse icon names it in the column")
+		await selection_shot("prepare_%d" % resolution.y, [equipment.detail_name, equipment.detail_note])
 		hub.go_back()
 	check(SaveCodec.encode(main.state) == before, "Selection captures do not change inventory or Gold")
 	main.free()
