@@ -15,6 +15,25 @@ const FEATHER_STEPS := 5
 @export var feather := 48.0
 @export var expand_left := 0.0
 @export var expand_right := 0.0
+# Optional dressing over the slab; all off by default, which keeps the plain
+# melting slab. A grain texture tiled over the opaque part, multiplied by
+# grain_tint: its colour takes the texture's mid grey down to the slab's
+# darkness and its alpha is how much of the face is the texture
+# (art/ui/slab_stone.png, from tools/build_slab_texture.py); a soft light down
+# from the top edge;
+# bronze rails along the chosen edges (RAIL_* flags), fading at both ends, with
+# a diamond stud at the middle of each.
+const RAIL_TOP := 1
+const RAIL_BOTTOM := 2
+const RAIL_LEFT := 4
+const RAIL_RIGHT := 8
+@export var grain: Texture2D
+@export var grain_tint := Color(1, 1, 1, 0)
+@export var top_light := 0.0
+@export var top_light_depth := 0.35
+@export_flags("Top", "Bottom", "Left", "Right") var rail_edges := 0
+@export var rail_color := Color(0.72, 0.58, 0.36, 0.0)
+@export var rail_inset := 0.0
 
 
 func _get_draw_rect(rect: Rect2) -> Rect2:
@@ -54,3 +73,31 @@ func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 			var d := c + 1
 			indices.append_array([a, b, c, b, d, c])
 	RenderingServer.canvas_item_add_triangle_array(to_canvas_item, indices, points, colors)
+	var body := Rect2(left, rect.position.y, width, rect.size.y)
+	if grain != null and grain_tint.a > 0.0:
+		RenderingServer.canvas_item_add_texture_rect(to_canvas_item, body, grain.get_rid(), true, grain_tint)
+	if top_light > 0.0:
+		var depth := body.size.y * top_light_depth
+		var lit := Color(1.0, 0.86, 0.62, top_light)
+		var dark := Color(lit, 0.0)
+		RenderingServer.canvas_item_add_polygon(to_canvas_item, PackedVector2Array([body.position, Vector2(body.end.x, body.position.y), Vector2(body.end.x, body.position.y + depth), Vector2(body.position.x, body.position.y + depth)]), PackedColorArray([lit, lit, dark, dark]))
+	if rail_edges != 0 and rail_color.a > 0.0:
+		var inner := body.grow(-rail_inset)
+		if rail_edges & RAIL_TOP:
+			_rail(to_canvas_item, inner.position, Vector2(inner.end.x, inner.position.y))
+		if rail_edges & RAIL_BOTTOM:
+			_rail(to_canvas_item, Vector2(inner.position.x, inner.end.y), inner.end)
+		if rail_edges & RAIL_LEFT:
+			_rail(to_canvas_item, inner.position, Vector2(inner.position.x, inner.end.y))
+		if rail_edges & RAIL_RIGHT:
+			_rail(to_canvas_item, Vector2(inner.end.x, inner.position.y), inner.end)
+
+
+# A hairline that fades in from both ends, with a diamond at its middle.
+func _rail(canvas: RID, from: Vector2, to: Vector2) -> void:
+	var clear := Color(rail_color, 0.0)
+	var points := PackedVector2Array([from, from.lerp(to, 0.18), from.lerp(to, 0.82), to])
+	RenderingServer.canvas_item_add_polyline(canvas, points, PackedColorArray([clear, rail_color, rail_color, clear]), 1.0, true)
+	var middle := from.lerp(to, 0.5)
+	var stud := Color(rail_color, minf(1.0, rail_color.a * 1.6))
+	RenderingServer.canvas_item_add_polygon(canvas, PackedVector2Array([middle + Vector2(0, -4), middle + Vector2(4, 0), middle + Vector2(0, 4), middle + Vector2(-4, 0)]), PackedColorArray([stud, stud, stud, stud]))
