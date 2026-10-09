@@ -101,6 +101,15 @@ func _ready() -> void:
 		equip.mouse_exited.connect(_preview.bind(-1))
 		$Panel/Actions.add_child(equip)
 		equip_buttons.append(equip)
+		# The shared drag grammar (ItemDrag): a carried item dropped on a slot
+		# it fits is worn there, a worn one dropped on the list comes off, and
+		# the weapons dropped on each other swap; none of it costs a turn.
+		ItemDrag.accept_drops(row, _row_takes.bind(slot), _dropped_on_row.bind(slot), _pick_slot.bind(slot))
+		ItemDrag.glow(row, _row_takes.bind(slot))
+	list.drag_row = _pick_row
+	list.can_take = _list_takes
+	list.take = _dropped_on_list
+	ItemDrag.glow(list, _list_takes)
 	UIMotion.bind_buttons($Panel)
 
 
@@ -272,6 +281,51 @@ func _equip(slot: int) -> void:
 
 func _remove(slot: int) -> void:
 	action_requested.emit("unequip", -1, slot)
+
+
+func _pick_row(index: int) -> Variant:
+	if player == null or index < 0 or index >= player.inventory.entries.size():
+		return null
+	return {"item": player.inventory.entries[index].item, "inventory_index": index}
+
+
+func _pick_slot(target: Control, slot: int) -> Variant:
+	var item: ItemData = player.equipment.slots[slot] if player != null else null
+	if item == null:
+		return null
+	if target.get_viewport().gui_is_dragging():
+		target.set_drag_preview(ItemDrag.preview(item, 32.0, target.get_theme_color(&"font_color", &"GoldLabel")))
+	return {"item": item, "slot": slot}
+
+
+# A slot takes a carried item that fits it (a scroll fits a staff), or the
+# other weapon to swap with.
+func _row_takes(data: Variant, slot: int) -> bool:
+	if player == null or not data is Dictionary:
+		return false
+	if data.has("inventory_index"):
+		var item: ItemData = data.item
+		return player.equipment.accepts(item, slot) or (item.kind == ItemData.Kind.SCROLL and player.equipment.can_socket(slot))
+	var weapons := [Equipment.Slot.MAIN, Equipment.Slot.SUB]
+	return data.has("slot") and data.slot != slot and data.slot in weapons and slot in weapons and player.equipment.slots[Equipment.Slot.SUB] != null
+
+
+func _dropped_on_row(data: Variant, slot: int) -> void:
+	if data.has("inventory_index"):
+		selected_index = data.inventory_index
+		list.select(selected_index)
+		_equip(slot)
+	else:
+		action_requested.emit("switch", -1, -1)
+
+
+# The list takes a worn item back, except the main weapon.
+func _list_takes(data: Variant) -> bool:
+	return player != null and data is Dictionary and data.has("slot") and data.slot != Equipment.Slot.MAIN
+
+
+func _dropped_on_list(data: Variant) -> void:
+	_remove(data.slot)
 
 
 # The staff M opens the picker for: the main weapon if it is a staff, else

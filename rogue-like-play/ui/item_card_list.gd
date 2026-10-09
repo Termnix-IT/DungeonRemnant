@@ -27,6 +27,37 @@ var empty_text := "":
 		empty_text = value
 		queue_redraw()
 
+# The shared drag grammar (ItemDrag) for a list whose rows are items: given
+# a row's index, drag_row returns the drag's data (a Dictionary with "item"),
+# or null where the row cannot be picked up; can_take and take receive what
+# is dropped on the list.
+var drag_row := Callable()
+var can_take := Callable()
+var take := Callable()
+
+
+func _get_drag_data(at_position: Vector2) -> Variant:
+	if not drag_row.is_valid():
+		return null
+	var index := get_item_at_position(at_position, true)
+	if index < 0:
+		return null
+	var data: Variant = drag_row.call(index)
+	var item := ItemDrag.item_of(data)
+	if item == null:
+		return null
+	set_drag_preview(ItemDrag.preview(item, 48.0, get_theme_color(&"font_color", &"GoldLabel")))
+	return data
+
+
+func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
+	return can_take.is_valid() and can_take.call(data)
+
+
+func _drop_data(_at_position: Vector2, data: Variant) -> void:
+	take.call(data)
+
+
 func _ready() -> void:
 	# Made here, not first in _draw, where the tree must not change.
 	UIMotion.of(self)

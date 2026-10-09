@@ -41,6 +41,9 @@ var dimmed := false:
 	set(value):
 		dimmed = value
 		queue_redraw()
+# True while something this cell would take is held (ItemDrag): the cell
+# lights up as a place to drop it.
+var drop_ready := false
 
 
 func _init() -> void:
@@ -71,7 +74,21 @@ func show_item(value: ItemData, amount: int = 1) -> void:
 	queue_redraw()
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_DRAG_BEGIN:
+		var held: Variant = get_viewport().gui_get_drag_data()
+		drop_ready = is_visible_in_tree() and held is ItemCell and held != self and can_accept.is_valid() and can_accept.call(held)
+		queue_redraw()
+	elif what == NOTIFICATION_DRAG_END and drop_ready:
+		drop_ready = false
+		queue_redraw()
+
+
 func _draw() -> void:
+	if drop_ready:
+		var gold := get_theme_color(&"font_color", &"GoldLabel")
+		draw_rect(Rect2(Vector2.ZERO, size).grow(-2), Color(gold, 0.08))
+		draw_rect(Rect2(Vector2.ZERO, size).grow(-3), Color(gold, 0.75), false, 1.0)
 	if button_pressed:
 		draw_rect(Rect2(Vector2.ZERO, size).grow(-3), get_theme_color(&"font_color", &"GoldLabel"), false, 2.0)
 	var shown := item if item != null else symbol
@@ -83,7 +100,7 @@ func _draw() -> void:
 	if captioned:
 		rect.position.x = (size.y - extent) * 0.5
 	if item != null and not dimmed:
-		var strength := GLOW_CHOSEN if button_pressed else (GLOW_ACTIVE if (is_hovered() or has_focus()) else GLOW_REST)
+		var strength := GLOW_CHOSEN if button_pressed else (GLOW_ACTIVE if (is_hovered() or has_focus() or drop_ready) else GLOW_REST)
 		draw_texture_rect(_glow, Rect2(rect.position - rect.size * 0.35, rect.size * 1.7), false, Color(GLOW_COLOR, strength))
 	var role := &"GoldLabel" if button_pressed and item != null else &"Label"
 	var color := get_theme_color(&"font_color", role if item != null else &"NoteLabel")
@@ -129,16 +146,7 @@ func _gui_input(event: InputEvent) -> void:
 func _get_drag_data(_at_position: Vector2) -> Variant:
 	if item == null or not draggable or disabled:
 		return null
-	var held := item
-	var extent := Vector2.ONE * icon_size
-	var preview := Control.new()
-	var ghost := Control.new()
-	ghost.size = extent
-	ghost.position = -extent * 0.5
-	var color := get_theme_color(&"font_color", &"GoldLabel")
-	ghost.draw.connect(func(): ItemGlyph.paint(ghost, Rect2(Vector2.ZERO, extent), held, color))
-	preview.add_child(ghost)
-	set_drag_preview(preview)
+	set_drag_preview(ItemDrag.preview(item, icon_size, get_theme_color(&"font_color", &"GoldLabel")))
 	return self
 
 

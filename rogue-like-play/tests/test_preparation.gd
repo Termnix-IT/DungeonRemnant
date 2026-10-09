@@ -66,8 +66,15 @@ func run_tests() -> void:
 	check(page._slot_accepts(page.storage.cells[armor_at], Equipment.Slot.ARMOR) and not page._slot_accepts(page.storage.cells[armor_at], Equipment.Slot.MAIN), "Only a fitting slot takes the dragged gear")
 	check(page._slot_accepts(page.slots[Equipment.Slot.MAIN], Equipment.Slot.SUB) and not page._slot_accepts(page.slots[Equipment.Slot.MAIN], Equipment.Slot.ARMOR), "The weapons can be dragged onto each other to swap")
 	check(page.slots[Equipment.Slot.ARMOR]._can_drop_data(Vector2.ZERO, page.storage.cells[armor_at]) and not page.slots[Equipment.Slot.MAIN]._can_drop_data(Vector2.ZERO, page.storage.cells[armor_at]), "Gear can be dropped on a fitting slot only")
+	# Dropping gear on its slot wears it at once (ItemDrag: wearing can be undone).
 	page.slots[Equipment.Slot.ARMOR]._drop_data(Vector2.ZERO, page.storage.cells[armor_at])
-	check(page.primary_button.has_focus() and main.state.equipment.slots[Equipment.Slot.ARMOR] == null, "Dropping gear on its slot waits on the action before wearing it")
+	check(main.state.equipment.slots[Equipment.Slot.ARMOR] == ARMOR, "Dropping gear on its slot wears it")
+	# Let its glyph land before the checks that count flights.
+	await create_timer(UIMotion.TRAVEL_TIME + 0.1).timeout
+	# Put it back in the warehouse for the checks that follow.
+	check(main.unequip_item(Equipment.Slot.ARMOR), "Dropped gear comes off again")
+	check(main.transfer_storage(false, main.state.inventory.entries.find_custom(func(entry: InventoryEntry): return entry.item == ARMOR)), "Taken-off gear goes back to the warehouse")
+	armor_at = page.storage.entries.find_custom(func(entry: Dictionary): return entry.item == ARMOR)
 	var weapon_at: int = page.storage.entries.find_custom(func(entry: Dictionary): return entry.item.kind == ItemData.Kind.WEAPON)
 	check(page.stock_menu(page.storage, armor_at).map(func(entry: Array): return entry[0]) == ["防具に装備", "持ち込みへ移す"], "Right-clicking armor offers the armor slot and the move")
 	check(page.stock_menu(page.storage, weapon_at).map(func(entry: Array): return entry[0]) == ["主武器に装備", "副武器に装備", "持ち込みへ移す"], "Right-clicking a weapon offers the main and the sub slot")

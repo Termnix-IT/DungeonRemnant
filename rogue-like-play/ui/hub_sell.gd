@@ -6,7 +6,9 @@ extends Control
 # the slab from the left edge; the full text is each icon's tooltip) and
 # decide in the right column: the goods' art beside their name, kind and main
 # effect, what they would change in her, the counter and the one trade action
-# at its foot. The goods' art once stood large in the open hall between the
+# at its foot. Goods dragged from the list onto the column are chosen there
+# and wait on the trade's button (ItemDrag: a drop never spends or earns
+# Gold by itself). The goods' art once stood large in the open hall between the
 # two, where it rested on nothing, only repeated the chosen icon, and stopped
 # the eye on its way from the list to the trade. Each number shows once or
 # twice rather than four times.
@@ -71,6 +73,9 @@ func _ready() -> void:
 	_build_catalog(_catalog)
 	_info = HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
 	_build_info(_info)
+	var counter := _info.get_parent() as Control
+	ItemDrag.accept_drops(counter, _counter_takes, _dropped_on_counter)
+	ItemDrag.glow(counter, _counter_takes)
 	# What the goods would change in her stands right above the counter.
 	hero_stats = HeroStats.new()
 	hero_stats.visible = false
@@ -268,6 +273,21 @@ func _purchase_limit(item: ItemData) -> int:
 	if item.stackable():
 		capacity = destination.max_stack - _owned(item.id) if _owned(item.id) > 0 else (destination.max_stack if capacity > 0 else 0)
 	return mini(capacity, int(state.gold / item.buy_price))
+
+
+# The column takes goods dragged from the list.
+func _counter_takes(data: Variant) -> bool:
+	return data is ItemCell and grid.cells.has(data)
+
+
+# Dropped goods are chosen and the trade waits for its button.
+func _dropped_on_counter(data: Variant) -> void:
+	var place := grid.cells.find(data)
+	if place < 0:
+		return
+	pick(place)
+	if sell_button.is_visible_in_tree() and not sell_button.disabled:
+		sell_button.grab_focus()
 
 
 # The place among the icons shown of the chosen goods, or -1.

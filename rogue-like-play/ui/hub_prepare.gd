@@ -13,10 +13,11 @@ extends Control
 #
 # Choosing and acting are separate. Choosing an icon or a slot only fills the
 # column; Enter (A) or a double click moves to the primary action, which acts
-# on the next press. Dragging an icon onto a slot chooses that slot for it and
-# moves to the action the same way; dragging an icon to the other grid moves
-# it, and dragging a worn icon onto either grid takes it off. The right-click
-# menu acts at once. A staff's slot carries a round socket for its spell; the
+# on the next press. The mouse follows the shared drag grammar (ItemDrag):
+# an icon dropped on a slot it fits is worn there, dropped on the other grid
+# it moves, and a worn icon dropped on either grid comes off; all of these can
+# be undone, so the drop acts. An icon dropped on the right column is chosen
+# and waits on the primary action. The right-click menu acts at once. A staff's slot carries a round socket for its spell; the
 # socket, M or Y opens the MagicPicker of the spells at hand.
 
 signal equip_requested(from_storage: bool, index: int, slot: int)
@@ -101,6 +102,9 @@ func _ready() -> void:
 		_wire(pair[0], pair[1])
 	_column = HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
 	_build_column(_column)
+	var column_slab := _column.get_parent() as Control
+	ItemDrag.accept_drops(column_slab, _column_takes, _dropped_on_column)
+	ItemDrag.glow(column_slab, _column_takes)
 	menu = ContextMenu.new()
 	add_child(menu)
 	magic_picker = MagicPicker.new()
@@ -519,8 +523,8 @@ func _slot_accepts(source: ItemCell, slot: int) -> bool:
 	return from_slot >= 0 and from_slot != slot and from_slot in weapons and slot in weapons and state.equipment.slots[Equipment.Slot.SUB] != null
 
 
-# An icon dropped on a slot: that slot is where it would go, and the action
-# waits; weapons dropped on each other swap.
+# An icon dropped on a slot it fits is worn there (it can be taken off again);
+# weapons dropped on each other swap.
 func _dropped_on_slot(source: ItemCell, slot: int) -> void:
 	for stock: StockGrid in [storage, carried]:
 		var place := stock.cells.find(source)
@@ -529,10 +533,27 @@ func _dropped_on_slot(source: ItemCell, slot: int) -> void:
 			(carried if stock == storage else storage).clear_choice()
 			target_slot = slot
 			_show_chosen()
-			_to_action()
+			_equip(stock, place, slot)
 			return
 	if slots.has(source):
 		swap_requested.emit()
+
+
+# The right column takes an icon from either grid, to show it and wait.
+func _column_takes(data: Variant) -> bool:
+	return data is ItemCell and (storage.cells.has(data) or carried.cells.has(data))
+
+
+func _dropped_on_column(data: Variant) -> void:
+	for stock: StockGrid in [storage, carried]:
+		var place := stock.cells.find(data)
+		if place >= 0:
+			stock.choose(place)
+			(carried if stock == storage else storage).clear_choice()
+			target_slot = -1
+			_show_chosen()
+			_to_action()
+			return
 
 
 # Opening the screen: the slots arrive left first, the grids a beat later.
