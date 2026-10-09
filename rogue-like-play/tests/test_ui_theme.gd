@@ -86,6 +86,10 @@ func run_tests() -> void:
 	check(hub.upgrade_page.next_value.get_theme_color("font_color") != probe, "An upgrade's next value is information, not gold")
 	theme.set_color("font_color", "GoldLabel", original)
 	main.free()
+	# Scroll bars are drawn in the hall's bronze, not the engine's grey bar.
+	for bar in [&"VScrollBar", &"HScrollBar"]:
+		for part in [&"scroll", &"grabber", &"grabber_highlight", &"grabber_pressed"]:
+			check(theme.get_stylebox(part, bar) is ScrollRailStyle, "%s %s is a bronze rail" % [bar, part])
 	print("UI theme: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
 

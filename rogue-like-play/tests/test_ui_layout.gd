@@ -60,6 +60,8 @@ func run_tests() -> void:
 			check(worn.slots.all(func(slot: Button): return screen.encloses(slot.get_global_rect())) and screen.encloses(worn.detail_note.get_global_rect()), "Every slot and the detail line stay on the screen")
 			check(worn.slots.all(func(slot: Button): return slot.get_global_rect().end.y <= worn.storage.get_global_rect().position.y), "The slots stand above the two grids")
 			check(worn.storage.get_global_rect().end.x <= worn.carried.get_global_rect().position.x and worn.carried.get_global_rect().end.x <= worn.detail_name.get_global_rect().position.x, "Warehouse, carried and the column read left to right")
+			var divider: Rect2 = worn.divider.get_global_rect()
+			check(divider.position.x >= worn.storage.get_global_rect().end.x and divider.end.x <= worn.carried.get_global_rect().position.x and divider.size.y > worn.storage.get_global_rect().size.y * 0.8, "A rule stands between the warehouse and the carried grids")
 	var lefts := {}
 	for rect: Rect2 in action_rects.values():
 		lefts[roundi(rect.position.x)] = true

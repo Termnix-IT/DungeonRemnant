@@ -63,6 +63,8 @@ var equipped_item: ItemData
 var moved_item: ItemData
 var _from_rect := Rect2()
 var _slab: Control
+# The upright rule between the warehouse and the carried grids.
+var divider: Control
 var _column: VBoxContainer
 var _picking_slot := -1
 # What the column showed last, so only a new choice fades in.
@@ -88,11 +90,9 @@ func _ready() -> void:
 	storage.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	storage.size_flags_stretch_ratio = 1.45
 	stocks.add_child(storage)
-	# The two grids stand apart, so their headings do not run together.
-	var parting := Control.new()
-	parting.custom_minimum_size.x = STOCK_GAP
-	parting.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	stocks.add_child(parting)
+	# A gilt hairline parts the two grids, so where the warehouse ends and
+	# what she carries begins reads at a glance.
+	divider = HubUI.column_rule(stocks, STOCK_GAP)
 	carried = StockGrid.new("持ち込み")
 	carried.columns = CARRIED_COLUMNS
 	carried.size_flags_horizontal = Control.SIZE_EXPAND_FILL

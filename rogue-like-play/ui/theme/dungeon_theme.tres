@@ -1,6 +1,7 @@
 [gd_resource type="Theme" format=3]
 
 [ext_resource type="Script" path="res://ui/slab_style.gd" id="SlabStyleScript"]
+[ext_resource type="Script" path="res://ui/scroll_rail_style.gd" id="ScrollRailScript"]
 [ext_resource type="Texture2D" path="res://art/ui/cell_frame.png" id="CellFrameTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/slot_frame.png" id="SlotFrameTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/popup_frame.png" id="PopupFrameTexture"]
@@ -256,44 +257,53 @@ border_width_bottom = 1
 shadow_color = Color(0.72, 0.52, 0.20, 0.12)
 shadow_size = 4
 
-[sub_resource type="StyleBoxFlat" id="ScrollGrabber"]
+[sub_resource type="StyleBox" id="ScrollGrabber"]
 resource_name = "ScrollGrabber"
-content_margin_left = 4.0
+script = ExtResource("ScrollRailScript")
+grabber = true
+edge = Color(0.72, 0.58, 0.36, 0.85)
+body = Color(0.33, 0.25, 0.14, 1)
+thickness = 6.0
+content_margin_left = 5.0
 content_margin_top = 6.0
-content_margin_right = 4.0
+content_margin_right = 5.0
 content_margin_bottom = 6.0
-bg_color = Color(0.38, 0.38, 0.38, 1)
-border_color = Color(0.32, 0.32, 0.32, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
 
-[sub_resource type="StyleBoxFlat" id="ScrollHover"]
+[sub_resource type="StyleBox" id="ScrollHover"]
 resource_name = "ScrollHover"
-content_margin_left = 4.0
+script = ExtResource("ScrollRailScript")
+grabber = true
+edge = Color(0.92, 0.78, 0.5, 1)
+body = Color(0.45, 0.34, 0.18, 1)
+thickness = 6.0
+content_margin_left = 5.0
 content_margin_top = 6.0
-content_margin_right = 4.0
+content_margin_right = 5.0
 content_margin_bottom = 6.0
-bg_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
-border_color = Color(0.32, 0.32, 0.32, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
 
-[sub_resource type="StyleBoxFlat" id="ScrollTrack"]
-resource_name = "ScrollTrack"
-content_margin_left = 4.0
+[sub_resource type="StyleBox" id="ScrollPressed"]
+resource_name = "ScrollPressed"
+script = ExtResource("ScrollRailScript")
+grabber = true
+edge = Color(1, 0.88, 0.6, 1)
+body = Color(0.58, 0.44, 0.22, 1)
+thickness = 6.0
+content_margin_left = 5.0
 content_margin_top = 6.0
-content_margin_right = 4.0
+content_margin_right = 5.0
 content_margin_bottom = 6.0
-bg_color = Color(0.13, 0.13, 0.13, 1)
-border_color = Color(0.32, 0.32, 0.32, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBox" id="ScrollTrack"]
+resource_name = "ScrollTrack"
+script = ExtResource("ScrollRailScript")
+grabber = false
+edge = Color(0.72, 0.58, 0.36, 0.4)
+body = Color(0.02, 0.018, 0.016, 0.55)
+thickness = 4.0
+content_margin_left = 5.0
+content_margin_top = 6.0
+content_margin_right = 5.0
+content_margin_bottom = 6.0
 
 [sub_resource type="StyleBoxTexture" id="ItemSelected"]
 resource_name = "ItemSelected"
@@ -971,7 +981,7 @@ GoldLabel/font_sizes/font_size = 21
 HBoxContainer/constants/separation = 20
 HScrollBar/styles/grabber = SubResource("ScrollGrabber")
 HScrollBar/styles/grabber_highlight = SubResource("ScrollHover")
-HScrollBar/styles/grabber_pressed = SubResource("GoldHover")
+HScrollBar/styles/grabber_pressed = SubResource("ScrollPressed")
 HScrollBar/styles/scroll = SubResource("ScrollTrack")
 HeadingLabel/base_type = &"Label"
 HeadingLabel/font_sizes/font_size = 24
@@ -1071,7 +1081,7 @@ TooltipPanel/styles/panel = SubResource("ItemSurface")
 VBoxContainer/constants/separation = 12
 VScrollBar/styles/grabber = SubResource("ScrollGrabber")
 VScrollBar/styles/grabber_highlight = SubResource("ScrollHover")
-VScrollBar/styles/grabber_pressed = SubResource("GoldHover")
+VScrollBar/styles/grabber_pressed = SubResource("ScrollPressed")
 VScrollBar/styles/scroll = SubResource("ScrollTrack")
 
 DetailPanel/base_type = &"PanelContainer"

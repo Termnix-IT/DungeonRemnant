@@ -95,6 +95,24 @@ static func rule(parent: Node) -> Control:
 	return rule
 
 
+# The same hairline standing upright, width wide, to part two columns that
+# sit side by side on one slab (the preparation's warehouse and carried goods).
+static func column_rule(parent: Node, width: float) -> Control:
+	var rule := Control.new()
+	rule.custom_minimum_size.x = width
+	rule.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rule.draw.connect(func():
+		var rail := rule.get_theme_color(&"rail", &"HubLobby")
+		var x := rule.size.x * 0.5
+		var h := rule.size.y
+		rule.draw_polyline_colors(PackedVector2Array([Vector2(x, 0), Vector2(x, h * 0.12), Vector2(x, h * 0.88), Vector2(x, h)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.55), Color(rail, 0.55), Color(rail, 0.0)]), 1.0, true)
+		var c := Vector2(x, h * 0.5)
+		rule.draw_colored_polygon(PackedVector2Array([c + Vector2(0, -4), c + Vector2(4, 0), c + Vector2(0, 4), c + Vector2(-4, 0)]), Color(rail, 0.85)))
+	parent.add_child(rule)
+	return rule
+
+
 # A plaque at the foot of a hall that is left open to its painting: a slab
 # with an item's name and, beneath, a line of what it is. Returns the name
 # and the note, for the page to fill.
