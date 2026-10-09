@@ -1,28 +1,28 @@
 class_name HubSell
 extends Control
 
-# The shop, laid out so the eye runs left to right: choose the goods (icons
-# with their names and prices in a grid, filtered by category tabs, on a slab
-# from the left edge; the full text is each icon's tooltip), see them (the
-# goods large on a glow in the open hall, where the merchant's counter shows
-# behind them), and decide in the right column as on every hub screen: their
-# name and main effect, what they would change in her, the counter and the
-# one trade action at its foot. Each number shows once or twice rather than
-# four times.
+# The shop, laid out like every hub screen: choose the goods on the left (icons
+# with their names and prices, three to a row, filtered by category tabs, on
+# the slab from the left edge; the full text is each icon's tooltip) and
+# decide in the right column: the goods' art beside their name, kind and main
+# effect, what they would change in her, the counter and the one trade action
+# at its foot. The goods' art once stood large in the open hall between the
+# two, where it rested on nothing, only repeated the chosen icon, and stopped
+# the eye on its way from the list to the trade. Each number shows once or
+# twice rather than four times.
 # Buying and selling switch at the header's title place (mode_tabs).
 
 signal sell_requested(from_storage: bool, index: int, amount: int)
 signal buy_requested(to_storage: bool, item_id: StringName, amount: int)
 signal mode_changed
 
-# The goods share the middle with what they would change in her: 172px is the
-# least that still draws the 48px art at three times (ItemVisual fills 84% in
-# 48px steps).
-const SHOWCASE_SIZE := 240.0
-# The goods are small icons, each with its name and price beside it, two
-# to a row.
-const GRID_COLUMNS := 2
-const CELL_WIDTH := 254.0
+# The goods' art at the head of the column: 120px is the least that draws the
+# 48px art at twice its size (ItemVisual fills 84% in 48px steps).
+const SHOWCASE_SIZE := 120.0
+# The goods are small icons, each with its name and price beside it, three
+# to a row, so the whole stock fits without scrolling.
+const GRID_COLUMNS := 3
+const CELL_WIDTH := 320.0
 const CELL_SIZE := 72.0
 const CELL_ICON := 48.0
 const CATEGORIES: Array[String] = ["すべて", "武器", "防具", "装飾", "消耗品", "魔法"]
@@ -58,7 +58,6 @@ var _place_row: HBoxContainer
 var hero_stats: HeroStats
 var _catalog: VBoxContainer
 var _info: VBoxContainer
-var _stage: VBoxContainer
 var _counter_rule: Control
 
 
@@ -68,24 +67,8 @@ func _ready() -> void:
 	columns.theme_type_variation = &"ShopColumns"
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# The list and the details share one dark slab, melting into the hall
-	# only at its right edge; the background shows above it and round her.
-	# The list and the display share the left two thirds, so the right column
-	# stands where it does on every hub screen.
-	var choosing := HBoxContainer.new()
-	choosing.theme_type_variation = &"ShopColumns"
-	choosing.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	choosing.size_flags_stretch_ratio = 2.1
-	columns.add_child(choosing)
-	_catalog = HubUI.open_column(choosing, 1.1, &"SlabSolid")
+	_catalog = HubUI.open_column(columns, 2.1, &"SlabSolid")
 	_build_catalog(_catalog)
-	# The middle is the open hall, with the goods on display in it.
-	_stage = VBoxContainer.new()
-	_stage.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_stage.size_flags_stretch_ratio = 0.8
-	_stage.alignment = BoxContainer.ALIGNMENT_CENTER
-	_stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	choosing.add_child(_stage)
 	_info = HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
 	_build_info(_info)
 	# What the goods would change in her stands right above the counter.
@@ -156,15 +139,12 @@ func _build_info(info: VBoxContainer) -> void:
 	info.theme_type_variation = &"DetailStack"
 	heading = HubUI.label(info, "", &"MutedLabel")
 	heading.visible = false
-	# The goods on display stand large on a glow in the hall; their name and
-	# main effect head the column.
+	# The goods' art on a glow beside their name and main effect.
 	showcase = ItemShowcase.new()
 	showcase.visual.framed = false
 	showcase.visual.idle = true
-	info.add_child(showcase)
 	showcase.visual.custom_minimum_size = Vector2.ONE * SHOWCASE_SIZE
-	showcase.visual.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	showcase.visual.reparent(_stage, false)
+	info.add_child(showcase)
 	HubUI.rule(info)
 	var gap := Control.new()
 	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -220,7 +200,6 @@ func _show_stock() -> void:
 # later.
 func play_entrance() -> void:
 	UIMotion.of(_catalog).appear(0.0, UIMotion.WINDOW_TIME)
-	UIMotion.of(_stage).appear(UIMotion.STAGGER_TIME)
 	UIMotion.of(_info).appear(UIMotion.STAGGER_TIME)
 
 
