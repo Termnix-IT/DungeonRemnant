@@ -1,9 +1,15 @@
 extends CanvasLayer
 
 const DISPLAY_TIME := 1.65
-# The top of the one lane banners run in. The run sets it below the boss
-# gauge's area (HUD.notice_lane_top()) before adding the banner.
-var lane_top := 112.0
+const WIDTH := 800.0
+# The top of the one lane banners run in: the band at the screen's top edge
+# (HUD.notice_lane_top()), set by the run before adding the banner. The band
+# is one line, title and place side by side, so it stays off the floor round
+# the hero.
+var lane_top := 12.0
+
+# A banner began or ended; the boss gauge, which shares the band, steps aside.
+signal showing_changed(showing: bool)
 
 var panel: PanelContainer
 var title_label: Label
@@ -22,19 +28,28 @@ func _ready() -> void:
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(panel)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	panel.offset_left = -360
-	panel.offset_right = 360
+	panel.offset_left = -WIDTH * 0.5
+	panel.offset_right = WIDTH * 0.5
 	panel.offset_top = lane_top
-	var column := VBoxContainer.new()
+	var column := HBoxContainer.new()
+	column.alignment = BoxContainer.ALIGNMENT_CENTER
+	column.theme_type_variation = &"ShopColumns"
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(column)
 	title_label = Label.new()
-	title_label.theme_type_variation = &"TitleLabel"
+	title_label.theme_type_variation = &"HeadingLabel"
+	title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(title_label)
+	# The place stands a little apart from the title on the one line.
+	var gap := Control.new()
+	gap.custom_minimum_size.x = 28
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(gap)
 	subtitle_label = Label.new()
 	subtitle_label.theme_type_variation = &"MutedLabel"
+	subtitle_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	subtitle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(subtitle_label)
@@ -69,6 +84,7 @@ func _show(title: String, subtitle: String, delay: float) -> void:
 	subtitle_label.text = subtitle
 	subtitle_label.visible = not subtitle.is_empty()
 	show()
+	showing_changed.emit(true)
 	UIMotion.of(panel).enter(delay)
 	if delay <= 0.0:
 		UIMotion.of(title_label).pulse(1.025, UIMotion.WINDOW_TIME)
@@ -92,3 +108,4 @@ func clear() -> void:
 	UIMotion.of(panel).reset()
 	UIMotion.of(title_label).reset()
 	hide()
+	showing_changed.emit(false)

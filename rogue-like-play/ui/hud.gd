@@ -7,12 +7,19 @@ const EMPHASIZED_LOG_ENTRIES := 2
 const PORTRAIT_SIZE := 104
 const PORTRAIT_INSET := 14
 const EFFECTS_POSITION := Vector2(16, 16)
-const HINT_RECT := Rect2(10, 254, 334, 30)
 # The weapon in hand, between the EXP bar and the turn line.
 const WEAPON_RECT := Rect2(14, 172, 330, 46)
-const EFFECTS_WIDTH := 238.0
-# Announcements run in one lane this far below the boss gauge's area.
-const NOTICE_GAP := 6.0
+const EFFECTS_WIDTH := 300.0
+# Announcements and the boss gauge share one band at the screen's top edge,
+# above the ring of floor round the hero that the HUD keeps clear.
+const NOTICE_TOP := 12.0
+# The message log is full strength while it has news, then recedes so the
+# floor under it shows; a new line brings it back.
+const LOG_FRESH_TIME := 4.0
+const LOG_RESTING_ALPHA := 0.5
+# The tag over the hero while an attack's direction is chosen, this far above
+# the hero's cell centre.
+const AIM_TAG_RISE := 64.0
 
 @onready var status: Label = $Status
 @onready var floor_value: Label = $TopRight/Floor
@@ -30,6 +37,9 @@ const NOTICE_GAP := 6.0
 
 var portrait: HudPortrait
 var weapon: HudWeapon
+var actions: HudActions
+var aim_tag: Label
+var _log_rest: Timer
 var log_history: Array[String] = []
 var last_log_text := ""
 var last_log_key := -1
@@ -45,14 +55,25 @@ func _ready() -> void:
 	vitals.add_child(weapon)
 	weapon.position = WEAPON_RECT.position
 	weapon.size = WEAPON_RECT.size
-	# Key caps rather than "I 所持品" as plain text. Tab sits on the weapon row,
-	# beside the weapon it swaps in.
-	var hint := KeyGuide.new()
-	hint.name = "Hint"
-	vitals.add_child(hint)
-	hint.position = HINT_RECT.position
-	hint.size = HINT_RECT.size
-	hint.add_hint("I", "X", "所持品")
+	# What can be done now, at the bottom right: the keys the HUD shows nowhere
+	# else (Tab sits on the weapon row, beside the weapons it swaps).
+	actions = HudActions.new()
+	actions.name = "Actions"
+	actions.theme = $TopRight.theme
+	add_child(actions)
+	aim_tag = Label.new()
+	aim_tag.name = "AimTag"
+	aim_tag.theme = $TopRight.theme
+	aim_tag.theme_type_variation = &"HudAimTag"
+	aim_tag.text = "攻撃の向き"
+	aim_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	aim_tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	aim_tag.hide()
+	add_child(aim_tag)
+	_log_rest = Timer.new()
+	_log_rest.one_shot = true
+	_log_rest.timeout.connect(func(): UIMotion.of($Log).fade_to(LOG_RESTING_ALPHA))
+	add_child(_log_rest)
 	portrait = HudPortrait.new()
 	portrait.name = "Portrait"
 	vitals.add_child(portrait)
@@ -86,9 +107,15 @@ func show_health(hp: int, max_hp: int) -> void:
 	portrait.show_health(hp, max_hp)
 
 
-func show_aim(aiming: bool) -> void:
+# While an attack's direction is chosen: the card at the bottom right turns
+# into the aim's own, and a tag stands over the hero (at, on the screen).
+func show_aim(aiming: bool, at: Vector2 = Vector2.ZERO, staff: bool = false) -> void:
+	if aiming != actions.aiming or staff != actions.can_cast:
+		actions.show_state(aiming, staff)
+	aim_tag.visible = aiming
 	if aiming:
-		_render_log("攻撃方向を選択中：方向キーで変更 / Spaceで確定 / Escでキャンセル")
+		aim_tag.reset_size()
+		aim_tag.position = (at - Vector2(aim_tag.size.x * 0.5, AIM_TAG_RISE + aim_tag.size.y)).round()
 
 
 func show_progress(level: int, exp: int, required: int) -> void:
@@ -145,10 +172,15 @@ func show_weapons(main: ItemData, sub: ItemData, attack: WeaponData) -> void:
 	weapon.show_weapons(main, sub, attack)
 
 
-# Where announcement banners start: below the boss gauge's area whether or not
-# the gauge is showing, so a banner never covers it.
+# Where announcement banners stand: the band at the screen's top edge.
 func notice_lane_top() -> float:
-	return ($Boss as Control).offset_bottom + NOTICE_GAP
+	return NOTICE_TOP
+
+
+# A banner in the top band stands where the boss gauge does; the gauge steps
+# aside while it shows.
+func make_room_for_notice(showing: bool) -> void:
+	($Boss as Control).modulate.a = 0.0 if showing else 1.0
 
 
 func reset_log() -> void:
@@ -177,6 +209,7 @@ func _record_log(value: String, key: int = -1) -> void:
 		_render_log()
 		return
 	log_history.append(text)
+	_freshen_log()
 	while log_history.size() > MAX_LOG_ENTRIES:
 		log_history.pop_front()
 	_render_log()
@@ -214,6 +247,12 @@ func _write_log(lines: Array[String]) -> void:
 
 func _log_color(role: StringName) -> Color:
 	return log_entries.get_theme_color(&"font_color", role)
+
+
+# News brings the log to full strength; after a while it recedes again.
+func _freshen_log() -> void:
+	UIMotion.of($Log).reset()
+	_log_rest.start(LOG_FRESH_TIME)
 
 
 func _refresh_meta() -> void:

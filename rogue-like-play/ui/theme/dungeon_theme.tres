@@ -257,6 +257,19 @@ border_width_bottom = 1
 shadow_color = Color(0.72, 0.52, 0.20, 0.12)
 shadow_size = 4
 
+[sub_resource type="StyleBoxFlat" id="HudAimTagSurface"]
+resource_name = "HudAimTagSurface"
+content_margin_left = 12.0
+content_margin_top = 3.0
+content_margin_right = 12.0
+content_margin_bottom = 4.0
+bg_color = Color(0.17, 0.14, 0.09, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+
 [sub_resource type="StyleBox" id="ScrollGrabber"]
 resource_name = "ScrollGrabber"
 script = ExtResource("ScrollRailScript")
@@ -536,9 +549,9 @@ corner_radius_bottom_left = 3
 [sub_resource type="StyleBoxFlat" id="BannerBand"]
 resource_name = "BannerBand"
 content_margin_left = 48.0
-content_margin_top = 14.0
+content_margin_top = 8.0
 content_margin_right = 48.0
-content_margin_bottom = 14.0
+content_margin_bottom = 8.0
 bg_color = Color(0.07, 0.07, 0.07, 0.82)
 border_color = Color(0.72, 0.59, 0.35, 0.75)
 border_width_top = 1
@@ -1151,6 +1164,10 @@ HudMapPanel/base_type = &"Panel"
 HudMapPanel/styles/panel = SubResource("HudMapSurface")
 HudPortraitFrame/base_type = &"Panel"
 HudPortraitFrame/styles/panel = SubResource("HudPortraitFrame")
+HudAimTag/base_type = &"Label"
+HudAimTag/colors/font_color = Color(0.95, 0.9, 0.77, 1)
+HudAimTag/font_sizes/font_size = 14
+HudAimTag/styles/normal = SubResource("HudAimTagSurface")
 HudCaption/base_type = &"Label"
 HudCaption/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
 HudCaption/font_sizes/font_size = 14

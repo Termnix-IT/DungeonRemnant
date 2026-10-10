@@ -451,6 +451,15 @@ func fade_out(delay: float = 0.0, duration: float = EXIT_TIME) -> Tween:
 	return alpha_tween
 
 
+# Alpha toward a resting value (a panel that recedes while it has no news);
+# reset() brings it back at once.
+func fade_to(alpha: float, duration: float = EXIT_TIME * 2.0) -> Tween:
+	_stop(alpha_tween)
+	alpha_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	alpha_tween.tween_property(control, "modulate:a", alpha, duration)
+	return alpha_tween
+
+
 func _stop(tween: Tween) -> void:
 	if tween != null:
 		tween.kill()

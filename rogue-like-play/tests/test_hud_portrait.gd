@@ -31,7 +31,7 @@ func run_tests() -> void:
 	check(portrait.theme_type_variation == &"HudPortraitFrame", "The face uses the HUD portrait frame role")
 	check(hud.get_node_or_null("BottomRight") == null and hud.get_node_or_null("TopLeft") == null, "The dungeon HUD has no equipment or floor/Gold panel")
 	check(hud.gold_value.get_parent() == vitals and hud.floor_value.get_parent() == hud.get_node("TopRight"), "Gold sits with the vitals and the floor with the map")
-	for node_name in ["Gold", "Hint"]:
+	for node_name in ["Gold"]:
 		check(not face_rect.intersects((vitals.get_node(node_name) as Control).get_global_rect()), "The portrait leaves %s clear" % node_name)
 	check(not (vitals.get_node("Meta") as Control).get_global_rect().intersects((vitals.get_node("Gold") as Control).get_global_rect()), "Gold sits beside the turn line")
 
