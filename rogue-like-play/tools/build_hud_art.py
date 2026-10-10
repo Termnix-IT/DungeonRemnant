@@ -9,8 +9,8 @@ band (black ink on white paper) and the aim marks (light on black, added
 onto the floor) are painted on flat magenta (#FF00FF). The prompts' passage
 pictures are cut from the floor tiles' own painted pictures. This keys the
 backdrop out, cuts each part, fills the plates' empty insides with the HUD's
-translucent ink, and scales every part to the size the game draws it,
-writing art/ui/hud/*.png. The nine-patch margins in
+translucent ink (the dialogs' plate with warm stone), and scales every part
+to the size the game draws it, writing art/ui/hud/*.png. The nine-patch margins in
 ui/theme/dungeon_theme.tres follow the sizes printed here; update them
 whenever a picture changes.
 
@@ -66,6 +66,11 @@ PIP_WIDTH = 24
 # (painted on black; the game adds them onto the floor), at twice the tile.
 SEAL_SIZE = 240
 AIM_SIZE = 96
+# The dialogs' plate: the HUD plate's frame round a warm dark stone. The grain
+# is half the slabs' contrast, so words on it stay easy to read.
+DIALOG_STONE = (30, 26, 22)
+DIALOG_GRAIN = 0.5
+DIALOG_ALPHA = 242
 # The ink band is scaled to this height; its frayed ends overhang the log.
 BAND_HEIGHT = 150
 BAND_ALPHA = 0.84
@@ -128,6 +133,27 @@ def filled(frame: Image.Image, fill: tuple[int, int, int, int] = FILL) -> Image.
 	ink = Image.new("RGBA", frame.size, fill)
 	under = Image.new("RGBA", frame.size)
 	under.paste(ink, mask=inside)
+	under.alpha_composite(frame)
+	return under
+
+
+def stone_filled(frame: Image.Image) -> Image.Image:
+	"""The plate as the dungeon's dialogs wear it (the level-up choice, the
+	prompts, the menu, the result): its middle a warm dark stone, the hub
+	slabs' grain (art/ui/slab_stone.png) at a low contrast, nearly opaque."""
+	solid = frame.getchannel("A").point(lambda value: 255 if value > 8 else 0)
+	ImageDraw.floodfill(solid, (frame.width // 2, frame.height // 2), 128)
+	inside = solid.point(lambda value: 255 if value == 128 else 0).filter(ImageFilter.MaxFilter(7))
+	grain = np.asarray(Image.open(ROOT / "art" / "ui" / "slab_stone.png").convert("L"), dtype=np.float32) / 255.0
+	rows = -(-frame.height // grain.shape[0])
+	columns = -(-frame.width // grain.shape[1])
+	grain = np.tile(grain, (rows, columns))[: frame.height, : frame.width]
+	shade = (1.0 - DIALOG_GRAIN * 0.5) + DIALOG_GRAIN * (grain - grain.mean())
+	stone = np.zeros((frame.height, frame.width, 4), dtype=np.float32)
+	stone[..., 0:3] = np.array(DIALOG_STONE, dtype=np.float32) * shade[..., None]
+	stone[..., 3] = DIALOG_ALPHA
+	under = Image.new("RGBA", frame.size)
+	under.paste(Image.fromarray(np.clip(stone, 0, 255).astype(np.uint8), "RGBA"), mask=inside)
 	under.alpha_composite(frame)
 	return under
 
@@ -196,6 +222,7 @@ def build() -> None:
 		save(scaled(image, CAP_HEIGHT / image.height), name)
 	[[normal, active], [medallion]] = pieces(keyed("hud_plates.png"))
 	save(filled(scaled(normal, PLATE_SCALE)), "plate")
+	save(stone_filled(scaled(normal, PLATE_SCALE)), "dialog_plate")
 	save(filled(scaled(active, PLATE_SCALE)), "plate_active")
 	save(fit(medallion, MEDALLION_SIZE), "medallion")
 	save(scaled(trim(keyed("map_frame.png")), MAP_SCALE), "map_frame")

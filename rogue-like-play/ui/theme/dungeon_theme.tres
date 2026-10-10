@@ -30,6 +30,7 @@
 [ext_resource type="Texture2D" path="res://art/ui/hud/key_cap.png" id="HudKeyCapTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/key_cap_active.png" id="HudKeyCapActiveTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/plate.png" id="HudPlateTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/dialog_plate.png" id="DialogPlateTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/plate_active.png" id="HudPlateActiveTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/medallion.png" id="HudMedallionTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/map_frame.png" id="HudMapFrameTexture"]
@@ -56,6 +57,24 @@
 [ext_resource type="Texture2D" path="res://art/ui/hud/seal_clear.png" id="SealClearTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/seal_return.png" id="SealReturnTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/seal_defeat.png" id="SealDefeatTexture"]
+
+[sub_resource type="StyleBoxTexture" id="DialogPlate"]
+resource_name = "DialogPlate"
+axis_stretch_horizontal = 2
+axis_stretch_vertical = 2
+texture = ExtResource("DialogPlateTexture")
+texture_margin_left = 38.0
+texture_margin_top = 38.0
+texture_margin_right = 38.0
+texture_margin_bottom = 38.0
+expand_margin_left = 14.0
+expand_margin_top = 14.0
+expand_margin_right = 14.0
+expand_margin_bottom = 14.0
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
 
 [sub_resource type="StyleBoxTexture" id="AbilityCardNew"]
 resource_name = "AbilityCardNew"
@@ -1202,7 +1221,7 @@ LineEdit/styles/focus = SubResource("FocusOutline")
 LineEdit/styles/normal = SubResource("FieldSurface")
 LineEdit/styles/read_only = SubResource("ButtonDisabled")
 MainPanel/base_type = &"PanelContainer"
-MainPanel/styles/panel = SubResource("FramePanel")
+MainPanel/styles/panel = SubResource("DialogPlate")
 MarginContainer/constants/margin_bottom = 24
 MarginContainer/constants/margin_left = 24
 MarginContainer/constants/margin_right = 24

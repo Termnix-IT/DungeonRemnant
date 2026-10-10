@@ -98,6 +98,12 @@ func run_tests() -> void:
 	check(theme.get_stylebox(&"normal", &"SecondaryButton") is StyleBoxTexture, "A secondary action is a painted bronze plate")
 	check(theme.get_stylebox(&"normal", &"SecondaryButton") != theme.get_stylebox(&"disabled", &"SecondaryButton"), "A secondary action looks different when it cannot be pressed")
 	check(theme.get_color(&"font_color", &"SecondaryButton").get_luminance() - theme.get_color(&"font_disabled_color", &"SecondaryButton").get_luminance() > 0.3, "Its words dim when it cannot be pressed")
+	# The dungeon's dialogs (level-up, prompts, menu, result) stand on warm
+	# stone in the HUD's bronze frame, not the old colourless grey.
+	var dialog := theme.get_stylebox(&"panel", &"MainPanel") as StyleBoxTexture
+	check(dialog != null and dialog.texture.resource_path.ends_with("dialog_plate.png"), "Dialogs stand on the stone plate")
+	var middle := dialog.texture.get_image().get_pixel(dialog.texture.get_width() / 2, dialog.texture.get_height() / 2)
+	check(middle.r > middle.b + 0.02 and middle.a > 0.9, "The plate's stone is warm and nearly opaque")
 	print("UI theme: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
 
