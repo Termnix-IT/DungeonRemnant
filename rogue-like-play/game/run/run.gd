@@ -303,11 +303,11 @@ func _request_transition(kind: String) -> void:
 	turns.paused = true
 	var place := "%s  ·  %dF" % [stage_data.display_name if stage_data != null else "古代遺跡", floor_number]
 	if kind == "stairs" and floor_kind == DungeonGenerator.Kind.ANTECHAMBER:
-		transition_dialog.ask(place, "守護者の扉", "扉の先で%sが待っています。  進むとこの部屋には戻れません。" % ("最深部の主" if floor_number == final_floor else "守護者"), "進む", "とどまる")
+		transition_dialog.ask(place, "守護者の扉", "扉の先で%sが待っています。  進むとこの部屋には戻れません。" % ("最深部の主" if floor_number == final_floor else "守護者"), "進む", "とどまる", &"guardian")
 	elif kind == "stairs":
-		transition_dialog.ask(place, "下り階段", "%dFへ降りますか？  この階には戻れません。" % (floor_number + 1), "降りる", "とどまる")
+		transition_dialog.ask(place, "下り階段", "%dFへ降りますか？  この階には戻れません。" % (floor_number + 1), "降りる", "とどまる", &"stairs")
 	else:
-		transition_dialog.ask(place, "脱出口", "拠点へ帰還しますか？  所持品とGoldは失いません。", "帰還する", "探索を続ける")
+		transition_dialog.ask(place, "脱出口", "拠点へ帰還しますか？  所持品とGoldは失いません。", "帰還する", "探索を続ける", &"exit")
 
 
 # The prompt's accept path darkens the last frame before the floor changes.
@@ -754,7 +754,7 @@ func request_abort() -> void:
 	inventory_panel.hide()
 	turns.player.aiming = false
 	turns.paused = true
-	result_panel.confirm_abort()
+	result_panel.confirm_abort(turns.player.equipment.slots.duplicate())
 	_refresh()
 
 

@@ -22,7 +22,7 @@ func check(ok: bool, message: String) -> void:
 func defeat_summary() -> Dictionary:
 	var sword := ItemCatalog.floor_item(6)
 	var armor := ItemCatalog.floor_item(1)
-	return {"cleared": false, "floor": 7, "earned_gold": 30, "gold_lost": 50, "gold": 50, "item_count_lost": 4,
+	return {"cleared": false, "defeated": true, "floor": 7, "earned_gold": 30, "gold_lost": 50, "gold": 50, "item_count_lost": 4,
 		"items_lost": {ItemCatalog.POTION.display_name: 3, armor.display_name: 1},
 		"lost_entries": [{"item": ItemCatalog.POTION, "count": 3}, {"item": armor, "count": 1}],
 		"equipment": [sword, null, null, preload("res://data/items/vital_charm.tres"), null]}
@@ -122,15 +122,18 @@ func run_tests() -> void:
 	result.present(summary)
 	check(result.title_label.theme_type_variation == &"VictoryTitle" and result.lost_none.visible and result.lost_none.text == "なし", "Clear result uses victory tone and reports no losses")
 	check(not result.kept_box.visible, "Kept equipment hides when the result carries none")
+	check(result.seal.visible and result.seal.texture == result.seal.get_theme_icon(&"clear", &"RunResult"), "A clear wears the gold seal")
 	var defeat := defeat_summary()
 	result.present(defeat)
 	check(result.title_label.theme_type_variation == &"DefeatTitle" and result.lost_value.text == "−50 G", "Defeat result uses loss tone and signed Gold loss")
 	check(result.lost_grid.entries.size() == 2 and result.lost_grid.visible and not result.lost_none.visible and result.kept_box.visible, "Lost items are shown as icons beside kept equipment")
 	check(result.balance_value.text == "70 G", "Balance replays from the run's starting Gold")
+	check(result.seal.visible and result.seal.texture == result.seal.get_theme_icon(&"defeat", &"RunResult"), "A fall wears the cracked seal")
 	result.hide()
 	check(result.balance_value.text == "50 G" and result.stat_rows[3].modulate.a == 1.0, "Hiding mid-sequence settles final values and visibility")
 	result.confirm_abort()
 	check(not result.summary.visible and not result.lost_box.visible and result.details.visible, "Abort confirmation shows only its explanation")
+	check(not result.seal.visible and result.kept_box.visible, "The abort question wears no seal and lists the equipment it keeps")
 	result.hide()
 	var player := preload("res://actors/player/player.tscn").instantiate()
 	root.add_child(player)

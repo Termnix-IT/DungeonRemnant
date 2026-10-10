@@ -45,6 +45,41 @@
 [ext_resource type="Texture2D" path="res://art/ui/hud/log_news.png" id="HudLogNewsTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/notice_band.png" id="NoticeBandTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/notice_band_warning.png" id="NoticeBandWarningTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/passage_stairs.png" id="PassageStairsTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/passage_guardian.png" id="PassageGuardianTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/passage_exit.png" id="PassageExitTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/card_new.png" id="CardNewTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/card_raise.png" id="CardRaiseTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/card_chosen.png" id="CardChosenTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/pip_empty.png" id="PipEmptyTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/pip_full.png" id="PipFullTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/seal_clear.png" id="SealClearTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/seal_return.png" id="SealReturnTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/seal_defeat.png" id="SealDefeatTexture"]
+
+[sub_resource type="StyleBoxTexture" id="AbilityCardNew"]
+resource_name = "AbilityCardNew"
+texture = ExtResource("CardNewTexture")
+texture_margin_left = 68.0
+texture_margin_top = 92.0
+texture_margin_right = 68.0
+texture_margin_bottom = 84.0
+
+[sub_resource type="StyleBoxTexture" id="AbilityCardRaise"]
+resource_name = "AbilityCardRaise"
+texture = ExtResource("CardRaiseTexture")
+texture_margin_left = 68.0
+texture_margin_top = 92.0
+texture_margin_right = 68.0
+texture_margin_bottom = 84.0
+
+[sub_resource type="StyleBoxTexture" id="AbilityCardChosen"]
+resource_name = "AbilityCardChosen"
+texture = ExtResource("CardChosenTexture")
+texture_margin_left = 68.0
+texture_margin_top = 92.0
+texture_margin_right = 68.0
+texture_margin_bottom = 84.0
 
 [sub_resource type="StyleBoxTexture" id="FramePanel"]
 resource_name = "FramePanel"
@@ -1388,6 +1423,22 @@ BannerBand/base_type = &"PanelContainer"
 BannerBand/styles/panel = SubResource("BannerBand")
 BannerBandWarning/base_type = &"PanelContainer"
 BannerBandWarning/styles/panel = SubResource("BannerBandWarning")
+AbilityCard/styles/new = SubResource("AbilityCardNew")
+AbilityCard/styles/raise = SubResource("AbilityCardRaise")
+AbilityCard/styles/chosen = SubResource("AbilityCardChosen")
+AbilityCard/icons/pip_empty = ExtResource("PipEmptyTexture")
+AbilityCard/icons/pip_full = ExtResource("PipFullTexture")
+AbilityCardMargin/base_type = &"MarginContainer"
+AbilityCardMargin/constants/margin_left = 40
+AbilityCardMargin/constants/margin_top = 54
+AbilityCardMargin/constants/margin_right = 40
+AbilityCardMargin/constants/margin_bottom = 40
+RunResult/icons/clear = ExtResource("SealClearTexture")
+RunResult/icons/return = ExtResource("SealReturnTexture")
+RunResult/icons/defeat = ExtResource("SealDefeatTexture")
+ChoicePrompt/icons/stairs = ExtResource("PassageStairsTexture")
+ChoicePrompt/icons/guardian = ExtResource("PassageGuardianTexture")
+ChoicePrompt/icons/exit = ExtResource("PassageExitTexture")
 VictoryTitle/base_type = &"Label"
 VictoryTitle/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
 VictoryTitle/font_sizes/font_size = 34

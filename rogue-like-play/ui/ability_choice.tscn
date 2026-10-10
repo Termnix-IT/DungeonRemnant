@@ -37,19 +37,19 @@ horizontal_alignment = 1
 layout_mode = 2
 alignment = 1
 [node name="First" type="Button" parent="Panel/Margin/Stack/Choices"]
-custom_minimum_size = Vector2(248, 300)
+custom_minimum_size = Vector2(272, 364)
 layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"AbilityCardButton"
 flat = true
 [node name="Second" type="Button" parent="Panel/Margin/Stack/Choices"]
-custom_minimum_size = Vector2(248, 300)
+custom_minimum_size = Vector2(272, 364)
 layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"AbilityCardButton"
 flat = true
 [node name="Third" type="Button" parent="Panel/Margin/Stack/Choices"]
-custom_minimum_size = Vector2(248, 300)
+custom_minimum_size = Vector2(272, 364)
 layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"AbilityCardButton"

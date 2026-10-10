@@ -1,16 +1,27 @@
 extends Node2D
 
-# Attack range while aiming: a faint wash with gold corner brackets per cell,
-# and a reticle on cells that currently hold a target.
-const RANGE_COLOR := Color(1.0, 0.8, 0.42)
-const TARGET_COLOR := Color(1.0, 0.46, 0.32)
-const BRACKET := 0.26
+# Attack range while aiming: each cell in reach carries a golden rune mark,
+# and a cell holding a target a red-orange reticle mark. The marks are light
+# (painted on black, art/ui/hud/aim_*.png) added onto the floor, so the tile
+# and whoever stands on it show through; they breathe slowly while the
+# direction is chosen.
+const RANGE_MARK := preload("res://art/ui/hud/aim_range.png")
+const TARGET_MARK := preload("res://art/ui/hud/aim_target.png")
 const PULSE_SPEED := 4.0
+# How bright the marks are at the low and high of their breath.
+const RANGE_LIGHT := Vector2(0.75, 1.0)
+const TARGET_LIGHT := Vector2(0.8, 1.0)
 
 var cells: Array[Vector2i] = []
 var target_cells: Array[Vector2i] = []
 var tile_size := 48
 var _phase := 0.0
+
+
+func _init() -> void:
+	var light := CanvasItemMaterial.new()
+	light.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	material = light
 
 
 func _process(delta: float) -> void:
@@ -21,26 +32,11 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	var glow := 0.5 + 0.5 * sin(_phase)
+	var breath := 0.5 + 0.5 * sin(_phase)
 	for cell in cells:
-		var area := Rect2(Vector2(cell * tile_size), Vector2.ONE * tile_size).grow(-3.0)
+		var area := Rect2(Vector2(cell * tile_size), Vector2.ONE * tile_size)
 		var target := cell in target_cells
-		var color := TARGET_COLOR if target else RANGE_COLOR
-		draw_rect(area, Color(color, (0.16 if target else 0.08) + 0.05 * glow))
-		_brackets(area, Color(color, 0.7 + 0.3 * glow), 2.0)
-		if target:
-			_reticle(area.get_center(), area.size.x * 0.32, Color(color, 0.85))
-
-
-func _brackets(area: Rect2, color: Color, width: float) -> void:
-	var arm := area.size.x * BRACKET
-	for corner in [area.position, Vector2(area.end.x, area.position.y), area.end, Vector2(area.position.x, area.end.y)]:
-		var horizontal := Vector2(arm if corner.x == area.position.x else -arm, 0)
-		var vertical := Vector2(0, arm if corner.y == area.position.y else -arm)
-		draw_polyline(PackedVector2Array([corner + horizontal, corner, corner + vertical]), color, width)
-
-
-func _reticle(center: Vector2, radius: float, color: Color) -> void:
-	draw_arc(center, radius, 0, TAU, 32, color, 1.5, true)
-	for direction: Vector2 in [Vector2.UP, Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT]:
-		draw_line(center + direction * (radius - 4), center + direction * (radius + 5), color, 2.0)
+		var light := TARGET_LIGHT if target else RANGE_LIGHT
+		# Added light: dimming the colour dims the mark; alpha stays whole.
+		var strength := lerpf(light.x, light.y, breath)
+		draw_texture_rect(TARGET_MARK if target else RANGE_MARK, area, false, Color(strength, strength, strength, 1.0))

@@ -177,6 +177,7 @@ func check_stair_prompt() -> void:
 	run._on_action("move", Vector2i.RIGHT)
 	check(prompt.visible and run.turns.paused and prompt.accept_button.text == "降りる", "Stairs open the themed prompt")
 	check(prompt.body_label.text.contains("2F"), "Prompt names the next floor")
+	check(prompt.emblem.visible and prompt.emblem.texture == prompt.emblem.get_theme_icon(&"stairs", &"ChoicePrompt"), "The prompt shows the stairs it asks about")
 	var cancel := InputEventAction.new()
 	cancel.action = "cancel_attack"
 	cancel.pressed = true

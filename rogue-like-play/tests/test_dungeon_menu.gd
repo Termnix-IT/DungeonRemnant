@@ -119,6 +119,8 @@ func run_tests() -> void:
 	menu.abort_button.pressed.emit()
 	await process_frame
 	check(not menu.visible and run.result_panel.visible and run.result_panel.confirming, "冒険を中断する asks for confirmation first")
+	var weapon: ItemData = player.equipment.slots[Equipment.Slot.MAIN]
+	check(weapon != null and run.result_panel.kept_box.visible and run.result_panel.kept_equipment.row_text(Equipment.Slot.MAIN) == weapon.label(), "The confirmation lists the equipment kept, the main weapon by name")
 	run.result_panel.abort_cancelled.emit()
 	await process_frame
 	check(not run.result_panel.visible and not run.turns.paused, "Declining returns to the floor")

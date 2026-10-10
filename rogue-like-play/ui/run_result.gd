@@ -21,6 +21,11 @@ var confirming := false
 var return_to_hub := false
 var title_label: Label
 var cause_label: Label
+# A seal over the title says how the run ended at a glance (the theme's
+# RunResult icons): gold for a clear, bronze and teal for a safe return, a
+# cracked crimson one for a fall. Leaving early and the forced return, which
+# end in the fall's losses but not by falling, show none.
+var seal: TextureRect
 var shade: ColorRect
 var backdrop: TextureRect
 var _accept_after_msec := 0
@@ -74,6 +79,13 @@ func _ready() -> void:
 	var panel := VBoxContainer.new()
 	panel.name = "Panel"
 	margin.add_child(panel)
+	seal = TextureRect.new()
+	seal.custom_minimum_size = Vector2(120, 120)
+	seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	seal.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	seal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(seal)
 	title_label = Label.new()
 	title_label.theme_type_variation = &"TitleLabel"
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -192,6 +204,9 @@ func present(result: Dictionary) -> void:
 	var returned_well: bool = result.cleared or result.get("safe_return", false)
 	title_label.text = "冒険クリア" if result.cleared else ("無事に帰還" if result.get("safe_return", false) else ("滞在上限：強制帰還" if result.get("forced_return", false) else "冒険終了"))
 	title_label.theme_type_variation = &"VictoryTitle" if returned_well else &"DefeatTitle"
+	var mark: StringName = &"clear" if result.cleared else (&"return" if result.get("safe_return", false) else (&"defeat" if result.get("defeated", false) else &""))
+	seal.texture = seal.get_theme_icon(mark, &"RunResult") if not mark.is_empty() else null
+	seal.visible = seal.texture != null
 	backdrop.texture = CLEAR_ART if returned_well else DEFEAT_ART
 	backdrop.show()
 	shade.color = SCENE_VEIL
@@ -281,11 +296,14 @@ func _gold(amount: int, prefix: String = "") -> String:
 	return "%s%d G" % [prefix, amount]
 
 
-func confirm_abort() -> void:
+# equipment is the hero's five slots now: what the abort keeps, shown as the
+# result would show it.
+func confirm_abort(equipment: Array = []) -> void:
 	save_label.text = ""
 	confirming = true
 	_accept_after_msec = 0
 	cause_label.hide()
+	seal.hide()
 	title_label.text = "冒険を中断しますか？"
 	# The question is not an outcome yet: no scene, the plain dark veil.
 	backdrop.hide()
@@ -293,6 +311,8 @@ func confirm_abort() -> void:
 	title_label.theme_type_variation = &"TitleLabel"
 	summary.hide()
 	lost_box.hide()
+	kept_box.show()
+	kept_equipment.show_slots(equipment)
 	details.text = "死亡時と同じペナルティが適用されます。\n\n・所持Goldの50%を失います。\n・非装備の所持枠の半数をランダムに失います（切り上げ）。\n・装備中の5枠は保持されます。\n\nGoldの端数は切り捨て。Lv・EXP・能力は再挑戦時にリセットされます。"
 	accept.text = "中断してリザルトへ"
 	cancel.show()
@@ -305,6 +325,7 @@ func _reveal() -> void:
 	details_scroll.scroll_vertical = 0
 	UIMotion.of(presentation_panel).reveal(UIMotion.WINDOW_TIME)
 	UIMotion.of(title_label).pulse(1.025, UIMotion.WINDOW_TIME)
+	UIMotion.of(seal).pulse(1.08, UIMotion.WINDOW_TIME)
 
 
 func _accept() -> void:

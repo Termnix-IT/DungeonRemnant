@@ -3,6 +3,8 @@ extends CanvasLayer
 
 # In-world yes/no prompt for stairs and exits. It sits in the lower third so
 # the hero and the surrounding room stay readable while the player decides.
+# A painted picture of the passage it asks about (the theme's ChoicePrompt
+# icons: stairs, guardian, exit) stands beside the words.
 signal confirmed
 signal canceled
 
@@ -10,6 +12,7 @@ var panel: PanelContainer
 var caption_label: Label
 var title_label: Label
 var body_label: Label
+var emblem: TextureRect
 var accept_button: Button
 var cancel_button: Button
 var key_guide: KeyGuide
@@ -49,8 +52,21 @@ func _ready() -> void:
 	var column := VBoxContainer.new()
 	column.theme_type_variation = &"DetailStack"
 	margin.add_child(column)
-	caption_label = HubUI.label(column, "", &"MutedLabel")
-	title_label = HubUI.label(column, "", &"TitleLabel")
+	var heading := HBoxContainer.new()
+	heading.theme_type_variation = &"DetailStack"
+	column.add_child(heading)
+	emblem = TextureRect.new()
+	emblem.custom_minimum_size = Vector2(96, 96)
+	emblem.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	emblem.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	emblem.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	heading.add_child(emblem)
+	var words := VBoxContainer.new()
+	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	words.alignment = BoxContainer.ALIGNMENT_CENTER
+	heading.add_child(words)
+	caption_label = HubUI.label(words, "", &"MutedLabel")
+	title_label = HubUI.label(words, "", &"TitleLabel")
 	body_label = HubUI.label(column, "", &"DescriptionLabel")
 	var actions := HBoxContainer.new()
 	actions.alignment = BoxContainer.ALIGNMENT_END
@@ -74,7 +90,9 @@ func _ready() -> void:
 	hide()
 
 
-func ask(caption: String, title: String, body: String, accept_text: String, cancel_text: String) -> void:
+func ask(caption: String, title: String, body: String, accept_text: String, cancel_text: String, passage: StringName = &"") -> void:
+	emblem.texture = emblem.get_theme_icon(passage, &"ChoicePrompt") if not passage.is_empty() else null
+	emblem.visible = emblem.texture != null
 	caption_label.text = caption
 	caption_label.visible = not caption.is_empty()
 	title_label.text = title
