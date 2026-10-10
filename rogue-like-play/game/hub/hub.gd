@@ -181,6 +181,7 @@ func _ready() -> void:
 	settings_page = _page(HubSettings.new()) as HubSettings
 	settings_page.offset_left = bleed
 	settings_page.changed.connect(func(): settings_changed.emit())
+	settings_page.help_opened.connect(_settings_hints)
 	tree.hp_requested.connect(func(): purchase_requested.emit())
 	tree.skill_requested.connect(func(id: StringName): skill_requested.emit(id))
 	tree.entry_requested.connect(func(stage: StageData, floor_number: int): entry_requested.emit(stage, floor_number))

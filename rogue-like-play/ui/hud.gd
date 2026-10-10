@@ -118,6 +118,13 @@ func show_health(hp: int, max_hp: int) -> void:
 	portrait.show_health(hp, max_hp)
 
 
+# The settings' 操作の案内: the actions card can be put away by players who
+# know the keys. The tag over the hero stays, the one sign of the aim on the
+# floor itself.
+func show_controls(shown: bool) -> void:
+	actions.visible = shown
+
+
 # While an attack's direction is chosen: the card at the bottom right turns
 # into the aim's own, and a tag stands over the hero (at, on the screen).
 func show_aim(aiming: bool, at: Vector2 = Vector2.ZERO, staff: bool = false) -> void:

@@ -11,8 +11,12 @@ extends Control
 # primary action.
 # The last row opens the help: the game's rules that the screens keep out of
 # their way, by topic. A HintMark ("?") on another page opens it at its topic.
+# The same page opens over the dungeon from its menu (DungeonMenu), so it
+# reaches nothing outside itself: whoever shows it listens to its signals.
 
 signal changed
+# The help opened from its row; the screen showing the page updates its keys.
+signal help_opened
 
 const ROW_HEIGHT := 80.0
 const BAND_TIP := 18.0
@@ -21,7 +25,7 @@ const EDGE_REACH := 40.0
 # The note's column in the hall, from the band's tip.
 const NOTE_INSET := 36.0
 const NOTE_WIDTH := 420.0
-const NOTES := ["すべての音の大きさ。0%で消音。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "ダンジョンの空気の音の大きさ。", "被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "冒険の決まりごとと操作。"]
+const NOTES := ["すべての音の大きさ。0%で消音。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "ダンジョンの空気の音の大きさ。", "被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "探索中、画面の右下に今できる操作の札を出す。", "冒険の決まりごとと操作。"]
 # The help's topics, in order: [title, paragraphs]. HintMarks name them by index.
 const TOPIC_RUN := 0
 const TOPIC_LOSS := 1
@@ -52,7 +56,7 @@ const HELP := [
 	["操作", [
 		"移動：WASD・矢印キー・テンキー。斜めはQ・E・Z・C。",
 		"攻撃：Spaceで構え、向きを選んでもう一度Space。",
-		"持ち物：I。主武器と副武器の切り替え：Tab。中断：R。",
+		"持ち物：I。主武器と副武器の切り替え：Tab。メニュー（設定・冒険の中断）：Esc。中断の確認へ直接：R。",
 		"拠点では、Enterで選んだものの操作へ移り、もう一度Enterで実行する。Escで戻る。",
 	]],
 ]
@@ -66,6 +70,7 @@ var effects_value: Label
 var ambience_value: Label
 var shake_cycler: OptionCycler
 var display_cycler: OptionCycler
+var controls_cycler: OptionCycler
 var settings: GameSettings
 var rows: VBoxContainer
 var note: Label
@@ -131,14 +136,23 @@ func _ready() -> void:
 		settings.fullscreen = index == 1
 		settings.apply_display()
 		changed.emit())
+	var controls_row := _row("操作の案内")
+	controls_cycler = OptionCycler.new()
+	controls_cycler.name = "ControlsCycler"
+	controls_cycler.custom_minimum_size = Vector2(300, 52)
+	controls_cycler.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	controls_cycler.tooltip_text = "操作の案内"
+	controls_row.add_child(controls_cycler)
+	controls_cycler.setup(GameSettings.CONTROLS_NAMES)
+	controls_cycler.item_selected.connect(func(index: int):
+		settings.show_controls = index == 0
+		changed.emit())
 	var help_row := _row("ヘルプ")
 	help_button = HubUI.button(help_row, "遊び方と決まりごとを読む  ›", func():
 		open_help(TOPIC_RUN)
-		var hub := get_tree().get_first_node_in_group(&"hub")
-		if hub != null:
-			hub.call(&"_settings_hints"), &"TextAction")
+		help_opened.emit(), &"TextAction")
 	help_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var controls: Array[Control] = [volume_slider, effects_slider, ambience_slider, shake_cycler, display_cycler, help_button]
+	var controls: Array[Control] = [volume_slider, effects_slider, ambience_slider, shake_cycler, display_cycler, controls_cycler, help_button]
 	for index in controls.size():
 		var control := controls[index]
 		if index > 0:
@@ -320,6 +334,7 @@ func refresh(value: GameSettings) -> void:
 		(pair[1] as Label).text = "%d%%" % settings.volume_percent(pair[2])
 	shake_cycler.select(settings.shake_level)
 	display_cycler.select(1 if settings.fullscreen else 0)
+	controls_cycler.select(0 if settings.show_controls else 1)
 
 
 func focus_first() -> void:

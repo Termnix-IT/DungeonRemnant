@@ -156,6 +156,10 @@ func start_run() -> void:
 	active_run.initial_state = state
 	active_run.generation_seed = run_seed
 	active_run.shake_scale = $Hub.settings.shake_scale()
+	active_run.settings = $Hub.settings
+	active_run.settings_changed.connect(func():
+		if saving_enabled:
+			$Hub.settings.save_settings())
 	if stage != null:
 		active_run.stage_data = stage
 		active_run.starting_floor = entry_floor
@@ -217,6 +221,8 @@ func _enter_tree() -> void:
 		"move_nw": [KEY_Q, KEY_KP_7],
 		"attack": [KEY_SPACE, KEY_KP_5],
 		"cancel_attack": [KEY_ESCAPE],
+		# The dungeon's menu; Esc cancels an aim or closes the inventory first.
+		"menu": [KEY_ESCAPE],
 		"restart": [KEY_R],
 		"inventory": [KEY_I],
 		"switch_weapon": [KEY_TAB],
@@ -232,7 +238,8 @@ func _enter_tree() -> void:
 			InputMap.action_add_event(action, event)
 	# Gamepad: D-pad moves on the cardinals (the left stick adds diagonals via
 	# StickDirections), A attacks and confirms, B cancels, X opens the
-	# inventory, Y switches weapons and Start aborts or leaves the result.
+	# inventory, Y switches weapons, and Start opens the dungeon's menu, or
+	# leaves the result.
 	var pad := {
 		"move_n": JOY_BUTTON_DPAD_UP,
 		"move_e": JOY_BUTTON_DPAD_RIGHT,
@@ -244,6 +251,7 @@ func _enter_tree() -> void:
 		"switch_weapon": JOY_BUTTON_Y,
 		"magic": JOY_BUTTON_RIGHT_SHOULDER,
 		"restart": JOY_BUTTON_START,
+		"menu": JOY_BUTTON_START,
 	}
 	for action: String in pad:
 		var button := InputEventJoypadButton.new()

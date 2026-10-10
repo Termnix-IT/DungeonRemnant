@@ -3,8 +3,8 @@ extends Panel
 
 # What can be done right now, at the bottom right of the dungeon HUD: one key
 # cap per line. Out of the aim it lists the actions the HUD has no other place
-# for (ready an attack, open the inventory, cast when a staff is worn, leave
-# the run); while an attack's direction is being chosen it turns into that
+# for (ready an attack, open the inventory, cast when a staff is worn, open
+# the menu, which holds the settings and leaving the run); while an attack's direction is being chosen it turns into that
 # mode's own card, in the gilt plate (HudPanelActive) and titled so, with only
 # the keys that work in it. The aim's instructions once ran as a line in the message log, where
 # they were the only sign that the mode had begun. The weapon swap stays on
@@ -63,7 +63,7 @@ func show_state(is_aiming: bool, staff: bool) -> void:
 		lines = [["Space", "A", "構える"], ["I", "X", "所持品"]]
 		if can_cast:
 			lines.append(["M", "RB", "魔法"])
-		lines.append(["R", "Start", "中断"])
+		lines.append(["Esc", "Start", "メニュー"])
 	for line: Array in lines:
 		var guide := KeyGuide.new()
 		guide.custom_minimum_size.y = LINE

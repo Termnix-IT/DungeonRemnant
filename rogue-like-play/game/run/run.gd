@@ -2,6 +2,8 @@ extends Node2D
 
 signal hub_requested
 signal result_ready
+# A setting changed from the dungeon's menu; the game stores it.
+signal settings_changed
 
 const PLAYER_SCENE := preload("res://actors/player/player.tscn")
 const ENEMY_SCENE := preload("res://actors/enemy/enemy.tscn")
@@ -37,6 +39,10 @@ const ENEMY_TYPES: Array[EnemyStats] = [
 # The player's screen-shake setting (GameSettings.shake_scale()): 1 shakes at
 # full strength, 0 not at all.
 var shake_scale := 1.0
+# The player's settings, shared with the hub's page (main.gd sets them); the
+# dungeon's menu changes them in place.
+var settings: GameSettings
+var menu := DungeonMenu.new()
 var preview: Node2D
 var stage_data: StageData
 var starting_floor := 1
@@ -100,6 +106,17 @@ func _ready() -> void:
 	journey_banner.showing_changed.connect(hud.make_room_for_notice)
 	add_child(journey_banner)
 	add_child(boss_cut_in)
+	if settings == null:
+		settings = GameSettings.new()
+	menu.settings = settings
+	add_child(menu)
+	menu.resumed.connect(_close_menu)
+	menu.abort_requested.connect(func():
+		menu.hide()
+		_close_menu()
+		request_abort())
+	menu.settings_changed.connect(_settings_changed)
+	hud.show_controls(settings.show_controls)
 	add_child(ambience)
 	add_child(vignette)
 	add_child(danger)
@@ -654,9 +671,22 @@ func _input(event: InputEvent) -> void:
 		elif not result_panel.confirming and event.is_action_pressed("restart"):
 			retry_run()
 		return
+	# The menu takes the keys while it is open: Esc (B, Start) steps back, and
+	# the rest moves its focus.
+	if menu.visible:
+		if _menu_pressed(event) or event.is_action_pressed("ui_cancel") or event.is_action_pressed("cancel_attack"):
+			get_viewport().set_input_as_handled()
+			menu.back()
+		return
 	# The spell picker over the inventory answers its own keys (cards take
 	# Enter, Esc leaves it); nothing reaches the inventory behind it.
 	if inventory_panel.visible and inventory_panel.picking():
+		return
+	# Esc opens the menu only when there is nothing nearer to back out of: an
+	# aim is cancelled and the inventory closed first.
+	if _menu_pressed(event) and can_open_menu():
+		get_viewport().set_input_as_handled()
+		open_menu()
 		return
 	if event.is_action_pressed("inventory"):
 		get_viewport().set_input_as_handled()
@@ -687,6 +717,34 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("restart") and not event.is_echo():
 		get_viewport().set_input_as_handled()
 		request_abort()
+
+
+# main.gd binds "menu"; a run built on its own in a test may lack it.
+func _menu_pressed(event: InputEvent) -> bool:
+	return InputMap.has_action("menu") and event.is_action_pressed("menu")
+
+
+func can_open_menu() -> bool:
+	return not (presentation.playing or turns.busy or turns.ended or turns.paused or result_panel.visible or inventory_panel.visible or turns.player.aiming or floor_cover.covering)
+
+
+func open_menu() -> void:
+	rapid_move.stop()
+	turns.paused = true
+	menu.open()
+	_refresh()
+
+
+func _close_menu() -> void:
+	turns.paused = false
+	_refresh()
+
+
+# A change made in the menu takes effect at once, the shake included.
+func _settings_changed() -> void:
+	shake_scale = settings.shake_scale()
+	hud.show_controls(settings.show_controls)
+	settings_changed.emit()
 
 
 func request_abort() -> void:

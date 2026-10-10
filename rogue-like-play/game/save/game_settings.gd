@@ -13,6 +13,8 @@ const AMBIENCE_BUS := &"Ambience"
 # How hard the camera shakes when she is hit, as a share of Run.SHAKE_STRENGTH.
 const SHAKE_NAMES: Array[String] = ["標準", "弱め", "なし"]
 const SHAKE_SCALES: Array[float] = [1.0, 0.5, 0.0]
+# Whether the dungeon HUD shows the card of what can be done now (HudActions).
+const CONTROLS_NAMES: Array[String] = ["ON", "OFF"]
 # The first settings stored five volume steps; read them as their level.
 const LEGACY_VOLUME_STEPS: Array[float] = [0.0, 0.25, 0.5, 0.75, 1.0]
 
@@ -24,6 +26,7 @@ var ambience_volume := 1.0
 var fullscreen := false
 # An index into SHAKE_NAMES.
 var shake_level := 0
+var show_controls := true
 
 
 func load_settings() -> void:
@@ -39,6 +42,7 @@ func load_settings() -> void:
 	ambience_volume = clampf(float(file.get_value("audio", "ambience", ambience_volume)), 0.0, 1.0)
 	fullscreen = bool(file.get_value("display", "fullscreen", fullscreen))
 	shake_level = clampi(int(file.get_value("display", "shake", shake_level)), 0, SHAKE_NAMES.size() - 1)
+	show_controls = bool(file.get_value("display", "controls", show_controls))
 
 
 func save_settings() -> bool:
@@ -48,6 +52,7 @@ func save_settings() -> bool:
 	file.set_value("audio", "ambience", ambience_volume)
 	file.set_value("display", "fullscreen", fullscreen)
 	file.set_value("display", "shake", shake_level)
+	file.set_value("display", "controls", show_controls)
 	return file.save(path) == OK
 
 
