@@ -90,6 +90,14 @@ func run_tests() -> void:
 	for bar in [&"VScrollBar", &"HScrollBar"]:
 		for part in [&"scroll", &"grabber", &"grabber_highlight", &"grabber_pressed"]:
 			check(theme.get_stylebox(part, bar) is ScrollRailStyle, "%s %s is a bronze rail" % [bar, part])
+	# A secondary action that can be pressed must never look like one that
+	# cannot: it was once a flat grey plate with grey words, the same as the
+	# disabled look, so the shop's 全部売却 read as switched off.
+	for state in [&"normal", &"hover", &"focus", &"pressed", &"hover_pressed", &"disabled"]:
+		check(theme.has_stylebox(state, &"SecondaryButton"), "SecondaryButton has its own %s look" % state)
+	check(theme.get_stylebox(&"normal", &"SecondaryButton") is StyleBoxTexture, "A secondary action is a painted bronze plate")
+	check(theme.get_stylebox(&"normal", &"SecondaryButton") != theme.get_stylebox(&"disabled", &"SecondaryButton"), "A secondary action looks different when it cannot be pressed")
+	check(theme.get_color(&"font_color", &"SecondaryButton").get_luminance() - theme.get_color(&"font_disabled_color", &"SecondaryButton").get_luminance() > 0.3, "Its words dim when it cannot be pressed")
 	print("UI theme: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
 
