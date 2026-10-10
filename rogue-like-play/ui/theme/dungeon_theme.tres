@@ -26,8 +26,23 @@
 [ext_resource type="Texture2D" path="res://art/ui/vital_experience.png" id="VitalExperienceTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/speech_bubble.png" id="SpeechBubbleTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/ink_plate.png" id="InkPlateTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud_ink.png" id="HudInkTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/slab_stone.png" id="SlabStoneTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/key_cap.png" id="HudKeyCapTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/key_cap_active.png" id="HudKeyCapActiveTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/plate.png" id="HudPlateTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/plate_active.png" id="HudPlateActiveTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/medallion.png" id="HudMedallionTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/map_frame.png" id="HudMapFrameTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/map_stairs.png" id="HudMapStairsTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/map_enemy.png" id="HudMapEnemyTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/map_item.png" id="HudMapItemTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/map_player.png" id="HudMapPlayerTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/log_band.png" id="HudLogBandTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/log_victory.png" id="HudLogVictoryTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/log_harm.png" id="HudLogHarmTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/log_floor.png" id="HudLogFloorTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/log_supply.png" id="HudLogSupplyTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/log_news.png" id="HudLogNewsTexture"]
 
 [sub_resource type="StyleBoxTexture" id="FramePanel"]
 resource_name = "FramePanel"
@@ -502,36 +517,81 @@ texture = ExtResource("VitalManaTrailTexture")
 
 [sub_resource type="StyleBoxTexture" id="HudSurface"]
 resource_name = "HudSurface"
-texture = ExtResource("HudInkTexture")
-texture_margin_left = 56.0
-texture_margin_top = 56.0
-texture_margin_right = 56.0
-texture_margin_bottom = 56.0
-expand_margin_left = 40.0
-expand_margin_top = 40.0
-expand_margin_right = 40.0
-expand_margin_bottom = 40.0
+texture = ExtResource("HudPlateTexture")
+texture_margin_left = 38.0
+texture_margin_top = 38.0
+texture_margin_right = 38.0
+texture_margin_bottom = 38.0
+expand_margin_left = 14.0
+expand_margin_top = 14.0
+expand_margin_right = 14.0
+expand_margin_bottom = 14.0
 content_margin_left = 14.0
 content_margin_top = 10.0
 content_margin_right = 14.0
 content_margin_bottom = 10.0
 
-[sub_resource type="StyleBoxTexture" id="HudMapSurface"]
-resource_name = "HudMapSurface"
-texture = ExtResource("HudInkTexture")
-texture_margin_left = 56.0
-texture_margin_top = 56.0
-texture_margin_right = 56.0
-texture_margin_bottom = 56.0
-expand_margin_left = 40.0
-expand_margin_top = 40.0
-expand_margin_right = 40.0
-expand_margin_bottom = 40.0
+[sub_resource type="StyleBoxTexture" id="HudSurfaceActive"]
+resource_name = "HudSurfaceActive"
+texture = ExtResource("HudPlateActiveTexture")
+texture_margin_left = 38.0
+texture_margin_top = 38.0
+texture_margin_right = 38.0
+texture_margin_bottom = 38.0
+expand_margin_left = 14.0
+expand_margin_top = 14.0
+expand_margin_right = 14.0
+expand_margin_bottom = 14.0
 content_margin_left = 14.0
 content_margin_top = 10.0
 content_margin_right = 14.0
 content_margin_bottom = 10.0
-modulate_color = Color(1, 1, 1, 0.7)
+
+[sub_resource type="StyleBoxFlat" id="HudMapSurface"]
+resource_name = "HudMapSurface"
+bg_color = Color(0.051, 0.047, 0.043, 0.82)
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxTexture" id="HudMapFrame"]
+resource_name = "HudMapFrame"
+texture = ExtResource("HudMapFrameTexture")
+texture_margin_left = 46.0
+texture_margin_top = 46.0
+texture_margin_right = 62.0
+texture_margin_bottom = 68.0
+expand_margin_left = 12.0
+expand_margin_top = 12.0
+expand_margin_right = 12.0
+expand_margin_bottom = 12.0
+
+[sub_resource type="StyleBoxTexture" id="HudLogBand"]
+resource_name = "HudLogBand"
+texture = ExtResource("HudLogBandTexture")
+texture_margin_left = 110.0
+texture_margin_right = 110.0
+expand_margin_left = 60.0
+expand_margin_top = 24.0
+expand_margin_right = 60.0
+expand_margin_bottom = 24.0
+
+[sub_resource type="StyleBoxTexture" id="KeyCap"]
+resource_name = "KeyCap"
+texture = ExtResource("HudKeyCapTexture")
+texture_margin_left = 7.0
+texture_margin_top = 7.0
+texture_margin_right = 7.0
+texture_margin_bottom = 7.0
+
+[sub_resource type="StyleBoxTexture" id="KeyCapActive"]
+resource_name = "KeyCapActive"
+texture = ExtResource("HudKeyCapActiveTexture")
+texture_margin_left = 7.0
+texture_margin_top = 7.0
+texture_margin_right = 7.0
+texture_margin_bottom = 7.0
 
 [sub_resource type="StyleBoxFlat" id="HudPortraitFrame"]
 resource_name = "HudPortraitFrame"
@@ -1162,6 +1222,17 @@ HudPanel/base_type = &"Panel"
 HudPanel/styles/panel = SubResource("HudSurface")
 HudMapPanel/base_type = &"Panel"
 HudMapPanel/styles/panel = SubResource("HudMapSurface")
+HudPanelActive/base_type = &"Panel"
+HudPanelActive/styles/panel = SubResource("HudSurfaceActive")
+HudMapFrame/base_type = &"Panel"
+HudMapFrame/styles/panel = SubResource("HudMapFrame")
+HudLogPanel/base_type = &"Panel"
+HudLogPanel/styles/panel = SubResource("HudLogBand")
+HudEffects/icons/token = ExtResource("HudMedallionTexture")
+DungeonMinimap/icons/stairs = ExtResource("HudMapStairsTexture")
+DungeonMinimap/icons/enemy = ExtResource("HudMapEnemyTexture")
+DungeonMinimap/icons/item = ExtResource("HudMapItemTexture")
+DungeonMinimap/icons/player = ExtResource("HudMapPlayerTexture")
 HudPortraitFrame/base_type = &"Panel"
 HudPortraitFrame/styles/panel = SubResource("HudPortraitFrame")
 HudAimTag/base_type = &"Label"
@@ -1195,6 +1266,11 @@ ExpBar/styles/fill = SubResource("ExperienceFill")
 HudLog/base_type = &"RichTextLabel"
 HudLog/colors/default_color = Color(0.79, 0.79, 0.75, 1)
 HudLog/font_sizes/normal_font_size = 15
+HudLog/icons/victory = ExtResource("HudLogVictoryTexture")
+HudLog/icons/harm = ExtResource("HudLogHarmTexture")
+HudLog/icons/floor = ExtResource("HudLogFloorTexture")
+HudLog/icons/supply = ExtResource("HudLogSupplyTexture")
+HudLog/icons/news = ExtResource("HudLogNewsTexture")
 HudLog/styles/normal = SubResource("HudLogInsets")
 HudEquipment/base_type = &"Control"
 HudEquipment/constants/row_height = 38
@@ -1382,7 +1458,6 @@ KeyGuideButton/colors/font_hover_color = Color(0.93333334, 0.9137255, 0.8745098,
 KeyGuideButton/colors/font_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
 KeyGuideButton/colors/font_hover_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
 KeyGuideButton/colors/font_outline_color = Color(0, 0, 0, 0.7)
-KeyGuideButton/colors/cap_fill = Color(0.04, 0.038, 0.04, 0.7)
 KeyGuideButton/colors/cap_rim = Color(0.62, 0.59, 0.52, 1)
 KeyGuideButton/colors/cap_rim_active = Color(0.93333334, 0.9137255, 0.8745098, 1)
 KeyGuideButton/constants/outline_size = 3
@@ -1395,6 +1470,8 @@ KeyGuideButton/styles/hover = SubResource("KeyGuideHint")
 KeyGuideButton/styles/pressed = SubResource("KeyGuideHint")
 KeyGuideButton/styles/hover_pressed = SubResource("KeyGuideHint")
 KeyGuideButton/styles/disabled = SubResource("KeyGuideHint")
+KeyGuideButton/styles/cap = SubResource("KeyCap")
+KeyGuideButton/styles/cap_active = SubResource("KeyCapActive")
 PurseValueQuiet/base_type = &"PurseValue"
 PurseValueQuiet/font_sizes/font_size = 24
 ShopColumns/base_type = &"HBoxContainer"

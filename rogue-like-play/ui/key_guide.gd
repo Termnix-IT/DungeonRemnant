@@ -2,7 +2,8 @@ class_name KeyGuide
 extends HBoxContainer
 
 # The footer's key guide: each hint is a key cap and what it does
-# ("Esc 戻る"), shown as text rather than a boxed button. A hint with an
+# ("Esc 戻る"), shown as text rather than a boxed button. The cap is a
+# painted key (the theme's "cap" and "cap_active" styles), not a drawn box. A hint with an
 # action can also be clicked. While a gamepad is in use the caps show its
 # buttons (B, A) instead of the keys.
 
@@ -83,6 +84,8 @@ func _fit(hint: Button) -> void:
 	var font := hint.get_theme_font(&"font")
 	var size := hint.get_theme_font_size(&"cap_font_size")
 	var width := font.get_string_size(cap_text(hint), HORIZONTAL_ALIGNMENT_LEFT, -1, size).x + hint.get_theme_constant(&"cap_padding") * 2.0
+	# A one-letter key is at least square, like a real key.
+	width = maxf(width, _cap_height(hint))
 	hint.set_meta(&"cap_width", width)
 	var padded := (hint.get_meta(&"base_style") as StyleBox).duplicate() as StyleBox
 	padded.content_margin_left = CAP_INSET + width + hint.get_theme_constant(&"cap_gap")
@@ -94,13 +97,17 @@ func _draw_cap(hint: Button) -> void:
 	var width: float = hint.get_meta(&"cap_width", 0.0)
 	var font := hint.get_theme_font(&"font")
 	var size := hint.get_theme_font_size(&"cap_font_size")
-	var height := font.get_height(size) + 6.0
+	var height := _cap_height(hint)
 	# The cap ends the same gap before the words.
 	var right := hint.get_theme_stylebox(&"normal").content_margin_left - hint.get_theme_constant(&"cap_gap")
 	var rect := Rect2(Vector2(right - width, (hint.size.y - height) * 0.5), Vector2(width, height))
 	var active := hint.is_hovered() or hint.has_focus()
 	var rim := hint.get_theme_color(&"cap_rim_active" if active else &"cap_rim")
-	hint.draw_rect(rect, hint.get_theme_color(&"cap_fill"))
-	hint.draw_rect(rect, rim, false, 1.0)
+	# A painted bronze key, lit gold while the hint is pointed at.
+	hint.draw_style_box(hint.get_theme_stylebox(&"cap_active" if active else &"cap"), rect)
 	var baseline := rect.position.y + (height + font.get_ascent(size) - font.get_descent(size)) * 0.5
 	hint.draw_string(font, Vector2(rect.position.x, baseline), cap_text(hint), HORIZONTAL_ALIGNMENT_CENTER, width, size, rim)
+
+
+func _cap_height(hint: Button) -> float:
+	return hint.get_theme_font(&"font").get_height(hint.get_theme_font_size(&"cap_font_size")) + 6.0

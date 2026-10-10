@@ -73,9 +73,25 @@ func run_tests() -> void:
 	check(hud.actions.aiming and hud.actions.keys() == ["方向", "Space", "Esc"] and hud.actions.title.text == "攻撃の向きを選択中", "Aiming turns the card into the aim's keys")
 	check(hud.aim_tag.visible and hud.aim_tag.get_global_rect().end.y <= hero.y and absf(hud.aim_tag.get_global_rect().get_center().x - hero.x) < 2.0, "A tag stands over the hero while aiming")
 	check(not hud.log_entries.get_parsed_text().contains("攻撃方向を選択中"), "The log carries no aiming instructions")
+	check(hud.actions.theme_type_variation == &"HudPanelActive" and hud.actions.get_theme_stylebox(&"panel") != hud.get_node("BottomLeft").get_theme_stylebox(&"panel"), "The aim's card stands on the gilt plate")
 	player.aiming = false
 	run._refresh()
 	check(not hud.actions.aiming and not hud.aim_tag.visible and "I" in hud.actions.keys(), "Leaving the aim brings the usual keys back")
+	check(hud.actions.theme_type_variation == &"HudPanel", "Leaving the aim puts the card back on the usual plate")
+	# Each log entry leads with the mark of its kind of news; harm outranks the
+	# rest of a turn that also dealt a blow.
+	var marks := {
+		"5Fに到着した。": &"floor",
+		"ネズミに3ダメージ、ネズミを倒した。 EXP +2 / Gold +1。": &"victory",
+		"ネズミに3ダメージ。 疾走ネズミの攻撃で1ダメージ。": &"harm",
+		"回復薬を使った。HPが8回復。": &"supply",
+		"攻撃は空を切った。": &"news",
+	}
+	for text: String in marks:
+		check(hud.log_mark(text) == marks[text], "The log marks %s as %s" % [text, marks[text]])
+	for kind: StringName in [&"victory", &"harm", &"floor", &"supply", &"news"]:
+		check(hud.log_entries.has_theme_icon(kind, &"HudLog"), "The theme paints the %s mark" % kind)
+	check(not hud.log_entries.get_parsed_text().contains("◇"), "Log entries lead with marks, not drawn diamonds")
 	check(hud.get_viewport().get_visible_rect().encloses(hud.actions.get_global_rect()), "The card stays on the screen")
 	# News brings the log to full strength and then lets it rest.
 	hud._freshen_log()

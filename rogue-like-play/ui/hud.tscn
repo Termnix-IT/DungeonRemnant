@@ -27,7 +27,7 @@ theme = ExtResource("3")
 theme_type_variation = &"HudMapPanel"
 
 [node name="FloorCaption" type="Label" parent="TopRight"]
-offset_left = 16.0
+offset_left = 40.0
 offset_top = 15.0
 offset_right = 110.0
 offset_bottom = 39.0
@@ -35,18 +35,18 @@ theme_type_variation = &"HudCaption"
 text = "階層"
 
 [node name="Floor" type="Label" parent="TopRight"]
-offset_left = 140.0
+offset_left = 118.0
 offset_top = 8.0
-offset_right = 284.0
+offset_right = 262.0
 offset_bottom = 41.0
 theme_type_variation = &"HudValue"
 text = "1 / 10"
 horizontal_alignment = 2
 
 [node name="FloorDivider" type="TextureRect" parent="TopRight"]
-offset_left = 14.0
+offset_left = 36.0
 offset_top = 49.0
-offset_right = 286.0
+offset_right = 264.0
 offset_bottom = 50.0
 mouse_filter = 2
 texture = ExtResource("5")
@@ -60,6 +60,15 @@ offset_right = 285.0
 offset_bottom = 248.0
 mouse_filter = 2
 script = ExtResource("2")
+
+[node name="Frame" type="Panel" parent="TopRight"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HudMapFrame"
 
 [node name="BottomLeft" type="Panel" parent="."]
 anchors_preset = 2
@@ -205,7 +214,7 @@ grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
 theme = ExtResource("3")
-theme_type_variation = &"HudPanel"
+theme_type_variation = &"HudLogPanel"
 
 [node name="Entries" type="RichTextLabel" parent="Log"]
 offset_left = 18.0

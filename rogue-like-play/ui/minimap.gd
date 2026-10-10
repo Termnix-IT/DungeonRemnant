@@ -3,20 +3,18 @@ extends Control
 
 const UNKNOWN_CELL := Vector2i(-1, -1)
 # Walls stay darker than any floor, so a lit room reads as an outlined shape
-# instead of one pale block.
-const FLOOR_COLOR := Color("3a434b")
-const VISIBLE_FLOOR_COLOR := Color("56626c")
-const WALL_COLOR := Color("1a2025")
-const VISIBLE_WALL_COLOR := Color("2b333a")
-# Each marker differs from the others in both colour and shape: the player is
-# a blue disc in a white ring, enemies red discs, items small green squares
-# and the stairs a gold diamond.
-const PLAYER_COLOR := Color("6aa6ff")
-const PLAYER_RING := Color("f2f4f8")
-const ENEMY_COLOR := Color("f0524c")
-const ITEM_COLOR := Color("7fd26a")
-const STAIRS_COLOR := Color("e8bd55")
-const OUTLINE_COLOR := Color("101010")
+# instead of one pale block. The stone is warm, like the bronze frame round
+# it, so the hero's blue gem and the green item gems stand out from it.
+const FLOOR_COLOR := Color("3f3a30")
+const VISIBLE_FLOOR_COLOR := Color("5c5544")
+const WALL_COLOR := Color("1f1c17")
+const VISIBLE_WALL_COLOR := Color("332e25")
+# Each marker is a small painted icon (the theme's DungeonMinimap icons),
+# differing from the others in both colour and shape: the hero a blue-white
+# gem, enemies red horned skulls, items green gems and the stairs a gold
+# stairway. Each icon is built at the size it is drawn (tools/build_hud_art.py),
+# the hero largest, so it lands on whole pixels unscaled.
+
 # A fixed scale centred on the player: the map scrolls as the floor is
 # explored instead of shrinking to fit everything seen so far. Whole pixels
 # keep cells tiling without seams.
@@ -69,27 +67,18 @@ func _draw() -> void:
 		draw_rect(rect, color)
 	for cell: Vector2i in item_cells:
 		if explored.has(cell):
-			var center := _center(cell, origin)
-			var half := CELL_SIZE * 0.3
-			draw_rect(Rect2(center - Vector2.ONE * (half + 1.0), Vector2.ONE * (half + 1.0) * 2.0), OUTLINE_COLOR)
-			draw_rect(Rect2(center - Vector2.ONE * half, Vector2.ONE * half * 2.0), ITEM_COLOR)
+			_marker(&"item", cell, origin)
 	if stairs_cell != UNKNOWN_CELL and explored.has(stairs_cell):
-		var center := _center(stairs_cell, origin)
-		var radius := CELL_SIZE * 0.75
-		var diamond := PackedVector2Array([center + Vector2(0, -radius), center + Vector2(radius, 0), center + Vector2(0, radius), center + Vector2(-radius, 0)])
-		draw_colored_polygon(diamond, STAIRS_COLOR)
-		draw_polyline(diamond + PackedVector2Array([diamond[0]]), OUTLINE_COLOR, 1.0, true)
+		_marker(&"stairs", stairs_cell, origin)
 	for cell: Vector2i in enemy_cells:
-		var center := _center(cell, origin)
-		var radius := CELL_SIZE * 0.45
-		draw_circle(center, radius + 1.0, OUTLINE_COLOR)
-		draw_circle(center, radius, ENEMY_COLOR)
+		_marker(&"enemy", cell, origin)
 	if explored.has(player_cell):
-		var center := _center(player_cell, origin)
-		var radius := CELL_SIZE * 0.5
-		draw_circle(center, radius + 2.0, OUTLINE_COLOR)
-		draw_circle(center, radius + 1.0, PLAYER_RING)
-		draw_circle(center, radius, PLAYER_COLOR)
+		_marker(&"player", player_cell, origin)
+
+
+func _marker(kind: StringName, cell: Vector2i, origin: Vector2) -> void:
+	var icon := get_theme_icon(kind, &"DungeonMinimap")
+	draw_texture(icon, (_center(cell, origin) - icon.get_size() * 0.5).round())
 
 
 func _center(cell: Vector2i, origin: Vector2) -> Vector2:

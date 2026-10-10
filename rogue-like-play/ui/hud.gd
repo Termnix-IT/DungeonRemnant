@@ -9,7 +9,7 @@ const PORTRAIT_INSET := 14
 const EFFECTS_POSITION := Vector2(16, 16)
 # The weapon in hand, between the EXP bar and the turn line.
 const WEAPON_RECT := Rect2(14, 172, 330, 46)
-const EFFECTS_WIDTH := 300.0
+const EFFECTS_WIDTH := 330.0
 # Announcements and the boss gauge share one band at the screen's top edge,
 # above the ring of floor round the hero that the HUD keeps clear.
 const NOTICE_TOP := 12.0
@@ -20,6 +20,16 @@ const LOG_RESTING_ALPHA := 0.5
 # The tag over the hero while an attack's direction is chosen, this far above
 # the hero's cell centre.
 const AIM_TAG_RISE := 64.0
+# Each log entry leads with a painted mark for what kind of news it is, so the
+# log can be skimmed before it is read. A turn's entry often joins several
+# events; the first kind whose words it holds names it, harm before all else.
+const LOG_MARK_SIZE := 18
+const LOG_MARKS: Array = [
+	[&"harm", ["の攻撃で", "に倒された", "強制帰還", "様子が変"]],
+	[&"victory", ["を倒した", "撃破", "ダメージ", "EXP +"]],
+	[&"floor", ["Fに到着", "F："]],
+	[&"supply", ["を使った", "回復", "装備を変更"]],
+]
 
 @onready var status: Label = $Status
 @onready var floor_value: Label = $TopRight/Floor
@@ -217,13 +227,11 @@ func _record_log(value: String, key: int = -1) -> void:
 
 
 func _render_log(temporary_message: String = "") -> void:
-	var lines: Array[String] = []
-	for entry: String in log_history:
-		lines.append("◇ %s" % entry)
+	var lines: Array[String] = log_history.duplicate()
 	if not temporary_message.is_empty():
 		if lines.size() >= MAX_LOG_ENTRIES:
 			lines.pop_front()
-		lines.append("◆ %s" % temporary_message)
+		lines.append(temporary_message)
 	# Long lines wrap; when the wrapped text overflows the box, the oldest
 	# entries give way so the newest line is never cut off at the bottom.
 	_write_log(lines)
@@ -240,9 +248,22 @@ func _write_log(lines: Array[String]) -> void:
 	for index in lines.size():
 		if index > 0:
 			log_entries.newline()
-		log_entries.push_color(recent if index >= lines.size() - EMPHASIZED_LOG_ENTRIES else older)
+		var faded := index < lines.size() - EMPHASIZED_LOG_ENTRIES
+		var mark := log_entries.get_theme_icon(log_mark(lines[index]), &"HudLog")
+		log_entries.add_image(mark, LOG_MARK_SIZE, LOG_MARK_SIZE, Color(1, 1, 1, 0.6) if faded else Color.WHITE, INLINE_ALIGNMENT_CENTER)
+		log_entries.add_text("  ")
+		log_entries.push_color(older if faded else recent)
 		log_entries.add_text(lines[index])
 		log_entries.pop()
+
+
+# The kind of news an entry is, which names its mark.
+static func log_mark(text: String) -> StringName:
+	for kind: Array in LOG_MARKS:
+		for words: String in kind[1]:
+			if text.contains(words):
+				return kind[0]
+	return &"news"
 
 
 func _log_color(role: StringName) -> Color:

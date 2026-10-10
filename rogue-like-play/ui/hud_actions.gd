@@ -5,15 +5,16 @@ extends Panel
 # cap per line. Out of the aim it lists the actions the HUD has no other place
 # for (ready an attack, open the inventory, cast when a staff is worn, leave
 # the run); while an attack's direction is being chosen it turns into that
-# mode's own card, edged in gold and titled so, with only the keys that work
-# in it. The aim's instructions once ran as a line in the message log, where
+# mode's own card, in the gilt plate (HudPanelActive) and titled so, with only
+# the keys that work in it. The aim's instructions once ran as a line in the message log, where
 # they were the only sign that the mode had begun. The weapon swap stays on
 # the weapon row, beside the weapons it swaps.
 
 const WIDTH := 300.0
 # From the screen's edges, like the other HUD plates.
 const MARGIN := 16.0
-const PADDING := Vector2(14, 12)
+# Clear of the plate's corner brackets.
+const PADDING := Vector2(24, 16)
 const LINE := 34.0
 const TITLE_HEIGHT := 26.0
 
@@ -46,6 +47,7 @@ func _ready() -> void:
 func show_state(is_aiming: bool, staff: bool) -> void:
 	aiming = is_aiming
 	can_cast = staff
+	theme_type_variation = &"HudPanelActive" if aiming else &"HudPanel"
 	for guide in _guides:
 		_lines.remove_child(guide)
 		guide.queue_free()
@@ -79,13 +81,6 @@ func show_state(is_aiming: bool, staff: bool) -> void:
 	offset_left = -MARGIN - WIDTH
 	offset_top = -MARGIN - height
 	_lines.size.x = WIDTH - PADDING.x * 2
-	queue_redraw()
-
-
-# The aim's card is edged in gold, so the change of mode reads from afar.
-func _draw() -> void:
-	if aiming:
-		draw_rect(Rect2(Vector2.ZERO, size).grow(-1), get_theme_color(&"font_color", &"GoldLabel"), false, 1.5)
 
 
 # The keys this card names, in order, for the tests and the help.
