@@ -167,7 +167,7 @@ func test_turns_and_ui() -> void:
 	run.inventory_panel._select_item(0)
 	# A real click at the button's position: overlapping rows must not eat it.
 	await process_frame
-	await click(run.inventory_panel.get_node("Panel/Use"))
+	await click(run.inventory_panel.use_button)
 	if run.presentation.playing:
 		await run.presentation.finished
 		await process_frame
@@ -186,7 +186,7 @@ func test_turns_and_ui() -> void:
 	press_inventory(run)
 	run.inventory_panel.list.select(0)
 	run.inventory_panel._select_item(0)
-	check(run.inventory_panel.get_node("Panel/Use").disabled and run.inventory_panel.get_node("Panel/Use").text.contains("満タン"), "Full HP explains why the potion cannot be used")
+	check(run.inventory_panel.use_button.disabled and run.inventory_panel.use_button.text.contains("満タン"), "Full HP explains why the potion cannot be used")
 	player.hp = 10
 	run.inventory_panel.refresh()
 	run.inventory_panel._select_item(0)
@@ -207,6 +207,57 @@ func test_turns_and_ui() -> void:
 	run.turns.busy = false
 	run.turns.ended = true
 	check(not run.turns.submit_inventory("use", 0), "Dead run cannot use items")
+	run.free()
+
+
+# The preparation screen's grammar: the slots above the list, the decision
+# column right of it with its primary action at the foot, and a chosen slot
+# offering to take its item off.
+func test_decision_column() -> void:
+	var run := new_run()
+	var player: Node2D = run.turns.player
+	player.inventory.add(POTION, 2)
+	player.inventory.add(VITAL)
+	press_inventory(run)
+	for frame in 3:
+		await process_frame
+	var panel = run.inventory_panel
+	var list_rect: Rect2 = panel.list.get_global_rect()
+	check(panel.slot_cells.size() == 5 and panel.slot_cells.all(func(cell: ItemCell) -> bool: return cell.get_global_rect().end.y <= list_rect.position.y), "The five slots stand in a row above the list")
+	check(panel.showcase.get_global_rect().position.x >= list_rect.end.x and panel.details.get_global_rect().position.x >= list_rect.end.x, "The decision column stands right of the list")
+	check(panel.list.max_columns == 2 and panel.list.get_item_rect(1).position.x > panel.list.get_item_rect(0).position.x, "The list shows two columns")
+	panel.list.select(1)
+	panel._select_item(1)
+	await process_frame
+	var primary: Button = panel.primary_button
+	var other: Button = panel.equip_buttons[Equipment.Slot.ACCESSORY_2]
+	check(primary == panel.equip_buttons[Equipment.Slot.ACCESSORY_1] and primary.theme_type_variation == &"PrimaryAction" and other.visible and other.theme_type_variation == &"SecondaryButton", "The default slot's equip is the primary action, the other slot a secondary one")
+	check(primary.get_index() == panel.actions.get_child_count() - 1 and primary.get_global_rect().position.y > other.get_global_rect().position.y and primary.get_global_rect().position.y > panel.details.get_global_rect().end.y, "The primary action stands at the column's foot")
+	var column: Rect2 = (panel.showcase.get_parent() as Control).get_global_rect()
+	check(column.end.y - primary.get_global_rect().end.y < 4.0, "Nothing stands below the primary action")
+	panel.list.select(0)
+	panel._select_item(0)
+	check(panel.primary_button == panel.use_button and panel.use_button.theme_type_variation == &"PrimaryAction", "Using is a consumable's primary action")
+	panel.select_slot(Equipment.Slot.MAIN)
+	check(panel.selected_index == -1 and panel.list.get_selected_items().is_empty() and panel.slot_cells[Equipment.Slot.MAIN].button_pressed, "Choosing a slot clears the list's choice")
+	check(panel.primary_button == panel.remove_button and panel.remove_button.visible and panel.remove_button.disabled and panel.remove_button.text == "主武器は外せない", "The main weapon's slot offers no removal")
+	check(not panel.activate_selected() and player.equipment.slots[Equipment.Slot.MAIN] != null, "Confirm on the main weapon's slot does nothing")
+	check(panel.showcase.title.text == player.equipment.slots[Equipment.Slot.MAIN].label(), "A chosen slot shows what it holds")
+	panel.slot_cells[Equipment.Slot.SUB].grab_focus()
+	check(panel.activate_selected() and panel.selected_slot == Equipment.Slot.SUB and player.equipment.slots[Equipment.Slot.SUB] != null, "Confirm on a focused slot chooses it before acting")
+	check(panel.remove_button.visible and not panel.remove_button.disabled and panel.remove_button.text == "副武器を外す", "The sub weapon's slot offers to take it off")
+	var sub: ItemData = player.equipment.slots[Equipment.Slot.SUB]
+	var removals: Array[int] = []
+	panel.action_requested.connect(func(kind: String, _index: int, slot: int):
+		if kind == "unequip":
+			removals.append(slot))
+	await process_frame
+	await click(panel.remove_button)
+	check(removals == [Equipment.Slot.SUB] and player.equipment.slots[Equipment.Slot.SUB] == null and player.inventory.entries.any(func(entry: InventoryEntry) -> bool: return entry.item == sub), "The removal button takes the item off")
+	check(panel.visible and run.turns.turn_count == 0 and not panel.remove_button.visible, "Taking off is free and the emptied slot offers nothing")
+	panel.slot_cells[Equipment.Slot.ARMOR].grab_focus()
+	panel.select_slot(Equipment.Slot.ARMOR)
+	check(not panel.remove_button.visible and panel.primary_button == null and not panel.activate_selected(), "An empty slot has no action")
 	run.free()
 
 
@@ -265,6 +316,7 @@ func run_tests() -> void:
 	test_capacity_and_transactions()
 	test_effects()
 	await test_turns_and_ui()
+	await test_decision_column()
 	test_pickup_and_generation()
 	await process_frame
 	print("Inventory tests: %d checks, %d failures" % [checks, failures])

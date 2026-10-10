@@ -39,14 +39,14 @@ func capture() -> void:
 	key(KEY_I)
 	for frame in 2:
 		await process_frame
-	run.inventory_panel.get_node("Panel/List").select(0)
+	run.inventory_panel.list.select(0)
 	run.inventory_panel._select_item(0)
 	var ok := await snapshot("res://.godot/inventory_weapons.png")
 	if not run.inventory_panel.visible or player.input_enabled or run.turns.turn_count != 0:
 		push_error("Inventory keyboard open/pause failed.")
 		quit(1)
 		return
-	run.inventory_panel.get_node("Panel/List").select(2)
+	run.inventory_panel.list.select(2)
 	run.inventory_panel._select_item(2)
 	ok = await snapshot("res://.godot/inventory_accessories.png") and ok
 	# Exercise the actual GUI mouse route, not just a signal emission.

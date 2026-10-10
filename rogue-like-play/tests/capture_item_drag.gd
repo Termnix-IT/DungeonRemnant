@@ -92,11 +92,14 @@ func capture() -> void:
 	var list: ItemCardList = panel.list
 	var index: int = player.inventory.entries.find_custom(func(entry: InventoryEntry): return entry.item == ARMOR)
 	var from: Vector2 = list.get_global_transform() * list.get_item_rect(index).get_center()
-	var slot_row: Control = panel.slot_labels[Equipment.Slot.ARMOR].get_parent()
-	await drag(from, slot_row.get_global_rect().get_center(), "inventory_held")
-	check(player.equipment.slots[Equipment.Slot.ARMOR] == ARMOR, "Mouse: carried armor dropped on its row in the dungeon is worn")
-	await drag(panel.slot_labels[Equipment.Slot.ARMOR].get_global_rect().get_center(), list.get_global_rect().get_center())
-	check(player.equipment.slots[Equipment.Slot.ARMOR] == null, "Mouse: a worn row dropped on the list comes off")
+	var armor_cell: ItemCell = panel.slot_cells[Equipment.Slot.ARMOR]
+	await drag(from, armor_cell.get_global_rect().get_center(), "inventory_held")
+	check(player.equipment.slots[Equipment.Slot.ARMOR] == ARMOR, "Mouse: carried armor dropped on its slot in the dungeon is worn")
+	await drag(armor_cell.get_global_rect().get_center(), list.get_global_rect().get_center(), "inventory_worn_held")
+	check(player.equipment.slots[Equipment.Slot.ARMOR] == null, "Mouse: a worn slot dropped on the list comes off")
+	var main_weapon: ItemData = player.equipment.slots[Equipment.Slot.MAIN]
+	await drag(panel.slot_cells[Equipment.Slot.SUB].get_global_rect().get_center(), panel.slot_cells[Equipment.Slot.MAIN].get_global_rect().get_center())
+	check(player.equipment.slots[Equipment.Slot.SUB] == main_weapon, "Mouse: the weapons dropped on each other swap")
 	run.free()
 	print("Item drag render/input: ", "passed" if failures == 0 else "FAILED")
 	quit(0 if failures == 0 else 1)

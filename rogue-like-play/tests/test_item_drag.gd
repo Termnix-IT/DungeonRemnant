@@ -90,18 +90,20 @@ func test_inventory() -> void:
 	panel.present(player)
 	var index: int = player.inventory.entries.find_custom(func(entry: InventoryEntry): return entry.item == ARMOR)
 	var row: Variant = panel._pick_row(index)
-	check(row.item == ARMOR and panel._row_takes(row, Equipment.Slot.ARMOR) and not panel._row_takes(row, Equipment.Slot.MAIN), "A carried item fits only its own slot")
+	check(row.item == ARMOR and panel._slot_takes(row, Equipment.Slot.ARMOR) and not panel._slot_takes(row, Equipment.Slot.MAIN), "A carried item fits only its own slot")
 	var turns_before: int = run.turns.turn_count
-	panel._dropped_on_row(row, Equipment.Slot.ARMOR)
+	panel._dropped_on_slot(row, Equipment.Slot.ARMOR)
 	check(player.equipment.slots[Equipment.Slot.ARMOR] == ARMOR and run.turns.turn_count == turns_before, "Dropped on its slot, it is worn without a turn")
-	var worn: Variant = panel._pick_slot(panel.slot_labels[Equipment.Slot.ARMOR], Equipment.Slot.ARMOR)
-	check(panel._list_takes(worn) and not panel._list_takes(panel._pick_slot(panel.slot_labels[Equipment.Slot.MAIN], Equipment.Slot.MAIN)), "The list takes worn gear back, except the main weapon")
+	var worn: ItemCell = panel.slot_cells[Equipment.Slot.ARMOR]
+	check(worn.item == ARMOR and worn.draggable, "A worn slot shows its item and can be picked up")
+	check(panel._list_takes(worn) and not panel._list_takes(panel.slot_cells[Equipment.Slot.MAIN]) and not panel._list_takes(row), "The list takes worn gear back, except the main weapon")
 	panel._dropped_on_list(worn)
 	check(player.equipment.slots[Equipment.Slot.ARMOR] == null, "Dropped on the list, worn gear comes off")
+	check(not panel._list_takes(worn), "An emptied slot has nothing to give back")
 	var main_weapon: ItemData = player.equipment.slots[Equipment.Slot.MAIN]
-	var sub: Variant = panel._pick_slot(panel.slot_labels[Equipment.Slot.SUB], Equipment.Slot.SUB)
-	check(panel._row_takes(sub, Equipment.Slot.MAIN), "The weapons take each other")
-	panel._dropped_on_row(sub, Equipment.Slot.MAIN)
+	var sub: ItemCell = panel.slot_cells[Equipment.Slot.SUB]
+	check(panel._slot_takes(sub, Equipment.Slot.MAIN) and panel.slot_cells[Equipment.Slot.MAIN].can_accept.call(sub) and not panel._slot_takes(sub, Equipment.Slot.ARMOR), "The weapons take each other, and only each other")
+	panel._dropped_on_slot(sub, Equipment.Slot.MAIN)
 	check(player.equipment.slots[Equipment.Slot.SUB] == main_weapon, "Weapons dropped on each other swap")
 	run.free()
 	await process_frame
