@@ -11,8 +11,9 @@ const EFFECTS_POSITION := Vector2(16, 16)
 const WEAPON_RECT := Rect2(14, 172, 330, 46)
 const EFFECTS_WIDTH := 330.0
 # Announcements and the boss gauge share one band at the screen's top edge,
-# above the ring of floor round the hero that the HUD keeps clear.
-const NOTICE_TOP := 12.0
+# above the ring of floor round the hero that the HUD keeps clear. The
+# band's finial spikes reach 18px above it, still on the screen.
+const NOTICE_TOP := 18.0
 # The message log is full strength while it has news, then recedes so the
 # floor under it shows; a new line brings it back.
 const LOG_FRESH_TIME := 4.0

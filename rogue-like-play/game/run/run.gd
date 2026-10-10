@@ -237,7 +237,7 @@ func _load_floor() -> void:
 	var place := stage_name if band_name == stage_name else "%s  ·  %s" % [stage_name, band_name]
 	# In the hall the boss cut-in announces the floor instead.
 	if floor_kind != DungeonGenerator.Kind.BOSS_HALL:
-		journey_banner.present("%dF  ·  %s" % [floor_number, "守護者の領域" if is_boss_floor() else "探索開始"], place, arrival_banner_delay)
+		journey_banner.present("%dF  ·  %s" % [floor_number, "守護者の領域" if is_boss_floor() else "探索開始"], place, arrival_banner_delay, is_boss_floor())
 	vignette.bloom(arrival_banner_delay)
 	ambience.start(dungeon_settings.forest)
 	GameAudio.play(journey_banner, &"floor", -22.0)
@@ -578,7 +578,7 @@ func _record_discoveries() -> void:
 				dungeon.house_discovered = true
 				found_something = true
 				turns.last_message += " モンスターハウスだ！敵とアイテムが密集している。"
-				journey_banner.present("モンスターハウス", "敵が密集している。退路を確認しよう。")
+				journey_banner.present("モンスターハウス", "敵が密集している。退路を確認しよう。", 0.0, true)
 				GameAudio.play(journey_banner, &"warning", -20.0)
 				break
 	# Enemy visibility is synced after this, so the boss's cell is read directly.

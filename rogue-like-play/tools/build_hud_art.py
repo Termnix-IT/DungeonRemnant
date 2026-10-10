@@ -2,11 +2,12 @@
 
 The pictures in art/ui/source/ were made with Codex's image generation (see
 開発メモ.md): the key caps, the HUD plates and the talisman medallion, the
-minimap's frame and markers, and the message log's ink band and marks. All
-but the ink band are painted on flat magenta (#FF00FF); the band is black ink
-on white paper. This keys the backdrop out, cuts each part, fills the plates'
-empty insides with the HUD's translucent ink, and scales every part to the
-size the game draws it, writing art/ui/hud/*.png. The nine-patch margins in
+minimap's frame and markers, the message log's ink band and marks, and the
+notice band at the screen's top edge. All but the log's ink band are painted
+on flat magenta (#FF00FF); the ink band is black ink on white paper. This
+keys the backdrop out, cuts each part, fills the plates' empty insides with
+the HUD's translucent ink, and scales every part to the size the game draws
+it, writing art/ui/hud/*.png. The nine-patch margins in
 ui/theme/dungeon_theme.tres follow the sizes printed here; update them
 whenever a picture changes.
 
@@ -41,6 +42,10 @@ MARKER_SIZES = {"stairs": 15, "enemy": 13, "item": 11, "player": 17}
 MARKER_ORDER = ["stairs", "enemy", "item", "player"]
 LOG_MARK_SIZE = 18
 LOG_MARKS = ["victory", "harm", "floor", "supply", "news"]
+# The notice band: notice_band.png holds two bands, one above the other: the
+# usual one with blue gems, and the warning one with flame crests (a monster
+# house, the guardian's floor). Both are drawn this tall.
+NOTICE_HEIGHT = 80
 # The ink band is scaled to this height; its frayed ends overhang the log.
 BAND_HEIGHT = 150
 BAND_ALPHA = 0.84
@@ -143,6 +148,9 @@ def build() -> None:
 	for name, icon in zip(LOG_MARKS, marks, strict=True):
 		save(fit(icon, LOG_MARK_SIZE), f"log_{name}")
 	save(ink_band(), "log_band")
+	[[usual], [warning]] = pieces(keyed("notice_band.png"))
+	for band, name in ((usual, "notice_band"), (warning, "notice_band_warning")):
+		save(scaled(band, NOTICE_HEIGHT / band.height), name)
 
 
 if __name__ == "__main__":

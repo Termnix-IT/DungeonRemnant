@@ -5,8 +5,9 @@ const WIDTH := 800.0
 # The top of the one lane banners run in: the band at the screen's top edge
 # (HUD.notice_lane_top()), set by the run before adding the banner. The band
 # is one line, title and place side by side, so it stays off the floor round
-# the hero.
-var lane_top := 12.0
+# the hero. The band is a painted bronze plaque with blue gems; a warning (a
+# monster house, the guardian's floor) stands on its sibling with flame crests.
+var lane_top := 18.0
 
 # A banner began or ended; the boss gauge, which shares the band, steps aside.
 signal showing_changed(showing: bool)
@@ -16,7 +17,7 @@ var title_label: Label
 var subtitle_label: Label
 var lifetime: Timer
 # Cues that arrived while another was showing, shown one after another
-# instead of over each other: {title, subtitle}.
+# instead of over each other: {title, subtitle, warning}.
 var queue: Array[Dictionary] = []
 
 
@@ -62,12 +63,12 @@ func _ready() -> void:
 
 # delay holds the entrance while something covers the screen (a floor change).
 # A cue that arrives while another is showing waits for it to finish.
-func present(title: String, subtitle: String = "", delay: float = 0.0) -> void:
+func present(title: String, subtitle: String = "", delay: float = 0.0, warning: bool = false) -> void:
 	if showing():
 		if title != title_label.text and not queue.any(func(cue: Dictionary) -> bool: return cue.title == title):
-			queue.append({"title": title, "subtitle": subtitle})
+			queue.append({"title": title, "subtitle": subtitle, "warning": warning})
 		return
-	_show(title, subtitle, delay)
+	_show(title, subtitle, delay, warning)
 
 
 func showing() -> bool:
@@ -79,7 +80,8 @@ func announces(title: String) -> bool:
 	return (showing() and title_label.text == title) or queue.any(func(cue: Dictionary) -> bool: return cue.title == title)
 
 
-func _show(title: String, subtitle: String, delay: float) -> void:
+func _show(title: String, subtitle: String, delay: float, warning: bool = false) -> void:
+	panel.theme_type_variation = &"BannerBandWarning" if warning else &"BannerBand"
 	title_label.text = title
 	subtitle_label.text = subtitle
 	subtitle_label.visible = not subtitle.is_empty()
@@ -98,7 +100,7 @@ func _advance() -> void:
 	var next: Dictionary = queue.pop_front()
 	UIMotion.of(panel).reset()
 	UIMotion.of(title_label).reset()
-	_show(next.title, next.subtitle, 0.0)
+	_show(next.title, next.subtitle, 0.0, next.warning)
 
 
 # Drops the cue on screen and any waiting ones.
