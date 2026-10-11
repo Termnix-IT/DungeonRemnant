@@ -75,7 +75,7 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 16.0
-offset_top = -280.0
+offset_top = -196.0
 offset_right = 376.0
 offset_bottom = -16.0
 grow_vertical = 0
@@ -163,15 +163,6 @@ offset_bottom = 154.0
 theme_type_variation = &"HudCaption"
 text = "Lv 1"
 
-[node name="ExpValue" type="Label" parent="BottomLeft"]
-offset_left = 100.0
-offset_top = 131.0
-offset_right = 344.0
-offset_bottom = 154.0
-theme_type_variation = &"HudSmall"
-text = "EXP 0 / 10"
-horizontal_alignment = 2
-
 [node name="ExpBar" type="ProgressBar" parent="BottomLeft"]
 offset_left = 14.0
 offset_top = 158.0
@@ -180,25 +171,6 @@ offset_bottom = 164.0
 mouse_filter = 2
 theme_type_variation = &"ExpBar"
 show_percentage = false
-
-[node name="Meta" type="Label" parent="BottomLeft"]
-offset_left = 14.0
-offset_top = 228.0
-offset_right = 240.0
-offset_bottom = 252.0
-theme_type_variation = &"HudSmall"
-text = "TURN 0  ·  所持品 0 / 40"
-vertical_alignment = 1
-
-[node name="Gold" type="Label" parent="BottomLeft"]
-offset_left = 240.0
-offset_top = 228.0
-offset_right = 344.0
-offset_bottom = 252.0
-theme_type_variation = &"HudGoldCaption"
-text = "0 G"
-horizontal_alignment = 2
-vertical_alignment = 1
 
 [node name="Log" type="Panel" parent="."]
 anchors_preset = 7

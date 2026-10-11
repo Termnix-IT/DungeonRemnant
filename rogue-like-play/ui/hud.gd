@@ -7,8 +7,6 @@ const EMPHASIZED_LOG_ENTRIES := 2
 const PORTRAIT_SIZE := 104
 const PORTRAIT_INSET := 14
 const EFFECTS_POSITION := Vector2(16, 16)
-# The weapon in hand, between the EXP bar and the turn line.
-const WEAPON_RECT := Rect2(14, 172, 330, 46)
 const EFFECTS_WIDTH := 330.0
 # Announcements and the boss gauge share one band at the screen's top edge,
 # above the ring of floor round the hero that the HUD keeps clear. The
@@ -34,40 +32,32 @@ const LOG_MARKS: Array = [
 
 @onready var status: Label = $Status
 @onready var floor_value: Label = $TopRight/Floor
-@onready var gold_value: Label = $BottomLeft/Gold
 @onready var minimap: DungeonMinimap = $TopRight/Minimap
 @onready var hp_value: Label = $BottomLeft/HpValue
 @onready var hp_bar: ProgressBar = $BottomLeft/HpBar
 @onready var mp_value: Label = $BottomLeft/MpValue
 @onready var mp_bar: ProgressBar = $BottomLeft/MpBar
 @onready var level_value: Label = $BottomLeft/Level
-@onready var exp_value: Label = $BottomLeft/ExpValue
 @onready var exp_bar: ProgressBar = $BottomLeft/ExpBar
-@onready var meta: Label = $BottomLeft/Meta
 @onready var log_entries: RichTextLabel = $Log/Entries
 
 var portrait: HudPortrait
-var weapon: HudWeapon
 var actions: HudActions
 var aim_tag: Label
 var _log_rest: Timer
 var log_history: Array[String] = []
 var last_log_text := ""
 var last_log_key := -1
-var turn_count := 0
-var inventory_count := 0
-var _gold := -1
 
 
 func _ready() -> void:
+	# The vitals plate holds only what changes in a fight: the face, HP and MP,
+	# and the level with its EXP bar. The weapon in hand shows on the hero
+	# herself; the turn, the inventory count, Gold and the EXP figures are in
+	# the inventory (I), where they are read, not glanced at.
 	var vitals: Panel = $BottomLeft
-	weapon = HudWeapon.new()
-	weapon.name = "Weapon"
-	vitals.add_child(weapon)
-	weapon.position = WEAPON_RECT.position
-	weapon.size = WEAPON_RECT.size
 	# What can be done now, at the bottom right: the keys the HUD shows nowhere
-	# else (Tab sits on the weapon row, beside the weapons it swaps).
+	# else, the weapon swap among them.
 	actions = HudActions.new()
 	actions.name = "Actions"
 	actions.theme = $TopRight.theme
@@ -90,13 +80,6 @@ func _ready() -> void:
 	vitals.add_child(portrait)
 	portrait.position = Vector2.ONE * PORTRAIT_INSET
 	portrait.size = Vector2.ONE * PORTRAIT_SIZE
-	for bar: ProgressBar in [hp_bar, mp_bar]:
-		var ticks := VitalTicks.new()
-		ticks.name = bar.name + "Ticks"
-		vitals.add_child(ticks)
-		vitals.move_child(ticks, bar.get_index() + 1)
-		ticks.position = bar.position
-		ticks.size = bar.size
 
 
 # log_key identifies the action the text belongs to: text that grows within one
@@ -105,8 +88,6 @@ func refresh(hp: int, max_hp: int, turns: int, visible_enemies: int, log_text: S
 	status.text = "%d / %dF  %s     HP %d / %d     TURN %d     視界内の敵 %d" % [floor_number, total_floors, layout_name, hp, max_hp, turns, visible_enemies]
 	floor_value.text = "%d / %d" % [floor_number, total_floors]
 	show_health(hp, max_hp)
-	turn_count = turns
-	_refresh_meta()
 	_record_log(log_text, log_key)
 
 
@@ -136,36 +117,11 @@ func show_aim(aiming: bool, at: Vector2 = Vector2.ZERO, staff: bool = false) -> 
 		aim_tag.position = (at - Vector2(aim_tag.size.x * 0.5, AIM_TAG_RISE + aim_tag.size.y)).round()
 
 
+# The bar tells how near the next level is; the figures are in the inventory.
 func show_progress(level: int, exp: int, required: int) -> void:
 	level_value.text = "Lv %d" % level
-	if required > 0:
-		exp_value.text = "EXP %d / %d" % [exp, required]
-		exp_bar.max_value = required
-		exp_bar.value = exp
-	else:
-		exp_value.text = "EXP MAX"
-		exp_bar.max_value = 1
-		exp_bar.value = 1
-
-
-func show_inventory(count: int) -> void:
-	inventory_count = count
-	_refresh_meta()
-
-
-# A gain counts up from the old amount and glints; a drop (a new run, a
-# loss) shows at once.
-func show_gold(gold: int) -> void:
-	if gold == _gold:
-		return
-	var format := func(value: int) -> String: return "%s G" % UIFormat.amount(value)
-	if _gold >= 0 and gold > _gold and gold_value.is_visible_in_tree():
-		UIMotion.of(gold_value).count(_gold, gold, format)
-		UIMotion.of(gold_value).flash()
-	else:
-		UIMotion.of(gold_value).reset()
-		gold_value.text = format.call(gold)
-	_gold = gold
+	exp_bar.max_value = required if required > 0 else 1
+	exp_bar.value = exp if required > 0 else 1
 
 
 func show_minimap(
@@ -183,11 +139,6 @@ func show_minimap(
 # An empty name hides the boss gauge.
 func show_boss(boss_name: String, hp: int = 0, max_hp: int = 0) -> void:
 	($Boss as BossGauge).present(boss_name, hp, max_hp)
-
-
-# attack is the weapon the attack code uses for main, so its range matches.
-func show_weapons(main: ItemData, sub: ItemData, attack: WeaponData) -> void:
-	weapon.show_weapons(main, sub, attack)
 
 
 # Where announcement banners stand: the band at the screen's top edge.
@@ -282,10 +233,6 @@ func _log_color(role: StringName) -> Color:
 func _freshen_log() -> void:
 	UIMotion.of($Log).reset()
 	_log_rest.start(LOG_FRESH_TIME)
-
-
-func _refresh_meta() -> void:
-	meta.text = "TURN %d  ·  所持品 %d / 40" % [turn_count, inventory_count]
 
 
 func terrain_label(value: String) -> String:

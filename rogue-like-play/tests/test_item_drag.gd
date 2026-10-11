@@ -89,17 +89,17 @@ func test_inventory() -> void:
 	var panel = run.inventory_panel
 	panel.present(player)
 	var index: int = player.inventory.entries.find_custom(func(entry: InventoryEntry): return entry.item == ARMOR)
-	var row: Variant = panel._pick_row(index)
+	var row: ItemCell = panel.stock.cells[panel.stock.place_of(index)]
 	check(row.item == ARMOR and panel._slot_takes(row, Equipment.Slot.ARMOR) and not panel._slot_takes(row, Equipment.Slot.MAIN), "A carried item fits only its own slot")
 	var turns_before: int = run.turns.turn_count
 	panel._dropped_on_slot(row, Equipment.Slot.ARMOR)
 	check(player.equipment.slots[Equipment.Slot.ARMOR] == ARMOR and run.turns.turn_count == turns_before, "Dropped on its slot, it is worn without a turn")
 	var worn: ItemCell = panel.slot_cells[Equipment.Slot.ARMOR]
 	check(worn.item == ARMOR and worn.draggable, "A worn slot shows its item and can be picked up")
-	check(panel._list_takes(worn) and not panel._list_takes(panel.slot_cells[Equipment.Slot.MAIN]) and not panel._list_takes(row), "The list takes worn gear back, except the main weapon")
-	panel._dropped_on_list(worn)
-	check(player.equipment.slots[Equipment.Slot.ARMOR] == null, "Dropped on the list, worn gear comes off")
-	check(not panel._list_takes(worn), "An emptied slot has nothing to give back")
+	check(panel._stock_takes(worn) and not panel._stock_takes(panel.slot_cells[Equipment.Slot.MAIN]) and not panel._stock_takes(panel.stock.cells[0]), "The grid takes worn gear back, except the main weapon")
+	panel.stock.received.emit(worn)
+	check(player.equipment.slots[Equipment.Slot.ARMOR] == null, "Dropped on the grid, worn gear comes off")
+	check(not panel._stock_takes(worn), "An emptied slot has nothing to give back")
 	var main_weapon: ItemData = player.equipment.slots[Equipment.Slot.MAIN]
 	var sub: ItemCell = panel.slot_cells[Equipment.Slot.SUB]
 	check(panel._slot_takes(sub, Equipment.Slot.MAIN) and panel.slot_cells[Equipment.Slot.MAIN].can_accept.call(sub) and not panel._slot_takes(sub, Equipment.Slot.ARMOR), "The weapons take each other, and only each other")

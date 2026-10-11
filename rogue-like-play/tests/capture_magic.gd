@@ -35,7 +35,7 @@ func capture() -> void:
 	main.start_run()
 	var run: Node2D = main.active_run
 	run.inventory_panel.present(run.turns.player)
-	run.inventory_panel._select_item(0)
+	run.inventory_panel.select_item(0)
 	run._refresh()
 	await settle()
 	ok = root.get_texture().get_image().save_png("res://.godot/magic_inventory.png") == OK and ok

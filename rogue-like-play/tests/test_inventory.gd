@@ -158,13 +158,13 @@ func test_turns_and_ui() -> void:
 	run.turns.enemies.append(enemy)
 	press_inventory(run)
 	check(run.inventory_panel.visible and not player.input_enabled and run.turns.turn_count == 0, "Opening inventory is free and disables movement")
-	run.inventory_panel._select_item(1)
+	run.inventory_panel.select_item(1)
 	check(run.inventory_panel.equip_buttons[2].visible and not run.inventory_panel.equip_buttons[0].visible, "UI shows compatible equipment actions only")
 	check(player.hp == 24 and enemy.cell == Vector2i(2, 3), "Selecting item does not advance enemies")
 	run.inventory_panel.equip_buttons[2].pressed.emit()
 	check(run.inventory_panel.visible and not player.input_enabled and run.turns.turn_count == 0 and player.hp == 24, "Equip refreshes the open UI without spending a turn")
 	player.hp = 10
-	run.inventory_panel._select_item(0)
+	run.inventory_panel.select_item(0)
 	# A real click at the button's position: overlapping rows must not eat it.
 	await process_frame
 	await click(run.inventory_panel.use_button)
@@ -184,12 +184,11 @@ func test_turns_and_ui() -> void:
 	check(player.weapon.kind == WeaponData.Kind.SPEAR and player.hp == 24 and run.turns.turn_count == 1, "Quick switch is free")
 	player.inventory.add(POTION, 2)
 	press_inventory(run)
-	run.inventory_panel.list.select(0)
-	run.inventory_panel._select_item(0)
+	run.inventory_panel.select_item(0)
 	check(run.inventory_panel.use_button.disabled and run.inventory_panel.use_button.text.contains("満タン"), "Full HP explains why the potion cannot be used")
 	player.hp = 10
 	run.inventory_panel.refresh()
-	run.inventory_panel._select_item(0)
+	run.inventory_panel.select_item(0)
 	var potions_before: int = player.inventory.entries[0].count
 	var space := InputEventAction.new()
 	space.action = "attack"
@@ -222,12 +221,12 @@ func test_decision_column() -> void:
 	for frame in 3:
 		await process_frame
 	var panel = run.inventory_panel
-	var list_rect: Rect2 = panel.list.get_global_rect()
-	check(panel.slot_cells.size() == 5 and panel.slot_cells.all(func(cell: ItemCell) -> bool: return cell.get_global_rect().end.y <= list_rect.position.y), "The five slots stand in a row above the list")
-	check(panel.showcase.get_global_rect().position.x >= list_rect.end.x and panel.details.get_global_rect().position.x >= list_rect.end.x, "The decision column stands right of the list")
-	check(panel.list.max_columns == 2 and panel.list.get_item_rect(1).position.x > panel.list.get_item_rect(0).position.x, "The list shows two columns")
-	panel.list.select(1)
-	panel._select_item(1)
+	var list_rect: Rect2 = panel.stock.get_global_rect()
+	check(panel.slot_cells.size() == 5 and panel.slot_cells.all(func(cell: ItemCell) -> bool: return cell.get_global_rect().end.y <= list_rect.position.y), "The five slots stand in a row above the grid")
+	check(panel.showcase.get_global_rect().position.x >= list_rect.end.x and panel.details.get_global_rect().position.x >= list_rect.end.x, "The decision column stands right of the grid")
+	# What she carries is the same icon grid as the preparation screen's.
+	check(panel.stock is StockGrid and panel.stock.filter_tabs != null and panel.stock.cells.size() == player.inventory.entries.size() and panel.stock.cells[1].get_global_rect().position.x > panel.stock.cells[0].get_global_rect().position.x, "The grid shows every carried item as an icon in a row")
+	panel.select_item(1)
 	await process_frame
 	var primary: Button = panel.primary_button
 	var other: Button = panel.equip_buttons[Equipment.Slot.ACCESSORY_2]
@@ -235,11 +234,10 @@ func test_decision_column() -> void:
 	check(primary.get_index() == panel.actions.get_child_count() - 1 and primary.get_global_rect().position.y > other.get_global_rect().position.y and primary.get_global_rect().position.y > panel.details.get_global_rect().end.y, "The primary action stands at the column's foot")
 	var column: Rect2 = (panel.showcase.get_parent() as Control).get_global_rect()
 	check(column.end.y - primary.get_global_rect().end.y < 4.0, "Nothing stands below the primary action")
-	panel.list.select(0)
-	panel._select_item(0)
+	panel.select_item(0)
 	check(panel.primary_button == panel.use_button and panel.use_button.theme_type_variation == &"PrimaryAction", "Using is a consumable's primary action")
 	panel.select_slot(Equipment.Slot.MAIN)
-	check(panel.selected_index == -1 and panel.list.get_selected_items().is_empty() and panel.slot_cells[Equipment.Slot.MAIN].button_pressed, "Choosing a slot clears the list's choice")
+	check(panel.selected_index == -1 and panel.stock.selected == -1 and panel.slot_cells[Equipment.Slot.MAIN].button_pressed, "Choosing a slot clears the grid's choice")
 	check(panel.primary_button == panel.remove_button and panel.remove_button.visible and panel.remove_button.disabled and panel.remove_button.text == "主武器は外せない", "The main weapon's slot offers no removal")
 	check(not panel.activate_selected() and player.equipment.slots[Equipment.Slot.MAIN] != null, "Confirm on the main weapon's slot does nothing")
 	check(panel.showcase.title.text == player.equipment.slots[Equipment.Slot.MAIN].label(), "A chosen slot shows what it holds")

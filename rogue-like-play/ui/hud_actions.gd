@@ -7,8 +7,8 @@ extends Panel
 # the menu, which holds the settings and leaving the run); while an attack's direction is being chosen it turns into that
 # mode's own card, in the gilt plate (HudPanelActive) and titled so, with only
 # the keys that work in it. The aim's instructions once ran as a line in the message log, where
-# they were the only sign that the mode had begun. The weapon swap stays on
-# the weapon row, beside the weapons it swaps.
+# they were the only sign that the mode had begun. The weapon swap is here
+# too: the weapon in hand shows on the hero, so the HUD has no weapon row.
 
 const WIDTH := 300.0
 # From the screen's edges, like the other HUD plates.
@@ -60,7 +60,7 @@ func show_state(is_aiming: bool, staff: bool) -> void:
 	else:
 		title.text = "操作"
 		title.theme_type_variation = &"HudCaption"
-		lines = [["Space", "A", "構える"], ["I", "X", "所持品"]]
+		lines = [["Space", "A", "構える"], ["Tab", "Y", "武器切替"], ["I", "X", "所持品"]]
 		if can_cast:
 			lines.append(["M", "RB", "魔法"])
 		lines.append(["Esc", "Start", "メニュー"])

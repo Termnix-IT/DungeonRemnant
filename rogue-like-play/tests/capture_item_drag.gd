@@ -89,14 +89,14 @@ func capture() -> void:
 	run.inventory_panel.present(player)
 	await settle()
 	var panel = run.inventory_panel
-	var list: ItemCardList = panel.list
+	var list: StockGrid = panel.stock
 	var index: int = player.inventory.entries.find_custom(func(entry: InventoryEntry): return entry.item == ARMOR)
-	var from: Vector2 = list.get_global_transform() * list.get_item_rect(index).get_center()
+	var from: Vector2 = list.cells[list.place_of(index)].get_global_rect().get_center()
 	var armor_cell: ItemCell = panel.slot_cells[Equipment.Slot.ARMOR]
 	await drag(from, armor_cell.get_global_rect().get_center(), "inventory_held")
 	check(player.equipment.slots[Equipment.Slot.ARMOR] == ARMOR, "Mouse: carried armor dropped on its slot in the dungeon is worn")
 	await drag(armor_cell.get_global_rect().get_center(), list.get_global_rect().get_center(), "inventory_worn_held")
-	check(player.equipment.slots[Equipment.Slot.ARMOR] == null, "Mouse: a worn slot dropped on the list comes off")
+	check(player.equipment.slots[Equipment.Slot.ARMOR] == null, "Mouse: a worn slot dropped on the grid comes off")
 	var main_weapon: ItemData = player.equipment.slots[Equipment.Slot.MAIN]
 	await drag(panel.slot_cells[Equipment.Slot.SUB].get_global_rect().get_center(), panel.slot_cells[Equipment.Slot.MAIN].get_global_rect().get_center())
 	check(player.equipment.slots[Equipment.Slot.SUB] == main_weapon, "Mouse: the weapons dropped on each other swap")

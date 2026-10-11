@@ -531,6 +531,8 @@ func _refresh() -> void:
 	# The log line describes the whole action, so it waits for the playback.
 	hud.refresh(_displayed_hp(), turns.player.stats.max_hp, turns.turn_count, visible_enemies, "" if presentation.playing else turns.last_message, floor_number, dungeon.layout_name, dungeon.terrain_theme_name, final_floor, turns.message_serial)
 	hud.show_progress(progression.level, progression.exp, progression.required_exp())
+	# The figures the HUD leaves out stand in the inventory's header.
+	inventory_panel.show_record(progression.level, progression.exp, progression.required_exp(), turns.turn_count, turns.gold)
 	preview.cells.clear()
 	preview.target_cells.clear()
 	for cell: Vector2i in CombatRules.attack_cells(dungeon.grid, turns.player.cell, turns.player.facing, turns.player.effective_weapon()):
@@ -543,15 +545,11 @@ func _refresh() -> void:
 	preview.queue_redraw()
 	var staff: bool = turns.player.equipment.can_socket(Equipment.Slot.MAIN) or turns.player.equipment.can_socket(Equipment.Slot.SUB)
 	hud.show_aim(preview.visible, turns.player.get_global_transform_with_canvas().origin, staff)
-	hud.show_inventory(turns.player.inventory.entries.size())
-	var main_weapon: ItemData = turns.player.equipment.slots[Equipment.Slot.MAIN]
-	hud.show_weapons(main_weapon, turns.player.equipment.slots[Equipment.Slot.SUB], turns.player.effective_weapon() if main_weapon != null else null)
 	hud.show_mana(turns.player.mp, turns.player.stats.max_mp)
 	# finish_run clears effects in rules; keep the last list on screen through
 	# the defeat and result instead of emptying it before the killing blow shows.
 	if not turns.ended:
 		hud.show_effects(turns.player.active_effects.entries())
-	hud.show_gold(turns.gold)
 	var visible_enemy_cells: Array[Vector2i] = []
 	for enemy: Node2D in turns.enemies:
 		if enemy.visible:

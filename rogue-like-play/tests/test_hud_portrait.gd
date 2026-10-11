@@ -25,21 +25,16 @@ func run_tests() -> void:
 	check(portrait != null and portrait.get_parent() == vitals, "The portrait shares one plate with the vitals")
 	var face_rect := portrait.get_global_rect()
 	check(vitals.get_global_rect().encloses(face_rect), "The portrait frame stays inside the plate")
-	for node_name in ["HpCaption", "HpValue", "HpBar", "MpCaption", "MpValue", "MpBar", "Level", "ExpValue", "ExpBar", "Meta"]:
+	for node_name in ["HpCaption", "HpValue", "HpBar", "MpCaption", "MpValue", "MpBar", "Level", "ExpBar"]:
 		check(not face_rect.intersects((vitals.get_node(node_name) as Control).get_global_rect()), "The portrait leaves %s clear" % node_name)
 	check(face_rect.end.x < (vitals.get_node("HpBar") as Control).get_global_rect().position.x, "HP and MP sit beside the face")
 	check(portrait.theme_type_variation == &"HudPortraitFrame", "The face uses the HUD portrait frame role")
 	check(hud.get_node_or_null("BottomRight") == null and hud.get_node_or_null("TopLeft") == null, "The dungeon HUD has no equipment or floor/Gold panel")
-	check(hud.gold_value.get_parent() == vitals and hud.floor_value.get_parent() == hud.get_node("TopRight"), "Gold sits with the vitals and the floor with the map")
-	for node_name in ["Gold"]:
-		check(not face_rect.intersects((vitals.get_node(node_name) as Control).get_global_rect()), "The portrait leaves %s clear" % node_name)
-	check(not (vitals.get_node("Meta") as Control).get_global_rect().intersects((vitals.get_node("Gold") as Control).get_global_rect()), "Gold sits beside the turn line")
+	check(hud.floor_value.get_parent() == hud.get_node("TopRight"), "The floor sits with the map")
 
+	# The HP and MP bars read as plain gauges, without quarter notches.
 	for bar_name in ["HpBar", "MpBar"]:
-		var bar: ProgressBar = vitals.get_node(bar_name)
-		var ticks := vitals.get_node_or_null(bar_name + "Ticks") as VitalTicks
-		check(ticks != null and ticks.get_index() == bar.get_index() + 1 and ticks.get_rect() == bar.get_rect(), "%s has quarter notches drawn just above it" % bar_name)
-		check(ticks != null and ticks.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Notches never take input")
+		check(vitals.get_node_or_null(bar_name + "Ticks") == null, "%s has no quarter notches" % bar_name)
 	var track := (vitals.get_node("HpTrail") as ProgressBar).get_theme_stylebox(&"background") as StyleBoxTexture
 	check(track != null and track.expand_margin_top > 0.0, "The HP gauge frame surrounds the bar without moving it")
 	hud.show_health(24, 24)

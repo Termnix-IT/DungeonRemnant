@@ -1,9 +1,11 @@
 extends SceneTree
 
-# The HUD's weapon row and its notice band: the row shows the weapon the attack
-# really uses and follows a swap at once; announcement banners share the band
-# at the screen's top edge with the boss gauge, which steps aside while one
-# shows, stay off the floor round the hero, and wait for one another.
+# The HUD's vitals plate, its actions card and its notice band: the plate keeps
+# only the face, HP, MP and the level's bar, the card names the weapon swap
+# with the other keys, and the run's figures move to the inventory; banners
+# share the band at the screen's top edge with the boss gauge, which steps
+# aside while one shows, stay off the floor round the hero, and wait for one
+# another.
 var checks := 0
 var failures := 0
 
@@ -26,44 +28,25 @@ func run_tests() -> void:
 	await process_frame
 	var hud = run.hud
 	var player: Node2D = run.turns.player
-	var row: HudWeapon = hud.weapon
 	var vitals: Control = hud.get_node("BottomLeft")
-	check(row != null and row.get_parent() == vitals, "The weapon row sits on the vitals plate")
-	check(vitals.get_global_rect().encloses(row.get_global_rect()), "The weapon row stays inside the plate")
+	# The vitals plate holds only what a fight changes: no weapon row (the
+	# weapon shows on the hero), no turn, count or Gold line, no EXP figures.
+	for node_name in ["Weapon", "Meta", "Gold", "ExpValue"]:
+		check(vitals.get_node_or_null(node_name) == null, "The vitals plate has no %s" % node_name)
 	var exp_bar: Control = vitals.get_node("ExpBar")
-	check(row.get_global_rect().position.y >= exp_bar.get_global_rect().end.y, "The weapon row sits below the EXP bar")
-	for node_name in ["Meta", "Gold"]:
-		var other: Control = vitals.get_node(node_name)
-		check(row.get_global_rect().end.y <= other.get_global_rect().position.y, "The weapon row sits above %s" % node_name)
-	# The keys the HUD shows nowhere else stand on the card at the bottom right;
-	# Tab stays on the weapon row.
+	check(vitals.get_global_rect().encloses(exp_bar.get_global_rect()) and vitals.get_global_rect().end.y - exp_bar.get_global_rect().end.y < 24.0, "The plate ends just under the EXP bar")
+	# The keys the HUD shows nowhere else stand on the card at the bottom right,
+	# the weapon swap among them.
 	var keys: Array[String] = hud.actions.keys()
-	check("I" in keys and "Space" in keys and not "Tab" in keys, "The actions card names I and Space and leaves Tab to the weapon row")
-	check(row.hint._hints.size() == 1 and row.hint.cap_text(row.hint._hints[0]) == "Tab", "The weapon row shows the Tab key that swaps")
-
+	check("I" in keys and "Space" in keys and "Tab" in keys, "The actions card names I, Space and Tab")
 	var main: ItemData = player.equipment.slots[Equipment.Slot.MAIN]
 	var sub: ItemData = player.equipment.slots[Equipment.Slot.SUB]
-	check(row.name_label.text == main.label() and row.main_glyph.item == main and row.sub_glyph.item == sub, "The row shows the main weapon and the other one beside it")
-	check(row.range_label.text == "射程 %d" % player.effective_weapon().reach, "The range is the attack's own reach")
 	run._on_action("switch", Vector2i.ZERO)
-	check(player.equipment.slots[Equipment.Slot.MAIN] == sub, "Tab swaps the weapons")
-	check(row.name_label.text == sub.label() and row.main_glyph.item == sub and row.sub_glyph.item == main, "The row follows the swap at once")
-	check(row.range_label.text == "射程 %d" % player.effective_weapon().reach and player.effective_weapon().reach == sub.weapon.reach, "The range follows the swap")
-	var spear_range: AbilityData
-	for ability: AbilityData in player.abilities.definitions:
-		if ability.effect == AbilityData.Effect.SPEAR_RANGE:
-			spear_range = ability
-	if sub.weapon.kind == WeaponData.Kind.SPEAR and spear_range != null:
-		player.gain_ability(spear_range)
-		run._refresh()
-		check(row.range_label.text == "射程 %d" % (sub.weapon.reach + spear_range.amount), "An upgrade's extra reach shows in the range")
-	else:
-		check(false, "The second starting weapon is a spear with a range upgrade to test")
-	player.equipment.slots[Equipment.Slot.SUB] = null
+	check(player.equipment.slots[Equipment.Slot.MAIN] == sub and player.equipment.slots[Equipment.Slot.SUB] == main, "Tab swaps the weapons")
+	# The run's figures stand in the inventory's header instead.
 	run._refresh()
-	check(row.sub_glyph.item == null and row.tooltip_text.ends_with("副武器：%s" % HudWeapon.EMPTY), "An empty other slot shows as empty")
-	hud.show_weapons(null, null, null)
-	check(row.name_label.text == HudWeapon.EMPTY and row.range_label.text == "射程 %s" % HudWeapon.EMPTY, "An empty main slot shows a dash")
+	var record: String = run.inventory_panel.record_label.text
+	check(record.contains("Lv 1") and record.contains("EXP 0 / ") and record.contains("TURN %d" % run.turns.turn_count) and record.contains("%s G" % UIFormat.amount(run.turns.gold)), "The inventory's header carries Lv, EXP, the turn and Gold")
 
 	# Choosing an attack's direction turns the card into the aim's own and puts
 	# a tag over the hero; the log carries no instructions for it.

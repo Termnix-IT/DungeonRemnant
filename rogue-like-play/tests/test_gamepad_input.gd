@@ -49,13 +49,12 @@ func run_tests() -> void:
 	root.push_input(pad(JOY_BUTTON_X, false))
 	await process_frame
 	var inventory = run.inventory_panel
-	check(inventory.visible and inventory.list.has_focus(), "Gamepad X opens the inventory with the list focused")
+	check(inventory.visible and inventory.stock.cells.has(inventory.get_viewport().gui_get_focus_owner()), "Gamepad X opens the inventory with an icon of the grid focused")
 	var armor_index := -1
 	for index in player.inventory.entries.size():
 		if player.inventory.entries[index].item == LEATHER:
 			armor_index = index
-	inventory.list.select(armor_index)
-	inventory._select_item(armor_index)
+	inventory.select_item(armor_index)
 	check(inventory.activate_selected() and player.equipment.slots[Equipment.Slot.ARMOR] == LEATHER, "Confirm equips armour into its slot")
 	var main_before: ItemData = player.equipment.slots[Equipment.Slot.MAIN]
 	root.push_input(pad(JOY_BUTTON_Y))

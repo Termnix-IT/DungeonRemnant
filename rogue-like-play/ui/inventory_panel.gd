@@ -3,27 +3,29 @@ extends CanvasLayer
 # The dungeon's inventory, in the preparation screen's grammar (HubPrepare):
 # over the shaded dungeon, a dark slab on the left holds the five equipment
 # slots as lit squares across the top and, under a rule, what she carries as
-# a list of two columns; the lighter plate on the right is the decision
-# column: the chosen thing's art and name, what wearing it would change, its
-# description, and the actions with the primary one at the foot.
+# the same icon grid the preparation screen uses (StockGrid: kind tabs, an
+# order, the icons); the lighter plate on the right is the decision column:
+# the chosen thing's art and name, what wearing it would change, its
+# description, and the actions with the primary one at the foot. The header
+# holds the run's figures the HUD leaves out: level and EXP, turn and Gold.
 #
-# Choosing a row shows that item; choosing a slot shows what it holds, with
-# taking it off as the primary action. Enter (A) presses the primary action.
-# The mouse follows the shared drag grammar (ItemDrag): a row dropped on a
-# slot it fits is worn there (a scroll set in a staff), a worn slot dropped on
-# the list comes off, and the weapons dropped on each other swap; none of it
-# costs a turn. Game logic is reached only through action_requested.
+# Choosing an icon (or reaching it with the arrow keys) shows that item;
+# choosing a slot shows what it holds, with taking it off as the primary
+# action. Enter (A) presses the primary action. The mouse follows the shared
+# drag grammar (ItemDrag): an icon dropped on a slot it fits is worn there (a
+# scroll set in a staff), a worn slot dropped on the grid comes off, and the
+# weapons dropped on each other swap; none of it costs a turn. Game logic is
+# reached only through action_requested.
 
 signal action_requested(kind: String, index: int, slot: int)
 signal close_requested
 
 const EMPTY_HINT := "持ち物か装備枠を選ぶと、ここに詳しく表示されます。装備中の5枠は所持品の上限に含みません。"
-const TURN_NOTE := "ターンが進むのは「使う」だけ"
 const COMPARED_STATS := [["hp", "最大HP"], ["attack", "攻撃"], ["defense", "防御"], ["reach", "射程"], ["vision", "視界"]]
 const SLOT_CAPTIONS := Equipment.SLOT_NAMES
 const SLOT_SIZE := 88.0
 const SLOT_ICON := 72.0
-const LIST_COLUMNS := 2
+const STOCK_COLUMNS := 9
 const SECONDARY_HEIGHT := 44.0
 
 var player: Node2D
@@ -48,8 +50,9 @@ var _picking_slot := -1
 # Slot the comparison describes; hovering an equip action previews that slot.
 var preview_slot := -1
 var title_label: Label
-var count_label: Label
-var list: ItemCardList
+# Lv, EXP, turn and Gold, at the header's right (show_record).
+var record_label: Label
+var stock: StockGrid
 var showcase: ItemShowcase
 var details: ItemDetails
 var feedback_label: Label
@@ -73,15 +76,16 @@ func _ready() -> void:
 	work.theme_type_variation = &"DetailStack"
 	_build_slots(work)
 	HubUI.rule(work)
-	HubUI.label(work, "持ち物", &"SectionLabel")
-	list = ItemCardList.new()
-	list.name = "List"
-	list.max_columns = LIST_COLUMNS
-	list.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	work.add_child(list)
-	list.empty_text = "持ち物はありません"
-	list.resized.connect(_fit_columns)
-	list.item_selected.connect(_select_item)
+	stock = StockGrid.new("持ち物")
+	stock.name = "Stock"
+	stock.columns = STOCK_COLUMNS
+	stock.choose_on_focus = true
+	work.add_child(stock)
+	stock.chosen.connect(_choose_place)
+	# A worn slot dropped on the grid comes off; the main weapon stays.
+	stock.can_receive = _stock_takes
+	stock.received.connect(func(source: ItemCell): _remove(slot_cells.find(source)))
+	ItemDrag.glow(stock, func(data: Variant) -> bool: return data is ItemCell and _stock_takes(data))
 	var column := HubUI.open_column(body, 1.0, &"SlabSolidEnd")
 	_build_column(column)
 	key_guide = KeyGuide.new()
@@ -99,29 +103,29 @@ func _ready() -> void:
 	visibility_changed.connect(func():
 		if not visible:
 			close_magic())
-	list.drag_row = _pick_row
-	list.can_take = _list_takes
-	list.take = _dropped_on_list
-	ItemDrag.glow(list, _list_takes)
 	UIMotion.bind_buttons(panel)
 
 
-# 「所持品」, how many kinds she carries of how many, and on the right which
-# action costs a turn.
+# 「所持品」, and on the right the run's figures (how many kinds she carries
+# shows on the grid itself).
 func _build_header() -> void:
 	var header := HBoxContainer.new()
 	header.name = "Header"
 	panel.add_child(header)
 	title_label = HubUI.label(header, "所持品", &"TitleLabel")
 	title_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	count_label = HubUI.label(header, "", &"NoteLabel")
-	count_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	count_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var note := HubUI.label(header, TURN_NOTE, &"NoteLabel")
-	note.autowrap_mode = TextServer.AUTOWRAP_OFF
-	note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	record_label = HubUI.label(header, "", &"NoteLabel")
+	record_label.name = "Record"
+	record_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	record_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	record_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	record_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+
+
+# The figures the HUD leaves to this screen. required is 0 at the top level.
+func show_record(level: int, exp: int, required: int, turn: int, gold: int) -> void:
+	var progress := "EXP %d / %d" % [exp, required] if required > 0 else "EXP MAX"
+	record_label.text = "Lv %d　%s　　TURN %d　　%s G" % [level, progress, turn, UIFormat.amount(gold)]
 
 
 func _build_slots(work: VBoxContainer) -> void:
@@ -139,11 +143,10 @@ func _build_slots(work: VBoxContainer) -> void:
 		cell.icon_size = SLOT_ICON
 		cell.symbol = ItemGlyph.slot_symbol(slot)
 		cell.pressed.connect(select_slot.bind(slot))
-		# The cell picks itself up (its own _get_drag_data); drops are
-		# forwarded here so it also takes the list's rows.
-		cell.can_accept = _cell_swaps.bind(slot)
-		cell.set_drag_forwarding(Callable(), _can_drop_on_slot.bind(slot), _drop_on_slot.bind(slot))
-		ItemDrag.glow(cell, func(data: Variant) -> bool: return data is Dictionary and _slot_takes(data, slot))
+		# An icon from the grid that fits is worn here; the other weapon's
+		# slot swaps with this one.
+		cell.can_accept = _slot_takes.bind(slot)
+		cell.dropped.connect(_dropped_on_slot.bind(slot))
 		box.add_child(cell)
 		var caption := HubUI.label(box, SLOT_CAPTIONS[slot], &"SectionLabel")
 		caption.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -200,16 +203,13 @@ func present(actor: Node2D) -> void:
 	refresh()
 	show()
 	UIMotion.of(panel).reveal(UIMotion.WINDOW_TIME)
-	# Arrow keys and the D-pad move through the list; the inventory and close
-	# keys are handled by Run in _input before the list can see them.
-	list.grab_focus()
+	# Arrow keys and the D-pad move through the grid; the inventory and close
+	# keys are handled by Run in _input before the grid can see them.
+	focus_stock()
 
 
 func refresh(feedback: String = "") -> void:
-	count_label.text = "%d / %d 種類" % [player.inventory.entries.size(), player.inventory.max_entries]
-	list.clear()
-	for entry: InventoryEntry in player.inventory.entries:
-		list.add_card(entry.item, entry.count, -1, ItemGlyph.category(entry.item))
+	stock.set_stock(player.inventory)
 	for slot in slot_cells.size():
 		var item: ItemData = player.equipment.slots[slot]
 		slot_cells[slot].show_item(item)
@@ -221,22 +221,33 @@ func refresh(feedback: String = "") -> void:
 	magic_hint.visible = magic_slot() >= 0
 	feedback_label.text = feedback
 	feedback_label.visible = not feedback.is_empty()
-	if selected_index >= player.inventory.entries.size():
+	# The grid keeps its choice while the item is still shown at that index (a
+	# use or a filter may take it away); the column follows the grid.
+	if selected_index >= 0 and (selected_index >= player.inventory.entries.size() or stock.place_of(selected_index) < 0):
 		selected_index = -1
-	if selected_index >= 0:
-		list.select(selected_index)
+	stock.choose(stock.place_of(selected_index))
 	_update_actions()
 
 
-# Two columns that share the list's width, so each row keeps its icon, name,
-# main effect and count.
-func _fit_columns() -> void:
-	var room := list.size.x - list.get_theme_stylebox(&"panel").get_minimum_size().x - list.get_v_scroll_bar().get_combined_minimum_size().x
-	var gap := list.get_theme_constant(&"h_separation")
-	list.fixed_column_width = maxi(1, floori((room - gap * (LIST_COLUMNS - 1)) / LIST_COLUMNS) - gap)
+# The focus on the chosen icon, or the first one; on the grid when it is empty.
+func focus_stock() -> void:
+	var place := stock.place_of(selected_index)
+	if place < 0 and not stock.cells.is_empty():
+		place = 0
+	if place >= 0:
+		stock.cells[place].grab_focus()
+	else:
+		stock.grab_focus()
 
 
-func _select_item(index: int) -> void:
+# The item at an inventory index is chosen, as if its icon were clicked.
+func select_item(index: int) -> void:
+	_choose_place(stock.place_of(index))
+
+
+func _choose_place(place: int) -> void:
+	stock.choose(place)
+	var index: int = stock.entries[place].index if place >= 0 and place < stock.entries.size() else -1
 	var changed := selected_index != index or selected_slot >= 0
 	selected_index = index
 	selected_slot = -1
@@ -253,7 +264,7 @@ func select_slot(slot: int) -> void:
 	var changed := selected_slot != slot
 	selected_slot = slot
 	selected_index = -1
-	list.deselect_all()
+	stock.clear_choice()
 	_update_actions()
 	if changed:
 		UIMotion.reveal_selection([details, showcase])
@@ -448,20 +459,14 @@ func _remove(slot: int) -> void:
 	action_requested.emit("unequip", -1, slot)
 
 
-func _pick_row(index: int) -> Variant:
-	if player == null or index < 0 or index >= player.inventory.entries.size():
-		return null
-	return {"item": player.inventory.entries[index].item, "inventory_index": index}
-
-
-# A slot takes a carried row that fits it (a scroll fits a staff), or the
-# other weapon's cell to swap with.
-func _slot_takes(data: Variant, slot: int) -> bool:
-	if player == null:
+# A slot takes an icon from the grid that fits it (a scroll fits a staff), or
+# the other weapon's slot to swap with.
+func _slot_takes(source: ItemCell, slot: int) -> bool:
+	if player == null or source == null:
 		return false
-	if data is Dictionary and data.has("inventory_index"):
-		return _fits(data.item, slot)
-	return data is ItemCell and _cell_swaps(data, slot)
+	if stock.cells.has(source):
+		return source.item != null and _fits(source.item, slot)
+	return _cell_swaps(source, slot)
 
 
 func _cell_swaps(source: ItemCell, slot: int) -> bool:
@@ -470,34 +475,21 @@ func _cell_swaps(source: ItemCell, slot: int) -> bool:
 	return player != null and from >= 0 and from != slot and from in weapons and slot in weapons and player.equipment.slots[Equipment.Slot.SUB] != null
 
 
-func _dropped_on_slot(data: Variant, slot: int) -> void:
-	if data is Dictionary:
-		selected_index = data.inventory_index
-		selected_slot = -1
-		list.select(selected_index)
+func _dropped_on_slot(source: ItemCell, slot: int) -> void:
+	var place := stock.cells.find(source)
+	if place >= 0:
+		select_item(stock.entries[place].index)
 		_equip(slot)
 	else:
 		action_requested.emit("switch", -1, -1)
 
 
-func _can_drop_on_slot(_at: Vector2, data: Variant, slot: int) -> bool:
-	return _slot_takes(data, slot)
-
-
-func _drop_on_slot(_at: Vector2, data: Variant, slot: int) -> void:
-	_dropped_on_slot(data, slot)
-
-
-# The list takes a worn slot back, except the main weapon.
-func _list_takes(data: Variant) -> bool:
-	if player == null or not data is ItemCell:
+# The grid takes a worn slot back, except the main weapon.
+func _stock_takes(source: ItemCell) -> bool:
+	if player == null:
 		return false
-	var slot := slot_cells.find(data)
+	var slot := slot_cells.find(source)
 	return slot >= 0 and slot != Equipment.Slot.MAIN and player.equipment.slots[slot] != null
-
-
-func _dropped_on_list(data: Variant) -> void:
-	_remove(slot_cells.find(data))
 
 
 # The staff M opens the picker for: the main weapon if it is a staff, else
@@ -538,4 +530,4 @@ func close_magic() -> void:
 	magic_picker.hide()
 	_picking_slot = -1
 	if visible:
-		list.grab_focus()
+		focus_stock()
