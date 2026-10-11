@@ -265,10 +265,15 @@ func _play_animation(motion: StringName) -> void:
 		var next_phase := (previous_frame + previous_progress) * next_count / previous_count
 		sprite.set_frame_and_progress(int(next_phase), fmod(next_phase, 1.0))
 	sprite.scale = Vector2.ONE
-	# The outlined 64px sprite ends at row 61; align it to the existing foot marker.
-	sprite.offset = Vector2.ZERO
+	# Her boots stand on the shadow: each direction's picture moves sideways
+	# by its measured shift (MioAnimation.foot_shift), and the sword she holds
+	# moves with her; the shadow stays at the tile's centre.
+	var shift := MioAnimation.foot_shift(MioAnimation.direction_name(facing))
+	sprite.offset = Vector2(shift, 0)
 	# Compensate child transforms so weapons and floor markers keep world size.
-	weapon_visual.position = Vector2(0, 3.0 / sprite.scale.y)
+	weapon_visual.position = Vector2(shift, 3.0 / sprite.scale.y)
 	weapon_visual.scale = Vector2.ONE * (1.5 / sprite.scale.x)
-	foot_marker.position = Vector2(0, 29.0 / sprite.scale.y)
+	# The 64px frame's soles are on row 60, 28px below its centre: the shadow
+	# is centred on them, half under the boots and half before them.
+	foot_marker.position = Vector2(0, 28.0 / sprite.scale.y)
 	foot_marker.scale = Vector2(1.0, 0.5) / sprite.scale

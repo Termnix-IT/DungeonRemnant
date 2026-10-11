@@ -41,6 +41,46 @@ static func build_frame_set() -> SpriteFrames:
 	return frame_set
 
 
+# How far each direction's picture must move sideways so her boots stand on
+# the frame's centre line, where her shadow and the tile's centre are. Side
+# and diagonal views draw her boots up to 11px ahead of the centre, so the
+# shadow trailed behind her feet. Measured once from each direction's resting
+# frame (its lowest four rows are boots alone; the hair ends above them), so a
+# new sheet aligns itself; the walk's stride keeps its own small sway.
+static var _foot_shifts := {}
+
+
+static func foot_shift(direction: StringName) -> float:
+	if _foot_shifts.is_empty():
+		for row in DIRECTIONS.size():
+			var sheet: Texture2D = FRONT_IDLE_SHEET if row == 0 else (SHEET if row < 4 else DIAGONAL_SHEET)
+			var source_row := 0 if row == 0 else (row - 1 if row < 4 else row - 4)
+			var frame := sheet.get_image().get_region(Rect2i(0, source_row * FRAME_SIZE.y, FRAME_SIZE.x, FRAME_SIZE.y))
+			_foot_shifts[DIRECTIONS[row]] = FRAME_SIZE.x * 0.5 - _boot_centre(frame)
+	return _foot_shifts.get(direction, 0.0)
+
+
+static func _boot_centre(frame: Image) -> float:
+	var bottom := -1
+	for y in range(frame.get_height() - 1, -1, -1):
+		for x in frame.get_width():
+			if frame.get_pixel(x, y).a > 0.16:
+				bottom = y
+				break
+		if bottom >= 0:
+			break
+	if bottom < 0:
+		return FRAME_SIZE.x * 0.5
+	var left := frame.get_width()
+	var right := -1
+	for y in range(maxi(bottom - 3, 0), bottom + 1):
+		for x in frame.get_width():
+			if frame.get_pixel(x, y).a > 0.16:
+				left = mini(left, x)
+				right = maxi(right, x)
+	return (left + right + 1) * 0.5
+
+
 static func direction_name(facing: Vector2i) -> StringName:
 	if facing.x != 0 and facing.y != 0:
 		if facing.y > 0:

@@ -39,7 +39,11 @@ func run_tests() -> void:
 	player.reset_step()
 	player.facing = Vector2i.DOWN
 	check(sprite.sprite_frames.get_frame_texture(&"idle_front", 0).get_size() == Vector2(64, 64), "Dungeon front uses a dedicated 64px sprite")
-	check(player.foot_marker.global_position.is_equal_approx(Vector2(0, 26)), "Front idle keeps the floor anchor")
+	check(player.foot_marker.global_position.is_equal_approx(Vector2(0, 25)), "Front idle keeps the floor anchor on her soles")
+	# Her boots stand on the shadow in every direction: side views draw them
+	# well ahead of the frame's centre, so the picture moves to meet it.
+	var right_shift := MioAnimation.foot_shift(&"right")
+	check(right_shift < -5.0 and MioAnimation.foot_shift(&"left") > 5.0 and absf(MioAnimation.foot_shift(&"back")) <= 1.0, "Side views move the picture so the boots meet the shadow")
 	check(sprite.get_node_or_null("IdleEyes") == null, "The dungeon blink is baked into the frames instead of an overlay")
 	var blink_texture := sprite.sprite_frames.get_frame_texture(&"idle_front", 5) as AtlasTexture
 	check(blink_texture.atlas == MioAnimation.FRONT_IDLE_SHEET and blink_texture.region == Rect2(64, 64, 64, 64), "Front idle plays its own blink frame")
@@ -59,13 +63,14 @@ func run_tests() -> void:
 	player.play_step(Vector2i.RIGHT, 48)
 	seen[sprite.frame] = true
 	check(player.position == Vector2.ZERO, "Visual step never moves the logical actor")
-	check(player.weapon_visual.global_position.is_equal_approx(Vector2(-8, 0)), "Weapon follows initial visual step")
-	check(player.foot_marker.global_position.is_equal_approx(Vector2(-8, 26)), "Foot marker follows initial visual step")
+	check(sprite.offset.is_equal_approx(Vector2(right_shift, 0)), "Facing right moves the picture by its boots' shift")
+	check(player.weapon_visual.global_position.is_equal_approx(Vector2(-8 + right_shift, 0)), "Weapon follows initial visual step and her body")
+	check(player.foot_marker.global_position.is_equal_approx(Vector2(-8, 25)), "Foot marker follows initial visual step")
 	player.move_tween.pause()
 	player.move_tween.custom_step(0.05)
 	check(sprite.position.x > -8 and sprite.position.x < 0, "Step interpolates toward destination")
-	check(player.foot_marker.global_position.is_equal_approx(sprite.position + Vector2(0, 29)), "Foot marker remains attached during tween")
-	check(player.weapon_visual.global_position.is_equal_approx(sprite.position + Vector2(0, 3)), "Weapon remains attached during tween")
+	check(player.foot_marker.global_position.is_equal_approx(sprite.position + Vector2(0, 28)), "Foot marker remains attached during tween")
+	check(player.weapon_visual.global_position.is_equal_approx(sprite.position + Vector2(right_shift, 3)), "Weapon remains attached during tween")
 	player.move_tween.play()
 	await create_timer(0.16).timeout
 	check(sprite.position.is_equal_approx(player.BASE_SPRITE_POSITION), "Position settles in 0.12 seconds")
@@ -73,7 +78,7 @@ func run_tests() -> void:
 	await create_timer(0.30).timeout
 	check(seen.size() == 4, "Single step displays all four walk frames")
 	check(sprite.animation == &"idle_right", "Single step returns to idle")
-	check(player.foot_marker.global_position.is_equal_approx(Vector2(0, 26)), "Foot marker settles under feet")
+	check(player.foot_marker.global_position.is_equal_approx(Vector2(0, 25)), "Foot marker settles under feet")
 	var idle_frame := sprite.frame
 	await create_timer(0.8).timeout
 	check(sprite.frame != idle_frame, "Idle animation advances while stationary")
