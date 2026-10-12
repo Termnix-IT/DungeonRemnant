@@ -76,7 +76,7 @@ func _reset_actor(actor: Node2D) -> void:
 		actor.combat_visual.scale = Vector2.ONE
 		actor.combat_visual.rotation = 0.0
 		actor.weapon_visual.rotation = 0.0
-		actor.weapon_visual.position = Vector2(0, 3.75)
+		actor.weapon_visual.position = actor.weapon_rest()
 	else:
 		actor.visual_offset = Vector2.ZERO
 		actor.visual_scale = Vector2.ONE
@@ -239,13 +239,14 @@ func _attack(actor: Node2D, direction: Vector2i, weapon: WeaponData) -> void:
 	if weapon == null or actor.get("weapon_visual") == null:
 		return
 	var blade: Node2D = actor.weapon_visual
+	var rest: Vector2 = actor.weapon_rest()
 	var swing := create_tween()
 	tweens.append(swing)
 	if weapon.kind == WeaponData.Kind.SPEAR:
-		blade.position = Vector2(0, 3.75) - vector * 5.0
+		blade.position = rest - vector * 5.0
 		swing.tween_interval(anticipation)
-		swing.tween_property(blade, "position", Vector2(0, 3.75) + vector * 15.0, 0.04)
-		swing.tween_property(blade, "position", Vector2(0, 3.75), 0.12)
+		swing.tween_property(blade, "position", rest + vector * 15.0, 0.04)
+		swing.tween_property(blade, "position", rest, 0.12)
 	else:
 		blade.rotation = -1.0 if weapon.kind == WeaponData.Kind.SWORD else -1.6
 		swing.tween_interval(anticipation)

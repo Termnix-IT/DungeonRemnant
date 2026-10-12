@@ -27,7 +27,10 @@ func run_tests() -> void:
 	for index in directions.size():
 		player.facing = directions[index]
 		check(sprite.animation == StringName("idle_%s" % names[index]), "Eight-way facing %s" % directions[index])
-		check(player.weapon_visual.show_behind_parent == (directions[index].y < 0), "Weapon depth follows facing")
+		check(not player.weapon_visual.show_behind_parent and player.weapon_rest() == Vector2(MioAnimation.foot_shift(StringName(names[index])), 0) + player.HANDS[StringName(names[index])], "The weapon stays in her hand, drawn over her, facing %s" % names[index])
+	# Each kind of weapon is held as its own picture.
+	for kind: int in player.HELD:
+		check(player.HELD[kind] is Texture2D and player.HELD.values().count(player.HELD[kind]) == 1, "Weapon kind %d has its own held picture" % kind)
 	player.facing = Vector2i.RIGHT
 	player.play_step(Vector2i.RIGHT, 48)
 	sprite.set_frame_and_progress(2, 0.3)
@@ -51,7 +54,7 @@ func run_tests() -> void:
 	check(resting.get_region(Rect2i(0, 128, 64, 64)).get_data() != resting.get_region(Rect2i(64, 128, 64, 64)).get_data(), "Side idle breathes between two frames")
 	player.play_step(Vector2i.DOWN, 48)
 	check(sprite.sprite_frames.get_frame_count(&"walk_front") == 8, "Walking uses eight frames")
-	check(player.weapon_visual.global_scale.is_equal_approx(Vector2(1.5, 1.5)), "High-resolution front keeps weapon size")
+	check(player.weapon_visual.global_scale.is_equal_approx(Vector2.ONE), "The held picture is drawn at her sprite's own pixel size")
 	await create_timer(0.46).timeout
 	check(sprite.animation == &"idle_front", "Front walk returns to quiet idle in the existing step duration")
 	player.facing = Vector2i.RIGHT
@@ -64,13 +67,13 @@ func run_tests() -> void:
 	seen[sprite.frame] = true
 	check(player.position == Vector2.ZERO, "Visual step never moves the logical actor")
 	check(sprite.offset.is_equal_approx(Vector2(right_shift, 0)), "Facing right moves the picture by its boots' shift")
-	check(player.weapon_visual.global_position.is_equal_approx(Vector2(-8 + right_shift, 0)), "Weapon follows initial visual step and her body")
+	check(player.weapon_visual.global_position.is_equal_approx(Vector2(-8 + right_shift, -3) + player.HANDS[&"right"]), "Weapon follows initial visual step and her hand")
 	check(player.foot_marker.global_position.is_equal_approx(Vector2(-8, 25)), "Foot marker follows initial visual step")
 	player.move_tween.pause()
 	player.move_tween.custom_step(0.05)
 	check(sprite.position.x > -8 and sprite.position.x < 0, "Step interpolates toward destination")
 	check(player.foot_marker.global_position.is_equal_approx(sprite.position + Vector2(0, 28)), "Foot marker remains attached during tween")
-	check(player.weapon_visual.global_position.is_equal_approx(sprite.position + Vector2(right_shift, 3)), "Weapon remains attached during tween")
+	check(player.weapon_visual.global_position.is_equal_approx(sprite.position + Vector2(right_shift, 0) + player.HANDS[&"right"]), "Weapon remains attached during tween")
 	player.move_tween.play()
 	await create_timer(0.16).timeout
 	check(sprite.position.is_equal_approx(player.BASE_SPRITE_POSITION), "Position settles in 0.12 seconds")
