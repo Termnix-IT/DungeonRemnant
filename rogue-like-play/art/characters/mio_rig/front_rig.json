@@ -1,0 +1,81 @@
+{
+	"name": "MioRigFront",
+	"layout": "res://art/characters/mio_rig/front_parts.json",
+	"atlas": "res://art/characters/mio_rig/front_parts.png",
+	"output": "res://art/characters/mio_rig/mio_rig_front.tscn",
+	"lean_bone": "Chest",
+	"weapon_anchor": "WeaponAnchor",
+	"eyes": ["EyesOpen", "EyesHalf", "EyesClosed"],
+	"bones": [
+		{"name": "Hip", "at": [519, 960]},
+		{"name": "Chest", "parent": "Hip", "at": [519, 940]},
+		{"name": "Head", "parent": "Chest", "at": [519, 745]},
+		{"name": "HairL1", "parent": "Head", "at": [420, 420], "spring": true, "gain": 0.3},
+		{"name": "HairL2", "parent": "HairL1", "at": [300, 760], "spring": true, "gain": 0.8},
+		{"name": "HairL3", "parent": "HairL2", "at": [180, 1000], "spring": true, "gain": 1.2, "tip": [110, 1215]},
+		{"name": "HairR1", "parent": "Head", "at": [618, 420], "spring": true, "gain": 0.3},
+		{"name": "HairR2", "parent": "HairR1", "at": [738, 760], "spring": true, "gain": 0.8},
+		{"name": "HairR3", "parent": "HairR2", "at": [858, 1000], "spring": true, "gain": 1.2, "tip": [928, 1215]},
+		{"name": "ArmL", "parent": "Chest", "at": [352, 800]},
+		{"name": "HandL", "parent": "ArmL", "at": [262, 1085], "tip": [190, 1420]},
+		{"name": "ArmR", "parent": "Chest", "at": [686, 800], "tip": [776, 1085]},
+		{"name": "LegL", "parent": "Hip", "at": [445, 1020], "tip": [445, 1457]},
+		{"name": "LegR", "parent": "Hip", "at": [593, 1020], "tip": [593, 1457]},
+		{"name": "Hem", "parent": "Hip", "at": [519, 1050], "spring": true, "gain": 0.6, "tip": [519, 1140]}
+	],
+	"anchors": [
+		{"name": "WeaponAnchor", "bone": "HandL", "at": [262, 1085]}
+	],
+	"parts": [
+		{"name": "HairBackL", "bones": ["HairL1", "HairL2", "HairL3"], "grid": [3, 6], "weights": "along", "tip": [110, 1215]},
+		{"name": "HairBackR", "bones": ["HairR1", "HairR2", "HairR3"], "grid": [3, 6], "weights": "along", "tip": [928, 1215]},
+		{"name": "LegL", "bone": "LegL"},
+		{"name": "LegR", "bone": "LegR"},
+		{"name": "Skirt", "bones": ["Hip", "Hem"], "grid": [4, 3], "weights": "along", "tip": [519, 1140]},
+		{"name": "Torso", "bone": "Chest"},
+		{"name": "Sword", "bone": "HandL"},
+		{"name": "ArmL", "bone": "ArmL"},
+		{"name": "ArmR", "bone": "ArmR"},
+		{"name": "Head", "bone": "Head"},
+		{"name": "EyesOpen", "bone": "Head"},
+		{"name": "EyesHalf", "bone": "Head", "visible": false},
+		{"name": "EyesClosed", "bone": "Head", "visible": false}
+	],
+	"animations": {
+		"idle": {
+			"length": 2.4, "loop": true,
+			"tracks": {
+				"Hip:position": [[0.0, [0, 0]], [1.2, [0, 6]], [2.4, [0, 0]]],
+				"Chest:scale": [[0.0, [1, 1]], [1.2, [1.01, 1.035]], [2.4, [1, 1]]],
+				"Head:rotation": [[0.0, 0], [1.2, 2.0], [2.4, 0]],
+				"ArmL:rotation": [[0.0, 0], [1.2, -3.0], [2.4, 0]],
+				"ArmR:rotation": [[0.0, 0], [1.2, 3.0], [2.4, 0]]
+			}
+		},
+		"walk": {
+			"length": 0.4, "loop": true,
+			"tracks": {
+				"Hip:position": [[0.0, [0, 0]], [0.1, [0, -10]], [0.2, [0, 0]], [0.3, [0, -10]], [0.4, [0, 0]]],
+				"Chest:rotation": [[0.0, 0], [0.1, -2.5], [0.2, 0], [0.3, 2.5], [0.4, 0]],
+				"Head:rotation": [[0.0, 0], [0.1, 1.5], [0.2, 0], [0.3, -1.5], [0.4, 0]],
+				"LegL:position": [[0.0, [0, 0]], [0.1, [0, -22]], [0.2, [0, 0]], [0.4, [0, 0]]],
+				"LegR:position": [[0.0, [0, 0]], [0.2, [0, 0]], [0.3, [0, -22]], [0.4, [0, 0]]],
+				"LegL:scale": [[0.0, [1, 1]], [0.1, [1.0, 0.95]], [0.2, [1, 1]], [0.4, [1, 1]]],
+				"LegR:scale": [[0.0, [1, 1]], [0.2, [1, 1]], [0.3, [1.0, 0.95]], [0.4, [1, 1]]],
+				"ArmL:rotation": [[0.0, 0], [0.1, 7], [0.2, 0], [0.3, -7], [0.4, 0]],
+				"ArmR:rotation": [[0.0, 0], [0.1, 7], [0.2, 0], [0.3, -7], [0.4, 0]]
+			}
+		},
+		"attack_sword": {
+			"length": 0.45, "impact": 0.09,
+			"tracks": {
+				"Hip:position": [[0.0, [0, 0]], [0.05, [0, -4]], [0.09, [0, 8]], [0.18, [0, 7]], [0.45, [0, 0]]],
+				"Chest:rotation": [[0.0, 0], [0.05, -6], [0.09, 7], [0.18, 8], [0.45, 0]],
+				"Head:rotation": [[0.0, 0], [0.05, 3], [0.09, -3], [0.18, -3], [0.45, 0]],
+				"ArmL:rotation": [[0.0, 0], [0.05, 105], [0.09, -50], [0.18, -60], [0.45, 0]],
+				"HandL:rotation": [[0.0, 0], [0.05, 35], [0.09, -30], [0.18, -38], [0.45, 0]],
+				"ArmR:rotation": [[0.0, 0], [0.05, -10], [0.09, 14], [0.18, 14], [0.45, 0]]
+			}
+		}
+	}
+}
