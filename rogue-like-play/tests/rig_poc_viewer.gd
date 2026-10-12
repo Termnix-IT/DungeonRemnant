@@ -131,11 +131,11 @@ func _process(_delta: float) -> void:
 	magnified_holder.position = MAGNIFIED_FEET + (visual.position + actor.slide.position) * ZOOM * MAGNIFY
 	magnified_holder.rotation = visual.rotation
 	magnified_holder.scale = Vector2.ONE * ZOOM * MAGNIFY * visual.scale
-	state_label.text = "高さ %d px（画面 %d px）　スナップ %s　%s　FPS %d　処理 %.2f ms　描画 %d 回" % [
+	var fps := maxf(1.0, Engine.get_frames_per_second())
+	state_label.text = "高さ %d px（画面 %d px）　スナップ %s　%s　FPS %d（1フレーム %.2f ms）　描画 %d 回" % [
 		world_height, world_height * ZOOM, "ON" if get_viewport().snap_2d_transforms_to_pixel else "OFF",
 		"負荷 %d体" % (stress.size() + 1) if not stress.is_empty() else "",
-		Engine.get_frames_per_second(), Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
-		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)]
+		fps, 1000.0 / fps, Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)]
 
 
 func _unhandled_input(event: InputEvent) -> void:
