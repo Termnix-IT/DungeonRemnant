@@ -125,6 +125,10 @@ func _check_facings(set_rig: DirectionalRig) -> void:
 		check(holder.visible and (holder.scale.x < 0.0) == source[1] and set_rig.rig.mirrored == source[1], "%s is %s" % [facing_name, "mirrored" if source[1] else "drawn as is"])
 		if DirectionalRig.MIRRORED.has(facing_name) and set_rig.facing_scenes.has(DirectionalRig.MIRRORED[facing_name]):
 			check(source[1], "%s mirrors %s" % [facing_name, DirectionalRig.MIRRORED[facing_name]])
+			# A drawn rig (not a one-piece placeholder) has the flower cut apart to hide.
+			var drawn: bool = set_rig.rig.get_node_or_null(^"Parts/Whole") == null
+			var hideable := set_rig.rig.find_children("*", "Polygon2D", true, false).any(func(part): return part.get_meta(&"mirror_hide", false))
+			check(not drawn or hideable, "%s has the flower and ribbon apart, to hide when mirrored" % facing_name)
 		for part in set_rig.rig.find_children("*", "Polygon2D", true, false):
 			if part.get_meta(&"mirror_hide", false):
 				check(part.visible != source[1], "%s %s shows only when not mirrored" % [facing_name, part.name])

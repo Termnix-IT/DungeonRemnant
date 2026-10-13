@@ -32,7 +32,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "art" / "characters" / "mio_rig" / "source"
@@ -53,6 +53,13 @@ FEATHER = 24
 # and the closing that fills the cuffs (odd sizes, source pixels).
 ARM_REACH = 41
 ARM_CLOSE = 15
+# The left and right halves of the long hair overlap by twice this at the
+# centre line (source pixels), so their shrunk edges never show a seam.
+HAIR_OVERLAP = 16
+# How far past the base's outline a layer may reach (odd, source pixels).
+OUTLINE_GROW = 9
+# Around the hair edit, where the hair the base shows is taken from it.
+HAIR_REACH = 61
 # The sword's picture: its grip and tip (source pixels of front_sword.png).
 SWORD_GRIP = (512, 215)
 SWORD_TIP = (512, 1478)
@@ -61,7 +68,9 @@ SWORD_WIDTH = 1.5
 
 # Each facing's cuts, measured on its base (source pixels). A part is
 # (source, region): the source is a layer, "arms" (the arms cut from the
-# base), "ornament" (the flower and ribbon cut from the base), "sword", or
+# base), "ornament" (the flower and ribbon cut from the base), "hair_shown"
+# (the hair edit under the hair the base shows), "head_over_hair" (the body
+# layer less the hair the base shows), "sword", or
 # "eyes:<layer>" (the eye box of that layer); the region keeps the rows from
 # top to bottom and the columns from left to right, fading the edges named in
 # "fade". center_x is the line between the soles. Left and right in part
@@ -74,8 +83,8 @@ FACINGS: dict[str, dict] = {
 		# Her right hand, on the screen's left, the blade hanging down and out.
 		"sword": {"hand": (262, 1085), "angle": 34.0, "length": 430.0},
 		"parts": {
-			"HairBackL": ("hair", {"right": 519}),
-			"HairBackR": ("hair", {"left": 519}),
+			"HairBackL": ("hair", {"right": 519 + HAIR_OVERLAP}),
+			"HairBackR": ("hair", {"left": 519 - HAIR_OVERLAP}),
 			"LegL": ("legs", {"right": 519}),
 			"LegR": ("legs", {"left": 519}),
 			# Head above the chin; the torso from under the chin down to the
@@ -96,13 +105,15 @@ FACINGS: dict[str, dict] = {
 	# mirrored front_right can hide them.
 	"front_left": {
 		"center_x": 515,
+		# Below the skirt's frill the legs show; the base gives them there.
+		"legs_below": 1165,
 		"layers": ["hair", "legs", "body", "arms", "eyes_half", "eyes_closed"],
 		"eyes": (295, 560, 565, 672),
 		"ornament": (620, 410, 885, 780),
 		"sword": {"hand": (240, 1080), "angle": 30.0, "length": 430.0},
 		"parts": {
-			"HairBackL": ("hair", {"right": 515}),
-			"HairBackR": ("hair", {"left": 515}),
+			"HairBackL": ("hair", {"right": 515 + HAIR_OVERLAP}),
+			"HairBackR": ("hair", {"left": 515 - HAIR_OVERLAP}),
 			"LegL": ("legs", {"right": 515}),
 			"LegR": ("legs", {"left": 515}),
 			"Skirt": ("body", {"top": 905}),
@@ -121,6 +132,9 @@ FACINGS: dict[str, dict] = {
 	# the sword ahead of her; the far arm is behind the body.
 	"left": {
 		"center_x": 515,
+		"arms_as_drawn": True,
+		# Below the skirt's frill the legs show; the base gives them there.
+		"legs_below": 1150,
 		"layers": ["hair", "legs", "body", "arms", "eyes_half", "eyes_closed"],
 		"eyes": (380, 555, 510, 660),
 		"ornament": (560, 395, 805, 760),
@@ -144,19 +158,30 @@ FACINGS: dict[str, dict] = {
 	# body; her right hand, on the screen's right, holds the sword.
 	"back": {
 		"center_x": 513,
+		# Found before the legs edit's upper rows were cleared; with only the
+		# boots left the search loses them.
+		"offsets": {"legs": (-2, -1)},
+		# The hair edit fills in only under the head (to the nape).
+		"hair_fill_below": 760,
+		# The flower and ribbon, which the hair surrounds; they stay the head's.
+		"ribbon": (185, 395, 355, 725),
+		# Below the skirt's frill the legs show; the base gives them there.
+		"legs_below": 1150,
 		"layers": ["hair", "legs", "body", "arms"],
 		"sword": {"hand": (773, 1013), "angle": -30.0, "length": 430.0},
 		"parts": {
-			"LegL": ("legs", {"right": 513}),
-			"LegR": ("legs", {"left": 513}),
+			# The legs edit drew them on up to an adult's hips (its source keeps
+			# only the rows from 1000 down); only what the skirt can hide is used.
+			"LegL": ("legs", {"top": 1040, "right": 513}),
+			"LegR": ("legs", {"top": 1040, "left": 513}),
 			"Skirt": ("body", {"top": 905}),
 			"Torso": ("body", {"top": 700, "bottom": 965, "fade": ["bottom"]}),
-			"HairBackL": ("hair", {"right": 513}),
-			"HairBackR": ("hair", {"left": 513}),
+			"HairBackL": ("hair_shown", {"right": 513 + HAIR_OVERLAP}),
+			"HairBackR": ("hair_shown", {"left": 513 - HAIR_OVERLAP}),
 			"ArmL": ("arms", {"right": 513}),
 			"Sword": ("sword", {}),
 			"ArmR": ("arms", {"left": 513}),
-			"Head": ("body", {"bottom": 740, "fade": ["bottom"]}),
+			"Head": ("head_over_hair", {"bottom": 740, "fade": ["bottom"]}),
 		},
 	},
 	# From behind, turned toward the screen's left: the near (left) hand, on
@@ -164,19 +189,29 @@ FACINGS: dict[str, dict] = {
 	# for the mirrored back_right.
 	"back_left": {
 		"center_x": 495,
+		# Below the skirt's frill the legs show; the base gives them there.
+		"legs_below": 1160,
 		"layers": ["hair", "legs", "body", "arms"],
 		"ornament": (335, 355, 595, 700),
+		# The hair edit is drawn wider than the base, so no shift lays it
+		# well; it is used where it lies, inside the base's outline.
+		"offsets": {"hair": (0, 0)},
+		"hair_fill_below": 760,
 		"sword": {"hand": (200, 1067), "angle": 30.0, "length": 430.0},
 		"parts": {
 			"ArmFar": ("arms", {"left": 600}),
-			"LegL": ("legs", {"right": 495}),
-			"LegR": ("legs", {"left": 495}),
-			"Skirt": ("body", {"top": 905}),
+			# As from behind, the legs edit's source keeps only the rows from
+			# 1000 down, and only what the skirt can hide is used.
+			"LegL": ("legs", {"top": 1040, "right": 495}),
+			"LegR": ("legs", {"top": 1040, "left": 495}),
+			# The body edit drew the frill longer, over the legs; the base's
+			# frill ends here.
+			"Skirt": ("body", {"top": 905, "bottom": 1170}),
 			"Torso": ("body", {"top": 700, "bottom": 965, "fade": ["bottom"]}),
-			"HairBack": ("hair", {}),
+			"HairBack": ("hair_shown", {}),
 			"Sword": ("sword", {}),
 			"ArmNear": ("arms", {"right": 600}),
-			"Head": ("body", {"bottom": 740, "fade": ["bottom"]}),
+			"Head": ("head_over_hair", {"bottom": 740, "fade": ["bottom"]}),
 			"Ornament": ("ornament", {}),
 		},
 	},
@@ -307,6 +342,61 @@ def arms_from_base(base: Image.Image, body: Image.Image, arms: Image.Image) -> I
 	return masked(rgba, closed)
 
 
+# From behind, the long hair is the front of the figure, so the hair edit's
+# own shape and strands would show wherever they differ from the base. The
+# hair the base shows is laid over the edit, which only fills what the head
+# hides, above fill_below; lower down, the gaps between the strands show the
+# coat and skirt, as the base does.
+def hair_from_base(base: Image.Image, hair: Image.Image, fill_below: int, keep_out: tuple | None) -> Image.Image:
+	rgba = np.asarray(base).astype(np.float32) / 255.0
+	shown = hair_shown(base, hair, keep_out)
+	under_head = np.zeros(shown.shape, dtype=bool)
+	under_head[:fill_below] = True
+	out = masked(np.asarray(hair).astype(np.float32) / 255.0, under_head)
+	out.alpha_composite(masked(rgba, shown))
+	return out
+
+
+# Where the base shows the long hair: bluish and not dark, including its
+# shaded strands, the gaps and holes closed, but never inside keep_out (the
+# flower and ribbon's box), which the hair surrounds.
+def hair_shown(base: Image.Image, hair: Image.Image, keep_out: tuple | None = None) -> np.ndarray:
+	rgba = np.asarray(base).astype(np.float32) / 255.0
+	light = rgba[..., :3].mean(axis=2)
+	lavender = (rgba[..., 2] - rgba[..., 1] > 0.03) & (rgba[..., 2] > rgba[..., 0]) & (light > 0.35)
+	near = grow(np.asarray(hair.getchannel("A")) > 128, HAIR_REACH)
+	shown = filled(shrink_mask(grow(lavender & near, 15), 15)) & (rgba[..., 3] > 0.05)
+	if keep_out:
+		x0, y0, x1, y1 = keep_out
+		shown[y0:y1, x0:x1] &= lavender[y0:y1, x0:x1]
+	return shown
+
+
+# The mask with every hole it encloses filled: what the outside cannot reach.
+def filled(mask: np.ndarray) -> np.ndarray:
+	padded = Image.fromarray(np.pad(mask, 1).astype(np.uint8) * 255)
+	ImageDraw.floodfill(padded, (0, 0), 128)
+	return (np.asarray(padded) != 128)[1:-1, 1:-1]
+
+
+# The legs edits come back larger or shifted, and below the skirt the legs
+# are in plain sight, so there the base's own pixels near the edit are laid
+# over it (leaving out the lavender hair beside them); the edit then only
+# continues the legs up under the skirt.
+def legs_from_base(base: Image.Image, legs: Image.Image, below: int) -> Image.Image:
+	rgba = np.asarray(base).astype(np.float32) / 255.0
+	light = rgba[..., :3].mean(axis=2)
+	hair = (rgba[..., 2] - rgba[..., 1] > 0.035) & (light > 0.6)
+	near = grow(np.asarray(legs.getchannel("A")) > 128, ARM_REACH)
+	rows = np.arange(rgba.shape[0])[:, None] >= below
+	shown = (rgba[..., 3] > 0.05) & near & rows & ~hair
+	cut = np.asarray(legs).astype(np.float32) / 255.0
+	cut[..., 3] *= ~rows[:, :1].repeat(cut.shape[1], axis=1)
+	out = masked(cut, np.ones(shown.shape, dtype=bool))
+	out.alpha_composite(masked(rgba, shown))
+	return out
+
+
 # The flower and ribbon, cut from the base inside their box where the body
 # layer (painted without them) differs, so the mirrored facings can hide them.
 def ornament_from_base(base: Image.Image, body: Image.Image, box: tuple[int, int, int, int]) -> Image.Image:
@@ -336,19 +426,36 @@ def shrink_mask(mask: np.ndarray, size: int) -> np.ndarray:
 
 def cut_parts(facing: dict, base: Image.Image, layers: dict[str, Image.Image]) -> dict[str, Image.Image]:
 	sources = dict(layers, base=base)
-	if "arms" in layers:
+	# A facing whose arm lies over the body (a side view) keeps the arms
+	# edit itself: the body layer paints the coat under it, so "what the body
+	# layer lacks" would find no arm.
+	if "arms" in layers and not facing.get("arms_as_drawn", False):
 		sources["arms"] = arms_from_base(base, layers["body"], layers["arms"])
 	if "ornament" in facing:
 		sources["ornament"] = ornament_from_base(base, layers["body"], facing["ornament"])
+	if "legs_below" in facing:
+		sources["legs"] = legs_from_base(base, layers["legs"], facing["legs_below"])
+	if "hair" in layers:
+		keep_out = facing.get("ornament") or facing.get("ribbon")
+		sources["hair_shown"] = hair_from_base(base, layers["hair"], facing.get("hair_fill_below", 0), keep_out)
+		# The head drawn over the long hair: the body layer without the hair
+		# the base shows (its edit paints a dark nape there).
+		sources["head_over_hair"] = masked(np.asarray(layers["body"]).astype(np.float32) / 255.0, ~hair_shown(base, layers["hair"], keep_out))
+	# What a layer paints in is what the base hides, so it lies inside the
+	# base's outline; an edit that drew a part wider (a bigger skirt, more
+	# hair) is cut back to it.
+	outline = grow(np.asarray(base.getchannel("A")) > 128, OUTLINE_GROW)
 	parts = {}
 	for name, (source, region) in facing["parts"].items():
 		if source == "sword":
 			parts[name] = sword_in_figure(base, facing["sword"])
-		elif source.startswith("eyes:"):
+			continue
+		if source.startswith("eyes:"):
 			x0, y0, x1, y1 = facing["eyes"]
-			parts[name] = band(sources[source[5:]], {"top": y0, "bottom": y1, "left": x0, "right": x1})
+			part = band(sources[source[5:]], {"top": y0, "bottom": y1, "left": x0, "right": x1})
 		else:
-			parts[name] = band(sources[source], region)
+			part = band(sources[source], region)
+		parts[name] = masked(np.asarray(part).astype(np.float32) / 255.0, outline)
 	return parts
 
 
@@ -383,7 +490,7 @@ def build(name: str) -> None:
 	layers = {}
 	for layer_name in facing["layers"]:
 		layer = load(f"{name}_{layer_name}")
-		dx, dy = align(layer, base)
+		dx, dy = facing.get("offsets", {}).get(layer_name) or align(layer, base)
 		print(f"{name}_{layer_name}.png: moved by ({dx}, {dy})")
 		layers[layer_name] = shifted(layer, dx, dy)
 	parts = cut_parts(facing, base, layers)
@@ -392,8 +499,9 @@ def build(name: str) -> None:
 		box = part.getchannel("A").getbbox()
 		if box:
 			frame = (min(frame[0], box[0]), min(frame[1], box[1]), max(frame[2], box[2]), max(frame[3], box[3]))
-	# The figure is from the top of the beret to the soles.
-	soles = (layers["legs"] if "legs" in layers else base).getchannel("A").getbbox()[3]
+	# The figure is from the top of the beret to the soles, both the base's:
+	# a legs edit drawn larger would put the soles below the boots shown.
+	soles = base.getchannel("A").getbbox()[3]
 	scale = FIGURE_HEIGHT / (soles - base.getchannel("A").getbbox()[1])
 	pieces: dict[str, Image.Image] = {}
 	at: dict[str, list[int]] = {}
