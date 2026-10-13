@@ -11,6 +11,9 @@ extends Node2D
 #
 # Its origin is between the soles, where the shadow is. Bones rest at
 # rotation 0, so an animation's rotation keys are offsets from the rest pose.
+# Motion is read in the rig's own space, so a rig shown mirrored (a parent
+# with a negative x scale, as DirectionalRig does) leans and swings the right
+# way.
 
 const IDLE := &"idle"
 const WALK := &"walk"
@@ -50,6 +53,14 @@ const BLINK_STEPS := [[0.05, 1], [0.08, 2], [0.05, 1]]
 @export var lean_bone: NodePath
 @export var eye_parts: Array[NodePath] = []
 @export var weapon_anchor_path: NodePath
+# Shown flipped: parts marked "mirror_hide" (the flower and ribbon on her
+# left, which a flipped picture would put on the wrong side) are hidden.
+var mirrored := false:
+	set(value):
+		mirrored = value
+		for part in find_children("*", "Polygon2D", true, false):
+			if part.get_meta(&"mirror_hide", false):
+				part.visible = not mirrored
 
 var animation_player: AnimationPlayer
 var time := 0.0
@@ -63,7 +74,6 @@ var _impulse := Vector2.ZERO
 var _next_blink := 0.0
 var _blink_time := -1.0
 var _lean_node: Bone2D
-var _lean_rest := 0.0
 
 
 func _ready() -> void:
@@ -111,9 +121,10 @@ func step(direction: Vector2) -> void:
 	else:
 		animation_player.play(WALK, WALK_BLEND)
 		_walk_left = walk_length
-	_lean_target = clampf(direction.normalized().x, -1.0, 1.0) * LEAN_ANGLE
+	var local := _local(direction).normalized()
+	_lean_target = clampf(local.x, -1.0, 1.0) * LEAN_ANGLE
 	# The hair and hem are left behind for a moment.
-	_impulse = -direction.normalized()
+	_impulse = -local
 
 
 func attack() -> void:
@@ -133,6 +144,52 @@ func weapon_anchor() -> Node2D:
 	return get_node_or_null(weapon_anchor_path) as Node2D
 
 
+# What another facing's rig needs to carry on from this one: the motion and
+# where it is in it, and the swing of each spring bone by name.
+func pose_state() -> Dictionary:
+	var swings := {}
+	for spring in _springs:
+		swings[spring.bone.name] = [spring.angle, spring.velocity]
+	return {"animation": animation_player.current_animation, "position": animation_player.current_animation_position,
+		"walk_left": _walk_left, "lean": [_lean, _lean_velocity, _lean_target], "swings": swings, "time": time}
+
+
+func resume(state: Dictionary) -> void:
+	var animation: StringName = state.get("animation", IDLE)
+	if animation_player.has_animation(animation):
+		animation_player.play(animation)
+		animation_player.seek(float(state.get("position", 0.0)), true)
+		if animation == ATTACK:
+			animation_player.queue(IDLE)
+	_walk_left = float(state.get("walk_left", 0.0))
+	var lean: Array = state.get("lean", [0.0, 0.0, 0.0])
+	_lean = lean[0]
+	_lean_velocity = lean[1]
+	_lean_target = lean[2]
+	time = float(state.get("time", time))
+	var swings: Dictionary = state.get("swings", {})
+	for spring in _springs:
+		var swing: Array = swings.get(spring.bone.name, [0.0, 0.0])
+		spring.angle = swing[0]
+		spring.velocity = swing[1]
+		spring.last = spring.bone.global_position
+
+
+func _local(vector: Vector2) -> Vector2:
+	return global_transform.affine_inverse().basis_xform(vector)
+
+
+# How far a node is turned within the rig, summed up its bones; a mirrored
+# parent's negative scale makes global_rotation unreliable here.
+func _turn_within(node: Node) -> float:
+	var turn := 0.0
+	while node != null and node != self:
+		if node is Node2D:
+			turn += (node as Node2D).rotation
+		node = node.get_parent()
+	return turn
+
+
 func _apply_lean(delta: float) -> void:
 	var omega := TAU * LEAN_FREQUENCY
 	_lean_velocity += (omega * omega * (_lean_target - _lean) - 2.0 * LEAN_DAMPING * omega * _lean_velocity) * delta
@@ -147,18 +204,18 @@ func _apply_springs(delta: float) -> void:
 	var omega := TAU * SPRING_FREQUENCY
 	var steps := maxi(1, ceili(delta / 0.01))
 	var step_time := delta / steps
-	var world_scale := absf(global_scale.x) if global_scale.x != 0.0 else 1.0
 	for spring in _springs:
 		var bone: Bone2D = spring.bone
 		var parent := bone.get_parent() as Node2D
 		var moved: Vector2 = bone.global_position - spring.last
 		spring.last = bone.global_position
-		# In the rig's own pixels, so a smaller figure swings the same way.
+		# In the rig's own pixels, so a smaller or mirrored figure swings the
+		# same way.
 		var velocity := Vector2.ZERO
 		if moved.length() < TELEPORT_DISTANCE:
-			velocity = moved / delta / world_scale
+			velocity = _local(moved) / delta
 		# Trail the motion sideways, and hang straight when the parent turns.
-		var parent_turn := parent.global_rotation - global_rotation
+		var parent_turn := _turn_within(parent)
 		var gain: float = spring.gain
 		var drift := sin(time * TAU / SPRING_DRIFT_PERIOD + float(spring.phase)) * SPRING_DRIFT
 		var target := (-velocity.x * 0.0009 + _impulse.x * 0.18 + drift) * gain - parent_turn * 0.6

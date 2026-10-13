@@ -1,10 +1,12 @@
 extends SceneTree
 
-# The illustration rig PoC (Phase 1): the built front rig loads, keys what the
+# The illustration rig PoC: every facing's built rig loads, keys what the
 # game's timing needs, stays within its budget, ends every motion back on its
-# idle, and keeps its origin on the soles. It touches no game state.
+# idle and keeps its origin on the soles; the eight facings resolve to drawn
+# or mirrored rigs, a mirrored rig hides what a flip puts on the wrong side,
+# and turning mid-stride carries the step on. It touches no game state.
 
-const RIG_SCENE := "res://art/characters/mio_rig/mio_rig_front.tscn"
+const SET_SCENE := "res://art/characters/mio_rig/mio_rig.tscn"
 const BattlePresentation := preload("res://combat/battle_presentation.gd")
 const SWORD := preload("res://data/weapons/sword.tres")
 # A budget that keeps thirty rigs on screen cheap.
@@ -29,62 +31,75 @@ func check(ok: bool, label: String) -> void:
 
 
 func run_tests() -> void:
-	var scene: PackedScene = load(RIG_SCENE)
-	check(scene != null, "The front rig scene loads")
-	if scene == null:
+	var set_scene: PackedScene = load(SET_SCENE)
+	check(set_scene != null, "The hero's directional rig loads")
+	if set_scene == null:
 		quit(1)
 		return
+	var set_rig: DirectionalRig = set_scene.instantiate()
+	check(set_rig.facing_scenes.has(&"front"), "The front is drawn")
+	for facing_name: StringName in set_rig.facing_scenes:
+		await _check_rig(facing_name, set_rig.facing_scenes[facing_name])
+	root.add_child(set_rig)
+	await process_frame
+	_check_facings(set_rig)
+	await _check_turn(set_rig)
+	set_rig.free()
+	print("Character rig tests: %d checks, %d failures" % [checks, failures])
+	quit(1 if failures > 0 else 0)
+
+
+func _check_rig(facing_name: StringName, scene: PackedScene) -> void:
 	var rig: CharacterRig = scene.instantiate()
 	root.add_child(rig)
 	await process_frame
 	rig.set_process(false)
 	var player := rig.animation_player
 	for animation_name: StringName in [&"RESET", CharacterRig.IDLE, CharacterRig.WALK, CharacterRig.ATTACK]:
-		check(player.has_animation(animation_name), "The rig has %s" % animation_name)
+		check(player.has_animation(animation_name), "%s has %s" % [facing_name, animation_name])
 	var walk := player.get_animation(CharacterRig.WALK)
-	check(is_equal_approx(walk.length, 0.4) and walk.loop_mode == Animation.LOOP_LINEAR, "The walk cycle keeps the hero's 0.4 s step")
+	check(is_equal_approx(walk.length, 0.4) and walk.loop_mode == Animation.LOOP_LINEAR, "%s walks the hero's 0.4 s step" % facing_name)
 	var attack := player.get_animation(CharacterRig.ATTACK)
-	check(is_equal_approx(float(attack.get_meta(&"impact", -1.0)), BattlePresentation._impact_delay(SWORD)), "The sword lands when the presentation's hit does")
-	check(player.get_animation(CharacterRig.IDLE).loop_mode == Animation.LOOP_LINEAR, "The idle loops")
+	check(is_equal_approx(float(attack.get_meta(&"impact", -1.0)), BattlePresentation._impact_delay(SWORD)), "%s's sword lands when the presentation's hit does" % facing_name)
+	check(player.get_animation(CharacterRig.IDLE).loop_mode == Animation.LOOP_LINEAR, "%s's idle loops" % facing_name)
 	var tracks := {}
 	for animation_name in player.get_animation_list():
 		var animation := player.get_animation(animation_name)
 		for index in animation.get_track_count():
 			tracks[animation.track_get_path(index)] = true
 	for animation_name in player.get_animation_list():
-		check(player.get_animation(animation_name).get_track_count() == tracks.size(), "%s keys every animated bone" % animation_name)
+		check(player.get_animation(animation_name).get_track_count() == tracks.size(), "%s %s keys every animated bone" % [facing_name, animation_name])
 	var bones := rig.find_children("*", "Bone2D", true, false)
 	var parts := rig.get_node("Parts").get_children()
 	var vertices := 0
 	for part: Polygon2D in parts:
 		vertices += part.polygon.size()
-		check(part.get_bone_count() > 0 and part.skeleton != NodePath(), "%s is skinned to the skeleton" % part.name)
-		check(part.z_index == 0, "%s draws in sibling order, leaking no z_index into the y-sort" % part.name)
+		check(part.get_bone_count() > 0 and part.skeleton != NodePath(), "%s %s is skinned to the skeleton" % [facing_name, part.name])
+		check(part.z_index == 0, "%s %s draws in sibling order, leaking no z_index into the y-sort" % [facing_name, part.name])
 	check(parts.size() <= MAX_PARTS and bones.size() <= MAX_BONES and vertices <= MAX_VERTICES,
-		"The rig stays within budget (%d parts, %d bones, %d vertices)" % [parts.size(), bones.size(), vertices])
-	check(rig.weapon_anchor() != null and rig.weapon_anchor().get_parent() is Bone2D, "The sword hangs from a hand bone")
-	check(rig.eye_parts.size() == 3, "The rig blinks between three eye parts")
-	_check_soles(rig, parts)
+		"%s stays within budget (%d parts, %d bones, %d vertices)" % [facing_name, parts.size(), bones.size(), vertices])
+	check(rig.weapon_anchor() != null and rig.weapon_anchor().get_parent() is Bone2D, "%s's sword hangs from a hand bone" % facing_name)
+	check(rig.eye_parts.size() == 3 or rig.eye_parts.is_empty(), "%s blinks between three eye parts or shows no eyes" % facing_name)
+	_check_soles(facing_name, parts)
 	rig.world_height = 64.0
-	check(is_equal_approx(rig.global_scale.y * rig.figure_height, 64.0), "The figure stands 64 world px tall")
+	check(is_equal_approx(rig.global_scale.y * rig.figure_height, 64.0), "%s stands 64 world px tall" % facing_name)
 	# Steps in a row keep the stride; the walk ends on a half cycle.
 	rig.step(Vector2.DOWN)
 	_advance(rig, 0.2)
 	rig.step(Vector2.DOWN)
-	check(player.current_animation == CharacterRig.WALK, "A second step keeps walking")
+	check(player.current_animation == CharacterRig.WALK, "%s: a second step keeps walking" % facing_name)
 	var left := rig._walk_left
-	var finish := player.current_animation_position + left
-	var remainder := fposmod(finish, 0.2)
-	check(left >= 0.399 and (remainder < 0.001 or remainder > 0.199), "The walk stops with both feet under her")
+	var remainder := fposmod(player.current_animation_position + left, 0.2)
+	check(left >= 0.399 and (remainder < 0.001 or remainder > 0.199), "%s's walk stops with both feet under her" % facing_name)
 	_advance(rig, left + 0.3)
-	check(player.current_animation == CharacterRig.IDLE, "The walk settles into the idle")
+	check(player.current_animation == CharacterRig.IDLE, "%s's walk settles into the idle" % facing_name)
 	rig.attack()
-	check(player.current_animation == CharacterRig.ATTACK, "The attack plays at once")
+	check(player.current_animation == CharacterRig.ATTACK, "%s's attack plays at once" % facing_name)
 	_advance(rig, attack.length + 0.4)
-	check(player.current_animation == CharacterRig.IDLE, "The attack returns to the idle")
-	_check_idle_pose(rig)
-	# Being placed on a new cell is not a swing: the hair must not whip.
-	# A frame's change, so the swing still settling from the attack is not counted.
+	check(player.current_animation == CharacterRig.IDLE, "%s's attack returns to the idle" % facing_name)
+	_check_idle_pose(facing_name, rig)
+	# Being placed on a new cell is not a swing: the hair must not whip. A
+	# frame's change, so the swing still settling from the attack is not counted.
 	_advance(rig, FRAME)
 	var before := {}
 	for bone: Bone2D in bones:
@@ -95,10 +110,43 @@ func run_tests() -> void:
 	for bone: Bone2D in bones:
 		if bone.get_meta(&"spring", false):
 			largest = maxf(largest, absf(bone.rotation - before[bone]))
-	check(largest < 0.02, "A jump to another cell leaves the springs calm (%.3f rad in a frame)" % largest)
+	check(largest < 0.02, "%s: a jump to another cell leaves the springs calm (%.3f rad in a frame)" % [facing_name, largest])
 	rig.free()
-	print("Character rig tests: %d checks, %d failures" % [checks, failures])
-	quit(1 if failures > 0 else 0)
+
+
+func _check_facings(set_rig: DirectionalRig) -> void:
+	var heights := {}
+	for index in MioAnimation.DIRECTIONS.size():
+		var facing_name := MioAnimation.DIRECTIONS[index]
+		set_rig.facing = MioAnimation.FACINGS[index]
+		var source: Array = set_rig.source_of(facing_name)
+		check(set_rig.facing_name == facing_name and set_rig.rig == set_rig._rigs[source[0]], "%s shows its rig" % facing_name)
+		var holder: Node2D = set_rig.rig.get_parent()
+		check(holder.visible and (holder.scale.x < 0.0) == source[1] and set_rig.rig.mirrored == source[1], "%s is %s" % [facing_name, "mirrored" if source[1] else "drawn as is"])
+		if DirectionalRig.MIRRORED.has(facing_name) and set_rig.facing_scenes.has(DirectionalRig.MIRRORED[facing_name]):
+			check(source[1], "%s mirrors %s" % [facing_name, DirectionalRig.MIRRORED[facing_name]])
+		for part in set_rig.rig.find_children("*", "Polygon2D", true, false):
+			if part.get_meta(&"mirror_hide", false):
+				check(part.visible != source[1], "%s %s shows only when not mirrored" % [facing_name, part.name])
+		for other in set_rig._rigs.values():
+			if other != set_rig.rig:
+				check(not other.is_visible_in_tree() and not other.is_processing(), "%s leaves the other rigs hidden and idle" % facing_name)
+		# A flipped parent shows up as a negative y scale in global_scale.
+		heights[facing_name] = absf(set_rig.rig.global_scale.y) * set_rig.rig.figure_height
+	for facing_name in heights:
+		check(is_equal_approx(heights[facing_name], heights[&"front"]), "%s is as tall as the front" % facing_name)
+
+
+# Turning mid-stride keeps the motion and its phase.
+func _check_turn(set_rig: DirectionalRig) -> void:
+	set_rig.facing = Vector2i.DOWN
+	set_rig.step(Vector2.DOWN)
+	_advance(set_rig.rig, 0.13)
+	var position := set_rig.rig.animation_player.current_animation_position
+	set_rig.facing = Vector2i(-1, -1)
+	check(set_rig.rig.animation_player.current_animation == CharacterRig.WALK
+		and is_equal_approx(set_rig.rig.animation_player.current_animation_position, position), "A turn mid-stride carries the step on")
+	await process_frame
 
 
 func _advance(rig: CharacterRig, seconds: float) -> void:
@@ -109,28 +157,26 @@ func _advance(rig: CharacterRig, seconds: float) -> void:
 
 
 # The rig's origin is between her soles: the lowest drawn point is on it.
-func _check_soles(rig: CharacterRig, parts: Array) -> void:
+func _check_soles(facing_name: StringName, parts: Array) -> void:
 	var lowest := -INF
 	for part: Polygon2D in parts:
 		for point in part.polygon:
 			lowest = maxf(lowest, point.y)
 	# The layout trims each part to its pixels plus a small pad.
-	check(lowest >= -1.0 and lowest <= 12.0, "Her soles are on the origin (lowest point %.1f)" % lowest)
+	check(lowest >= -1.0 and lowest <= 12.0, "%s's soles are on the origin (lowest point %.1f)" % [facing_name, lowest])
 
 
 # After any motion, the bones the idle does not key are back at rest.
-func _check_idle_pose(rig: CharacterRig) -> void:
+func _check_idle_pose(facing_name: StringName, rig: CharacterRig) -> void:
 	var idle := rig.animation_player.get_animation(CharacterRig.IDLE)
 	var moving := {}
 	for index in idle.get_track_count():
-		var keys := idle.track_get_key_count(index)
 		var first: Variant = idle.track_get_key_value(index, 0)
-		for key in keys:
+		for key in idle.track_get_key_count(index):
 			if idle.track_get_key_value(index, key) != first:
 				moving[String(idle.track_get_path(index)).get_slice(":", 0)] = true
+	var lean := rig.get_node(rig.lean_bone)
 	for bone: Bone2D in rig.find_children("*", "Bone2D", true, false):
-		if bone.get_meta(&"spring", false) or moving.has("Skeleton/" + String(rig.get_node("Skeleton").get_path_to(bone))):
+		if bone.get_meta(&"spring", false) or bone == lean or moving.has("Skeleton/" + String(rig.get_node("Skeleton").get_path_to(bone))):
 			continue
-		if bone.get_path() == rig.get_node(rig.lean_bone).get_path():
-			continue
-		check(absf(bone.rotation) < 0.002 and bone.position.is_equal_approx(bone.rest.origin), "%s is back at rest after the attack" % bone.name)
+		check(absf(bone.rotation) < 0.002 and bone.position.is_equal_approx(bone.rest.origin), "%s %s is back at rest after the attack" % [facing_name, bone.name])

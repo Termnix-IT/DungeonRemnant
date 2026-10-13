@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://actors/rig/directional_rig.gd" id="1_ek4sk"]
+[ext_resource type="PackedScene" path="res://art/characters/mio_rig/mio_rig_front.tscn" id="2_0h8oq"]
+[ext_resource type="PackedScene" path="res://art/characters/mio_rig/mio_rig_front_left.tscn" id="3_0h8oq"]
+[ext_resource type="PackedScene" path="res://art/characters/mio_rig/mio_rig_left.tscn" id="4_j6d34"]
+[ext_resource type="PackedScene" path="res://art/characters/mio_rig/mio_rig_back.tscn" id="5_4uy1m"]
+[ext_resource type="PackedScene" path="res://art/characters/mio_rig/mio_rig_back_left.tscn" id="6_2sf3t"]
+
+[node name="MioRig" type="Node2D" unique_id=847602596]
+script = ExtResource("1_ek4sk")
+facing_scenes = Dictionary[StringName, PackedScene]({
+&"back": ExtResource("5_4uy1m"),
+&"back_left": ExtResource("6_2sf3t"),
+&"front": ExtResource("2_0h8oq"),
+&"front_left": ExtResource("3_0h8oq"),
+&"left": ExtResource("4_j6d34")
+})

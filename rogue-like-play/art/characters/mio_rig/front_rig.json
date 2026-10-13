@@ -3,6 +3,8 @@
 	"layout": "res://art/characters/mio_rig/front_parts.json",
 	"atlas": "res://art/characters/mio_rig/front_parts.png",
 	"output": "res://art/characters/mio_rig/mio_rig_front.tscn",
+	"set": "res://art/characters/mio_rig/mio_rig.tscn",
+	"facing": "front",
 	"lean_bone": "Chest",
 	"weapon_anchor": "WeaponAnchor",
 	"eyes": ["EyesOpen", "EyesHalf", "EyesClosed"],

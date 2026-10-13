@@ -1,10 +1,11 @@
 extends SceneTree
 
 # Captures the rig PoC viewer (tests/rig_poc_viewer.tscn) for a visual check:
-# the idle, a walk's stride, the sword attack's wind-up, strike and follow,
-# the three heights, pixel snap off, the three screen sizes, and the frame
-# time with thirty-one rigs. Images go to .godot/rig_*.png. Frames are held
-# in memory and written at the end, so writing never delays the next shot.
+# the idle with the eight facings side by side, a walk's stride, the sword
+# attack's wind-up, strike and follow, the strike in each facing, the three
+# heights, pixel snap off, and the frame time with thirty-one rigs. Images
+# go to .godot/rig_*.png. Frames are held in memory and written at the end,
+# so writing never delays the next shot.
 
 var shots: Dictionary = {}
 
@@ -29,10 +30,19 @@ func capture() -> void:
 	await _grab("rig_walk_settled")
 	viewer.do_step(Vector2i.LEFT)
 	await create_timer(0.9).timeout
+	viewer.face(Vector2i.DOWN)
+	await create_timer(0.3).timeout
 	viewer.do_attack()
 	await _grab_at(Time.get_ticks_msec(), {"rig_attack_050": 0.05, "rig_attack_090": 0.09, "rig_attack_160": 0.16, "rig_attack_300": 0.3})
 	await create_timer(0.8).timeout
 	await _grab("rig_attack_settled")
+	for direction: Vector2i in viewer.TURN_ORDER:
+		viewer.face(direction)
+		await create_timer(0.3).timeout
+		viewer.do_attack()
+		await _grab_at(Time.get_ticks_msec(), {"rig_strike_%s" % MioAnimation.direction_name(direction): 0.09})
+		await create_timer(0.8).timeout
+	viewer.face(Vector2i.DOWN)
 	for height in [56.0, 72.0, 64.0]:
 		viewer.set_world_height(height)
 		await create_timer(0.3).timeout
@@ -41,11 +51,6 @@ func capture() -> void:
 	await create_timer(0.3).timeout
 	await _grab("rig_snap_off")
 	viewer.set_snap(true)
-	for resolution in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
-		root.size = resolution
-		await create_timer(0.3).timeout
-		await _grab("rig_%dx%d" % [resolution.x, resolution.y])
-	root.size = Vector2i(1600, 900)
 	var single_ms: float = await _frame_time()
 	viewer.set_stress(true)
 	await create_timer(1.0).timeout

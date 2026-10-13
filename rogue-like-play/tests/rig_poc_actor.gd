@@ -13,12 +13,16 @@ const SOLE_OFFSET := 25.0
 
 var cell := Vector2i.ZERO
 var hp := 10
-var facing := Vector2i.DOWN
+var facing := Vector2i.DOWN:
+	set(value):
+		facing = value
+		if rig != null:
+			rig.facing = value
 var combat_visual: Node2D
 # The presentation turns this for a sword; the rig swings its own sword, so
 # the presentation's turn lands on an empty node.
 var weapon_visual: Node2D
-var rig: CharacterRig
+var rig: DirectionalRig
 var slide: Node2D
 var move_tween: Tween
 
@@ -35,8 +39,9 @@ func setup(rig_scene: PackedScene, world_height: float) -> void:
 	slide.add_child(shadow)
 	rig = rig_scene.instantiate()
 	rig.position = Vector2(0, SOLE_OFFSET)
-	slide.add_child(rig)
 	rig.world_height = world_height
+	rig.facing = facing
+	slide.add_child(rig)
 	weapon_visual = Node2D.new()
 	combat_visual.add_child(weapon_visual)
 
@@ -53,6 +58,7 @@ func reset_step() -> void:
 
 func step_to(next_cell: Vector2i, tile_size: int) -> void:
 	var direction := Vector2(next_cell - cell).normalized()
+	facing = next_cell - cell
 	cell = next_cell
 	position = Vector2(cell * tile_size) + Vector2.ONE * tile_size / 2.0
 	reset_step()

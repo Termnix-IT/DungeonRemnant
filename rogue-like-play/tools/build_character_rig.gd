@@ -14,9 +14,12 @@ extends SceneTree
 ## Rigid parts are one quad on one bone; a part with a bone chain becomes a
 ## grid weighted to the chain by distance, so hair and hems bend smoothly.
 ## Every animation keys the same tracks (missing ones hold the rest pose), so
-## blending from one motion to another never leaves a bone behind.
+## blending from one motion to another never leaves a bone behind. A
+## description with "set" and "facing" also lists the built rig in that
+## DirectionalRig scene under its facing.
 
 const RIG_SCRIPT := preload("res://actors/rig/character_rig.gd")
+const DIRECTIONAL_SCRIPT := preload("res://actors/rig/directional_rig.gd")
 
 
 func _initialize() -> void:
@@ -97,15 +100,19 @@ static func build(description_path: String, atlas_override: Texture2D = null) ->
 	root.add_child(parts)
 	for entry: Dictionary in rig_data.parts:
 		var part_name := String(entry.name)
+		# A facing cut as one picture (its layers not made yet) has only
+		# "Whole" and the sword; the parts it lacks are left out.
 		if not layout.parts.has(part_name):
-			push_error("Layout has no part %s" % part_name)
-			return ERR_INVALID_DATA
+			continue
 		var placed: Dictionary = layout.parts[part_name]
 		var chain: Array = entry.get("bones", [entry.get("bone", "")])
 		var polygon := _part_polygon(placed, feet, entry.get("grid", [1, 1]))
 		polygon.name = part_name
 		polygon.texture = atlas
 		polygon.visible = entry.get("visible", true)
+		# Hidden when the facing is shown mirrored (CharacterRig.mirrored).
+		if entry.get("mirror_hide", false):
+			polygon.set_meta(&"mirror_hide", true)
 		parts.add_child(polygon)
 		polygon.skeleton = polygon.get_path_to(skeleton)
 		var chain_joints: Array[Vector2] = []
@@ -122,7 +129,8 @@ static func build(description_path: String, atlas_override: Texture2D = null) ->
 	root.set("lean_bone", root.get_path_to(bones[String(rig_data.lean_bone)]))
 	var eyes: Array[NodePath] = []
 	for eye_name: String in rig_data.get("eyes", []):
-		eyes.append(NodePath("Parts/" + eye_name))
+		if layout.parts.has(eye_name):
+			eyes.append(NodePath("Parts/" + eye_name))
 	root.set("eye_parts", eyes)
 	if rig_data.has("weapon_anchor"):
 		var anchor: Node = root.find_child(String(rig_data.weapon_anchor), true, false)
@@ -133,6 +141,29 @@ static func build(description_path: String, atlas_override: Texture2D = null) ->
 	if error == OK:
 		error = ResourceSaver.save(scene, String(rig_data.output))
 	root.free()
+	if error == OK and rig_data.has("set"):
+		error = _register(String(rig_data.set), StringName(rig_data.facing), String(rig_data.output))
+	return error
+
+
+# Lists the built facing in the character's DirectionalRig scene, making the
+# scene the first time.
+static func _register(set_path: String, facing: StringName, rig_path: String) -> Error:
+	var holder: Node2D
+	if ResourceLoader.exists(set_path):
+		holder = (ResourceLoader.load(set_path, "", ResourceLoader.CACHE_MODE_IGNORE) as PackedScene).instantiate()
+	else:
+		holder = Node2D.new()
+		holder.set_script(DIRECTIONAL_SCRIPT)
+		holder.name = set_path.get_file().get_basename().to_pascal_case()
+	var scenes: Dictionary = holder.get("facing_scenes").duplicate()
+	scenes[facing] = ResourceLoader.load(rig_path, "", ResourceLoader.CACHE_MODE_REPLACE)
+	holder.set("facing_scenes", scenes)
+	var packed := PackedScene.new()
+	var error := packed.pack(holder)
+	if error == OK:
+		error = ResourceSaver.save(packed, set_path)
+	holder.free()
 	return error
 
 

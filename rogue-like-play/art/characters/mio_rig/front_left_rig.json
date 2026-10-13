@@ -1,0 +1,835 @@
+{
+	"name": "MioRigFrontLeft",
+	"layout": "res://art/characters/mio_rig/front_left_parts.json",
+	"atlas": "res://art/characters/mio_rig/front_left_parts.png",
+	"output": "res://art/characters/mio_rig/mio_rig_front_left.tscn",
+	"set": "res://art/characters/mio_rig/mio_rig.tscn",
+	"facing": "front_left",
+	"lean_bone": "Chest",
+	"weapon_anchor": "WeaponAnchor",
+	"eyes": [
+		"EyesOpen",
+		"EyesHalf",
+		"EyesClosed"
+	],
+	"bones": [
+		{
+			"name": "Hip",
+			"at": [
+				500,
+				975
+			]
+		},
+		{
+			"name": "Chest",
+			"parent": "Hip",
+			"at": [
+				495,
+				945
+			]
+		},
+		{
+			"name": "Head",
+			"parent": "Chest",
+			"at": [
+				480,
+				747
+			]
+		},
+		{
+			"name": "HairL1",
+			"parent": "Head",
+			"at": [
+				380,
+				450
+			],
+			"spring": true,
+			"gain": 0.3
+		},
+		{
+			"name": "HairL2",
+			"parent": "HairL1",
+			"at": [
+				260,
+				780
+			],
+			"spring": true,
+			"gain": 0.8
+		},
+		{
+			"name": "HairL3",
+			"parent": "HairL2",
+			"at": [
+				170,
+				1020
+			],
+			"spring": true,
+			"gain": 1.2,
+			"tip": [
+				130,
+				1200
+			]
+		},
+		{
+			"name": "HairR1",
+			"parent": "Head",
+			"at": [
+				600,
+				450
+			],
+			"spring": true,
+			"gain": 0.3
+		},
+		{
+			"name": "HairR2",
+			"parent": "HairR1",
+			"at": [
+				780,
+				780
+			],
+			"spring": true,
+			"gain": 0.8
+		},
+		{
+			"name": "HairR3",
+			"parent": "HairR2",
+			"at": [
+				900,
+				1020
+			],
+			"spring": true,
+			"gain": 1.2,
+			"tip": [
+				950,
+				1220
+			]
+		},
+		{
+			"name": "ArmL",
+			"parent": "Chest",
+			"at": [
+				393,
+				800
+			]
+		},
+		{
+			"name": "HandL",
+			"parent": "ArmL",
+			"at": [
+				240,
+				1080
+			],
+			"tip": [
+				180,
+				1400
+			]
+		},
+		{
+			"name": "ArmR",
+			"parent": "Chest",
+			"at": [
+				587,
+				800
+			],
+			"tip": [
+				707,
+				1093
+			]
+		},
+		{
+			"name": "LegL",
+			"parent": "Hip",
+			"at": [
+				440,
+				1060
+			],
+			"tip": [
+				427,
+				1473
+			]
+		},
+		{
+			"name": "LegR",
+			"parent": "Hip",
+			"at": [
+				590,
+				1060
+			],
+			"tip": [
+				603,
+				1473
+			]
+		},
+		{
+			"name": "Hem",
+			"parent": "Hip",
+			"at": [
+				500,
+				1060
+			],
+			"spring": true,
+			"gain": 0.6,
+			"tip": [
+				500,
+				1160
+			]
+		}
+	],
+	"anchors": [
+		{
+			"name": "WeaponAnchor",
+			"bone": "HandL",
+			"at": [
+				240,
+				1080
+			]
+		}
+	],
+	"parts": [
+		{
+			"name": "Whole",
+			"bone": "Hip"
+		},
+		{
+			"name": "HairBackL",
+			"bones": [
+				"HairL1",
+				"HairL2",
+				"HairL3"
+			],
+			"grid": [
+				3,
+				6
+			],
+			"weights": "along",
+			"tip": [
+				130,
+				1200
+			]
+		},
+		{
+			"name": "HairBackR",
+			"bones": [
+				"HairR1",
+				"HairR2",
+				"HairR3"
+			],
+			"grid": [
+				3,
+				6
+			],
+			"weights": "along",
+			"tip": [
+				950,
+				1220
+			]
+		},
+		{
+			"name": "LegL",
+			"bone": "LegL"
+		},
+		{
+			"name": "LegR",
+			"bone": "LegR"
+		},
+		{
+			"name": "Skirt",
+			"bones": [
+				"Hip",
+				"Hem"
+			],
+			"grid": [
+				4,
+				3
+			],
+			"weights": "along",
+			"tip": [
+				500,
+				1160
+			]
+		},
+		{
+			"name": "Torso",
+			"bone": "Chest"
+		},
+		{
+			"name": "Sword",
+			"bone": "HandL"
+		},
+		{
+			"name": "ArmL",
+			"bone": "ArmL"
+		},
+		{
+			"name": "ArmR",
+			"bone": "ArmR"
+		},
+		{
+			"name": "Head",
+			"bone": "Head"
+		},
+		{
+			"name": "Ornament",
+			"bone": "Head",
+			"mirror_hide": true
+		},
+		{
+			"name": "EyesOpen",
+			"bone": "Head"
+		},
+		{
+			"name": "EyesHalf",
+			"bone": "Head",
+			"visible": false
+		},
+		{
+			"name": "EyesClosed",
+			"bone": "Head",
+			"visible": false
+		}
+	],
+	"animations": {
+		"idle": {
+			"length": 2.4,
+			"loop": true,
+			"tracks": {
+				"Hip:position": [
+					[
+						0.0,
+						[
+							0,
+							0
+						]
+					],
+					[
+						1.2,
+						[
+							0,
+							6
+						]
+					],
+					[
+						2.4,
+						[
+							0,
+							0
+						]
+					]
+				],
+				"Chest:scale": [
+					[
+						0.0,
+						[
+							1,
+							1
+						]
+					],
+					[
+						1.2,
+						[
+							1.01,
+							1.035
+						]
+					],
+					[
+						2.4,
+						[
+							1,
+							1
+						]
+					]
+				],
+				"Head:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						1.2,
+						2.0
+					],
+					[
+						2.4,
+						0
+					]
+				],
+				"ArmL:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						1.2,
+						-3.0
+					],
+					[
+						2.4,
+						0
+					]
+				],
+				"ArmR:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						1.2,
+						3.0
+					],
+					[
+						2.4,
+						0
+					]
+				]
+			}
+		},
+		"walk": {
+			"length": 0.4,
+			"loop": true,
+			"tracks": {
+				"Hip:position": [
+					[
+						0.0,
+						[
+							0,
+							0
+						]
+					],
+					[
+						0.1,
+						[
+							0,
+							-10
+						]
+					],
+					[
+						0.2,
+						[
+							0,
+							0
+						]
+					],
+					[
+						0.3,
+						[
+							0,
+							-10
+						]
+					],
+					[
+						0.4,
+						[
+							0,
+							0
+						]
+					]
+				],
+				"Chest:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.1,
+						-2.5
+					],
+					[
+						0.2,
+						0
+					],
+					[
+						0.3,
+						2.5
+					],
+					[
+						0.4,
+						0
+					]
+				],
+				"Head:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.1,
+						1.5
+					],
+					[
+						0.2,
+						0
+					],
+					[
+						0.3,
+						-1.5
+					],
+					[
+						0.4,
+						0
+					]
+				],
+				"LegL:position": [
+					[
+						0.0,
+						[
+							0,
+							0
+						]
+					],
+					[
+						0.1,
+						[
+							0,
+							-22
+						]
+					],
+					[
+						0.2,
+						[
+							0,
+							0
+						]
+					],
+					[
+						0.4,
+						[
+							0,
+							0
+						]
+					]
+				],
+				"LegR:position": [
+					[
+						0.0,
+						[
+							0,
+							0
+						]
+					],
+					[
+						0.2,
+						[
+							0,
+							0
+						]
+					],
+					[
+						0.3,
+						[
+							0,
+							-22
+						]
+					],
+					[
+						0.4,
+						[
+							0,
+							0
+						]
+					]
+				],
+				"LegL:scale": [
+					[
+						0.0,
+						[
+							1,
+							1
+						]
+					],
+					[
+						0.1,
+						[
+							1.0,
+							0.95
+						]
+					],
+					[
+						0.2,
+						[
+							1,
+							1
+						]
+					],
+					[
+						0.4,
+						[
+							1,
+							1
+						]
+					]
+				],
+				"LegR:scale": [
+					[
+						0.0,
+						[
+							1,
+							1
+						]
+					],
+					[
+						0.2,
+						[
+							1,
+							1
+						]
+					],
+					[
+						0.3,
+						[
+							1.0,
+							0.95
+						]
+					],
+					[
+						0.4,
+						[
+							1,
+							1
+						]
+					]
+				],
+				"LegL:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.1,
+						6.0
+					],
+					[
+						0.2,
+						0
+					],
+					[
+						0.3,
+						-6.0
+					],
+					[
+						0.4,
+						0
+					]
+				],
+				"LegR:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.1,
+						-6.0
+					],
+					[
+						0.2,
+						0
+					],
+					[
+						0.3,
+						6.0
+					],
+					[
+						0.4,
+						0
+					]
+				],
+				"ArmL:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.1,
+						7
+					],
+					[
+						0.2,
+						0
+					],
+					[
+						0.3,
+						-7
+					],
+					[
+						0.4,
+						0
+					]
+				],
+				"ArmR:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.1,
+						7
+					],
+					[
+						0.2,
+						0
+					],
+					[
+						0.3,
+						-7
+					],
+					[
+						0.4,
+						0
+					]
+				]
+			}
+		},
+		"attack_sword": {
+			"length": 0.45,
+			"impact": 0.09,
+			"tracks": {
+				"Hip:position": [
+					[
+						0.0,
+						[
+							0,
+							0
+						]
+					],
+					[
+						0.05,
+						[
+							0,
+							-4
+						]
+					],
+					[
+						0.09,
+						[
+							0,
+							8
+						]
+					],
+					[
+						0.18,
+						[
+							0,
+							7
+						]
+					],
+					[
+						0.45,
+						[
+							0,
+							0
+						]
+					]
+				],
+				"Chest:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.05,
+						-6
+					],
+					[
+						0.09,
+						7
+					],
+					[
+						0.18,
+						8
+					],
+					[
+						0.45,
+						0
+					]
+				],
+				"Head:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.05,
+						3
+					],
+					[
+						0.09,
+						-3
+					],
+					[
+						0.18,
+						-3
+					],
+					[
+						0.45,
+						0
+					]
+				],
+				"ArmL:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.05,
+						105
+					],
+					[
+						0.09,
+						-50
+					],
+					[
+						0.18,
+						-60
+					],
+					[
+						0.45,
+						0
+					]
+				],
+				"HandL:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.05,
+						35
+					],
+					[
+						0.09,
+						-30
+					],
+					[
+						0.18,
+						-38
+					],
+					[
+						0.45,
+						0
+					]
+				],
+				"ArmR:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.05,
+						-10
+					],
+					[
+						0.09,
+						14
+					],
+					[
+						0.18,
+						14
+					],
+					[
+						0.45,
+						0
+					]
+				]
+			}
+		}
+	}
+}

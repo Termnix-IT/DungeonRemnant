@@ -1,0 +1,765 @@
+{
+	"name": "MioRigBackLeft",
+	"layout": "res://art/characters/mio_rig/back_left_parts.json",
+	"atlas": "res://art/characters/mio_rig/back_left_parts.png",
+	"output": "res://art/characters/mio_rig/mio_rig_back_left.tscn",
+	"set": "res://art/characters/mio_rig/mio_rig.tscn",
+	"facing": "back_left",
+	"lean_bone": "Chest",
+	"weapon_anchor": "WeaponAnchor",
+	"bones": [
+		{
+			"name": "Hip",
+			"at": [
+				495,
+				985
+			]
+		},
+		{
+			"name": "Chest",
+			"parent": "Hip",
+			"at": [
+				480,
+				950
+			]
+		},
+		{
+			"name": "Head",
+			"parent": "Chest",
+			"at": [
+				440,
+				720
+			]
+		},
+		{
+			"name": "HairB1",
+			"parent": "Head",
+			"at": [
+				560,
+				560
+			],
+			"spring": true,
+			"gain": 0.4
+		},
+		{
+			"name": "HairB2",
+			"parent": "HairB1",
+			"at": [
+				680,
+				860
+			],
+			"spring": true,
+			"gain": 0.9
+		},
+		{
+			"name": "HairB3",
+			"parent": "HairB2",
+			"at": [
+				800,
+				1080
+			],
+			"spring": true,
+			"gain": 1.3,
+			"tip": [
+				880,
+				1240
+			]
+		},
+		{
+			"name": "ArmNear",
+			"parent": "Chest",
+			"at": [
+				347,
+				800
+			]
+		},
+		{
+			"name": "HandNear",
+			"parent": "ArmNear",
+			"at": [
+				200,
+				1067
+			],
+			"tip": [
+				150,
+				1380
+			]
+		},
+		{
+			"name": "ArmFar",
+			"parent": "Chest",
+			"at": [
+				640,
+				780
+			],
+			"tip": [
+				947,
+				1000
+			]
+		},
+		{
+			"name": "LegL",
+			"parent": "Hip",
+			"at": [
+				420,
+				1080
+			],
+			"tip": [
+				403,
+				1481
+			]
+		},
+		{
+			"name": "LegR",
+			"parent": "Hip",
+			"at": [
+				590,
+				1080
+			],
+			"tip": [
+				587,
+				1481
+			]
+		},
+		{
+			"name": "Hem",
+			"parent": "Hip",
+			"at": [
+				495,
+				1080
+			],
+			"spring": true,
+			"gain": 0.6,
+			"tip": [
+				495,
+				1150
+			]
+		}
+	],
+	"anchors": [
+		{
+			"name": "WeaponAnchor",
+			"bone": "HandNear",
+			"at": [
+				200,
+				1067
+			]
+		}
+	],
+	"parts": [
+		{
+			"name": "Whole",
+			"bone": "Hip"
+		},
+		{
+			"name": "ArmFar",
+			"bone": "ArmFar"
+		},
+		{
+			"name": "LegL",
+			"bone": "LegL"
+		},
+		{
+			"name": "LegR",
+			"bone": "LegR"
+		},
+		{
+			"name": "Skirt",
+			"bones": [
+				"Hip",
+				"Hem"
+			],
+			"grid": [
+				4,
+				3
+			],
+			"weights": "along",
+			"tip": [
+				495,
+				1150
+			]
+		},
+		{
+			"name": "Torso",
+			"bone": "Chest"
+		},
+		{
+			"name": "HairBack",
+			"bones": [
+				"HairB1",
+				"HairB2",
+				"HairB3"
+			],
+			"grid": [
+				3,
+				6
+			],
+			"weights": "along",
+			"tip": [
+				880,
+				1240
+			]
+		},
+		{
+			"name": "Sword",
+			"bone": "HandNear"
+		},
+		{
+			"name": "ArmNear",
+			"bone": "ArmNear"
+		},
+		{
+			"name": "Head",
+			"bone": "Head"
+		},
+		{
+			"name": "Ornament",
+			"bone": "Head",
+			"mirror_hide": true
+		}
+	],
+	"animations": {
+		"idle": {
+			"length": 2.4,
+			"loop": true,
+			"tracks": {
+				"Hip:position": [
+					[
+						0.0,
+						[
+							0,
+							0
+						]
+					],
+					[
+						1.2,
+						[
+							0,
+							6
+						]
+					],
+					[
+						2.4,
+						[
+							0,
+							0
+						]
+					]
+				],
+				"Chest:scale": [
+					[
+						0.0,
+						[
+							1,
+							1
+						]
+					],
+					[
+						1.2,
+						[
+							1.01,
+							1.035
+						]
+					],
+					[
+						2.4,
+						[
+							1,
+							1
+						]
+					]
+				],
+				"Head:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						1.2,
+						2.0
+					],
+					[
+						2.4,
+						0
+					]
+				],
+				"ArmNear:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						1.2,
+						-3.0
+					],
+					[
+						2.4,
+						0
+					]
+				],
+				"ArmFar:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						1.2,
+						3.0
+					],
+					[
+						2.4,
+						0
+					]
+				]
+			}
+		},
+		"walk": {
+			"length": 0.4,
+			"loop": true,
+			"tracks": {
+				"Hip:position": [
+					[
+						0.0,
+						[
+							0,
+							0
+						]
+					],
+					[
+						0.1,
+						[
+							0,
+							-10
+						]
+					],
+					[
+						0.2,
+						[
+							0,
+							0
+						]
+					],
+					[
+						0.3,
+						[
+							0,
+							-10
+						]
+					],
+					[
+						0.4,
+						[
+							0,
+							0
+						]
+					]
+				],
+				"Chest:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.1,
+						-2.5
+					],
+					[
+						0.2,
+						0
+					],
+					[
+						0.3,
+						2.5
+					],
+					[
+						0.4,
+						0
+					]
+				],
+				"Head:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.1,
+						1.5
+					],
+					[
+						0.2,
+						0
+					],
+					[
+						0.3,
+						-1.5
+					],
+					[
+						0.4,
+						0
+					]
+				],
+				"LegL:position": [
+					[
+						0.0,
+						[
+							0,
+							0
+						]
+					],
+					[
+						0.1,
+						[
+							0,
+							-22
+						]
+					],
+					[
+						0.2,
+						[
+							0,
+							0
+						]
+					],
+					[
+						0.4,
+						[
+							0,
+							0
+						]
+					]
+				],
+				"LegR:position": [
+					[
+						0.0,
+						[
+							0,
+							0
+						]
+					],
+					[
+						0.2,
+						[
+							0,
+							0
+						]
+					],
+					[
+						0.3,
+						[
+							0,
+							-22
+						]
+					],
+					[
+						0.4,
+						[
+							0,
+							0
+						]
+					]
+				],
+				"LegL:scale": [
+					[
+						0.0,
+						[
+							1,
+							1
+						]
+					],
+					[
+						0.1,
+						[
+							1.0,
+							0.95
+						]
+					],
+					[
+						0.2,
+						[
+							1,
+							1
+						]
+					],
+					[
+						0.4,
+						[
+							1,
+							1
+						]
+					]
+				],
+				"LegR:scale": [
+					[
+						0.0,
+						[
+							1,
+							1
+						]
+					],
+					[
+						0.2,
+						[
+							1,
+							1
+						]
+					],
+					[
+						0.3,
+						[
+							1.0,
+							0.95
+						]
+					],
+					[
+						0.4,
+						[
+							1,
+							1
+						]
+					]
+				],
+				"LegL:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.1,
+						6.0
+					],
+					[
+						0.2,
+						0
+					],
+					[
+						0.3,
+						-6.0
+					],
+					[
+						0.4,
+						0
+					]
+				],
+				"LegR:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.1,
+						-6.0
+					],
+					[
+						0.2,
+						0
+					],
+					[
+						0.3,
+						6.0
+					],
+					[
+						0.4,
+						0
+					]
+				],
+				"ArmNear:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.1,
+						7
+					],
+					[
+						0.2,
+						0
+					],
+					[
+						0.3,
+						-7
+					],
+					[
+						0.4,
+						0
+					]
+				],
+				"ArmFar:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.1,
+						7
+					],
+					[
+						0.2,
+						0
+					],
+					[
+						0.3,
+						-7
+					],
+					[
+						0.4,
+						0
+					]
+				]
+			}
+		},
+		"attack_sword": {
+			"length": 0.45,
+			"impact": 0.09,
+			"tracks": {
+				"Hip:position": [
+					[
+						0.0,
+						[
+							0,
+							0
+						]
+					],
+					[
+						0.05,
+						[
+							0,
+							-4
+						]
+					],
+					[
+						0.09,
+						[
+							0,
+							8
+						]
+					],
+					[
+						0.18,
+						[
+							0,
+							7
+						]
+					],
+					[
+						0.45,
+						[
+							0,
+							0
+						]
+					]
+				],
+				"Chest:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.05,
+						-6
+					],
+					[
+						0.09,
+						7
+					],
+					[
+						0.18,
+						8
+					],
+					[
+						0.45,
+						0
+					]
+				],
+				"Head:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.05,
+						3
+					],
+					[
+						0.09,
+						-3
+					],
+					[
+						0.18,
+						-3
+					],
+					[
+						0.45,
+						0
+					]
+				],
+				"ArmNear:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.05,
+						105
+					],
+					[
+						0.09,
+						-50
+					],
+					[
+						0.18,
+						-60
+					],
+					[
+						0.45,
+						0
+					]
+				],
+				"HandNear:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.05,
+						35
+					],
+					[
+						0.09,
+						-30
+					],
+					[
+						0.18,
+						-38
+					],
+					[
+						0.45,
+						0
+					]
+				],
+				"ArmFar:rotation": [
+					[
+						0.0,
+						0
+					],
+					[
+						0.05,
+						-10
+					],
+					[
+						0.09,
+						14
+					],
+					[
+						0.18,
+						14
+					],
+					[
+						0.45,
+						0
+					]
+				]
+			}
+		}
+	}
+}
