@@ -32,8 +32,26 @@ const HANDS := {
 	&"front_left": Vector2(-7, 12), &"front_right": Vector2(7, 12),
 	&"back_left": Vector2(-13, 12), &"back_right": Vector2(13, 12),
 }
+# Drawn as the illustration rig (art/characters/mio_rig/mio_rig.tscn) instead
+# of the pixel sprite. The rig is drawn into its own SubViewport at the
+# screen's resolution with pixel snap off, so its parts move smoothly while
+# the project snaps everything else (the floor's pixel art) to pixels; the
+# picture is then placed in the world as one sprite. Her soles are
+# SOLE_OFFSET below the cell's centre, on her shadow, as the sprite's are.
+const MIO_RIG := preload("res://art/characters/mio_rig/mio_rig.tscn")
+const SOLE_OFFSET := 25.0
+const RIG_HEIGHT := 64.0
+# The world px around her soles the rig's picture covers: the beret, a sword
+# raised overhead and swung out to either side.
+const RIG_BOX := Rect2(-60, -100, 120, 128)
+# A held pixel picture (no illustrated weapon yet for its kind) stands upright
+# in the rig's hand, head up beside her, as a spear or staff is carried; the
+# pictures lie with their tip at the top right.
+const RIG_HELD_TURN := -PI * 0.25
 
 @export var stats: ActorStats
+# Off draws her as the pixel sprite, as before the rig.
+@export var illustrated := true
 @export_range(1, 20) var vision_range: int = 8
 var hp: int
 var mp: int
@@ -60,6 +78,13 @@ var move_tween: Tween
 var combat_visual: Node2D
 # Where the weapon rests in the sprite: her hand, after the facing's shift.
 var _weapon_rest := Vector2.ZERO
+# The illustrated body: the rig, the SubViewport it is drawn in, the sprite
+# showing that picture, and the node a step slides (the picture and shadow).
+var rig: DirectionalRig
+var rig_view: SubViewport
+var rig_display: Sprite2D
+var body: Node2D
+var _rig_holder: Node2D
 
 @onready var sprite: AnimatedSprite2D = $Sprite
 @onready var weapon_visual: Node2D = $Sprite/Weapon
@@ -91,7 +116,79 @@ func _ready() -> void:
 	sprite.reparent(combat_visual, false)
 	weapon_visual.draw.connect(_draw_weapon_silhouette)
 	foot_marker.draw.connect(_draw_foot_marker)
+	if illustrated:
+		_build_rig()
+	set_process(illustrated)
 	_sync_sprite_direction()
+
+
+func _build_rig() -> void:
+	sprite.visible = false
+	sprite.stop()
+	body = Node2D.new()
+	body.name = "Body"
+	combat_visual.add_child(body)
+	foot_marker.reparent(body, false)
+	foot_marker.position = Vector2(0, SOLE_OFFSET)
+	foot_marker.scale = Vector2(1.0, 0.5)
+	rig_view = SubViewport.new()
+	rig_view.name = "RigView"
+	rig_view.transparent_bg = true
+	rig_view.snap_2d_transforms_to_pixel = false
+	rig_view.snap_2d_vertices_to_pixel = false
+	rig_view.render_target_update_mode = SubViewport.UPDATE_WHEN_PARENT_VISIBLE
+	body.add_child(rig_view)
+	_rig_holder = Node2D.new()
+	rig_view.add_child(_rig_holder)
+	rig = MIO_RIG.instantiate()
+	rig.world_height = RIG_HEIGHT
+	_rig_holder.add_child(rig)
+	rig_display = Sprite2D.new()
+	rig_display.name = "RigDisplay"
+	rig_display.centered = false
+	rig_display.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	rig_display.texture = rig_view.get_texture()
+	body.add_child(rig_display)
+	weapon_visual.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	# Its hand is a bone, drawn before the parts; like the sprite's, what she
+	# holds is drawn over her. The rig's view is its own canvas, so this
+	# z_index never reaches the world's y-sort.
+	weapon_visual.z_index = 1
+	_fit_rig_view()
+
+
+func _process(_delta: float) -> void:
+	_fit_rig_view()
+	# Fallen, she lies still rather than breathing on the floor.
+	if hp <= 0 and rig.process_mode != Node.PROCESS_MODE_DISABLED:
+		rig.process_mode = Node.PROCESS_MODE_DISABLED
+
+
+# Draws the rig at the screen's own scale (camera zoom and window stretch),
+# so its picture lands on the screen one texel per pixel.
+func _fit_rig_view() -> void:
+	if not is_inside_tree():
+		return
+	var screen_scale := absf((get_viewport().get_final_transform() * get_global_transform_with_canvas()).get_scale().y)
+	if screen_scale <= 0.0:
+		return
+	var size := Vector2i((RIG_BOX.size * screen_scale).ceil())
+	if rig_view.size != size:
+		rig_view.size = size
+	# The rig's origin is her soles; the box is measured from them.
+	_rig_holder.position = -RIG_BOX.position * screen_scale
+	_rig_holder.scale = Vector2.ONE * screen_scale
+	rig_display.position = Vector2(0, SOLE_OFFSET) + RIG_BOX.position
+	rig_display.scale = Vector2.ONE / screen_scale
+
+
+# The rig plays the swing itself, so the battle presentation keeps only its
+# lunge and pose; false hands the swing back to it (the pixel sprite).
+func play_attack(_weapon: WeaponData) -> bool:
+	if not illustrated:
+		return false
+	rig.attack()
+	return true
 
 
 func play_step(direction: Vector2i, tile_size: int) -> void:
@@ -100,6 +197,9 @@ func play_step(direction: Vector2i, tile_size: int) -> void:
 	if move_tween != null and move_tween.is_valid():
 		move_tween.kill()
 	var visual_direction := Vector2(direction).normalized()
+	if illustrated:
+		_play_rig_step(visual_direction, tile_size)
+		return
 	sprite.position = BASE_SPRITE_POSITION - visual_direction * minf(MOVE_VISUAL_OFFSET, tile_size * 0.25)
 	_play_animation(&"walk")
 	move_tween = create_tween()
@@ -116,11 +216,27 @@ func reset_step() -> void:
 	if move_tween != null and move_tween.is_valid():
 		move_tween.kill()
 	move_tween = null
+	if illustrated:
+		body.position = Vector2.ZERO
+		rig.idle()
+		queue_redraw()
+		return
 	sprite.position = BASE_SPRITE_POSITION
 	_play_animation(&"idle")
 	if hp <= 0:
 		sprite.stop()
 	queue_redraw()
+
+
+# The picture slides the last few pixels into the cell, as the sprite does,
+# and the rig walks; it ends its own stride, so the tween only clears itself.
+func _play_rig_step(direction: Vector2, tile_size: int) -> void:
+	body.position = -direction * minf(MOVE_VISUAL_OFFSET, tile_size * 0.25)
+	rig.step(direction)
+	move_tween = create_tween()
+	move_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	move_tween.tween_property(body, "position", Vector2.ZERO, MOVE_ANIMATION_DURATION)
+	move_tween.finished.connect(func(): move_tween = null)
 
 
 func gain_ability(ability: AbilityData) -> bool:
@@ -227,6 +343,14 @@ func _unhandled_input(event: InputEvent) -> void:
 func _draw() -> void:
 	foot_marker.queue_redraw()
 	weapon_visual.queue_redraw()
+	if illustrated:
+		# The rig draws its own sword; any other weapon is its pixel picture.
+		rig.set_part_shown(&"Sword", _held_kind() == WeaponData.Kind.SWORD)
+
+
+func _held_kind() -> int:
+	var held: ItemData = equipment.slots[Equipment.Slot.MAIN]
+	return held.weapon.kind if held != null and held.weapon != null else -1
 
 
 func _draw_foot_marker() -> void:
@@ -246,6 +370,13 @@ func _draw_weapon_silhouette() -> void:
 		return
 	var size := picture.get_size()
 	var grip := size * GRIP
+	if illustrated:
+		if held.weapon.kind == WeaponData.Kind.SWORD:
+			return
+		# In the rig's hand, which a mirrored facing already flips.
+		weapon_visual.draw_set_transform(Vector2.ZERO, RIG_HELD_TURN)
+		weapon_visual.draw_texture(picture, -grip)
+		return
 	var mirrored: bool = HANDS[MioAnimation.direction_name(facing)].x < 0.0
 	if mirrored:
 		weapon_visual.draw_set_transform(Vector2(grip.x, -grip.y), 0.0, Vector2(-1, 1))
@@ -259,10 +390,27 @@ func weapon_rest() -> Vector2:
 	return _weapon_rest
 
 
+# The rig turns to the facing (carrying its motion on), and the held pixel
+# picture moves to the shown rig's hand at the world's size.
+func _sync_rig_direction() -> void:
+	rig.facing = facing
+	var hand := rig.weapon_anchor()
+	if hand != null and weapon_visual.get_parent() != hand:
+		weapon_visual.reparent(hand, false)
+	weapon_visual.position = Vector2.ZERO
+	weapon_visual.rotation = 0.0
+	weapon_visual.scale = Vector2.ONE / rig.rig.scale
+	_weapon_rest = Vector2.ZERO
+	queue_redraw()
+
+
 func _sync_sprite_direction() -> void:
 	if not is_node_ready():
 		return
 	weapon_visual.queue_redraw()
+	if illustrated:
+		_sync_rig_direction()
+		return
 	var moving := move_tween != null and move_tween.is_valid() and move_tween.is_running()
 	var motion: StringName = &"walk" if moving else &"idle"
 	_play_animation(motion)

@@ -236,6 +236,9 @@ func _attack(actor: Node2D, direction: Vector2i, weapon: WeaponData) -> void:
 	tween.tween_property(visual, property, baseline, 0.12)
 	tween.tween_callback(_hold_frame.bind(actor, -1))
 	_pose(actor, Vector2(0.94, 1.05), vector.x * -0.08, _impact_delay(weapon) + 0.12)
+	# An illustrated hero swings with her own arm, timed to the same impact.
+	if actor.has_method("play_attack") and actor.play_attack(weapon):
+		return
 	if weapon == null or actor.get("weapon_visual") == null:
 		return
 	var blade: Node2D = actor.weapon_visual

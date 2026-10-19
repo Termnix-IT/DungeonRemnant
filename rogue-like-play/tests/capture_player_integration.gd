@@ -29,6 +29,8 @@ func capture() -> void:
 	for row in weapons.size():
 		for column in directions.size():
 			var player = preload("res://actors/player/player.tscn").instantiate()
+			# The pixel sprite's facings and held weapons.
+			player.illustrated = false
 			board.add_child(player)
 			player.position = Vector2(72 + column * 144, 120 + row * 192)
 			player.facing = directions[column]

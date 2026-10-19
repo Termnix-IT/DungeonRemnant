@@ -31,6 +31,8 @@ func run_tests() -> void:
 	check(not grid.can_step(Vector2i(1, 1), Vector2i(3, 1)), "Cannot skip cells")
 	grid.walls.clear()
 	var player := PLAYER.instantiate()
+	# The sprite checks below are the pixel sprite's; test_player_rig.gd covers the rig.
+	player.illustrated = false
 	var enemy := ENEMY.instantiate()
 	root.add_child(player)
 	root.add_child(enemy)

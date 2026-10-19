@@ -76,6 +76,7 @@ func _ready() -> void:
 	actor.cell = Vector2i(3, 3)
 	actor.position = _cell_center(actor.cell)
 	pixel_hero = PlayerScene.instantiate()
+	pixel_hero.illustrated = false
 	pixel_hero.input_enabled = false
 	actors.add_child(pixel_hero)
 	pixel_hero.facing = Vector2i.DOWN

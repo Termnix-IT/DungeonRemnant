@@ -19,6 +19,8 @@ func run_tests() -> void:
 	var main := preload("res://game/main.gd").new()
 	root.add_child(main)
 	var player = preload("res://actors/player/player.tscn").instantiate()
+	# These checks are the pixel sprite's; test_player_rig.gd covers the rig.
+	player.illustrated = false
 	root.add_child(player)
 	var sprite: AnimatedSprite2D = player.sprite
 	var directions := [Vector2i.DOWN, Vector2i(1, 1), Vector2i(-1, 1), Vector2i.UP,
@@ -112,10 +114,12 @@ func run_tests() -> void:
 	run.dungeon_settings.enemy_count = 3
 	root.add_child(run)
 	preload("res://tests/run_fixture.gd").arrange(run)
+	# The game's own hero is the illustration rig.
 	player = run.turns.player
-	sprite = player.sprite
 	run._on_action("move", Vector2i.DOWN)
-	check(sprite.animation == &"walk_front" and player.cell == Vector2i(3, 4), "Successful game action starts walking")
+	# Read after the move: a turn shows another facing's rig.
+	var motion: AnimationPlayer = player.rig.rig.animation_player
+	check(motion.current_animation == CharacterRig.WALK and player.rig.facing_name == &"front" and player.cell == Vector2i(3, 4), "Successful game action starts walking")
 	if run.presentation.playing:
 		await run.presentation.finished
 		await process_frame
@@ -123,22 +127,23 @@ func run_tests() -> void:
 	run.dungeon.grid.walls[player.cell + Vector2i.LEFT] = true
 	var turns_before: int = run.turns.turn_count
 	run._on_action("move", Vector2i.LEFT)
-	check(sprite.animation == &"idle_left" and run.turns.turn_count == turns_before, "Blocked movement turns without walking or spending a turn")
+	motion = player.rig.rig.animation_player
+	check(player.rig.facing_name == &"left" and motion.current_animation != CharacterRig.WALK and run.turns.turn_count == turns_before, "Blocked movement turns without walking or spending a turn")
 	player.aiming = true
 	var event := InputEventAction.new()
 	event.action = "move_n"
 	event.pressed = true
 	player._unhandled_input(event)
-	check(sprite.animation == &"idle_back" and run.turns.turn_count == turns_before, "Aiming changes direction without movement")
+	check(player.rig.facing_name == &"back" and run.turns.turn_count == turns_before, "Aiming changes direction without movement")
 	player.aiming = false
 	run._on_action("switch", Vector2i.UP)
 	check(player.weapon.kind == WeaponData.Kind.SPEAR, "Weapon switch remains available")
 	player.play_step(Vector2i.UP, 48)
 	run._load_floor()
-	check(sprite.animation == &"idle_back" and sprite.position == player.BASE_SPRITE_POSITION, "Floor transition cancels an old step")
+	check(player.rig.rig.animation_player.current_animation == CharacterRig.IDLE and player.body.position == Vector2.ZERO, "Floor transition cancels an old step")
 	player.play_step(Vector2i.UP, 48)
 	run.finish_run(false)
-	check(sprite.animation == &"idle_back" and sprite.position == player.BASE_SPRITE_POSITION, "Run completion cancels an old step")
+	check(player.rig.rig.animation_player.current_animation == CharacterRig.IDLE and player.body.position == Vector2.ZERO, "Run completion cancels an old step")
 	run.free()
 	main.free()
 	print("Player animation tests: %d checks, %d failures" % [checks, failures])

@@ -71,6 +71,15 @@ func weapon_anchor() -> Node2D:
 	return rig.weapon_anchor()
 
 
+# Shows or hides a part (the sword, when another weapon is held) in every
+# facing's rig.
+func set_part_shown(part_name: StringName, shown: bool) -> void:
+	for each in _rigs.values():
+		var part := each.get_node_or_null(NodePath("Parts/" + String(part_name))) as CanvasItem
+		if part != null:
+			part.visible = shown
+
+
 func _show(name: StringName) -> void:
 	if name == facing_name:
 		return

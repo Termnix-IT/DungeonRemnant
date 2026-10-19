@@ -29,6 +29,8 @@ func _ready() -> void:
 
 func _create_player(position_value: Vector2, scale_value: float) -> Node2D:
 	var player := preload("res://actors/player/player.tscn").instantiate()
+	# This preview inspects the pixel sprite.
+	player.illustrated = false
 	player.position = position_value
 	player.scale = Vector2.ONE * scale_value
 	player.input_enabled = false
