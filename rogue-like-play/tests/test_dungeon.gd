@@ -167,6 +167,15 @@ func test_terrain_art() -> void:
 		atlas = run.dungeon.get_node("Terrain").tile_set.get_source(0) as TileSetAtlasSource
 		var expected_path: String = run.dungeon.PAINTED_ATLASES.get(theme_index, theme_paths[theme_index])
 		check(run.dungeon.terrain_theme_index == theme_index and atlas.texture.resource_path == expected_path, "Floor %d loads its complete terrain theme atlas" % floor_value)
+	# Every theme is painted; the forest takes the moss caverns' floor and
+	# its own painted trees, shown smoothly.
+	check(run.dungeon.PAINTED_ATLASES.size() == run.dungeon.TERRAIN_ATLASES.size(), "Every terrain theme has a painted atlas")
+	var forest_settings: DungeonSettings = run.dungeon_settings.duplicate()
+	forest_settings.forest = true
+	run.dungeon.build(forest_settings, 1, rng, false)
+	atlas = run.dungeon.get_node("Terrain").tile_set.get_source(0) as TileSetAtlasSource
+	check(run.dungeon.painted and atlas.texture.resource_path == run.dungeon.PAINTED_ATLASES[1], "The forest's floor is the painted moss caverns'")
+	check(run.dungeon.trees.resource_path == run.dungeon.PAINTED_TREES and run.dungeon.decorations.texture_filter == CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS, "The forest's trees are painted and drawn smoothly")
 	var center := Vector2i(10, 10)
 	var directions: Array[Vector2i] = [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]
 	for expected_mask in 16:

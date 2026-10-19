@@ -26,7 +26,16 @@ const TERRAIN_THEME_NAMES: Array[String] = ["Slate Ruins", "Moss Caverns", "Embe
 # mipmapped linear filtering. Their floor is one texture spread over
 # PAINTED_PERIOD x PAINTED_PERIOD cells (tiles PAINTED_FLOOR_START on), so
 # the floor shows no grid; the aim marks show the cells when it matters.
-const PAINTED_ATLASES := {0: "res://art/tiles/painted/slate_terrain.png"}
+const PAINTED_ATLASES := {
+	0: "res://art/tiles/painted/slate_terrain.png",
+	1: "res://art/tiles/painted/moss_terrain.png",
+	2: "res://art/tiles/painted/ember_terrain.png",
+	3: "res://art/tiles/painted/sanctum_terrain.png",
+}
+# The forest's painted trees (the moss caverns' floor is the forest's too):
+# a row of square frames, shown TREE_WORLD_SIZE world px across.
+const PAINTED_TREES := "res://art/tiles/painted/forest_trees.png"
+const TREE_WORLD_SIZE := 64.0
 const PAINTED_CELL := 96
 const PAINTED_PERIOD := 4
 const PAINTED_FLOOR_START := 21
@@ -68,6 +77,8 @@ var mist := preload("res://world/dungeon/unexplored_mist.gd").new()
 # Off keeps every theme's pixel atlas.
 var painted_terrain := true
 var painted := false
+# The tree frames drawn on forest walls: painted, or the pixel ones.
+var trees: Texture2D = FOREST_TREES
 var wall_shade: Node2D
 
 
@@ -123,7 +134,9 @@ func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenera
 	var terrain: TileMapLayer = $Terrain
 	var remembered: TileMapLayer = $ExploredTerrain
 	var painted_path: String = PAINTED_ATLASES.get(terrain_theme_index, "")
-	painted = painted_terrain and not forest and not painted_path.is_empty() and ResourceLoader.exists(painted_path)
+	painted = painted_terrain and not painted_path.is_empty() and ResourceLoader.exists(painted_path)
+	trees = load(PAINTED_TREES) if painted and ResourceLoader.exists(PAINTED_TREES) else FOREST_TREES
+	decorations.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS if trees != FOREST_TREES else CanvasItem.TEXTURE_FILTER_NEAREST
 	var cell := PAINTED_CELL if painted else TILE_SIZE
 	var count := PAINTED_TILE_COUNT if painted else WALL_TILE_START + WALL_TILE_COUNT
 	terrain.tile_set = _make_tileset(load(painted_path) if painted else TERRAIN_ATLASES[terrain_theme_index], cell, count)
@@ -308,13 +321,14 @@ func _draw_forest_trees() -> void:
 		if grid.walls.has(cell):
 			cells.append(cell)
 	cells.sort_custom(func(a: Vector2i, b: Vector2i): return a.y < b.y or (a.y == b.y and a.x < b.x))
-	var size := float(FOREST_TREES.get_height())
-	var variants := FOREST_TREES.get_width() / int(size)
+	var frame := float(trees.get_height())
+	var variants := trees.get_width() / int(frame)
+	var size := TREE_WORLD_SIZE
 	for cell in cells:
 		var variant := absi(cell.x * 73856093 ^ cell.y * 19349663) % variants
 		var base := Vector2(cell * TILE_SIZE) + Vector2(TILE_SIZE / 2.0, TILE_SIZE)
 		var tint := TREE_TINT if fog.visible.has(cell) else REMEMBERED_TREE_TINT
-		decorations.draw_texture_rect_region(FOREST_TREES, Rect2(base - Vector2(size / 2.0, size - 4.0), Vector2.ONE * size), Rect2(variant * size, 0, size, size), tint)
+		decorations.draw_texture_rect_region(trees, Rect2(base - Vector2(size / 2.0, size - 4.0), Vector2.ONE * size), Rect2(variant * frame, 0, frame, frame), tint)
 
 
 func _draw_decorations() -> void:
