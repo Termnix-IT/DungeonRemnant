@@ -22,6 +22,9 @@ const ATTACK := &"attack_sword"
 # holds its last pose.
 const HURT := &"hurt"
 const DOWN := &"down"
+# Optional: a looping held wind-up, shown while `braced` (an enemy's warning
+# turn) whenever nothing else plays.
+const BRACE := &"brace"
 # Blending between motions, in seconds: a step starts at once, an attack
 # snaps to its wind-up, and the body settles into the idle more slowly.
 const WALK_BLEND := 0.08
@@ -67,6 +70,12 @@ var mirrored := false:
 				part.visible = not mirrored
 
 var animation_player: AnimationPlayer
+var braced := false:
+	set(value):
+		if value == braced:
+			return
+		braced = value
+		_follow_brace()
 var time := 0.0
 var rng := RandomNumberGenerator.new()
 var _springs: Array[Dictionary] = []
@@ -110,6 +119,8 @@ func advance(delta: float) -> void:
 		if _walk_left <= 0.0:
 			_lean_target = 0.0
 			animation_player.play(IDLE, IDLE_BLEND)
+	if braced and animation_player.current_animation == IDLE:
+		_follow_brace()
 	animation_player.advance(delta)
 	_apply_lean(delta)
 	_apply_springs(delta)
@@ -144,6 +155,16 @@ func idle() -> void:
 	_walk_left = 0.0
 	_lean_target = 0.0
 	animation_player.play(IDLE, IDLE_BLEND)
+
+
+func _follow_brace() -> void:
+	if not animation_player.has_animation(BRACE):
+		return
+	var current := animation_player.current_animation
+	if braced and current == IDLE:
+		animation_player.play(BRACE, ATTACK_BLEND * 3.0)
+	elif not braced and current == BRACE:
+		animation_player.play(IDLE, IDLE_BLEND)
 
 
 func hurt() -> void:

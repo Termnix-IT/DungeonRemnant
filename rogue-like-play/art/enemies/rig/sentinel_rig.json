@@ -3,6 +3,7 @@
 	"layout": "res://art/enemies/rig/sentinel_parts.json",
 	"atlas": "res://art/enemies/rig/sentinel_parts.png",
 	"output": "res://art/enemies/rig/basic_rig.tscn",
+	"height": 60,
 	"lean_bone": "Chest",
 	"weapon_anchor": "WeaponAnchor",
 	"bones": [

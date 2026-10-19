@@ -55,6 +55,9 @@ static func build(description_path: String, atlas_override: Texture2D = null) ->
 	root.set_script(RIG_SCRIPT)
 	root.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	root.set("figure_height", float(layout.figure_height))
+	# The height it stands in the world, where the description sets one.
+	if rig_data.has("height"):
+		root.set_meta(&"world_height", float(rig_data.height))
 	var skeleton := Skeleton2D.new()
 	skeleton.name = "Skeleton"
 	root.add_child(skeleton)

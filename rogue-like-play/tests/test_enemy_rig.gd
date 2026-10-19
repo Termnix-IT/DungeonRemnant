@@ -9,6 +9,13 @@ extends SceneTree
 const ENEMY := preload("res://actors/enemy/enemy.tscn")
 const BASIC := preload("res://data/enemies/basic_enemy.tres")
 const FAST := preload("res://data/enemies/fast_enemy.tres")
+const TURRET := preload("res://data/enemies/turret_enemy.tres")
+const BOSS := preload("res://data/enemies/boss.tres")
+# Each named boss's display name, as EnemySprites maps them.
+const MESH_ENEMIES := [
+	"proximity", "fast", "charge", "summoner", "turret",
+	"boss_stone_gate", "boss_gale_warden", "boss_cannon_watcher", "boss_summoning_priest", "boss_ruin_king",
+	"boss_root_warden", "boss_gale_wolf_king", "boss_spore_cannon", "boss_swarm_lord", "boss_ancient_tree_king"]
 const BattlePresentation := preload("res://combat/battle_presentation.gd")
 const FRAME := 1.0 / 60.0
 
@@ -35,14 +42,14 @@ func run_tests() -> void:
 	check(not view.snap_2d_transforms_to_pixel and sentinel.rig_view.show_behind_parent, "Its rig is drawn unsnapped, behind the facing arrow and health bar")
 	# The rig lives in its view's space; in the enemy's (scaled) space it is
 	# world_height tall.
-	check(is_equal_approx(sentinel.rig.world_height * sentinel.scale.y, sentinel.RIG_HEIGHT), "It stands %d world px tall" % sentinel.RIG_HEIGHT)
+	check(is_equal_approx(sentinel.rig.world_height * sentinel.scale.y, 60.0) and is_equal_approx(sentinel.rig_height(), 60.0), "It stands 60 world px tall, as its rig says")
 	sentinel.facing = Vector2i.RIGHT
 	sentinel.visual_offset = Vector2.ZERO
 	check(sentinel.rig_view.scale.x > 0.0, "Facing right shows the rig as drawn")
 	sentinel.facing = Vector2i.LEFT
 	sentinel.visual_offset = Vector2(3, 0)
 	check(sentinel.rig_view.scale.x < 0.0 and sentinel.rig_view.position == Vector2(3, 0) + sentinel.SOLE, "Facing left mirrors it, and it follows the presentation's offset")
-	check(sentinel._health_bar_top() < sentinel.SOLE.y - sentinel.RIG_HEIGHT / sentinel.scale.x + 1.0, "The health bar stays over its head")
+	check(sentinel._health_bar_top() < sentinel.SOLE.y - sentinel.rig_height() / sentinel.scale.x + 1.0, "The health bar stays over its head")
 	var motion: AnimationPlayer = sentinel.rig.animation_player
 	for animation_name: StringName in [CharacterRig.IDLE, CharacterRig.WALK, CharacterRig.ATTACK, CharacterRig.HURT, CharacterRig.DOWN]:
 		check(motion.has_animation(animation_name), "The sentinel has %s" % animation_name)
@@ -91,10 +98,14 @@ func run_tests() -> void:
 	presentation.free()
 	walker.free()
 	hero.free()
-	# Without a rig, or switched off, the strip stays.
-	var rat: Node2D = _enemy(FAST)
-	check(rat.rig == null and rat.has_sprite() == (EnemySprites.sheet_for(rat.stats) != null), "An enemy without a rig keeps its strip")
-	rat.free()
+	# Every other enemy is one bent picture, at its strip's size, with the
+	# motions the presentation cues and a brace for its warning turns.
+	await _check_meshes()
+	# Without a rig (the unnamed fallback boss), or switched off, the strip
+	# or the drawn body stays.
+	var fallback: Node2D = _enemy(BOSS)
+	check(fallback.rig == null and EnemySprites.visual_id(fallback.stats) == "boss", "An enemy without a rig keeps its own drawing")
+	fallback.free()
 	var plain: Node2D = ENEMY.instantiate()
 	plain.stats = BASIC.duplicate()
 	plain.illustrated = false
@@ -103,6 +114,60 @@ func run_tests() -> void:
 	plain.free()
 	print("Enemy rig tests: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures > 0 else 0)
+
+
+func _check_meshes() -> void:
+	var names := {}
+	for display_name: String in EnemySprites.BOSS_IDS:
+		names[EnemySprites.BOSS_IDS[display_name]] = display_name
+	for id: String in MESH_ENEMIES:
+		check(ResourceLoader.exists(_rig_path(id)), "%s has a rig" % id)
+		var stats := _stats_for(id, names)
+		if stats == null:
+			check(false, "%s has enemy data to try it with" % id)
+			continue
+		var enemy: Node2D = _enemy(stats)
+		await process_frame
+		check(enemy.rig != null and EnemySprites.visual_id(enemy.stats) == id, "%s is drawn as its rig" % id)
+		if enemy.rig == null:
+			enemy.free()
+			continue
+		var strip_height := EnemySprites.body_height(EnemySprites.sheet_for(enemy.stats)) * EnemySprites.WORLD_SCALE
+		check(is_equal_approx(enemy.rig_height(), strip_height), "%s keeps its strip's height (%.0f world px)" % [id, strip_height])
+		for animation_name: StringName in [CharacterRig.IDLE, CharacterRig.WALK, CharacterRig.ATTACK, CharacterRig.HURT, CharacterRig.DOWN, CharacterRig.BRACE]:
+			check(enemy.rig.animation_player.has_animation(animation_name), "%s has %s" % [id, animation_name])
+		var box: Rect2 = enemy.rig_view.box
+		check(box.has_point(enemy.SOLE * 0.0) and box.size.y * enemy.scale.y >= strip_height, "%s's view holds its whole figure" % id)
+		enemy.free()
+	# A turret taking aim holds its brace until it fires.
+	var turret: Node2D = _enemy(TURRET)
+	await process_frame
+	turret.shot_direction = Vector2i.LEFT
+	turret._process(FRAME)
+	turret.rig.advance(FRAME)
+	check(turret.rig.animation_player.current_animation == CharacterRig.BRACE, "A turret taking aim braces")
+	turret.shot_direction = Vector2i.ZERO
+	turret._process(FRAME)
+	check(turret.rig.animation_player.current_animation == CharacterRig.IDLE, "It eases back once the shot is gone")
+	turret.free()
+
+
+func _rig_path(id: String) -> String:
+	return "res://art/enemies/rig/%s_rig.tscn" % id
+
+
+# Enemy data whose visual id is this one: a named boss by its display name,
+# the others from their own data.
+func _stats_for(id: String, boss_names: Dictionary) -> EnemyStats:
+	if boss_names.has(id):
+		var stats: EnemyStats = BOSS.duplicate()
+		stats.display_name = boss_names[id]
+		return stats
+	for path in ["basic_enemy", "proximity_enemy", "fast_enemy", "charge_enemy", "summoner_enemy", "turret_enemy"]:
+		var stats: EnemyStats = (load("res://data/enemies/%s.tres" % path) as EnemyStats).duplicate()
+		if EnemySprites.visual_id(stats) == id:
+			return stats
+	return null
 
 
 func _enemy(stats: EnemyStats) -> Node2D:

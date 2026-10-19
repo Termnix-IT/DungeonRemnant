@@ -5,12 +5,15 @@ extends Node2D
 # sprite strip, mirrored when it faces left. Its shadow and the rig sit
 # behind this node's own drawing, so the facing arrow and health bar stay on
 # top. The battle presentation's wind-up, hurt and down frames become the
-# rig's attack, flinch and fall. Enemies without a rig keep their strip.
+# rig's attack, flinch and fall, and the held wind-up of a warning turn its
+# brace. Enemies without a rig keep their strip.
 const RIG_DIRECTORY := "res://art/enemies/rig/"
-# World px from the soles to the top of the head; the hero stands 64.
+# World px from the soles to the top of the head, where neither the rig (its
+# "world_height" meta) nor the strip says; the hero stands 64.
 const RIG_HEIGHT := 60.0
-# World px around the soles the rig's picture covers (a raised weapon, a fall).
-const RIG_BOX := Rect2(-64, -96, 128, 124)
+# Room around the rig's own outline for its motions (a lunge, a raised
+# weapon, a fall), as a share of the outline's larger side.
+const RIG_REACH := 0.4
 # Where a sprite's feet stand in the enemy's own (scaled) space.
 const SOLE := Vector2(0, 13)
 
@@ -86,12 +89,38 @@ func _build_rig() -> void:
 	rig_view.name = "RigView"
 	rig_view.show_behind_parent = true
 	# In this node's scaled space, as the rig is.
-	rig_view.box = Rect2(RIG_BOX.position / scale.x, RIG_BOX.size / scale.x)
 	add_child(rig_view)
 	rig = (load(path) as PackedScene).instantiate()
-	rig.world_height = RIG_HEIGHT / scale.x
+	rig.world_height = rig_height() / scale.x
+	rig_view.box = _rig_box()
 	rig_view.setup(rig)
 	_sync_rig()
+
+
+# The rig's height in world px: its own, or its strip's body, so a rig keeps
+# the size the enemy was designed at.
+func rig_height() -> float:
+	if rig != null and rig.has_meta(&"world_height"):
+		return float(rig.get_meta(&"world_height"))
+	var sheet := EnemySprites.sheet_for(stats)
+	if sheet != null:
+		return EnemySprites.body_height(sheet) * EnemySprites.WORLD_SCALE
+	return RIG_HEIGHT
+
+
+# The rig's outline in this node's space, grown by RIG_REACH.
+func _rig_box() -> Rect2:
+	var bounds := Rect2()
+	var first := true
+	for part: Polygon2D in rig.find_children("*", "Polygon2D", true, false):
+		for point in part.polygon:
+			var at: Vector2 = point * rig.scale
+			if first:
+				bounds = Rect2(at, Vector2.ZERO)
+				first = false
+			else:
+				bounds = bounds.expand(at)
+	return bounds.grow(maxf(bounds.size.x, bounds.size.y) * RIG_REACH)
 
 
 # The rig follows the presentation's offset, squash and tilt, and faces the
@@ -131,7 +160,17 @@ func _update_idle_processing() -> void:
 func _process(delta: float) -> void:
 	_idle_time = fmod(_idle_time + delta, TAU * 2.0)
 	_sync_rig()
+	if rig != null:
+		rig.braced = hp > 0 and _bracing()
 	queue_redraw()
+
+
+# A warning turn: a turret aiming, a charger bracing, a nest about to hatch;
+# the strip holds its wind-up frame, a rig its brace.
+func _bracing() -> bool:
+	if shot_direction != Vector2i.ZERO:
+		return true
+	return stats.behavior == EnemyStats.Behavior.SUMMONER and summon_clock + 1 >= stats.summon_interval
 
 
 func detects(grid: GridState, target: Vector2i) -> bool:
@@ -281,7 +320,7 @@ func _draw() -> void:
 # Sprites stand taller than the drawn bodies; the bar stays just above the head.
 func _health_bar_top() -> float:
 	if rig_view != null:
-		return SOLE.y - RIG_HEIGHT / scale.x - 6.0
+		return SOLE.y - rig_height() / scale.x - 6.0
 	var sheet := EnemySprites.sheet_for(stats)
 	if sheet == null:
 		return -23.0

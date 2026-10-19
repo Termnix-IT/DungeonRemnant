@@ -24,7 +24,8 @@ rig's size and packs them:
 
 	python tools/build_rig_parts.py [character] [facing ...]
 
-The character defaults to mio. With no facing, every facing whose base
+The character defaults to mio; the others are sentinel and enemies (every
+enemy in ENEMY_MESHES, or the ids named). With no facing, every facing whose base
 exists is built. A facing whose
 layers are not all made yet is cut as its base in one piece (WHOLE_PARTS).
 """
@@ -514,6 +515,9 @@ def build(name: str, facings: dict[str, dict]) -> None:
 	# The figure is from the top of the beret to the soles, both the base's:
 	# a legs edit drawn larger would put the soles below the boots shown.
 	soles = base.getchannel("A").getbbox()[3]
+	# The line between the soles; a single picture's is its outline's middle.
+	outline = base.getchannel("A").getbbox()
+	center_x = facing.get("center_x", (outline[0] + outline[2]) / 2)
 	scale = FIGURE_HEIGHT / (soles - base.getchannel("A").getbbox()[1])
 	pieces: dict[str, Image.Image] = {}
 	at: dict[str, list[int]] = {}
@@ -535,7 +539,7 @@ def build(name: str, facings: dict[str, dict]) -> None:
 		"source_origin": [frame[0], frame[1]],
 		"scale": scale,
 		"figure_height": FIGURE_HEIGHT,
-		"feet": [round((facing["center_x"] - frame[0]) * scale, 2), round((soles - frame[1]) * scale, 2)],
+		"feet": [round((center_x - frame[0]) * scale, 2), round((soles - frame[1]) * scale, 2)],
 		"parts": {part_name: {"atlas": places[part_name], "at": at[part_name]} for part_name in parts},
 	}
 	(OUTPUT / f"{name}_parts.json").write_text(json.dumps(layout, indent="\t") + "\n", encoding="utf-8", newline="\n")
@@ -595,11 +599,27 @@ SENTINEL_FACINGS: dict[str, dict] = {
 	},
 }
 
+# The other enemies are one picture each (<id>_base.png), bent as a whole
+# mesh by a few bones, so they need no layer edits. The kind of body says how
+# tools/write_enemy_rigs.py lays out its bones and motions: "blob" (a low
+# mound that squashes), "beast" (a long four-legged body bent along its
+# length) or "upright" (a standing figure bent from the feet up).
+ENEMY_MESHES = {
+	"proximity": "blob", "summoner": "blob",
+	"fast": "beast", "charge": "beast", "boss_gale_wolf_king": "beast", "boss_swarm_lord": "beast",
+	"turret": "upright", "boss_stone_gate": "upright", "boss_gale_warden": "upright",
+	"boss_cannon_watcher": "upright", "boss_summoning_priest": "upright", "boss_ruin_king": "upright",
+	"boss_root_warden": "upright", "boss_spore_cannon": "upright", "boss_ancient_tree_king": "upright",
+}
+MESH_FACING = {"layers": [], "parts": {"Body": ("base", {})}}
+
 CHARACTERS = {
 	"mio": {"source": ROOT / "art" / "characters" / "mio_rig" / "source", "output": ROOT / "art" / "characters" / "mio_rig",
 		"facings": FACINGS, "sword": "front_sword", "grip": (512, 215), "tip": (512, 1478)},
 	"sentinel": {"source": ROOT / "art" / "enemies" / "rig" / "source", "output": ROOT / "art" / "enemies" / "rig",
 		"facings": SENTINEL_FACINGS, "sword": "sentinel_sword", "grip": (512, 370), "tip": (512, 1282)},
+	"enemies": {"source": ROOT / "art" / "enemies" / "rig" / "source", "output": ROOT / "art" / "enemies" / "rig",
+		"facings": {name: MESH_FACING for name in ENEMY_MESHES}, "sword": "sentinel_sword", "grip": (512, 370), "tip": (512, 1282)},
 }
 
 
