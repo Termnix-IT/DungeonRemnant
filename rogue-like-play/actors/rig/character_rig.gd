@@ -18,6 +18,10 @@ extends Node2D
 const IDLE := &"idle"
 const WALK := &"walk"
 const ATTACK := &"attack_sword"
+# Optional motions (an enemy's): flinching from a hit, and falling, which
+# holds its last pose.
+const HURT := &"hurt"
+const DOWN := &"down"
 # Blending between motions, in seconds: a step starts at once, an attack
 # snaps to its wind-up, and the body settles into the idle more slowly.
 const WALK_BLEND := 0.08
@@ -89,6 +93,8 @@ func _ready() -> void:
 				"gain": float(bone.get_meta(&"spring_gain", 1.0)), "last": bone.global_position})
 	_next_blink = rng.randf_range(BLINK_GAP.x, BLINK_GAP.y)
 	animation_player.play(IDLE)
+	# Rigs side by side do not breathe in unison.
+	animation_player.seek(rng.randf() * animation_player.get_animation(IDLE).length, true)
 	visibility_changed.connect(func(): set_process(is_visible_in_tree()))
 
 
@@ -138,6 +144,22 @@ func idle() -> void:
 	_walk_left = 0.0
 	_lean_target = 0.0
 	animation_player.play(IDLE, IDLE_BLEND)
+
+
+func hurt() -> void:
+	if not animation_player.has_animation(HURT) or animation_player.current_animation == DOWN:
+		return
+	_walk_left = 0.0
+	animation_player.play(HURT, ATTACK_BLEND)
+	animation_player.queue(IDLE)
+
+
+func fall() -> void:
+	if not animation_player.has_animation(DOWN):
+		return
+	_walk_left = 0.0
+	animation_player.clear_queue()
+	animation_player.play(DOWN, ATTACK_BLEND)
 
 
 func weapon_anchor() -> Node2D:

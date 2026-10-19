@@ -34,14 +34,20 @@ func run_tests() -> void:
 	root.add_child(player)
 	await process_frame
 	check(player.illustrated and player.rig != null and not player.sprite.visible, "The hero is drawn as the rig, the pixel sprite hidden")
-	check(player.rig_display.texture == player.rig_view.get_texture() and not player.rig_view.snap_2d_transforms_to_pixel and not player.rig_view.snap_2d_vertices_to_pixel,
+	var view: SubViewport = player.rig_view.viewport
+	check(player.rig_view.display.texture == view.get_texture() and not view.snap_2d_transforms_to_pixel and not view.snap_2d_vertices_to_pixel,
 		"The rig is drawn unsnapped in its own view and shown as one picture")
 	check(player.foot_marker.get_parent() == player.body and player.foot_marker.position == Vector2(0, player.SOLE_OFFSET), "Her shadow stays under her soles")
 	check(player.get_child_count() == 1 and player.combat_visual.get_parent() == player, "The presentation's pivot is still her only child")
-	var size: Vector2i = player.rig_view.size
-	var scale: float = 1.0 / player.rig_display.scale.x
+	var size: Vector2i = view.size
+	var scale: float = 1.0 / player.rig_view.display.scale.x
 	check(size == Vector2i((player.RIG_BOX.size * scale).ceil()) and is_equal_approx(scale, absf((player.get_viewport().get_final_transform() * player.get_global_transform_with_canvas()).get_scale().y)),
 		"The view is sized to the screen's scale (%s at %.2f)" % [size, scale])
+	# The presentation's squash is put on the picture, not on the view's size.
+	player.combat_visual.scale = Vector2(1.14, 0.85)
+	await process_frame
+	check(view.size == size, "A squash leaves the view's size alone")
+	player.combat_visual.scale = Vector2.ONE
 	for index in MioAnimation.FACINGS.size():
 		player.facing = MioAnimation.FACINGS[index]
 		check(player.rig.facing_name == MioAnimation.DIRECTIONS[index], "She faces %s" % MioAnimation.DIRECTIONS[index])

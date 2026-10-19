@@ -6,7 +6,7 @@ extends SceneTree
 ##
 ## The rig description (hand-written JSON) names the bones with their joints,
 ## the parts in drawing order with the bones that move them, and the
-## animations. The parts layout (written by tools/build_mio_rig_parts.py)
+## animations. The parts layout (written by tools/build_rig_parts.py)
 ## places each part's picture in the atlas and in the figure. Joints in the
 ## description are pixels of the source illustration, so they can be read off
 ## it directly; the layout's source_origin and scale bring them to the

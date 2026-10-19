@@ -1,6 +1,22 @@
 extends Node2D
 
+# An enemy with an illustration rig (RIG_DIRECTORY/<visual id>_rig.tscn, a
+# CharacterRig drawn facing right) is drawn through a RigView instead of its
+# sprite strip, mirrored when it faces left. Its shadow and the rig sit
+# behind this node's own drawing, so the facing arrow and health bar stay on
+# top. The battle presentation's wind-up, hurt and down frames become the
+# rig's attack, flinch and fall. Enemies without a rig keep their strip.
+const RIG_DIRECTORY := "res://art/enemies/rig/"
+# World px from the soles to the top of the head; the hero stands 64.
+const RIG_HEIGHT := 60.0
+# World px around the soles the rig's picture covers (a raised weapon, a fall).
+const RIG_BOX := Rect2(-64, -96, 128, 124)
+# Where a sprite's feet stand in the enemy's own (scaled) space.
+const SOLE := Vector2(0, 13)
+
 @export var stats: EnemyStats
+# Off keeps the sprite strip even where a rig exists.
+@export var illustrated := true
 var summon_clock := 0
 var summon_due := false
 var summoner: Node2D
@@ -18,28 +34,94 @@ var shot_origin := Vector2i(-1, -1)
 var visual_offset := Vector2.ZERO:
 	set(value):
 		visual_offset = value
+		_sync_rig()
 		queue_redraw()
 var visual_scale := Vector2.ONE:
 	set(value):
 		visual_scale = value
+		_sync_rig()
 		queue_redraw()
 var visual_rotation := 0.0:
 	set(value):
 		visual_rotation = value
+		_sync_rig()
 		queue_redraw()
 # Presentation-held sprite frame (wind-up, strike, hurt); -1 returns to idle.
+# A rig plays the hurt as a flinch and, once fallen, falls; its attack starts
+# from play_attack().
 var pose_frame := -1:
 	set(value):
 		pose_frame = value
 		queue_redraw()
+		if rig != null:
+			if value == EnemySprites.FRAME_HURT:
+				rig.hurt()
+			elif value < 0 and hp <= 0:
+				rig.fall()
 var _idle_time := 0.0
+var rig: CharacterRig
+var rig_view: RigView
+var _rig_shadow: Node2D
 
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	hp = stats.max_hp
+	if illustrated:
+		_build_rig()
 	visibility_changed.connect(_update_idle_processing)
 	_update_idle_processing()
+
+
+func _build_rig() -> void:
+	var path := RIG_DIRECTORY + EnemySprites.visual_id(stats) + "_rig.tscn"
+	if not ResourceLoader.exists(path):
+		return
+	_rig_shadow = Node2D.new()
+	_rig_shadow.name = "RigShadow"
+	_rig_shadow.show_behind_parent = true
+	add_child(_rig_shadow)
+	_rig_shadow.draw.connect(_draw_rig_shadow)
+	rig_view = RigView.new()
+	rig_view.name = "RigView"
+	rig_view.show_behind_parent = true
+	# In this node's scaled space, as the rig is.
+	rig_view.box = Rect2(RIG_BOX.position / scale.x, RIG_BOX.size / scale.x)
+	add_child(rig_view)
+	rig = (load(path) as PackedScene).instantiate()
+	rig.world_height = RIG_HEIGHT / scale.x
+	rig_view.setup(rig)
+	_sync_rig()
+
+
+# The rig follows the presentation's offset, squash and tilt, and faces the
+# way the enemy does.
+func _sync_rig() -> void:
+	if rig_view == null:
+		return
+	rig_view.position = visual_offset + SOLE
+	rig_view.rotation = visual_rotation
+	rig_view.scale = Vector2(visual_scale.x * (-1.0 if facing.x < 0 else 1.0), visual_scale.y)
+	_rig_shadow.queue_redraw()
+
+
+func _draw_rig_shadow() -> void:
+	_rig_shadow.draw_set_transform(visual_offset + Vector2(0, 11), 0, Vector2(1, 0.3))
+	_rig_shadow.draw_circle(Vector2.ZERO, 12.0, Color(0.04, 0.045, 0.05, 0.5))
+
+
+# The rig swings itself, timed to the presentation's impact; false leaves the
+# wind-up and strike frames to the sprite.
+func play_attack(_weapon: WeaponData) -> bool:
+	if rig == null:
+		return false
+	rig.attack()
+	return true
+
+
+func play_walk(direction: Vector2i) -> void:
+	if rig != null:
+		rig.step(Vector2(direction))
 
 
 func _update_idle_processing() -> void:
@@ -48,6 +130,7 @@ func _update_idle_processing() -> void:
 
 func _process(delta: float) -> void:
 	_idle_time = fmod(_idle_time + delta, TAU * 2.0)
+	_sync_rig()
 	queue_redraw()
 
 
@@ -167,12 +250,13 @@ func _draw() -> void:
 		return
 	# Ground shadow and tactical markers stay readable when the body recoils.
 	draw_set_transform(visual_offset)
-	draw_ellipse_shadow()
-	var sheet := EnemySprites.sheet_for(stats)
-	if sheet != null:
-		_draw_sprite(sheet)
-	else:
-		_draw_procedural_body()
+	if rig_view == null:
+		draw_ellipse_shadow()
+		var sheet := EnemySprites.sheet_for(stats)
+		if sheet != null:
+			_draw_sprite(sheet)
+		else:
+			_draw_procedural_body()
 	draw_set_transform(visual_offset)
 	if hp <= 0:
 		draw_set_transform(Vector2.ZERO)
@@ -196,14 +280,17 @@ func _draw() -> void:
 
 # Sprites stand taller than the drawn bodies; the bar stays just above the head.
 func _health_bar_top() -> float:
+	if rig_view != null:
+		return SOLE.y - RIG_HEIGHT / scale.x - 6.0
 	var sheet := EnemySprites.sheet_for(stats)
 	if sheet == null:
 		return -23.0
 	return 13.0 - EnemySprites.body_height(sheet) * EnemySprites.WORLD_SCALE / scale.x - 8.0
 
 
+# A rig counts: it has a fall of its own, so the presentation never flattens it.
 func has_sprite() -> bool:
-	return stats != null and EnemySprites.sheet_for(stats) != null
+	return rig_view != null or (stats != null and EnemySprites.sheet_for(stats) != null)
 
 
 func sprite_frame() -> int:

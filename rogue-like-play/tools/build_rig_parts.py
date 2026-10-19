@@ -1,4 +1,7 @@
-"""Cut Mio's rig parts, one facing at a time, from her generated illustrations.
+"""Cut a character's rig parts, one facing at a time, from its generated
+illustrations. CHARACTERS says where each character's sources and outputs
+are and how its facings are cut; Mio's are described here, the enemies'
+follow the same scheme in their own folder (art/enemies/rig/).
 
 art/characters/mio_rig/source/ holds, for each facing drawn (front, back,
 left, front_left, back_left; the right-hand facings are these mirrored), a
@@ -12,16 +15,17 @@ and for faces the eye edits _eyes_half.png and _eyes_closed.png. The sword
 drifts by a few pixels), cuts the parts as FACINGS says, shrinks them to the
 rig's size and packs them:
 
-- art/characters/mio_rig/<facing>_parts.png: the atlas, mipmapped in Godot.
-- art/characters/mio_rig/<facing>_parts.json: each part's rectangle in the
-  atlas and its place in the figure, the soles, and how source pixels map to
-  the figure, for tools/build_character_rig.gd.
-- .godot/mio_rig_<facing>_parts_check.png: the parts put back together in the
+- <output>/<facing>_parts.png: the atlas, mipmapped in Godot.
+- <output>/<facing>_parts.json: each part's rectangle in the atlas and its
+  place in the figure, the soles, and how source pixels map to the figure,
+  for tools/build_character_rig.gd.
+- .godot/rig_<facing>_parts_check.png: the parts put back together in the
   rig's drawing order beside the base and their difference.
 
-	python tools/build_mio_rig_parts.py [facing ...]
+	python tools/build_rig_parts.py [character] [facing ...]
 
-With no facing, every facing whose base exists is built. A facing whose
+The character defaults to mio. With no facing, every facing whose base
+exists is built. A facing whose
 layers are not all made yet is cut as its base in one piece (WHOLE_PARTS).
 """
 
@@ -35,9 +39,13 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
+CHECKS = ROOT / ".godot"
+# The character being built (use() sets these).
 SOURCE = ROOT / "art" / "characters" / "mio_rig" / "source"
 OUTPUT = ROOT / "art" / "characters" / "mio_rig"
-CHECKS = ROOT / ".godot"
+SWORD = "front_sword"
+SWORD_GRIP = (512, 215)
+SWORD_TIP = (512, 1478)
 # The figure (beret to soles) in the rig's own pixels: about twice the
 # largest height it is shown at (115 px on a 1920x1080 screen), so mipmaps
 # always shrink it.
@@ -60,9 +68,6 @@ HAIR_OVERLAP = 16
 OUTLINE_GROW = 9
 # Around the hair edit, where the hair the base shows is taken from it.
 HAIR_REACH = 61
-# The sword's picture: its grip and tip (source pixels of front_sword.png).
-SWORD_GRIP = (512, 215)
-SWORD_TIP = (512, 1478)
 # The slender blade would be a pixel or two wide in the dungeon; widen it.
 SWORD_WIDTH = 1.5
 
@@ -293,6 +298,13 @@ def band(image: Image.Image, region: dict) -> Image.Image:
 		keep *= columns >= region["left"]
 	if "right" in region:
 		keep *= columns < region["right"]
+	# A slanted split, for legs whose feet overlap: the columns left of (or
+	# right of) the line through two points.
+	for key in ("left_of_line", "right_of_line"):
+		if key in region:
+			(x0, y0), (x1, y1) = region[key]
+			line_x = x0 + (rows - y0) * (x1 - x0) / (y1 - y0)
+			keep *= (columns < line_x) if key == "left_of_line" else (columns >= line_x)
 	rgba[..., 3] *= keep
 	return Image.fromarray(rgba.astype(np.uint8))
 
@@ -313,7 +325,7 @@ def shrink(image: Image.Image, scale: float) -> Image.Image:
 # The sword turned so its blade hangs at the angle from straight down,
 # outward, with its grip in the hand.
 def sword_in_figure(base: Image.Image, placing: dict) -> Image.Image:
-	sword = load("front_sword")
+	sword = load(SWORD)
 	grip = np.array(SWORD_GRIP, dtype=np.float32)
 	tip = np.array(SWORD_TIP, dtype=np.float32)
 	scale = placing["length"] / float(np.linalg.norm(tip - grip))
@@ -478,8 +490,8 @@ def pack(pieces: dict[str, Image.Image]) -> tuple[Image.Image, dict[str, list[in
 	return atlas, places
 
 
-def build(name: str) -> None:
-	facing = dict(FACINGS[name])
+def build(name: str, facings: dict[str, dict]) -> None:
+	facing = dict(facings[name])
 	base = load(f"{name}_base")
 	missing = [layer for layer in facing["layers"] if not (SOURCE / f"{name}_{layer}.png").exists()]
 	if missing:
@@ -552,13 +564,60 @@ def write_check(name: str, base: Image.Image, parts: dict[str, Image.Image], fra
 	for index, panel in enumerate(panels):
 		check.paste(panel, (index * base.width, 0))
 	CHECKS.mkdir(exist_ok=True)
-	check.crop((0, frame[1], check.width, frame[3])).save(CHECKS / f"mio_rig_{name}_parts_check.png")
+	check.crop((0, frame[1], check.width, frame[3])).save(CHECKS / f"rig_{name}_parts_check.png")
+
+
+# The wandering sentinel (EnemySprites "basic"), drawn once facing right; the
+# enemy mirrors it to face left. Its files are sentinel_<layer>.png.
+SENTINEL_FACINGS: dict[str, dict] = {
+	"sentinel": {
+		"center_x": 560,
+		"layers": ["body", "arms", "legs", "cloak"],
+		# The near arm lies over the body, as in Mio's side view.
+		"arms_as_drawn": True,
+		# Below the armour skirt the legs show; the base gives them there.
+		"legs_below": 1165,
+		# The near fist, the blade raised ahead of it as the pixel sentinel
+		# holds it, clear of the legs.
+		"sword": {"hand": (470, 1090), "angle": -110.0, "length": 400.0},
+		"parts": {
+			"Cloak": ("cloak", {}),
+			# The legs edit kept bits of the arm and breastplate higher up;
+			# only what the armour skirt hides is used. The feet overlap, so
+			# the near leg (in front) takes everything left of a slanted line.
+			"LegFar": ("legs", {"top": 1100, "right_of_line": ((575, 1150), (640, 1480))}),
+			"LegNear": ("legs", {"top": 1100, "left_of_line": ((575, 1150), (640, 1480))}),
+			"Torso": ("body", {"top": 690}),
+			"Head": ("body", {"bottom": 740, "fade": ["bottom"]}),
+			"Sword": ("sword", {}),
+			"ArmNear": ("arms", {"right": 600}),
+		},
+	},
+}
+
+CHARACTERS = {
+	"mio": {"source": ROOT / "art" / "characters" / "mio_rig" / "source", "output": ROOT / "art" / "characters" / "mio_rig",
+		"facings": FACINGS, "sword": "front_sword", "grip": (512, 215), "tip": (512, 1478)},
+	"sentinel": {"source": ROOT / "art" / "enemies" / "rig" / "source", "output": ROOT / "art" / "enemies" / "rig",
+		"facings": SENTINEL_FACINGS, "sword": "sentinel_sword", "grip": (512, 370), "tip": (512, 1282)},
+}
+
+
+def use(character: str) -> dict[str, dict]:
+	global SOURCE, OUTPUT, SWORD, SWORD_GRIP, SWORD_TIP
+	config = CHARACTERS[character]
+	SOURCE, OUTPUT, SWORD = config["source"], config["output"], config["sword"]
+	SWORD_GRIP, SWORD_TIP = config["grip"], config["tip"]
+	return config["facings"]
 
 
 def main() -> None:
-	names = sys.argv[1:] or [name for name in FACINGS if (SOURCE / f"{name}_base.png").exists()]
+	arguments = sys.argv[1:]
+	character = arguments.pop(0) if arguments and arguments[0] in CHARACTERS else "mio"
+	facings = use(character)
+	names = arguments or [name for name in facings if (SOURCE / f"{name}_base.png").exists()]
 	for name in names:
-		build(name)
+		build(name, facings)
 
 
 if __name__ == "__main__":

@@ -33,11 +33,10 @@ const HANDS := {
 	&"back_left": Vector2(-13, 12), &"back_right": Vector2(13, 12),
 }
 # Drawn as the illustration rig (art/characters/mio_rig/mio_rig.tscn) instead
-# of the pixel sprite. The rig is drawn into its own SubViewport at the
-# screen's resolution with pixel snap off, so its parts move smoothly while
-# the project snaps everything else (the floor's pixel art) to pixels; the
-# picture is then placed in the world as one sprite. Her soles are
-# SOLE_OFFSET below the cell's centre, on her shadow, as the sprite's are.
+# of the pixel sprite, through a RigView: drawn unsnapped at the screen's
+# scale, so its parts move smoothly while the floor's pixel art stays
+# snapped. Her soles are SOLE_OFFSET below the cell's centre, on her shadow,
+# as the sprite's are.
 const MIO_RIG := preload("res://art/characters/mio_rig/mio_rig.tscn")
 const SOLE_OFFSET := 25.0
 const RIG_HEIGHT := 64.0
@@ -78,13 +77,11 @@ var move_tween: Tween
 var combat_visual: Node2D
 # Where the weapon rests in the sprite: her hand, after the facing's shift.
 var _weapon_rest := Vector2.ZERO
-# The illustrated body: the rig, the SubViewport it is drawn in, the sprite
-# showing that picture, and the node a step slides (the picture and shadow).
+# The illustrated body: the rig, the view that shows it, and the node a step
+# slides (the picture and the shadow).
 var rig: DirectionalRig
-var rig_view: SubViewport
-var rig_display: Sprite2D
+var rig_view: RigView
 var body: Node2D
-var _rig_holder: Node2D
 
 @onready var sprite: AnimatedSprite2D = $Sprite
 @onready var weapon_visual: Node2D = $Sprite/Weapon
@@ -131,55 +128,25 @@ func _build_rig() -> void:
 	foot_marker.reparent(body, false)
 	foot_marker.position = Vector2(0, SOLE_OFFSET)
 	foot_marker.scale = Vector2(1.0, 0.5)
-	rig_view = SubViewport.new()
+	rig_view = RigView.new()
 	rig_view.name = "RigView"
-	rig_view.transparent_bg = true
-	rig_view.snap_2d_transforms_to_pixel = false
-	rig_view.snap_2d_vertices_to_pixel = false
-	rig_view.render_target_update_mode = SubViewport.UPDATE_WHEN_PARENT_VISIBLE
+	rig_view.box = RIG_BOX
+	rig_view.position = Vector2(0, SOLE_OFFSET)
 	body.add_child(rig_view)
-	_rig_holder = Node2D.new()
-	rig_view.add_child(_rig_holder)
 	rig = MIO_RIG.instantiate()
 	rig.world_height = RIG_HEIGHT
-	_rig_holder.add_child(rig)
-	rig_display = Sprite2D.new()
-	rig_display.name = "RigDisplay"
-	rig_display.centered = false
-	rig_display.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	rig_display.texture = rig_view.get_texture()
-	body.add_child(rig_display)
+	rig_view.setup(rig)
 	weapon_visual.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	# Its hand is a bone, drawn before the parts; like the sprite's, what she
 	# holds is drawn over her. The rig's view is its own canvas, so this
 	# z_index never reaches the world's y-sort.
 	weapon_visual.z_index = 1
-	_fit_rig_view()
 
 
 func _process(_delta: float) -> void:
-	_fit_rig_view()
 	# Fallen, she lies still rather than breathing on the floor.
 	if hp <= 0 and rig.process_mode != Node.PROCESS_MODE_DISABLED:
 		rig.process_mode = Node.PROCESS_MODE_DISABLED
-
-
-# Draws the rig at the screen's own scale (camera zoom and window stretch),
-# so its picture lands on the screen one texel per pixel.
-func _fit_rig_view() -> void:
-	if not is_inside_tree():
-		return
-	var screen_scale := absf((get_viewport().get_final_transform() * get_global_transform_with_canvas()).get_scale().y)
-	if screen_scale <= 0.0:
-		return
-	var size := Vector2i((RIG_BOX.size * screen_scale).ceil())
-	if rig_view.size != size:
-		rig_view.size = size
-	# The rig's origin is her soles; the box is measured from them.
-	_rig_holder.position = -RIG_BOX.position * screen_scale
-	_rig_holder.scale = Vector2.ONE * screen_scale
-	rig_display.position = Vector2(0, SOLE_OFFSET) + RIG_BOX.position
-	rig_display.scale = Vector2.ONE / screen_scale
 
 
 # The rig plays the swing itself, so the battle presentation keeps only its

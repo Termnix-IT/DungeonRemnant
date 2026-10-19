@@ -209,6 +209,9 @@ func _step(actor: Node2D, origin: Vector2i, destination: Vector2i, tile_size: in
 		return
 	_track(actor)
 	_pose(actor, Vector2(1.07, 0.92), 0.0, 0.12)
+	# An illustrated enemy walks the step as well as sliding along it.
+	if actor.has_method("play_walk"):
+		actor.play_walk(destination - origin)
 	actor.visual_offset = Vector2((origin - actor.cell) * tile_size) / actor.scale
 	var tween := create_tween()
 	tweens.append(tween)
