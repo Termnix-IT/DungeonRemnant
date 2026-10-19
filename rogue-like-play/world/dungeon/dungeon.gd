@@ -21,6 +21,25 @@ const DESCENT_STAIRS := preload("res://art/tiles/descent_stairs.png")
 const RETURN_DOOR := preload("res://art/tiles/return_door.png")
 const REMEMBERED_PASSAGE_TINT := Color(0.45, 0.45, 0.5)
 const TERRAIN_THEME_NAMES: Array[String] = ["Slate Ruins", "Moss Caverns", "Ember Depths", "Obsidian Sanctum"]
+# Painted atlases (tools/build_painted_terrain.py) replace a theme's pixel
+# atlas where they exist: PAINTED_CELL px cells shown at the 48 px grid with
+# mipmapped linear filtering. Their floor is one texture spread over
+# PAINTED_PERIOD x PAINTED_PERIOD cells (tiles PAINTED_FLOOR_START on), so
+# the floor shows no grid; the aim marks show the cells when it matters.
+const PAINTED_ATLASES := {0: "res://art/tiles/painted/slate_terrain.png"}
+const PAINTED_CELL := 96
+const PAINTED_PERIOD := 4
+const PAINTED_FLOOR_START := 21
+# The wall is spread over PAINTED_WALL_PERIOD x PAINTED_WALL_PERIOD cells;
+# its first position is tiles 5-20, the others follow the floor, 16 each.
+const PAINTED_WALL_PERIOD := 2
+const PAINTED_WALL_START := PAINTED_FLOOR_START + PAINTED_PERIOD * PAINTED_PERIOD
+const PAINTED_TILE_COUNT := PAINTED_WALL_START + (PAINTED_WALL_PERIOD * PAINTED_WALL_PERIOD - 1) * WALL_TILE_COUNT
+# Painted tiles lie this many to a row of the atlas.
+const PAINTED_COLUMNS := 16
+# The shadow a wall casts on the floor just below it (and less on its sides).
+const WALL_SHADE := Color(0.02, 0.025, 0.04, 0.5)
+const WALL_SHADE_DEPTH := 0.45
 const FLOOR_TILES: Array[int] = [0, 3, 4]
 const STAIRS_TILE := 1
 const PILLAR_TILE := 2
@@ -46,6 +65,10 @@ var passages: Node2D
 var ambient_details := preload("res://world/dungeon/ambient_details.gd").new()
 var lights := preload("res://world/dungeon/dungeon_lights.gd").new()
 var mist := preload("res://world/dungeon/unexplored_mist.gd").new()
+# Off keeps every theme's pixel atlas.
+var painted_terrain := true
+var painted := false
+var wall_shade: Node2D
 
 
 func _ready() -> void:
@@ -63,6 +86,12 @@ func _ready() -> void:
 	passages.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	decorations.add_child(passages)
 	passages.draw.connect(_draw_passages)
+	# Just over the terrain, under the lights, items and actors.
+	wall_shade = Node2D.new()
+	wall_shade.name = "WallShade"
+	add_child(wall_shade)
+	move_child(wall_shade, $Terrain.get_index() + 1)
+	wall_shade.draw.connect(_draw_wall_shade)
 	# Added last so the fixed layer indices above stay as they were; the mist
 	# then moves under every terrain layer, so known tiles cover it.
 	mist.name = "Mist"
@@ -93,9 +122,16 @@ func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenera
 	ground_items.clear()
 	var terrain: TileMapLayer = $Terrain
 	var remembered: TileMapLayer = $ExploredTerrain
-	terrain.tile_set = _make_tileset(TERRAIN_ATLASES[terrain_theme_index])
+	var painted_path: String = PAINTED_ATLASES.get(terrain_theme_index, "")
+	painted = painted_terrain and not forest and not painted_path.is_empty() and ResourceLoader.exists(painted_path)
+	var cell := PAINTED_CELL if painted else TILE_SIZE
+	var count := PAINTED_TILE_COUNT if painted else WALL_TILE_START + WALL_TILE_COUNT
+	terrain.tile_set = _make_tileset(load(painted_path) if painted else TERRAIN_ATLASES[terrain_theme_index], cell, count)
+	for layer: TileMapLayer in [terrain, remembered]:
+		layer.scale = Vector2.ONE * TILE_SIZE / cell
+		layer.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS if painted else CanvasItem.TEXTURE_FILTER_NEAREST
 	# Keep the existing grid, actor, and attack-preview coordinate convention.
-	terrain.position = Vector2.ONE * TILE_SIZE / 2.0 - terrain.map_to_local(Vector2i.ZERO)
+	terrain.position = Vector2.ONE * TILE_SIZE / 2.0 - terrain.map_to_local(Vector2i.ZERO) * terrain.scale
 	remembered.tile_set = terrain.tile_set
 	remembered.position = terrain.position
 	mist.refresh(grid.size, forest, terrain_theme_index)
@@ -150,14 +186,15 @@ func update_visibility(origin: Vector2i, radius: int) -> void:
 	var remembered: TileMapLayer = $ExploredTerrain
 	terrain.clear()
 	for cell: Vector2i in fog.visible:
-		var tile := _terrain_tile(cell)
-		terrain.set_cell(cell, 0, Vector2i(tile, 0))
-		remembered.set_cell(cell, 0, Vector2i(tile, 0))
+		var coords := tile_coords(_terrain_tile(cell))
+		terrain.set_cell(cell, 0, coords)
+		remembered.set_cell(cell, 0, coords)
 	$Items.entries = ground_items
 	$Items.visible_cells = fog.visible
 	$Items.queue_redraw()
 	decorations.queue_redraw()
 	passages.queue_redraw()
+	wall_shade.queue_redraw()
 	ambient_details.refresh(grid, fog.visible, stairs_cell, has_stairs, escape_cell, forest, terrain_theme_index)
 	lights.refresh(grid, fog.visible, stairs_cell, has_stairs, forest, terrain_theme_index)
 
@@ -174,16 +211,49 @@ func sync_actors() -> void:
 			$Actors.move_child(actor, -1)
 
 
-func _make_tileset(texture: Texture2D) -> TileSet:
+# Where a tile index lies in the atlas: one row for the pixel atlas, rows of
+# PAINTED_COLUMNS for a painted one.
+func tile_coords(index: int) -> Vector2i:
+	return Vector2i(index % PAINTED_COLUMNS, index / PAINTED_COLUMNS) if painted else Vector2i(index, 0)
+
+
+func _make_tileset(texture: Texture2D, cell: int = TILE_SIZE, count: int = WALL_TILE_START + WALL_TILE_COUNT) -> TileSet:
 	var atlas := TileSetAtlasSource.new()
 	atlas.texture = texture
-	atlas.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
-	for index in WALL_TILE_START + WALL_TILE_COUNT:
-		atlas.create_tile(Vector2i(index, 0))
+	atlas.texture_region_size = Vector2i(cell, cell)
+	for index in count:
+		atlas.create_tile(tile_coords(index))
 	var result := TileSet.new()
-	result.tile_size = Vector2i(TILE_SIZE, TILE_SIZE)
+	result.tile_size = Vector2i(cell, cell)
 	result.add_source(atlas, 0)
 	return result
+
+
+# Floor cells just below a wall get its shadow, fading down a share of the
+# cell; beside a wall, a fainter one. Remembered cells take it dimmer.
+func _draw_wall_shade() -> void:
+	if not painted:
+		return
+	for cell: Vector2i in fog.explored:
+		if grid.walls.has(cell) or not grid.is_floor(cell):
+			continue
+		var strength := 1.0 if fog.visible.has(cell) else 0.45
+		var origin := Vector2(cell * TILE_SIZE)
+		var size := float(TILE_SIZE)
+		if grid.walls.has(cell + Vector2i.UP):
+			_shade_strip(origin, Vector2(size, 0), Vector2(0, size * WALL_SHADE_DEPTH), strength)
+		if grid.walls.has(cell + Vector2i.LEFT):
+			_shade_strip(origin, Vector2(0, size), Vector2(size * WALL_SHADE_DEPTH * 0.5, 0), strength * 0.6)
+		if grid.walls.has(cell + Vector2i.RIGHT):
+			_shade_strip(origin + Vector2(size, 0), Vector2(0, size), Vector2(-size * WALL_SHADE_DEPTH * 0.5, 0), strength * 0.6)
+
+
+# A strip from the edge along `along`, fading over `inward`.
+func _shade_strip(start: Vector2, along: Vector2, inward: Vector2, strength: float) -> void:
+	var dark := Color(WALL_SHADE, WALL_SHADE.a * strength)
+	var clear := Color(WALL_SHADE, 0.0)
+	wall_shade.draw_polygon(PackedVector2Array([start, start + along, start + along + inward, start + inward]),
+		PackedColorArray([dark, dark, clear, clear]))
 
 
 func _terrain_theme_index(floor_number: int) -> int:
@@ -202,7 +272,11 @@ func _terrain_tile(cell: Vector2i) -> int:
 	if grid.pillars.has(cell):
 		return PILLAR_TILE
 	if grid.walls.has(cell):
-		return WALL_TILE_START + _wall_connection_mask(cell)
+		var mask := _wall_connection_mask(cell)
+		var spot := posmod(cell.x, PAINTED_WALL_PERIOD) + posmod(cell.y, PAINTED_WALL_PERIOD) * PAINTED_WALL_PERIOD if painted else 0
+		return WALL_TILE_START + mask if spot == 0 else PAINTED_WALL_START + (spot - 1) * WALL_TILE_COUNT + mask
+	if painted:
+		return PAINTED_FLOOR_START + posmod(cell.y, PAINTED_PERIOD) * PAINTED_PERIOD + posmod(cell.x, PAINTED_PERIOD)
 	var variation := absi(cell.x * 73856093 ^ cell.y * 19349663)
 	return FLOOR_TILES[variation % 12] if variation % 12 < FLOOR_TILES.size() else FLOOR_TILES[0]
 

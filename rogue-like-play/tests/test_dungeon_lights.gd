@@ -94,6 +94,18 @@ func run_tests() -> void:
 		var floor_tone := mean_tone(image, 0)
 		var wall_tone := mean_tone(image, dungeon.WALL_TILE_START + 15)
 		check(wall_tone < floor_tone * 0.8, "Walls sit darker than the floor in %s" % atlas.resource_path.get_file())
+	for path: String in dungeon.PAINTED_ATLASES.values():
+		var painted: Image = (load(path) as Texture2D).get_image()
+		var cell: int = dungeon.PAINTED_CELL
+		var columns: int = dungeon.PAINTED_COLUMNS
+		var floor_tone := region_tone(painted, Rect2i(0, 0, cell, cell))
+		var wall_index: int = dungeon.WALL_TILE_START + 15
+		var wall_tone := region_tone(painted, Rect2i((wall_index % columns) * cell, (wall_index / columns) * cell, cell, cell))
+		check(wall_tone < floor_tone * 0.85, "Painted walls sit darker than the floor in %s" % path.get_file())
+	var layers: Array[String] = []
+	for child in dungeon.get_children():
+		layers.append(String(child.name))
+	check(layers.find("WallShade") == layers.find("Terrain") + 1 and layers.find("WallShade") < layers.find("Lights"), "Wall shadows lie on the terrain, under the lights")
 	check(dungeon.TREE_TINT.v < 1.0 and dungeon.REMEMBERED_TREE_TINT.v < dungeon.TREE_TINT.v, "Forest trees sit below the floor and remembered trees darker still")
 	var actors: Node2D = dungeon.get_node("Actors")
 	check(actors.y_sort_enabled, "Actors on lower rows are drawn in front")
@@ -123,3 +135,11 @@ func mean_tone(image: Image, tile: int) -> float:
 		for x in 48:
 			total += image.get_pixel(tile * 48 + x, y).v
 	return total / (48.0 * 48.0)
+
+
+func region_tone(image: Image, area: Rect2i) -> float:
+	var total := 0.0
+	for y in range(area.position.y, area.end.y, 2):
+		for x in range(area.position.x, area.end.x, 2):
+			total += image.get_pixel(x, y).v
+	return total / (area.size.x * area.size.y / 4.0)

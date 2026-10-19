@@ -113,19 +113,42 @@ func test_terrain_art() -> void:
 	var run := new_run(0)
 	var terrain: TileMapLayer = run.dungeon.get_node("Terrain")
 	var atlas := terrain.tile_set.get_source(0) as TileSetAtlasSource
-	check(atlas != null and atlas.texture.get_size() == Vector2(1008, 48), "Pixel terrain atlas loaded at twenty-one 48px tiles")
-	check(atlas.get_tiles_count() == 21, "All terrain art variants registered")
+	# 1F is the slate ruins, which has a painted atlas.
+	check(run.dungeon.painted and atlas != null and atlas.texture.resource_path == run.dungeon.PAINTED_ATLASES[0], "The slate ruins load their painted atlas")
+	check(atlas.get_tiles_count() == run.dungeon.PAINTED_TILE_COUNT and atlas.texture_region_size == Vector2i(run.dungeon.PAINTED_CELL, run.dungeon.PAINTED_CELL), "All painted terrain tiles registered")
+	check(terrain.texture_filter == CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS, "Painted terrain is filtered smoothly")
 	check(run.dungeon._terrain_tile(run.dungeon.stairs_cell) == run.dungeon.STAIRS_TILE, "Stairs use dedicated gold tile")
 	var player_cell: Vector2i = run.turns.player.cell
 	var first_tile: int = run.dungeon._terrain_tile(player_cell)
 	run.dungeon.update_visibility(player_cell, run.turns.player.vision_range)
-	check(first_tile in run.dungeon.FLOOR_TILES and terrain.get_cell_atlas_coords(player_cell).x == first_tile, "Floor art variant remains stable across visibility redraw")
+	check(terrain.get_cell_atlas_coords(player_cell) == run.dungeon.tile_coords(first_tile), "Floor art variant remains stable across visibility redraw")
+	# Neighbouring floor cells take neighbouring patches of one texture, so
+	# the painted floor shows no grid.
+	var floor_tiles := {}
+	for x in run.dungeon.PAINTED_PERIOD:
+		for y in run.dungeon.PAINTED_PERIOD:
+			var floor_cell := Vector2i(40 + x, 40 + y)
+			floor_tiles[run.dungeon._terrain_tile(floor_cell)] = true
+	check(floor_tiles.size() == run.dungeon.PAINTED_PERIOD * run.dungeon.PAINTED_PERIOD and run.dungeon._terrain_tile(Vector2i(40, 40)) == run.dungeon._terrain_tile(Vector2i(40 + run.dungeon.PAINTED_PERIOD, 40)),
+		"The painted floor repeats one texture every %d cells" % run.dungeon.PAINTED_PERIOD)
 	var wall_variants_valid := true
 	for cell: Vector2i in run.dungeon.grid.walls:
 		var tile: int = run.dungeon._terrain_tile(cell)
-		if tile < run.dungeon.WALL_TILE_START or tile >= run.dungeon.WALL_TILE_START + run.dungeon.WALL_TILE_COUNT:
+		var first_spot: bool = tile >= run.dungeon.WALL_TILE_START and tile < run.dungeon.WALL_TILE_START + run.dungeon.WALL_TILE_COUNT
+		var other_spot: bool = tile >= run.dungeon.PAINTED_WALL_START and tile < run.dungeon.PAINTED_TILE_COUNT
+		var mask: int = run.dungeon._wall_connection_mask(cell)
+		if not ((first_spot and tile == run.dungeon.WALL_TILE_START + mask) or (other_spot and (tile - run.dungeon.PAINTED_WALL_START) % run.dungeon.WALL_TILE_COUNT == mask)):
 			wall_variants_valid = false
 	check(wall_variants_valid, "Every generated wall maps to a registered connection tile")
+	# With painting switched off, the pixel atlas returns.
+	run.dungeon.painted_terrain = false
+	var pixel_rng := RandomNumberGenerator.new()
+	pixel_rng.seed = 47
+	run.dungeon.build(run.dungeon_settings, 1, pixel_rng, false)
+	atlas = run.dungeon.get_node("Terrain").tile_set.get_source(0) as TileSetAtlasSource
+	check(not run.dungeon.painted and atlas.texture.get_size() == Vector2(1008, 48) and atlas.get_tiles_count() == 21, "Pixel terrain atlas loaded at twenty-one 48px tiles")
+	check(run.dungeon._terrain_tile(Vector2i(40, 40)) in run.dungeon.FLOOR_TILES, "The pixel floor keeps its variants")
+	run.dungeon.painted_terrain = true
 	var theme_boundaries := [[1, 0], [3, 0], [4, 1], [6, 1], [7, 2], [9, 2], [10, 3], [99, 3]]
 	for expectation: Array in theme_boundaries:
 		check(run.dungeon._terrain_theme_index(int(expectation[0])) == int(expectation[1]), "Floor %d selects terrain theme %d" % expectation)
@@ -142,7 +165,8 @@ func test_terrain_art() -> void:
 		var floor_value: int = theme_floors[theme_index]
 		run.dungeon.build(run.dungeon_settings, floor_value, rng, floor_value == 10)
 		atlas = run.dungeon.get_node("Terrain").tile_set.get_source(0) as TileSetAtlasSource
-		check(run.dungeon.terrain_theme_index == theme_index and atlas.texture.resource_path == theme_paths[theme_index] and atlas.texture.get_size() == Vector2(1008, 48), "Floor %d loads its complete terrain theme atlas" % floor_value)
+		var expected_path: String = run.dungeon.PAINTED_ATLASES.get(theme_index, theme_paths[theme_index])
+		check(run.dungeon.terrain_theme_index == theme_index and atlas.texture.resource_path == expected_path, "Floor %d loads its complete terrain theme atlas" % floor_value)
 	var center := Vector2i(10, 10)
 	var directions: Array[Vector2i] = [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]
 	for expected_mask in 16:
@@ -152,6 +176,7 @@ func test_terrain_art() -> void:
 		for direction_index in directions.size():
 			if expected_mask & (1 << direction_index):
 				run.dungeon.grid.walls[center + directions[direction_index]] = true
+		# (10, 10) is a wall texture's first position, tiles 5-20.
 		check(run.dungeon._terrain_tile(center) == run.dungeon.WALL_TILE_START + expected_mask, "Wall connection mask %d maps to its atlas tile" % expected_mask)
 	run.dungeon.grid.walls.clear()
 	run.dungeon.grid.walls[center] = true
@@ -191,7 +216,7 @@ func test_ten_floors() -> void:
 		check(run.camera.global_position == player.global_position + run.CAMERA_LEAD, "Camera follows player after transition")
 		check(not run.preview.visible and not player.aiming, "No stale attack preview")
 		var terrain: TileMapLayer = run.dungeon.get_node("Terrain")
-		check(terrain.position + terrain.map_to_local(player.cell) == player.position, "Tile and actor alignment")
+		check(terrain.position + terrain.map_to_local(player.cell) * terrain.scale == player.position, "Tile and actor alignment")
 	check(run.boss_hall and run.floor_kind == DungeonGenerator.Kind.BOSS_HALL and not run.dungeon.has_stairs and run.floor_number == 10, "The 10F door leads into the boss hall, with no exit to 11F")
 	var count: int = run.turns.turn_count
 	run.turns.submit("attack", Vector2i.RIGHT)

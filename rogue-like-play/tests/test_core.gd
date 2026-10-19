@@ -104,7 +104,8 @@ func run_tests() -> void:
 	var terrain: TileMapLayer = run_instance.dungeon.get_node("Terrain")
 	var remembered: TileMapLayer = run_instance.dungeon.get_node("ExploredTerrain")
 	var ground_items: Node2D = run_instance.dungeon.get_node("Items")
-	check(terrain.tile_set.tile_size == Vector2i(48, 48), "Terrain cells use 48px geometry")
+	# A painted atlas holds 96 px cells shown at half size.
+	check(Vector2(terrain.tile_set.tile_size) * terrain.scale == Vector2(48, 48), "Terrain cells use 48px geometry")
 	check(run_instance.preview.tile_size == 48 and ground_items.tile_size == 48, "Preview and ground items share the dungeon cell size")
 	var cell_center := Vector2(168, 168)
 	check(terrain.to_global(terrain.map_to_local(Vector2i(3, 3))) == run_instance.turns.player.global_position, "Terrain and player share a cell center")
