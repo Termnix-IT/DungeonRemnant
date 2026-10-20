@@ -610,6 +610,7 @@ ENEMY_MESHES = {
 	"turret": "upright", "boss_stone_gate": "upright", "boss_gale_warden": "upright",
 	"boss_cannon_watcher": "upright", "boss_summoning_priest": "upright", "boss_ruin_king": "upright",
 	"boss_root_warden": "upright", "boss_spore_cannon": "upright", "boss_ancient_tree_king": "upright",
+	"boss": "upright",
 }
 MESH_FACING = {"layers": [], "parts": {"Body": ("base", {})}}
 

@@ -15,7 +15,7 @@ const BOSS := preload("res://data/enemies/boss.tres")
 const MESH_ENEMIES := [
 	"proximity", "fast", "charge", "summoner", "turret",
 	"boss_stone_gate", "boss_gale_warden", "boss_cannon_watcher", "boss_summoning_priest", "boss_ruin_king",
-	"boss_root_warden", "boss_gale_wolf_king", "boss_spore_cannon", "boss_swarm_lord", "boss_ancient_tree_king"]
+	"boss_root_warden", "boss_gale_wolf_king", "boss_spore_cannon", "boss_swarm_lord", "boss_ancient_tree_king", "boss"]
 const BattlePresentation := preload("res://combat/battle_presentation.gd")
 const FRAME := 1.0 / 60.0
 
@@ -101,11 +101,7 @@ func run_tests() -> void:
 	# Every other enemy is one bent picture, at its strip's size, with the
 	# motions the presentation cues and a brace for its warning turns.
 	await _check_meshes()
-	# Without a rig (the unnamed fallback boss), or switched off, the strip
-	# or the drawn body stays.
-	var fallback: Node2D = _enemy(BOSS)
-	check(fallback.rig == null and EnemySprites.visual_id(fallback.stats) == "boss", "An enemy without a rig keeps its own drawing")
-	fallback.free()
+	# Switched off, the strip or the drawn body stays.
 	var plain: Node2D = ENEMY.instantiate()
 	plain.stats = BASIC.duplicate()
 	plain.illustrated = false
@@ -132,8 +128,10 @@ func _check_meshes() -> void:
 		if enemy.rig == null:
 			enemy.free()
 			continue
-		var strip_height := EnemySprites.body_height(EnemySprites.sheet_for(enemy.stats)) * EnemySprites.WORLD_SCALE
-		check(is_equal_approx(enemy.rig_height(), strip_height), "%s keeps its strip's height (%.0f world px)" % [id, strip_height])
+		# Without a strip (the fallback boss) the rig sets its own height.
+		var sheet := EnemySprites.sheet_for(enemy.stats)
+		var strip_height: float = EnemySprites.body_height(sheet) * EnemySprites.WORLD_SCALE if sheet != null else float(enemy.rig.get_meta(&"world_height", 0.0))
+		check(strip_height > 0.0 and is_equal_approx(enemy.rig_height(), strip_height), "%s keeps its strip's height (%.0f world px)" % [id, strip_height])
 		for animation_name: StringName in [CharacterRig.IDLE, CharacterRig.WALK, CharacterRig.ATTACK, CharacterRig.HURT, CharacterRig.DOWN, CharacterRig.BRACE]:
 			check(enemy.rig.animation_player.has_animation(animation_name), "%s has %s" % [id, animation_name])
 		var box: Rect2 = enemy.rig_view.box
@@ -159,6 +157,8 @@ func _rig_path(id: String) -> String:
 # Enemy data whose visual id is this one: a named boss by its display name,
 # the others from their own data.
 func _stats_for(id: String, boss_names: Dictionary) -> EnemyStats:
+	if id == "boss":
+		return BOSS.duplicate()
 	if boss_names.has(id):
 		var stats: EnemyStats = BOSS.duplicate()
 		stats.display_name = boss_names[id]

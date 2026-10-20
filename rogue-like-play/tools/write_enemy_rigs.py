@@ -30,6 +30,9 @@ ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "art" / "enemies" / "rig" / "source"
 OUTPUT = ROOT / "art" / "enemies" / "rig"
 IMPACT = 0.09
+# World px tall, for an enemy without a pixel strip to take its height from:
+# the unnamed fallback boss stands as tall as the named bosses' strips.
+HEIGHTS = {"boss": 88}
 
 
 def outline(name: str) -> tuple[float, float, float, float]:
@@ -158,6 +161,8 @@ def write(name: str) -> None:
 		# No sword; the lean turns the body.
 		"lean_bone": "Body" if ENEMY_MESHES[name] != "beast" else "Fore",
 	}
+	if name in HEIGHTS:
+		rig["height"] = HEIGHTS[name]
 	rig.update(KINDS[ENEMY_MESHES[name]](*outline(name)))
 	(OUTPUT / f"{name}_rig.json").write_text(json.dumps(rig, indent="\t", ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
 	print(f"Wrote {name}_rig.json ({ENEMY_MESHES[name]})")
