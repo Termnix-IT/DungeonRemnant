@@ -2,8 +2,9 @@ extends Node2D
 
 # Wall torches and the stairs' warm light. Torches hang on wall faces that look
 # down onto visible floor; their glow is added on top of the terrain in a child
-# layer so the floor brightens instead of being painted over. A generated
-# "torch" strip (4 frames, see EnemySprites) replaces the drawn flame.
+# layer so the floor brightens instead of being painted over. Each torch is a
+# painted sconce (tools/build_painted_objects.py) drawn TORCH_HEIGHT world px
+# tall, and its flame flickers by the same waves as the glow and sways.
 const TILE_SIZE := 48.0
 const MAX_TORCHES := 10
 const TORCH_SPACING := 5
@@ -12,6 +13,10 @@ const STAIRS_RADIUS := 60.0
 const STAIRS_CORE_RADIUS := 30.0
 # Flame and light colours follow dungeon.gd's terrain theme order.
 const THEME_LIGHTS: Array[Color] = [Color(1.0, 0.66, 0.32), Color(0.95, 0.72, 0.38), Color(1.0, 0.45, 0.2), Color(0.72, 0.56, 1.0)]
+const SCONCE := preload("res://art/tiles/painted/torch_sconce.png")
+const FLAME := preload("res://art/tiles/painted/torch_flame.png")
+const TORCH_HEIGHT := 26.0
+const FLAME_HEIGHT := 16.0
 
 var torches: Array[Vector2i] = []
 var stairs := Vector2i(-1, -1)
@@ -22,10 +27,7 @@ var _glow_texture: GradientTexture2D
 
 
 func _ready() -> void:
-	_sconce = load(PAINTED_SCONCE) if ResourceLoader.exists(PAINTED_SCONCE) else null
-	_flame = load(PAINTED_FLAME) if ResourceLoader.exists(PAINTED_FLAME) else null
-	# The painted torch shrinks smoothly; a pixel torch strip keeps its pixels.
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS if painted and ResourceLoader.exists(PAINTED_SCONCE) else CanvasItem.TEXTURE_FILTER_NEAREST
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_glow_texture = GradientTexture2D.new()
 	_glow_texture.fill = GradientTexture2D.FILL_RADIAL
 	_glow_texture.fill_from = Vector2(0.5, 0.5)
@@ -96,48 +98,16 @@ func _flame_point(cell: Vector2i) -> Vector2:
 	return Vector2(cell) * TILE_SIZE + Vector2(TILE_SIZE * 0.5, TILE_SIZE - 14.0)
 
 
-# The painted sconce and flame (tools/build_painted_objects.py), drawn
-# TORCH_HEIGHT world px tall; the flame flickers by the same waves as the
-# glow and sways with them.
-const PAINTED_SCONCE := "res://art/tiles/painted/torch_sconce.png"
-const PAINTED_FLAME := "res://art/tiles/painted/torch_flame.png"
-const TORCH_HEIGHT := 26.0
-const FLAME_HEIGHT := 16.0
-var painted := true
-# Loaded in _ready, outside any draw call: a texture first loaded while
-# drawing is drawn as a blank white quad.
-var _sconce: Texture2D
-var _flame: Texture2D
-
-
 func _draw() -> void:
-	var sheet := EnemySprites.sheet("torch")
-	var sconce: Texture2D = _sconce if painted else null
-	var flame: Texture2D = _flame if painted else null
 	for cell in torches:
-		var point := _flame_point(cell)
-		if sconce != null and flame != null:
-			_draw_painted_torch(cell, point, sconce, flame)
-			continue
-		if sheet != null:
-			var frame_size := float(sheet.get_height())
-			var frame := (int(_phase * 8.0) + _cell_seed(cell)) % EnemySprites.frame_count(sheet)
-			var size := Vector2.ONE * frame_size * 0.6
-			draw_texture_rect_region(sheet, Rect2(point + Vector2(-size.x * 0.5, 12.0 - size.y), size), Rect2(frame * frame_size, 0, frame_size, frame_size))
-			continue
-		var strength := flicker(cell)
-		draw_rect(Rect2(point + Vector2(-6, 5), Vector2(12, 3)), Color("2a2622"))
-		draw_rect(Rect2(point + Vector2(-3, 1), Vector2(6, 10)), Color("4a3b2c"))
-		draw_rect(Rect2(point + Vector2(-3, 1), Vector2(6, 2)), Color("6b5540"))
-		var outer := light_color.lerp(Color(1.0, 0.3, 0.1), 0.35)
-		var sway := sin(_phase * 6.0 + float(_cell_seed(cell) % 13)) * 0.8
-		draw_colored_polygon(PackedVector2Array([point + Vector2(-6, 1), point + Vector2(-4, -6), point + Vector2(sway * 1.5, -15.0 * strength), point + Vector2(4, -6), point + Vector2(6, 1)]), outer)
-		draw_colored_polygon(PackedVector2Array([point + Vector2(-3, 1), point + Vector2(sway, -9.0 * strength), point + Vector2(3, 1)]), Color(1.0, 0.93, 0.7))
+		_draw_torch(cell, _flame_point(cell))
 
 
 # The sconce hangs with its torch's top at the flame point; the flame stands
 # on it, stretched by the flicker and leaning with the sway.
-func _draw_painted_torch(cell: Vector2i, point: Vector2, sconce: Texture2D, flame: Texture2D) -> void:
+func _draw_torch(cell: Vector2i, point: Vector2) -> void:
+	var sconce := SCONCE
+	var flame := FLAME
 	var strength := flicker(cell)
 	var sconce_size := Vector2(sconce.get_width() * TORCH_HEIGHT / sconce.get_height(), TORCH_HEIGHT)
 	draw_texture_rect(sconce, Rect2(point + Vector2(-sconce_size.x * 0.5, -sconce_size.y * 0.35), sconce_size), false)

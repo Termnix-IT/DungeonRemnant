@@ -98,16 +98,9 @@ func run_tests() -> void:
 	presentation.free()
 	walker.free()
 	hero.free()
-	# Every other enemy is one bent picture, at its strip's size, with the
+	# Every other enemy is one bent picture, at its designed size, with the
 	# motions the presentation cues and a brace for its warning turns.
 	await _check_meshes()
-	# Switched off, the strip or the drawn body stays.
-	var plain: Node2D = ENEMY.instantiate()
-	plain.stats = BASIC.duplicate()
-	plain.illustrated = false
-	root.add_child(plain)
-	check(plain.rig == null and not plain.has_node(^"RigView"), "The strip is one switch away")
-	plain.free()
 	print("Enemy rig tests: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures > 0 else 0)
 
@@ -128,10 +121,9 @@ func _check_meshes() -> void:
 		if enemy.rig == null:
 			enemy.free()
 			continue
-		# Without a strip (the fallback boss) the rig sets its own height.
-		var sheet := EnemySprites.sheet_for(enemy.stats)
-		var strip_height: float = EnemySprites.body_height(sheet) * EnemySprites.WORLD_SCALE if sheet != null else float(enemy.rig.get_meta(&"world_height", 0.0))
-		check(strip_height > 0.0 and is_equal_approx(enemy.rig_height(), strip_height), "%s keeps its strip's height (%.0f world px)" % [id, strip_height])
+		# Each rig records the height it was designed at.
+		var strip_height: float = float(enemy.rig.get_meta(&"world_height", 0.0))
+		check(strip_height > 0.0 and is_equal_approx(enemy.rig_height(), strip_height), "%s keeps its designed height (%.0f world px)" % [id, strip_height])
 		for animation_name: StringName in [CharacterRig.IDLE, CharacterRig.WALK, CharacterRig.ATTACK, CharacterRig.HURT, CharacterRig.DOWN, CharacterRig.BRACE]:
 			check(enemy.rig.animation_player.has_animation(animation_name), "%s has %s" % [id, animation_name])
 		var box: Rect2 = enemy.rig_view.box

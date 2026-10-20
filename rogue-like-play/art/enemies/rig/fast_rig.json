@@ -4,6 +4,7 @@
 	"atlas": "res://art/enemies/rig/fast_parts.png",
 	"output": "res://art/enemies/rig/fast_rig.tscn",
 	"lean_bone": "Fore",
+	"height": 34.4,
 	"bones": [
 		{
 			"name": "Root",

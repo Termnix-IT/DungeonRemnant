@@ -9,9 +9,12 @@ const HOLD_TIME := 1.35
 const FADE_TIME := 0.3
 const BAND_TOP := 104.0
 const BAND_HEIGHT := 188.0
-# Boss strips are 176px frames; 1.5x lets the body rise above the band.
+# The portrait's square, 176 px at 1.5x so the body rises above the band;
+# the boss stands on its bottom edge, BODY_SHARE of it tall, and breathes.
 const SPRITE_SCALE := 1.5
-const IDLE_FPS := 6.0
+const BODY_SHARE := 0.64
+const BREATH_PERIOD := 2.4
+const BREATH := 0.02
 const SLIDE := 72.0
 
 var root: Control
@@ -24,7 +27,8 @@ var portrait: Control
 var text: VBoxContainer
 var caption_label: Label
 var name_label: Label
-var sheet: Texture2D
+# The boss's painted picture (EnemySprites.portrait): texture and region.
+var picture := {}
 var lifetime: Timer
 var _frame_clock := 0.0
 
@@ -47,7 +51,7 @@ func _ready() -> void:
 	portrait_holder = _holder()
 	portrait = Control.new()
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	portrait.draw.connect(_draw_portrait)
 	portrait_holder.add_child(portrait)
 	text_holder = _holder()
@@ -72,13 +76,13 @@ func _ready() -> void:
 func present(stats: EnemyStats, caption: String) -> void:
 	# A second boss replaces the first at once; the old fade never finishes.
 	clear()
-	sheet = EnemySprites.sheet_for(stats)
+	picture = EnemySprites.portrait(stats)
 	caption_label.text = caption
 	name_label.text = stats.display_name
 	_frame_clock = 0.0
 	_layout()
 	show()
-	portrait.visible = sheet != null
+	portrait.visible = not picture.is_empty()
 	UIMotion.of(band).appear(0.0, UIMotion.WINDOW_TIME)
 	UIMotion.of(portrait).enter(0.0, Vector2(-SLIDE, 0))
 	UIMotion.of(text).enter(UIMotion.STAGGER_TIME, Vector2(SLIDE, 0))
@@ -114,13 +118,13 @@ func _layout() -> void:
 	portrait_holder.position = Vector2(center - 70.0 - side, BAND_TOP + BAND_HEIGHT - side)
 	portrait_holder.size = Vector2.ONE * side
 	portrait.size = portrait_holder.size
-	# Without a strip (the shared drawn boss) the name stands centred alone.
+	# Without a picture the name stands centred alone.
 	var width := minf(560.0, root.size.x - center + 24.0)
-	text_holder.position = Vector2(center - 40.0 if sheet != null else center - width / 2.0, BAND_TOP)
+	text_holder.position = Vector2(center - 40.0 if not picture.is_empty() else center - width / 2.0, BAND_TOP)
 	text_holder.size = Vector2(width, BAND_HEIGHT)
 	text.size = text_holder.size
 	for label: Label in [caption_label, name_label]:
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT if sheet != null else HORIZONTAL_ALIGNMENT_CENTER
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT if not picture.is_empty() else HORIZONTAL_ALIGNMENT_CENTER
 
 
 func _holder() -> Control:
@@ -131,8 +135,11 @@ func _holder() -> Control:
 
 
 func _draw_portrait() -> void:
-	if sheet == null:
+	if picture.is_empty():
 		return
-	var frame := float(sheet.get_height())
-	var index := int(_frame_clock * IDLE_FPS) % mini(EnemySprites.IDLE_FRAMES, EnemySprites.frame_count(sheet))
-	portrait.draw_texture_rect_region(sheet, Rect2(Vector2.ZERO, portrait.size), Rect2(index * frame, 0, frame, frame))
+	var region: Rect2 = picture.region
+	var breath := 1.0 + BREATH * (0.5 - 0.5 * cos(_frame_clock * TAU / BREATH_PERIOD))
+	var height := portrait.size.y * BODY_SHARE * breath
+	var width := height * region.size.x / region.size.y / breath
+	var area := Rect2(Vector2((portrait.size.x - width) * 0.5, portrait.size.y - height), Vector2(width, height))
+	portrait.draw_texture_rect_region(picture.texture, area, region)

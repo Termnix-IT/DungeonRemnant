@@ -291,31 +291,32 @@ _data = {
 &"walk": SubResource("Animation_ivhih")
 }
 
-[node name="ProximityRig" type="Node2D" unique_id=438630455]
+[node name="ProximityRig" type="Node2D" unique_id=526578369]
 texture_filter = 4
 script = ExtResource("1_sn5c7")
 figure_height = 320.0
 lean_bone = NodePath("Skeleton/Root/Body")
+metadata/world_height = 30.4
 
-[node name="Skeleton" type="Skeleton2D" parent="." unique_id=316270917]
+[node name="Skeleton" type="Skeleton2D" parent="." unique_id=204451554]
 
-[node name="Root" type="Bone2D" parent="Skeleton" unique_id=1355258204]
+[node name="Root" type="Bone2D" parent="Skeleton" unique_id=1629202667]
 position = Vector2(0.003326416, 0)
 rest = Transform2D(1, 0, 0, 1, 0.003326416, 0)
 auto_calculate_length_and_angle = false
 length = 160.0
 bone_angle = -90.0
 
-[node name="Body" type="Bone2D" parent="Skeleton/Root" unique_id=1765750345]
+[node name="Body" type="Bone2D" parent="Skeleton/Root" unique_id=2071057184]
 position = Vector2(0, -160)
 rest = Transform2D(1, 0, 0, 1, 0, -160)
 auto_calculate_length_and_angle = false
 length = 160.0
 bone_angle = -90.0
 
-[node name="Parts" type="Node2D" parent="." unique_id=564907329]
+[node name="Parts" type="Node2D" parent="." unique_id=14607868]
 
-[node name="Body" type="Polygon2D" parent="Parts" unique_id=300275115]
+[node name="Body" type="Polygon2D" parent="Parts" unique_id=824808101]
 texture = ExtResource("2_dxlrn")
 skeleton = NodePath("../../Skeleton")
 polygon = PackedVector2Array(-340.83, -320, -243.40141, -320, -145.97284, -320, -48.54428, -320, 48.884308, -320, 146.3129, -320, 243.74142, -320, 341.17, -320, -340.83, -256, -243.40141, -256, -145.97284, -256, -48.54428, -256, 48.884308, -256, 146.3129, -256, 243.74142, -256, 341.17, -256, -340.83, -192, -243.40141, -192, -145.97284, -192, -48.54428, -192, 48.884308, -192, 146.3129, -192, 243.74142, -192, 341.17, -192, -340.83, -128, -243.40141, -128, -145.97284, -128, -48.54428, -128, 48.884308, -128, 146.3129, -128, 243.74142, -128, 341.17, -128, -340.83, -64, -243.40141, -64, -145.97284, -64, -48.54428, -64, 48.884308, -64, 146.3129, -64, 243.74142, -64, 341.17, -64, -340.83, 0, -243.40141, 0, -145.97284, 0, -48.54428, 0, 48.884308, 0, 146.3129, 0, 243.74142, 0, 341.17, 0)
@@ -323,5 +324,5 @@ uv = PackedVector2Array(6, 6, 103.42857, 6, 200.85715, 6, 298.2857, 6, 395.7143,
 polygons = [PackedInt32Array(0, 1, 9, 8), PackedInt32Array(1, 2, 10, 9), PackedInt32Array(2, 3, 11, 10), PackedInt32Array(3, 4, 12, 11), PackedInt32Array(4, 5, 13, 12), PackedInt32Array(5, 6, 14, 13), PackedInt32Array(6, 7, 15, 14), PackedInt32Array(8, 9, 17, 16), PackedInt32Array(9, 10, 18, 17), PackedInt32Array(10, 11, 19, 18), PackedInt32Array(11, 12, 20, 19), PackedInt32Array(12, 13, 21, 20), PackedInt32Array(13, 14, 22, 21), PackedInt32Array(14, 15, 23, 22), PackedInt32Array(16, 17, 25, 24), PackedInt32Array(17, 18, 26, 25), PackedInt32Array(18, 19, 27, 26), PackedInt32Array(19, 20, 28, 27), PackedInt32Array(20, 21, 29, 28), PackedInt32Array(21, 22, 30, 29), PackedInt32Array(22, 23, 31, 30), PackedInt32Array(24, 25, 33, 32), PackedInt32Array(25, 26, 34, 33), PackedInt32Array(26, 27, 35, 34), PackedInt32Array(27, 28, 36, 35), PackedInt32Array(28, 29, 37, 36), PackedInt32Array(29, 30, 38, 37), PackedInt32Array(30, 31, 39, 38), PackedInt32Array(32, 33, 41, 40), PackedInt32Array(33, 34, 42, 41), PackedInt32Array(34, 35, 43, 42), PackedInt32Array(35, 36, 44, 43), PackedInt32Array(36, 37, 45, 44), PackedInt32Array(37, 38, 46, 45), PackedInt32Array(38, 39, 47, 46)]
 bones = ["Root", PackedFloat32Array(2.4414055e-07, 2.4414055e-07, 2.4414055e-07, 2.4414055e-07, 2.4414055e-07, 2.4414055e-07, 2.4414055e-07, 2.4414055e-07, 1.1302794e-06, 1.1302794e-06, 1.1302794e-06, 1.1302794e-06, 1.1302794e-06, 1.1302794e-06, 1.1302794e-06, 1.1302794e-06, 3.0516647e-05, 3.0516647e-05, 3.0516647e-05, 3.0516647e-05, 3.0516647e-05, 3.0516647e-05, 3.0516647e-05, 3.0516647e-05, 0.9999695, 0.9999695, 0.9999695, 0.9999695, 0.9999695, 0.9999695, 0.9999695, 0.9999695, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999976), "Root/Body", PackedFloat32Array(0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.9999695, 0.9999695, 0.9999695, 0.9999695, 0.9999695, 0.9999695, 0.9999695, 0.9999695, 3.0516647e-05, 3.0516647e-05, 3.0516647e-05, 3.0516647e-05, 3.0516647e-05, 3.0516647e-05, 3.0516647e-05, 3.0516647e-05, 1.1302794e-06, 1.1302794e-06, 1.1302794e-06, 1.1302794e-06, 1.1302794e-06, 1.1302794e-06, 1.1302794e-06, 1.1302794e-06, 2.4414055e-07, 2.4414055e-07, 2.4414055e-07, 2.4414055e-07, 2.4414055e-07, 2.4414055e-07, 2.4414055e-07, 2.4414055e-07)]
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1377683017]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=2032408705]
 libraries/ = SubResource("AnimationLibrary_q7uts")

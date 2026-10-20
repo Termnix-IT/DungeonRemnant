@@ -3,8 +3,7 @@ extends SceneTree
 # The hero drawn as the illustration rig: it follows her facing, walks with
 # the step's slide, shows the weapon she holds, swings with the battle
 # presentation's timing (which then leaves the held picture unturned), lies
-# still once fallen, draws at the screen's scale, and the pixel sprite is
-# still one switch away.
+# still once fallen, and draws at the screen's scale.
 
 const PLAYER := preload("res://actors/player/player.tscn")
 const ENEMY := preload("res://actors/enemy/enemy.tscn")
@@ -33,7 +32,7 @@ func run_tests() -> void:
 	var player = PLAYER.instantiate()
 	root.add_child(player)
 	await process_frame
-	check(player.illustrated and player.rig != null and not player.sprite.visible, "The hero is drawn as the rig, the pixel sprite hidden")
+	check(player.rig != null and player.get_node_or_null(^"Sprite") == null, "The hero is drawn as the rig")
 	var view: SubViewport = player.rig_view.viewport
 	check(player.rig_view.display.texture == view.get_texture() and not view.snap_2d_transforms_to_pixel and not view.snap_2d_vertices_to_pixel,
 		"The rig is drawn unsnapped in its own view and shown as one picture")
@@ -60,7 +59,7 @@ func run_tests() -> void:
 	check(player.body.position.is_zero_approx(), "The slide settles on the cell")
 	await create_timer(0.6).timeout
 	check(player.rig.rig.animation_player.current_animation == CharacterRig.IDLE, "The walk settles into the idle on its own")
-	# The rig shows its own sword; another weapon is its pixel picture.
+	# The rig shows its own sword; another weapon is its painted icon.
 	player.weapon = SWORD
 	player.queue_redraw()
 	await process_frame
@@ -102,14 +101,6 @@ func run_tests() -> void:
 	presentation.free()
 	enemy.free()
 	player.free()
-	# One switch brings the pixel sprite back.
-	var pixel = PLAYER.instantiate()
-	pixel.illustrated = false
-	root.add_child(pixel)
-	await process_frame
-	check(pixel.rig == null and pixel.sprite.visible and pixel.foot_marker.get_parent() == pixel.sprite, "The pixel sprite is one switch away")
-	check(not pixel.play_attack(SWORD), "The pixel sprite leaves the swing to the presentation")
-	pixel.free()
 	main.free()
 	print("Player rig tests: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures > 0 else 0)

@@ -1,43 +1,33 @@
 extends Node2D
 
 const TILE_SIZE := 48
-const TERRAIN_ATLASES: Array[Texture2D] = [
-	preload("res://art/tiles/dungeon_terrain.png"),
-	preload("res://art/tiles/dungeon_terrain_moss.png"),
-	preload("res://art/tiles/dungeon_terrain_ember.png"),
-	preload("res://art/tiles/dungeon_terrain_sanctum.png"),
+# The terrain is painted (tools/build_painted_terrain.py): each theme's atlas
+# holds PAINTED_CELL px cells shown at the 48 px grid with mipmapped linear
+# filtering. Its floor is one texture spread over PAINTED_PERIOD x
+# PAINTED_PERIOD cells (tiles PAINTED_FLOOR_START on), so the floor shows no
+# grid; the aim marks show the cells when it matters.
+const PAINTED_ATLASES: Array[Texture2D] = [
+	preload("res://art/tiles/painted/slate_terrain.png"),
+	preload("res://art/tiles/painted/moss_terrain.png"),
+	preload("res://art/tiles/painted/ember_terrain.png"),
+	preload("res://art/tiles/painted/sanctum_terrain.png"),
 ]
-const FOREST_TREES := preload("res://art/tiles/forest_trees.png")
-# Trees are the forest's walls, so like the stone walls they sit a step below
-# the floor and actors; remembered but unseen trees go darker still.
+# Trees are the forest's walls (its floor is the moss caverns'): a row of
+# square frames, shown TREE_WORLD_SIZE world px across. Like the stone walls
+# they sit a step below the floor and actors; remembered but unseen trees
+# go darker still.
+const FOREST_TREES := preload("res://art/tiles/painted/forest_trees.png")
+const TREE_WORLD_SIZE := 64.0
 const TREE_TINT := Color(0.74, 0.77, 0.74)
 const REMEMBERED_TREE_TINT := Color(0.34, 0.36, 0.36)
 # Boss floors draw their passages over the floor instead of the stairs tile:
 # the guardian's door in the antechamber, the stairs on the throne once the
-# boss falls, and the door back to the base at the hall's entrance. They are
-# built by tools/build_passage_art.py at 2x for nearest sampling.
-const GUARDIAN_DOOR := preload("res://art/tiles/guardian_door.png")
-const DESCENT_STAIRS := preload("res://art/tiles/descent_stairs.png")
-const RETURN_DOOR := preload("res://art/tiles/return_door.png")
+# boss falls, and the door back to the base at the hall's entrance.
+const GUARDIAN_DOOR := preload("res://art/tiles/painted/guardian_door.png")
+const DESCENT_STAIRS := preload("res://art/tiles/painted/descent_stairs.png")
+const RETURN_DOOR := preload("res://art/tiles/painted/return_door.png")
 const REMEMBERED_PASSAGE_TINT := Color(0.45, 0.45, 0.5)
-# Their painted versions, used on a painted floor where they exist.
-const PAINTED_PASSAGES := "res://art/tiles/painted/%s.png"
 const TERRAIN_THEME_NAMES: Array[String] = ["Slate Ruins", "Moss Caverns", "Ember Depths", "Obsidian Sanctum"]
-# Painted atlases (tools/build_painted_terrain.py) replace a theme's pixel
-# atlas where they exist: PAINTED_CELL px cells shown at the 48 px grid with
-# mipmapped linear filtering. Their floor is one texture spread over
-# PAINTED_PERIOD x PAINTED_PERIOD cells (tiles PAINTED_FLOOR_START on), so
-# the floor shows no grid; the aim marks show the cells when it matters.
-const PAINTED_ATLASES := {
-	0: "res://art/tiles/painted/slate_terrain.png",
-	1: "res://art/tiles/painted/moss_terrain.png",
-	2: "res://art/tiles/painted/ember_terrain.png",
-	3: "res://art/tiles/painted/sanctum_terrain.png",
-}
-# The forest's painted trees (the moss caverns' floor is the forest's too):
-# a row of square frames, shown TREE_WORLD_SIZE world px across.
-const PAINTED_TREES := "res://art/tiles/painted/forest_trees.png"
-const TREE_WORLD_SIZE := 64.0
 const PAINTED_CELL := 96
 const PAINTED_PERIOD := 4
 const PAINTED_FLOOR_START := 21
@@ -46,12 +36,11 @@ const PAINTED_FLOOR_START := 21
 const PAINTED_WALL_PERIOD := 2
 const PAINTED_WALL_START := PAINTED_FLOOR_START + PAINTED_PERIOD * PAINTED_PERIOD
 const PAINTED_TILE_COUNT := PAINTED_WALL_START + (PAINTED_WALL_PERIOD * PAINTED_WALL_PERIOD - 1) * WALL_TILE_COUNT
-# Painted tiles lie this many to a row of the atlas.
+# Tiles lie this many to a row of the atlas.
 const PAINTED_COLUMNS := 16
 # The shadow a wall casts on the floor just below it (and less on its sides).
 const WALL_SHADE := Color(0.02, 0.025, 0.04, 0.5)
 const WALL_SHADE_DEPTH := 0.45
-const FLOOR_TILES: Array[int] = [0, 3, 4]
 const STAIRS_TILE := 1
 const PILLAR_TILE := 2
 const WALL_TILE_START := 5
@@ -76,22 +65,10 @@ var passages: Node2D
 var ambient_details := preload("res://world/dungeon/ambient_details.gd").new()
 var lights := preload("res://world/dungeon/dungeon_lights.gd").new()
 var mist := preload("res://world/dungeon/unexplored_mist.gd").new()
-# Off keeps every theme's pixel atlas.
-var painted_terrain := true
-var painted := false
-# The tree frames drawn on forest walls: painted, or the pixel ones.
-var trees: Texture2D = FOREST_TREES
-# Each pixel passage's painted version, loaded once in _ready: a texture
-# first loaded while drawing is drawn as a blank white quad.
-var _painted_passages := {}
 var wall_shade: Node2D
 
 
 func _ready() -> void:
-	for passage: Texture2D in [GUARDIAN_DOOR, DESCENT_STAIRS, RETURN_DOOR]:
-		var path := PAINTED_PASSAGES % passage.resource_path.get_file().get_basename()
-		if ResourceLoader.exists(path):
-			_painted_passages[passage] = load(path)
 	lights.name = "Lights"
 	add_child(lights)
 	move_child(lights, 2)
@@ -100,10 +77,11 @@ func _ready() -> void:
 	decorations = Node2D.new()
 	add_child(decorations)
 	move_child(decorations, 2)
+	decorations.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	decorations.draw.connect(_draw_decorations)
 	passages = Node2D.new()
 	passages.name = "Passages"
-	passages.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	passages.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	decorations.add_child(passages)
 	passages.draw.connect(_draw_passages)
 	# Just over the terrain, under the lights, items and actors.
@@ -142,17 +120,10 @@ func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenera
 	ground_items.clear()
 	var terrain: TileMapLayer = $Terrain
 	var remembered: TileMapLayer = $ExploredTerrain
-	var painted_path: String = PAINTED_ATLASES.get(terrain_theme_index, "")
-	painted = painted_terrain and not painted_path.is_empty() and ResourceLoader.exists(painted_path)
-	trees = load(PAINTED_TREES) if painted and ResourceLoader.exists(PAINTED_TREES) else FOREST_TREES
-	passages.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS if painted else CanvasItem.TEXTURE_FILTER_NEAREST
-	decorations.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS if trees != FOREST_TREES else CanvasItem.TEXTURE_FILTER_NEAREST
-	var cell := PAINTED_CELL if painted else TILE_SIZE
-	var count := PAINTED_TILE_COUNT if painted else WALL_TILE_START + WALL_TILE_COUNT
-	terrain.tile_set = _make_tileset(load(painted_path) if painted else TERRAIN_ATLASES[terrain_theme_index], cell, count)
+	terrain.tile_set = _make_tileset(PAINTED_ATLASES[terrain_theme_index])
 	for layer: TileMapLayer in [terrain, remembered]:
-		layer.scale = Vector2.ONE * TILE_SIZE / cell
-		layer.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS if painted else CanvasItem.TEXTURE_FILTER_NEAREST
+		layer.scale = Vector2.ONE * TILE_SIZE / PAINTED_CELL
+		layer.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	# Keep the existing grid, actor, and attack-preview coordinate convention.
 	terrain.position = Vector2.ONE * TILE_SIZE / 2.0 - terrain.map_to_local(Vector2i.ZERO) * terrain.scale
 	remembered.tile_set = terrain.tile_set
@@ -234,20 +205,19 @@ func sync_actors() -> void:
 			$Actors.move_child(actor, -1)
 
 
-# Where a tile index lies in the atlas: one row for the pixel atlas, rows of
-# PAINTED_COLUMNS for a painted one.
+# Where a tile index lies in the atlas, in rows of PAINTED_COLUMNS.
 func tile_coords(index: int) -> Vector2i:
-	return Vector2i(index % PAINTED_COLUMNS, index / PAINTED_COLUMNS) if painted else Vector2i(index, 0)
+	return Vector2i(index % PAINTED_COLUMNS, index / PAINTED_COLUMNS)
 
 
-func _make_tileset(texture: Texture2D, cell: int = TILE_SIZE, count: int = WALL_TILE_START + WALL_TILE_COUNT) -> TileSet:
+func _make_tileset(texture: Texture2D) -> TileSet:
 	var atlas := TileSetAtlasSource.new()
 	atlas.texture = texture
-	atlas.texture_region_size = Vector2i(cell, cell)
-	for index in count:
+	atlas.texture_region_size = Vector2i(PAINTED_CELL, PAINTED_CELL)
+	for index in PAINTED_TILE_COUNT:
 		atlas.create_tile(tile_coords(index))
 	var result := TileSet.new()
-	result.tile_size = Vector2i(cell, cell)
+	result.tile_size = Vector2i(PAINTED_CELL, PAINTED_CELL)
 	result.add_source(atlas, 0)
 	return result
 
@@ -255,8 +225,6 @@ func _make_tileset(texture: Texture2D, cell: int = TILE_SIZE, count: int = WALL_
 # Floor cells just below a wall get its shadow, fading down a share of the
 # cell; beside a wall, a fainter one. Remembered cells take it dimmer.
 func _draw_wall_shade() -> void:
-	if not painted:
-		return
 	for cell: Vector2i in fog.explored:
 		if grid.walls.has(cell) or not grid.is_floor(cell):
 			continue
@@ -296,12 +264,9 @@ func _terrain_tile(cell: Vector2i) -> int:
 		return PILLAR_TILE
 	if grid.walls.has(cell):
 		var mask := _wall_connection_mask(cell)
-		var spot := posmod(cell.x, PAINTED_WALL_PERIOD) + posmod(cell.y, PAINTED_WALL_PERIOD) * PAINTED_WALL_PERIOD if painted else 0
+		var spot := posmod(cell.x, PAINTED_WALL_PERIOD) + posmod(cell.y, PAINTED_WALL_PERIOD) * PAINTED_WALL_PERIOD
 		return WALL_TILE_START + mask if spot == 0 else PAINTED_WALL_START + (spot - 1) * WALL_TILE_COUNT + mask
-	if painted:
-		return PAINTED_FLOOR_START + posmod(cell.y, PAINTED_PERIOD) * PAINTED_PERIOD + posmod(cell.x, PAINTED_PERIOD)
-	var variation := absi(cell.x * 73856093 ^ cell.y * 19349663)
-	return FLOOR_TILES[variation % 12] if variation % 12 < FLOOR_TILES.size() else FLOOR_TILES[0]
+	return PAINTED_FLOOR_START + posmod(cell.y, PAINTED_PERIOD) * PAINTED_PERIOD + posmod(cell.x, PAINTED_PERIOD)
 
 
 func _wall_connection_mask(cell: Vector2i) -> int:
@@ -331,14 +296,14 @@ func _draw_forest_trees() -> void:
 		if grid.walls.has(cell):
 			cells.append(cell)
 	cells.sort_custom(func(a: Vector2i, b: Vector2i): return a.y < b.y or (a.y == b.y and a.x < b.x))
-	var frame := float(trees.get_height())
-	var variants := trees.get_width() / int(frame)
+	var frame := float(FOREST_TREES.get_height())
+	var variants := FOREST_TREES.get_width() / int(frame)
 	var size := TREE_WORLD_SIZE
 	for cell in cells:
 		var variant := absi(cell.x * 73856093 ^ cell.y * 19349663) % variants
 		var base := Vector2(cell * TILE_SIZE) + Vector2(TILE_SIZE / 2.0, TILE_SIZE)
 		var tint := TREE_TINT if fog.visible.has(cell) else REMEMBERED_TREE_TINT
-		decorations.draw_texture_rect_region(trees, Rect2(base - Vector2(size / 2.0, size - 4.0), Vector2.ONE * size), Rect2(variant * frame, 0, frame, frame), tint)
+		decorations.draw_texture_rect_region(FOREST_TREES, Rect2(base - Vector2(size / 2.0, size - 4.0), Vector2.ONE * size), Rect2(variant * frame, 0, frame, frame), tint)
 
 
 func _draw_decorations() -> void:
@@ -377,7 +342,5 @@ func _draw_passages() -> void:
 func _draw_passage(texture: Texture2D, cell: Vector2i) -> void:
 	if not fog.explored.has(cell):
 		return
-	if painted and _painted_passages.has(texture):
-		texture = _painted_passages[texture]
 	var tint := Color.WHITE if fog.visible.has(cell) else REMEMBERED_PASSAGE_TINT
 	passages.draw_texture_rect(texture, Rect2(Vector2(cell * TILE_SIZE), Vector2.ONE * TILE_SIZE), false, tint)

@@ -22,13 +22,11 @@ func run_tests() -> void:
 			catalog.append(load("res://data/items/" + path))
 	for weapon_path in ["sword", "spear", "hammer", "axe", "staff"]:
 		catalog.append(ItemData.from_weapon(load("res://data/weapons/%s.tres" % weapon_path)))
-	# Every item has a painted icon (192 px, shown smoothly) and keeps its
-	# pixel one (48 px stored at 2x) for when painting is switched off.
+	# Every item has a painted icon (192 px, shown smoothly).
 	var missing: Array[String] = []
-	var pixel_missing: Array[String] = []
 	for item in catalog:
 		var texture := ItemIcons.icon(item)
-		if texture == null or not texture.resource_path.begins_with(ItemIcons.PAINTED_DIRECTORY):
+		if texture == null or not texture.resource_path.begins_with(ItemIcons.DIRECTORY):
 			missing.append(String(item.id))
 		elif texture.get_size() != Vector2(192, 192):
 			missing.append("%s (size %s)" % [item.id, texture.get_size()])
@@ -37,13 +35,6 @@ func run_tests() -> void:
 	ItemIcons._cache.clear()
 	ItemIcons.warm()
 	check(ItemIcons._cache.size() >= catalog.size(), "Warming loads every icon before anything draws one")
-	ItemIcons.painted = false
-	for item in catalog:
-		var texture := ItemIcons.icon(item)
-		if texture == null or texture.get_size() != Vector2(96, 96):
-			pixel_missing.append(String(item.id))
-	check(pixel_missing.is_empty() and ItemIcons.filter() == CanvasItem.TEXTURE_FILTER_NEAREST, "Every item and weapon keeps a 48px pixel icon stored at 2x: missing %s" % [pixel_missing])
-	ItemIcons.painted = true
 
 	var unknown := ItemData.new()
 	unknown.id = &"not_generated_yet"

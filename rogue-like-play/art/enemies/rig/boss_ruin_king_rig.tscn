@@ -459,38 +459,39 @@ _data = {
 &"walk": SubResource("Animation_08y2b")
 }
 
-[node name="BossRuinKingRig" type="Node2D" unique_id=288023795]
+[node name="BossRuinKingRig" type="Node2D" unique_id=943893155]
 texture_filter = 4
 script = ExtResource("1_7k26j")
 figure_height = 320.0
 lean_bone = NodePath("Skeleton/Root/Body")
+metadata/world_height = 88.8
 
-[node name="Skeleton" type="Skeleton2D" parent="." unique_id=927753544]
+[node name="Skeleton" type="Skeleton2D" parent="." unique_id=1065826076]
 
-[node name="Root" type="Bone2D" parent="Skeleton" unique_id=1819931961]
+[node name="Root" type="Bone2D" parent="Skeleton" unique_id=1417575270]
 position = Vector2(0.003326416, 0)
 rest = Transform2D(1, 0, 0, 1, 0.003326416, 0)
 auto_calculate_length_and_angle = false
 length = 95.83334
 bone_angle = -90.0
 
-[node name="Body" type="Bone2D" parent="Skeleton/Root" unique_id=51180622]
+[node name="Body" type="Bone2D" parent="Skeleton/Root" unique_id=262933367]
 position = Vector2(0, -95.83334)
 rest = Transform2D(1, 0, 0, 1, 0, -95.83334)
 auto_calculate_length_and_angle = false
 length = 112.08333
 bone_angle = -90.0
 
-[node name="Top" type="Bone2D" parent="Skeleton/Root/Body" unique_id=1852266010]
+[node name="Top" type="Bone2D" parent="Skeleton/Root/Body" unique_id=497834452]
 position = Vector2(0, -112.08333)
 rest = Transform2D(1, 0, 0, 1, 0, -112.08333)
 auto_calculate_length_and_angle = false
 length = 112.08333
 bone_angle = -90.0
 
-[node name="Parts" type="Node2D" parent="." unique_id=553935234]
+[node name="Parts" type="Node2D" parent="." unique_id=1353175930]
 
-[node name="Body" type="Polygon2D" parent="Parts" unique_id=1033145496]
+[node name="Body" type="Polygon2D" parent="Parts" unique_id=406562030]
 texture = ExtResource("2_cjqf1")
 skeleton = NodePath("../../Skeleton")
 polygon = PackedVector2Array(-170.83, -320, -113.83, -320, -56.83, -320, 0.16999817, -320, 57.17, -320, 114.17, -320, 171.17, -320, -170.83, -280, -113.83, -280, -56.83, -280, 0.16999817, -280, 57.17, -280, 114.17, -280, 171.17, -280, -170.83, -240, -113.83, -240, -56.83, -240, 0.16999817, -240, 57.17, -240, 114.17, -240, 171.17, -240, -170.83, -200, -113.83, -200, -56.83, -200, 0.16999817, -200, 57.17, -200, 114.17, -200, 171.17, -200, -170.83, -160, -113.83, -160, -56.83, -160, 0.16999817, -160, 57.17, -160, 114.17, -160, 171.17, -160, -170.83, -120, -113.83, -120, -56.83, -120, 0.16999817, -120, 57.17, -120, 114.17, -120, 171.17, -120, -170.83, -80, -113.83, -80, -56.83, -80, 0.16999817, -80, 57.17, -80, 114.17, -80, 171.17, -80, -170.83, -40, -113.83, -40, -56.83, -40, 0.16999817, -40, 57.17, -40, 114.17, -40, 171.17, -40, -170.83, 0, -113.83, 0, -56.83, 0, 0.16999817, 0, 57.17, 0, 114.17, 0, 171.17, 0)
@@ -498,5 +499,5 @@ uv = PackedVector2Array(6, 6, 63, 6, 120, 6, 177, 6, 234, 6, 291, 6, 348, 6, 6, 
 polygons = [PackedInt32Array(0, 1, 8, 7), PackedInt32Array(1, 2, 9, 8), PackedInt32Array(2, 3, 10, 9), PackedInt32Array(3, 4, 11, 10), PackedInt32Array(4, 5, 12, 11), PackedInt32Array(5, 6, 13, 12), PackedInt32Array(7, 8, 15, 14), PackedInt32Array(8, 9, 16, 15), PackedInt32Array(9, 10, 17, 16), PackedInt32Array(10, 11, 18, 17), PackedInt32Array(11, 12, 19, 18), PackedInt32Array(12, 13, 20, 19), PackedInt32Array(14, 15, 22, 21), PackedInt32Array(15, 16, 23, 22), PackedInt32Array(16, 17, 24, 23), PackedInt32Array(17, 18, 25, 24), PackedInt32Array(18, 19, 26, 25), PackedInt32Array(19, 20, 27, 26), PackedInt32Array(21, 22, 29, 28), PackedInt32Array(22, 23, 30, 29), PackedInt32Array(23, 24, 31, 30), PackedInt32Array(24, 25, 32, 31), PackedInt32Array(25, 26, 33, 32), PackedInt32Array(26, 27, 34, 33), PackedInt32Array(28, 29, 36, 35), PackedInt32Array(29, 30, 37, 36), PackedInt32Array(30, 31, 38, 37), PackedInt32Array(31, 32, 39, 38), PackedInt32Array(32, 33, 40, 39), PackedInt32Array(33, 34, 41, 40), PackedInt32Array(35, 36, 43, 42), PackedInt32Array(36, 37, 44, 43), PackedInt32Array(37, 38, 45, 44), PackedInt32Array(38, 39, 46, 45), PackedInt32Array(39, 40, 47, 46), PackedInt32Array(40, 41, 48, 47), PackedInt32Array(42, 43, 50, 49), PackedInt32Array(43, 44, 51, 50), PackedInt32Array(44, 45, 52, 51), PackedInt32Array(45, 46, 53, 52), PackedInt32Array(46, 47, 54, 53), PackedInt32Array(47, 48, 55, 54), PackedInt32Array(49, 50, 57, 56), PackedInt32Array(50, 51, 58, 57), PackedInt32Array(51, 52, 59, 58), PackedInt32Array(52, 53, 60, 59), PackedInt32Array(53, 54, 61, 60), PackedInt32Array(54, 55, 62, 61)]
 bones = ["Root", PackedFloat32Array(8.8774165e-08, 8.8774165e-08, 8.8774165e-08, 8.8774165e-08, 8.8774165e-08, 8.8774165e-08, 8.8774165e-08, 1.6009058e-07, 1.6009058e-07, 1.6009058e-07, 1.6009058e-07, 1.6009058e-07, 1.6009058e-07, 1.6009058e-07, 3.3372768e-07, 3.3372768e-07, 3.3372768e-07, 3.3372768e-07, 3.3372768e-07, 3.3372768e-07, 3.3372768e-07, 8.8295593e-07, 8.8295593e-07, 8.8295593e-07, 8.8295593e-07, 8.8295593e-07, 8.8295593e-07, 8.8295593e-07, 3.7850025e-06, 3.7850025e-06, 3.7850025e-06, 3.7850025e-06, 3.7850025e-06, 3.7850025e-06, 3.7850025e-06, 7.084658e-05, 7.084658e-05, 7.084658e-05, 7.084658e-05, 7.084658e-05, 7.084658e-05, 7.084658e-05, 0.99974763, 0.99974763, 0.99974763, 0.99974763, 0.99974763, 0.99974763, 0.99974763, 0.99999404, 0.99999404, 0.99999404, 0.99999404, 0.99999404, 0.99999404, 0.99999404, 0.99999875, 0.99999875, 0.99999875, 0.99999875, 0.99999875, 0.99999875, 0.99999875), "Root/Body", PackedFloat32Array(7.101933e-07, 7.101933e-07, 7.101933e-07, 7.101933e-07, 7.101933e-07, 7.101933e-07, 7.101933e-07, 2.6698956e-06, 2.6698956e-06, 2.6698956e-06, 2.6698956e-06, 2.6698956e-06, 2.6698956e-06, 2.6698956e-06, 3.0279483e-05, 3.0279483e-05, 3.0279483e-05, 3.0279483e-05, 3.0279483e-05, 3.0279483e-05, 3.0279483e-05, 0.99798775, 0.99798775, 0.99798775, 0.99798775, 0.99798775, 0.99798775, 0.99798775, 0.9999871, 0.9999871, 0.9999871, 0.9999871, 0.9999871, 0.9999871, 0.9999871, 0.9999277, 0.9999277, 0.9999277, 0.9999277, 0.9999277, 0.9999277, 0.9999277, 0.00025186772, 0.00025186772, 0.00025186772, 0.00025186772, 0.00025186772, 0.00025186772, 0.00025186772, 5.7453503e-06, 5.7453503e-06, 5.7453503e-06, 5.7453503e-06, 5.7453503e-06, 5.7453503e-06, 5.7453503e-06, 1.1361863e-06, 1.1361863e-06, 1.1361863e-06, 1.1361863e-06, 1.1361863e-06, 1.1361863e-06, 1.1361863e-06), "Root/Body/Top", PackedFloat32Array(0.9999992, 0.9999992, 0.9999992, 0.9999992, 0.9999992, 0.9999992, 0.9999992, 0.9999972, 0.9999972, 0.9999972, 0.9999972, 0.9999972, 0.9999972, 0.9999972, 0.99996936, 0.99996936, 0.99996936, 0.99996936, 0.99996936, 0.99996936, 0.99996936, 0.0020113946, 0.0020113946, 0.0020113946, 0.0020113946, 0.0020113946, 0.0020113946, 0.0020113946, 9.089385e-06, 9.089385e-06, 9.089385e-06, 9.089385e-06, 9.089385e-06, 9.089385e-06, 9.089385e-06, 1.4714817e-06, 1.4714817e-06, 1.4714817e-06, 1.4714817e-06, 1.4714817e-06, 1.4714817e-06, 1.4714817e-06, 4.7764905e-07, 4.7764905e-07, 4.7764905e-07, 4.7764905e-07, 4.7764905e-07, 4.7764905e-07, 4.7764905e-07, 2.1121072e-07, 2.1121072e-07, 2.1121072e-07, 2.1121072e-07, 2.1121072e-07, 2.1121072e-07, 2.1121072e-07, 1.1125807e-07, 1.1125807e-07, 1.1125807e-07, 1.1125807e-07, 1.1125807e-07, 1.1125807e-07, 1.1125807e-07)]
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1080857713]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=132785873]
 libraries/ = SubResource("AnimationLibrary_7ba53")

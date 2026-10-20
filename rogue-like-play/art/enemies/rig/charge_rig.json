@@ -4,6 +4,7 @@
 	"atlas": "res://art/enemies/rig/charge_parts.png",
 	"output": "res://art/enemies/rig/charge_rig.tscn",
 	"lean_bone": "Fore",
+	"height": 40.8,
 	"bones": [
 		{
 			"name": "Root",

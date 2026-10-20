@@ -543,45 +543,46 @@ _data = {
 &"walk": SubResource("Animation_p2dco")
 }
 
-[node name="BossGaleWolfKingRig" type="Node2D" unique_id=353531424]
+[node name="BossGaleWolfKingRig" type="Node2D" unique_id=1247416900]
 texture_filter = 4
 script = ExtResource("1_11bqd")
 figure_height = 320.0
 lean_bone = NodePath("Skeleton/Root/Hind/Fore")
+metadata/world_height = 92.0
 
-[node name="Skeleton" type="Skeleton2D" parent="." unique_id=973279428]
+[node name="Skeleton" type="Skeleton2D" parent="." unique_id=1209772952]
 
-[node name="Root" type="Bone2D" parent="Skeleton" unique_id=474984136]
+[node name="Root" type="Bone2D" parent="Skeleton" unique_id=1670959855]
 position = Vector2(-0.25506592, 0)
 rest = Transform2D(1, 0, 0, 1, -0.25506592, 0)
 auto_calculate_length_and_angle = false
 length = 177.34607
 bone_angle = -125.82291
 
-[node name="Hind" type="Bone2D" parent="Skeleton/Root" unique_id=1523514552]
+[node name="Hind" type="Bone2D" parent="Skeleton/Root" unique_id=716599253]
 position = Vector2(-103.79747, -143.79747)
 rest = Transform2D(1, 0, 0, 1, -103.79747, -143.79747)
 auto_calculate_length_and_angle = false
 length = 145.82278
 bone_angle = 0.0
 
-[node name="Fore" type="Bone2D" parent="Skeleton/Root/Hind" unique_id=752891739]
+[node name="Fore" type="Bone2D" parent="Skeleton/Root/Hind" unique_id=1482567549]
 position = Vector2(145.82278, 0)
 rest = Transform2D(1, 0, 0, 1, 145.82278, 0)
 auto_calculate_length_and_angle = false
 length = 91.13924
 bone_angle = 0.0
 
-[node name="Head" type="Bone2D" parent="Skeleton/Root/Hind/Fore" unique_id=1295628041]
+[node name="Head" type="Bone2D" parent="Skeleton/Root/Hind/Fore" unique_id=355471074]
 position = Vector2(91.13924, 0)
 rest = Transform2D(1, 0, 0, 1, 91.13924, 0)
 auto_calculate_length_and_angle = false
 length = 74.93671
 bone_angle = 0.0
 
-[node name="Parts" type="Node2D" parent="." unique_id=1820139490]
+[node name="Parts" type="Node2D" parent="." unique_id=179443255]
 
-[node name="Body" type="Polygon2D" parent="Parts" unique_id=1488703772]
+[node name="Body" type="Polygon2D" parent="Parts" unique_id=116344382]
 texture = ExtResource("2_sol0x")
 skeleton = NodePath("../../Skeleton")
 polygon = PackedVector2Array(-207.85, -320, -155.85, -320, -103.850006, -320, -51.850006, -320, 0.1499939, -320, 52.149994, -320, 104.149994, -320, 156.15, -320, 208.15, -320, -207.85, -256, -155.85, -256, -103.850006, -256, -51.850006, -256, 0.1499939, -256, 52.149994, -256, 104.149994, -256, 156.15, -256, 208.15, -256, -207.85, -192, -155.85, -192, -103.850006, -192, -51.850006, -192, 0.1499939, -192, 52.149994, -192, 104.149994, -192, 156.15, -192, 208.15, -192, -207.85, -128, -155.85, -128, -103.850006, -128, -51.850006, -128, 0.1499939, -128, 52.149994, -128, 104.149994, -128, 156.15, -128, 208.15, -128, -207.85, -64, -155.85, -64, -103.850006, -64, -51.850006, -64, 0.1499939, -64, 52.149994, -64, 104.149994, -64, 156.15, -64, 208.15, -64, -207.85, 0, -155.85, 0, -103.850006, 0, -51.850006, 0, 0.1499939, 0, 52.149994, 0, 104.149994, 0, 156.15, 0, 208.15, 0)
@@ -589,5 +590,5 @@ uv = PackedVector2Array(6, 6, 58, 6, 110, 6, 162, 6, 214, 6, 266, 6, 318, 6, 370
 polygons = [PackedInt32Array(0, 1, 10, 9), PackedInt32Array(1, 2, 11, 10), PackedInt32Array(2, 3, 12, 11), PackedInt32Array(3, 4, 13, 12), PackedInt32Array(4, 5, 14, 13), PackedInt32Array(5, 6, 15, 14), PackedInt32Array(6, 7, 16, 15), PackedInt32Array(7, 8, 17, 16), PackedInt32Array(9, 10, 19, 18), PackedInt32Array(10, 11, 20, 19), PackedInt32Array(11, 12, 21, 20), PackedInt32Array(12, 13, 22, 21), PackedInt32Array(13, 14, 23, 22), PackedInt32Array(14, 15, 24, 23), PackedInt32Array(15, 16, 25, 24), PackedInt32Array(16, 17, 26, 25), PackedInt32Array(18, 19, 28, 27), PackedInt32Array(19, 20, 29, 28), PackedInt32Array(20, 21, 30, 29), PackedInt32Array(21, 22, 31, 30), PackedInt32Array(22, 23, 32, 31), PackedInt32Array(23, 24, 33, 32), PackedInt32Array(24, 25, 34, 33), PackedInt32Array(25, 26, 35, 34), PackedInt32Array(27, 28, 37, 36), PackedInt32Array(28, 29, 38, 37), PackedInt32Array(29, 30, 39, 38), PackedInt32Array(30, 31, 40, 39), PackedInt32Array(31, 32, 41, 40), PackedInt32Array(32, 33, 42, 41), PackedInt32Array(33, 34, 43, 42), PackedInt32Array(34, 35, 44, 43), PackedInt32Array(36, 37, 46, 45), PackedInt32Array(37, 38, 47, 46), PackedInt32Array(38, 39, 48, 47), PackedInt32Array(39, 40, 49, 48), PackedInt32Array(40, 41, 50, 49), PackedInt32Array(41, 42, 51, 50), PackedInt32Array(42, 43, 52, 51), PackedInt32Array(43, 44, 53, 52)]
 bones = ["Root/Hind", PackedFloat32Array(0.9089574, 0.9767738, 0.9999996, 0.9999986, 0.9999857, 0.0008934102, 4.119544e-06, 6.682176e-07, 2.1711891e-07, 0.9089574, 0.9767738, 0.9999996, 0.9999986, 0.9999857, 0.0008934102, 4.119544e-06, 6.682176e-07, 2.1711891e-07, 0.9089574, 0.9767738, 0.9999996, 0.9999986, 0.9999857, 0.0008934102, 4.119544e-06, 6.682176e-07, 2.1711891e-07, 0.9089574, 0.9767738, 0.9999996, 0.9999986, 0.9999857, 0.0008934102, 4.119544e-06, 6.682176e-07, 2.1711891e-07, 0.9089574, 0.9767738, 0.9999996, 0.9999986, 0.9999857, 0.0008934102, 4.119544e-06, 6.682176e-07, 2.1711891e-07, 0.9089574, 0.9767738, 0.9999996, 0.9999986, 0.9999857, 0.0008934102, 4.119544e-06, 6.682176e-07, 2.1711891e-07), "Root/Hind/Fore", PackedFloat32Array(0.06535283, 0.017588358, 3.2384295e-07, 1.2186807e-06, 1.38701e-05, 0.9991047, 0.99995387, 7.965794e-05, 2.3477073e-06, 0.06535283, 0.017588358, 3.2384295e-07, 1.2186807e-06, 1.38701e-05, 0.9991047, 0.99995387, 7.965794e-05, 2.3477073e-06, 0.06535283, 0.017588358, 3.2384295e-07, 1.2186807e-06, 1.38701e-05, 0.9991047, 0.99995387, 7.965794e-05, 2.3477073e-06, 0.06535283, 0.017588358, 3.2384295e-07, 1.2186807e-06, 1.38701e-05, 0.9991047, 0.99995387, 7.965794e-05, 2.3477073e-06, 0.06535283, 0.017588358, 3.2384295e-07, 1.2186807e-06, 1.38701e-05, 0.9991047, 0.99995387, 7.965794e-05, 2.3477073e-06, 0.06535283, 0.017588358, 3.2384295e-07, 1.2186807e-06, 1.38701e-05, 0.9991047, 0.99995387, 7.965794e-05, 2.3477073e-06), "Root/Hind/Fore/Head", PackedFloat32Array(0.025689755, 0.0056378157, 7.534902e-08, 1.585547e-07, 4.2736315e-07, 1.8968382e-06, 4.203745e-05, 0.99991965, 0.99999744, 0.025689755, 0.0056378157, 7.534902e-08, 1.585547e-07, 4.2736315e-07, 1.8968382e-06, 4.203745e-05, 0.99991965, 0.99999744, 0.025689755, 0.0056378157, 7.534902e-08, 1.585547e-07, 4.2736315e-07, 1.8968382e-06, 4.203745e-05, 0.99991965, 0.99999744, 0.025689755, 0.0056378157, 7.534902e-08, 1.585547e-07, 4.2736315e-07, 1.8968382e-06, 4.203745e-05, 0.99991965, 0.99999744, 0.025689755, 0.0056378157, 7.534902e-08, 1.585547e-07, 4.2736315e-07, 1.8968382e-06, 4.203745e-05, 0.99991965, 0.99999744, 0.025689755, 0.0056378157, 7.534902e-08, 1.585547e-07, 4.2736315e-07, 1.8968382e-06, 4.203745e-05, 0.99991965, 0.99999744)]
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=670665027]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1612491916]
 libraries/ = SubResource("AnimationLibrary_q4l0i")

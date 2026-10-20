@@ -7,8 +7,8 @@ CELL px cells, COLUMNS to a row, that dungeon.gd shows at the 48 px grid
 with mipmapped linear filtering. Tile index i is at column i % COLUMNS,
 row i / COLUMNS:
 
-- 0 floor, 1 stairs, 2 pillar, 3-4 floor (the pixel atlas's slots, kept so
-  tile indices mean the same), 5-20 the wall for each up/right/down/left
+- 0 floor, 1 stairs, 2 pillar, 3-4 floor (slots kept from the retired pixel
+  atlas, so tile indices mean the same), 5-20 the wall for each up/right/down/left
   connection mask, 21-36 the floor texture cut into PERIOD x PERIOD cells,
   then for each further wall position (WALL_PERIOD x WALL_PERIOD cells,
   the first being 5-20) its 16 masks.
@@ -16,7 +16,7 @@ row i / COLUMNS:
 The floor is one texture spread over PERIOD x PERIOD cells, and the wall's
 over WALL_PERIOD x WALL_PERIOD, so neighbouring cells continue each other:
 the floor shows no grid, and a run of wall keeps its stones' size. Stairs and the pillar
-stand on the floor's first cell. Walls keep the pixel atlas's rules: the
+stand on the floor's first cell. Walls keep the retired pixel atlas's rules: the
 stone darker and flatter than the floor, a lit rim on the top and left open
 edges, a shaded rim on the bottom and right, and a dark gap where a wall
 meets the floor.

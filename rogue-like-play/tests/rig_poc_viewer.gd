@@ -1,8 +1,8 @@
 extends Node2D
 
 # Visual check of the illustration rig PoC. The left panel is a patch of
-# real dungeon floor at the dungeon camera's 1.5 zoom, with the rig hero, the
-# current pixel hero for comparison, an enemy and potions; the real
+# real dungeon floor at the dungeon camera's 1.5 zoom, with the rig hero, an
+# enemy and potions; the real
 # BattlePresentation plays the attack. Below it the eight facings stand side
 # by side at the same size, and the right panel shows the hero's rig three
 # times larger to inspect joints and seams.
@@ -12,15 +12,14 @@ extends Node2D
 # on / off   T: 30 rigs for load
 
 const RIG_SCENE := preload("res://art/characters/mio_rig/mio_rig.tscn")
-const PlayerScene := preload("res://actors/player/player.tscn")
+const Dungeon := preload("res://world/dungeon/dungeon.gd")
 const EnemyScene := preload("res://actors/enemy/enemy.tscn")
 const BattlePresentation := preload("res://combat/battle_presentation.gd")
 const RigActor := preload("res://tests/rig_poc_actor.gd")
-const TERRAIN := preload("res://art/tiles/dungeon_terrain.png")
-const POTION := preload("res://art/items/healing_potion.png")
+const TERRAIN := preload("res://art/tiles/painted/slate_terrain.png")
+const POTION := preload("res://art/items/painted/healing_potion.png")
 const SWORD := preload("res://data/weapons/sword.tres")
 const TILE_SIZE := 48
-const FLOOR_TILES: Array[int] = [0, 3, 4]
 const ZOOM := 1.5
 const MAP_SIZE := Vector2i(9, 7)
 const WORLD_ORIGIN := Vector2(40, 96)
@@ -30,7 +29,6 @@ const LINEUP_FEET := Vector2(84, 742)
 const LINEUP_GAP := 80.0
 const HEIGHTS: Array[float] = [56.0, 64.0, 72.0]
 const STRESS_COUNT := 30
-const PIXEL_HERO_CELL := Vector2i(1, 3)
 const KEYS := {
 	KEY_UP: Vector2i.UP, KEY_W: Vector2i.UP, KEY_DOWN: Vector2i.DOWN, KEY_S: Vector2i.DOWN,
 	KEY_LEFT: Vector2i.LEFT, KEY_A: Vector2i.LEFT, KEY_RIGHT: Vector2i.RIGHT, KEY_D: Vector2i.RIGHT,
@@ -45,7 +43,6 @@ const FACING_LABELS := {&"front": "正面", &"front_left": "左前", &"left": "�
 var world: Node2D
 var actors: Node2D
 var actor: Node2D
-var pixel_hero: Node2D
 var enemy: Node2D
 var presentation: Node2D
 var magnified_holder: Node2D
@@ -62,7 +59,7 @@ func _ready() -> void:
 	world = Node2D.new()
 	world.position = WORLD_ORIGIN
 	world.scale = Vector2.ONE * ZOOM
-	world.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	world.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	add_child(world)
 	var floor_layer := Node2D.new()
 	floor_layer.draw.connect(_draw_floor.bind(floor_layer))
@@ -75,12 +72,6 @@ func _ready() -> void:
 	actor.setup(RIG_SCENE, world_height)
 	actor.cell = Vector2i(3, 3)
 	actor.position = _cell_center(actor.cell)
-	pixel_hero = PlayerScene.instantiate()
-	pixel_hero.illustrated = false
-	pixel_hero.input_enabled = false
-	actors.add_child(pixel_hero)
-	pixel_hero.facing = Vector2i.DOWN
-	pixel_hero.position = _cell_center(PIXEL_HERO_CELL)
 	enemy = EnemyScene.instantiate()
 	enemy.stats = enemy.stats.duplicate()
 	enemy.cell = Vector2i(3, 4)
@@ -137,10 +128,13 @@ func _draw() -> void:
 
 
 func _draw_floor(layer: Node2D) -> void:
+	# The painted floor, spread over its period as the dungeon lays it.
+	var tile_px := Dungeon.PAINTED_CELL
 	for y in MAP_SIZE.y:
 		for x in MAP_SIZE.x:
-			var variant := FLOOR_TILES[absi(x * 73856093 ^ y * 19349663) % FLOOR_TILES.size()]
-			layer.draw_texture_rect_region(TERRAIN, Rect2(Vector2(x, y) * TILE_SIZE, Vector2.ONE * TILE_SIZE), Rect2(variant * TILE_SIZE, 0, TILE_SIZE, TILE_SIZE))
+			var tile := Dungeon.PAINTED_FLOOR_START + posmod(y, Dungeon.PAINTED_PERIOD) * Dungeon.PAINTED_PERIOD + posmod(x, Dungeon.PAINTED_PERIOD)
+			var source := Rect2(Vector2(tile % Dungeon.PAINTED_COLUMNS, tile / Dungeon.PAINTED_COLUMNS) * tile_px, Vector2.ONE * tile_px)
+			layer.draw_texture_rect_region(TERRAIN, Rect2(Vector2(x, y) * TILE_SIZE, Vector2.ONE * TILE_SIZE), source)
 	# Potions as the floor draws them: the icon at 0.8 with a soft shadow.
 	var half := Vector2.ONE * TILE_SIZE * 0.8 * 0.5
 	for cell in potion_cells:
@@ -187,21 +181,19 @@ func _unhandled_input(event: InputEvent) -> void:
 func face(direction: Vector2i) -> void:
 	actor.facing = direction
 	magnified.facing = direction
-	pixel_hero.facing = direction
 
 
-# One step towards direction; into a wall, the enemy or the pixel hero, she
-# only turns, as in the game.
+# One step towards direction; into a wall or the enemy, she only turns, as in
+# the game.
 func do_step(direction: Vector2i) -> void:
 	if presentation.playing:
 		return
 	var next: Vector2i = actor.cell + direction
 	face(direction)
-	if next.x < 0 or next.y < 0 or next.x >= MAP_SIZE.x or next.y >= MAP_SIZE.y or next == enemy.cell or next == PIXEL_HERO_CELL:
+	if next.x < 0 or next.y < 0 or next.x >= MAP_SIZE.x or next.y >= MAP_SIZE.y or next == enemy.cell:
 		return
 	actor.step_to(next, TILE_SIZE)
 	magnified.step(Vector2(direction))
-	pixel_hero.play_step(direction, TILE_SIZE)
 
 
 # The sword attack where she faces, played by the real presentation: the

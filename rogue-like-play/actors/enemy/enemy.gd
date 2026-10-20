@@ -1,15 +1,13 @@
 extends Node2D
 
-# An enemy with an illustration rig (RIG_DIRECTORY/<visual id>_rig.tscn, a
-# CharacterRig drawn facing right) is drawn through a RigView instead of its
-# sprite strip, mirrored when it faces left. Its shadow and the rig sit
-# behind this node's own drawing, so the facing arrow and health bar stay on
-# top. The battle presentation's wind-up, hurt and down frames become the
-# rig's attack, flinch and fall, and the held wind-up of a warning turn its
-# brace. Enemies without a rig keep their strip.
-const RIG_DIRECTORY := "res://art/enemies/rig/"
-# World px from the soles to the top of the head, where neither the rig (its
-# "world_height" meta) nor the strip says; the hero stands 64.
+# An enemy is drawn as its illustration rig (EnemySprites.rig_path(), a
+# CharacterRig drawn facing right) through a RigView, mirrored when it faces
+# left. Its shadow and the rig sit behind this node's own drawing, so the
+# facing arrow and health bar stay on top. The battle presentation's
+# wind-up, hurt and down cues become the rig's attack, flinch and fall, and
+# a warning turn its brace.
+# World px from the soles to the top of the head, where the rig does not say
+# (its "world_height" meta); the hero stands 64.
 const RIG_HEIGHT := 60.0
 # Room around the rig's own outline for its motions (a lunge, a raised
 # weapon, a fall), as a share of the outline's larger side.
@@ -18,8 +16,6 @@ const RIG_REACH := 0.4
 const SOLE := Vector2(0, 13)
 
 @export var stats: EnemyStats
-# Off keeps the sprite strip even where a rig exists.
-@export var illustrated := true
 var summon_clock := 0
 var summon_due := false
 var summoner: Node2D
@@ -49,8 +45,8 @@ var visual_rotation := 0.0:
 		visual_rotation = value
 		_sync_rig()
 		queue_redraw()
-# Presentation-held sprite frame (wind-up, strike, hurt); -1 returns to idle.
-# A rig plays the hurt as a flinch and, once fallen, falls; its attack starts
+# The presentation's held cue (EnemySprites.FRAME_*); -1 returns to idle. The
+# rig plays the hurt as a flinch and, once fallen, falls; its attack starts
 # from play_attack().
 var pose_frame := -1:
 	set(value):
@@ -61,23 +57,20 @@ var pose_frame := -1:
 				rig.hurt()
 			elif value < 0 and hp <= 0:
 				rig.fall()
-var _idle_time := 0.0
 var rig: CharacterRig
 var rig_view: RigView
 var _rig_shadow: Node2D
 
 
 func _ready() -> void:
-	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	hp = stats.max_hp
-	if illustrated:
-		_build_rig()
+	_build_rig()
 	visibility_changed.connect(_update_idle_processing)
 	_update_idle_processing()
 
 
 func _build_rig() -> void:
-	var path := RIG_DIRECTORY + EnemySprites.visual_id(stats) + "_rig.tscn"
+	var path := EnemySprites.rig_path(EnemySprites.visual_id(stats))
 	if not ResourceLoader.exists(path):
 		return
 	_rig_shadow = Node2D.new()
@@ -97,14 +90,11 @@ func _build_rig() -> void:
 	_sync_rig()
 
 
-# The rig's height in world px: its own, or its strip's body, so a rig keeps
-# the size the enemy was designed at.
+# The rig's height in world px, as its description sets it (the size the
+# enemy was designed at).
 func rig_height() -> float:
 	if rig != null and rig.has_meta(&"world_height"):
 		return float(rig.get_meta(&"world_height"))
-	var sheet := EnemySprites.sheet_for(stats)
-	if sheet != null:
-		return EnemySprites.body_height(sheet) * EnemySprites.WORLD_SCALE
 	return RIG_HEIGHT
 
 
@@ -157,8 +147,7 @@ func _update_idle_processing() -> void:
 	set_process(is_inside_tree() and is_visible_in_tree() and hp > 0)
 
 
-func _process(delta: float) -> void:
-	_idle_time = fmod(_idle_time + delta, TAU * 2.0)
+func _process(_delta: float) -> void:
 	_sync_rig()
 	if rig != null:
 		rig.braced = hp > 0 and _bracing()
@@ -166,7 +155,7 @@ func _process(delta: float) -> void:
 
 
 # A warning turn: a turret aiming, a charger bracing, a nest about to hatch;
-# the strip holds its wind-up frame, a rig its brace.
+# the rig holds its brace.
 func _bracing() -> bool:
 	if shot_direction != Vector2i.ZERO:
 		return true
@@ -287,15 +276,7 @@ func choose_step(grid: GridState, target: Vector2i) -> Vector2i:
 func _draw() -> void:
 	if stats == null:
 		return
-	# Ground shadow and tactical markers stay readable when the body recoils.
-	draw_set_transform(visual_offset)
-	if rig_view == null:
-		draw_ellipse_shadow()
-		var sheet := EnemySprites.sheet_for(stats)
-		if sheet != null:
-			_draw_sprite(sheet)
-		else:
-			_draw_procedural_body()
+	# Tactical markers stay readable when the body recoils.
 	draw_set_transform(visual_offset)
 	if hp <= 0:
 		draw_set_transform(Vector2.ZERO)
@@ -317,88 +298,16 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO)
 
 
-# Sprites stand taller than the drawn bodies; the bar stays just above the head.
+# The bar stays just above the head.
 func _health_bar_top() -> float:
-	if rig_view != null:
-		return SOLE.y - rig_height() / scale.x - 6.0
-	var sheet := EnemySprites.sheet_for(stats)
-	if sheet == null:
-		return -23.0
-	return 13.0 - EnemySprites.body_height(sheet) * EnemySprites.WORLD_SCALE / scale.x - 8.0
+	return SOLE.y - rig_height() / scale.x - 6.0
 
 
-# A rig counts: it has a fall of its own, so the presentation never flattens it.
+# The rig has a fall of its own, so the presentation never flattens it.
 func has_sprite() -> bool:
-	return rig_view != null or (stats != null and EnemySprites.sheet_for(stats) != null)
+	return rig_view != null
 
 
-func sprite_frame() -> int:
-	var sheet := EnemySprites.sheet_for(stats)
-	if sheet == null:
-		return -1
-	var count := EnemySprites.frame_count(sheet)
-	var frame := pose_frame
-	if frame < 0:
-		if hp <= 0:
-			frame = EnemySprites.FRAME_DOWN
-		elif shot_direction != Vector2i.ZERO:
-			# A turret aiming or a charger bracing holds its wind-up for the
-			# whole warning turn, so the body telegraphs the threat too.
-			frame = EnemySprites.FRAME_WIND_UP
-		elif stats.behavior == EnemyStats.Behavior.SUMMONER and summon_due:
-			# A nest never attacks; its burst frame marks the turn it hatched.
-			frame = EnemySprites.FRAME_STRIKE
-		elif stats.behavior == EnemyStats.Behavior.SUMMONER and summon_clock + 1 >= stats.summon_interval:
-			frame = EnemySprites.FRAME_WIND_UP
-		else:
-			# Neighbours desynchronise by cell so a room does not bob in unison.
-			var offset := absi(cell.x * 3 + cell.y * 5)
-			frame = (int(_idle_time * 5.0) + offset) % mini(EnemySprites.IDLE_FRAMES, count)
-	return frame if frame < count else 0
-
-
-# Strips face right and stand on the frame's bottom edge; the feet meet the
-# ground shadow and the body is mirrored when the enemy looks left.
-func _draw_sprite(sheet: Texture2D) -> void:
-	var frame_size := float(sheet.get_height())
-	var size := Vector2.ONE * frame_size * EnemySprites.WORLD_SCALE / scale.x
-	var body_scale := visual_scale
-	if facing.x < 0:
-		body_scale.x *= -1.0
-	draw_set_transform(visual_offset + Vector2(0, 13), visual_rotation, body_scale)
-	var region := Rect2(sprite_frame() * frame_size, 0, frame_size, frame_size)
-	var body := Rect2(Vector2(-size.x * 0.5, -size.y), size)
-	if EnemySprites.stands_out(stats):
-		# A dark silhouette one pixel out on each side reads as a soft halo.
-		var step := 1.0 / scale.x
-		for offset: Vector2 in [Vector2(-step, 0), Vector2(step, 0), Vector2(0, -step), Vector2(0, step)]:
-			draw_texture_rect_region(sheet, Rect2(body.position + offset, body.size), region, EnemySprites.STANDOUT_HALO)
-	draw_texture_rect_region(sheet, body, region)
-
-
-func _draw_procedural_body() -> void:
-	var breath := sin(_idle_time * 2.4 + cell.x * 0.73 + cell.y * 1.13) if hp > 0 else 0.0
-	var body_scale := visual_scale * Vector2(1.0 + breath * 0.018, 1.0 - breath * 0.025)
-	if stats.behavior in [EnemyStats.Behavior.FAST, EnemyStats.Behavior.CHARGER] and facing.x > 0:
-		body_scale.x *= -1.0
-	draw_set_transform(visual_offset + Vector2(0, -0.5 * breath), visual_rotation, body_scale)
-	if stats.is_boss:
-		_draw_guardian(true)
-	elif stats.behavior == EnemyStats.Behavior.SUMMONER:
-		_draw_nest()
-	elif stats.behavior == EnemyStats.Behavior.FAST:
-		_draw_beast(false)
-	elif stats.behavior == EnemyStats.Behavior.CHARGER:
-		_draw_beast(true)
-	elif stats.detection == EnemyStats.Detection.TURRET:
-		_draw_turret()
-	elif stats.detection == EnemyStats.Detection.PROXIMITY:
-		_draw_slime()
-	else:
-		_draw_guardian(false)
-
-
-# Framed bar whose fill warms from gold to red as the enemy weakens.
 func _draw_health(top: float) -> void:
 	var ratio := clampf(float(hp) / stats.max_hp, 0.0, 1.0)
 	var frame := Rect2(-14, top, 28, 5)
@@ -407,80 +316,3 @@ func _draw_health(top: float) -> void:
 	var fill := Color("e8c26f") if ratio > 0.5 else (Color("e98a4a") if ratio > 0.25 else Color("e0483f"))
 	draw_rect(Rect2(frame.position, Vector2(frame.size.x * ratio, frame.size.y)), fill)
 	draw_rect(Rect2(frame.position, Vector2(frame.size.x * ratio, 1)), fill.lightened(0.35))
-
-
-func draw_ellipse_shadow() -> void:
-	var radius := 12.0
-	var alpha := 0.5
-	if EnemySprites.stands_out(stats):
-		var sheet := EnemySprites.sheet_for(stats)
-		radius = maxf(radius, EnemySprites.foot_width(sheet) * EnemySprites.WORLD_SCALE / scale.x * 0.55)
-		alpha = EnemySprites.STANDOUT_SHADOW_ALPHA
-	draw_set_transform(visual_offset + Vector2(0, 11), 0, Vector2(1, 0.3))
-	draw_circle(Vector2.ZERO, radius, Color(0.04, 0.045, 0.05, alpha))
-	draw_set_transform(visual_offset)
-
-
-func _draw_guardian(boss: bool) -> void:
-	var width := 13.0 if boss else 10.0
-	draw_rect(Rect2(-width, -8, width * 2, 18), Color("292d36"))
-	draw_rect(Rect2(-7, 8, 5, 5), Color("62594f"))
-	draw_rect(Rect2(2, 8, 5, 5), Color("62594f"))
-	draw_rect(Rect2(-width + 2, -5, width * 2 - 4, 14), Color("8f655c") if boss else Color("68757a"))
-	draw_rect(Rect2(-5, -12, 10, 13), Color("b2997b") if boss else Color("9daba7"))
-	draw_rect(Rect2(-4, -6, 8, 3), Color("272f38"))
-	draw_rect(Rect2(-3, -5, 2, 1), Color("f1c486"))
-	draw_rect(Rect2(2, -5, 2, 1), Color("f1c486"))
-	draw_line(Vector2(-width + 2, 0), Vector2(width - 2, 0), Color("b7a080"), 2)
-	draw_line(Vector2(0, 1), Vector2(0, 7), Color("414955"), 2)
-	if boss:
-		draw_colored_polygon(PackedVector2Array([Vector2(-7,-10),Vector2(-10,-17),Vector2(-3,-13),Vector2(0,-17),Vector2(3,-13),Vector2(10,-17),Vector2(7,-10)]), Color("d4b275"))
-		draw_rect(Rect2(-15, -5, 5, 8), Color("b58a70"))
-		draw_rect(Rect2(10, -5, 5, 8), Color("b58a70"))
-
-
-func _draw_slime() -> void:
-	draw_colored_polygon(PackedVector2Array([Vector2(-12,8),Vector2(-11,-1),Vector2(-6,-10),Vector2(3,-12),Vector2(9,-7),Vector2(12,7),Vector2(7,11),Vector2(-7,11)]), Color("303833"))
-	draw_colored_polygon(PackedVector2Array([Vector2(-9,7),Vector2(-8,-1),Vector2(-4,-8),Vector2(3,-9),Vector2(7,-5),Vector2(9,7),Vector2(5,9),Vector2(-5,9)]), Color("a99c65"))
-	draw_rect(Rect2(-5, -6, 5, 2), Color("d0c68b"))
-	draw_rect(Rect2(-4, 0, 2, 3), Color("343936"))
-	draw_rect(Rect2(3, 0, 2, 3), Color("343936"))
-	draw_line(Vector2(-6, 7), Vector2(5, 7), Color("7d7950"), 2)
-
-
-func _draw_beast(charger: bool) -> void:
-	var hide_color := Color("9c7b67") if charger else Color("8c8b8b")
-	draw_line(Vector2(7, 6), Vector2(15, 2), Color("b29a83"), 2)
-	draw_rect(Rect2(-8, 8, 4, 4), Color("43424a"))
-	draw_rect(Rect2(4, 8, 4, 4), Color("43424a"))
-	draw_colored_polygon(PackedVector2Array([Vector2(-12,3),Vector2(-8,-7),Vector2(6,-9),Vector2(11,-2),Vector2(10,9),Vector2(-6,10)]), Color("33333c"))
-	draw_colored_polygon(PackedVector2Array([Vector2(-9,3),Vector2(-6,-5),Vector2(5,-7),Vector2(8,-1),Vector2(7,7),Vector2(-5,8)]), hide_color)
-	draw_rect(Rect2(-7, -10, 4, 6), hide_color)
-	draw_rect(Rect2(3, -11, 4, 5), hide_color)
-	draw_rect(Rect2(-10, 1, 7, 6), Color("bdab96"))
-	draw_rect(Rect2(-11, 2, 2, 3), Color("3c3640"))
-	draw_rect(Rect2(-5, -2, 2, 2), Color("eed6a0"))
-	if charger:
-		draw_colored_polygon(PackedVector2Array([Vector2(-10,4),Vector2(-14,-2),Vector2(-7,1)]), Color("e3d2ab"))
-		draw_line(Vector2(0,-7),Vector2(5,5),Color("66554f"),3)
-
-
-func _draw_nest() -> void:
-	draw_circle(Vector2(0, 2), 13, Color("343a34"))
-	for index in 6:
-		var point := Vector2.from_angle(index * TAU / 6) * 9
-		draw_line(point, point.rotated(0.7), Color("80745a"), 4)
-	draw_circle(Vector2(-3, 0), 5, Color("8f9b73"))
-	draw_circle(Vector2(5, 3), 4, Color("b5bc8b"))
-	draw_circle(Vector2(1, -5), 4, Color("a3ad7f"))
-	draw_line(Vector2(-4,-2),Vector2(-1,2),Color("52604a"),1)
-
-
-func _draw_turret() -> void:
-	draw_rect(Rect2(-11, 5, 22, 8), Color("383743"))
-	draw_rect(Rect2(-8, 4, 16, 7), Color("767385"))
-	draw_colored_polygon(PackedVector2Array([Vector2(0,-14),Vector2(10,-5),Vector2(7,5),Vector2(-7,5),Vector2(-10,-5)]), Color("524b65"))
-	draw_colored_polygon(PackedVector2Array([Vector2(0,-11),Vector2(6,-4),Vector2(0,3),Vector2(-6,-4)]), Color("afa3c0"))
-	draw_line(Vector2(0,-10),Vector2(0,2),Color("d8cde0"),2)
-	draw_line(Vector2(0,-3),Vector2(facing).normalized() * 12, Color("4e485b"), 5)
-	draw_circle(Vector2(facing).normalized() * 12, 2, Color("eed6a0") if shot_direction != Vector2i.ZERO else Color("9e91ad"))

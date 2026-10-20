@@ -4,6 +4,7 @@
 	"atlas": "res://art/enemies/rig/boss_cannon_watcher_parts.png",
 	"output": "res://art/enemies/rig/boss_cannon_watcher_rig.tscn",
 	"lean_bone": "Body",
+	"height": 87.2,
 	"bones": [
 		{
 			"name": "Root",

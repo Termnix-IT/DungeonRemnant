@@ -408,16 +408,16 @@ func _build_entries(parent: VBoxContainer) -> void:
 	_link_entry_focus()
 
 
-# The guardian's first idle frame, cropped to the body in the frame's lower
-# part; the strip leaves room above it for the strike.
+# The guardian's painted picture, squared about its body.
 func _show_guardian(node: SkillNodeButton, stats: EnemyStats) -> void:
-	var strip := EnemySprites.sheet_for(stats)
-	if strip == null:
+	var picture := EnemySprites.portrait(stats)
+	if picture.is_empty():
 		return
-	var frame := float(strip.get_height())
-	node.picture = strip
-	node.picture_region = Rect2(frame * 0.15, frame * 0.3, frame * 0.7, frame * 0.7)
-	node.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var region: Rect2 = picture.region
+	var side := maxf(region.size.x, region.size.y)
+	node.picture = picture.texture
+	node.picture_region = Rect2(region.get_center() - Vector2.ONE * side * 0.5, Vector2.ONE * side)
+	node.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 
 
 # Each stage's island at the far left of its row, the stages stacked down

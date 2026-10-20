@@ -31,26 +31,21 @@ func run_tests() -> void:
 	check(not grid.can_step(Vector2i(1, 1), Vector2i(3, 1)), "Cannot skip cells")
 	grid.walls.clear()
 	var player := PLAYER.instantiate()
-	# The sprite checks below are the pixel sprite's; test_player_rig.gd covers the rig.
-	player.illustrated = false
 	var enemy := ENEMY.instantiate()
 	root.add_child(player)
 	root.add_child(enemy)
-	var player_sprite: AnimatedSprite2D = player.sprite
-	check(player_sprite.sprite_frames.get_animation_names().size() == 16, "Player uses Mio's eight-direction idle and walk animations")
-	check(player_sprite.scale == Vector2.ONE and MioAnimation.FRAME_SIZE == Vector2i(64, 64), "Player renders the 64px atlas at an effective 1:1 screen scale")
 	player.facing = Vector2i.DOWN
-	check(player_sprite.animation == &"idle_front", "Player front animation follows downward facing")
+	check(player.rig.facing_name == &"front", "Player front follows downward facing")
 	player.facing = Vector2i.UP
-	check(player_sprite.animation == &"idle_back", "Player back animation follows upward facing")
+	check(player.rig.facing_name == &"back", "Player back follows upward facing")
 	player.facing = Vector2i.LEFT
-	check(player_sprite.animation == &"idle_left", "Player left animation follows facing")
+	check(player.rig.facing_name == &"left", "Player left follows facing")
 	player.facing = Vector2i.RIGHT
-	check(player_sprite.animation == &"idle_right", "Player right animation follows facing")
+	check(player.rig.facing_name == &"right", "Player right follows facing")
 	player.play_step(Vector2i.RIGHT, 48)
-	check(player_sprite.animation == &"walk_right" and player_sprite.position == Vector2(-8, -3), "Movement uses a restrained visual step near the destination cell")
+	check(player.rig.rig.animation_player.current_animation == CharacterRig.WALK and player.body.position == Vector2(-8, 0), "Movement uses a restrained visual step near the destination cell")
 	await create_timer(0.45).timeout
-	check(player_sprite.animation == &"idle_right" and player_sprite.position == Vector2(0, -3), "Movement animation settles on the destination cell")
+	check(player.body.position.is_zero_approx(), "Movement animation settles on the destination cell")
 	check(grid.place(player, Vector2i(1, 1)), "Place player")
 	check(grid.place(enemy, Vector2i(2, 1)), "Place enemy")
 	check(not grid.move_actor(player, enemy.cell), "Occupied destination rejected")
@@ -136,8 +131,8 @@ func run_tests() -> void:
 	run_instance._on_action("move", Vector2i.DOWN)
 	check(run_instance.turns.player.hp == 0, "Lethal enemy attack after movement")
 	check(run_instance.turns.player.position == Vector2(168, 216), "Death display matches final 48px cell")
-	player_sprite = run_instance.turns.player.sprite
-	check(player_sprite.position == run_instance.turns.player.BASE_SPRITE_POSITION and not player_sprite.is_playing(), "Death clears a previous step and stops the sprite at the final cell")
+	var fallen: Node2D = run_instance.turns.player
+	check(fallen.body.position.is_zero_approx() and fallen.rig.rig.animation_player.current_animation != CharacterRig.WALK, "Death clears a previous step at the final cell")
 	check(run_instance.camera.global_position == run_instance.turns.player.global_position + run_instance.CAMERA_LEAD and not run_instance.preview.visible, "Death keeps the camera aligned and hides attack preview")
 	run_instance.free()
 	print("Core tests: %d checks, %d failures" % [checks, failures])

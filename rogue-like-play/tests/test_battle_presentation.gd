@@ -175,8 +175,7 @@ func check_move_batches() -> void:
 		if child.get_script() == preload("res://combat/strike_effect.gd"):
 			footprints += child.points.size()
 	check(footprints == 1, "Whiff effect includes visible attack cells without revealing fog")
-	# Every effect is painted: light added over the scene, smoke laid on it;
-	# switched off, the third-party strips play again.
+	# Every effect is painted: light added over the scene, smoke laid on it.
 	var Strike := preload("res://combat/strike_effect.gd")
 	for effect_kind: StringName in Strike.PAINTED:
 		var effect := Strike.new()
@@ -184,16 +183,8 @@ func check_move_batches() -> void:
 		var cells: Array[Vector2] = [Vector2(24, 24)]
 		effect.start(effect_kind, cells, Vector2.LEFT)
 		var added: bool = effect.material is CanvasItemMaterial and effect.material.blend_mode == CanvasItemMaterial.BLEND_MODE_ADD
-		check(effect._image != null and effect._strip == null and added == bool(Strike.PAINTED[effect_kind][5]), "The %s effect is painted, %s" % [effect_kind, "added as light" if added else "laid over the scene"])
+		check(effect._image != null and added == bool(Strike.PAINTED[effect_kind][5]), "The %s effect is painted, %s" % [effect_kind, "added as light" if added else "laid over the scene"])
 		effect.free()
-	Strike.painted = false
-	var fallback := Strike.new()
-	presentation.add_child(fallback)
-	var one: Array[Vector2] = [Vector2(24, 24)]
-	fallback.start(&"slash", one, Vector2.RIGHT)
-	check(fallback._image == null and fallback._strip != null, "Switched off, the slash plays its strip")
-	fallback.free()
-	Strike.painted = true
 	presentation.clear()
 	first.free()
 	second.free()

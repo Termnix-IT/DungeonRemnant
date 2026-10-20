@@ -18,94 +18,9 @@ func check(condition: bool, label: String) -> void:
 func run_tests() -> void:
 	var main := preload("res://game/main.gd").new()
 	root.add_child(main)
-	var player = preload("res://actors/player/player.tscn").instantiate()
-	# These checks are the pixel sprite's; test_player_rig.gd covers the rig.
-	player.illustrated = false
-	root.add_child(player)
-	var sprite: AnimatedSprite2D = player.sprite
-	var directions := [Vector2i.DOWN, Vector2i(1, 1), Vector2i(-1, 1), Vector2i.UP,
-		Vector2i(1, -1), Vector2i(-1, -1), Vector2i.LEFT, Vector2i.RIGHT]
-	var names := ["front", "front_right", "front_left", "back", "back_right", "back_left", "left", "right"]
-	for index in directions.size():
-		player.facing = directions[index]
-		check(sprite.animation == StringName("idle_%s" % names[index]), "Eight-way facing %s" % directions[index])
-		check(not player.weapon_visual.show_behind_parent and player.weapon_rest() == Vector2(MioAnimation.foot_shift(StringName(names[index])), 0) + player.HANDS[StringName(names[index])], "The weapon stays in her hand, drawn over her, facing %s" % names[index])
-	# Each kind of weapon is held as its own picture.
-	for kind: int in player.HELD:
-		check(player.HELD[kind] is Texture2D and player.HELD.values().count(player.HELD[kind]) == 1, "Weapon kind %d has its own held picture" % kind)
-	player.facing = Vector2i.RIGHT
-	player.play_step(Vector2i.RIGHT, 48)
-	sprite.set_frame_and_progress(2, 0.3)
-	for index in directions.size():
-		player.facing = directions[index]
-		var expected_frame := 4 if directions[index] == Vector2i.DOWN else 2
-		check(sprite.animation == StringName("walk_%s" % names[index]) and sprite.frame == expected_frame,
-			"Eight-way turn preserves walk phase")
-	player.reset_step()
-	player.facing = Vector2i.DOWN
-	check(sprite.sprite_frames.get_frame_texture(&"idle_front", 0).get_size() == Vector2(64, 64), "Dungeon front uses a dedicated 64px sprite")
-	check(player.foot_marker.global_position.is_equal_approx(Vector2(0, 25)), "Front idle keeps the floor anchor on her soles")
-	# Her boots stand on the shadow in every direction: side views draw them
-	# well ahead of the frame's centre, so the picture moves to meet it.
-	var right_shift := MioAnimation.foot_shift(&"right")
-	check(right_shift < -5.0 and MioAnimation.foot_shift(&"left") > 5.0 and absf(MioAnimation.foot_shift(&"back")) <= 1.0, "Side views move the picture so the boots meet the shadow")
-	check(sprite.get_node_or_null("IdleEyes") == null, "The dungeon blink is baked into the frames instead of an overlay")
-	var blink_texture := sprite.sprite_frames.get_frame_texture(&"idle_front", 5) as AtlasTexture
-	check(blink_texture.atlas == MioAnimation.FRONT_IDLE_SHEET and blink_texture.region == Rect2(64, 64, 64, 64), "Front idle plays its own blink frame")
-	var resting := MioAnimation.SHEET.get_image()
-	check(resting.get_region(Rect2i(0, 128, 64, 64)).get_data() != resting.get_region(Rect2i(64, 128, 64, 64)).get_data(), "Side idle breathes between two frames")
-	player.play_step(Vector2i.DOWN, 48)
-	check(sprite.sprite_frames.get_frame_count(&"walk_front") == 8, "Walking uses eight frames")
-	check(player.weapon_visual.global_scale.is_equal_approx(Vector2.ONE), "The held picture is drawn at her sprite's own pixel size")
-	await create_timer(0.46).timeout
-	check(sprite.animation == &"idle_front", "Front walk returns to quiet idle in the existing step duration")
-	player.facing = Vector2i.RIGHT
-	var seen: Dictionary = {}
-	sprite.frame_changed.connect(func():
-		if sprite.animation == &"walk_right":
-			seen[sprite.frame] = true
-	)
-	player.play_step(Vector2i.RIGHT, 48)
-	seen[sprite.frame] = true
-	check(player.position == Vector2.ZERO, "Visual step never moves the logical actor")
-	check(sprite.offset.is_equal_approx(Vector2(right_shift, 0)), "Facing right moves the picture by its boots' shift")
-	check(player.weapon_visual.global_position.is_equal_approx(Vector2(-8 + right_shift, -3) + player.HANDS[&"right"]), "Weapon follows initial visual step and her hand")
-	check(player.foot_marker.global_position.is_equal_approx(Vector2(-8, 25)), "Foot marker follows initial visual step")
-	player.move_tween.pause()
-	player.move_tween.custom_step(0.05)
-	check(sprite.position.x > -8 and sprite.position.x < 0, "Step interpolates toward destination")
-	check(player.foot_marker.global_position.is_equal_approx(sprite.position + Vector2(0, 28)), "Foot marker remains attached during tween")
-	check(player.weapon_visual.global_position.is_equal_approx(sprite.position + Vector2(right_shift, 0) + player.HANDS[&"right"]), "Weapon remains attached during tween")
-	player.move_tween.play()
-	await create_timer(0.16).timeout
-	check(sprite.position.is_equal_approx(player.BASE_SPRITE_POSITION), "Position settles in 0.12 seconds")
-	check(sprite.animation == &"walk_right", "Walk continues after position settles")
-	await create_timer(0.30).timeout
-	check(seen.size() == 4, "Single step displays all four walk frames")
-	check(sprite.animation == &"idle_right", "Single step returns to idle")
-	check(player.foot_marker.global_position.is_equal_approx(Vector2(0, 25)), "Foot marker settles under feet")
-	var idle_frame := sprite.frame
-	await create_timer(0.8).timeout
-	check(sprite.frame != idle_frame, "Idle animation advances while stationary")
-	player.play_step(Vector2i.RIGHT, 48)
-	await create_timer(0.15).timeout
-	var walk_frame := sprite.frame
-	player.facing = Vector2i.LEFT
-	check(sprite.animation == &"walk_left" and sprite.frame == walk_frame, "Direction change preserves walking phase")
-	player.play_step(Vector2i.LEFT, 48)
-	await create_timer(0.28).timeout
-	check(sprite.animation == &"walk_left", "Replaced tween cannot stop a later step")
-	player.reset_step()
-	check(sprite.animation == &"idle_left" and sprite.position == player.BASE_SPRITE_POSITION, "Reset clears movement immediately")
-	player.facing = Vector2i(1, -1)
-	player.play_step(player.facing, 48)
-	check(is_equal_approx((sprite.position - player.BASE_SPRITE_POSITION).length(), 8.0), "Diagonal step has the same visual distance as cardinal steps")
-	player.facing = Vector2i.LEFT
-	player.reset_step()
-	player.hp = 0
-	player.play_step(Vector2i.LEFT, 48)
-	check(sprite.animation == &"idle_left", "Dead player cannot start walking")
-	player.free()
+	# The hero's own drawing (rig, step, swing) is test_player_rig.gd's; this
+	# checks her motion in the real run.
+	var player: Node2D
 	var run = preload("res://game/run/run.tscn").instantiate()
 	run.generation_seed = 47
 	# The fixed fixture has three enemy positions; random houses add more.

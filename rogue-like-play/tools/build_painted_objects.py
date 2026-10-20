@@ -5,8 +5,8 @@ padded to a square with a margin, and shrunk to its size here, written for
 Godot to show with mipmapped linear filtering:
 
 - art/items/painted/source/<id>.png -> art/items/painted/<id>.png (ICON px),
-  read by ItemIcons before the pixel icons, so screens and the floor show
-  them; the weapons' also give the pictures the hero holds.
+  read by ItemIcons for screens and the floor; the weapons' also give the
+  pictures the hero holds.
 - art/tiles/painted/source/<passage>.png -> art/tiles/painted/<passage>.png
   (PASSAGE px), drawn over a boss floor's cell.
 - art/tiles/painted/source/torch_sconce.png and torch_flame.png ->

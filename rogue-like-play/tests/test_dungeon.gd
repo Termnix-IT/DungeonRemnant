@@ -114,7 +114,7 @@ func test_terrain_art() -> void:
 	var terrain: TileMapLayer = run.dungeon.get_node("Terrain")
 	var atlas := terrain.tile_set.get_source(0) as TileSetAtlasSource
 	# 1F is the slate ruins, which has a painted atlas.
-	check(run.dungeon.painted and atlas != null and atlas.texture.resource_path == run.dungeon.PAINTED_ATLASES[0], "The slate ruins load their painted atlas")
+	check(atlas != null and atlas.texture == run.dungeon.PAINTED_ATLASES[0], "The slate ruins load their painted atlas")
 	check(atlas.get_tiles_count() == run.dungeon.PAINTED_TILE_COUNT and atlas.texture_region_size == Vector2i(run.dungeon.PAINTED_CELL, run.dungeon.PAINTED_CELL), "All painted terrain tiles registered")
 	check(terrain.texture_filter == CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS, "Painted terrain is filtered smoothly")
 	check(run.dungeon._terrain_tile(run.dungeon.stairs_cell) == run.dungeon.STAIRS_TILE, "Stairs use dedicated gold tile")
@@ -140,42 +140,26 @@ func test_terrain_art() -> void:
 		if not ((first_spot and tile == run.dungeon.WALL_TILE_START + mask) or (other_spot and (tile - run.dungeon.PAINTED_WALL_START) % run.dungeon.WALL_TILE_COUNT == mask)):
 			wall_variants_valid = false
 	check(wall_variants_valid, "Every generated wall maps to a registered connection tile")
-	# With painting switched off, the pixel atlas returns.
-	run.dungeon.painted_terrain = false
-	var pixel_rng := RandomNumberGenerator.new()
-	pixel_rng.seed = 47
-	run.dungeon.build(run.dungeon_settings, 1, pixel_rng, false)
-	atlas = run.dungeon.get_node("Terrain").tile_set.get_source(0) as TileSetAtlasSource
-	check(not run.dungeon.painted and atlas.texture.get_size() == Vector2(1008, 48) and atlas.get_tiles_count() == 21, "Pixel terrain atlas loaded at twenty-one 48px tiles")
-	check(run.dungeon._terrain_tile(Vector2i(40, 40)) in run.dungeon.FLOOR_TILES, "The pixel floor keeps its variants")
-	run.dungeon.painted_terrain = true
 	var theme_boundaries := [[1, 0], [3, 0], [4, 1], [6, 1], [7, 2], [9, 2], [10, 3], [99, 3]]
 	for expectation: Array in theme_boundaries:
 		check(run.dungeon._terrain_theme_index(int(expectation[0])) == int(expectation[1]), "Floor %d selects terrain theme %d" % expectation)
 	var theme_floors := [1, 4, 7, 10]
-	var theme_paths := [
-		"res://art/tiles/dungeon_terrain.png",
-		"res://art/tiles/dungeon_terrain_moss.png",
-		"res://art/tiles/dungeon_terrain_ember.png",
-		"res://art/tiles/dungeon_terrain_sanctum.png",
-	]
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 47
 	for theme_index in theme_floors.size():
 		var floor_value: int = theme_floors[theme_index]
 		run.dungeon.build(run.dungeon_settings, floor_value, rng, floor_value == 10)
 		atlas = run.dungeon.get_node("Terrain").tile_set.get_source(0) as TileSetAtlasSource
-		var expected_path: String = run.dungeon.PAINTED_ATLASES.get(theme_index, theme_paths[theme_index])
-		check(run.dungeon.terrain_theme_index == theme_index and atlas.texture.resource_path == expected_path, "Floor %d loads its complete terrain theme atlas" % floor_value)
+		check(run.dungeon.terrain_theme_index == theme_index and atlas.texture == run.dungeon.PAINTED_ATLASES[theme_index], "Floor %d loads its complete terrain theme atlas" % floor_value)
 	# Every theme is painted; the forest takes the moss caverns' floor and
 	# its own painted trees, shown smoothly.
-	check(run.dungeon.PAINTED_ATLASES.size() == run.dungeon.TERRAIN_ATLASES.size(), "Every terrain theme has a painted atlas")
+	check(run.dungeon.PAINTED_ATLASES.size() == run.dungeon.TERRAIN_THEME_NAMES.size(), "Every terrain theme has a painted atlas")
 	var forest_settings: DungeonSettings = run.dungeon_settings.duplicate()
 	forest_settings.forest = true
 	run.dungeon.build(forest_settings, 1, rng, false)
 	atlas = run.dungeon.get_node("Terrain").tile_set.get_source(0) as TileSetAtlasSource
-	check(run.dungeon.painted and atlas.texture.resource_path == run.dungeon.PAINTED_ATLASES[1], "The forest's floor is the painted moss caverns'")
-	check(run.dungeon.trees.resource_path == run.dungeon.PAINTED_TREES and run.dungeon.decorations.texture_filter == CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS, "The forest's trees are painted and drawn smoothly")
+	check(atlas.texture == run.dungeon.PAINTED_ATLASES[1], "The forest's floor is the painted moss caverns'")
+	check(run.dungeon.decorations.texture_filter == CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS, "The forest's trees are drawn smoothly")
 	var center := Vector2i(10, 10)
 	var directions: Array[Vector2i] = [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]
 	for expected_mask in 16:

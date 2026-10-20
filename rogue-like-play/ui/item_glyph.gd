@@ -40,8 +40,7 @@ static func slot_symbol(slot: int) -> ItemData:
 static func paint(canvas: Control, rect: Rect2, item: ItemData, color: Color) -> void:
 	var texture := ItemIcons.icon(item)
 	if texture != null:
-		# Snap to whole pixels so a 48px card shows a 2x pixel icon without
-		# blur; a painted icon is shrunk by its canvas's mipmapped filter.
+		# Whole pixels; the canvas's mipmapped filter shrinks the icon.
 		canvas.draw_texture_rect(texture, Rect2(rect.position.round(), rect.size.round()), false, ItemIcons.tint(color))
 		return
 	canvas.draw_set_transform(rect.position, 0, rect.size / 32.0)

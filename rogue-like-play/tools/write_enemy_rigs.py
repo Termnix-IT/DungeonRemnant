@@ -30,9 +30,17 @@ ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "art" / "enemies" / "rig" / "source"
 OUTPUT = ROOT / "art" / "enemies" / "rig"
 IMPACT = 0.09
-# World px tall, for an enemy without a pixel strip to take its height from:
-# the unnamed fallback boss stands as tall as the named bosses' strips.
-HEIGHTS = {"boss": 88}
+# World px each enemy stands, from the sole to the top: the heights their
+# retired pixel strips' bodies had (the strip at 0.8 of its pixels), so the painted
+# enemies keep the sizes they were designed at. The fallback boss, which had
+# no strip, stands as tall as the named bosses.
+HEIGHTS = {
+	"proximity": 30.4, "fast": 34.4, "charge": 40.8, "summoner": 39.2, "turret": 43.2,
+	"boss_stone_gate": 87.2, "boss_gale_warden": 89.6, "boss_cannon_watcher": 87.2,
+	"boss_summoning_priest": 89.6, "boss_ruin_king": 88.8, "boss_root_warden": 91.2,
+	"boss_gale_wolf_king": 92.0, "boss_spore_cannon": 90.4, "boss_swarm_lord": 92.0,
+	"boss_ancient_tree_king": 89.6, "boss": 88,
+}
 
 
 def outline(name: str) -> tuple[float, float, float, float]:
@@ -161,8 +169,7 @@ def write(name: str) -> None:
 		# No sword; the lean turns the body.
 		"lean_bone": "Body" if ENEMY_MESHES[name] != "beast" else "Fore",
 	}
-	if name in HEIGHTS:
-		rig["height"] = HEIGHTS[name]
+	rig["height"] = HEIGHTS[name]
 	rig.update(KINDS[ENEMY_MESHES[name]](*outline(name)))
 	(OUTPUT / f"{name}_rig.json").write_text(json.dumps(rig, indent="\t", ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
 	print(f"Wrote {name}_rig.json ({ENEMY_MESHES[name]})")

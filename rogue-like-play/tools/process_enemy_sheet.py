@@ -8,6 +8,11 @@ a flat colour, a fake checkerboard or real transparency.
 	python tools/process_enemy_sheet.py basic
 	python tools/process_enemy_sheet.py boss_ruin_king
 	python tools/process_enemy_sheet.py --all
+
+The enemies are now drawn as rigs and these strips are retired (their boards
+are no longer in the repository); the module stays for the background,
+shrinking and outline helpers that build_ui_frames.py, cut_card_art.py and
+process_item_icons.py import.
 """
 
 from __future__ import annotations

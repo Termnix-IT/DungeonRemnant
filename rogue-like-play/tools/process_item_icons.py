@@ -7,6 +7,11 @@ outline) stored at 2x with nearest scaling, so a 48px item card shows it at
 exactly one source pixel per two texture pixels.
 
 	python tools/process_item_icons.py
+
+The items now use painted icons (build_painted_objects.py) and these pixel
+icons are retired (their boards are no longer in the repository); the module
+stays for the board cutting that build_ui_frames.py and process_emblems.py
+import.
 """
 
 from __future__ import annotations

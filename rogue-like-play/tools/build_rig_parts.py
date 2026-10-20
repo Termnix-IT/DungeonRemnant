@@ -581,8 +581,7 @@ SENTINEL_FACINGS: dict[str, dict] = {
 		"arms_as_drawn": True,
 		# Below the armour skirt the legs show; the base gives them there.
 		"legs_below": 1165,
-		# The near fist, the blade raised ahead of it as the pixel sentinel
-		# holds it, clear of the legs.
+		# The near fist, the blade raised ahead of it, clear of the legs.
 		"sword": {"hand": (470, 1090), "angle": -110.0, "length": 400.0},
 		"parts": {
 			"Cloak": ("cloak", {}),

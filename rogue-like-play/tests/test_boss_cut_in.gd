@@ -47,10 +47,10 @@ func test_cut_in() -> void:
 	var stone := boss("石門の守護者")
 	cut_in.present(stone, "10F  ·  守護者")
 	check(cut_in.visible and cut_in.name_label.text == "石門の守護者" and cut_in.caption_label.text == "10F  ·  守護者", "The cut-in names the boss and its floor")
-	check(cut_in.portrait.visible == (EnemySprites.sheet_for(stone) != null), "A boss with a strip is shown beside its name")
+	check(cut_in.portrait.visible and not EnemySprites.portrait(stone).is_empty(), "A boss is shown beside its name")
 	var unnamed := boss("名もなき試験の主")
 	cut_in.present(unnamed, "10F  ·  守護者")
-	check(not cut_in.portrait.visible and cut_in.name_label.horizontal_alignment == HORIZONTAL_ALIGNMENT_CENTER, "A boss without a strip has its name centred alone")
+	check(cut_in.portrait.visible, "The unnamed boss shows the shared boss rig")
 	await create_timer(BossCutIn.HOLD_TIME * 0.6).timeout
 	cut_in.present(stone, "20F  ·  守護者")
 	await create_timer(BossCutIn.HOLD_TIME * 0.6).timeout

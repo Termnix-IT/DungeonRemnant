@@ -4,6 +4,7 @@
 	"atlas": "res://art/enemies/rig/boss_gale_warden_parts.png",
 	"output": "res://art/enemies/rig/boss_gale_warden_rig.tscn",
 	"lean_bone": "Body",
+	"height": 89.6,
 	"bones": [
 		{
 			"name": "Root",

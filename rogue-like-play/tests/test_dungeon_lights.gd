@@ -89,19 +89,14 @@ func run_tests() -> void:
 	check(mist.tint == mist.THEME_TINTS[2], "The mist takes the terrain theme's colour")
 	mist.refresh(Vector2i(30, 20), true, 1)
 	check(mist.tint == mist.FOREST_TINT, "The forest has its own green mist")
-	for atlas: Texture2D in dungeon.TERRAIN_ATLASES:
-		var image := atlas.get_image()
-		var floor_tone := mean_tone(image, 0)
-		var wall_tone := mean_tone(image, dungeon.WALL_TILE_START + 15)
-		check(wall_tone < floor_tone * 0.8, "Walls sit darker than the floor in %s" % atlas.resource_path.get_file())
-	for path: String in dungeon.PAINTED_ATLASES.values():
-		var painted: Image = (load(path) as Texture2D).get_image()
+	for atlas: Texture2D in dungeon.PAINTED_ATLASES:
+		var painted: Image = atlas.get_image()
 		var cell: int = dungeon.PAINTED_CELL
 		var columns: int = dungeon.PAINTED_COLUMNS
 		var floor_tone := region_tone(painted, Rect2i(0, 0, cell, cell))
 		var wall_index: int = dungeon.WALL_TILE_START + 15
 		var wall_tone := region_tone(painted, Rect2i((wall_index % columns) * cell, (wall_index / columns) * cell, cell, cell))
-		check(wall_tone < floor_tone * 0.85, "Painted walls sit darker than the floor in %s" % path.get_file())
+		check(wall_tone < floor_tone * 0.85, "Painted walls sit darker than the floor in %s" % atlas.resource_path.get_file())
 	var layers: Array[String] = []
 	for child in dungeon.get_children():
 		layers.append(String(child.name))
@@ -126,15 +121,6 @@ func run_tests() -> void:
 	await process_frame
 	print("Dungeon lights: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures else 0)
-
-
-# Mean brightness of one 48px atlas tile.
-func mean_tone(image: Image, tile: int) -> float:
-	var total := 0.0
-	for y in 48:
-		for x in 48:
-			total += image.get_pixel(tile * 48 + x, y).v
-	return total / (48.0 * 48.0)
 
 
 func region_tone(image: Image, area: Rect2i) -> float:
