@@ -40,6 +40,8 @@ func capture() -> void:
 			hero.facing = direction
 			hero.aiming = true
 			break
+	# The camera eases after the hero; a placed hero has to be met at once.
+	run._snap_camera = true
 	run._refresh()
 	await process_frame
 	await RenderingServer.frame_post_draw
@@ -72,6 +74,7 @@ func capture() -> void:
 	run._refresh()
 	grid.remove_actor(hero)
 	grid.place(hero, Vector2i(14, 12))
+	run._snap_camera = true
 	run._refresh()
 	await process_frame
 	await RenderingServer.frame_post_draw
