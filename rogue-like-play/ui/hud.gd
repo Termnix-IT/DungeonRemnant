@@ -9,8 +9,7 @@ const EMPHASIZED_LOG_ENTRIES := 2
 const PORTRAIT_SIZE := 104
 const PORTRAIT_INSET := 14
 # The effects stand in the top-left corner, under the actions card when it
-# shows.
-const EFFECTS_MARGIN := 16.0
+# shows, at the card's own distance from the screen's edges.
 const EFFECTS_GAP := 12.0
 const EFFECTS_WIDTH := 330.0
 # Announcements and the boss gauge share one band at the screen's top edge,
@@ -63,7 +62,7 @@ func _ready() -> void:
 	# count, the level with the two weapons and the EXP bar, and under them HP
 	# and MP across the plate. The turn, Gold and the EXP figures are in the
 	# inventory (I), where they are read, not glanced at.
-	var vitals: Panel = $BottomLeft
+	var vitals: Control = $BottomLeft
 	# What can be done now, at the top left: the keys the HUD shows nowhere
 	# else, the weapon swap among them.
 	actions = HudActions.new()
@@ -299,10 +298,10 @@ func show_effects(active: Array[Dictionary]) -> void:
 		panel.theme = $TopRight.theme
 		add_child(panel)
 		panel.size.x = EFFECTS_WIDTH
-	var top := EFFECTS_MARGIN
+	var top := HudActions.MARGIN
 	if actions.visible:
 		top = actions.position.y + actions.full_height() + EFFECTS_GAP
-	panel.position = Vector2(EFFECTS_MARGIN, top)
+	panel.position = Vector2(HudActions.MARGIN, top)
 	panel.show_entries(active)
 
 

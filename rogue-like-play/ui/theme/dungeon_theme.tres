@@ -29,9 +29,7 @@
 [ext_resource type="Texture2D" path="res://art/ui/slab_stone.png" id="SlabStoneTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/key_cap.png" id="HudKeyCapTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/key_cap_active.png" id="HudKeyCapActiveTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/plate.png" id="HudPlateTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/dialog_plate.png" id="DialogPlateTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/plate_active.png" id="HudPlateActiveTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/medallion.png" id="HudMedallionTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/map_frame.png" id="HudMapFrameTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/map_stairs.png" id="HudMapStairsTexture"]
@@ -610,38 +608,6 @@ texture = ExtResource("VitalHealthTrailTexture")
 
 [sub_resource type="StyleBoxTexture" id="VitalManaTrail"]
 texture = ExtResource("VitalManaTrailTexture")
-
-[sub_resource type="StyleBoxTexture" id="HudSurface"]
-resource_name = "HudSurface"
-texture = ExtResource("HudPlateTexture")
-texture_margin_left = 38.0
-texture_margin_top = 38.0
-texture_margin_right = 38.0
-texture_margin_bottom = 38.0
-expand_margin_left = 14.0
-expand_margin_top = 14.0
-expand_margin_right = 14.0
-expand_margin_bottom = 14.0
-content_margin_left = 14.0
-content_margin_top = 10.0
-content_margin_right = 14.0
-content_margin_bottom = 10.0
-
-[sub_resource type="StyleBoxTexture" id="HudSurfaceActive"]
-resource_name = "HudSurfaceActive"
-texture = ExtResource("HudPlateActiveTexture")
-texture_margin_left = 38.0
-texture_margin_top = 38.0
-texture_margin_right = 38.0
-texture_margin_bottom = 38.0
-expand_margin_left = 14.0
-expand_margin_top = 14.0
-expand_margin_right = 14.0
-expand_margin_bottom = 14.0
-content_margin_left = 14.0
-content_margin_top = 10.0
-content_margin_right = 14.0
-content_margin_bottom = 10.0
 
 [sub_resource type="StyleBoxFlat" id="HudMapSurface"]
 resource_name = "HudMapSurface"
@@ -1335,12 +1301,8 @@ MpTrail/base_type = &"ProgressBar"
 MpTrail/styles/background = SubResource("VitalTrack")
 MpTrail/styles/fill = SubResource("VitalManaTrail")
 
-HudPanel/base_type = &"Panel"
-HudPanel/styles/panel = SubResource("HudSurface")
 HudMapPanel/base_type = &"Panel"
 HudMapPanel/styles/panel = SubResource("HudMapSurface")
-HudPanelActive/base_type = &"Panel"
-HudPanelActive/styles/panel = SubResource("HudSurfaceActive")
 HudMapFrame/base_type = &"Panel"
 HudMapFrame/styles/panel = SubResource("HudMapFrame")
 HudEffects/icons/token = ExtResource("HudMedallionTexture")
@@ -1366,9 +1328,9 @@ HudValue/constants/outline_size = 4
 HudSmall/base_type = &"Label"
 HudSmall/colors/font_color = Color(0.6, 0.6, 0.57, 1)
 HudSmall/font_sizes/font_size = 13
-HudGoldCaption/base_type = &"Label"
+HudGoldCaption/base_type = &"HudCaption"
 HudGoldCaption/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
-HudGoldCaption/font_sizes/font_size = 15
+HudGoldCaption/font_sizes/font_size = 20
 HpCaption/base_type = &"Label"
 HpCaption/colors/font_color = Color(0.92, 0.35, 0.3, 1)
 HpCaption/font_sizes/font_size = 16
@@ -1384,6 +1346,8 @@ ExpBar/styles/fill = SubResource("ExperienceFill")
 HudLog/base_type = &"RichTextLabel"
 HudLog/colors/default_color = Color(0.79, 0.79, 0.75, 1)
 HudLog/font_sizes/normal_font_size = 15
+HudLog/colors/font_outline_color = Color(0, 0, 0, 0.8)
+HudLog/constants/outline_size = 4
 HudLog/icons/victory = ExtResource("HudLogVictoryTexture")
 HudLog/icons/harm = ExtResource("HudLogHarmTexture")
 HudLog/icons/floor = ExtResource("HudLogFloorTexture")

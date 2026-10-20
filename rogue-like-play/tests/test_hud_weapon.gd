@@ -34,6 +34,9 @@ func run_tests() -> void:
 	# in the inventory, not glanced at.
 	for node_name in ["Meta", "Gold", "ExpValue"]:
 		check(vitals.get_node_or_null(node_name) == null, "The vitals plate has no %s" % node_name)
+	# Only the map keeps a frame; the rest stand on the floor, uncaptioned.
+	check(not (vitals is Panel) and not (hud.get_node("Log") is Panel) and not (hud.actions is Panel) and hud.get_node("TopRight") is Panel, "Only the map keeps a frame")
+	check(hud.get_node("Log").find_children("*", "Label", false, false).is_empty(), "The log has no caption")
 	var mp_bar: Control = vitals.get_node("MpBar")
 	check(vitals.get_global_rect().encloses(mp_bar.get_global_rect()) and vitals.get_global_rect().end.y - mp_bar.get_global_rect().end.y < 24.0, "The plate ends just under the MP bar")
 	run._refresh()
@@ -64,11 +67,11 @@ func run_tests() -> void:
 	check(hud.actions.aiming and hud.actions.keys() == ["方向", "Space", "Esc"] and hud.actions.title.text == "攻撃の向きを選択中", "Aiming turns the card into the aim's keys")
 	check(hud.aim_tag.visible and hud.aim_tag.get_global_rect().end.y <= hero.y and absf(hud.aim_tag.get_global_rect().get_center().x - hero.x) < 2.0, "A tag stands over the hero while aiming")
 	check(not hud.log_entries.get_parsed_text().contains("攻撃方向を選択中"), "The log carries no aiming instructions")
-	check(hud.actions.theme_type_variation == &"HudPanelActive" and hud.actions.get_theme_stylebox(&"panel") != hud.get_node("BottomLeft").get_theme_stylebox(&"panel"), "The aim's card stands on the gilt plate")
+	check(hud.actions.title.visible and hud.actions.title.theme_type_variation == &"HudGoldCaption", "The aim's card is titled in gold")
 	player.aiming = false
 	run._refresh()
 	check(not hud.actions.aiming and not hud.aim_tag.visible and "I" in hud.actions.keys(), "Leaving the aim brings the usual keys back")
-	check(hud.actions.theme_type_variation == &"HudPanel", "Leaving the aim puts the card back on the usual plate")
+	check(not hud.actions.title.visible, "Out of the aim the card has no title")
 	# Each log entry leads with the mark of its kind of news; harm outranks the
 	# rest of a turn that also dealt a blow.
 	var marks := {

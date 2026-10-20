@@ -92,7 +92,8 @@ func run_tests() -> void:
 	var ring := Rect2(hero - Vector2.ONE * cell * 4.5, Vector2.ONE * cell * 9.0)
 	for path in ["TopRight", "BottomLeft", "Log", "Actions"]:
 		var panel: Control = hud.get_node(path)
-		var safe_rect := root.get_visible_rect().grow(-15.0)
+		# The actions card stands a few pixels from the corner; the rest keep a wider margin.
+		var safe_rect := root.get_visible_rect().grow(-(HudActions.MARGIN - 1.0) if path == "Actions" else -15.0)
 		check(safe_rect.encloses(panel.get_global_rect()), "%s keeps edge padding" % path)
 		check(not panel.get_global_rect().intersects(ring), "%s stays off the floor round the hero" % path)
 		for other in panels:

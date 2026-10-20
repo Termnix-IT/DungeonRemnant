@@ -1,14 +1,14 @@
 """Build the dungeon HUD's painted parts from their generated pictures.
 
 The pictures in art/ui/source/ were made with Codex's image generation (see
-開発メモ.md): the key caps, the HUD plates and the talisman medallion, the
+開発メモ.md): the key caps, the dialogs' plate and the talisman medallion, the
 minimap's frame and markers, the message log's marks, the notice band at
 the screen's top edge, the level-up cards and their rank pips, the result's
 seals and the floor's aim marks. All but the aim marks (light on black,
 added onto the floor) are painted on flat magenta (#FF00FF). The prompts' passage
 pictures are cut from the floor tiles' own painted pictures. This keys the
-backdrop out, cuts each part, fills the plates' empty insides with the HUD's
-translucent ink (the dialogs' plate with warm stone), and scales every part
+backdrop out, cuts each part, fills the dialogs' plate with warm stone and
+the level-up cards with the HUD's translucent ink, and scales every part
 to the size the game draws it, writing art/ui/hud/*.png. The nine-patch margins in
 ui/theme/dungeon_theme.tres follow the sizes printed here; update them
 whenever a picture changes.
@@ -202,10 +202,10 @@ def build() -> None:
 	[[normal, active]] = pieces(keyed("key_caps.png"))
 	for image, name in ((normal, "key_cap"), (active, "key_cap_active")):
 		save(scaled(image, CAP_HEIGHT / image.height), name)
-	[[normal, active], [medallion]] = pieces(keyed("hud_plates.png"))
-	save(filled(scaled(normal, PLATE_SCALE)), "plate")
+	# The HUD's own plates (the frame in ink, and a gilt one for the aim) are
+	# retired: the HUD stands on the floor, and only the dialogs keep the frame.
+	[[normal, _gilt], [medallion]] = pieces(keyed("hud_plates.png"))
 	save(stone_filled(scaled(normal, PLATE_SCALE)), "dialog_plate")
-	save(filled(scaled(active, PLATE_SCALE)), "plate_active")
 	save(fit(medallion, MEDALLION_SIZE), "medallion")
 	save(scaled(trim(keyed("map_frame.png")), MAP_SCALE), "map_frame")
 	icons = [icon for row in pieces(keyed("map_markers.png")) for icon in row]
