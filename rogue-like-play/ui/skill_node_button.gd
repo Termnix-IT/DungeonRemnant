@@ -38,6 +38,8 @@ static var _halo: GradientTexture2D
 
 func _init() -> void:
 	theme_type_variation = &"SkillNode"
+	# The painted emblem is shrunk from its mipmaps.
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	toggle_mode = true
 	focus_mode = Control.FOCUS_ALL
 

@@ -2,10 +2,16 @@ class_name HudPortrait
 extends Panel
 
 # The hero's face in the vitals plate, beside her HP: calm with an occasional blink, a wince for a
-# moment when hit, and worn out once HP falls into the danger range. Frames
-# come from art/ui/hud_portrait.png (normal, blink, hurt, near collapse).
-const SHEET := preload("res://art/ui/hud_portrait.png")
+# moment when hit, and worn out once HP falls into the danger range. The faces
+# are painted (art/ui/hud_portrait_<face>.png, 192 px, tools/build_hud_portrait.py)
+# and drawn at FRAME px from their mipmaps.
 enum Face { NORMAL, BLINK, HURT, WEARY }
+const FACES: Array[Texture2D] = [
+	preload("res://art/ui/hud_portrait_normal.png"),
+	preload("res://art/ui/hud_portrait_blink.png"),
+	preload("res://art/ui/hud_portrait_hurt.png"),
+	preload("res://art/ui/hud_portrait_weary.png"),
+]
 const FRAME := 96
 const HURT_TIME := 0.6
 const BLINK_TIME := 0.14
@@ -23,7 +29,7 @@ var _blink_clock := 0.0
 func _ready() -> void:
 	theme_type_variation = &"HudPortraitFrame"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 
 
 func show_health(hp: int, max_hp: int) -> void:
@@ -70,4 +76,4 @@ func _update_face() -> void:
 func _draw() -> void:
 	var inner := Rect2((size - Vector2.ONE * FRAME) / 2.0, Vector2.ONE * FRAME).abs()
 	inner.position = inner.position.floor()
-	draw_texture_rect_region(SHEET, inner, Rect2(face * FRAME, 0, FRAME, FRAME))
+	draw_texture_rect(FACES[face], inner, false)

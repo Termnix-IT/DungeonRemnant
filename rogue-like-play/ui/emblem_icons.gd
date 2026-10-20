@@ -2,8 +2,8 @@ class_name EmblemIcons
 extends RefCounted
 
 # Optional generated medallions for level-up abilities and permanent upgrades:
-# art/emblems/<key>.png, a 48px pixel-art emblem stored at 2x like the item
-# icons. Keys come from the ability Effect and the upgrade effect, so ability
+# art/emblems/<key>.png, a 192px painted emblem (tools/process_emblems.py)
+# drawn shrunk from its mipmaps. Keys come from the ability Effect and the upgrade effect, so ability
 # and upgrade data stay untouched. Without a file, ItemGlyph's drawn symbol
 # stays, so art can arrive one emblem at a time.
 const DIRECTORY := "res://art/emblems/"
@@ -42,8 +42,8 @@ static func set_override(key: String, value: Texture2D) -> void:
 		_cache[key] = value
 
 
-# Draws the emblem snapped to whole pixels; false when there is none, so the
-# caller keeps its drawn symbol.
+# Draws the emblem on whole pixels; false when there is none, so the caller
+# keeps its drawn symbol.
 static func paint(canvas: CanvasItem, rect: Rect2, key: String) -> bool:
 	var emblem := texture(key)
 	if emblem == null:

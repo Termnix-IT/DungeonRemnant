@@ -1,8 +1,9 @@
 """Build the Theme's 9-slice frames and button plates from generated ornaments.
 
-art/ui/source/ornaments.png is a 2x2 board: bronze panel corner, gold panel
-corner, bronze button end cap, gold button end cap (see BOARD). This script
-cuts them out, shrinks them to pixel art with the enemies' outline, and
+art/ui/source/painted/ornaments.png is a 2x2 board of painted pieces on
+magenta: bronze panel corner, gold panel corner, bronze button end cap, gold
+button end cap. This script cuts them out (their edge pulled in by
+EDGE_TRIM px so no magenta fringe stays), shrinks them smoothly, and
 composes, in art/ui/:
 
 - frame_panel.png, frame_card.png, frame_card_active.png: 96px frames with a
@@ -31,13 +32,12 @@ from __future__ import annotations
 import random
 from pathlib import Path
 
-from PIL import Image, ImageOps
+from PIL import Image, ImageFilter, ImageOps
 
-from process_enemy_sheet import add_outline, downscale
 from process_item_icons import cut_board
 
 ROOT = Path(__file__).resolve().parent.parent
-SOURCE = ROOT / "art" / "ui" / "source" / "ornaments.png"
+SOURCE = ROOT / "art" / "ui" / "source" / "painted" / "ornaments.png"
 OUTPUT = ROOT / "art" / "ui"
 FRAME_MARGIN = 42
 # The tiled middle of each frame; the grain repeats with this period.
@@ -58,7 +58,8 @@ CAP_HEIGHT = 36
 # into a tall cut gem instead of smearing.
 BUTTON_MARGIN_TOP = 21
 BUTTON_MARGIN_BOTTOM = 21
-PALETTE_COLORS = 24
+# The cut's edge holds a little of the key colour; pull it in (odd).
+EDGE_TRIM = 5
 OUTLINE = (10, 11, 14, 255)
 
 # Panel surfaces keep the Theme's approved colours and translucency.
@@ -86,17 +87,16 @@ PLATES = {
 }
 
 
-def pixel_part(source: Image.Image, size: tuple[int, int]) -> Image.Image:
-	"""Fit a cut-out into `size` minus its outline, as outlined pixel art."""
-	scale = min((size[0] - 2) / source.width, (size[1] - 2) / source.height)
-	small = downscale(source, scale)
-	small = small.crop(small.getchannel("A").getbbox())
-	alpha = small.getchannel("A")
-	flat = Image.new("RGB", small.size)
-	flat.paste(small.convert("RGB"), mask=alpha)
-	reduced = flat.quantize(colors=PALETTE_COLORS, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE).convert("RGBA")
-	reduced.putalpha(alpha)
-	return add_outline(reduced)
+def painted_part(source: Image.Image, size: tuple[int, int]) -> Image.Image:
+	"""Fit a cut-out into `size`, shrunk smoothly with a soft edge."""
+	alpha = source.getchannel("A").filter(ImageFilter.MinFilter(EDGE_TRIM)).filter(ImageFilter.GaussianBlur(1.0))
+	source.putalpha(alpha)
+	source = source.crop(alpha.getbbox())
+	scale = min(size[0] / source.width, size[1] / source.height)
+	target = (max(1, round(source.width * scale)), max(1, round(source.height * scale)))
+	# Shrunk premultiplied, so clear pixels never darken the edge.
+	premultiplied = Image.alpha_composite(Image.new("RGBA", source.size, (0, 0, 0, 0)), source).convert("RGBa")
+	return premultiplied.resize(target, Image.Resampling.LANCZOS).convert("RGBA")
 
 
 def grain(seed: int) -> list[list[float]]:
@@ -202,8 +202,8 @@ def plate(cap: Image.Image, fill: tuple, rim: tuple, shade: tuple) -> Image.Imag
 
 def main() -> None:
 	parts = cut_board(Image.open(SOURCE), 2, 2)
-	corners = {"bronze": pixel_part(parts[0], (CORNER, CORNER)), "gold": pixel_part(parts[1], (CORNER, CORNER))}
-	caps = {"bronze": pixel_part(parts[2], (CAP_HEIGHT, CAP_HEIGHT)), "gold": pixel_part(parts[3], (CAP_HEIGHT, CAP_HEIGHT))}
+	corners = {"bronze": painted_part(parts[0], (CORNER, CORNER)), "gold": painted_part(parts[1], (CORNER, CORNER))}
+	caps = {"bronze": painted_part(parts[2], (CAP_HEIGHT, CAP_HEIGHT)), "gold": painted_part(parts[3], (CAP_HEIGHT, CAP_HEIGHT))}
 	for name, (surface, rail) in SURFACES.items():
 		frame(corners["gold" if name.endswith("active") else "bronze"], surface, rail).save(OUTPUT / f"{name}.png")
 	for name, style in SURFACE_STYLES.items():

@@ -325,7 +325,7 @@ func _build_detail(column: VBoxContainer) -> void:
 	detail_emblem = Control.new()
 	detail_emblem.custom_minimum_size = Vector2.ONE * CENTRE_EMBLEM
 	detail_emblem.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	detail_emblem.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	detail_emblem.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	detail_emblem.draw.connect(func(): EmblemIcons.paint(detail_emblem, Rect2(Vector2.ZERO, detail_emblem.size), (buttons[selected_id] as SkillNodeButton).emblem))
 	heading.add_child(detail_emblem)
 	var names := VBoxContainer.new()

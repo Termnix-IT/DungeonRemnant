@@ -16,7 +16,7 @@ func check(ok: bool, message: String) -> void:
 
 
 func run_tests() -> void:
-	check(HudPortrait.SHEET.get_size() == Vector2(96 * 4, 96), "The portrait sheet holds four 96px faces")
+	check(HudPortrait.FACES.size() == 4 and HudPortrait.FACES.all(func(face: Texture2D): return face.get_size() == Vector2(192, 192)), "The portrait holds four painted 192px faces")
 	var hud = preload("res://ui/hud.tscn").instantiate()
 	root.add_child(hud)
 	await process_frame

@@ -51,9 +51,9 @@ func _init() -> void:
 	key_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	status_label = HubUI.label(top, "", &"MutedLabel")
 	status_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	# 96px shows a 2x emblem at its stored size, one texture pixel per pixel.
+	# The 192px painted emblem at half its size, from its mipmaps.
 	symbol = _canvas(stack, Vector2(96, 96), _draw_symbol)
-	symbol.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	symbol.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	symbol.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	name_label = HubUI.label(stack, "", &"HeadingLabel")
 	name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
