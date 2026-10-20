@@ -94,7 +94,7 @@ func run_tests() -> void:
 	root.add_child(run_instance)
 	preload("res://tests/run_fixture.gd").arrange(run_instance)
 	check(run_instance.dungeon.TILE_SIZE == 48 and run_instance.camera.zoom == Vector2(1.5, 1.5), "Dungeon presents 48-pixel tiles at a readable scale")
-	check(ProjectSettings.get_setting("rendering/2d/snap/snap_2d_transforms_to_pixel"), "2D transforms snap animated pixels to the screen grid")
+	check(not ProjectSettings.get_setting("rendering/2d/snap/snap_2d_transforms_to_pixel") and not ProjectSettings.get_setting("rendering/2d/snap/snap_2d_vertices_to_pixel"), "The painted world moves smoothly, unsnapped to the pixel grid")
 	check(run_instance.turns.enemies.size() == 3, "Run spawns three enemies")
 	var terrain: TileMapLayer = run_instance.dungeon.get_node("Terrain")
 	var remembered: TileMapLayer = run_instance.dungeon.get_node("ExploredTerrain")

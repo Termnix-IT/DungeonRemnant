@@ -3,14 +3,13 @@ extends Node2D
 
 # Shows a rig (a CharacterRig or DirectionalRig) in the world as one picture.
 # The rig is drawn into its own SubViewport at the screen's scale (camera
-# zoom and window stretch) with pixel snap off, so its parts move smoothly
-# while the project snaps everything else (the floor's pixel art) to pixels;
-# the picture is then placed here, one texel per screen pixel. This node's
-# origin is the rig's origin, the point between its soles.
+# zoom and window stretch) with pixel snap off, and the picture is placed
+# here, one texel per screen pixel. Its own canvas also keeps the parts'
+# draw order (and the held weapon's z_index) out of the actors' y-sort. This
+# node's origin is the rig's origin, the point between its soles.
 #
-# With unsnapped off, the rig is simply a child and snaps like the rest of
-# the world: cheaper (no render target per actor), but its small motions
-# then move a pixel at a time.
+# With unsnapped off, the rig is simply a child of this node: cheaper (no
+# render target per actor), but a z_index inside it then reaches the y-sort.
 
 # The local px around the origin the picture covers, room for the rig's
 # reach in every motion.
