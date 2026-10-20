@@ -15,8 +15,9 @@ const FOES := 4
 # The point aimed from: her middle, above the feet.
 const AIM_ORIGIN := Vector2(0, -26)
 
-@export var tuning: HeroTuning = preload("res://data/hero/mio.tres")
-@export var moveset: Moveset = preload("res://data/movesets/sword.tres")
+# Set in hero.tscn, not preloaded here (see Foe.data).
+@export var tuning: HeroTuning
+@export var moveset: Moveset
 # Off in tests, which step her with made-up HeroInput instead.
 @export var controlled := true
 var motor: HeroMotor

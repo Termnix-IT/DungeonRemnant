@@ -4,8 +4,10 @@ extends Node2D
 # A battlefield of the real-time fight. It holds the ground, the hero and
 # the foes (its `foes` list is what her swings are measured against), the
 # hit stop and the camera, and shows what the fight reports: the swing's
-# painted effect, the numbers, the shake and the sounds. The open field, the
-# arena and the boss hall build on it.
+# painted effect, the foes' warnings on the floor, the numbers, the shake
+# and the sounds. A fallen foe is kept in a pool, out of the world, and
+# brought back for the next spawn of its kind. The open field, the arena
+# and the boss hall build on it.
 
 signal hero_fell
 signal foe_fell(foe: Foe)
@@ -26,10 +28,18 @@ const HEAVY_KNOCKBACK := 400.0
 # How high on a body its effects and numbers show.
 const BODY_MIDDLE := Vector2(0, -26)
 const NUMBER_HEIGHT := Vector2(0, -58)
-# Death sounds closer together than this (ms) are one sound.
+# Hit and death sounds closer together than this (ms) are one sound, so a
+# crowd struck at once does not use up every voice.
+const HIT_SOUND_GAP := 45
 const DEATH_SOUND_GAP := 70
+# Painted effects of a kind shown at once, at most: past this a crowd's hits
+# and falls add no more, so the hero is never buried in smoke.
+const EFFECT_CAPS := {&"hit": 18, &"death": 10}
+const DEATH_SCALE := 0.9
 
 var ground: AreaGround
+# The foes' warnings: over the ground, under the actors.
+var marks: Node2D
 var actors: Node2D
 var effects: Node2D
 var popups: DamagePopups
@@ -39,14 +49,27 @@ var hero: Hero
 var foes: Array[Foe] = []
 var kills := 0
 var shake_scale := 1.0
+# Spawns since the area opened, and foes brought back from the pool.
+var spawned := 0
+var reused := 0
 var _shake: Tween
+var _last_hit_sound := -HIT_SOUND_GAP
 var _last_death_sound := -DEATH_SOUND_GAP
+var _effects_shown: Dictionary = {}
+# Retired foes by their FoeData, kept under a node that neither processes
+# nor collides.
+var _pool: Dictionary = {}
+var _pool_holder: Node
 
 
 func _ready() -> void:
 	ground = AreaGround.new()
 	ground.name = "Ground"
 	add_child(ground)
+	marks = Node2D.new()
+	marks.name = "Marks"
+	marks.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(marks)
 	actors = Node2D.new()
 	actors.name = "Actors"
 	actors.y_sort_enabled = true
@@ -68,6 +91,10 @@ func _ready() -> void:
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = CAMERA_SMOOTHING
 	add_child(camera)
+	_pool_holder = Node.new()
+	_pool_holder.name = "Pool"
+	_pool_holder.process_mode = Node.PROCESS_MODE_DISABLED
+	add_child(_pool_holder)
 	StrikeEffect.warm()
 
 
@@ -88,14 +115,42 @@ func spawn_hero(at: Vector2) -> Hero:
 
 
 func spawn_foe(data: FoeData, at: Vector2) -> Foe:
-	var foe: Foe = FOE_SCENE.instantiate()
-	foe.data = data
+	spawned += 1
+	var kept: Array = _pool.get(data, [])
+	var foe: Foe
+	if not kept.is_empty():
+		foe = kept.pop_back()
+		reused += 1
+		_pool_holder.remove_child(foe)
+		foe.revive(at)
+	else:
+		foe = FOE_SCENE.instantiate()
+		foe.data = data
+		foe.position = at
+		foe.fell.connect(_on_foe_fell)
+		foe.retired.connect(_on_foe_retired)
 	foe.target = hero
-	foe.position = at
+	foe.area = self
 	actors.add_child(foe)
 	foes.append(foe)
-	foe.fell.connect(_on_foe_fell)
 	return foe
+
+
+func pooled(data: FoeData) -> int:
+	return (_pool.get(data, []) as Array).size()
+
+
+# The world rectangle the camera shows now.
+func view_rect() -> Rect2:
+	var size := get_viewport_rect().size / camera.zoom
+	return Rect2(camera.get_screen_center_position() - size * 0.5, size)
+
+
+func show_telegraph(attack: AttackData, origin: Vector2, facing: Vector2) -> Telegraph:
+	var telegraph := Telegraph.new()
+	telegraph.setup(attack, origin, facing)
+	marks.add_child(telegraph)
+	return telegraph
 
 
 func report_swing(by: Hero, attack: AttackData, facing: Vector2) -> void:
@@ -115,13 +170,11 @@ func report_swing(by: Hero, attack: AttackData, facing: Vector2) -> void:
 func report_hit(target: Node2D, lost: int, info: DamageInfo) -> void:
 	if lost > 0:
 		popups.dealt(lost, target.global_position + NUMBER_HEIGHT)
-	var effect := StrikeEffect.new()
-	effect.scale = Vector2.ONE * 1.3
-	effect.position = target.global_position + BODY_MIDDLE
-	effects.add_child(effect)
-	var points: Array[Vector2] = [Vector2.ZERO]
-	effect.start(&"hit", points, info.direction)
-	GameAudio.play(self, &"hit", -20.0)
+	_effect(&"hit", target.global_position + BODY_MIDDLE, info.direction, 1.3)
+	var now := Time.get_ticks_msec()
+	if now - _last_hit_sound >= HIT_SOUND_GAP:
+		_last_hit_sound = now
+		GameAudio.play(self, &"hit", -20.0)
 	if info.knockback >= HEAVY_KNOCKBACK:
 		shake(HEAVY_SHAKE)
 
@@ -149,17 +202,35 @@ func shake(strength: float) -> void:
 func _on_foe_fell(foe: Foe) -> void:
 	foes.erase(foe)
 	kills += 1
-	var effect := StrikeEffect.new()
-	effect.scale = Vector2.ONE * 1.2
-	effect.position = foe.global_position + BODY_MIDDLE * 0.7
-	effects.add_child(effect)
-	var points: Array[Vector2] = [Vector2.ZERO]
-	effect.start(&"death", points, Vector2.RIGHT)
+	_effect(&"death", foe.global_position + BODY_MIDDLE * 0.7, Vector2.RIGHT, DEATH_SCALE)
 	var now := Time.get_ticks_msec()
 	if now - _last_death_sound >= DEATH_SOUND_GAP:
 		_last_death_sound = now
 		GameAudio.play(self, &"death", -22.0)
 	foe_fell.emit(foe)
+
+
+# A painted effect at a point, unless its kind is at its cap.
+func _effect(kind: StringName, at: Vector2, direction: Vector2, size: float) -> void:
+	var shown: int = _effects_shown.get(kind, 0)
+	if shown >= EFFECT_CAPS.get(kind, 1000):
+		return
+	_effects_shown[kind] = shown + 1
+	var effect := StrikeEffect.new()
+	effect.scale = Vector2.ONE * size
+	effect.position = at
+	effects.add_child(effect)
+	effect.tree_exited.connect(func(): _effects_shown[kind] = _effects_shown[kind] - 1)
+	var points: Array[Vector2] = [Vector2.ZERO]
+	effect.start(kind, points, direction)
+
+
+func _on_foe_retired(foe: Foe) -> void:
+	actors.remove_child(foe)
+	_pool_holder.add_child(foe)
+	if not _pool.has(foe.data):
+		_pool[foe.data] = []
+	_pool[foe.data].append(foe)
 
 
 func _on_hero_fell() -> void:

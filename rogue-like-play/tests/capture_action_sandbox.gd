@@ -1,7 +1,8 @@
 extends SceneTree
 
 # The Phase 1 sandbox drawn for real at 1600x900: the hero among sentinels,
-# mid-swing, charging, letting the charged attack loose and dashing, then
+# mid-swing, charging, letting the charged attack loose and dashing, an
+# elite and a rat winding up their attacks with their warnings, then
 # the frame time with 12, 30 and 60 sentinels on the field (vsync off, the
 # hero kept alive). Images go to .godot/action_*.png; the times are printed.
 # Needs a rendering display driver:
@@ -26,6 +27,7 @@ func capture() -> void:
 	sandbox = load("res://world/areas/sandbox.tscn").instantiate()
 	sandbox.seed_value = 11
 	root.add_child(sandbox)
+	sandbox.director.fixed_alive = 12
 	var hero := sandbox.hero
 	hero.controlled = false
 	# Kept standing through the frame-time runs.
@@ -44,9 +46,20 @@ func capture() -> void:
 	await drive(HeroInput.new(), 0.5)
 	await drive(HeroInput.make(Vector2.RIGHT, Vector2.ZERO, false, false, true), 0.08)
 	await _grab("action_dash")
+	# A raging charger winding up its slam beside her, and a rat its pounce.
+	sandbox.director.running = false
+	var charger: Foe = sandbox.spawn_foe(load("res://data/foes/raging_charger.tres"), hero.global_position + Vector2(90, 20))
+	charger.begin_attack(charger.data.attacks[0], hero.global_position - charger.global_position)
+	var rat: Foe = sandbox.spawn_foe(load("res://data/foes/dashing_rat.tres"), hero.global_position + Vector2(-140, -40))
+	rat.begin_attack(rat.data.attacks[0], hero.global_position - rat.global_position)
+	await drive(HeroInput.new(), 0.3)
+	await _grab("action_warnings")
+	await drive(HeroInput.new(), 0.5)
+	await _grab("action_slam")
+	sandbox.director.running = true
 	var times := {}
 	for count in [12, 30, 60]:
-		sandbox.foe_count = count
+		sandbox.director.fixed_alive = count
 		while sandbox.foes.size() < count:
 			await drive(HeroInput.new(), 0.25)
 		await drive(HeroInput.new(), 1.0)

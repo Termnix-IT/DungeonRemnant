@@ -106,7 +106,13 @@ func run_tests() -> void:
 	check(fallen.size() == 1 and fallen[0] == foe and area.kills == 1 and area.foes.is_empty(), "Enough swings fell the foe, which leaves the list")
 	check(foe.collision_layer == 0, "A fallen foe no longer blocks")
 	await drive(hero, HeroInput.new(), 0.8)
-	check(not is_instance_valid(foe), "A fallen foe fades and is removed")
+	check(is_instance_valid(foe) and foe.get_parent() != area.actors and area.pooled(sentinel) == 1, "A fallen foe fades and is kept in the pool")
+	var again := area.spawn_foe(sentinel, hero.global_position + Vector2(300, 0))
+	check(again == foe and area.reused == 1 and area.pooled(sentinel) == 0, "The next foe of its kind comes back from the pool")
+	check(again.is_inside_tree() and again.health.hp == sentinel.max_hp and not again.dying and again.collision_layer == Hero.FOES and is_equal_approx(again.modulate.a, 1.0), "A foe from the pool comes back whole")
+	again.receive(DamageInfo.make(1000.0, Vector2.RIGHT))
+	await drive(hero, HeroInput.new(), 0.8)
+	check(area.pooled(sentinel) == 1 and area.kills == 2, "It can fall and return to the pool again")
 	check(area.effects.get_child_count() >= 0, "Effects play and clear themselves")
 
 	# The dash slips through a blow; her mercy time protects her after one.
@@ -128,13 +134,13 @@ func run_tests() -> void:
 	await process_frame
 	area.free()
 
-	# The sandbox starts up and keeps its foes coming.
+	# The sandbox starts up and its director keeps the foes coming.
 	var sandbox: CombatArea = load("res://world/areas/sandbox.tscn").instantiate()
 	sandbox.seed_value = 5
 	root.add_child(sandbox)
 	await drive_frames(150)
 	check(sandbox.hero != null and sandbox.hero.controlled, "The sandbox puts a hero under the player's control")
-	check(sandbox.foes.size() >= 3, "The sandbox keeps sending foes")
+	check(sandbox.foes.size() >= 8 and sandbox.director.elapsed > 2.0, "The sandbox's director keeps sending foes")
 	for each: Foe in sandbox.foes:
 		check(sandbox.ground.is_open(each.global_position, 10.0), "Foes appear on open ground")
 	check(sandbox.hud != null and sandbox.hud.hp_bar.value == sandbox.hero.health.hp, "The HUD shows the hero's health")

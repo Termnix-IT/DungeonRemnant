@@ -1,14 +1,15 @@
 class_name ActionHud
 extends CanvasLayer
 
-# The provisional HUD of the real-time fight (Phase 1): the hero's health and
-# dashes at the bottom left, the foe count, kills and frame rate at the top
-# left, the controls along the bottom and a message in the middle (paused,
-# fallen). The real HUD replaces it in Phase 5; it only reads the area.
+# The provisional HUD of the real-time fight: the hero's health and dashes at
+# the bottom left; the time, foe count, kills and frame rate at the top left
+# (with how the foes are being sent, when an EnemyDirector is watched); the
+# controls along the bottom and a message in the middle (paused, fallen).
+# The real HUD replaces it in Phase 5; it only reads the area.
 
 const DASH_FULL := Color("9fe3dc")
 const DASH_EMPTY := Color(0.35, 0.4, 0.42, 0.6)
-const CONTROLS := "WASD 移動　／　左クリック 攻撃（長押しで溜め）　／　Space 回避　／　1〜4 敵の数　／　Esc 一時停止"
+const CONTROLS := "WASD 移動　／　左クリック 攻撃（長押しで溜め）　／　Space 回避　／　1〜5 敵の数を固定　0 時間で増加　／　Esc 一時停止"
 
 var area: CombatArea
 var hp_bar: ProgressBar
@@ -92,7 +93,13 @@ func _process(_delta: float) -> void:
 	hp_bar.max_value = health.max_hp
 	hp_bar.value = health.hp
 	hp_value.text = "%d / %d" % [health.hp, health.max_hp]
-	info.text = "敵 %d　撃破 %d　%d FPS" % [area.foes.size(), area.kills, Engine.get_frames_per_second()]
+	var director: EnemyDirector = area.get(&"director")
+	var line := "敵 %d　撃破 %d　%d FPS" % [area.foes.size(), area.kills, Engine.get_frames_per_second()]
+	if director != null:
+		var minutes := floori(director.elapsed / 60.0)
+		var sending := "固定 %d体" % director.fixed_alive if director.fixed_alive > 0 else "時間で増加（目標 %d体）" % director.target_alive()
+		line = "%d:%02d　%s　／　%s" % [minutes, floori(director.elapsed) % 60, line, sending]
+	info.text = line
 	dashes.queue_redraw()
 
 

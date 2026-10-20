@@ -4,6 +4,7 @@
 script = ExtResource("1")
 id = &"wandering_sentinel"
 display_name = "さまよう番兵"
+baked = true
 visual_id = "basic"
 max_hp = 30
 defense = 0

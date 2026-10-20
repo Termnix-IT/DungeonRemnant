@@ -35,6 +35,10 @@ enum Shape { ARC, CIRCLE, LINE }
 @export var effect: StringName = &"slash"
 # Lightning, fire...; empty is a plain blow. Read by later effects.
 @export var element: StringName
+# A foe's attack only: the distances to the hero (world px, feet to feet) at
+# which it chooses this one. Its wind-up is the warning drawn on the floor.
+@export_range(0.0, 2000.0) var use_from := 0.0
+@export_range(0.0, 2000.0) var use_until := 0.0
 
 
 func duration() -> float:
