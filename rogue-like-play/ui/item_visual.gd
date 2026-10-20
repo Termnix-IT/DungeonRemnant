@@ -13,6 +13,12 @@ var idle := false:
 	set(value):
 		idle = value
 		_sync_idle()
+# An item not found yet: its dark outline alone, still (the encyclopedia).
+var unknown := false:
+	set(value):
+		unknown = value
+		_sync_idle()
+		queue_redraw()
 static var _glow: GradientTexture2D
 var _phase := 0.0
 
@@ -35,7 +41,7 @@ func _notification(what: int) -> void:
 
 
 func _sync_idle() -> void:
-	set_process(idle and item != null and is_visible_in_tree())
+	set_process(idle and item != null and not unknown and is_visible_in_tree())
 
 
 func _process(delta: float) -> void:
@@ -48,7 +54,7 @@ func _draw() -> void:
 	var wave := sin(_phase * TAU) if idle else 0.0
 	if framed:
 		draw_style_box(get_theme_stylebox(&"panel", &"VisualPanel"), rect)
-	elif item != null:
+	elif item != null and not unknown:
 		if _glow == null:
 			var fade := Gradient.new()
 			fade.set_color(0, Color.WHITE)
@@ -69,4 +75,12 @@ func _draw() -> void:
 			extent = maxf(48.0, floorf(minf(size.x, size.y) * 0.84 / 48.0) * 48.0)
 		# Whole pixels, so the drift never blurs the icon.
 		var lift := Vector2(0, roundf(-wave * UIMotion.IDLE_RISE))
+		var art := ItemIcons.silhouette(item) if unknown else null
+		if unknown:
+			var area := Rect2(((size - Vector2.ONE * extent) / 2).floor(), Vector2.ONE * extent)
+			if art != null:
+				draw_texture_rect(art, area, false)
+			else:
+				ItemGlyph.paint(self, area, item, ItemCell.UNKNOWN_SHADE)
+			return
 		ItemGlyph.paint(self, Rect2(((size - Vector2.ONE * extent) / 2).floor() + lift, Vector2.ONE * extent), item, get_theme_color(&"font_color", &"GoldLabel"))

@@ -90,6 +90,33 @@ func test_codec() -> void:
 		data.equipment = invalid
 		check(SaveCodec.decode(data) == null, "Invalid equipment rejected without loading arbitrary paths")
 	check(not original.has("abilities") and not original.has("level") and not original.has("hp"), "Run growth and HP not serialized")
+	# The encyclopedia's record: what was ever held, kept after it is gone.
+	var finder := sample()
+	var bolt := ItemCatalog.by_id("bolt_scroll")
+	check(finder.has_discovered(ItemCatalog.POTION) and not finder.has_discovered(bolt), "What is held counts as found; the rest does not")
+	finder.discover(bolt)
+	var recorded := SaveCodec.encode(finder)
+	check(recorded.discovered.has("bolt_scroll") and recorded.discovered.has("healing_potion"), "The save lists what was found and what is held")
+	var reread := SaveCodec.decode(JSON.parse_string(JSON.stringify(recorded)))
+	reread.inventory = Inventory.new()
+	reread.storage = Inventory.new()
+	check(reread.has_discovered(bolt) and reread.has_discovered(ItemCatalog.POTION), "Found items stay found once sold or used up")
+	var older := recorded.duplicate(true)
+	older.erase("discovered")
+	var from_older := SaveCodec.decode(older)
+	check(from_older != null and from_older.discovered_items.is_empty() and from_older.has_discovered(ItemCatalog.POTION), "A save from before the encyclopedia starts from what it holds")
+	var retired := recorded.duplicate(true)
+	retired.discovered.append("retired_item")
+	var without_retired := SaveCodec.decode(retired)
+	check(without_retired != null and not without_retired.discovered_items.has(&"retired_item"), "An id the game no longer has is dropped")
+	for invalid in [null, "bolt_scroll", {}, [1], [null]]:
+		var data := recorded.duplicate(true)
+		data.discovered = invalid
+		check(SaveCodec.decode(data) == null, "An invalid record is rejected")
+	var ids := {}
+	for item in ItemCatalog.all_items():
+		ids[item.id] = true
+	check(ids.size() == ItemCatalog.all_items().size() and ids.size() == 22 and ItemCatalog.all_items()[0].kind == ItemData.Kind.WEAPON, "The encyclopedia lists each of the 22 items once, weapons first")
 
 
 func test_files() -> void:

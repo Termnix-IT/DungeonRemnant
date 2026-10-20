@@ -73,6 +73,9 @@ func save_state(state: RunCarryover) -> bool:
 				return _failed("読めない元データを退避できません")
 	if DirAccess.rename_absolute(temporary, path) != OK:
 		return _failed("保存ファイルを確定できません")
+	# Only a save that landed writes the held items in as found; a failed one
+	# leaves the state as it was, for the caller to roll back.
+	state.note_possessions()
 	message = "保存済み。冒険途中で終了すると最後に保存した拠点状態に戻ります。"
 	alert = false
 	return true

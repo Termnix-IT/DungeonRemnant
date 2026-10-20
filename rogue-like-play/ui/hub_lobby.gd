@@ -19,6 +19,7 @@ const ENTRIES := [
 	[&"prepare", "準備", "装備"],
 	[&"shop", "ショップ", "ショップ"],
 	[&"upgrade", "強化", "永久強化"],
+	[&"codex", "図鑑", "図鑑"],
 	[&"settings", "設定", "設定"],
 ]
 const ACTIONS := {
@@ -26,12 +27,14 @@ const ACTIONS := {
 	&"prepare": "準備を整える",
 	&"shop": "ショップに入る",
 	&"upgrade": "強化を選ぶ",
+	&"codex": "図鑑を開く",
 	&"settings": "設定を開く",
 }
 const DESCRIPTIONS := {
 	&"prepare": "武具を装備し、持ち込みと倉庫の間で品を移す。倉庫の品は冒険で失わない。",
 	&"shop": "Goldで薬や武具を買い、要らない品を売る。",
 	&"upgrade": "Goldで能力を永久に強化し、開始階を解放する。",
+	&"codex": "これまでに手にした品の絵と効果を見返す。",
 	&"settings": "音量と画面モードを変え、遊び方を確認する。",
 }
 # Each panel shows the illustration of what it opens.
@@ -39,6 +42,7 @@ const ART := {
 	&"prepare": preload("res://art/hub/cards/weapons.png"),
 	&"shop": preload("res://art/hub/cards/shop.png"),
 	&"upgrade": preload("res://art/hub/cards/books.png"),
+	&"codex": preload("res://art/hub/cards/codex.png"),
 	&"settings": preload("res://art/hub/cards/settings.png"),
 }
 const HERO_TEXTURE := preload("res://art/characters/mio_lobby.png")
@@ -100,6 +104,8 @@ var gold_value: Label
 var carried_room: Label
 var upgrade_value: Label
 var upgrade_ready: Label
+var codex_found: Label
+var codex_left: Label
 var title_icon: NavigationIcon
 var floors_value: Label
 var difficulty_value: Label
@@ -269,6 +275,11 @@ func _build_panel() -> void:
 	upgrade_value = _fact(growth, "習得した強化")
 	_divider(growth)
 	upgrade_ready = _fact(growth, "強化できる")
+	var records: HBoxContainer = _strip(stack)
+	_details[&"codex"] = records
+	codex_found = _fact(records, "見つけた品")
+	_divider(records)
+	codex_left = _fact(records, "未発見")
 	var current: HBoxContainer = _strip(stack)
 	_details[&"settings"] = current
 	volume_value = _fact(current, "音量")
@@ -462,6 +473,10 @@ func refresh(state: RunCarryover, stage: StageData) -> void:
 	for id in state.skill_levels:
 		ranks += int(state.skill_levels[id])
 	upgrade_value.text = "%d 段階" % ranks
+	var all := ItemCatalog.all_items()
+	var found := all.filter(func(item: ItemData): return state.has_discovered(item)).size()
+	codex_found.text = "%d / %d" % [found, all.size()]
+	codex_left.text = "%d 品" % (all.size() - found)
 	if stage != null:
 		floors_value.text = "全%d階" % stage.floor_count
 		difficulty_value.text = stage.difficulty

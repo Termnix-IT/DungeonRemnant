@@ -172,7 +172,7 @@ func run_tests() -> void:
 	hero.advance(LobbyHero.REACT_TIME)
 	check(is_equal_approx(hero.scale.y, 1.0) and is_equal_approx(hero.scale.x, 1.0), "The hop settles back to rest")
 	check(hero.get_rect().get_center().x > viewport.x * 0.66, "Heroine stands on the right side of the lobby")
-	check(lobby.buttons.map(func(button: Button): return button.text) == ["出撃", "準備", "ショップ", "強化", "設定"], "Lobby menu lists the five entries in order")
+	check(lobby.buttons.map(func(button: Button): return button.text) == ["出撃", "準備", "ショップ", "強化", "図鑑", "設定"], "Lobby menu lists the six entries in order")
 	check(lobby.selected_id() == &"departure" and hub.start_button.has_focus(), "Lobby starts on departure with focus")
 	for button in lobby.buttons:
 		check(button.get_global_rect().end.x <= viewport.x * 0.22, "Menu entry stays within about a fifth of the width: " + button.text)
@@ -190,7 +190,7 @@ func run_tests() -> void:
 	# the pointer by resting on an entry; a press enters.
 	await create_timer(HubAmbience.FOCUS_TIME + 0.1).timeout
 	check(ambience.focus_id == &"departure" and ambience.focus_strength > 0.9, "Departure lights the gate")
-	check(HubLobby.ENTRIES.map(func(entry: Array): return entry[1]) == ["出撃", "準備", "ショップ", "強化", "設定"], "The lobby offers five entries, equipment and warehouse as one preparation")
+	check(HubLobby.ENTRIES.map(func(entry: Array): return entry[1]) == ["出撃", "準備", "ショップ", "強化", "図鑑", "設定"], "The lobby offers six entries, equipment and warehouse as one preparation")
 	check(hub.decide_button.text == "%sへ向かう" % hub.featured_stage().display_name, "The departure's button sets out for the stage shown")
 	hub.prepare_button.mouse_entered.emit()
 	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
@@ -315,6 +315,29 @@ func run_tests() -> void:
 	# Keyboard and gamepad focus chooses directly.
 	hub.sell_button.grab_focus()
 	check(lobby.selected_id() == &"shop" and lobby.carried_room.is_visible_in_tree(), "Focus chooses an entry")
+	# The encyclopedia: every item, the ones never held as unnamed outlines.
+	var codex_entry: Button = lobby.buttons[4]
+	codex_entry.grab_focus()
+	var found_now := ItemCatalog.all_items().filter(func(item: ItemData): return hub._state.has_discovered(item)).size()
+	check(lobby.selected_id() == &"codex" and lobby.codex_found.text == "%d / 22" % found_now, "The encyclopedia entry counts what has been found")
+	codex_entry.pressed.emit()
+	var codex: HubCodex = hub.codex_page
+	check(hub.page == "codex" and codex.visible and hub.title_label.text == "図鑑" and codex.grid.cells.size() == 22, "The encyclopedia lists all 22 items")
+	var unknown_rows := codex.rows.filter(func(row: Dictionary): return row.unknown)
+	check(not unknown_rows.is_empty() and unknown_rows.size() == 22 - found_now and unknown_rows.all(func(row: Dictionary): return row.caption == HubCodex.UNKNOWN_NAME), "Items never held show as ？？？")
+	var hidden: ItemData = unknown_rows[0].item
+	var hidden_place := codex.rows.find(unknown_rows[0])
+	codex.grid.cells[hidden_place].grab_focus()
+	check(codex.showcase.title.text == HubCodex.UNKNOWN_NAME and codex.showcase.visual.unknown and codex.grid.cells[hidden_place].unknown, "An unknown item's column names nothing and shows its outline")
+	hub._state.discover(hidden)
+	codex.refresh(hub._state)
+	codex.grid.cells[hidden_place].grab_focus()
+	check(codex.showcase.title.text == hidden.label() and not codex.showcase.visual.unknown and codex.count_label.text == "見つけた品  %d / 22" % (found_now + 1), "Once found it is named and counted")
+	codex.step_category(1)
+	check(codex.rows.all(func(row: Dictionary): return row.item.kind == ItemData.Kind.WEAPON), "The tabs filter the list as in the shop")
+	codex.category_tabs.select(0, true)
+	hub.go_back()
+	check(hub.page == "home", "Back leaves the encyclopedia for the lobby")
 	# Settings open as their own page, entered like the others.
 	var settings_entry: Button = lobby.buttons[-1]
 	settings_entry.grab_focus()
@@ -334,6 +357,12 @@ func run_tests() -> void:
 	check(AudioServer.is_bus_mute(master), "Silent mutes the master bus")
 	page.volume_slider.value = 100
 	check(not AudioServer.is_bus_mute(master) and is_equal_approx(AudioServer.get_bus_volume_linear(master), 1.0), "Loudest restores full volume")
+	# In the hub, ending the game loses nothing; declining keeps the page.
+	page.ask_quit()
+	check(page.quit_prompt.visible and page.quit_prompt.body_label.text == HubSettings.QUIT_BODY, "The hub's quit prompt says the hub is saved")
+	page.quit_prompt.canceled.emit()
+	check(not page.quit_prompt.visible and hub.page == "settings" and page.quit_button.has_focus(), "Declining returns to the settings")
+	page.volume_slider.grab_focus()
 	# Effects and the room tone have their own buses under the master.
 	page.effects_slider.value = 40
 	page.ambience_slider.value = 0

@@ -10,7 +10,13 @@ const FILTER := CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 # Grey theme colours mark secondary slots; icons dim instead of recolouring.
 const MUTED_TINT := Color(0.62, 0.62, 0.62)
 
+# An unknown item's outline (the encyclopedia): its icon's shape in one slate
+# shade, at the largest size it is drawn.
+const SILHOUETTE_SHADE := Color(0.25, 0.25, 0.29)
+const SILHOUETTE_SIZE := 128
+
 static var _cache: Dictionary = {}
+static var _silhouettes: Dictionary = {}
 
 
 # Loads every icon once, before anything draws one (Main calls it on start):
@@ -33,6 +39,32 @@ static func icon_by_id(key: String) -> Texture2D:
 		var path := DIRECTORY + key + ".png"
 		_cache[key] = load(path) if ResourceLoader.exists(path) else null
 	return _cache[key]
+
+
+# The item's icon as a flat slate shape with its soft edge kept; null without
+# an icon. Made once and kept, from outside any draw call (HubCodex builds
+# the ones it shows before its cells draw).
+static func silhouette(item: ItemData) -> Texture2D:
+	var art := icon(item)
+	if art == null:
+		return null
+	if not _silhouettes.has(item.id):
+		var image := art.get_image()
+		if image.is_compressed():
+			image.decompress()
+		image.convert(Image.FORMAT_RGBA8)
+		image.clear_mipmaps()
+		image.resize(SILHOUETTE_SIZE, SILHOUETTE_SIZE, Image.INTERPOLATE_LANCZOS)
+		var bytes := image.get_data()
+		var shade := PackedByteArray([SILHOUETTE_SHADE.r8, SILHOUETTE_SHADE.g8, SILHOUETTE_SHADE.b8])
+		for at in range(0, bytes.size(), 4):
+			bytes[at] = shade[0]
+			bytes[at + 1] = shade[1]
+			bytes[at + 2] = shade[2]
+		var flat := Image.create_from_data(SILHOUETTE_SIZE, SILHOUETTE_SIZE, false, Image.FORMAT_RGBA8, bytes)
+		flat.generate_mipmaps()
+		_silhouettes[item.id] = ImageTexture.create_from_image(flat)
+	return _silhouettes[item.id]
 
 
 # The filter for a canvas that draws item icons.

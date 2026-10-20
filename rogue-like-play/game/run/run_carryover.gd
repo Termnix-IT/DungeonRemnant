@@ -14,6 +14,10 @@ var defeated_bosses: Dictionary = {}
 var unlocked_entries: Dictionary = {}
 var cleared_stages: Array[String] = []
 var upgrade: PermanentUpgrade = preload("res://data/upgrades/max_hp.tres")
+# The items ever held, for the encyclopedia: item id -> true. What is held now
+# counts too (has_discovered, discovered_ids), and a save that lands writes it
+# in (note_possessions), so an item sold or used up stays found.
+var discovered_items: Dictionary = {}
 
 
 func purchase_upgrade() -> bool:
@@ -88,6 +92,47 @@ func preparation_stats(gear: Equipment = equipment) -> Dictionary:
 		"attack": base.attack + skill_bonus(&"attack") + bonus.damage + (attack_weapon.damage_bonus if attack_weapon != null else 0),
 		"defense": base.defense + skill_bonus(&"defense") + bonus.defense,
 		"reach": attack_weapon.reach if attack_weapon != null else 0}
+
+
+func discover(item: ItemData) -> void:
+	if item != null:
+		discovered_items[item.id] = true
+		if item.socketed_scroll != null:
+			discovered_items[item.socketed_scroll.id] = true
+
+
+func has_discovered(item: ItemData) -> bool:
+	return discovered_items.has(item.id) or _possessed().has(item.id)
+
+
+# Everything found, held now or before, as sorted id strings (the save's list).
+func discovered_ids() -> Array:
+	var ids: Array = []
+	for id: StringName in _possessed().merged(discovered_items):
+		ids.append(String(id))
+	ids.sort()
+	return ids
+
+
+func note_possessions() -> void:
+	discovered_items.merge(_possessed())
+
+
+# The ids of what is in the inventory, the warehouse and the equipment now.
+func _possessed() -> Dictionary:
+	var held := {}
+	var items: Array[ItemData] = []
+	for container: Inventory in [inventory, storage]:
+		for entry in container.entries:
+			items.append(entry.item)
+	for item in equipment.slots:
+		if item != null:
+			items.append(item)
+	for item in items:
+		held[item.id] = true
+		if item.socketed_scroll != null:
+			held[item.socketed_scroll.id] = true
+	return held
 
 
 func capture(player: Node2D, held_gold: int) -> void:

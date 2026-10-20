@@ -37,6 +37,7 @@ var hero_speech: Panel
 var settings := GameSettings.new()
 var upgrade_page: Control
 var settings_page: HubSettings
+var codex_page: HubCodex
 var page := "home"
 var prepare_return := "home"
 # The page a "?" mark opened the help from, which back returns to.
@@ -178,6 +179,10 @@ func _ready() -> void:
 	heading_box.move_child(tree.mode_tabs, 1)
 	tree.mode_tabs.visible = false
 	tree.mode_changed.connect(_upgrade_hints)
+	codex_page = _page(HubCodex.new()) as HubCodex
+	# Like the shop: the list's slab runs off the left edge, the column's off the right.
+	codex_page.offset_left = bleed
+	codex_page.offset_right = -bleed
 	settings_page = _page(HubSettings.new()) as HubSettings
 	settings_page.offset_left = bleed
 	settings_page.changed.connect(func(): settings_changed.emit())
@@ -258,6 +263,8 @@ func _enter(id: StringName) -> void:
 			show_page("sell")
 		&"upgrade":
 			show_page("upgrade")
+		&"codex":
+			show_page("codex")
 		&"settings":
 			show_page("settings")
 
@@ -294,6 +301,7 @@ func refresh(state: RunCarryover, message: String = "") -> void:
 	feedback.text = message
 	prepare_page.refresh(state)
 	sell_page.refresh(state)
+	codex_page.refresh(state)
 	if page == "stages":
 		departure_page.refresh_kit(state)
 	if not home_page.visible and page == "home":
@@ -319,7 +327,7 @@ func _show_page_background() -> void:
 func show_page(target: String, to_action := false) -> void:
 	page = target
 	hero_speech.hide()
-	for control in [home_page, prepare_page, sell_page, departure_page, upgrade_page, settings_page]:
+	for control in [home_page, prepare_page, sell_page, departure_page, upgrade_page, codex_page, settings_page]:
 		control.hide()
 	key_guide.clear_hints()
 	# The lobby has nowhere to go back to; it shows how to choose and enter.
@@ -363,6 +371,13 @@ func show_page(target: String, to_action := false) -> void:
 			upgrade_page.show()
 			_upgrade_hints()
 			(upgrade_page as SkillTreePanel).focus_first_action()
+		"codex":
+			title_label.text = "図鑑"
+			codex_page.show()
+			codex_page.refresh(_state)
+			codex_page.focus_first()
+			key_guide.add_hint("矢印", "十字", "選ぶ")
+			key_guide.add_hint("Q / E", "LB / RB", "分類")
 		"settings":
 			title_label.text = "設定"
 			settings_page.show()
@@ -379,7 +394,7 @@ func show_page(target: String, to_action := false) -> void:
 	# Pages are anchored in a plain host, not laid out by a Container, so the
 	# whole page can slide: forward pages from the right, home from the left.
 	var side := -1.0 if page == "home" else 1.0
-	for control in [home_page, prepare_page, sell_page, departure_page, upgrade_page, settings_page]:
+	for control in [home_page, prepare_page, sell_page, departure_page, upgrade_page, codex_page, settings_page]:
 		if control.visible:
 			UIMotion.of(control).enter(0.0, Vector2(side * UIMotion.PAGE_DISTANCE, 0), UIMotion.WINDOW_TIME)
 			# Pages built in the screen grammar bring their parts in one by one.

@@ -5,7 +5,12 @@ magenta background, in the order of CARDS (the last cell stays empty). Each
 panel is trimmed a few pixels inside its edge, so no key-colour fringe
 remains, and saved as art/hub/cards/<name>.png.
 
+Cards painted later are whole 3:2 scenes of their own (SCENES): each is
+shrunk to the board cards' width and the band at its top offset is kept,
+the same cut the settings card (settings_card.png) was given.
+
 	python tools/cut_card_art.py
+	python tools/cut_card_art.py --scenes
 """
 
 from __future__ import annotations
@@ -23,6 +28,9 @@ ROWS = 3
 COLUMNS = 2
 CARDS = ["stairs", "weapons", "chests", "shop", "books"]
 TRIM = 3
+# name: (source in art/hub/source/, top of the kept band after shrinking)
+SCENES = {"codex": ("codex_card.png", 104)}
+CARD_SIZE = (767, 305)
 
 
 def main() -> None:
@@ -52,5 +60,15 @@ def main() -> None:
 		print(f"Saved cards/{name}.png {box[2] - box[0]}x{box[3] - box[1]}")
 
 
+def cut_scenes() -> None:
+	for name, (source, top) in SCENES.items():
+		scene = Image.open(SOURCE.parent / source).convert("RGB")
+		height = round(scene.height * CARD_SIZE[0] / scene.width)
+		scene = scene.resize((CARD_SIZE[0], height), Image.Resampling.LANCZOS)
+		scene.crop((0, top, CARD_SIZE[0], top + CARD_SIZE[1])).save(OUTPUT / f"{name}.png")
+		print(f"Saved cards/{name}.png")
+
+
 if __name__ == "__main__":
-	main()
+	import sys
+	cut_scenes() if "--scenes" in sys.argv else main()

@@ -34,6 +34,13 @@ func _draw() -> void:
 			_line([Vector2(16, 7), Vector2(5, 3), Vector2(3, 26), Vector2(16, 29), Vector2(29, 26), Vector2(27, 3), Vector2(16, 7), Vector2(16, 29)], color)
 			_line([Vector2(8, 10), Vector2(12, 12)], color)
 			_line([Vector2(20, 12), Vector2(24, 10)], color)
+		"図鑑":
+			# An open book with a page marker hanging from its spine.
+			_line([Vector2(16, 8), Vector2(9, 5), Vector2(3, 6), Vector2(3, 26), Vector2(9, 25), Vector2(16, 28), Vector2(23, 25), Vector2(29, 26), Vector2(29, 6), Vector2(23, 5), Vector2(16, 8), Vector2(16, 28)], color)
+			_line([Vector2(7, 11), Vector2(12, 11)], color)
+			_line([Vector2(7, 16), Vector2(12, 16)], color)
+			_line([Vector2(20, 11), Vector2(25, 11)], color)
+			_line([Vector2(16, 28), Vector2(16, 31)], color)
 		"設定":
 			# Eight-toothed gear around a hollow hub.
 			var teeth := PackedVector2Array()

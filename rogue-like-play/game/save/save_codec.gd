@@ -6,13 +6,14 @@ const VERSION := 4
 # Before version 4 each branch was one node; what it needed to open.
 const LEGACY_PREREQUISITES := {"vitality": ["hp", 3], "attack": ["hp", 1], "mana": ["hp", 1], "defense": ["attack", 1]}
 const MAX_GOLD := 1000000000
+const MAX_DISCOVERED := 512
 
 
 static func encode(state: RunCarryover) -> Dictionary:
 	var equipment: Array = []
 	for item in state.equipment.slots:
 		equipment.append(_encode_item(item))
-	return {"version": VERSION, "gold": state.gold, "skills": state.skill_levels.duplicate(true), "bosses": state.defeated_bosses.duplicate(true), "entries": state.unlocked_entries.duplicate(true), "cleared_stages": state.cleared_stages.duplicate(), "hp_upgrade_level": state.hp_upgrade_level, "inventory": _encode_inventory(state.inventory), "storage": _encode_inventory(state.storage), "equipment": equipment}
+	return {"version": VERSION, "gold": state.gold, "skills": state.skill_levels.duplicate(true), "bosses": state.defeated_bosses.duplicate(true), "entries": state.unlocked_entries.duplicate(true), "cleared_stages": state.cleared_stages.duplicate(), "hp_upgrade_level": state.hp_upgrade_level, "inventory": _encode_inventory(state.inventory), "storage": _encode_inventory(state.storage), "equipment": equipment, "discovered": state.discovered_ids()}
 
 
 static func _encode_inventory(inventory: Inventory) -> Array:
@@ -54,8 +55,23 @@ static func decode(data: Variant) -> RunCarryover:
 	state.hp_upgrade_level = int(data.hp_upgrade_level)
 	if not _decode_campaign(data, state):
 		return null
+	# Added without a new version: an older save starts from what it holds.
+	if data.has("discovered") and not _decode_discovered(data.discovered, state):
+		return null
 	state.gold = int(data.gold)
 	return state
+
+
+# Ids the game no longer has are dropped rather than refusing the save.
+static func _decode_discovered(data: Variant, state: RunCarryover) -> bool:
+	if not data is Array or data.size() > MAX_DISCOVERED:
+		return false
+	for id: Variant in data:
+		if not id is String:
+			return false
+		if ItemCatalog.by_id(id) != null:
+			state.discovered_items[StringName(id)] = true
+	return true
 
 
 static func _decode_inventory(data: Variant, inventory: Inventory) -> bool:

@@ -8,7 +8,8 @@ extends VBoxContainer
 # the grid sideways with the arrow keys is the page's too (crossed). A row is
 # {index, item, count}; index is whatever the page uses to name it, unique among
 # the rows. "tooltip" may replace the item's description, "badge" the count in
-# the icon's corner, "caption" and "note" are the lines beside the icon of a wide cell.
+# the icon's corner, "caption" and "note" are the lines beside the icon of a wide
+# cell, and "unknown" shows the item as a dark outline (ItemCell.unknown).
 
 signal chosen(place: int)
 signal activated(place: int)
@@ -92,6 +93,7 @@ func show_rows(rows: Array[Dictionary], empty_text := "") -> void:
 			cell.note = entry.get("note", "")
 		cell.icon_size = icon_size
 		cell.show_item(entry.item, entry.get("badge", entry.count))
+		cell.unknown = entry.get("unknown", false)
 		cell.tooltip_text = entry.get("tooltip", ItemTooltipList.description(entry.item))
 		cell.set_pressed_no_signal(entry.index == selected)
 		if read_only:

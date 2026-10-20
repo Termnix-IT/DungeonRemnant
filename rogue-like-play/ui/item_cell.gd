@@ -20,6 +20,8 @@ const GLOW_COLOR := Color(1.0, 0.72, 0.4)
 const GLOW_REST := 0.16
 const GLOW_ACTIVE := 0.34
 const GLOW_CHOSEN := 0.52
+# An unknown item without painted art: its drawn symbol in the outline shade.
+const UNKNOWN_SHADE := Color(0.25, 0.25, 0.29, 0.95)
 
 static var _glow: GradientTexture2D
 
@@ -44,6 +46,12 @@ var dimmed := false:
 # True while something this cell would take is held (ItemDrag): the cell
 # lights up as a place to drop it.
 var drop_ready := false
+# An item not found yet (the encyclopedia): only its dark outline shows, with
+# no glow behind it.
+var unknown := false:
+	set(value):
+		unknown = value
+		queue_redraw()
 
 
 func _init() -> void:
@@ -100,14 +108,19 @@ func _draw() -> void:
 	var captioned := item != null and not caption.is_empty()
 	if captioned:
 		rect.position.x = (size.y - extent) * 0.5
-	if item != null and not dimmed:
+	if item != null and not dimmed and not unknown:
 		var strength := GLOW_CHOSEN if button_pressed else (GLOW_ACTIVE if (is_hovered() or has_focus() or drop_ready) else GLOW_REST)
 		draw_texture_rect(_glow, Rect2(rect.position - rect.size * 0.35, rect.size * 1.7), false, Color(GLOW_COLOR, strength))
 	var role := &"GoldLabel" if button_pressed and item != null else &"Label"
 	var color := get_theme_color(&"font_color", role if item != null else &"NoteLabel")
 	if dimmed:
 		color.a *= 0.35
-	ItemGlyph.paint(self, rect, shown, color)
+	# ItemGlyph's tint keeps a painted icon light; an outline is its own shape.
+	var art := ItemIcons.silhouette(shown) if unknown else null
+	if art != null:
+		draw_texture_rect(art, rect, false)
+	else:
+		ItemGlyph.paint(self, rect, shown, UNKNOWN_SHADE if unknown else color)
 	if captioned:
 		_draw_caption(rect.end.x + 12.0, role)
 	if item != null and count > 1:

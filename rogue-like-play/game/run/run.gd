@@ -642,6 +642,7 @@ func _collect_items() -> void:
 		var left_behind: bool = dungeon.ground_items.has(turns.player.cell)
 		var taken: int = before - (entry.count if left_behind else 0)
 		if entry != null and taken > 0:
+			carryover.discover(entry.item)
 			var full := "  収納がいっぱい" if left_behind else ""
 			presentation.item_popup(entry.item, "%s ×%d%s" % [entry.item.display_name, taken, full], center + Vector2(0, -52), Color("9de3c3"))
 		else:

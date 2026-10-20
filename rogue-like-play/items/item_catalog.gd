@@ -17,6 +17,23 @@ static func shop_items() -> Array[ItemData]:
 	return result
 
 
+# Every item the game has, once each, for the encyclopedia: by kind (weapons,
+# armour, accessories, consumables, scrolls), each kind in the order the shop
+# and the floors list it.
+static func all_items() -> Array[ItemData]:
+	var found: Array[ItemData] = [POTION]
+	for index in 9:
+		found.append(floor_item(index))
+	found.append_array(talismans())
+	found.append_array(magic_items())
+	var result: Array[ItemData] = []
+	for kind in [ItemData.Kind.WEAPON, ItemData.Kind.ARMOR, ItemData.Kind.ACCESSORY, ItemData.Kind.CONSUMABLE, ItemData.Kind.SCROLL]:
+		for item in found:
+			if item.kind == kind and not result.any(func(other: ItemData): return other.id == item.id):
+				result.append(item)
+	return result
+
+
 static func by_id(id: String) -> ItemData:
 	if id == String(POTION.id):
 		return POTION
