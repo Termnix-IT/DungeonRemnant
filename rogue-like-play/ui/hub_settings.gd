@@ -9,14 +9,19 @@ extends Control
 # the row. Changes apply at once and are
 # stored by GameSettings when the hub reports them, so the page holds no
 # primary action.
-# The last row opens the help: the game's rules that the screens keep out of
-# their way, by topic. A HintMark ("?") on another page opens it at its topic.
+# A row opens the help: the game's rules that the screens keep out of their
+# way, by topic. A HintMark ("?") on another page opens it at its topic. The
+# last row ends the game, once a prompt has asked.
 # The same page opens over the dungeon from its menu (DungeonMenu), so it
 # reaches nothing outside itself: whoever shows it listens to its signals.
 
 signal changed
 # The help opened from its row; the screen showing the page updates its keys.
 signal help_opened
+
+const QUIT_BODY := "設定と拠点の準備は保存済みです。"
+# In a run nothing of it is kept (SaveStore saves only in the hub).
+const QUIT_BODY_IN_RUN := "冒険の途中で終了すると、この冒険で進んだ階・レベル・拾った品は残らず、最後に保存した拠点の状態に戻ります。"
 
 const ROW_HEIGHT := 80.0
 const BAND_TIP := 18.0
@@ -25,7 +30,7 @@ const EDGE_REACH := 40.0
 # The note's column in the hall, from the band's tip.
 const NOTE_INSET := 36.0
 const NOTE_WIDTH := 420.0
-const NOTES := ["すべての音の大きさ。0%で消音。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "ダンジョンの空気の音の大きさ。", "被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "探索中、画面の右下に今できる操作の札を出す。", "冒険の決まりごとと操作。"]
+const NOTES := ["すべての音の大きさ。0%で消音。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "ダンジョンの空気の音の大きさ。", "被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "探索中、画面の右下に今できる操作の札を出す。", "冒険の決まりごとと操作。", "ゲームを閉じる。確かめてから終了する。"]
 # The help's topics, in order: [title, paragraphs]. HintMarks name them by index.
 const TOPIC_RUN := 0
 const TOPIC_LOSS := 1
@@ -65,6 +70,12 @@ var volume_slider: GameSlider
 var effects_slider: GameSlider
 var ambience_slider: GameSlider
 var help_button: Button
+var quit_button: Button
+var quit_prompt: ChoicePrompt
+# Set by the dungeon's menu, so the prompt says what a run loses.
+var in_run := false
+# What ending the game does; tests replace it.
+var quit_action := func(): get_tree().quit()
 var volume_value: Label
 var effects_value: Label
 var ambience_value: Label
@@ -152,7 +163,20 @@ func _ready() -> void:
 		open_help(TOPIC_RUN)
 		help_opened.emit(), &"TextAction")
 	help_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var controls: Array[Control] = [volume_slider, effects_slider, ambience_slider, shake_cycler, display_cycler, controls_cycler, help_button]
+	var quit_row := _row("ゲームの終了")
+	quit_button = HubUI.button(quit_row, "ゲームを終了する  ›", ask_quit, &"TextAction")
+	quit_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	quit_prompt = ChoicePrompt.new()
+	add_child(quit_prompt)
+	# Over the dungeon's menu as well as the hub.
+	quit_prompt.layer = 20
+	quit_prompt.confirmed.connect(func():
+		quit_prompt.hide()
+		quit_action.call())
+	quit_prompt.canceled.connect(func():
+		quit_prompt.hide()
+		quit_button.grab_focus())
+	var controls: Array[Control] = [volume_slider, effects_slider, ambience_slider, shake_cycler, display_cycler, controls_cycler, help_button, quit_button]
 	for index in controls.size():
 		var control := controls[index]
 		if index > 0:
@@ -210,6 +234,13 @@ func _build_help() -> void:
 	hall.size_flags_stretch_ratio = 0.7
 	hall.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	help_view.add_child(hall)
+
+
+# Asks before ending the game; Esc or the cancel button keeps playing. The
+# focus waits on the cancel button, so a second Enter never ends the game.
+func ask_quit() -> void:
+	quit_prompt.ask("", "ゲームを終了しますか？", QUIT_BODY_IN_RUN if in_run else QUIT_BODY, "終了する", "やめる")
+	quit_prompt.cancel_button.grab_focus()
 
 
 func open_help(topic: int) -> void:

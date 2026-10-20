@@ -95,6 +95,7 @@ func _build_settings() -> void:
 	settings_title.autowrap_mode = TextServer.AUTOWRAP_OFF
 	settings_title.position = EDGE
 	settings_page = HubSettings.new()
+	settings_page.in_run = true
 	settings_page.position = PAGE_RECT.position
 	settings_page.size = PAGE_RECT.size
 	settings_page.mouse_filter = Control.MOUSE_FILTER_IGNORE
