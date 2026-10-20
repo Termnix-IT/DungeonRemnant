@@ -69,6 +69,29 @@ func run_tests() -> void:
 	check(not choice.buttons[0].has_focus(), "Ability cards take no focus the instant they open")
 	await create_timer(choice.FOCUS_DELAY + 0.05).timeout
 	check(choice.buttons[0].has_focus(), "The first ability card takes focus after a beat")
+	root.push_input(pad(JOY_BUTTON_DPAD_RIGHT))
+	root.push_input(pad(JOY_BUTTON_DPAD_RIGHT, false))
+	await process_frame
+	check(choice.buttons[1].has_focus(), "D-pad right moves to the next ability card")
+	root.push_input(pad(JOY_BUTTON_DPAD_LEFT))
+	root.push_input(pad(JOY_BUTTON_DPAD_LEFT, false))
+	root.push_input(pad(JOY_BUTTON_DPAD_LEFT))
+	root.push_input(pad(JOY_BUTTON_DPAD_LEFT, false))
+	await process_frame
+	check(choice.buttons[choice.offers.size() - 1].has_focus(), "Left from the first card goes round to the last")
+	choice.buttons[choice.offers.size() - 1].release_focus()
+	root.push_input(pad(JOY_BUTTON_DPAD_RIGHT))
+	root.push_input(pad(JOY_BUTTON_DPAD_RIGHT, false))
+	await process_frame
+	check(choice.buttons[0].has_focus(), "With no card focused, a direction focuses one")
+	var picked: Array[StringName] = []
+	choice.selected.connect(func(id: StringName): picked.append(id), CONNECT_ONE_SHOT)
+	var expected: StringName = choice.offers[0].id
+	root.push_input(pad(JOY_BUTTON_A))
+	root.push_input(pad(JOY_BUTTON_A, false))
+	await process_frame
+	check(picked == [expected] and not choice.visible, "Gamepad A takes the focused ability card")
+	run.turns.busy = false
 	choice.dismiss()
 	run.request_abort()
 	var enter := InputEventAction.new()

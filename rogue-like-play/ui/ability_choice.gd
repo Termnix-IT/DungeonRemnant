@@ -5,7 +5,9 @@ signal selected(id: StringName)
 const GameAudio := preload("res://audio/game_audio.gd")
 # Focus (and so Enter / gamepad A) arrives a beat after opening, so a
 # confirm pressed for the attack that levelled up cannot pick a card.
-# Mouse and the 1-3 keys work immediately.
+# Mouse and the 1-3 keys work immediately. On a gamepad the D-pad or the
+# left stick moves between the cards (round from the last to the first) and
+# A takes the focused one; with no card focused, a direction focuses one.
 const FOCUS_DELAY := 0.3
 
 var offers: Array[AbilityData] = []
@@ -27,6 +29,7 @@ func _ready() -> void:
 	key_guide.alignment = BoxContainer.ALIGNMENT_CENTER
 	key_guide.custom_minimum_size.y = 40
 	$Panel/Margin/Stack.add_child(key_guide)
+	key_guide.add_hint("← / →", "◀ / ▶", "カード")
 	pick_hint = key_guide.add_hint("1・2・3", "A", "選ぶ")
 	for index in buttons.size():
 		var card := AbilityCard.new()
@@ -56,6 +59,12 @@ func present(candidates: Array[AbilityData], abilities: AbilitySystem, level: in
 		buttons[index].visible = index < offers.size()
 		if index < offers.size():
 			cards[index].setup(offers[index], abilities.level_of(offers[index]), index + 1)
+	# Left from the first card goes round to the last, and back.
+	for index in offers.size():
+		buttons[index].focus_neighbor_left = buttons[posmod(index - 1, offers.size())].get_path()
+		buttons[index].focus_neighbor_right = buttons[posmod(index + 1, offers.size())].get_path()
+		buttons[index].focus_neighbor_top = buttons[index].get_path()
+		buttons[index].focus_neighbor_bottom = buttons[index].get_path()
 	# A container grows to fit but never shrinks on its own, so fit the
 	# dialog to the cards on offer and keep it centred.
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER, Control.PRESET_MODE_MINSIZE)
@@ -156,9 +165,19 @@ func _exit_tree() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not visible or not event is InputEventKey or not event.pressed or event.echo:
+	if not visible:
 		return
-	var index: int = [KEY_1, KEY_2, KEY_3].find(event.physical_keycode)
-	if index >= 0:
-		get_viewport().set_input_as_handled()
-		_select(index)
+	if event is InputEventKey and event.pressed and not event.echo:
+		var index: int = [KEY_1, KEY_2, KEY_3].find(event.physical_keycode)
+		if index >= 0:
+			get_viewport().set_input_as_handled()
+			_select(index)
+			return
+	# A focused card already moved with the direction; this is the case with
+	# none focused (the pointer took it away, or the opening beat has passed
+	# without one): the direction picks up from the nearest end.
+	for action: StringName in [&"ui_left", &"ui_right"]:
+		if event.is_action_pressed(action) and not offers.is_empty() and get_viewport().gui_get_focus_owner() == null:
+			get_viewport().set_input_as_handled()
+			buttons[0 if action == &"ui_right" else offers.size() - 1].grab_focus()
+			return
