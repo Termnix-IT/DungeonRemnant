@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="HeroTuning" load_steps=2 format=3]
+[ext_resource type="Script" path="res://actors/hero/hero_tuning.gd" id="1"]
+[resource]
+script = ExtResource("1")
+max_speed = 250.0
+acceleration = 2600.0
+deceleration = 3200.0
+dash_distance = 150.0
+dash_time = 0.17
+dash_invulnerable = 0.22
+dash_cooldown = 0.45
+dash_charges = 1
+input_buffer = 0.18
+charge_move_scale = 0.35
+push_decay = 10.0
+max_hp = 100
+defense = 0
+power = 10.0
+hurt_mercy = 0.8
+hit_radius = 14.0

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"wandering_sentinel"
+display_name = "さまよう番兵"
+visual_id = "basic"
+max_hp = 30
+defense = 0
+speed = 95.0
+acceleration = 900.0
+speed_spread = 0.12
+contact_damage = 8
+contact_knockback = 260.0
+contact_cooldown = 0.9
+hit_radius = 14.0
+knockback_resist = 0.0
+hitstun = 0.22
+exp_reward = 1
