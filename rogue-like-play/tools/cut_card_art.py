@@ -19,7 +19,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from process_enemy_sheet import background_mask
+from image_boards import background_mask
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "art" / "hub" / "source" / "home_cards.png"

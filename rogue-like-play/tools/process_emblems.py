@@ -18,7 +18,7 @@ from pathlib import Path
 from PIL import Image, ImageFilter
 
 from build_painted_objects import square
-from process_item_icons import cut_board
+from image_boards import cut_board
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "art" / "emblems" / "painted" / "source"
