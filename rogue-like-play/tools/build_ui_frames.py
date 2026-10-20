@@ -200,16 +200,28 @@ def plate(cap: Image.Image, fill: tuple, rim: tuple, shade: tuple) -> Image.Imag
 	return image
 
 
+# Writes art/ui/<name>.png unless the file already holds the same pixels:
+# Pillow's PNG bytes vary with its version, and rewriting an unchanged image
+# would show it as changed in git.
+def save(image: Image.Image, name: str) -> None:
+	path = OUTPUT / f"{name}.png"
+	if path.exists():
+		with Image.open(path) as current:
+			if current.convert("RGBA").tobytes() == image.convert("RGBA").tobytes() and current.size == image.size:
+				return
+	image.save(path)
+
+
 def main() -> None:
 	parts = cut_board(Image.open(SOURCE), 2, 2)
 	corners = {"bronze": painted_part(parts[0], (CORNER, CORNER)), "gold": painted_part(parts[1], (CORNER, CORNER))}
 	caps = {"bronze": painted_part(parts[2], (CAP_HEIGHT, CAP_HEIGHT)), "gold": painted_part(parts[3], (CAP_HEIGHT, CAP_HEIGHT))}
 	for name, (surface, rail) in SURFACES.items():
-		frame(corners["gold" if name.endswith("active") else "bronze"], surface, rail).save(OUTPUT / f"{name}.png")
+		save(frame(corners["gold" if name.endswith("active") else "bronze"], surface, rail), name)
 	for name, style in SURFACE_STYLES.items():
-		surface_tile(*style).save(OUTPUT / f"{name}.png")
+		save(surface_tile(*style), name)
 	for name, colours in PLATES.items():
-		plate(caps["gold" if name.endswith("hover") else "bronze"], *colours).save(OUTPUT / f"{name}.png")
+		save(plate(caps["gold" if name.endswith("hover") else "bronze"], *colours), name)
 	print(f"corner {corners['bronze'].size}, cap {caps['bronze'].size}; saved frames and button plates to art/ui/")
 
 
