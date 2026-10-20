@@ -9,7 +9,9 @@ extends VBoxContainer
 # {index, item, count}; index is whatever the page uses to name it, unique among
 # the rows. "tooltip" may replace the item's description, "badge" the count in
 # the icon's corner, "caption" and "note" are the lines beside the icon of a wide
-# cell, and "unknown" shows the item as a dark outline (ItemCell.unknown).
+# cell, "unknown" shows the item as a dark outline (ItemCell.unknown), and
+# "portrait" draws a picture in the item's place (ItemCell.portrait; the row's
+# item may then be null).
 
 signal chosen(place: int)
 signal activated(place: int)
@@ -83,18 +85,19 @@ func show_rows(rows: Array[Dictionary], empty_text := "") -> void:
 	grid.columns = columns
 	for place in entries.size():
 		var entry := entries[place]
-		if entry.item == kept:
+		if kept != null and entry.item == kept:
 			selected = entry.index
 		var cell := ItemCell.new()
 		cell.custom_minimum_size = Vector2(cell_width if cell_width > 0.0 else cell_size, cell_size)
 		if cell_width > 0.0:
 			cell.theme_type_variation = &"ItemRow"
-			cell.caption = entry.get("caption", entry.item.label())
+			cell.caption = entry.get("caption", entry.item.label() if entry.item != null else "")
 			cell.note = entry.get("note", "")
 		cell.icon_size = icon_size
 		cell.show_item(entry.item, entry.get("badge", entry.count))
 		cell.unknown = entry.get("unknown", false)
-		cell.tooltip_text = entry.get("tooltip", ItemTooltipList.description(entry.item))
+		cell.portrait = entry.get("portrait", {})
+		cell.tooltip_text = entry.get("tooltip", ItemTooltipList.description(entry.item) if entry.item != null else "")
 		cell.set_pressed_no_signal(entry.index == selected)
 		if read_only:
 			cell.draggable = false

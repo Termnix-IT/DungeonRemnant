@@ -180,9 +180,14 @@ func _ready() -> void:
 	tree.mode_tabs.visible = false
 	tree.mode_changed.connect(_upgrade_hints)
 	codex_page = _page(HubCodex.new()) as HubCodex
-	# Like the shop: the list's slab runs off the left edge, the column's off the right.
+	# Like the shop: the list's slab runs off the left edge, the column's off the
+	# right, and its two books switch at the header's title place.
 	codex_page.offset_left = bleed
 	codex_page.offset_right = -bleed
+	heading_box.add_child(codex_page.mode_tabs)
+	heading_box.move_child(codex_page.mode_tabs, 2)
+	codex_page.mode_tabs.visible = false
+	codex_page.mode_changed.connect(_codex_hints)
 	settings_page = _page(HubSettings.new()) as HubSettings
 	settings_page.offset_left = bleed
 	settings_page.changed.connect(func(): settings_changed.emit())
@@ -332,8 +337,9 @@ func show_page(target: String, to_action := false) -> void:
 	key_guide.clear_hints()
 	# The lobby has nowhere to go back to; it shows how to choose and enter.
 	back_button.visible = page != "home"
-	title_label.visible = page not in ["sell", "upgrade"]
+	title_label.visible = page not in ["sell", "upgrade", "codex"]
 	sell_page.mode_tabs.visible = page == "sell"
+	codex_page.mode_tabs.visible = page == "codex"
 	(upgrade_page as SkillTreePanel).mode_tabs.visible = page == "upgrade"
 	# Gold stays where the eye looks for it; it is quiet where nothing costs.
 	purse.quiet = page not in ["home", "sell", "upgrade"]
@@ -376,8 +382,7 @@ func show_page(target: String, to_action := false) -> void:
 			codex_page.show()
 			codex_page.refresh(_state)
 			codex_page.focus_first()
-			key_guide.add_hint("矢印", "十字", "選ぶ")
-			key_guide.add_hint("Q / E", "LB / RB", "分類")
+			_codex_hints()
 		"settings":
 			title_label.text = "設定"
 			settings_page.show()
@@ -418,6 +423,16 @@ func _upgrade_hints() -> void:
 	key_guide.add_hint("Enter", "A", "解放" if tree.entries_shown else "強化")
 	key_guide.add_hint("矢印", "十字", "選ぶ")
 	key_guide.add_hint("R", "Y", "能力の成長へ" if tree.entries_shown else "開始地点へ", func(): tree.set_entries(not tree.entries_shown))
+
+
+# The encyclopedia's keys: moving, the category tabs and the switch of book.
+func _codex_hints() -> void:
+	if page != "codex":
+		return
+	key_guide.clear_hints()
+	key_guide.add_hint("矢印", "十字", "選ぶ")
+	key_guide.add_hint("Q / E", "LB / RB", "分類")
+	key_guide.add_hint("R", "Y", "アイテムへ" if codex_page.monsters else "魔物へ", func(): codex_page.set_monsters(not codex_page.monsters))
 
 
 # The shop's keys: the trade, the category tabs and the switch of mode.

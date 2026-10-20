@@ -34,7 +34,7 @@ const DESCRIPTIONS := {
 	&"prepare": "武具を装備し、持ち込みと倉庫の間で品を移す。倉庫の品は冒険で失わない。",
 	&"shop": "Goldで薬や武具を買い、要らない品を売る。",
 	&"upgrade": "Goldで能力を永久に強化し、開始階を解放する。",
-	&"codex": "これまでに手にした品の絵と効果を見返す。",
+	&"codex": "これまでに手にした品と、出会った魔物を見返す。",
 	&"settings": "音量と画面モードを変え、遊び方を確認する。",
 }
 # Each panel shows the illustration of what it opens.
@@ -105,7 +105,7 @@ var carried_room: Label
 var upgrade_value: Label
 var upgrade_ready: Label
 var codex_found: Label
-var codex_left: Label
+var codex_monsters: Label
 var title_icon: NavigationIcon
 var floors_value: Label
 var difficulty_value: Label
@@ -279,7 +279,7 @@ func _build_panel() -> void:
 	_details[&"codex"] = records
 	codex_found = _fact(records, "見つけた品")
 	_divider(records)
-	codex_left = _fact(records, "未発見")
+	codex_monsters = _fact(records, "出会った魔物")
 	var current: HBoxContainer = _strip(stack)
 	_details[&"settings"] = current
 	volume_value = _fact(current, "音量")
@@ -476,7 +476,8 @@ func refresh(state: RunCarryover, stage: StageData) -> void:
 	var all := ItemCatalog.all_items()
 	var found := all.filter(func(item: ItemData): return state.has_discovered(item)).size()
 	codex_found.text = "%d / %d" % [found, all.size()]
-	codex_left.text = "%d 品" % (all.size() - found)
+	var monsters := EnemyCatalog.entries()
+	codex_monsters.text = "%d / %d" % [monsters.filter(func(entry: Dictionary): return state.has_met(entry.id)).size(), monsters.size()]
 	if stage != null:
 		floors_value.text = "全%d階" % stage.floor_count
 		difficulty_value.text = stage.difficulty

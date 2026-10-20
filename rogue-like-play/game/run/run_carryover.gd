@@ -18,6 +18,8 @@ var upgrade: PermanentUpgrade = preload("res://data/upgrades/max_hp.tres")
 # counts too (has_discovered, discovered_ids), and a save that lands writes it
 # in (note_possessions), so an item sold or used up stays found.
 var discovered_items: Dictionary = {}
+# The monsters ever seen, for the encyclopedia: EnemySprites.visual_id -> true.
+var met_enemies: Dictionary = {}
 
 
 func purchase_upgrade() -> bool:
@@ -99,6 +101,23 @@ func discover(item: ItemData) -> void:
 		discovered_items[item.id] = true
 		if item.socketed_scroll != null:
 			discovered_items[item.socketed_scroll.id] = true
+
+
+func meet(stats: EnemyStats) -> void:
+	if stats != null:
+		met_enemies[StringName(EnemySprites.visual_id(stats))] = true
+
+
+func has_met(id: String) -> bool:
+	return met_enemies.has(StringName(id))
+
+
+func met_ids() -> Array:
+	var ids: Array = []
+	for id: StringName in met_enemies:
+		ids.append(String(id))
+	ids.sort()
+	return ids
 
 
 func has_discovered(item: ItemData) -> bool:

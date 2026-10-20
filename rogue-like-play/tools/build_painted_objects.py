@@ -11,6 +11,10 @@ Godot to show with mipmapped linear filtering:
   (PASSAGE px), drawn over a boss floor's cell.
 - art/tiles/painted/source/torch_sconce.png and torch_flame.png ->
   art/tiles/painted/torch_*.png (TORCH px tall), drawn on the wall faces.
+- art/enemies/rig/source/sentinel_base.png -> art/enemies/rig/
+  basic_portrait.png (PORTRAIT px): the sentinel's whole figure for the
+  encyclopedia and other portraits, as its rig is drawn in parts with no one
+  body picture (EnemySprites.portrait).
 - art/tiles/painted/source/obstacle_<kind>.png -> art/tiles/painted/
   obstacle_<kind>.png (OBSTACLE px), the rubble, crates and pools that
   stand on floor cells (GridState.OBSTACLES).
@@ -36,6 +40,9 @@ PASSAGE_FILL = 1.0
 PASSAGES = ["guardian_door", "descent_stairs", "return_door"]
 TORCH = 128
 OBSTACLE = 192
+PORTRAIT = 256
+PORTRAITS = {"basic": "sentinel_base"}
+ENEMY_RIGS = ROOT / "art" / "enemies" / "rig"
 OBSTACLES = ["rubble", "crate", "water"]
 
 
@@ -69,6 +76,11 @@ def main() -> None:
 		if source.exists():
 			square(trimmed(source), PASSAGE, PASSAGE_FILL).save(TILES / f"{name}.png")
 			print(f"passage {name}")
+	for name, source_name in PORTRAITS.items():
+		source = ENEMY_RIGS / "source" / f"{source_name}.png"
+		if source.exists():
+			square(trimmed(source), PORTRAIT, 1.0).save(ENEMY_RIGS / f"{name}_portrait.png")
+			print(f"portrait {name}")
 	for kind in OBSTACLES:
 		source = TILES / "source" / f"obstacle_{kind}.png"
 		if source.exists():

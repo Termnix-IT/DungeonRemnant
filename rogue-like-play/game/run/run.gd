@@ -544,6 +544,7 @@ func _refresh() -> void:
 		enemy.visible = enemy.hp > 0 and dungeon.fog.visible.has(enemy.cell)
 		if enemy.visible:
 			visible_enemies += 1
+			carryover.meet(enemy.stats)
 	# The log line describes the whole action, so it waits for the playback.
 	hud.refresh(_displayed_hp(), turns.player.stats.max_hp, turns.turn_count, visible_enemies, "" if presentation.playing else turns.last_message, floor_number, dungeon.layout_name, dungeon.terrain_theme_name, final_floor, turns.message_serial)
 	hud.show_progress(progression.level, progression.exp, progression.required_exp())

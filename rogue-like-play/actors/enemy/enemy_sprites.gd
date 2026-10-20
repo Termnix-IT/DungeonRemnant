@@ -48,8 +48,9 @@ static func rig_path(id: String) -> String:
 
 
 # The enemy's whole picture for a portrait: {"texture", "region"} (the
-# atlas and the rectangle of its body), or empty for an enemy drawn in parts
-# (the sentinel) or without a rig. Read once from the rig's body mesh.
+# atlas and the rectangle of its body), read once from the rig's body mesh.
+# An enemy drawn in parts (the sentinel) has a picture of its own instead,
+# <id>_portrait.png beside its rig; without either it is empty.
 static func portrait(stats: EnemyStats) -> Dictionary:
 	if stats == null:
 		return {}
@@ -65,5 +66,9 @@ static func portrait(stats: EnemyStats) -> Dictionary:
 					region = region.expand(point)
 				found = {"texture": body.texture, "region": region}
 			rig.free()
+		var own := RIG_DIRECTORY + id + "_portrait.png"
+		if found.is_empty() and ResourceLoader.exists(own):
+			var picture: Texture2D = load(own)
+			found = {"texture": picture, "region": Rect2(Vector2.ZERO, picture.get_size())}
 		_portraits[id] = found
 	return _portraits[id]

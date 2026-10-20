@@ -52,6 +52,10 @@ var unknown := false:
 	set(value):
 		unknown = value
 		queue_redraw()
+# A picture standing in for an item (the encyclopedia's monsters): a texture
+# and the region of it to show, as EnemySprites.portrait() gives them; an
+# unknown one shows as a dark shape.
+var portrait := {}
 
 
 func _init() -> void:
@@ -100,6 +104,9 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, size).grow(-3), Color(gold, 0.75), false, 1.0)
 	if button_pressed:
 		draw_rect(Rect2(Vector2.ZERO, size).grow(-3), get_theme_color(&"font_color", &"GoldLabel"), false, 2.0)
+	if not portrait.is_empty():
+		_draw_portrait()
+		return
 	var shown := item if item != null else symbol
 	if shown == null:
 		return
@@ -129,6 +136,25 @@ func _draw() -> void:
 		var text := "×%d" % count
 		var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 		draw_string(font, Vector2(size.x - width - 6, size.y - 7), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, get_theme_color(&"font_color", &"Label"))
+
+
+# A monster's picture in the icon's place, fitted to it by its longer side
+# and standing on the icon square's foot, with the caption beside it.
+func _draw_portrait() -> void:
+	var extent := icon_size
+	var square := Rect2(Vector2((size.y - extent) * 0.5, (size.y - extent) * 0.5), Vector2.ONE * extent)
+	var region: Rect2 = portrait.region
+	var fit := extent / maxf(region.size.x, region.size.y)
+	var drawn := region.size * fit
+	var area := Rect2(Vector2(square.position.x + (extent - drawn.x) * 0.5, square.end.y - drawn.y), drawn)
+	if not unknown:
+		var strength := GLOW_CHOSEN if button_pressed else (GLOW_ACTIVE if (is_hovered() or has_focus()) else GLOW_REST)
+		draw_texture_rect(_glow, Rect2(square.position - square.size * 0.35, square.size * 1.7), false, Color(GLOW_COLOR, strength))
+	draw_texture_rect_region(portrait.texture, area, region, Color(0.0, 0.0, 0.0, 0.85) if unknown else Color.WHITE)
+	if button_pressed:
+		draw_rect(Rect2(Vector2.ZERO, size).grow(-3), get_theme_color(&"font_color", &"GoldLabel"), false, 2.0)
+	if not caption.is_empty():
+		_draw_caption(square.end.x + 12.0, &"GoldLabel" if button_pressed else &"Label")
 
 
 # The name and the note to the right of the icon, trimmed to the cell.

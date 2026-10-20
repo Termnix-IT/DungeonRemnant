@@ -113,6 +113,17 @@ func test_codec() -> void:
 		var data := recorded.duplicate(true)
 		data.discovered = invalid
 		check(SaveCodec.decode(data) == null, "An invalid record is rejected")
+	# Monsters seen are kept the same way, by their picture's id.
+	finder.meet(preload("res://data/enemies/turret_enemy.tres"))
+	var with_met := SaveCodec.encode(finder)
+	var met_back := SaveCodec.decode(JSON.parse_string(JSON.stringify(with_met)))
+	check(with_met.met == ["turret"] and met_back.has_met("turret") and not met_back.has_met("basic"), "Seen monsters are saved and read back")
+	var unknown_met := with_met.duplicate(true)
+	unknown_met.met.append("retired_monster")
+	check(not SaveCodec.decode(unknown_met).has_met("retired_monster"), "A monster the game no longer has is dropped")
+	var bad_met := with_met.duplicate(true)
+	bad_met.met = "turret"
+	check(SaveCodec.decode(bad_met) == null, "An invalid monster record is rejected")
 	var ids := {}
 	for item in ItemCatalog.all_items():
 		ids[item.id] = true

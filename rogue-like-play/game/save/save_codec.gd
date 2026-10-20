@@ -13,7 +13,7 @@ static func encode(state: RunCarryover) -> Dictionary:
 	var equipment: Array = []
 	for item in state.equipment.slots:
 		equipment.append(_encode_item(item))
-	return {"version": VERSION, "gold": state.gold, "skills": state.skill_levels.duplicate(true), "bosses": state.defeated_bosses.duplicate(true), "entries": state.unlocked_entries.duplicate(true), "cleared_stages": state.cleared_stages.duplicate(), "hp_upgrade_level": state.hp_upgrade_level, "inventory": _encode_inventory(state.inventory), "storage": _encode_inventory(state.storage), "equipment": equipment, "discovered": state.discovered_ids()}
+	return {"version": VERSION, "gold": state.gold, "skills": state.skill_levels.duplicate(true), "bosses": state.defeated_bosses.duplicate(true), "entries": state.unlocked_entries.duplicate(true), "cleared_stages": state.cleared_stages.duplicate(), "hp_upgrade_level": state.hp_upgrade_level, "inventory": _encode_inventory(state.inventory), "storage": _encode_inventory(state.storage), "equipment": equipment, "discovered": state.discovered_ids(), "met": state.met_ids()}
 
 
 static func _encode_inventory(inventory: Inventory) -> Array:
@@ -58,6 +58,8 @@ static func decode(data: Variant) -> RunCarryover:
 	# Added without a new version: an older save starts from what it holds.
 	if data.has("discovered") and not _decode_discovered(data.discovered, state):
 		return null
+	if data.has("met") and not _decode_met(data.met, state):
+		return null
 	state.gold = int(data.gold)
 	return state
 
@@ -71,6 +73,17 @@ static func _decode_discovered(data: Variant, state: RunCarryover) -> bool:
 			return false
 		if ItemCatalog.by_id(id) != null:
 			state.discovered_items[StringName(id)] = true
+	return true
+
+
+static func _decode_met(data: Variant, state: RunCarryover) -> bool:
+	if not data is Array or data.size() > MAX_DISCOVERED:
+		return false
+	for id: Variant in data:
+		if not id is String:
+			return false
+		if EnemyCatalog.has_id(id):
+			state.met_enemies[StringName(id)] = true
 	return true
 
 
