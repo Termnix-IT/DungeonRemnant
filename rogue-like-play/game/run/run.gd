@@ -523,6 +523,9 @@ func _refresh() -> void:
 	dungeon.update_visibility(turns.player.cell, turns.player.vision_range)
 	var events: Array[Dictionary] = dungeon.grid.visual_events.duplicate()
 	dungeon.grid.visual_events.clear()
+	for event in events:
+		if event.kind == "break":
+			_drop_crate_loot(event.cell)
 	presentation.present(events, turns.player, dungeon.fog.visible, dungeon.TILE_SIZE)
 	turns.player.input_enabled = turns.player.input_enabled and not presentation.playing
 	_record_discoveries()
@@ -875,6 +878,14 @@ func _make_elite(enemy: Node2D) -> void:
 	enemy.stats.display_name = "精鋭 " + enemy.stats.display_name
 
 
+# A broken crate sometimes leaves something where it stood.
+func _drop_crate_loot(cell: Vector2i) -> void:
+	if rng.randf() >= dungeon_settings.crate_drop_chance or dungeon.ground_items.has(cell):
+		return
+	var item := ItemCatalog.POTION if rng.randf() < 0.5 else ItemCatalog.ground_item(rng.randi_range(0, 1000))
+	dungeon.ground_items[cell] = InventoryEntry.new(item, 2 if item.stackable() else 1)
+
+
 func _drop_enemy_loot(enemy: Node2D) -> void:
 	var item: ItemData
 	if enemy.stats.elite and rng.randf() < dungeon_settings.accessory_drop_chance:
@@ -888,7 +899,7 @@ func _drop_enemy_loot(enemy: Node2D) -> void:
 	for direction in MOVE_DIRECTIONS:
 		candidates.append(enemy.cell + direction)
 	for cell in candidates:
-		if dungeon.grid.is_floor(cell) and not dungeon.ground_items.has(cell) and cell != dungeon.stairs_cell:
+		if dungeon.grid.is_open(cell) and not dungeon.ground_items.has(cell) and cell != dungeon.stairs_cell:
 			dungeon.ground_items[cell] = InventoryEntry.new(item)
 			return
 

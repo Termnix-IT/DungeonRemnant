@@ -15,6 +15,10 @@ extends Resource
 @export_range(20, 60) var height: int = 40
 @export_range(0, 20) var enemy_count: int = 3
 @export_range(0, 20) var item_count: int = 6
+# Rubble, crates and pools set in the rooms of an exploration floor.
+@export_range(0, 20) var obstacle_count: int = 8
+# The chance a broken crate leaves an item.
+@export_range(0.0, 1.0) var crate_drop_chance: float = 0.35
 @export_range(1, 12) var enemy_start_distance: int = 6
 @export_range(4, 16) var room_count: int = 9
 @export_range(1, 100) var reinforcement_interval: int = 18

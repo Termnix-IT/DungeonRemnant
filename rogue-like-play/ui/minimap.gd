@@ -9,6 +9,12 @@ const FLOOR_COLOR := Color("3f3a30")
 const VISIBLE_FLOOR_COLOR := Color("5c5544")
 const WALL_COLOR := Color("1f1c17")
 const VISIBLE_WALL_COLOR := Color("332e25")
+# Obstacles read as not-floor: rubble and crates a shade lighter than walls,
+# water a dark cool blue.
+const OBSTACLE_COLOR := Color("2b2720")
+const VISIBLE_OBSTACLE_COLOR := Color("463f32")
+const WATER_COLOR := Color("1d2a33")
+const VISIBLE_WATER_COLOR := Color("284050")
 # Each marker is a small painted icon (the theme's DungeonMinimap icons),
 # differing from the others in both colour and shape: the hero a blue-white
 # gem, enemies red horned skulls, items green gems and the stairs a gold
@@ -22,6 +28,7 @@ const CELL_SIZE := 8.0
 
 var grid_size := Vector2i.ZERO
 var walls: Dictionary = {}
+var obstacles: Dictionary = {}
 var explored: Dictionary = {}
 var visible_cells: Dictionary = {}
 var player_cell := UNKNOWN_CELL
@@ -41,6 +48,7 @@ func refresh(
 ) -> void:
 	grid_size = grid.size
 	walls = grid.walls.duplicate()
+	obstacles = grid.obstacles.duplicate()
 	explored = explored_cells.duplicate()
 	visible_cells = currently_visible.duplicate()
 	player_cell = player_position
@@ -64,6 +72,10 @@ func _draw() -> void:
 		var color := VISIBLE_FLOOR_COLOR if seen_now else FLOOR_COLOR
 		if walls.has(cell):
 			color = VISIBLE_WALL_COLOR if seen_now else WALL_COLOR
+		elif obstacles.get(cell) == GridState.WATER:
+			color = VISIBLE_WATER_COLOR if seen_now else WATER_COLOR
+		elif obstacles.has(cell):
+			color = VISIBLE_OBSTACLE_COLOR if seen_now else OBSTACLE_COLOR
 		draw_rect(rect, color)
 	for cell: Vector2i in item_cells:
 		if explored.has(cell):

@@ -11,6 +11,9 @@ Godot to show with mipmapped linear filtering:
   (PASSAGE px), drawn over a boss floor's cell.
 - art/tiles/painted/source/torch_sconce.png and torch_flame.png ->
   art/tiles/painted/torch_*.png (TORCH px tall), drawn on the wall faces.
+- art/tiles/painted/source/obstacle_<kind>.png -> art/tiles/painted/
+  obstacle_<kind>.png (OBSTACLE px), the rubble, crates and pools that
+  stand on floor cells (GridState.OBSTACLES).
 
 	python tools/build_painted_objects.py
 """
@@ -32,6 +35,8 @@ PASSAGE = 192
 PASSAGE_FILL = 1.0
 PASSAGES = ["guardian_door", "descent_stairs", "return_door"]
 TORCH = 128
+OBSTACLE = 192
+OBSTACLES = ["rubble", "crate", "water"]
 
 
 def trimmed(path: Path) -> Image.Image:
@@ -64,6 +69,11 @@ def main() -> None:
 		if source.exists():
 			square(trimmed(source), PASSAGE, PASSAGE_FILL).save(TILES / f"{name}.png")
 			print(f"passage {name}")
+	for kind in OBSTACLES:
+		source = TILES / "source" / f"obstacle_{kind}.png"
+		if source.exists():
+			square(trimmed(source), OBSTACLE, 1.0).save(TILES / f"obstacle_{kind}.png")
+			print(f"obstacle {kind}")
 	for part in ["sconce", "flame"]:
 		source = TILES / "source" / f"torch_{part}.png"
 		if source.exists():

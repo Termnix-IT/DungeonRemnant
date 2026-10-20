@@ -114,6 +114,14 @@ func present(events: Array[Dictionary], player: Node2D, visible_cells: Dictionar
 	timeline = create_tween()
 	timeline.set_parallel(true)
 	for event in events:
+		# A crate struck by the attack before it splinters at the impact.
+		if event.kind == "break":
+			if visible_cells.has(event.cell):
+				var center := Vector2(event.cell * tile_size) + Vector2.ONE * tile_size / 2
+				timeline.tween_callback(_effect.bind(&"death", [center] as Array[Vector2], Vector2.UP)).set_delay(hit_at)
+				timeline.tween_callback(GameAudio.play.bind(self, &"hit", -16.0)).set_delay(hit_at)
+				scheduled = true
+			continue
 		var actor: Node2D = event.actor
 		if not is_instance_valid(actor):
 			continue

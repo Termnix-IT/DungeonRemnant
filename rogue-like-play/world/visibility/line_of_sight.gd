@@ -23,7 +23,7 @@ static func can_see(grid: GridState, from: Vector2i, to: Vector2i) -> bool:
 		var crossing_x := (1 + 2 * x_steps) * height
 		var crossing_y := (1 + 2 * y_steps) * width
 		if crossing_x == crossing_y:
-			if not grid.is_floor(cell + Vector2i(step.x, 0)) or not grid.is_floor(cell + Vector2i(0, step.y)):
+			if not grid.is_transparent(cell + Vector2i(step.x, 0)) or not grid.is_transparent(cell + Vector2i(0, step.y)):
 				return false
 			cell += step
 			x_steps += 1
@@ -34,7 +34,8 @@ static func can_see(grid: GridState, from: Vector2i, to: Vector2i) -> bool:
 		else:
 			cell.y += step.y
 			y_steps += 1
-		# An obstructing wall/pillar itself is visible, but nothing behind it is.
-		if cell != to and not grid.is_floor(cell):
+		# An obstructing wall, pillar or crate itself is visible, but nothing
+		# behind it is.
+		if cell != to and not grid.is_transparent(cell):
 			return false
 	return true

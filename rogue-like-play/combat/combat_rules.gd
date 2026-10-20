@@ -22,18 +22,30 @@ static func attack_cells(grid: GridState, origin: Vector2i, direction: Vector2i,
 	return ray_cells(grid, origin, direction, weapon.reach if weapon != null else 1, weapon.pierces if weapon != null else false)
 
 
+# The cells an attack's line reaches: it passes over water, stops before
+# rubble and walls, and ends on a crate, which it breaks.
 static func ray_cells(grid: GridState, origin: Vector2i, direction: Vector2i, reach: int, pierces: bool = false) -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
 	var previous := origin
 	for distance in range(1, reach + 1):
 		var destination := origin + direction * distance
-		if not grid.can_step(previous, destination):
+		if not grid.attack_passes(previous, destination):
+			# A crate on the line takes the blow itself.
+			if grid.is_breakable(destination) and _corners_pass(grid, previous, destination):
+				cells.append(destination)
 			break
 		cells.append(destination)
 		if grid.occupants.has(destination) and not pierces:
 			break
 		previous = destination
 	return cells
+
+
+static func _corners_pass(grid: GridState, from: Vector2i, to: Vector2i) -> bool:
+	var delta := to - from
+	if delta.x != 0 and delta.y != 0:
+		return grid.lets_attacks(from + Vector2i(delta.x, 0)) and grid.lets_attacks(from + Vector2i(0, delta.y))
+	return true
 
 
 static func attack(grid: GridState, attacker: Node2D, direction: Vector2i, weapon: WeaponData = null) -> int:
@@ -48,6 +60,8 @@ static func attack(grid: GridState, attacker: Node2D, direction: Vector2i, weapo
 		var target: Node2D = grid.occupants.get(cell)
 		if target != null and target != attacker and target.hp > 0:
 			targets.append(target)
+	for cell in cells:
+		grid.break_obstacle(cell)
 	var total_damage := 0
 	for target in targets:
 		total_damage += damage_target(grid, attacker, target, bonus)

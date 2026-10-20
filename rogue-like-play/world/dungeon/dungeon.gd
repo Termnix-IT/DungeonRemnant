@@ -27,6 +27,17 @@ const GUARDIAN_DOOR := preload("res://art/tiles/painted/guardian_door.png")
 const DESCENT_STAIRS := preload("res://art/tiles/painted/descent_stairs.png")
 const RETURN_DOOR := preload("res://art/tiles/painted/return_door.png")
 const REMEMBERED_PASSAGE_TINT := Color(0.45, 0.45, 0.5)
+# The obstacles standing on floor cells (GridState.OBSTACLES), painted by
+# tools/build_painted_objects.py; drawn with the passages, under the items
+# and actors, a little larger than the cell so they stand on it. Like the
+# walls they sit a step below the actors in tone.
+const OBSTACLE_ART := {
+	GridState.RUBBLE: preload("res://art/tiles/painted/obstacle_rubble.png"),
+	GridState.CRATE: preload("res://art/tiles/painted/obstacle_crate.png"),
+	GridState.WATER: preload("res://art/tiles/painted/obstacle_water.png"),
+}
+const OBSTACLE_REACH := 4.0
+const OBSTACLE_TINT := Color(0.86, 0.86, 0.86)
 const TERRAIN_THEME_NAMES: Array[String] = ["Slate Ruins", "Moss Caverns", "Ember Depths", "Obsidian Sanctum"]
 const PAINTED_CELL := 96
 const PAINTED_PERIOD := 4
@@ -333,6 +344,13 @@ func _draw_decorations() -> void:
 
 
 func _draw_passages() -> void:
+	for cell: Vector2i in grid.obstacles:
+		if not fog.explored.has(cell):
+			continue
+		var kind: StringName = grid.obstacles[cell]
+		var reach := 0.0 if kind == GridState.WATER else OBSTACLE_REACH
+		var tint := OBSTACLE_TINT if fog.visible.has(cell) else REMEMBERED_PASSAGE_TINT
+		passages.draw_texture_rect(OBSTACLE_ART[kind], Rect2(Vector2(cell * TILE_SIZE), Vector2.ONE * TILE_SIZE).grow(reach), false, tint)
 	if has_stairs and map_kind != DungeonGenerator.Kind.EXPLORATION:
 		_draw_passage(GUARDIAN_DOOR if map_kind == DungeonGenerator.Kind.ANTECHAMBER else DESCENT_STAIRS, stairs_cell)
 	if escape_cell.x >= 0:

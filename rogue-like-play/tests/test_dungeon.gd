@@ -29,7 +29,7 @@ func cardinal_region(grid: GridState, start: Vector2i) -> Dictionary:
 		index += 1
 		for direction: Vector2i in [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]:
 			var next := cell + direction
-			if grid.is_floor(next) and not visited.has(next):
+			if grid.is_open(next) and not visited.has(next):
 				visited[next] = true
 				queue.append(next)
 	return visited
@@ -57,7 +57,7 @@ func test_generation() -> void:
 					border_ok = border_ok and not grid.is_floor(Vector2i(0, edge)) and not grid.is_floor(Vector2i(size - 1, edge))
 				check(border_ok, label + " outer walls")
 				var reached := cardinal_region(grid, data.start)
-				check(reached.size() == size * size - grid.walls.size(), label + " all floors connected")
+				check(reached.size() == size * size - grid.walls.size() - grid.obstacles.size(), label + " all floors connected")
 				check(data.start != data.stairs and reached.has(data.stairs), label + " stairs reachable")
 				var placed: Dictionary = {data.start: true, data.stairs: true}
 				var enemies_ok: bool = data.enemies.size() == settings.enemy_count
@@ -197,6 +197,8 @@ func test_ten_floors() -> void:
 		pathfinder.update()
 		for wall: Vector2i in run.dungeon.grid.walls:
 			pathfinder.set_point_solid(wall)
+		for obstacle: Vector2i in run.dungeon.grid.obstacles:
+			pathfinder.set_point_solid(obstacle)
 		var path := pathfinder.get_id_path(player.cell, run.dungeon.stairs_cell)
 		check(path.size() > 1, "Playable route to stairs")
 		for index in range(1, path.size()):

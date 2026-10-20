@@ -20,7 +20,7 @@ func update(grid: GridState, origin: Vector2i, radius: int) -> void:
 	# Only directly visible floors reveal their border; never expand from walls.
 	var direct_cells := visible.keys()
 	for cell: Vector2i in direct_cells:
-		if not grid.is_floor(cell):
+		if not grid.is_transparent(cell):
 			continue
 		for direction in LayoutUtils.DIRECTIONS:
 			var border := cell + direction

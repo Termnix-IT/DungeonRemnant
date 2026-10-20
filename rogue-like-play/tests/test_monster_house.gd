@@ -23,7 +23,7 @@ func run_tests() -> void:
 		var data := DungeonGenerator.generate(settings, seed_value % 3 + 1, rng)
 		var reached := LayoutUtils.distances(data.grid, data.start)
 		var house: Rect2i = data.house
-		check(house.has_area() and reached.size() == settings.width * settings.height - data.grid.walls.size(), "House retains connected map")
+		check(house.has_area() and reached.size() == settings.width * settings.height - data.grid.walls.size() - data.grid.obstacles.size(), "House retains connected map")
 		check(reached.has(data.stairs) and data.stairs != data.start, "Reachable distinct stairs")
 		var occupied := {data.start: true, data.stairs: true}
 		for cell: Vector2i in data.enemies:

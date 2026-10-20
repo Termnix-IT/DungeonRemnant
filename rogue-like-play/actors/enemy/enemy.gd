@@ -247,6 +247,8 @@ func choose_step(grid: GridState, target: Vector2i) -> Vector2i:
 	pathfinder.update()
 	for wall: Vector2i in grid.walls:
 		pathfinder.set_point_solid(wall)
+	for obstacle: Vector2i in grid.obstacles:
+		pathfinder.set_point_solid(obstacle)
 	for occupied: Vector2i in grid.occupants:
 		if occupied != cell and occupied != target:
 			pathfinder.set_point_solid(occupied)

@@ -25,6 +25,8 @@ const BOSS_HALL_START := Vector2i(5, 6)
 const BOSS_HALL_THRONE := Vector2i(12, 6)
 const BOSS_HALL_PILLARS: Array[Vector2i] = [Vector2i(7, 4), Vector2i(7, 8), Vector2i(10, 4), Vector2i(10, 8)]
 const HOUSE_ATTEMPTS := 6
+# How often each obstacle kind is chosen (GridState.OBSTACLES).
+const OBSTACLE_WEIGHTS := {GridState.RUBBLE: 3, GridState.CRATE: 3, GridState.WATER: 2}
 
 
 static func generate(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenerator, final_floor: bool = false, kind: Kind = Kind.EXPLORATION) -> Dictionary:
@@ -97,7 +99,40 @@ static func generate(settings: DungeonSettings, floor_number: int, rng: RandomNu
 	for index in mini(settings.monster_house_enemies, house_candidates.size()):
 		var selected := rng.randi_range(0, house_candidates.size() - 1)
 		house_enemies.append(house_candidates.pop_at(selected))
+	var kept: Array[Vector2i] = [start, stairs]
+	kept.append_array(enemies)
+	_place_obstacles(grid, settings.obstacle_count, floors, kept, house, floor_number)
 	return {"grid": grid, "start": start, "stairs": stairs, "enemies": enemies, "layout": ROOM_LAYOUT, "house": house, "house_enemies": house_enemies}
+
+
+# Obstacles stand in the open middle of rooms: every one of a cell's eight
+# neighbours must be open floor, so none blocks a corridor or touches another
+# obstacle, and each can be walked round. None goes in or beside the monster
+# house (the way round it must stay open) or on or beside a kept cell (the
+# start, the stairs, an enemy). They use an RNG of
+# their own, seeded from the layout, so the layout's RNG runs as before.
+static func _place_obstacles(grid: GridState, count: int, floors: Array[Vector2i], kept: Array[Vector2i], house: Rect2i, floor_number: int) -> void:
+	count = clampi(count, 0, 20)
+	if count == 0:
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash([floor_number, kept, floors.size()])
+	var candidates: Array[Vector2i] = []
+	for cell in floors:
+		if (house.has_area() and house.grow(1).has_point(cell)) or kept.any(func(other: Vector2i): return maxi(absi(other.x - cell.x), absi(other.y - cell.y)) <= 1):
+			continue
+		candidates.append(cell)
+	var kinds: Array[StringName] = []
+	for kind: StringName in OBSTACLE_WEIGHTS:
+		for weight in OBSTACLE_WEIGHTS[kind]:
+			kinds.append(kind)
+	var placed := 0
+	while placed < count and not candidates.is_empty():
+		var cell: Vector2i = candidates.pop_at(rng.randi_range(0, candidates.size() - 1))
+		if not grid.is_open(cell) or LayoutUtils.DIRECTIONS.any(func(direction: Vector2i): return not grid.is_open(cell + direction)):
+			continue
+		grid.obstacles[cell] = kinds[rng.randi_range(0, kinds.size() - 1)]
+		placed += 1
 
 
 static func _farthest(distances: Dictionary, start: Vector2i) -> Vector2i:
