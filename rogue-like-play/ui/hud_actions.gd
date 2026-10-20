@@ -1,22 +1,24 @@
 class_name HudActions
 extends Panel
 
-# What can be done right now, at the bottom right of the dungeon HUD: one key
-# cap per line. Out of the aim it lists the actions the HUD has no other place
+# What can be done right now, at the top left of the dungeon HUD: one key cap
+# per line. Out of the aim it lists the actions the HUD has no other place
 # for (ready an attack, open the inventory, cast when a staff is worn, open
 # the menu, which holds the settings and leaving the run); while an attack's direction is being chosen it turns into that
 # mode's own card, in the gilt plate (HudPanelActive) and titled so, with only
 # the keys that work in it. The aim's instructions once ran as a line in the message log, where
 # they were the only sign that the mode had begun. The weapon swap is here
-# too: the weapon in hand shows on the hero, so the HUD has no weapon row.
+# too; the two weapons themselves stand beside the level (HudWeapons).
 
-const WIDTH := 300.0
+const WIDTH := 330.0
 # From the screen's edges, like the other HUD plates.
 const MARGIN := 16.0
 # Clear of the plate's corner brackets.
 const PADDING := Vector2(24, 16)
 const LINE := 34.0
 const TITLE_HEIGHT := 26.0
+# The most lines the card ever lists: out of the aim with a staff worn.
+const MOST_LINES := 5
 
 var aiming := false
 var can_cast := false
@@ -70,17 +72,17 @@ func show_state(is_aiming: bool, staff: bool) -> void:
 		_lines.add_child(guide)
 		guide.add_hint(line[0], line[1], line[2])
 		_guides.append(guide)
-	# Held to the screen's bottom-right corner; the card grows upward.
-	var height := PADDING.y * 2 + _lines.get_combined_minimum_size().y
-	anchor_left = 1.0
-	anchor_right = 1.0
-	anchor_top = 1.0
-	anchor_bottom = 1.0
-	offset_right = -MARGIN
-	offset_bottom = -MARGIN
-	offset_left = -MARGIN - WIDTH
-	offset_top = -MARGIN - height
+	# Held to the screen's top-left corner; the card grows downward.
+	position = Vector2.ONE * MARGIN
+	size = Vector2(WIDTH, PADDING.y * 2 + _lines.get_combined_minimum_size().y)
 	_lines.size.x = WIDTH - PADDING.x * 2
+
+
+# How far down the card reaches at its longest, so what stands under it never
+# moves as the card's lines change.
+func full_height() -> float:
+	var separation := _lines.get_theme_constant(&"separation")
+	return PADDING.y * 2 + TITLE_HEIGHT + (LINE + separation) * MOST_LINES
 
 
 # The keys this card names, in order, for the tests and the help.

@@ -1,12 +1,17 @@
 extends CanvasLayer
 
-const MAX_LOG_ENTRIES := 3
+# The log at the bottom right keeps as many lines as fit; long ones wrap and
+# push the oldest out (_render_log).
+const MAX_LOG_ENTRIES := 12
 # The newest entries stay at full strength; older ones recede.
 const EMPHASIZED_LOG_ENTRIES := 2
-# The face frame sits in the vitals plate's top-left, beside the HP and MP bars.
+# The face frame sits in the vitals plate's top-left, above the HP and MP bars.
 const PORTRAIT_SIZE := 104
 const PORTRAIT_INSET := 14
-const EFFECTS_POSITION := Vector2(16, 16)
+# The effects stand in the top-left corner, under the actions card when it
+# shows.
+const EFFECTS_MARGIN := 16.0
+const EFFECTS_GAP := 12.0
 const EFFECTS_WIDTH := 330.0
 # Announcements and the boss gauge share one band at the screen's top edge,
 # above the ring of floor round the hero that the HUD keeps clear. The
@@ -38,6 +43,8 @@ const LOG_MARKS: Array = [
 @onready var mp_value: Label = $BottomLeft/MpValue
 @onready var mp_bar: ProgressBar = $BottomLeft/MpBar
 @onready var level_value: Label = $BottomLeft/Level
+@onready var items_value: Label = $BottomLeft/Items
+@onready var weapons: HudWeapons = $BottomLeft/Weapons
 @onready var exp_bar: ProgressBar = $BottomLeft/ExpBar
 @onready var log_entries: RichTextLabel = $Log/Entries
 
@@ -52,12 +59,12 @@ var last_log_key := -1
 
 
 func _ready() -> void:
-	# The vitals plate holds only what changes in a fight: the face, HP and MP,
-	# and the level with its EXP bar. The weapon in hand shows on the hero
-	# herself; the turn, the inventory count, Gold and the EXP figures are in
-	# the inventory (I), where they are read, not glanced at.
+	# The vitals plate at the bottom left: the face, beside it the inventory
+	# count, the level with the two weapons and the EXP bar, and under them HP
+	# and MP across the plate. The turn, Gold and the EXP figures are in the
+	# inventory (I), where they are read, not glanced at.
 	var vitals: Panel = $BottomLeft
-	# What can be done now, at the bottom right: the keys the HUD shows nowhere
+	# What can be done now, at the top left: the keys the HUD shows nowhere
 	# else, the weapon swap among them.
 	actions = HudActions.new()
 	actions.name = "Actions"
@@ -127,9 +134,12 @@ func highlight_ability(effect: AbilityData.Effect, delay: float = 0.0) -> void:
 # floor itself.
 func show_controls(shown: bool) -> void:
 	actions.visible = shown
+	var effects := get_node_or_null("ActiveEffects") as HudEffects
+	if effects != null:
+		show_effects(effects.entries)
 
 
-# While an attack's direction is chosen: the card at the bottom right turns
+# While an attack's direction is chosen: the card at the top left turns
 # into the aim's own, and a tag stands over the hero (at, on the screen).
 func show_aim(aiming: bool, at: Vector2 = Vector2.ZERO, staff: bool = false) -> void:
 	if aiming != actions.aiming or staff != actions.can_cast:
@@ -138,6 +148,16 @@ func show_aim(aiming: bool, at: Vector2 = Vector2.ZERO, staff: bool = false) -> 
 	if aiming:
 		aim_tag.reset_size()
 		aim_tag.position = (at - Vector2(aim_tag.size.x * 0.5, AIM_TAG_RISE + aim_tag.size.y)).round()
+
+
+# How full the pack is, as slots used of slots held.
+func show_carry(count: int, capacity: int) -> void:
+	items_value.text = "%d / %d" % [count, capacity]
+
+
+# The weapon in hand and the one Tab swaps to.
+func show_weapons(main: ItemData, sub: ItemData) -> void:
+	weapons.show_weapons(main, sub)
 
 
 # The bar tells how near the next level is; the figures are in the inventory.
@@ -268,7 +288,9 @@ func terrain_label(value: String) -> String:
 	return value if not value.is_empty() else "未踏の迷宮"
 
 
-# Takes the otherwise empty top-left corner.
+# In the top-left corner, under the actions card at its longest so the
+# tokens stay put while the card changes; at the corner when the card is put
+# away.
 func show_effects(active: Array[Dictionary]) -> void:
 	var panel := get_node_or_null("ActiveEffects") as HudEffects
 	if panel == null:
@@ -276,8 +298,11 @@ func show_effects(active: Array[Dictionary]) -> void:
 		panel.name = "ActiveEffects"
 		panel.theme = $TopRight.theme
 		add_child(panel)
-		panel.position = EFFECTS_POSITION
 		panel.size.x = EFFECTS_WIDTH
+	var top := EFFECTS_MARGIN
+	if actions.visible:
+		top = actions.position.y + actions.full_height() + EFFECTS_GAP
+	panel.position = Vector2(EFFECTS_MARGIN, top)
 	panel.show_entries(active)
 
 

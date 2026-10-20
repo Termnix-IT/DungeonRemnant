@@ -86,10 +86,15 @@ func run_tests() -> void:
 	var run = main.active_run
 	var hud = run.get_node("HUD")
 	var panels: Array[Control] = []
-	for path in ["TopRight", "BottomLeft", "Log"]:
+	# Fights happen within four cells of the hero, so the HUD stays off them.
+	var cell: float = run.dungeon.TILE_SIZE * run.camera.zoom.x
+	var hero: Vector2 = run.turns.player.get_global_transform_with_canvas().origin
+	var ring := Rect2(hero - Vector2.ONE * cell * 4.5, Vector2.ONE * cell * 9.0)
+	for path in ["TopRight", "BottomLeft", "Log", "Actions"]:
 		var panel: Control = hud.get_node(path)
 		var safe_rect := root.get_visible_rect().grow(-15.0)
 		check(safe_rect.encloses(panel.get_global_rect()), "%s keeps edge padding" % path)
+		check(not panel.get_global_rect().intersects(ring), "%s stays off the floor round the hero" % path)
 		for other in panels:
 			check(not panel.get_global_rect().intersects(other.get_global_rect()), "HUD panels do not overlap")
 		panels.append(panel)

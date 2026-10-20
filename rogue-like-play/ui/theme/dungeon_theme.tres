@@ -38,7 +38,6 @@
 [ext_resource type="Texture2D" path="res://art/ui/hud/map_enemy.png" id="HudMapEnemyTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/map_item.png" id="HudMapItemTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/map_player.png" id="HudMapPlayerTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/log_band.png" id="HudLogBandTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/log_victory.png" id="HudLogVictoryTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/log_harm.png" id="HudLogHarmTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/log_floor.png" id="HudLogFloorTexture"]
@@ -663,16 +662,6 @@ expand_margin_left = 12.0
 expand_margin_top = 12.0
 expand_margin_right = 12.0
 expand_margin_bottom = 12.0
-
-[sub_resource type="StyleBoxTexture" id="HudLogBand"]
-resource_name = "HudLogBand"
-texture = ExtResource("HudLogBandTexture")
-texture_margin_left = 110.0
-texture_margin_right = 110.0
-expand_margin_left = 60.0
-expand_margin_top = 24.0
-expand_margin_right = 60.0
-expand_margin_bottom = 24.0
 
 [sub_resource type="StyleBoxTexture" id="KeyCap"]
 resource_name = "KeyCap"
@@ -1354,8 +1343,6 @@ HudPanelActive/base_type = &"Panel"
 HudPanelActive/styles/panel = SubResource("HudSurfaceActive")
 HudMapFrame/base_type = &"Panel"
 HudMapFrame/styles/panel = SubResource("HudMapFrame")
-HudLogPanel/base_type = &"Panel"
-HudLogPanel/styles/panel = SubResource("HudLogBand")
 HudEffects/icons/token = ExtResource("HudMedallionTexture")
 DungeonMinimap/icons/stairs = ExtResource("HudMapStairsTexture")
 DungeonMinimap/icons/enemy = ExtResource("HudMapEnemyTexture")
@@ -1388,6 +1375,9 @@ HpCaption/font_sizes/font_size = 16
 MpCaption/base_type = &"Label"
 MpCaption/colors/font_color = Color(0.67, 0.73, 1, 1)
 MpCaption/font_sizes/font_size = 16
+VitalCaption/base_type = &"HudCaption"
+VitalCaption/colors/font_color = Color(0.94, 0.92, 0.86, 1)
+VitalCaption/font_sizes/font_size = 16
 ExpBar/base_type = &"ProgressBar"
 ExpBar/styles/background = SubResource("VitalTrackThin")
 ExpBar/styles/fill = SubResource("ExperienceFill")

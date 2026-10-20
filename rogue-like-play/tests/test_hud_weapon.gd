@@ -1,8 +1,9 @@
 extends SceneTree
 
 # The HUD's vitals plate, its actions card and its notice band: the plate keeps
-# only the face, HP, MP and the level's bar, the card names the weapon swap
-# with the other keys, and the run's figures move to the inventory; banners
+# the face, the inventory count, the level with the two weapons and its bar,
+# HP and MP, the card names the weapon swap with the other keys, and the
+# turn, Gold and EXP figures stay in the inventory; banners
 # share the band at the screen's top edge with the boss gauge, which steps
 # aside while one shows, stay off the floor round the hero, and wait for one
 # another.
@@ -29,20 +30,27 @@ func run_tests() -> void:
 	var hud = run.hud
 	var player: Node2D = run.turns.player
 	var vitals: Control = hud.get_node("BottomLeft")
-	# The vitals plate holds only what a fight changes: no weapon row (the
-	# weapon shows on the hero), no turn, count or Gold line, no EXP figures.
-	for node_name in ["Weapon", "Meta", "Gold", "ExpValue"]:
+	# The vitals plate: no turn or Gold line and no EXP figures; those are read
+	# in the inventory, not glanced at.
+	for node_name in ["Meta", "Gold", "ExpValue"]:
 		check(vitals.get_node_or_null(node_name) == null, "The vitals plate has no %s" % node_name)
-	var exp_bar: Control = vitals.get_node("ExpBar")
-	check(vitals.get_global_rect().encloses(exp_bar.get_global_rect()) and vitals.get_global_rect().end.y - exp_bar.get_global_rect().end.y < 24.0, "The plate ends just under the EXP bar")
-	# The keys the HUD shows nowhere else stand on the card at the bottom right,
+	var mp_bar: Control = vitals.get_node("MpBar")
+	check(vitals.get_global_rect().encloses(mp_bar.get_global_rect()) and vitals.get_global_rect().end.y - mp_bar.get_global_rect().end.y < 24.0, "The plate ends just under the MP bar")
+	run._refresh()
+	check(hud.items_value.text == "%d / %d" % [player.inventory.entries.size(), player.inventory.max_entries], "The plate counts the pack's slots: " + hud.items_value.text)
+	# The keys the HUD shows nowhere else stand on the card at the top left,
 	# the weapon swap among them.
 	var keys: Array[String] = hud.actions.keys()
 	check("I" in keys and "Space" in keys and "Tab" in keys, "The actions card names I, Space and Tab")
+	var screen: Rect2 = hud.get_viewport().get_visible_rect()
+	check(hud.actions.get_global_rect().position.is_equal_approx(Vector2.ONE * HudActions.MARGIN) and hud.actions.get_global_rect().end.y < screen.size.y * 0.5, "The actions card stands at the top left")
 	var main: ItemData = player.equipment.slots[Equipment.Slot.MAIN]
 	var sub: ItemData = player.equipment.slots[Equipment.Slot.SUB]
+	check(hud.weapons.held == main and hud.weapons.spare == sub, "Beside the level, the weapon in hand comes first and the other second")
 	run._on_action("switch", Vector2i.ZERO)
 	check(player.equipment.slots[Equipment.Slot.MAIN] == sub and player.equipment.slots[Equipment.Slot.SUB] == main, "Tab swaps the weapons")
+	run._refresh()
+	check(hud.weapons.held == sub and hud.weapons.spare == main, "The swap puts the other weapon in the gold box")
 	# The run's figures stand in the inventory's header instead.
 	run._refresh()
 	var record: String = run.inventory_panel.record_label.text

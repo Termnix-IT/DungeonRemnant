@@ -544,6 +544,10 @@ func _refresh() -> void:
 	# The log line describes the whole action, so it waits for the playback.
 	hud.refresh(_displayed_hp(), turns.player.stats.max_hp, turns.turn_count, visible_enemies, "" if presentation.playing else turns.last_message, floor_number, dungeon.layout_name, dungeon.terrain_theme_name, final_floor, turns.message_serial)
 	hud.show_progress(progression.level, progression.exp, progression.required_exp())
+	var pack: Inventory = turns.player.inventory
+	hud.show_carry(pack.entries.size(), pack.max_entries)
+	var worn: Equipment = turns.player.equipment
+	hud.show_weapons(worn.slots[Equipment.Slot.MAIN], worn.slots[Equipment.Slot.SUB])
 	# The figures the HUD leaves out stand in the inventory's header.
 	inventory_panel.show_record(progression.level, progression.exp, progression.required_exp(), turns.turn_count, turns.gold)
 	preview.cells.clear()

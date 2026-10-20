@@ -132,8 +132,13 @@ func check_combat_readability() -> void:
 		player.active_effects.add(item)
 	run._refresh()
 	check(effects.visible and effects.entries.size() == player.active_effects.effects.size() and effects.entries.size() > 1, "Each active effect gets its own row")
-	for panel_name in ["TopRight", "BottomLeft", "Log"]:
+	for panel_name in ["TopRight", "BottomLeft", "Log", "Actions"]:
 		check(not effects.get_global_rect().intersects(run.hud.get_node(panel_name).get_global_rect()), "Effects panel stays clear of %s" % panel_name)
+	var under_card: float = effects.position.y
+	run.hud.show_controls(false)
+	check(effects.position.y < under_card, "With the actions card put away, the effects take the corner")
+	run.hud.show_controls(true)
+	check(is_equal_approx(effects.position.y, under_card), "The effects step back under the card when it returns")
 	check(run.danger.target == 0.0, "Full HP keeps the vignette off")
 	var kills: int = run.turns.kills_total
 	enemy.hp = 1

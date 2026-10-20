@@ -30,7 +30,7 @@ const EDGE_REACH := 40.0
 # The note's column in the hall, from the band's tip.
 const NOTE_INSET := 36.0
 const NOTE_WIDTH := 420.0
-const NOTES := ["すべての音の大きさ。0%で消音。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "ダンジョンの空気の音の大きさ。", "被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "探索中、画面の右下に今できる操作の札を出す。", "冒険の決まりごとと操作。", "ゲームを閉じる。確かめてから終了する。"]
+const NOTES := ["すべての音の大きさ。0%で消音。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "ダンジョンの空気の音の大きさ。", "被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "探索中、画面の左上に今できる操作の札を出す。", "冒険の決まりごとと操作。", "ゲームを閉じる。確かめてから終了する。"]
 # The help's topics, in order: [title, paragraphs]. HintMarks name them by index.
 const TOPIC_RUN := 0
 const TOPIC_LOSS := 1

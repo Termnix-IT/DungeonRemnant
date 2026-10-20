@@ -25,9 +25,13 @@ func run_tests() -> void:
 	check(portrait != null and portrait.get_parent() == vitals, "The portrait shares one plate with the vitals")
 	var face_rect := portrait.get_global_rect()
 	check(vitals.get_global_rect().encloses(face_rect), "The portrait frame stays inside the plate")
-	for node_name in ["HpCaption", "HpValue", "HpBar", "MpCaption", "MpValue", "MpBar", "Level", "ExpBar"]:
+	for node_name in ["HpCaption", "HpValue", "HpBar", "MpCaption", "MpValue", "MpBar", "ItemsCaption", "Items", "Level", "Weapons", "ExpBar"]:
 		check(not face_rect.intersects((vitals.get_node(node_name) as Control).get_global_rect()), "The portrait leaves %s clear" % node_name)
-	check(face_rect.end.x < (vitals.get_node("HpBar") as Control).get_global_rect().position.x, "HP and MP sit beside the face")
+	var hp_rect := (vitals.get_node("HpBar") as Control).get_global_rect()
+	check(face_rect.end.y < hp_rect.position.y and hp_rect.position.x <= face_rect.position.x and hp_rect.end.x > (vitals.get_node("ExpBar") as Control).get_global_rect().end.x - 1.0, "HP and MP run across the plate under the face")
+	for node_name in ["ItemsCaption", "Level", "ExpBar"]:
+		check((vitals.get_node(node_name) as Control).get_global_rect().position.x > face_rect.end.x, "%s stands beside the face" % node_name)
+	check((vitals.get_node("HpCaption") as Label).theme_type_variation == &"VitalCaption", "The HP caption on its gauge uses the light caption role")
 	check(portrait.theme_type_variation == &"HudPortraitFrame", "The face uses the HUD portrait frame role")
 	check(hud.get_node_or_null("BottomRight") == null and hud.get_node_or_null("TopLeft") == null, "The dungeon HUD has no equipment or floor/Gold panel")
 	check(hud.floor_value.get_parent() == hud.get_node("TopRight"), "The floor sits with the map")

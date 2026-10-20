@@ -2,11 +2,10 @@
 
 The pictures in art/ui/source/ were made with Codex's image generation (see
 開発メモ.md): the key caps, the HUD plates and the talisman medallion, the
-minimap's frame and markers, the message log's ink band and marks, the
-notice band at the screen's top edge, the level-up cards and their rank
-pips, the result's seals and the floor's aim marks. All but the log's ink
-band (black ink on white paper) and the aim marks (light on black, added
-onto the floor) are painted on flat magenta (#FF00FF). The prompts' passage
+minimap's frame and markers, the message log's marks, the notice band at
+the screen's top edge, the level-up cards and their rank pips, the result's
+seals and the floor's aim marks. All but the aim marks (light on black,
+added onto the floor) are painted on flat magenta (#FF00FF). The prompts' passage
 pictures are cut from the floor tiles' own painted pictures. This keys the
 backdrop out, cuts each part, fills the plates' empty insides with the HUD's
 translucent ink (the dialogs' plate with warm stone), and scales every part
@@ -71,9 +70,6 @@ AIM_SIZE = 96
 DIALOG_STONE = (30, 26, 22)
 DIALOG_GRAIN = 0.5
 DIALOG_ALPHA = 242
-# The ink band is scaled to this height; its frayed ends overhang the log.
-BAND_HEIGHT = 150
-BAND_ALPHA = 0.84
 
 
 def keyed(name: str) -> Image.Image:
@@ -158,20 +154,6 @@ def stone_filled(frame: Image.Image) -> Image.Image:
 	return under
 
 
-def ink_band() -> Image.Image:
-	paper = np.asarray(Image.open(SOURCE / "log_band.png").convert("L"), dtype=np.float32) / 255.0
-	darkness = 1.0 - paper
-	# The brushed middle is the darkest even run; it becomes BAND_ALPHA.
-	peak = np.percentile(darkness[darkness > 0.2], 60)
-	alpha = np.clip(darkness / max(peak, 1e-3), 0.0, 1.0) * BAND_ALPHA
-	alpha[darkness < 0.04] = 0.0
-	rgba = np.zeros(paper.shape + (4,), dtype=np.uint8)
-	rgba[..., 0:3] = FILL[:3]
-	rgba[..., 3] = (alpha * 255.0).round().astype(np.uint8)
-	band = trim(Image.fromarray(rgba, "RGBA"))
-	return scaled(band, BAND_HEIGHT / band.height)
-
-
 def gilded_glow(image: Image.Image) -> Image.Image:
 	"""The soft glow of the chosen card, painted over magenta, keeps a pink
 	cast after keying; its see-through pixels take the warm gold it was."""
@@ -232,7 +214,6 @@ def build() -> None:
 	[marks] = pieces(keyed("log_marks.png"))
 	for name, icon in zip(LOG_MARKS, marks, strict=True):
 		save(fit(icon, LOG_MARK_SIZE), f"log_{name}")
-	save(ink_band(), "log_band")
 	[[new, raised, chosen]] = pieces(keyed("ability_cards.png"))
 	for image, name, fill in ((new, "card_new", True), (raised, "card_raise", True), (chosen, "card_chosen", False)):
 		card = scaled(image, CARD_WIDTH / image.width)
