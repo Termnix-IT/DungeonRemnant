@@ -19,6 +19,7 @@ const PAINTED := {
 	&"flame": [64.0, 0.4, 0.55, 1.1, false, true, 0.0, 0.0],
 	&"heal": [60.0, 0.55, 0.8, 1.05, false, true, 0.0, 0.0],
 	&"death": [62.0, 0.6, 0.5, 1.25, false, false, 0.0, 0.25],
+	&"level_up": [100.0, 1.0, 0.7, 1.05, false, true, 0.0, 0.0],
 }
 const STAGGER := 0.04
 static var _images: Dictionary = {}

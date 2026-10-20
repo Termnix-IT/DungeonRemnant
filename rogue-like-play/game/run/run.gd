@@ -30,6 +30,10 @@ const ENEMY_TYPES: Array[EnemyStats] = [
 	preload("res://data/enemies/fast_enemy.tres"),
 	preload("res://data/enemies/summoner_enemy.tres"),
 ]
+# The level-up light's ring lies 22 px below its centre (at 100 px across),
+# so this puts it on her soles, 25 px below the cell's centre.
+const LEVEL_UP_LIGHT_OFFSET := Vector2(0, 3)
+const LEVEL_UP_GLOW_DELAY := 0.2
 
 @export var starting_weapon: WeaponData = preload("res://data/weapons/sword.tres")
 @export var dungeon_settings: DungeonSettings = preload("res://data/dungeon/default.tres")
@@ -406,7 +410,16 @@ func _present_ability_choice() -> void:
 
 
 func _choose_ability(id: StringName) -> void:
-	turns.choose_ability(id)
+	var chosen: AbilityData = null
+	for ability: AbilityData in turns.offered_abilities:
+		if ability.id == id:
+			chosen = ability
+	if not turns.choose_ability(id) or chosen == null:
+		return
+	# The growth shows where it lands: light rises round the hero and the
+	# HUD lights what was raised, after the chosen card's flourish.
+	presentation._effect(&"level_up", [turns.player.global_position + LEVEL_UP_LIGHT_OFFSET], Vector2.UP)
+	hud.highlight_ability(chosen.effect, LEVEL_UP_GLOW_DELAY)
 
 
 func _on_action(kind: String, direction: Vector2i) -> void:

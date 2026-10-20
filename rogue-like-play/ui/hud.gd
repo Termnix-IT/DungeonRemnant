@@ -42,6 +42,7 @@ const LOG_MARKS: Array = [
 @onready var log_entries: RichTextLabel = $Log/Entries
 
 var portrait: HudPortrait
+var glow: HudGlow
 var actions: HudActions
 var aim_tag: Label
 var _log_rest: Timer
@@ -80,6 +81,10 @@ func _ready() -> void:
 	vitals.add_child(portrait)
 	portrait.position = Vector2.ONE * PORTRAIT_INSET
 	portrait.size = Vector2.ONE * PORTRAIT_SIZE
+	# Over everything else in the HUD.
+	glow = HudGlow.new()
+	glow.name = "Glow"
+	add_child(glow)
 
 
 # log_key identifies the action the text belongs to: text that grows within one
@@ -97,6 +102,24 @@ func show_health(hp: int, max_hp: int) -> void:
 	hp_bar.value = max(hp, 0)
 	UIMotion.of($BottomLeft/HpTrail).update_vital(hp, max_hp, hp_value)
 	portrait.show_health(hp, max_hp)
+
+
+# A level-up choice lights what it raised, once: the HP for more max HP or
+# healing on a kill (its figure swelling as well), the map for a wider
+# sight, and the hero's face for her attack, defence and weapons, which the
+# HUD shows no figure for. delay lets the chosen card's own flourish read
+# first.
+func highlight_ability(effect: AbilityData.Effect, delay: float = 0.0) -> void:
+	var target: Rect2
+	match effect:
+		AbilityData.Effect.MAX_HP, AbilityData.Effect.KILL_HEAL:
+			target = $BottomLeft/HpCaption.get_global_rect().merge(hp_value.get_global_rect()).merge(hp_bar.get_global_rect())
+			UIMotion.of(hp_value).pulse(1.2, HudGlow.RISE_TIME + HudGlow.HOLD_TIME)
+		AbilityData.Effect.VISION:
+			target = $TopRight.get_global_rect()
+		_:
+			target = portrait.get_global_rect()
+	glow.shine(target, delay)
 
 
 # The settings' 操作の案内: the actions card can be put away by players who

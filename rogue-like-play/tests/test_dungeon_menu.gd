@@ -100,6 +100,20 @@ func run_tests() -> void:
 	key(KEY_ESCAPE)
 	await process_frame
 	check(menu.showing_settings() and not page.help_shown, "Esc leaves the help for the settings")
+	# The last row ends the game, once asked; Esc keeps playing.
+	var quits := [0]
+	page.quit_action = func(): quits[0] += 1
+	page.quit_button.pressed.emit()
+	await process_frame
+	check(page.quit_prompt.visible and page.quit_prompt.title_label.text == "ゲームを終了しますか？" and page.quit_prompt.body_label.text == HubSettings.QUIT_BODY_IN_RUN, "ゲームを終了する asks first, saying what the run loses")
+	key(KEY_ESCAPE)
+	await process_frame
+	check(not page.quit_prompt.visible and menu.showing_settings() and page.quit_button.has_focus() and quits[0] == 0, "Esc on the prompt keeps the game and the settings")
+	page.quit_button.pressed.emit()
+	await process_frame
+	page.quit_prompt.accept_button.pressed.emit()
+	check(quits[0] == 1 and not page.quit_prompt.visible, "Confirming ends the game")
+	page.quit_button.grab_focus()
 	key(KEY_ESCAPE)
 	await process_frame
 	check(menu.visible and not menu.showing_settings() and menu.settings_button.has_focus(), "Esc leaves the settings for the menu")
@@ -130,6 +144,29 @@ func run_tests() -> void:
 	check(run.result_panel.visible and run.result_panel.confirming and not menu.visible, "R goes straight to the abort confirmation")
 	run.result_panel.abort_cancelled.emit()
 	await process_frame
+
+	# A level-up choice lights what it raised: light round the hero, the HP
+	# for more max HP, the map for a wider sight, her face otherwise.
+	run.result_panel.abort_cancelled.emit()
+	await process_frame
+	var max_hp: AbilityData = preload("res://data/abilities/max_hp.tres")
+	run.turns.busy = true
+	run.turns.offered_abilities.assign([max_hp])
+	run.progression.pending_choices = 1
+	var before_hp: int = run.turns.player.stats.max_hp
+	run._choose_ability(max_hp.id)
+	var strike := preload("res://combat/strike_effect.gd")
+	var lights: Array = run.presentation.get_children().filter(func(node: Node): return node.get_script() == strike and node.kind == &"level_up")
+	check(run.turns.player.stats.max_hp > before_hp and lights.size() == 1, "Choosing an ability raises light round the hero")
+	await create_timer(run.LEVEL_UP_GLOW_DELAY + HudGlow.RISE_TIME + 0.05).timeout
+	var hp_area: Rect2 = hud.hp_bar.get_global_rect()
+	check(hud.glow.shining() and hud.glow.area.encloses(hp_area), "More max HP lights the HP")
+	hud.highlight_ability(AbilityData.Effect.VISION)
+	check(hud.glow.area == hud.get_node("TopRight").get_global_rect(), "A wider sight lights the map")
+	hud.highlight_ability(AbilityData.Effect.SWORD_DAMAGE)
+	check(hud.glow.area == hud.portrait.get_global_rect(), "Strength the HUD shows no figure for lights her face")
+	await create_timer(HudGlow.RISE_TIME + HudGlow.HOLD_TIME + HudGlow.FADE_TIME + 0.1).timeout
+	check(not hud.glow.shining(), "The light fades on its own")
 
 	# The setting is stored with the others.
 	var stored := GameSettings.new()
