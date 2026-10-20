@@ -69,12 +69,11 @@ func _draw() -> void:
 		glow.a *= 0.88 + 0.12 * wave
 		draw_texture_rect(_glow, rect.grow(rect.size.x * 0.1), false, glow)
 	if item != null:
-		var extent := minf(size.x, size.y) * 0.68
-		if ItemIcons.icon(item) != null:
-			# Whole multiples of the 48px icon keep every pixel square.
-			extent = maxf(48.0, floorf(minf(size.x, size.y) * 0.84 / 48.0) * 48.0)
-		# Whole pixels, so the drift never blurs the icon.
-		var lift := Vector2(0, roundf(-wave * UIMotion.IDLE_RISE))
+		var painted := ItemIcons.icon(item)
+		var extent := minf(size.x, size.y) * (0.84 if painted != null else 0.68)
+		# The painted icon is shrunk smoothly from its mipmaps, so the drift
+		# moves it by fractions of a pixel instead of stepping a pixel at a time.
+		var lift := Vector2(0, -wave * UIMotion.IDLE_RISE)
 		var art := ItemIcons.silhouette(item) if unknown else null
 		if unknown:
 			var area := Rect2(((size - Vector2.ONE * extent) / 2).floor(), Vector2.ONE * extent)
@@ -83,4 +82,8 @@ func _draw() -> void:
 			else:
 				ItemGlyph.paint(self, area, item, ItemCell.UNKNOWN_SHADE)
 			return
-		ItemGlyph.paint(self, Rect2(((size - Vector2.ONE * extent) / 2).floor() + lift, Vector2.ONE * extent), item, get_theme_color(&"font_color", &"GoldLabel"))
+		var area := Rect2((size - Vector2.ONE * extent) / 2 + lift, Vector2.ONE * extent)
+		if painted != null:
+			draw_texture_rect(painted, area, false, ItemIcons.tint(get_theme_color(&"font_color", &"GoldLabel")))
+		else:
+			ItemGlyph.paint(self, area, item, get_theme_color(&"font_color", &"GoldLabel"))
