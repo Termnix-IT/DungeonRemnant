@@ -354,7 +354,7 @@ func run_tests() -> void:
 	check(codex.rows.size() == 10 and codex.rows.all(func(row: Dictionary): return row.entry.boss), "The boss tab shows only the guardians")
 	codex.monster_tabs.select(0, true)
 	codex.set_monsters(false)
-	check(codex.showcase.visible and not codex.monster_view.visible, "R's other way back is the item book")
+	check(codex.showcase.visible and not codex.monster_view.visible, "R's other way back is the book of goods")
 	hub.go_back()
 	check(hub.page == "home", "Back leaves the encyclopedia for the lobby")
 	# Settings open as their own page, entered like the others.

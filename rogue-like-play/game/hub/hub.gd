@@ -432,7 +432,7 @@ func _codex_hints() -> void:
 	key_guide.clear_hints()
 	key_guide.add_hint("矢印", "十字", "選ぶ")
 	key_guide.add_hint("Q / E", "LB / RB", "分類")
-	key_guide.add_hint("R", "Y", "アイテムへ" if codex_page.monsters else "魔物へ", func(): codex_page.set_monsters(not codex_page.monsters))
+	key_guide.add_hint("R", "Y", "品物へ" if codex_page.monsters else "魔物へ", func(): codex_page.set_monsters(not codex_page.monsters))
 
 
 # The shop's keys: the trade, the category tabs and the switch of mode.

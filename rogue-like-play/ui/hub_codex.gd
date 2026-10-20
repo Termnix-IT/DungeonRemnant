@@ -2,7 +2,7 @@ class_name HubCodex
 extends Control
 
 # The encyclopedia, laid out like the shop, in two books the header's tabs
-# switch between (mode_tabs, or R): items and monsters. Each lists every entry
+# switch between (mode_tabs, or R): items (品物) and monsters (魔物). Each lists every entry
 # with its name, three to a row and filtered by category tabs, on the slab
 # from the left edge, and the focused one's picture and account in the column
 # on the right. An item counts as found once it has been held
@@ -98,7 +98,7 @@ func _build_mode_tabs() -> void:
 	mode_tabs.theme_type_variation = &"ModeTabs"
 	TabUnderline.attach(mode_tabs)
 	var group := ButtonGroup.new()
-	items_tab = HubUI.button(mode_tabs, "アイテム", set_monsters.bind(false), &"ModeTab")
+	items_tab = HubUI.button(mode_tabs, "品物", set_monsters.bind(false), &"ModeTab")
 	monsters_tab = HubUI.button(mode_tabs, "魔物", set_monsters.bind(true), &"ModeTab")
 	for tab in [items_tab, monsters_tab]:
 		tab.custom_minimum_size.y = 0
