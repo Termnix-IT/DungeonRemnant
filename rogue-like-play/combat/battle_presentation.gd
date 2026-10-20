@@ -2,6 +2,8 @@ extends Node2D
 
 signal finished
 signal impact(player_hit: bool)
+# A struck crate splinters: the dungeon stops drawing it now.
+signal obstacle_broken(cell: Vector2i)
 
 const ENEMY := preload("res://actors/enemy/enemy.tscn")
 const GameAudio := preload("res://audio/game_audio.gd")
@@ -120,7 +122,10 @@ func present(events: Array[Dictionary], player: Node2D, visible_cells: Dictionar
 				var center := Vector2(event.cell * tile_size) + Vector2.ONE * tile_size / 2
 				timeline.tween_callback(_effect.bind(&"death", [center] as Array[Vector2], Vector2.UP)).set_delay(hit_at)
 				timeline.tween_callback(GameAudio.play.bind(self, &"hit", -16.0)).set_delay(hit_at)
+				timeline.tween_callback(obstacle_broken.emit.bind(event.cell)).set_delay(hit_at)
 				scheduled = true
+			else:
+				obstacle_broken.emit(event.cell)
 			continue
 		var actor: Node2D = event.actor
 		if not is_instance_valid(actor):

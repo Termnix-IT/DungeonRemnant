@@ -3,6 +3,8 @@ extends SceneTree
 # Rubble, crates and pools: what each stops, the crate breaking, and where
 # the generator puts them.
 
+const BattlePresentation := preload("res://combat/battle_presentation.gd")
+
 var failures := 0
 var checks := 0
 
@@ -64,6 +66,30 @@ func run_tests() -> void:
 	grid.obstacles = {Vector2i(2, 2): GridState.RUBBLE}
 	CombatRules.attack(grid, attacker, Vector2i.RIGHT)
 	check(grid.obstacles.has(Vector2i(2, 2)), "Rubble does not break")
+	# The presentation lets the crate go when the blow lands, not before.
+	var presentation := BattlePresentation.new()
+	root.add_child(presentation)
+	var broken: Array[Vector2i] = []
+	presentation.obstacle_broken.connect(func(cell: Vector2i): broken.append(cell))
+	var seen := {origin: true, Vector2i(2, 2): true}
+	var events: Array[Dictionary] = [
+		{"kind": "attack", "actor": attacker, "origin": origin, "direction": Vector2i.RIGHT, "weapon": null, "cells": [Vector2i(2, 2)]},
+		{"kind": "break", "cell": Vector2i(2, 2), "obstacle": GridState.CRATE}]
+	var watcher := Node2D.new()
+	root.add_child(watcher)
+	presentation.present(events, watcher, seen, 48)
+	check(broken.is_empty(), "A struck crate is still shown as the blow begins")
+	await create_timer(BattlePresentation._impact_delay(null) + 0.1).timeout
+	check(broken == [Vector2i(2, 2)], "It splinters when the blow lands")
+	if presentation.playing:
+		await presentation.finished
+	var unseen: Array[Dictionary] = [{"kind": "break", "cell": Vector2i(6, 2), "obstacle": GridState.CRATE}]
+	presentation.present(unseen, watcher, {}, 48)
+	check(broken.has(Vector2i(6, 2)), "A crate broken out of sight goes at once")
+	# Out of the finished signal before the presentation goes.
+	await process_frame
+	presentation.free()
+	watcher.free()
 	attacker.free()
 	# Generation: rooms get obstacles that never touch each other or a kept
 	# cell, and every open floor stays reachable from the start.

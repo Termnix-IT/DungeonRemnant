@@ -134,6 +134,8 @@ func _ready() -> void:
 	add_child(floor_cover)
 	dungeon.add_child(presentation)
 	presentation.finished.connect(_refresh)
+	presentation.obstacle_broken.connect(func(cell: Vector2i): dungeon.release_break(cell))
+	presentation.finished.connect(func(): dungeon.release_breaks())
 	presentation.impact.connect(func(player_hit: bool):
 		if player_hit:
 			_show_vitals()
@@ -202,6 +204,7 @@ func _load_floor() -> void:
 	if presentation.finished.is_connected(_present_ability_choice):
 		presentation.finished.disconnect(_present_ability_choice)
 	presentation.clear()
+	dungeon.release_breaks()
 	reinforcements.reset(turns.turn_count)
 	rapid_move.stop()
 	turns.player.reset_step()
@@ -525,6 +528,7 @@ func _refresh() -> void:
 	dungeon.grid.visual_events.clear()
 	for event in events:
 		if event.kind == "break":
+			dungeon.hold_break(event.cell, event.obstacle)
 			_drop_crate_loot(event.cell)
 	presentation.present(events, turns.player, dungeon.fog.visible, dungeon.TILE_SIZE)
 	turns.player.input_enabled = turns.player.input_enabled and not presentation.playing

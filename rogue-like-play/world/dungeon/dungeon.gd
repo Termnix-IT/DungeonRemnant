@@ -37,6 +37,9 @@ const OBSTACLE_ART := {
 	GridState.WATER: preload("res://art/tiles/painted/obstacle_water.png"),
 }
 const OBSTACLE_REACH := 4.0
+# Broken obstacles still drawn until the blow that broke them lands in the
+# presentation (cell -> kind; release_break()).
+var breaking: Dictionary = {}
 const OBSTACLE_TINT := Color(0.86, 0.86, 0.86)
 const TERRAIN_THEME_NAMES: Array[String] = ["Slate Ruins", "Moss Caverns", "Ember Depths", "Obsidian Sanctum"]
 const PAINTED_CELL := 96
@@ -129,6 +132,7 @@ func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenera
 	has_stairs = kind == DungeonGenerator.Kind.ANTECHAMBER or not final_floor
 	fog.reset()
 	ground_items.clear()
+	breaking.clear()
 	var terrain: TileMapLayer = $Terrain
 	var remembered: TileMapLayer = $ExploredTerrain
 	terrain.tile_set = _make_tileset(PAINTED_ATLASES[terrain_theme_index])
@@ -344,10 +348,10 @@ func _draw_decorations() -> void:
 
 
 func _draw_passages() -> void:
-	for cell: Vector2i in grid.obstacles:
+	for cell: Vector2i in grid.obstacles.merged(breaking):
 		if not fog.explored.has(cell):
 			continue
-		var kind: StringName = grid.obstacles[cell]
+		var kind: StringName = grid.obstacles.get(cell, breaking.get(cell))
 		var reach := 0.0 if kind == GridState.WATER else OBSTACLE_REACH
 		var tint := OBSTACLE_TINT if fog.visible.has(cell) else REMEMBERED_PASSAGE_TINT
 		passages.draw_texture_rect(OBSTACLE_ART[kind], Rect2(Vector2(cell * TILE_SIZE), Vector2.ONE * TILE_SIZE).grow(reach), false, tint)
@@ -355,6 +359,24 @@ func _draw_passages() -> void:
 		_draw_passage(GUARDIAN_DOOR if map_kind == DungeonGenerator.Kind.ANTECHAMBER else DESCENT_STAIRS, stairs_cell)
 	if escape_cell.x >= 0:
 		_draw_passage(RETURN_DOOR, escape_cell)
+
+
+# The grid has already lost a struck crate; it stays on screen until the
+# presentation's blow lands (or the presentation is cut short).
+func hold_break(cell: Vector2i, kind: StringName) -> void:
+	breaking[cell] = kind
+	passages.queue_redraw()
+
+
+func release_break(cell: Vector2i) -> void:
+	if breaking.erase(cell):
+		passages.queue_redraw()
+
+
+func release_breaks() -> void:
+	if not breaking.is_empty():
+		breaking.clear()
+		passages.queue_redraw()
 
 
 func _draw_passage(texture: Texture2D, cell: Vector2i) -> void:
