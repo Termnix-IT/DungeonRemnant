@@ -33,24 +33,18 @@ func run_tests() -> void:
 	root.add_child(player)
 	await process_frame
 	check(player.rig != null and player.get_node_or_null(^"Sprite") == null, "The hero is drawn as the rig")
-	var view: SubViewport = player.rig_view.viewport
-	check(player.rig_view.display.texture == view.get_texture() and not view.snap_2d_transforms_to_pixel and not view.snap_2d_vertices_to_pixel,
-		"The rig is drawn unsnapped in its own view and shown as one picture")
+	check(player.rig.get_parent() == player.rig_view and player.rig_view.find_children("*", "SubViewport", true, false).is_empty(),
+		"The rig is drawn straight into the world, with no view of its own")
 	check(player.foot_marker.get_parent() == player.body and player.foot_marker.position == Vector2(0, player.SOLE_OFFSET), "Her shadow stays under her soles")
 	check(player.get_child_count() == 1 and player.combat_visual.get_parent() == player, "The presentation's pivot is still her only child")
-	var size: Vector2i = view.size
-	var scale: float = 1.0 / player.rig_view.display.scale.x
-	check(size == Vector2i((player.RIG_BOX.size * scale).ceil()) and is_equal_approx(scale, absf((player.get_viewport().get_final_transform() * player.get_global_transform_with_canvas()).get_scale().y)),
-		"The view is sized to the screen's scale (%s at %.2f)" % [size, scale])
-	# The presentation's squash is put on the picture, not on the view's size.
-	player.combat_visual.scale = Vector2(1.14, 0.85)
-	await process_frame
-	check(view.size == size, "A squash leaves the view's size alone")
-	player.combat_visual.scale = Vector2.ONE
 	for index in MioAnimation.FACINGS.size():
 		player.facing = MioAnimation.FACINGS[index]
 		check(player.rig.facing_name == MioAnimation.DIRECTIONS[index], "She faces %s" % MioAnimation.DIRECTIONS[index])
-		check(player.weapon_visual.get_parent() == player.rig.weapon_anchor() and player.weapon_rest() == Vector2.ZERO, "The held picture is in her hand facing %s" % MioAnimation.DIRECTIONS[index])
+		await process_frame
+		var hand: Node2D = player.rig.weapon_anchor()
+		check(player.hand_follower.get_parent() == hand and player.weapon_visual.get_parent() == player.rig_view and player.weapon_visual.get_index() > player.rig.get_index() and player.weapon_visual.global_position.is_equal_approx(hand.global_position) and player.weapon_rest() == Vector2.ZERO,
+			"The held picture follows her hand, drawn over her, facing %s" % MioAnimation.DIRECTIONS[index])
+		check(is_zero_approx(player.weapon_visual.z_index), "The held picture lifts no z_index into the actors' y-sort")
 	player.facing = Vector2i.DOWN
 	# A step: the picture slides the last 8 px and the rig walks.
 	player.play_step(Vector2i.RIGHT, 48)
@@ -85,11 +79,12 @@ func run_tests() -> void:
 	presentation.present(events, player, visible, 48)
 	await create_timer(0.07).timeout
 	check(player.rig.rig.animation_player.current_animation == CharacterRig.ATTACK, "The presentation's attack plays the rig's swing")
-	check(is_zero_approx(player.weapon_visual.rotation), "The presentation leaves the held picture unturned")
+	check(is_equal_approx(player.weapon_visual.global_rotation, player.rig.weapon_anchor().global_rotation), "The presentation leaves the held picture in her hand, unturned")
 	check(not player.combat_visual.position.is_zero_approx(), "The presentation's lunge still moves her")
 	if presentation.playing:
 		await presentation.finished
-	check(player.combat_visual.position.is_zero_approx() and is_zero_approx(player.weapon_visual.rotation), "Her pose recovers after the attack")
+	await process_frame
+	check(player.combat_visual.position.is_zero_approx() and is_equal_approx(player.weapon_visual.global_rotation, player.rig.weapon_anchor().global_rotation), "Her pose recovers after the attack")
 	# Fallen: she collapses and lies still.
 	player.hp = 0
 	presentation.collapse(player)

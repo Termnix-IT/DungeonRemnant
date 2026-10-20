@@ -9,10 +9,7 @@ extends Node2D
 # World px from the soles to the top of the head, where the rig does not say
 # (its "world_height" meta); the hero stands 64.
 const RIG_HEIGHT := 60.0
-# Room around the rig's own outline for its motions (a lunge, a raised
-# weapon, a fall), as a share of the outline's larger side.
-const RIG_REACH := 0.4
-# Where a sprite's feet stand in the enemy's own (scaled) space.
+# Where the rig's soles stand in the enemy's own (scaled) space.
 const SOLE := Vector2(0, 13)
 
 @export var stats: EnemyStats
@@ -85,7 +82,6 @@ func _build_rig() -> void:
 	add_child(rig_view)
 	rig = (load(path) as PackedScene).instantiate()
 	rig.world_height = rig_height() / scale.x
-	rig_view.box = _rig_box()
 	rig_view.setup(rig)
 	_sync_rig()
 
@@ -96,21 +92,6 @@ func rig_height() -> float:
 	if rig != null and rig.has_meta(&"world_height"):
 		return float(rig.get_meta(&"world_height"))
 	return RIG_HEIGHT
-
-
-# The rig's outline in this node's space, grown by RIG_REACH.
-func _rig_box() -> Rect2:
-	var bounds := Rect2()
-	var first := true
-	for part: Polygon2D in rig.find_children("*", "Polygon2D", true, false):
-		for point in part.polygon:
-			var at: Vector2 = point * rig.scale
-			if first:
-				bounds = Rect2(at, Vector2.ZERO)
-				first = false
-			else:
-				bounds = bounds.expand(at)
-	return bounds.grow(maxf(bounds.size.x, bounds.size.y) * RIG_REACH)
 
 
 # The rig follows the presentation's offset, squash and tilt, and faces the

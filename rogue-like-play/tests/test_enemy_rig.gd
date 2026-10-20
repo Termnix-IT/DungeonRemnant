@@ -38,8 +38,7 @@ func run_tests() -> void:
 	var sentinel: Node2D = _enemy(BASIC)
 	await process_frame
 	check(sentinel.rig != null and sentinel.rig_view != null and sentinel.has_sprite(), "The sentinel is drawn as its rig")
-	var view: SubViewport = sentinel.rig_view.viewport
-	check(not view.snap_2d_transforms_to_pixel and sentinel.rig_view.show_behind_parent, "Its rig is drawn unsnapped, behind the facing arrow and health bar")
+	check(sentinel.rig.get_parent() == sentinel.rig_view and sentinel.rig_view.show_behind_parent, "Its rig is drawn in the world, behind the facing arrow and health bar")
 	# The rig lives in its view's space; in the enemy's (scaled) space it is
 	# world_height tall.
 	check(is_equal_approx(sentinel.rig.world_height * sentinel.scale.y, 60.0) and is_equal_approx(sentinel.rig_height(), 60.0), "It stands 60 world px tall, as its rig says")
@@ -89,7 +88,11 @@ func run_tests() -> void:
 	root.add_child(hero)
 	var seen := {Vector2i(1, 0): true, Vector2i(2, 0): true}
 	presentation.present([{"kind": "move", "actor": walker, "origin": Vector2i(2, 0), "direction": Vector2i.LEFT}] as Array[Dictionary], hero, seen, 48)
-	await create_timer(0.05).timeout
+	# The step starts on the presentation's next frame, however long that takes.
+	for frame in 10:
+		await process_frame
+		if walker.rig.animation_player.current_animation == CharacterRig.WALK:
+			break
 	check(walker.rig.animation_player.current_animation == CharacterRig.WALK, "The presentation's step walks the rig")
 	if presentation.playing:
 		await presentation.finished
@@ -126,8 +129,6 @@ func _check_meshes() -> void:
 		check(strip_height > 0.0 and is_equal_approx(enemy.rig_height(), strip_height), "%s keeps its designed height (%.0f world px)" % [id, strip_height])
 		for animation_name: StringName in [CharacterRig.IDLE, CharacterRig.WALK, CharacterRig.ATTACK, CharacterRig.HURT, CharacterRig.DOWN, CharacterRig.BRACE]:
 			check(enemy.rig.animation_player.has_animation(animation_name), "%s has %s" % [id, animation_name])
-		var box: Rect2 = enemy.rig_view.box
-		check(box.has_point(enemy.SOLE * 0.0) and box.size.y * enemy.scale.y >= strip_height, "%s's view holds its whole figure" % id)
 		enemy.free()
 	# A turret taking aim holds its brace until it fires.
 	var turret: Node2D = _enemy(TURRET)

@@ -6,14 +6,11 @@ signal aim_changed
 const MOVE_VISUAL_OFFSET := 8.0
 const MOVE_ANIMATION_DURATION := 0.12
 # She is drawn as the illustration rig (art/characters/mio_rig/mio_rig.tscn)
-# through a RigView: drawn unsnapped at the screen's scale, so its parts move
-# smoothly. Her soles are SOLE_OFFSET below the cell's centre, on her shadow.
+# held by a RigView. Her soles are SOLE_OFFSET below the cell's centre, on her
+# shadow.
 const MIO_RIG := preload("res://art/characters/mio_rig/mio_rig.tscn")
 const SOLE_OFFSET := 25.0
 const RIG_HEIGHT := 64.0
-# The world px around her soles the rig's picture covers: the beret, a sword
-# raised overhead and swung out to either side.
-const RIG_BOX := Rect2(-60, -100, 120, 128)
 # The rig holds its own sword. Any other weapon is its kind's painted icon
 # (ItemIcons.painted_weapon), so every spear (wooden or iron alike) shows the
 # same one, HELD_SIZE world px square, standing upright in her hand, head up
@@ -55,6 +52,8 @@ var combat_visual: Node2D
 var rig: DirectionalRig
 var rig_view: RigView
 var body: Node2D
+# Under the shown rig's hand bone, it places weapon_visual on the hand.
+var hand_follower: RemoteTransform2D
 
 @onready var weapon_visual: Node2D = $Weapon
 @onready var foot_marker: Node2D = $FootMarker
@@ -95,7 +94,6 @@ func _build_rig() -> void:
 	foot_marker.scale = Vector2(1.0, 0.5)
 	rig_view = RigView.new()
 	rig_view.name = "RigView"
-	rig_view.box = RIG_BOX
 	rig_view.position = Vector2(0, SOLE_OFFSET)
 	body.add_child(rig_view)
 	rig = MIO_RIG.instantiate()
@@ -105,10 +103,12 @@ func _build_rig() -> void:
 	# Loaded now, outside any draw call (see ItemIcons.painted_weapon).
 	for kind in HELD_KINDS:
 		ItemIcons.painted_weapon(kind)
-	# Its hand is a bone, drawn before the parts; what she holds is drawn over
-	# her. The rig's view is its own canvas, so this z_index never reaches the
-	# world's y-sort.
-	weapon_visual.z_index = 1
+	# Her hand is a bone, drawn before the parts, so what she holds is a later
+	# sibling of the rig, drawn over her, that hand_follower keeps on the hand
+	# (a z_index would lift it over the other actors' y-sort too).
+	weapon_visual.reparent(rig_view, false)
+	hand_follower = RemoteTransform2D.new()
+	hand_follower.name = "HandFollower"
 
 
 func _process(_delta: float) -> void:
@@ -278,7 +278,9 @@ func _draw_held_weapon() -> void:
 	if picture == null:
 		return
 	var area := Vector2.ONE * HELD_SIZE
-	weapon_visual.draw_set_transform(Vector2.ZERO, HELD_TURN)
+	# The node takes the hand's whole transform, the rig's small scale with
+	# it; HELD_SIZE is in world px.
+	weapon_visual.draw_set_transform(Vector2.ZERO, HELD_TURN, Vector2.ONE / rig.rig.scale)
 	weapon_visual.draw_texture_rect(picture, Rect2(-area * GRIP, area), false)
 
 
@@ -288,15 +290,17 @@ func weapon_rest() -> Vector2:
 
 
 # The rig turns to the facing (carrying its motion on), and the held icon
-# moves to the shown rig's hand at the world's size.
+# follows the shown rig's hand.
 func _sync_rig_direction() -> void:
 	if not is_node_ready():
 		return
 	rig.facing = facing
 	var hand := rig.weapon_anchor()
-	if hand != null and weapon_visual.get_parent() != hand:
-		weapon_visual.reparent(hand, false)
-	weapon_visual.position = Vector2.ZERO
-	weapon_visual.rotation = 0.0
-	weapon_visual.scale = Vector2.ONE / rig.rig.scale
+	if hand != null and hand_follower.get_parent() != hand:
+		if hand_follower.get_parent() == null:
+			hand.add_child(hand_follower)
+		else:
+			hand_follower.reparent(hand, false)
+		hand_follower.remote_path = hand_follower.get_path_to(weapon_visual)
+		hand_follower.force_update_cache()
 	queue_redraw()
