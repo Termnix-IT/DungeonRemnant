@@ -1,9 +1,27 @@
 extends Node2D
 
-# One attack's effect on each cell it reaches. A kind with a frame strip in
-# SHEETS plays it (third-party pixel art built by tools/build_effect_sheets.py;
-# see THIRD_PARTY_NOTICES.md); the rest are drawn as lines. On a line of cells
-# (a bolt) each later cell starts a beat after the one before.
+# One attack's effect on each cell it reaches. A kind with a painted image in
+# PAINTED plays it: one still at the effect's fullest, which this animates
+# (it grows, turns with the attack, flickers and fades), drawn added as light
+# or, for smoke, over the scene. Without one (or with `painted` off), a kind
+# with a frame strip in SHEETS plays it (third-party pixel art built by
+# tools/build_effect_sheets.py; see THIRD_PARTY_NOTICES.md); the rest are
+# drawn as lines. On a line of cells (a bolt) each later cell starts a beat
+# after the one before.
+const PAINTED_DIRECTORY := "res://art/effects/painted/"
+# kind: [world px across at full size, seconds, start scale, end scale,
+#  turns with the attack, added as light, slide along the attack in world px,
+#  spin in radians over the effect]
+const PAINTED := {
+	&"slash": [70.0, 0.22, 0.75, 1.1, true, true, 0.0, 0.5],
+	&"thrust": [76.0, 0.18, 0.6, 1.05, true, true, 14.0, 0.0],
+	&"heavy": [84.0, 0.3, 0.45, 1.15, false, true, 0.0, 0.0],
+	&"hit": [54.0, 0.18, 0.5, 1.1, false, true, 0.0, 0.35],
+	&"magic": [46.0, 0.3, 0.7, 1.15, true, true, 10.0, 0.0],
+	&"flame": [64.0, 0.4, 0.55, 1.1, false, true, 0.0, 0.0],
+	&"heal": [60.0, 0.55, 0.8, 1.05, false, true, 0.0, 0.0],
+	&"death": [62.0, 0.6, 0.5, 1.25, false, false, 0.0, 0.25],
+}
 const TP := "res://art/third_party/"
 # kind: [strip, frames per second, world px per art px, pivot in art px, turns with the attack]
 const SHEETS := {
@@ -17,6 +35,9 @@ const SHEETS := {
 }
 const STAGGER := 0.04
 static var _strips: Dictionary = {}
+static var _painted_images: Dictionary = {}
+# Off plays the third-party strips and drawn lines, as before the paintings.
+static var painted := true
 
 var kind: StringName = &"slash"
 var points: Array[Vector2] = []
@@ -26,6 +47,7 @@ var phase := 0.0:
 		phase = value
 		queue_redraw()
 var _strip: Texture2D
+var _image: Texture2D
 var _duration := 0.22
 
 
@@ -34,15 +56,39 @@ func start(effect_kind: StringName, cells: Array[Vector2], facing: Vector2, dura
 	points = cells
 	direction = facing.normalized()
 	z_index = 12
-	_strip = strip(kind)
+	_image = painted_image(kind)
+	_strip = strip(kind) if _image == null else null
 	_duration = duration
-	if _strip != null:
+	if _image != null:
+		texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		if PAINTED[kind][5]:
+			var light := CanvasItemMaterial.new()
+			light.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+			material = light
+		_duration = float(PAINTED[kind][1]) + STAGGER * maxi(points.size() - 1, 0)
+	elif _strip != null:
 		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		var fps: float = SHEETS[kind][1]
 		_duration = frame_count(_strip) / fps + STAGGER * maxi(points.size() - 1, 0)
 	var tween := create_tween()
 	tween.tween_property(self, "phase", 1.0, _duration)
 	tween.tween_callback(queue_free)
+
+
+# Loads every painted image; called before anything draws one (a texture
+# first loaded inside a draw call can be drawn as a blank white quad).
+static func warm() -> void:
+	for effect_kind: StringName in PAINTED:
+		painted_image(effect_kind)
+
+
+static func painted_image(effect_kind: StringName) -> Texture2D:
+	if not painted or not PAINTED.has(effect_kind):
+		return null
+	if not _painted_images.has(effect_kind):
+		var path := PAINTED_DIRECTORY + String(effect_kind) + ".png"
+		_painted_images[effect_kind] = load(path) if ResourceLoader.exists(path) else null
+	return _painted_images[effect_kind]
 
 
 static func strip(effect_kind: StringName) -> Texture2D:
@@ -53,9 +99,12 @@ static func strip(effect_kind: StringName) -> Texture2D:
 	return _strips[effect_kind]
 
 
-# How long the longest strip plays, for callers that wait for effects to clear.
+# How long the longest effect plays, for callers that wait for effects to clear.
 static func longest_duration() -> float:
 	var longest := 0.0
+	for effect_kind: StringName in PAINTED:
+		if painted_image(effect_kind) != null:
+			longest = maxf(longest, float(PAINTED[effect_kind][1]))
 	for effect_kind: StringName in SHEETS:
 		var fps: float = SHEETS[effect_kind][1]
 		longest = maxf(longest, frame_count(strip(effect_kind)) / fps)
@@ -92,7 +141,40 @@ func _draw_frames() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
+# The still grows from its start to its end scale, eased out, turned with the
+# attack (mirrored rather than upside down to the left), sliding and spinning
+# a little; it is fullest a fifth of the way in and fades to nothing.
+func _draw_painted() -> void:
+	var spec: Array = PAINTED[kind]
+	var across: float = spec[0]
+	var life: float = spec[1]
+	var turns: bool = spec[4]
+	var slide: float = spec[6]
+	var spin: float = spec[7]
+	var flip := turns and direction.x < -0.01
+	var aim := Vector2(-direction.x, direction.y) if flip else direction
+	var angle := (-aim.angle() if flip else aim.angle()) if turns else 0.0
+	var elapsed := phase * _duration
+	for index in points.size():
+		var t := (elapsed - index * STAGGER) / life
+		if t < 0.0 or t >= 1.0:
+			continue
+		var grow := 1.0 - pow(1.0 - t, 3.0)
+		var size: float = across * lerpf(spec[2], spec[3], grow)
+		var alpha := smoothstep(0.0, 0.2, t) * (1.0 - smoothstep(0.35, 1.0, t))
+		# Light flickers a touch as it fades.
+		if spec[5]:
+			alpha *= 0.9 + 0.1 * sin(t * 40.0 + index)
+		var at := points[index] + direction * slide * grow
+		draw_set_transform(at, angle + spin * t, Vector2(-1.0 if flip else 1.0, 1.0))
+		draw_texture_rect(_image, Rect2(Vector2.ONE * -size * 0.5, Vector2.ONE * size), false, Color(1, 1, 1, alpha))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
 func _draw() -> void:
+	if _image != null:
+		_draw_painted()
+		return
 	if _strip != null:
 		_draw_frames()
 		return

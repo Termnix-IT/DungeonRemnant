@@ -15,6 +15,7 @@ var transition: SceneTransition
 func _ready() -> void:
 	# Before anything draws an icon (see ItemIcons.warm).
 	ItemIcons.warm()
+	preload("res://combat/strike_effect.gd").warm()
 	# Script-only instances in rule tests only register input bindings.
 	if not has_node("Hub"):
 		return
