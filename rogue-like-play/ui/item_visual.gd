@@ -24,6 +24,7 @@ var item: ItemData:
 
 
 func _init() -> void:
+	texture_filter = ItemIcons.filter()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	custom_minimum_size = Vector2(120, 120)
 

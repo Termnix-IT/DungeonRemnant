@@ -19,6 +19,7 @@ extends RefCounted
 static func preview(item: ItemData, extent: float, color: Color) -> Control:
 	var holder := Control.new()
 	var ghost := Control.new()
+	ghost.texture_filter = ItemIcons.filter()
 	ghost.size = Vector2.ONE * extent
 	ghost.position = -ghost.size * 0.5
 	ghost.draw.connect(func(): ItemGlyph.paint(ghost, Rect2(Vector2.ZERO, ghost.size), item, color))

@@ -11,7 +11,7 @@ const ICON_WORLD_SIZE := 48.0 * 0.8
 
 
 func _ready() -> void:
-	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	texture_filter = ItemIcons.filter()
 
 
 func _draw() -> void:

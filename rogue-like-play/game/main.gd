@@ -13,6 +13,8 @@ var transition: SceneTransition
 
 
 func _ready() -> void:
+	# Before anything draws an icon (see ItemIcons.warm).
+	ItemIcons.warm()
 	# Script-only instances in rule tests only register input bindings.
 	if not has_node("Hub"):
 		return

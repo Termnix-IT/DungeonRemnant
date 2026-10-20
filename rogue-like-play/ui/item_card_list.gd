@@ -141,6 +141,7 @@ func draw_selection_accent(rect: Rect2) -> void:
 
 func _init() -> void:
 	theme_type_variation = &"ItemCardList"
+	texture_filter = ItemIcons.filter()
 
 
 func add_card(item: ItemData, count: int, price: int = -1, context: String = "") -> void:

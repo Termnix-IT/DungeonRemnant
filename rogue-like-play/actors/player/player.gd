@@ -43,10 +43,13 @@ const RIG_HEIGHT := 64.0
 # The world px around her soles the rig's picture covers: the beret, a sword
 # raised overhead and swung out to either side.
 const RIG_BOX := Rect2(-60, -100, 120, 128)
-# A held pixel picture (no illustrated weapon yet for its kind) stands upright
-# in the rig's hand, head up beside her, as a spear or staff is carried; the
-# pictures lie with their tip at the top right.
+# A held weapon other than the rig's own sword stands upright in the rig's
+# hand, head up beside her, as a spear or staff is carried; the pictures lie
+# with their tip at the top right. It is the weapon's painted icon
+# (ItemIcons.painted_weapon), PAINTED_HELD world px square, or else its pixel
+# picture at its own size.
 const RIG_HELD_TURN := -PI * 0.25
+const PAINTED_HELD := 30.0
 
 @export var stats: ActorStats
 # Off draws her as the pixel sprite, as before the rig.
@@ -136,7 +139,10 @@ func _build_rig() -> void:
 	rig = MIO_RIG.instantiate()
 	rig.world_height = RIG_HEIGHT
 	rig_view.setup(rig)
-	weapon_visual.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	weapon_visual.texture_filter = ItemIcons.filter()
+	# Loaded now, outside any draw call (see ItemIcons.painted_weapon).
+	for kind in HELD:
+		ItemIcons.painted_weapon(kind)
 	# Its hand is a bone, drawn before the parts; like the sprite's, what she
 	# holds is drawn over her. The rig's view is its own canvas, so this
 	# z_index never reaches the world's y-sort.
@@ -342,7 +348,12 @@ func _draw_weapon_silhouette() -> void:
 			return
 		# In the rig's hand, which a mirrored facing already flips.
 		weapon_visual.draw_set_transform(Vector2.ZERO, RIG_HELD_TURN)
-		weapon_visual.draw_texture(picture, -grip)
+		var painted := ItemIcons.painted_weapon(held.weapon.kind)
+		if painted != null:
+			var area := Vector2.ONE * PAINTED_HELD
+			weapon_visual.draw_texture_rect(painted, Rect2(-area * GRIP, area), false)
+		else:
+			weapon_visual.draw_texture(picture, -grip)
 		return
 	var mirrored: bool = HANDS[MioAnimation.direction_name(facing)].x < 0.0
 	if mirrored:

@@ -15,7 +15,7 @@ func _init() -> void:
 	theme_type_variation = &"HudEquipment"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Icons are 2x pixel art drawn at a third of their size, so sample whole pixels.
-	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	texture_filter = ItemIcons.filter()
 
 
 # The rows' height follows the Theme metrics, so a Container never lays the

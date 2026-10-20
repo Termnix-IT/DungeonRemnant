@@ -31,7 +31,7 @@ func _init() -> void:
 	focus_mode = Control.FOCUS_NONE
 	flat = true
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	texture_filter = ItemIcons.filter()
 	tooltip_text = "魔法を込める"
 	visibility_changed.connect(_breathe)
 

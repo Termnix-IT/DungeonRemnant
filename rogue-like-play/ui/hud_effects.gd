@@ -24,6 +24,7 @@ var entries: Array[Dictionary] = []
 
 
 func _init() -> void:
+	texture_filter = ItemIcons.filter()
 	theme_type_variation = &"HudPanel"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 

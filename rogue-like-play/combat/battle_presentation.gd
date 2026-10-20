@@ -356,7 +356,7 @@ func item_popup(item: ItemData, text: String, center: Vector2, color: Color) -> 
 	holder.position = center
 	var icon := Control.new()
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.texture_filter = ItemIcons.filter()
 	icon.size = Vector2.ONE * ITEM_POPUP_ICON
 	icon.position = Vector2(-ITEM_POPUP_ICON * 0.5, -ITEM_POPUP_ICON - 4)
 	icon.draw.connect(func(): ItemGlyph.paint(icon, Rect2(Vector2.ZERO, icon.size), item, Color.WHITE))

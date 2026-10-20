@@ -47,6 +47,7 @@ var drop_ready := false
 
 
 func _init() -> void:
+	texture_filter = ItemIcons.filter()
 	theme_type_variation = &"ItemCell"
 	custom_minimum_size = Vector2.ONE * SIZE
 	if _glow == null:

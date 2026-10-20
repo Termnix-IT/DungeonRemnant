@@ -246,6 +246,7 @@ func _build_panel() -> void:
 	named.alignment = BoxContainer.ALIGNMENT_CENTER
 	weapon.add_child(named)
 	main_glyph = Control.new()
+	main_glyph.texture_filter = ItemIcons.filter()
 	main_glyph.custom_minimum_size = Vector2(26, 26)
 	main_glyph.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	main_glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE

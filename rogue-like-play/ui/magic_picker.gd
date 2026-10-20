@@ -131,7 +131,7 @@ func _card(choice: Dictionary, held: bool) -> Button:
 	stack.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, int(CARD_INSET))
 	var icon := Control.new()
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.texture_filter = ItemIcons.filter()
 	icon.custom_minimum_size = Vector2.ONE * CARD_ICON
 	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	icon.draw.connect(func():

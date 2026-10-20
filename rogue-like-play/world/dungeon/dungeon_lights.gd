@@ -22,7 +22,10 @@ var _glow_texture: GradientTexture2D
 
 
 func _ready() -> void:
-	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_sconce = load(PAINTED_SCONCE) if ResourceLoader.exists(PAINTED_SCONCE) else null
+	_flame = load(PAINTED_FLAME) if ResourceLoader.exists(PAINTED_FLAME) else null
+	# The painted torch shrinks smoothly; a pixel torch strip keeps its pixels.
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS if painted and ResourceLoader.exists(PAINTED_SCONCE) else CanvasItem.TEXTURE_FILTER_NEAREST
 	_glow_texture = GradientTexture2D.new()
 	_glow_texture.fill = GradientTexture2D.FILL_RADIAL
 	_glow_texture.fill_from = Vector2(0.5, 0.5)
@@ -93,10 +96,29 @@ func _flame_point(cell: Vector2i) -> Vector2:
 	return Vector2(cell) * TILE_SIZE + Vector2(TILE_SIZE * 0.5, TILE_SIZE - 14.0)
 
 
+# The painted sconce and flame (tools/build_painted_objects.py), drawn
+# TORCH_HEIGHT world px tall; the flame flickers by the same waves as the
+# glow and sways with them.
+const PAINTED_SCONCE := "res://art/tiles/painted/torch_sconce.png"
+const PAINTED_FLAME := "res://art/tiles/painted/torch_flame.png"
+const TORCH_HEIGHT := 26.0
+const FLAME_HEIGHT := 16.0
+var painted := true
+# Loaded in _ready, outside any draw call: a texture first loaded while
+# drawing is drawn as a blank white quad.
+var _sconce: Texture2D
+var _flame: Texture2D
+
+
 func _draw() -> void:
 	var sheet := EnemySprites.sheet("torch")
+	var sconce: Texture2D = _sconce if painted else null
+	var flame: Texture2D = _flame if painted else null
 	for cell in torches:
 		var point := _flame_point(cell)
+		if sconce != null and flame != null:
+			_draw_painted_torch(cell, point, sconce, flame)
+			continue
 		if sheet != null:
 			var frame_size := float(sheet.get_height())
 			var frame := (int(_phase * 8.0) + _cell_seed(cell)) % EnemySprites.frame_count(sheet)
@@ -111,6 +133,20 @@ func _draw() -> void:
 		var sway := sin(_phase * 6.0 + float(_cell_seed(cell) % 13)) * 0.8
 		draw_colored_polygon(PackedVector2Array([point + Vector2(-6, 1), point + Vector2(-4, -6), point + Vector2(sway * 1.5, -15.0 * strength), point + Vector2(4, -6), point + Vector2(6, 1)]), outer)
 		draw_colored_polygon(PackedVector2Array([point + Vector2(-3, 1), point + Vector2(sway, -9.0 * strength), point + Vector2(3, 1)]), Color(1.0, 0.93, 0.7))
+
+
+# The sconce hangs with its torch's top at the flame point; the flame stands
+# on it, stretched by the flicker and leaning with the sway.
+func _draw_painted_torch(cell: Vector2i, point: Vector2, sconce: Texture2D, flame: Texture2D) -> void:
+	var strength := flicker(cell)
+	var sconce_size := Vector2(sconce.get_width() * TORCH_HEIGHT / sconce.get_height(), TORCH_HEIGHT)
+	draw_texture_rect(sconce, Rect2(point + Vector2(-sconce_size.x * 0.5, -sconce_size.y * 0.35), sconce_size), false)
+	var height := FLAME_HEIGHT * (0.85 + 0.25 * strength)
+	var flame_size := Vector2(flame.get_width() * FLAME_HEIGHT / flame.get_height(), height)
+	var sway := sin(_phase * 6.0 + float(_cell_seed(cell) % 13)) * 0.06
+	draw_set_transform(point + Vector2(0, -sconce_size.y * 0.3), sway, Vector2.ONE)
+	draw_texture_rect(flame, Rect2(Vector2(-flame_size.x * 0.5, -flame_size.y), flame_size), false, Color(1, 1, 1, 0.92 + 0.08 * strength))
+	draw_set_transform(Vector2.ZERO)
 
 
 func _draw_glow() -> void:

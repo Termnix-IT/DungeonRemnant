@@ -392,6 +392,7 @@ static func fly_glyph(host: Control, item: ItemData, from: Control, to: Control)
 # Same as fly_glyph, landing on a global point such as one list row.
 static func fly_glyph_at(host: Control, item: ItemData, from: Control, point: Vector2) -> Tween:
 	var ghost := Control.new()
+	ghost.texture_filter = ItemIcons.filter()
 	ghost.top_level = true
 	# Top-level copies do not inherit a raised parent z (the warehouse uses
 	# one), so draw above any panel explicitly.

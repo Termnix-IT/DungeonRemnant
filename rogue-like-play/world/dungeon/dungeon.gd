@@ -20,6 +20,8 @@ const GUARDIAN_DOOR := preload("res://art/tiles/guardian_door.png")
 const DESCENT_STAIRS := preload("res://art/tiles/descent_stairs.png")
 const RETURN_DOOR := preload("res://art/tiles/return_door.png")
 const REMEMBERED_PASSAGE_TINT := Color(0.45, 0.45, 0.5)
+# Their painted versions, used on a painted floor where they exist.
+const PAINTED_PASSAGES := "res://art/tiles/painted/%s.png"
 const TERRAIN_THEME_NAMES: Array[String] = ["Slate Ruins", "Moss Caverns", "Ember Depths", "Obsidian Sanctum"]
 # Painted atlases (tools/build_painted_terrain.py) replace a theme's pixel
 # atlas where they exist: PAINTED_CELL px cells shown at the 48 px grid with
@@ -79,10 +81,17 @@ var painted_terrain := true
 var painted := false
 # The tree frames drawn on forest walls: painted, or the pixel ones.
 var trees: Texture2D = FOREST_TREES
+# Each pixel passage's painted version, loaded once in _ready: a texture
+# first loaded while drawing is drawn as a blank white quad.
+var _painted_passages := {}
 var wall_shade: Node2D
 
 
 func _ready() -> void:
+	for passage: Texture2D in [GUARDIAN_DOOR, DESCENT_STAIRS, RETURN_DOOR]:
+		var path := PAINTED_PASSAGES % passage.resource_path.get_file().get_basename()
+		if ResourceLoader.exists(path):
+			_painted_passages[passage] = load(path)
 	lights.name = "Lights"
 	add_child(lights)
 	move_child(lights, 2)
@@ -136,6 +145,7 @@ func build(settings: DungeonSettings, floor_number: int, rng: RandomNumberGenera
 	var painted_path: String = PAINTED_ATLASES.get(terrain_theme_index, "")
 	painted = painted_terrain and not painted_path.is_empty() and ResourceLoader.exists(painted_path)
 	trees = load(PAINTED_TREES) if painted and ResourceLoader.exists(PAINTED_TREES) else FOREST_TREES
+	passages.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS if painted else CanvasItem.TEXTURE_FILTER_NEAREST
 	decorations.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS if trees != FOREST_TREES else CanvasItem.TEXTURE_FILTER_NEAREST
 	var cell := PAINTED_CELL if painted else TILE_SIZE
 	var count := PAINTED_TILE_COUNT if painted else WALL_TILE_START + WALL_TILE_COUNT
@@ -367,5 +377,7 @@ func _draw_passages() -> void:
 func _draw_passage(texture: Texture2D, cell: Vector2i) -> void:
 	if not fog.explored.has(cell):
 		return
+	if painted and _painted_passages.has(texture):
+		texture = _painted_passages[texture]
 	var tint := Color.WHITE if fog.visible.has(cell) else REMEMBERED_PASSAGE_TINT
 	passages.draw_texture_rect(texture, Rect2(Vector2(cell * TILE_SIZE), Vector2.ONE * TILE_SIZE), false, tint)
