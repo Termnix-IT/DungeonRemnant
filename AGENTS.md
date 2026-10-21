@@ -24,6 +24,7 @@ Nodeの `@export` 変数に、Script定数と同じ `.tres` をpreloadした既�
 ## UI変更の指針
 
 - UIの仕様・デザイン値・操作要件は `docs/MVP_SPEC.md` の「14. UI」を参照する。拠点の個別画面（強化・図鑑・設定）を変更・追加するときは、同書の「個別画面のUI文法」に従う。AGENTS.mdには作業上の判断基準を置き、色・文字サイズ・余白の数値を二重管理しない。
+- 画面の配置は独自に考えず、多くのゲームで使われている定番の形式に合わせる（同書の「画面の型は定番に合わせる」）。他のゲームの絵・枠・アイコンはまねず、色・書体・枠は共通Themeのものを使う。
 - 外観は `rogue-like-play/ui/theme/dungeon_theme.tres` のTheme Type Variation・StyleBox・定数で管理する。画面ごとの色・フォントサイズ・StyleBox・定数のoverrideや別Themeの追加を避ける（`tests/test_ui_theme.gd` が検査する）。
 - 拠点背景の明るさは `rogue-like-play/game/hub/hub.gd` の背景上の暗幕で、パネルの明るさと色相は共通Themeの `MainSurface`・`ItemSurface`・`ListBackground` で調整する。背景の暖かい光と、青みのない石墨色のパネルを分け、選択の金枠と本文の視認性を保つ。
 - パネル構造には `HubUI`、タブには `CategoryTabs`、操作ガイドには `KeyGuide`、通貨の表示には `GoldPurse` を優先して再利用する。
