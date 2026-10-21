@@ -51,9 +51,9 @@ Copyright 2021 The Shippori Mincho Project Authors (https://github.com/fontdasu/
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1. The full license text is `rogue-like-play/ui/fonts/OFL.txt`, which is distributed with the game as `SHIPPORI_MINCHO_OFL.txt`.
 
-## Sound effects and ambience
+## Sound effects
 
-The sound effects and room tones below are third-party recordings. Each original is kept unmodified in `rogue-like-play/audio/third_party/<pack>/source/`; the game plays copies that `rogue-like-play/tools/build_sound_effects.py` level-matches, peak-limits and encodes as Ogg Vorbis (one-shot effects also have their leading silence trimmed). Each folder's `SOURCE.txt` records the download and the files used. Hit, level-up and victory sounds remain the game's own synthesized placeholders.
+The sound effects below are third-party recordings. Each original is kept unmodified in `rogue-like-play/audio/third_party/<pack>/source/`; the game plays copies that `rogue-like-play/tools/build_sound_effects.py` level-matches, peak-limits and encodes as Ogg Vorbis (one-shot effects also have their leading silence trimmed). Each folder's `SOURCE.txt` records the download and the files used. Hit, level-up and victory sounds remain the game's own synthesized placeholders.
 
 ### RPG sound pack
 
@@ -84,21 +84,5 @@ License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons
 Music Jingles by Kenney (www.kenney.nl): <https://kenney.nl/assets/music-jingles>
 
 Used: `jingles_PIZZI06.ogg` (floor arrival), `jingles_HIT15.ogg` (monster house warning) and `jingles_NES05.ogg` (defeat), in `rogue-like-play/audio/third_party/kenney_music_jingles/`.
-
-License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>
-
-### Dark Cavern Ambient
-
-Dark Cavern Ambient by Paul Wortmann: <https://opengameart.org/content/dark-cavern-ambient>
-
-Used: `dark_cavern_ambient_002.ogg` (ruins room tone), in `rogue-like-play/audio/third_party/paul_wortmann_dark_cavern_ambient/`.
-
-License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>
-
-### Forest Ambience
-
-Forest Ambience by TinyWorlds: <https://opengameart.org/content/forest-ambience>
-
-Used: `Forest_Ambience.mp3` (forest room tone), in `rogue-like-play/audio/third_party/tinyworlds_forest_ambience/`.
 
 License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>
