@@ -45,11 +45,19 @@ Godot logo and icon usage guidance: <https://godotengine.org/press/>
 
 ## Shippori Mincho
 
-`rogue-like-play/ui/fonts/ShipporiMincho-Bold.ttf` and `ShipporiMincho-Medium.ttf` are the Shippori Mincho typeface, used for headings, the logo and emphasised numbers.
+`rogue-like-play/ui/fonts/ShipporiMincho-Bold.ttf` and `ShipporiMincho-Medium.ttf` are the Shippori Mincho typeface, used for titles, headings, the logo and the lobby's figures.
 
 Copyright 2021 The Shippori Mincho Project Authors (https://github.com/fontdasu/ShipporiMincho)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1. The full license text is `rogue-like-play/ui/fonts/OFL.txt`, which is distributed with the game as `SHIPPORI_MINCHO_OFL.txt`.
+
+## BIZ UDPGothic
+
+`rogue-like-play/art/third_party/biz_udp_gothic/BIZUDPGothic-Regular.ttf` and `BIZUDPGothic-Bold.ttf` are the BIZ UDPGothic typeface (unmodified), used for body text, buttons and figures. Obtained from <https://github.com/google/fonts/tree/main/ofl/bizudpgothic>.
+
+Copyright 2022 The BIZ UDGothic Project Authors (https://github.com/googlefonts/morisawa-biz-ud-gothic)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1. The full license text is `rogue-like-play/art/third_party/biz_udp_gothic/OFL.txt`, which is distributed with the game as `BIZ_UDPGOTHIC_OFL.txt`.
 
 ## Sound effects
 

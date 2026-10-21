@@ -49,22 +49,24 @@ Windows版へ同梱する通知文書を、`rogue-like-play/`から次のコマ�
 ```powershell
 Copy-Item ..\THIRD_PARTY_NOTICES.md build\windows\THIRD_PARTY_NOTICES.md
 Copy-Item ui\fonts\OFL.txt build\windows\SHIPPORI_MINCHO_OFL.txt
+Copy-Item art\third_party\biz_udp_gothic\OFL.txt build\windows\BIZ_UDPGOTHIC_OFL.txt
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/godotengine/godot/4.7.2-stable/COPYRIGHT.txt" -OutFile "build\windows\GODOT_COPYRIGHT.txt"
 ```
 
-`THIRD_PARTY_NOTICES.md`にはGodot EngineのMIT License、既定アイコンのCC BY 4.0表記と、見出しに使う書体しっぽり明朝の表記、`SHIPPORI_MINCHO_OFL.txt`には書体に同梱が義務づけられているSIL Open Font Licenseの全文、`GODOT_COPYRIGHT.txt`にはGodot Engineが含む第三者コンポーネントの著作権・ライセンス情報が記載されています。
+`THIRD_PARTY_NOTICES.md`にはGodot EngineのMIT License、既定アイコンのCC BY 4.0表記と、見出しに使う書体しっぽり明朝と本文に使う書体BIZ UDPゴシックの表記、`SHIPPORI_MINCHO_OFL.txt`と`BIZ_UDPGOTHIC_OFL.txt`にはそれぞれの書体に同梱が義務づけられているSIL Open Font Licenseの全文、`GODOT_COPYRIGHT.txt`にはGodot Engineが含む第三者コンポーネントの著作権・ライセンス情報が記載されています。
 
 ## 配布物
 
-`build/windows/` の次の5ファイルを同じフォルダーに置いたまま配布します。
+`build/windows/` の次の6ファイルを同じフォルダーに置いたまま配布します。
 
 - `RogueLike_play.exe`
 - `RogueLike_play.pck`
 - `THIRD_PARTY_NOTICES.md`
 - `GODOT_COPYRIGHT.txt`
 - `SHIPPORI_MINCHO_OFL.txt`
+- `BIZ_UDPGOTHIC_OFL.txt`
 
-`.exe`と`.pck`の片方だけでは起動できません。配布時は5ファイルをZIPにまとめ、展開後に `RogueLike_play.exe` を起動してもらいます。`progress.json` などの保存データは配布物に含めません。
+`.exe`と`.pck`の片方だけでは起動できません。配布時は6ファイルをZIPにまとめ、展開後に `RogueLike_play.exe` を起動してもらいます。`progress.json` などの保存データは配布物に含めません。
 
 このMVP用プリセットはコード署名を行いません。そのため、別のPCではWindowsの警告やセキュリティ製品の確認が表示されることがあります。不特定多数への公開前には、配布元を明示し、必要に応じて正規のコード署名証明書を使う別のリリース工程を用意してください。署名用パスワードや証明書は `export_presets.cfg` に保存・コミットしません。
 
@@ -97,7 +99,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/godotengine/godot/4.7.
 
 配布用ZIPを新しいフォルダーへ展開し、可能なら開発に使っていないWindowsユーザーまたは別PCで確認します。
 
-- [ ] `RogueLike_play.exe`、`RogueLike_play.pck`、`THIRD_PARTY_NOTICES.md`、`GODOT_COPYRIGHT.txt`が同じフォルダーにある
+- [ ] `RogueLike_play.exe`、`RogueLike_play.pck`、`THIRD_PARTY_NOTICES.md`、`GODOT_COPYRIGHT.txt`、`SHIPPORI_MINCHO_OFL.txt`、`BIZ_UDPGOTHIC_OFL.txt`が同じフォルダーにある
 - [ ] `RogueLike_play.exe` をダブルクリックすると、余分なコンソール画面を出さずに起動する
 - [ ] 1600×900のウィンドウで拠点のロビーが表示される
 - [ ] 拠点下部に新規開始を示す保存メッセージが表示される
@@ -118,7 +120,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/godotengine/godot/4.7.
 ## リリース前の最終確認
 
 - [ ] `Export With Debug` をオフにしたRelease書き出しである
-- [ ] 書き出した`.exe`と`.pck`、ライセンス通知2ファイルを新しいフォルダーへコピーして起動できる
+- [ ] 書き出した`.exe`と`.pck`、ライセンス通知4ファイルを新しいフォルダーへコピーして起動できる
 - [ ] `THIRD_PARTY_NOTICES.md`と、使用したGodotバージョンに対応する`GODOT_COPYRIGHT.txt`を確認できる
 - [ ] 初回起動と再起動後の保存復元を確認した
 - [ ] ZIP内に `.godot/`、テスト用ログ、テスト用JSON、個人の保存データが含まれていない
