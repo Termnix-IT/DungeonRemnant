@@ -116,6 +116,11 @@ func _input(event: InputEvent) -> void:
 		_using_pad = true
 
 
+# Whether she is being played on a gamepad now (the HUD shows its buttons).
+func using_pad() -> bool:
+	return _using_pad
+
+
 func invulnerable() -> bool:
 	return motor.invulnerable() or health.protected()
 

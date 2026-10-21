@@ -120,6 +120,13 @@ func charging() -> bool:
 	return state == State.CHARGE
 
 
+# How far the next dash has come back, 0 to 1 (1 with every dash ready).
+func dash_recharge() -> float:
+	if dash_charges >= tuning.dash_charges or tuning.dash_cooldown <= 0.0:
+		return 1.0
+	return clampf(1.0 - _recharge_left / tuning.dash_cooldown, 0.0, 1.0)
+
+
 func push(impulse: Vector2) -> void:
 	_push += impulse
 

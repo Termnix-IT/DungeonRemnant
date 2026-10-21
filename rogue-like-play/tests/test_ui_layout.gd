@@ -81,6 +81,15 @@ func run_tests() -> void:
 		check(screen.grow(-4).encloses(panel.get_global_rect()), "%s keeps off the screen's edge" % panel.name)
 		check(not panel.get_global_rect().intersects(ring), "%s stays off the ground round the hero" % panel.name)
 	check(not hud.hp_bar.get_global_rect().intersects(hud.guide.get_global_rect()) and not hud.info.get_global_rect().intersects(hud.exp_bar.get_global_rect()), "HUD parts do not overlap")
+	# The common arrangement: the goal at the top centre, the tally at the
+	# top right, health at the bottom left, the actions at the bottom right.
+	var middle := screen.get_center().x
+	check(absf(hud.goal.get_global_rect().get_center().x - middle) < 2.0 and hud.goal.get_global_rect().end.y < ring.position.y, "The goal stands at the top centre")
+	check(hud.kills_label.get_global_rect().position.x > middle and hud.kills_label.get_global_rect().end.y < ring.position.y, "The tally keeps to the top right")
+	check(hud.hp_bar.get_global_rect().end.x < middle and hud.hp_bar.get_global_rect().position.y > ring.end.y, "Health keeps to the bottom left")
+	for key: StringName in hud.slots:
+		var slot_rect := hud.slots[key].get_global_rect()
+		check(screen.grow(-4).encloses(slot_rect) and slot_rect.position.x > middle and slot_rect.position.y > ring.end.y and not slot_rect.intersects(hud.guide.get_global_rect()), "The %s slot keeps to the bottom right" % key)
 	# The level-up cards and the menu over the fight.
 	area._on_gems(area.run.progression.required_exp())
 	await settle(0.4)
