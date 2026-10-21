@@ -26,6 +26,12 @@ const ROW_HEIGHT := 64.0
 const BAND_TIP := 18.0
 # The band starts at the screen's left edge, as the lobby menu's does.
 const EDGE_REACH := 40.0
+# The help window: over the page and the fight's menu, under the quit's
+# question; its backdrop, size and topic column.
+const HELP_LAYER := 15
+const HELP_SHADE := Color(0.01, 0.015, 0.025, 0.7)
+const HELP_SIZE := Vector2(1180, 640)
+const HELP_TOPICS_WIDTH := 300.0
 # The settings' groups: [heading, the first row's index].
 const GROUPS := [["音", 0], ["画面", 3], ["その他", 6]]
 const CAPTIONS := ["全体の音量", "効果音", "環境音", "画面の揺れ", "画面モード", "操作の案内", "ヘルプ", "ゲームの終了"]
@@ -83,7 +89,9 @@ var rows: VBoxContainer
 var note: Label
 var focused_row := 0
 var help_shown := false
+var help_layer: CanvasLayer
 var help_view: Control
+var help_window: PanelContainer
 var help_title: Label
 var help_body: Label
 var topic_rows: VBoxContainer
@@ -186,16 +194,48 @@ func _ready() -> void:
 	_build_help()
 
 
-# The help: topics as rows on a slab from the left edge, the chosen topic's
-# paragraphs beside them.
+# The help, as games commonly show their manual: a framed window over a
+# dimmed backdrop (on a layer of its own, above the page and the fight's
+# menu), the topics listed on its left and the chosen one's paragraphs on
+# its right, the keys at its foot.
 func _build_help() -> void:
-	help_view = HBoxContainer.new()
-	help_view.theme_type_variation = &"ShopColumns"
-	add_child(help_view)
+	help_layer = CanvasLayer.new()
+	help_layer.layer = HELP_LAYER
+	add_child(help_layer)
+	help_layer.hide()
+	help_view = Control.new()
+	help_view.theme = preload("res://ui/theme/dungeon_theme.tres")
 	help_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	help_view.hide()
-	var topics := HubUI.open_column(help_view, 0.7, &"SlabSolid")
+	help_layer.add_child(help_view)
+	var shade := ColorRect.new()
+	shade.color = HELP_SHADE
+	shade.mouse_filter = Control.MOUSE_FILTER_STOP
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	help_view.add_child(shade)
+	var center := CenterContainer.new()
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	help_view.add_child(center)
+	help_window = PanelContainer.new()
+	help_window.theme_type_variation = &"MainPanel"
+	help_window.custom_minimum_size = HELP_SIZE
+	center.add_child(help_window)
+	var margin := MarginContainer.new()
+	help_window.add_child(margin)
+	var stack := VBoxContainer.new()
+	stack.theme_type_variation = &"DetailStack"
+	margin.add_child(stack)
+	var body := HBoxContainer.new()
+	body.theme_type_variation = &"ListRow"
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	stack.add_child(body)
+	var topics := VBoxContainer.new()
 	topics.theme_type_variation = &"DetailStack"
+	topics.custom_minimum_size.x = HELP_TOPICS_WIDTH
+	body.add_child(topics)
+	var heading := HubUI.label(topics, "ヘルプ", &"TitleLabel")
+	heading.autowrap_mode = TextServer.AUTOWRAP_OFF
+	HubUI.rule(topics)
 	topic_rows = VBoxContainer.new()
 	topic_rows.theme_type_variation = &"SlotRows"
 	topics.add_child(topic_rows)
@@ -208,40 +248,45 @@ func _build_help() -> void:
 		row.custom_minimum_size.y = 56
 		row.focus_entered.connect(select_topic.bind(index))
 		topic_buttons.append(row)
-	# About 40 characters a line at most, the Xbox Accessibility Guideline 101
-	# limit for Japanese; the hall shows past them.
-	var page := HubUI.open_column(help_view, 1.0, &"SlabColumn")
-	page.theme_type_variation = &"DetailStack"
-	help_title = HubUI.label(page, "", &"HeadingLabel")
-	HubUI.rule(page)
-	help_body = HubUI.label(page, "", &"BodyLabel")
-	var hall := Control.new()
-	hall.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hall.size_flags_stretch_ratio = 0.7
-	hall.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	help_view.add_child(hall)
+	var page := PanelContainer.new()
+	page.theme_type_variation = &"InsetPanel"
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_child(page)
+	var words := VBoxContainer.new()
+	words.theme_type_variation = &"DetailStack"
+	page.add_child(words)
+	help_title = HubUI.label(words, "", &"HeadingLabel")
+	HubUI.rule(words)
+	help_body = HubUI.label(words, "", &"BodyLabel")
+	var guide := KeyGuide.new()
+	guide.alignment = BoxContainer.ALIGNMENT_CENTER
+	stack.add_child(guide)
+	guide.add_hint("↑ / ↓", "▲ / ▼", "話題")
+	guide.add_hint("Esc", "B", "閉じる")
+	# A page hidden behind another takes its help window with it.
+	visibility_changed.connect(func():
+		if not is_visible_in_tree():
+			help_layer.hide())
 
 
 # Asks before ending the game; Esc or the cancel button keeps playing. The
 # focus waits on the cancel button, so a second Enter never ends the game.
 func ask_quit() -> void:
-	quit_prompt.ask("", "ゲームを終了しますか？", QUIT_BODY_IN_RUN if in_run else QUIT_BODY, "終了する", "やめる")
+	quit_prompt.ask("", "ゲームを終了しますか？", QUIT_BODY_IN_RUN if in_run else QUIT_BODY, "終了する", "やめる", true)
 	quit_prompt.cancel_button.grab_focus()
 
 
 func open_help(topic: int) -> void:
 	help_shown = true
-	_columns.hide()
-	help_view.show()
+	help_layer.show()
 	select_topic(topic)
 	topic_buttons[topic].grab_focus()
-	UIMotion.of(help_view).appear(0.0, UIMotion.WINDOW_TIME)
+	UIMotion.of(help_window).appear(0.0, UIMotion.WINDOW_TIME)
 
 
 func close_help() -> void:
 	help_shown = false
-	help_view.hide()
-	_columns.show()
+	help_layer.hide()
 	help_button.grab_focus()
 
 
@@ -257,7 +302,7 @@ func select_topic(index: int) -> void:
 
 func _draw_topic_band() -> void:
 	var chosen := topic_buttons[selected_topic]
-	_draw_band(topic_rows, UIMotion.of(topic_rows).follow_mark(Rect2(chosen.position + Vector2(-EDGE_REACH, 2), chosen.size + Vector2(EDGE_REACH, -4))))
+	_draw_band(topic_rows, UIMotion.of(topic_rows).follow_mark(Rect2(chosen.position + Vector2(-8, 2), chosen.size + Vector2(8, -4))))
 
 
 func _row(caption: String) -> HBoxContainer:

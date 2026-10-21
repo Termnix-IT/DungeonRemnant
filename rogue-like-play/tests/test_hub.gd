@@ -79,6 +79,12 @@ func run_tests() -> void:
 	await process_frame
 	var headings: Array = settings_page.rows.get_children().filter(func(node: Node): return node is Label).map(func(label: Label): return label.text)
 	check(headings == ["音", "画面", "その他"] and settings_page.note_title.text == "効果音" and settings_page.note.text == HubSettings.NOTES[1], "The settings stand in three groups, the focused one told beside them")
+	# The help opens as a window over the dimmed page and closes back to it.
+	settings_page.open_help(HubSettings.TOPIC_GROWTH)
+	await process_frame
+	check(settings_page.help_layer.visible and settings_page.is_visible_in_tree() and settings_page.help_title.text == HubSettings.HELP[HubSettings.TOPIC_GROWTH][0], "The help opens as a window over the page, at its topic")
+	settings_page.close_help()
+	check(not settings_page.help_layer.visible and settings_page.help_button.has_focus(), "Closing the help returns to the settings")
 	hub.show_page("home")
 
 	# The help speaks of the real-time game.

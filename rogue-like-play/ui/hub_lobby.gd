@@ -282,7 +282,7 @@ func _cell(row: HBoxContainer, caption: String) -> VBoxContainer:
 	return cell
 
 
-func _fact(row: HBoxContainer, caption: String, role: StringName = &"ValueLabel") -> Label:
+func _fact(row: HBoxContainer, caption: String, role: StringName = &"LobbyFactValue") -> Label:
 	var value := HubUI.label(_cell(row, caption), "", role)
 	value.autowrap_mode = TextServer.AUTOWRAP_OFF
 	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

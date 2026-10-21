@@ -39,6 +39,12 @@ func inspect_styles(node: Node) -> void:
 
 func run_tests() -> void:
 	var theme := preload("res://ui/theme/dungeon_theme.tres")
+	# The bundled gothic for the body, buttons and figures; titles keep the
+	# display face.
+	check(theme.default_font != null and theme.default_font.resource_path.ends_with("BIZUDPGothic-Regular.ttf"), "The body text uses the bundled BIZ UDPGothic")
+	check(theme.get_font(&"font", &"ValueLabel").resource_path.ends_with("BIZUDPGothic-Bold.ttf") and theme.get_font(&"font", &"HudValue").resource_path.ends_with("BIZUDPGothic-Bold.ttf"), "Figures use its bold weight")
+	check((theme.get_font(&"font", &"TitleLabel") as FontVariation).base_font.resource_path.ends_with("ShipporiMincho-Bold.ttf"), "Titles keep the display face")
+	check(FileAccess.file_exists("res://art/third_party/biz_udp_gothic/OFL.txt") and FileAccess.file_exists("res://art/third_party/biz_udp_gothic/SOURCE.txt"), "The font's licence and source are bundled beside it")
 	var main: Node = load("res://game/main.tscn").instantiate()
 	main.saving_enabled = false
 	main.meta.echo = 100

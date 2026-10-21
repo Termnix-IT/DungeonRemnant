@@ -2,8 +2,8 @@ extends SceneTree
 
 # The base drawn for real at 1600x900, 1280x720 and 1920x1080: the lobby on
 # its departure, the lasting upgrades, the encyclopedia and the settings;
-# then, at 1600x900, a run's result offering the way home and the fight's
-# menu. Images go to .godot/hub_<page>_<width>.png. Look at them: the
+# then, at 1600x900, the help and the quit's question, a run's result
+# offering the way home, the fight's menu and its leaving question. Images go to .godot/hub_<page>_<width>.png. Look at them: the
 # hierarchy, the selected state, the main actions and any cut text. Needs a
 # rendering display driver:
 #   godot --path . --rendering-method gl_compatibility --log-file .godot/hub-capture.log --script res://tests/capture_hub.gd
@@ -43,6 +43,17 @@ func capture() -> void:
 			await _grab("hub_%s_%d" % [page, size.x])
 	DisplayServer.window_set_size(SIZES[0])
 	root.size = SIZES[0]
+	# The popups a click opens: the help, and the quit's question.
+	hub.show_page("settings")
+	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
+	hub.settings_page.open_help(HubSettings.TOPIC_RUN)
+	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
+	await _grab("hub_help_1600")
+	hub.settings_page.close_help()
+	hub.settings_page.ask_quit()
+	await create_timer(0.5).timeout
+	await _grab("hub_quit_prompt_1600")
+	hub.settings_page.quit_prompt.hide()
 	hub.show_page("home")
 	await create_timer(0.3).timeout
 	main.start_run()
@@ -54,6 +65,11 @@ func capture() -> void:
 	run.area.open_menu()
 	await create_timer(0.4).timeout
 	await _grab("hub_run_menu_1600")
+	run.area.menu.abort_requested.emit()
+	await create_timer(0.5).timeout
+	await _grab("hub_run_abandon_1600")
+	run.area.prompt.canceled.emit()
+	await create_timer(0.2).timeout
 	run.area.menu.resume()
 	run.run.echo = 60
 	run.area.hero.health.hp = 1

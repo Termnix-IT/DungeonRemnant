@@ -288,7 +288,7 @@ func _on_settings_changed() -> void:
 
 func _ask_abandon() -> void:
 	menu.hide()
-	prompt.ask("ランの中断", "ランを中断しますか？", "このランで得た残響は持ち帰れます。レベルと強化は残りません。", "中断する", "戻る")
+	prompt.ask("ランの中断", "ランを中断しますか？", "このランで得た残響は持ち帰れます。レベルと強化は残りません。", "中断する", "戻る", true)
 
 
 func _on_abandon_confirmed() -> void:

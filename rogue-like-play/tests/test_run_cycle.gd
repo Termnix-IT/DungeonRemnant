@@ -117,6 +117,7 @@ func run_tests() -> void:
 	check(paused and area.menu.visible, "The menu stops the fight")
 	area.menu.abort_requested.emit()
 	check(area.prompt.visible and not area.menu.visible, "Leaving asks first")
+	check(area.prompt.cancel_button.has_focus() and area.prompt.accept_button.theme_type_variation == &"DangerButton", "Leaving cannot be undone: the way ahead is red, the focus waits on the way back")
 	area.prompt.confirmed.emit()
 	await process_frame
 	await process_frame

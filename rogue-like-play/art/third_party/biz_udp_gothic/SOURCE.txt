@@ -1,0 +1,9 @@
+BIZ UDPGothic (Regular, Bold)
+
+Source: https://github.com/google/fonts/tree/main/ofl/bizudpgothic
+Project: https://github.com/googlefonts/morisawa-biz-ud-gothic
+Author: The BIZ UDGothic Project Authors (Morisawa Inc.)
+License: SIL Open Font License, Version 1.1 (OFL.txt in this folder; https://openfontlicense.org)
+Downloaded: 2026-10-22
+Files used: BIZUDPGothic-Regular.ttf, BIZUDPGothic-Bold.ttf (unmodified)
+Used as the game's body, button and figure typeface (ui/theme/dungeon_theme.tres).
