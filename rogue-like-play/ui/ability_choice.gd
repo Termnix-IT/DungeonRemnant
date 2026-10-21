@@ -54,11 +54,14 @@ func present(candidates: Array[AbilityData], abilities: AbilitySystem, level: in
 
 
 # The real-time run's level-up: boons, at the ranks the build holds.
-func present_boons(candidates: Array[BoonData], build: BuildState, level: int, pending: int) -> void:
+# `title` replaces the level-up title (an area's reward).
+func present_boons(candidates: Array[BoonData], build: BuildState, level: int, pending: int, title: String = "") -> void:
 	var levels: Array[int] = []
 	for boon in candidates:
 		levels.append(build.rank(boon.id))
 	_open(candidates, levels, level, pending)
+	if not title.is_empty():
+		$Panel/Margin/Stack/Title.text = title
 
 
 func _open(candidates: Array, levels: Array[int], level: int, pending: int) -> void:

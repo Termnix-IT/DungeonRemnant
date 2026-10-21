@@ -158,6 +158,13 @@ func spawn_foe(data: FoeData, at: Vector2) -> Foe:
 	return foe
 
 
+# Every foe leaves without falling (the area is cleared).
+func dismiss_foes() -> void:
+	for foe in foes:
+		foe.vanish()
+	foes.clear()
+
+
 func pooled(data: FoeData) -> int:
 	return (_pool.get(data, []) as Array).size()
 

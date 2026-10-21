@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SpawnTable" load_steps=8 format=3]
+[ext_resource type="Script" path="res://world/areas/spawn_table.gd" id="1"]
+[ext_resource type="Script" path="res://world/areas/spawn_entry.gd" id="2"]
+[ext_resource type="Resource" path="res://data/foes/wandering_sentinel.tres" id="3"]
+[ext_resource type="Resource" path="res://data/foes/dashing_rat.tres" id="4"]
+[ext_resource type="Resource" path="res://data/foes/raging_charger.tres" id="5"]
+[sub_resource type="Resource" id="Sentinels"]
+script = ExtResource("2")
+foe = ExtResource("3")
+weight = 6.0
+[sub_resource type="Resource" id="Rats"]
+script = ExtResource("2")
+foe = ExtResource("4")
+weight = 3.0
+from_time = 20.0
+[resource]
+script = ExtResource("1")
+entries = Array[ExtResource("2")]([SubResource("Sentinels"), SubResource("Rats")])
+start_alive = 12
+alive_per_minute = 45.0
+max_alive = 140
+spawns_per_second = 6.0
+elite = ExtResource("5")
+elite_first = 60.0
+elite_every = 50.0
+elite_cap = 1

@@ -11,7 +11,9 @@ extends CanvasLayer
 
 const DASH_FULL := Color("9fe3dc")
 const DASH_EMPTY := Color(0.35, 0.4, 0.42, 0.6)
-const CONTROLS := "WASD 移動　／　左クリック 攻撃（長押しで溜め）　／　Space 回避　／　Q スキル　／　1〜5 敵の数を固定　0 時間で増加　／　L レベルアップ（試験用）　／　Esc 一時停止"
+const CONTROLS := "WASD 移動　／　左クリック 攻撃（長押しで溜め）　／　Space 回避　／　Q スキル　／　Esc 一時停止"
+# The message sits this far above the middle, clear of the hero.
+const MESSAGE_RISE := 190.0
 
 var area: CombatArea
 var hp_bar: ProgressBar
@@ -19,6 +21,7 @@ var hp_value: Label
 var dashes: Control
 var info: Label
 var message: Label
+var guide: Label
 var exp_bar: ProgressBar
 var level_label: Label
 var skill_label: Label
@@ -84,7 +87,7 @@ func _ready() -> void:
 	boons_label.theme_type_variation = &"HudSmall"
 	boons_label.position = Vector2(32, 54)
 	root.add_child(boons_label)
-	var guide := Label.new()
+	guide = Label.new()
 	guide.theme_type_variation = &"HudSmall"
 	guide.text = CONTROLS
 	guide.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
@@ -99,13 +102,17 @@ func _ready() -> void:
 	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	message.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	message.grow_vertical = Control.GROW_DIRECTION_BOTH
+	message.position.y -= MESSAGE_RISE
 	root.add_child(message)
 	for control: Control in [hp_value, caption, info, guide, message, exp_bar, level_label, skill_label, boons_label]:
 		control.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
+# An area may add keys of its own to the controls line (trial_keys()).
 func watch(combat_area: CombatArea) -> void:
 	area = combat_area
+	if area.has_method(&"trial_keys"):
+		guide.text = CONTROLS + "　／　" + area.trial_keys()
 
 
 func show_message(text: String) -> void:
@@ -125,7 +132,8 @@ func _process(_delta: float) -> void:
 		var minutes := floori(director.elapsed / 60.0)
 		var sending := "固定 %d体" % director.fixed_alive if director.fixed_alive > 0 else "時間で増加（目標 %d体）" % director.target_alive()
 		line = "%d:%02d　%s　／　%s" % [minutes, floori(director.elapsed) % 60, line, sending]
-	info.text = line
+	var goal: String = area.objective_text() if area.has_method(&"objective_text") else ""
+	info.text = goal + "　／　" + line if not goal.is_empty() else line
 	var motor := area.hero.motor
 	if motor.moveset.skill != null:
 		skill_label.text = "Q スキル　準備よし" if motor.skill_cooldown_left <= 0.0 else "Q スキル　あと%.1f秒" % motor.skill_cooldown_left

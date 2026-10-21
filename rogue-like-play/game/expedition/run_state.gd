@@ -3,8 +3,11 @@ extends RefCounted
 
 # One run of the real-time game, from setting out to its end: the level and
 # experience (RunProgression, on the real-time curve), the build of boons,
-# and the run's own random numbers. Nothing in it outlives the run; the next
-# run starts from a new RunState.
+# the hero's health between areas, the route through the chapter and how
+# far along it she is, the echo earned (the base's currency), the foes
+# felled and the time fought, and the run's own random numbers. Nothing in
+# it outlives the run but what its end hands back; the next run starts from
+# a new RunState.
 
 const LEVELS := preload("res://data/progression/action_levels.tres")
 const BOONS: Array[BoonData] = [
@@ -21,6 +24,16 @@ const BOONS: Array[BoonData] = [
 var progression := RunProgression.new()
 var build := BuildState.new(BOONS)
 var rng := RandomNumberGenerator.new()
+# Her health carried from area to area; 0 or less: full.
+var hp := 0
+var route: RouteMap
+var layer := 0
+# The waypoints entered so far, one per layer.
+var taken: Array = []
+var echo := 0
+var kills := 0
+var time := 0.0
+var areas_cleared := 0
 
 
 func _init(seed_value: int = 0) -> void:
@@ -45,6 +58,13 @@ func next_offer() -> Array[BoonData]:
 	if offer.is_empty():
 		progression.pending_choices = 0
 	return offer
+
+
+# Heals a share of `max_hp`, up to it.
+func heal(share: float, max_hp: int) -> int:
+	var before := hp if hp > 0 else max_hp
+	hp = mini(max_hp, before + roundi(max_hp * share))
+	return hp - before
 
 
 func choose(id: StringName) -> bool:

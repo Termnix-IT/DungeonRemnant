@@ -296,6 +296,21 @@ func _fall() -> void:
 	_fade.tween_callback(_retire)
 
 
+# Leaves without falling (its area was cleared): no gem, no kill, no
+# event; it fades and is retired.
+func vanish() -> void:
+	if dying:
+		return
+	_cancel_attack()
+	dying = true
+	collision_layer = 0
+	collision_mask = 0
+	velocity = Vector2.ZERO
+	_fade = create_tween()
+	_fade.tween_property(self, "modulate:a", 0.0, FADE_TIME)
+	_fade.tween_callback(_retire)
+
+
 func _retire() -> void:
 	if retired.get_connections().is_empty():
 		queue_free()

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AreaData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://world/areas/area_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/spawns/ember_waste.tres" id="2"]
+[resource]
+script = ExtResource("1")
+id = &"ember_waste"
+display_name = "灰の荒野"
+kind = 0
+difficulty = 2
+condition = "敵を150体倒す"
+foe_summary = "疾走ネズミが多く、精鋭が早い"
+expected_time = 140
+reward_weights = {0: 0.3, 1: 0.15, 2: 0.55}
+echo = 80
+size = Vector2i(84, 60)
+theme = 2
+scattered_pillars = 22
+spawn_table = ExtResource("2")
+kill_target = 150

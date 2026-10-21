@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AreaData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://world/areas/area_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/spawns/moss_plain.tres" id="2"]
+[resource]
+script = ExtResource("1")
+id = &"moss_plain"
+display_name = "苔むす平原"
+kind = 0
+difficulty = 1
+condition = "2分30秒を生き延びる"
+foe_summary = "番兵とネズミの群れ。終盤に精鋭"
+expected_time = 150
+reward_weights = {0: 0.35, 1: 0.2, 2: 0.45}
+echo = 60
+size = Vector2i(90, 64)
+theme = 1
+scattered_pillars = 30
+spawn_table = ExtResource("2")
+survive_time = 150.0
