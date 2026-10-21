@@ -181,13 +181,16 @@ func finish(cleared: bool, abandoned: bool = false) -> void:
 	if not result.is_empty():
 		return
 	var boons: Array[String] = []
+	# [emblem, name with its rank] for the summary's row of emblems.
+	var emblems: Array = []
 	for boon in run.build.owned():
 		boons.append(boon.display_name)
+		emblems.append([boon.emblem, boon.display_name if boon.max_level == 1 else "%s %d" % [boon.display_name, run.build.rank(boon.id)]])
 	result = {"cleared": cleared, "abandoned": abandoned, "layer": mini(run.layer, run.route.size() - 1), "layers": run.route.size(),
 		"chapter": chapter.display_name, "time": run.time, "kills": run.kills,
-		"level": run.progression.level, "boons": boons, "echo": run.echo, "met": run.met.keys()}
+		"level": run.progression.level, "boons": boons, "emblems": emblems, "echo": run.echo, "met": run.met.keys()}
 	map_view.hide()
-	end_view.present(result, returns_to_base)
+	end_view.present(result, returns_to_base, chapter.illustration)
 	finished.emit(result)
 
 

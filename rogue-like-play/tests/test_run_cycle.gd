@@ -77,6 +77,10 @@ func run_tests() -> void:
 		await clear_area(run)
 	check(not run.result.is_empty() and run.result.cleared, "Every layer cleared, the boss beaten: the run is won")
 	check(run.end_view.visible and run.end_view._button.text == "拠点へ戻る", "The result offers the way home")
+	var summary := run.end_view
+	check(summary._tiles.get_child_count() == 4 and summary._boons.get_child_count() == run.result.emblems.size() and run.result.emblems.size() == run.run.build.owned().size(), "The summary shows the run's figures as tiles and every boon as its emblem")
+	await create_timer(1.5).timeout
+	check(summary._art.texture == run.CHAPTER.illustration and summary._echo.text == UIFormat.amount(run.result.echo), "The summary lies over the chapter's illustration, the echo counted up to what was brought home")
 	var echo: int = run.result.echo
 	check(main.meta.runs == 1 and main.meta.clears == 1 and main.meta.echo == echo and echo > 0, "The win is recorded with its echo")
 	check(main.meta.best_layer == run.run.route.size() and main.meta.has_met(&"ruin_king"), "The deepest layer and the foes met are recorded")
