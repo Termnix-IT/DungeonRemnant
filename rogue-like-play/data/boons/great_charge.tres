@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=6 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/stat_boon.gd" id="3"]
+[ext_resource type="Script" path="res://progression/build/attack_boon.gd" id="4"]
+[sub_resource type="Resource" id="Quick"]
+script = ExtResource("3")
+stat_name = &"charge_time"
+per_rank = -0.15
+[sub_resource type="Resource" id="Wider"]
+script = ExtResource("4")
+when = 4
+reach_scale = 1.25
+reach_per_rank = 0.15
+damage_scale = 1.15
+[resource]
+script = ExtResource("1")
+id = &"great_charge"
+display_name = "大溜め"
+description = "溜めが速くなり、範囲が広がる"
+families = Array[String](["範囲"])
+max_level = 3
+weight = 1.0
+emblem = "hammer_damage"
+effects = Array[ExtResource("2")]([SubResource("Quick"), SubResource("Wider")])

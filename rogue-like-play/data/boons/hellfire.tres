@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=6 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/attack_boon.gd" id="3"]
+[ext_resource type="Script" path="res://progression/build/trigger_boon.gd" id="4"]
+[sub_resource type="Resource" id="Burn"]
+script = ExtResource("3")
+when = 0
+inflict = &"burn"
+[sub_resource type="Resource" id="Burst"]
+script = ExtResource("4")
+on = 1
+needs_status = &"burn"
+action = 0
+at = 0
+radius = 80.0
+damage_scale = 0.9
+damage_per_rank = 0.4
+knockback = 250.0
+inflicts = Array[StringName]([&"burn"])
+effect = &"flame"
+[resource]
+script = ExtResource("1")
+id = &"hellfire"
+display_name = "業火"
+description = "敵を燃やし、倒すと炎が燃え広がる"
+families = Array[String](["属性", "状態異常"])
+max_level = 3
+weight = 1.0
+emblem = "attack"
+effects = Array[ExtResource("2")]([SubResource("Burn"), SubResource("Burst")])

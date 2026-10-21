@@ -1,15 +1,17 @@
 class_name ActionHud
 extends CanvasLayer
 
-# The provisional HUD of the real-time fight: the hero's health and dashes at
-# the bottom left; the time, foe count, kills and frame rate at the top left
-# (with how the foes are being sent, when an EnemyDirector is watched); the
-# controls along the bottom and a message in the middle (paused, fallen).
-# The real HUD replaces it in Phase 5; it only reads the area.
+# The provisional HUD of the real-time fight: the hero's health, dashes and
+# skill at the bottom left; the run's experience along the top with its
+# level; the time, foe count, kills and frame rate at the top left (with how
+# the foes are being sent, when an EnemyDirector is watched) and the boons
+# taken under them; the controls along the bottom and a message in the
+# middle (paused, fallen). The real HUD replaces it in Phase 5; it only
+# reads the area (and its `director` and `run`, when it has them).
 
 const DASH_FULL := Color("9fe3dc")
 const DASH_EMPTY := Color(0.35, 0.4, 0.42, 0.6)
-const CONTROLS := "WASD 移動　／　左クリック 攻撃（長押しで溜め）　／　Space 回避　／　1〜5 敵の数を固定　0 時間で増加　／　Esc 一時停止"
+const CONTROLS := "WASD 移動　／　左クリック 攻撃（長押しで溜め）　／　Space 回避　／　Q スキル　／　1〜5 敵の数を固定　0 時間で増加　／　L レベルアップ（試験用）　／　Esc 一時停止"
 
 var area: CombatArea
 var hp_bar: ProgressBar
@@ -17,6 +19,10 @@ var hp_value: Label
 var dashes: Control
 var info: Label
 var message: Label
+var exp_bar: ProgressBar
+var level_label: Label
+var skill_label: Label
+var boons_label: Label
 
 
 func _ready() -> void:
@@ -49,15 +55,35 @@ func _ready() -> void:
 	hp_bar.custom_minimum_size = Vector2(320, 18)
 	hp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vitals.add_child(hp_bar)
+	skill_label = Label.new()
+	skill_label.theme_type_variation = &"HudSmall"
+	vitals.add_child(skill_label)
 	dashes = Control.new()
 	dashes.custom_minimum_size = Vector2(320, 16)
 	dashes.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dashes.draw.connect(_draw_dashes)
 	vitals.add_child(dashes)
+	exp_bar = ProgressBar.new()
+	exp_bar.theme_type_variation = &"ExpBar"
+	exp_bar.show_percentage = false
+	exp_bar.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	exp_bar.offset_left = 120
+	exp_bar.offset_right = -32
+	exp_bar.offset_top = 10
+	exp_bar.offset_bottom = 20
+	root.add_child(exp_bar)
+	level_label = Label.new()
+	level_label.theme_type_variation = &"HudValue"
+	level_label.position = Vector2(32, 2)
+	root.add_child(level_label)
 	info = Label.new()
 	info.theme_type_variation = &"HudSmall"
-	info.position = Vector2(32, 24)
+	info.position = Vector2(32, 30)
 	root.add_child(info)
+	boons_label = Label.new()
+	boons_label.theme_type_variation = &"HudSmall"
+	boons_label.position = Vector2(32, 54)
+	root.add_child(boons_label)
 	var guide := Label.new()
 	guide.theme_type_variation = &"HudSmall"
 	guide.text = CONTROLS
@@ -74,8 +100,8 @@ func _ready() -> void:
 	message.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	message.grow_vertical = Control.GROW_DIRECTION_BOTH
 	root.add_child(message)
-	for label: Label in [hp_value, caption, info, guide, message]:
-		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for control: Control in [hp_value, caption, info, guide, message, exp_bar, level_label, skill_label, boons_label]:
+		control.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 func watch(combat_area: CombatArea) -> void:
@@ -100,6 +126,21 @@ func _process(_delta: float) -> void:
 		var sending := "固定 %d体" % director.fixed_alive if director.fixed_alive > 0 else "時間で増加（目標 %d体）" % director.target_alive()
 		line = "%d:%02d　%s　／　%s" % [minutes, floori(director.elapsed) % 60, line, sending]
 	info.text = line
+	var motor := area.hero.motor
+	if motor.moveset.skill != null:
+		skill_label.text = "Q スキル　準備よし" if motor.skill_cooldown_left <= 0.0 else "Q スキル　あと%.1f秒" % motor.skill_cooldown_left
+	var run: RunState = area.get(&"run")
+	exp_bar.visible = run != null
+	level_label.visible = run != null
+	if run != null:
+		exp_bar.max_value = maxi(1, run.progression.required_exp())
+		exp_bar.value = run.progression.exp
+		level_label.text = "Lv %d" % run.progression.level
+		var taken: Array[String] = []
+		for boon in run.build.owned():
+			var rank := run.build.rank(boon.id)
+			taken.append(boon.display_name if boon.max_level == 1 else "%s %d" % [boon.display_name, rank])
+		boons_label.text = "　".join(taken)
 	dashes.queue_redraw()
 
 

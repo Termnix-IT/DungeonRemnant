@@ -1,10 +1,11 @@
-[gd_resource type="Resource" script_class="Moveset" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="Moveset" load_steps=8 format=3]
 [ext_resource type="Script" path="res://combat/action/moveset.gd" id="1"]
 [ext_resource type="Script" path="res://combat/action/attack_data.gd" id="6"]
 [ext_resource type="Resource" path="res://data/attacks/sword_combo_1.tres" id="2"]
 [ext_resource type="Resource" path="res://data/attacks/sword_combo_2.tres" id="3"]
 [ext_resource type="Resource" path="res://data/attacks/sword_combo_3.tres" id="4"]
 [ext_resource type="Resource" path="res://data/attacks/sword_charged.tres" id="5"]
+[ext_resource type="Resource" path="res://data/attacks/skill_ring.tres" id="7"]
 [resource]
 script = ExtResource("1")
 display_name = "剣"
@@ -12,3 +13,5 @@ combo = Array[ExtResource("6")]([ExtResource("2"), ExtResource("3"), ExtResource
 charged = ExtResource("5")
 charge_time = 0.75
 combo_grace = 0.25
+skill = ExtResource("7")
+skill_cooldown = 6.0

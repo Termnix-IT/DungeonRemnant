@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=7 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/attack_boon.gd" id="3"]
+[ext_resource type="Script" path="res://combat/action/projectile_data.gd" id="4"]
+[sub_resource type="Resource" id="Wave"]
+script = ExtResource("4")
+speed = 720.0
+distance = 340.0
+radius = 28.0
+damage_scale = 1.2
+knockback = 220.0
+effect = &"slash"
+size = 96.0
+[sub_resource type="Resource" id="Third"]
+script = ExtResource("3")
+when = 2
+combo_step = 2
+projectile = SubResource("Wave")
+distance_per_rank = 100.0
+[resource]
+script = ExtResource("1")
+id = &"shockwave"
+display_name = "衝撃波"
+description = "3段目の攻撃が斬撃の波を飛ばす"
+families = Array[String](["連撃"])
+max_level = 3
+weight = 1.0
+emblem = "spear_range"
+effects = Array[ExtResource("2")]([SubResource("Third")])

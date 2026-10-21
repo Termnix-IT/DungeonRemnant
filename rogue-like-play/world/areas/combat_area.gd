@@ -6,8 +6,11 @@ extends Node2D
 # hit stop and the camera, and shows what the fight reports: the swing's
 # painted effect, the foes' warnings on the floor, the numbers, the shake
 # and the sounds. A fallen foe is kept in a pool, out of the world, and
-# brought back for the next spawn of its kind. The open field, the arena
-# and the boss hall build on it.
+# brought back for the next spawn of its kind, and drops experience gems
+# (GemField). Blows other than the hero's swing go through deal() as hers
+# do: waves (launch), blasts and chained lightning (a build's triggers),
+# burns. What happens is told on `events` (CombatEvents). The open field,
+# the arena and the boss hall build on it.
 
 signal hero_fell
 signal foe_fell(foe: Foe)
@@ -36,6 +39,11 @@ const DEATH_SOUND_GAP := 70
 # and falls add no more, so the hero is never buried in smoke.
 const EFFECT_CAPS := {&"hit": 18, &"death": 10}
 const DEATH_SCALE := 0.9
+const BURN_NUMBER := Color("ffa45c")
+const BURN_OUTLINE := Color("2a1004")
+const LIGHTNING := Color(0.7, 0.88, 1.0)
+const LIGHTNING_TIME := 0.22
+const LIGHTNING_JAGS := 5
 
 var ground: AreaGround
 # The foes' warnings: over the ground, under the actors.
@@ -43,6 +51,8 @@ var marks: Node2D
 var actors: Node2D
 var effects: Node2D
 var popups: DamagePopups
+var gems: GemField
+var events: CombatEvents
 var hit_stop: HitStop
 var camera: Camera2D
 var hero: Hero
@@ -70,6 +80,10 @@ func _ready() -> void:
 	marks.name = "Marks"
 	marks.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(marks)
+	gems = GemField.new()
+	gems.name = "Gems"
+	gems.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(gems)
 	actors = Node2D.new()
 	actors.name = "Actors"
 	actors.y_sort_enabled = true
@@ -82,6 +96,9 @@ func _ready() -> void:
 	popups = DamagePopups.new()
 	popups.name = "Popups"
 	add_child(popups)
+	events = CombatEvents.new()
+	events.name = "Events"
+	add_child(events)
 	hit_stop = HitStop.new()
 	hit_stop.name = "HitStop"
 	add_child(hit_stop)
@@ -101,6 +118,11 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if hero != null:
 		camera.global_position = hero.global_position + CAMERA_LEAD
+
+
+func _physics_process(delta: float) -> void:
+	if hero != null and hero.health.alive() and not get_tree().paused:
+		gems.step(hero.global_position, delta)
 
 
 func spawn_hero(at: Vector2) -> Hero:
@@ -153,6 +175,95 @@ func show_telegraph(attack: AttackData, origin: Vector2, facing: Vector2) -> Tel
 	return telegraph
 
 
+# A blow from the hero's side landing on a foe: it is dealt, shown, and told
+# (a burn's tick is shown smaller and told to no one). The health lost.
+func deal(foe: Foe, info: DamageInfo) -> int:
+	if foe == null or foe.dying:
+		return 0
+	var lost := foe.receive(info)
+	if info.flinch:
+		report_hit(foe, lost, info)
+		events.attack_hit.emit(foe, info)
+	elif lost > 0:
+		popups.show_number(str(lost), foe.global_position + NUMBER_HEIGHT, BURN_NUMBER, BURN_OUTLINE, DamagePopups.FONT_SIZE - 6)
+	return lost
+
+
+func launch(shot: ProjectileData, from: Vector2, toward: Vector2, power: float) -> Projectile:
+	var wave := Projectile.new()
+	effects.add_child(wave)
+	wave.launch(shot, self, from, toward, power)
+	return wave
+
+
+# Every foe whose body is inside the circle takes the blow.
+func blast(center: Vector2, radius: float, power: float, knockback: float, inflicts: Array[StringName], effect: StringName) -> void:
+	var across: float = StrikeEffect.PAINTED.get(effect, StrikeEffect.PAINTED[&"heavy"])[0]
+	_effect(effect, center + BODY_MIDDLE * 0.4, Vector2.RIGHT, radius * 2.0 / across)
+	for foe in foes.duplicate():
+		if foe.dying or foe.global_position.distance_to(center) > radius + foe.hit_radius:
+			continue
+		var info := DamageInfo.make(power, foe.global_position - center, knockback, hero)
+		info.inflicts = inflicts
+		deal(foe, info)
+	shake(HEAVY_SHAKE * 0.6)
+
+
+# Lightning from `from`, jumping to the nearest foe not yet struck within
+# `reach` of the last one, `jumps` times. `skip` (the foe it started from)
+# is never struck.
+func chain(from: Vector2, skip: Foe, jumps: int, reach: float, power: float, inflicts: Array[StringName]) -> void:
+	var struck := {}
+	if skip != null:
+		struck[skip] = true
+	var points := PackedVector2Array([from + BODY_MIDDLE])
+	var at := from
+	for jump in jumps:
+		var next: Foe = null
+		var nearest := reach
+		for foe in foes:
+			if foe.dying or struck.has(foe):
+				continue
+			var distance := foe.global_position.distance_to(at)
+			if distance <= nearest:
+				nearest = distance
+				next = foe
+		if next == null:
+			break
+		struck[next] = true
+		at = next.global_position
+		points.append(at + BODY_MIDDLE)
+		var info := DamageInfo.make(power, at - from, 60.0, hero)
+		info.inflicts = inflicts
+		deal(next, info)
+	if points.size() > 1:
+		_lightning(points)
+
+
+func _lightning(points: PackedVector2Array) -> void:
+	var bolt := Line2D.new()
+	bolt.width = 3.0
+	bolt.default_color = LIGHTNING
+	bolt.z_index = 13
+	var light := CanvasItemMaterial.new()
+	light.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	bolt.material = light
+	var jagged := PackedVector2Array([points[0]])
+	for index in range(1, points.size()):
+		var start := points[index - 1]
+		var end := points[index]
+		var side := (end - start).orthogonal().normalized()
+		for jag in range(1, LIGHTNING_JAGS):
+			var share := float(jag) / LIGHTNING_JAGS
+			jagged.append(start.lerp(end, share) + side * randf_range(-9.0, 9.0))
+		jagged.append(end)
+	bolt.points = jagged
+	effects.add_child(bolt)
+	var tween := bolt.create_tween()
+	tween.tween_property(bolt, "modulate:a", 0.0, LIGHTNING_TIME)
+	tween.tween_callback(bolt.queue_free)
+
+
 func report_swing(by: Hero, attack: AttackData, facing: Vector2) -> void:
 	var effect := StrikeEffect.new()
 	var across: float = StrikeEffect.PAINTED.get(attack.effect, StrikeEffect.PAINTED[&"slash"])[0]
@@ -202,12 +313,14 @@ func shake(strength: float) -> void:
 func _on_foe_fell(foe: Foe) -> void:
 	foes.erase(foe)
 	kills += 1
+	gems.drop(foe.global_position, foe.data.exp_reward)
 	_effect(&"death", foe.global_position + BODY_MIDDLE * 0.7, Vector2.RIGHT, DEATH_SCALE)
 	var now := Time.get_ticks_msec()
 	if now - _last_death_sound >= DEATH_SOUND_GAP:
 		_last_death_sound = now
 		GameAudio.play(self, &"death", -22.0)
 	foe_fell.emit(foe)
+	events.enemy_killed.emit(foe)
 
 
 # A painted effect at a point, unless its kind is at its cap.

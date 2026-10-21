@@ -35,6 +35,10 @@ enum Shape { ARC, CIRCLE, LINE }
 @export var effect: StringName = &"slash"
 # Lightning, fire...; empty is a plain blow. Read by later effects.
 @export var element: StringName
+# Statuses (Status ids: shock, burn) it leaves on what it hits.
+@export var inflicts: Array[StringName] = []
+# Sent off as the swing starts hitting, if set: a wave flying on its own.
+@export var projectile: ProjectileData
 # A foe's attack only: the distances to the hero (world px, feet to feet) at
 # which it chooses this one. Its wind-up is the warning drawn on the floor.
 @export_range(0.0, 2000.0) var use_from := 0.0

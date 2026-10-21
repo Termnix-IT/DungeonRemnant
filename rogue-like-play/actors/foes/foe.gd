@@ -4,7 +4,9 @@ extends CharacterBody2D
 # An enemy of the real-time fight: walks where its FoeBrain steers, hurts the
 # hero by touch, runs its attacks (a warning on the floor through the
 # wind-up, then the blow, which may carry it forward), staggers and is pushed
-# back when struck unless it has super armour, and falls. A fallen foe fades
+# back when struck unless it has super armour, carries statuses (Status:
+# shocked it walks slower, burning it loses health every tick), and falls. A
+# fallen foe fades
 # and is retired; its CombatArea keeps it to bring back (revive) rather than
 # making a new one. Off screen it thinks only every few frames.
 
@@ -38,6 +40,10 @@ var attack: AttackData
 var attack_time := 0.0
 var attack_facing := Vector2.RIGHT
 var telegraph: Telegraph
+# Status id -> seconds left.
+var statuses: Dictionary = {}
+var _burn_left := 0.0
+var _burn_power := 0.0
 var _attack_spent := false
 var _attack_shown := false
 var _lunge := Vector2.ZERO
@@ -89,6 +95,7 @@ func revive(at: Vector2) -> void:
 	_desired = Vector2.ZERO
 	attack = null
 	telegraph = null
+	statuses.clear()
 	modulate.a = 1.0
 	collision_layer = Hero.FOES
 	collision_mask = Hero.WALLS | Hero.FOES | Hero.HEROES
@@ -108,6 +115,9 @@ func step(delta: float) -> void:
 	_stun_left = maxf(0.0, _stun_left - delta)
 	_contact_left = maxf(0.0, _contact_left - delta)
 	_lunge = Vector2.ZERO
+	_step_statuses(delta)
+	if dying:
+		return
 	if attack != null:
 		_run_attack(delta)
 	else:
@@ -133,6 +143,8 @@ func _think(delta: float) -> void:
 		return
 	_think_left = 1 if on_screen else FAR_THINK_FRAMES
 	_desired = brain.step(self, _think_time)
+	if has_status(Status.SHOCK):
+		_desired *= 1.0 - Status.SHOCK_SLOW
 	_think_time = 0.0
 
 
@@ -205,8 +217,10 @@ func receive(info: DamageInfo) -> int:
 	if dying:
 		return 0
 	var lost := health.take(info)
+	for id in info.inflicts:
+		apply_status(id, info.amount)
 	_push += info.direction * info.knockback * (1.0 - data.knockback_resist)
-	var flinch := data.hitstun > 0.0
+	var flinch := data.hitstun > 0.0 and info.flinch
 	if flinch:
 		_stun_left = data.hitstun
 		walk = Vector2.ZERO
@@ -217,6 +231,43 @@ func receive(info: DamageInfo) -> int:
 	if not health.alive():
 		_fall()
 	return lost
+
+
+# Puts a status on (or renews it). `power` is the blow's strength, which a
+# burn's ticks are a share of.
+func apply_status(id: StringName, power: float = 0.0) -> void:
+	if dying or Status.duration(id) <= 0.0:
+		return
+	if id == Status.BURN:
+		_burn_power = maxf(_burn_power if statuses.has(id) else 0.0, power)
+		if not statuses.has(id):
+			_burn_left = Status.BURN_TICK
+	statuses[id] = Status.duration(id)
+	view.show_statuses(statuses)
+
+
+func has_status(id: StringName) -> bool:
+	return statuses.has(id)
+
+
+func _step_statuses(delta: float) -> void:
+	if statuses.is_empty():
+		return
+	for id: StringName in statuses.keys():
+		statuses[id] -= delta
+		if statuses[id] <= 0.0:
+			statuses.erase(id)
+			view.show_statuses(statuses)
+	if statuses.has(Status.BURN):
+		_burn_left -= delta
+		if _burn_left <= 0.0:
+			_burn_left += Status.BURN_TICK
+			var info := DamageInfo.make(maxf(1.0, _burn_power * Status.BURN_SHARE), Vector2.ZERO)
+			info.flinch = false
+			if area != null:
+				area.deal(self, info)
+			else:
+				receive(info)
 
 
 # A touch hurts only outside an attack: during one, the attack is the blow.

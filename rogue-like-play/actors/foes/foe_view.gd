@@ -34,6 +34,8 @@ var height := RIG_HEIGHT
 var _body: Node2D
 var _flash: Tween
 var _braced := false
+# The tint of the status it carries (Status.TINT), under any flash.
+var _tint := Color.WHITE
 
 
 func setup(owner_foe: Foe) -> void:
@@ -111,7 +113,7 @@ func hurt(flinch: bool) -> void:
 		_flash.kill()
 	_body.modulate = FLASH
 	_flash = create_tween()
-	_flash.tween_property(_body, "modulate", Color.WHITE, FLASH_TIME)
+	_flash.tween_property(_body, "modulate", _tint, FLASH_TIME)
 	if flinch:
 		if rig != null:
 			rig.hurt()
@@ -130,8 +132,19 @@ func fall() -> void:
 	queue_redraw()
 
 
+# Tints by the status it carries: burning over shocked.
+func show_statuses(statuses: Dictionary) -> void:
+	_tint = Color.WHITE
+	for id: StringName in [Status.SHOCK, Status.BURN]:
+		if statuses.has(id):
+			_tint = Status.TINT[id]
+	if _body != null and (_flash == null or not _flash.is_running()):
+		_body.modulate = _tint
+
+
 func revive() -> void:
 	_braced = false
+	_tint = Color.WHITE
 	if _flash != null:
 		_flash.kill()
 	if _body != null:

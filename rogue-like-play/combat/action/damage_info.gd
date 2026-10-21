@@ -10,6 +10,10 @@ var knockback := 0.0
 var hit_stop := 0.0
 var element: StringName
 var source: Node
+# Statuses (Status ids) the blow leaves on what it hits.
+var inflicts: Array[StringName] = []
+# False for damage over time: no flinch, no broken wind-up.
+var flinch := true
 
 
 static func make(amount_value: float, direction_value: Vector2, knockback_value: float = 0.0, source_node: Node = null) -> DamageInfo:

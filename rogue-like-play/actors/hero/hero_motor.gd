@@ -11,14 +11,22 @@ extends RefCounted
 # charge, counted from the press, let loose as the charged attack when
 # released after charge_time; released sooner, nothing more happens. A
 # strike pressed during a swing continues the combo from combo_after on; a
-# dash cuts a swing short from dash_after on, and a charge at any time.
+# dash cuts a swing short from dash_after on, and a charge at any time. The
+# skill comes out when free, or cuts a swing short as a dash does, and then
+# rests for its cooldown. A swing is shaped as it starts by `shaper` (the
+# run's build), if set.
 
 signal swing_started(attack: AttackData)
+signal skill_used(attack: AttackData)
 signal dashed(direction: Vector2)
+signal dash_ended(direction: Vector2)
 signal charge_ready
 
 enum State { FREE, ATTACK, CHARGE, DASH, DOWN }
-enum Press { NONE, STRIKE, DASH }
+enum Press { NONE, STRIKE, DASH, SKILL }
+# combo_index for a swing that is not of the combo.
+const CHARGED := -1
+const SKILL := -2
 
 var tuning: HeroTuning
 var moveset: Moveset
@@ -31,11 +39,17 @@ var facing := Vector2.RIGHT
 var attack: AttackData
 # Counts swings, so a target is hit once per swing (Hero keeps who was hit).
 var swing_serial := 0
-# The swing of the combo now playing, or -1 for the charged attack.
+# The swing of the combo now playing, or CHARGED or SKILL.
 var combo_index := -1
 var dash_charges := 1
-# Seconds since the last dash ended (Phase 3's after-dash effects read it).
+# Seconds since the last dash ended (after-dash boons read it).
 var since_dash := INF
+var skill_cooldown_left := 0.0
+# (attack, kind, combo index, seconds since a dash) -> the swing to play;
+# kind is &"combo", &"charged" or &"skill". Unset, swings play as written.
+var shaper: Callable
+# The charge's time is moveset.charge_time times this.
+var charge_scale := 1.0
 
 var _buffered := Press.NONE
 var _buffer_left := 0.0
@@ -93,9 +107,13 @@ func hitting() -> bool:
 
 # How full the charge is, 0 to 1, while the strike is held.
 func charge_progress() -> float:
-	if not _holding or moveset.charge_time <= 0.0:
+	if not _holding or charge_time() <= 0.0:
 		return 0.0
-	return clampf(_hold_time / moveset.charge_time, 0.0, 1.0)
+	return clampf(_hold_time / charge_time(), 0.0, 1.0)
+
+
+func charge_time() -> float:
+	return moveset.charge_time * charge_scale
 
 
 func charging() -> bool:
@@ -115,6 +133,7 @@ func fall() -> void:
 
 func _tick(delta: float) -> void:
 	_invulnerable_left = maxf(0.0, _invulnerable_left - delta)
+	skill_cooldown_left = maxf(0.0, skill_cooldown_left - delta)
 	_combo_grace_left = maxf(0.0, _combo_grace_left - delta)
 	# A press made during a dash waits for its end.
 	if state != State.DASH and _buffer_left > 0.0:
@@ -143,6 +162,8 @@ func _read(input: HeroInput, delta: float) -> void:
 			_holding = false
 	if input.dash_pressed:
 		_press(Press.DASH)
+	if input.skill_pressed:
+		_press(Press.SKILL)
 
 
 func _press(kind: Press) -> void:
@@ -163,6 +184,9 @@ func _free(input: HeroInput, delta: float) -> void:
 		_take(Press.DASH)
 		_start_dash(input, delta)
 		return
+	if _skill_ready():
+		_start_skill(input.aim)
+		return
 	if _take(Press.STRIKE):
 		var index := (combo_index + 1) % moveset.combo.size() if _combo_grace_left > 0.0 and combo_index >= 0 else 0
 		_start_swing(moveset.combo[index], index, input.aim)
@@ -177,6 +201,9 @@ func _attacking(input: HeroInput, delta: float) -> void:
 	if _buffered == Press.DASH and state_time >= attack.dash_after and dash_charges > 0:
 		_take(Press.DASH)
 		_start_dash(input, delta)
+		return
+	if state_time >= attack.dash_after and _skill_ready():
+		_start_skill(input.aim)
 		return
 	var next := combo_index + 1
 	if _buffered == Press.STRIKE and combo_index >= 0 and next < moveset.combo.size() and state_time >= attack.combo_after:
@@ -204,13 +231,13 @@ func _charging(input: HeroInput, delta: float) -> void:
 		facing = input.aim.normalized()
 	elif input.move.length() > 0.1:
 		facing = input.move.normalized()
-	if not _charge_announced and _hold_time >= moveset.charge_time:
+	if not _charge_announced and _hold_time >= charge_time():
 		_charge_announced = true
 		charge_ready.emit()
 	if _holding:
 		return
-	if _hold_time >= moveset.charge_time:
-		_start_swing(moveset.charged, -1, input.aim)
+	if _hold_time >= charge_time():
+		_start_swing(moveset.charged, CHARGED, input.aim)
 	else:
 		state = State.FREE
 		state_time = 0.0
@@ -225,17 +252,35 @@ func _dashing(delta: float) -> void:
 		since_dash = 0.0
 		# She comes out of it running, not stopped dead.
 		velocity = _dash_direction * tuning.max_speed
+		dash_ended.emit(_dash_direction)
 
 
 func _start_swing(next: AttackData, index: int, aim: Vector2) -> void:
 	attack = next
+	if shaper.is_valid():
+		var kind := &"skill" if index == SKILL else (&"charged" if index == CHARGED else &"combo")
+		attack = shaper.call(next, kind, index, since_dash)
 	combo_index = index
 	if aim.length() > 0.1:
 		facing = aim.normalized()
 	state = State.ATTACK
 	state_time = 0.0
 	swing_serial += 1
-	swing_started.emit(attack)
+	if index == SKILL:
+		skill_used.emit(attack)
+	else:
+		swing_started.emit(attack)
+
+
+func _skill_ready() -> bool:
+	return _buffered == Press.SKILL and moveset.skill != null and skill_cooldown_left <= 0.0
+
+
+func _start_skill(aim: Vector2) -> void:
+	_take(Press.SKILL)
+	_holding = false
+	skill_cooldown_left = moveset.skill_cooldown
+	_start_swing(moveset.skill, SKILL, aim)
 
 
 func _start_dash(input: HeroInput, delta: float) -> void:

@@ -10,7 +10,9 @@ const GameAudio := preload("res://audio/game_audio.gd")
 # A takes the focused one; with no card focused, a direction focuses one.
 const FOCUS_DELAY := 0.3
 
-var offers: Array[AbilityData] = []
+# AbilityData (the turn-based run) or BoonData (the real-time run).
+var offers: Array = []
+var _levels: Array[int] = []
 var cards: Array[AbilityCard] = []
 # Plays the chosen moment after the dialog has already closed, so the turn
 # resumes immediately. It never receives input and replaces itself.
@@ -45,8 +47,24 @@ func _ready() -> void:
 
 
 func present(candidates: Array[AbilityData], abilities: AbilitySystem, level: int, pending: int) -> void:
+	var levels: Array[int] = []
+	for ability in candidates:
+		levels.append(abilities.level_of(ability))
+	_open(candidates, levels, level, pending)
+
+
+# The real-time run's level-up: boons, at the ranks the build holds.
+func present_boons(candidates: Array[BoonData], build: BuildState, level: int, pending: int) -> void:
+	var levels: Array[int] = []
+	for boon in candidates:
+		levels.append(build.rank(boon.id))
+	_open(candidates, levels, level, pending)
+
+
+func _open(candidates: Array, levels: Array[int], level: int, pending: int) -> void:
 	clear_afterglow()
 	offers = candidates.duplicate()
+	_levels = levels
 	$Panel/Margin/Stack/Title.text = "Lv %d  能力を1つ選択" % (level - pending + 1)
 	var keys: Array[String] = []
 	for index in offers.size():
@@ -58,7 +76,7 @@ func present(candidates: Array[AbilityData], abilities: AbilitySystem, level: in
 	for index in buttons.size():
 		buttons[index].visible = index < offers.size()
 		if index < offers.size():
-			cards[index].setup(offers[index], abilities.level_of(offers[index]), index + 1)
+			cards[index].setup(offers[index], _levels[index], index + 1)
 	# Left from the first card goes round to the last, and back.
 	for index in offers.size():
 		buttons[index].focus_neighbor_left = buttons[posmod(index - 1, offers.size())].get_path()
@@ -77,7 +95,7 @@ func present(candidates: Array[AbilityData], abilities: AbilitySystem, level: in
 
 
 # Only the same offer, still open and unanswered, takes focus.
-func _focus_first(opened: Array[AbilityData]) -> void:
+func _focus_first(opened: Array) -> void:
 	if visible and offers == opened and not buttons.is_empty():
 		buttons[0].grab_focus()
 
@@ -103,7 +121,7 @@ func _hover(index: int, value: bool) -> void:
 func _select(index: int) -> void:
 	if not visible or index < 0 or index >= offers.size():
 		return
-	var id := offers[index].id
+	var id: StringName = offers[index].id
 	_play_afterglow(index)
 	dismiss()
 	selected.emit(id)

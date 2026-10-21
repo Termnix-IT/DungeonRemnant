@@ -6,8 +6,10 @@ extends Control
 # The card is a painted bronze frame (the theme's AbilityCard styles): a blue
 # gem crowns a new ability, an amber one a rank being raised, and the chosen
 # card turns gold, its frame fading in on hover and on the chosen moment.
-# Ranks are bronze sockets, the owned ones holding an amber gem.
-var ability: AbilityData
+# Ranks are bronze sockets, the owned ones holding an amber gem. It shows a
+# turn-based AbilityData or a real-time BoonData (its emblem and words for
+# the rank on offer).
+var ability: Resource
 var level := 0
 var hovered := false:
 	set(value):
@@ -65,16 +67,19 @@ func _init() -> void:
 	effect_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 
-func setup(data: AbilityData, current_level: int, shortcut: int) -> void:
+func setup(data: Resource, current_level: int, shortcut: int) -> void:
 	ability = data
 	level = current_level
 	glow = 0.0
 	hovered = false
 	key_label.text = str(shortcut)
 	status_label.text = "新規習得" if level == 0 else "Lv %d → %d" % [level, level + 1]
+	# A new boon names its families instead (the blue gem already says new).
+	if data is BoonData and level == 0:
+		status_label.text = data.families_text()
 	name_label.text = data.display_name
 	name_label.tooltip_text = data.display_name
-	TextWrap.set_text(effect_label, data.effect_description())
+	TextWrap.set_text(effect_label, data.effect_description(level + 1) if data is BoonData else data.effect_description())
 	symbol.queue_redraw()
 
 
@@ -107,7 +112,11 @@ func _draw_symbol() -> void:
 		return
 	var color := _gold()
 	var extent := minf(symbol.size.x, symbol.size.y)
-	ItemGlyph.paint_ability(symbol, Rect2((symbol.size - Vector2.ONE * extent) / 2, Vector2.ONE * extent), ability.effect, color)
+	var rect := Rect2((symbol.size - Vector2.ONE * extent) / 2, Vector2.ONE * extent)
+	if ability is BoonData:
+		EmblemIcons.paint(symbol, rect, ability.emblem_key())
+		return
+	ItemGlyph.paint_ability(symbol, rect, ability.effect, color)
 
 
 # One socket per rank: owned ranks hold a gem, the offered rank's gem fades
@@ -117,7 +126,7 @@ func _draw_pips() -> void:
 		return
 	var empty := get_theme_icon(&"pip_empty", &"AbilityCard")
 	var full := get_theme_icon(&"pip_full", &"AbilityCard")
-	var count := ability.max_level
+	var count: int = ability.max_level
 	var gap := 3.0
 	var width := minf(full.get_width(), (pips.size.x - gap * (count - 1)) / count)
 	var height := width * full.get_height() / full.get_width()

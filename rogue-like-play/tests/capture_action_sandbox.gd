@@ -2,7 +2,8 @@ extends SceneTree
 
 # The Phase 1 sandbox drawn for real at 1600x900: the hero among sentinels,
 # mid-swing, charging, letting the charged attack loose and dashing, an
-# elite and a rat winding up their attacks with their warnings, then
+# elite and a rat winding up their attacks with their warnings, a level-up's
+# cards and a build of lightning, fire and the wave in a crowd, then
 # the frame time with 12, 30 and 60 sentinels on the field (vsync off, the
 # hero kept alive). Images go to .godot/action_*.png; the times are printed.
 # Needs a rendering display driver:
@@ -57,6 +58,23 @@ func capture() -> void:
 	await drive(HeroInput.new(), 0.5)
 	await _grab("action_slam")
 	sandbox.director.running = true
+	# A level-up's cards, then a build of lightning, fire and the wave at work
+	# in a crowd.
+	sandbox._on_gems(sandbox.run.progression.required_exp())
+	await create_timer(0.6, true).timeout
+	await _grab("action_levelup")
+	sandbox.choice._select(0)
+	for id: StringName in [&"thunder_blade", &"chain_lightning", &"hellfire", &"shockwave", &"shockwave"]:
+		sandbox.run.build.take(sandbox.run.build.find(id))
+	sandbox.director.fixed_alive = 60
+	while sandbox.foes.size() < 60:
+		await drive(HeroInput.new(), 0.25)
+	await drive(HeroInput.new(), 1.5)
+	for swing in 6:
+		await drive(HeroInput.make(Vector2.ZERO, _toward_nearest(), true), 0.13)
+	await _grab("action_build")
+	await drive(HeroInput.new(), 0.3)
+	sandbox.director.fixed_alive = 12
 	var times := {}
 	for count in [12, 30, 60]:
 		sandbox.director.fixed_alive = count
