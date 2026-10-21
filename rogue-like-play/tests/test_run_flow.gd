@@ -86,8 +86,22 @@ func run_tests() -> void:
 	root.add_child(director)
 	await process_frame
 	check(director.map_view.visible and director.map_view.route_layer == 0 and director.map_view.buttons.size() == director.run.route.nodes(0).size(), "A run opens on its map, the first layer to choose")
+	# The node map: every area a node, only the first layer open, the first
+	# selected and told in the account, a later one readable but not enterable.
+	var view := director.map_view
+	var all_nodes := 0
+	for index in director.run.route.size():
+		all_nodes += director.run.route.nodes(index).size()
+	check(view.nodes_by_point.size() == all_nodes and view.buttons.all(func(node: RouteNode): return node.mark == RouteNode.Mark.OPEN and node.focus_mode == Control.FOCUS_ALL), "Every area is a node; the first layer's are open")
+	check(view.selected == director.run.route.nodes(0)[0] and view._detail_name.text == view.selected.area.display_name and not view._enter.disabled, "The first open node is selected and told, ready to enter")
+	var later: RouteMap.Waypoint = director.run.route.nodes(1)[0]
+	view._show_detail(later)
+	check(view._detail_name.text == later.area.display_name and view._enter.disabled and view.nodes_by_point[later].disabled, "A later node can be read, not entered")
+	view._choose(later)
+	check(view.visible and director.area == null, "Choosing a node not open does nothing")
+	view._show_detail(null)
 	var first: RouteMap.Waypoint = director.run.route.nodes(0)[0]
-	director.map_view._choose(first)
+	view._enter.pressed.emit()
 	await process_frame
 	check(director.area != null and director.area.data == first.area and not director.map_view.visible, "A choice enters its area")
 	check(director.area.hero.health.hp == director.max_hp() and director.area.hero.build == director.run.build, "She comes in whole, with the run's build")

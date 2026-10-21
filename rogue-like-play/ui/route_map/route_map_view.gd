@@ -1,44 +1,70 @@
 class_name RouteMapView
 extends CanvasLayer
 
-# The run's route between areas: the chapter's layers left to right, each
-# a column of cards (area name, its kind and difficulty, the reward it
-# offers and the time it takes, its condition, its foes), the boss last.
-# Only the current layer's cards can be chosen (mouse, the 1-3 keys, or the
-# focused card); a past layer shows the card taken, the others dimmed. Above
-# them, the run so far: level, health, echo and the boons held, and what
-# the last area gave. Every line is one line, so the panel's size is known
-# before it is laid out; a CenterContainer keeps it in the middle.
+# The run's route between areas, as roguelites commonly show it: a node map.
+# The chapter's illustration, darkened, lies behind a framed panel; along
+# its top the run so far (the chapter, health, level, echo, the boons as
+# emblems) and what the last area gave. On the left the map: the layers from
+# left to right, each a column of RouteNodes (what clearing it gives, its
+# kind and difficulty), joined by lines (the way already taken bright, the
+# ways open now gold, the rest faint), the boss last. On the right the
+# selected node's account (area, kind, time, reward, goal, foes) and the
+# button that enters it. Only the current layer's nodes can be chosen; the
+# others can still be pointed at to read them. Mouse: pointing reads a
+# node, a click enters an open one. Keys and pad: the arrows move between the
+# open nodes, Enter (A) or the button enters; 1-3 enter one at once.
 
 signal chosen(waypoint: RouteMap.Waypoint)
 
-const CARD_SIZE := Vector2(292, 168)
-const PAST_DIM := Color(1, 1, 1, 0.35)
-const AHEAD_DIM := Color(1, 1, 1, 0.7)
-const BACKDROP := Color(0.03, 0.035, 0.045, 1.0)
+const BACKDROP := Color(0.02, 0.025, 0.035, 0.78)
 const FOCUS_DELAY := 0.25
-const ECHO_NOTE := "残響は、拠点で永続強化に使う通貨です"
+const MAP_SIZE := Vector2(900, 560)
+const DETAIL_WIDTH := 400.0
+# Spacing between the nodes of a layer, and the map's side margins.
+const NODE_GAP := 170.0
+const MAP_MARGIN := 70.0
+const PATH_TAKEN := Color(0.84, 0.72, 0.48, 0.95)
+const PATH_OPEN := Color(0.84, 0.72, 0.48, 0.7)
+const PATH_FAINT := Color(0.6, 0.6, 0.58, 0.22)
+const EMBLEM_SIZE := 32.0
 
 var route: RouteMap
 # The layer to choose from now.
 var route_layer := 0
 var current: Array = []
 var buttons: Array[Button] = []
+var nodes_by_point: Dictionary = {}
+var selected: RouteMap.Waypoint
+var _run: RunState
+var _art: TextureRect
 var _title: Label
-var _status: Label
-var _boons: Label
+var _hp: Label
+var _level: Label
+var _echo: Label
+var _boons: HBoxContainer
 var _note: Label
-var _columns: HBoxContainer
+var _map: Control
+var _detail_name: Label
+var _detail_kind: Label
+var _detail_reward: Label
+var _detail_goal: Label
+var _detail_foes: Label
+var _enter: Button
 var _panel: PanelContainer
 
 
 func _ready() -> void:
 	layer = 9
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	var backdrop := ColorRect.new()
-	backdrop.color = BACKDROP
-	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(backdrop)
+	_art = TextureRect.new()
+	_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_art.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_art)
+	var shade := ColorRect.new()
+	shade.color = BACKDROP
+	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(shade)
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
@@ -48,22 +74,66 @@ func _ready() -> void:
 	var margin := MarginContainer.new()
 	_panel.add_child(margin)
 	var stack := VBoxContainer.new()
-	stack.add_theme_constant_override("separation", 10)
 	margin.add_child(stack)
-	_title = _line(stack, &"TitleLabel")
-	_status = _line(stack, &"BodyLabel")
-	_boons = _line(stack, &"MutedLabel")
+	_build_status(stack)
 	_note = _line(stack, &"GoldLabel")
-	_columns = HBoxContainer.new()
-	_columns.alignment = BoxContainer.ALIGNMENT_CENTER
-	_columns.add_theme_constant_override("separation", 16)
-	stack.add_child(_columns)
-	_line(stack, &"MutedLabel").text = ECHO_NOTE
+	var body := HBoxContainer.new()
+	stack.add_child(body)
+	_map = Control.new()
+	_map.custom_minimum_size = MAP_SIZE
+	_map.draw.connect(_draw_paths)
+	body.add_child(_map)
+	_build_detail(body)
 	var guide := KeyGuide.new()
 	guide.alignment = BoxContainer.ALIGNMENT_CENTER
 	stack.add_child(guide)
-	guide.add_hint("1・2・3", "A", "エリアを選ぶ")
+	guide.add_hint("←→↑↓", "十字", "エリアを選ぶ")
+	guide.add_hint("Enter", "A", "進む")
 	hide()
+
+
+# The top bar: the chapter on the left, the run's state on the right.
+func _build_status(stack: VBoxContainer) -> void:
+	var bar := HBoxContainer.new()
+	stack.add_child(bar)
+	_title = HubUI.label(bar, "", &"TitleLabel")
+	var gap := Control.new()
+	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.add_child(gap)
+	_boons = HBoxContainer.new()
+	_boons.alignment = BoxContainer.ALIGNMENT_END
+	bar.add_child(_boons)
+	_hp = HubUI.label(bar, "", &"ValueLabel")
+	_level = HubUI.label(bar, "", &"ValueLabel")
+	_echo = HubUI.label(bar, "", &"GoldLabel")
+	for label: Label in [_title, _hp, _level, _echo]:
+		label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	HubUI.rule(stack)
+
+
+# The selected node's account and the button that enters it.
+func _build_detail(body: HBoxContainer) -> void:
+	var detail := PanelContainer.new()
+	detail.theme_type_variation = &"InsetPanel"
+	detail.custom_minimum_size.x = DETAIL_WIDTH
+	body.add_child(detail)
+	var lines := VBoxContainer.new()
+	detail.add_child(lines)
+	_detail_name = HubUI.label(lines, "", &"HeadingLabel")
+	_detail_kind = HubUI.label(lines, "", &"MutedLabel")
+	for label: Label in [_detail_name, _detail_kind]:
+		label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	HubUI.rule(lines)
+	_detail_reward = HubUI.label(lines, "", &"GoldLabel")
+	_detail_goal = HubUI.label(lines, "", &"BodyLabel")
+	_detail_foes = HubUI.label(lines, "", &"DescriptionLabel")
+	for label: Label in [_detail_goal, _detail_foes]:
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var gap := Control.new()
+	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	lines.add_child(gap)
+	_enter = HubUI.primary_action(lines, "このエリアへ進む", func(): _choose(selected))
 
 
 # Shows the route at `at_layer` (the next to choose), with the run's state
@@ -71,21 +141,18 @@ func _ready() -> void:
 func present(route_map: RouteMap, at_layer: int, run: RunState, max_hp: int, note: String = "") -> void:
 	route = route_map
 	route_layer = at_layer
+	_run = run
+	_art.texture = route.chapter.illustration
 	_title.text = route.chapter.display_name
 	var hp := run.hp if run.hp > 0 else max_hp
-	_status.text = "Lv %d　　HP %d / %d　　残響 %d　　撃破 %d" % [run.progression.level, hp, max_hp, run.echo, run.kills]
-	var held: Array[String] = []
-	for boon in run.build.owned():
-		held.append(boon.display_name if boon.max_level == 1 else "%s %d" % [boon.display_name, run.build.rank(boon.id)])
-	_boons.text = "強化：" + ("　".join(held) if not held.is_empty() else "なし")
+	_hp.text = "HP %d / %d" % [hp, max_hp]
+	_level.text = "Lv %d" % run.progression.level
+	_echo.text = "残響 %s" % UIFormat.amount(run.echo)
+	_show_boons(run)
 	_note.text = note
 	_note.visible = not note.is_empty()
-	for child in _columns.get_children():
-		child.free()
-	buttons.clear()
-	current = route.nodes(route_layer)
-	for index in route.size():
-		_columns.add_child(_column(index, run))
+	_lay_nodes()
+	_select(current[0] if not current.is_empty() else null)
 	show()
 	UIMotion.bind_buttons(_panel)
 	get_tree().create_timer(FOCUS_DELAY).timeout.connect(_focus_first)
@@ -98,60 +165,128 @@ func _line(parent: Node, role: StringName) -> Label:
 	return label
 
 
-func _column(index: int, run: RunState) -> VBoxContainer:
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 10)
-	var last := index == route.size() - 1
-	_line(column, &"HeadingLabel").text = "ボス" if last else "第%d層" % (index + 1)
-	var chosen_here: RouteMap.Waypoint = run.taken[index] if index < run.taken.size() else null
-	for waypoint: RouteMap.Waypoint in route.nodes(index):
-		var card := _card(waypoint)
-		column.add_child(card)
-		if index == route_layer:
-			card.pressed.connect(_choose.bind(waypoint))
-			buttons.append(card)
-		else:
-			card.disabled = true
-			card.focus_mode = Control.FOCUS_NONE
-			card.modulate = AHEAD_DIM if index > route_layer else (Color.WHITE if waypoint == chosen_here else PAST_DIM)
-	return column
+func _show_boons(run: RunState) -> void:
+	for child in _boons.get_children():
+		child.free()
+	for boon in run.build.owned():
+		var icon := TextureRect.new()
+		icon.texture = EmblemIcons.texture(boon.emblem)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.custom_minimum_size = Vector2(EMBLEM_SIZE, EMBLEM_SIZE)
+		icon.tooltip_text = boon.display_name if boon.max_level == 1 else "%s %d" % [boon.display_name, run.build.rank(boon.id)]
+		_boons.add_child(icon)
 
 
-func _card(waypoint: RouteMap.Waypoint) -> Button:
-	var area := waypoint.area
-	var card := Button.new()
-	card.theme_type_variation = &"HomeCard"
-	card.custom_minimum_size = CARD_SIZE
-	card.focus_mode = Control.FOCUS_ALL
-	card.tooltip_text = "%s\n%s\n%s" % [area.display_name, area.condition, area.foe_summary]
-	var margin := MarginContainer.new()
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 14)
-	card.add_child(margin)
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var lines := VBoxContainer.new()
-	lines.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	lines.add_theme_constant_override("separation", 2)
-	margin.add_child(lines)
-	for pair: Array in [[area.display_name, &"HeadingLabel"],
-			["%s　%s　目安%d分%02d秒" % [area.kind_name(), area.stars(), area.expected_time / 60, area.expected_time % 60], &"MutedLabel"],
-			["報酬：%s" % AreaData.reward_name(waypoint.reward), &"GoldLabel"],
-			[area.condition, &"BodyLabel"], [area.foe_summary, &"MutedLabel"]]:
-		var label := HubUI.label(lines, pair[0], pair[1])
-		label.autowrap_mode = TextServer.AUTOWRAP_OFF
-		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		label.clip_text = true
-	return card
+# Every layer's nodes, placed in columns across the map.
+func _lay_nodes() -> void:
+	for child in _map.get_children():
+		child.free()
+	buttons.clear()
+	nodes_by_point.clear()
+	current = route.nodes(route_layer)
+	for index in route.size():
+		var taken_here: RouteMap.Waypoint = _run.taken[index] if index < _run.taken.size() else null
+		var points := route.nodes(index)
+		for row in points.size():
+			var point: RouteMap.Waypoint = points[row]
+			var mark := RouteNode.Mark.AHEAD
+			if index == route_layer:
+				mark = RouteNode.Mark.OPEN
+			elif index < route_layer:
+				mark = RouteNode.Mark.TAKEN if point == taken_here else RouteNode.Mark.PASSED
+			var node := RouteNode.new()
+			_map.add_child(node)
+			node.setup(point, mark)
+			node.position = _spot(index, row, points.size()) - node.size * 0.5
+			nodes_by_point[point] = node
+			node.mouse_entered.connect(_show_detail.bind(point))
+			node.mouse_exited.connect(_show_detail.bind(null))
+			if mark == RouteNode.Mark.OPEN:
+				node.pressed.connect(_on_node_pressed.bind(point))
+				node.focus_entered.connect(_select.bind(point))
+				buttons.append(node)
+			else:
+				node.disabled = true
+	# The open nodes are walked with the arrows, top to bottom and round.
+	for row in buttons.size():
+		var path := buttons[row].get_path_to(buttons[(row + 1) % buttons.size()])
+		var back := buttons[row].get_path_to(buttons[(row - 1 + buttons.size()) % buttons.size()])
+		buttons[row].focus_neighbor_bottom = path
+		buttons[row].focus_neighbor_right = path
+		buttons[row].focus_neighbor_top = back
+		buttons[row].focus_neighbor_left = back
+	_map.queue_redraw()
+
+
+# Where a layer's row sits on the map.
+func _spot(index: int, row: int, count: int) -> Vector2:
+	var span := MAP_SIZE.x - MAP_MARGIN * 2.0
+	var x := MAP_MARGIN + span * index / maxf(1.0, route.size() - 1)
+	var y := MAP_SIZE.y * 0.5 + (row - (count - 1) * 0.5) * NODE_GAP - 12.0
+	return Vector2(x, y)
+
+
+func _draw_paths() -> void:
+	if route == null:
+		return
+	for index in route.size() - 1:
+		var taken_here: RouteMap.Waypoint = _run.taken[index] if index < _run.taken.size() else null
+		for from: RouteMap.Waypoint in route.nodes(index):
+			for to: RouteMap.Waypoint in route.nodes(index + 1):
+				var color := PATH_FAINT
+				var width := 2.0
+				if index < route_layer and from == taken_here:
+					var next: RouteMap.Waypoint = _run.taken[index + 1] if index + 1 < _run.taken.size() else null
+					if to == next:
+						color = PATH_TAKEN
+						width = 4.0
+					elif index + 1 == route_layer:
+						color = PATH_OPEN
+						width = 3.0
+				_map.draw_line(_center(from), _center(to), color, width, true)
+
+
+func _center(point: RouteMap.Waypoint) -> Vector2:
+	var node: RouteNode = nodes_by_point[point]
+	return node.position + node.size * 0.5
+
+
+func _select(point: RouteMap.Waypoint) -> void:
+	selected = point
+	for node: RouteNode in nodes_by_point.values():
+		node.selected = node.waypoint == point
+	_show_detail(point)
+
+
+func _show_detail(point: RouteMap.Waypoint) -> void:
+	var shown := point if point != null else selected
+	if shown == null:
+		return
+	var area := shown.area
+	_detail_name.text = area.display_name
+	_detail_kind.text = "%s　%s　目安 %d分%02d秒" % [area.kind_name(), area.stars(), area.expected_time / 60, area.expected_time % 60]
+	_detail_reward.text = "報酬：%s" % AreaData.reward_name(shown.reward)
+	_detail_goal.text = area.condition
+	_detail_foes.text = area.foe_summary
+	_enter.disabled = not current.has(shown)
+
+
+func _on_node_pressed(point: RouteMap.Waypoint) -> void:
+	if selected == point:
+		_choose(point)
+	else:
+		_select(point)
+		nodes_by_point[point].grab_focus()
 
 
 func _focus_first() -> void:
 	if visible and not buttons.is_empty():
-		buttons[0].grab_focus()
+		buttons[current.find(selected) if current.has(selected) else 0].grab_focus()
 
 
 func _choose(waypoint: RouteMap.Waypoint) -> void:
-	if not visible:
+	if not visible or waypoint == null or not current.has(waypoint):
 		return
 	hide()
 	chosen.emit(waypoint)
