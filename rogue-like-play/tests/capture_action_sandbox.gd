@@ -5,7 +5,7 @@ extends SceneTree
 # afterimages, bringing her skill down with its ring on the floor, an
 # elite and a rat winding up their attacks with their warnings, a level-up's
 # cards and a build of lightning, fire and the wave in a crowd, the edges
-# pulsing at low health, then
+# pulsing at low health, the menu with the build beside it, then
 # the frame time with 12, 30 and 60 sentinels on the field (vsync off, the
 # hero kept alive). Images go to .godot/action_*.png; the times are printed.
 # Needs a rendering display driver:
@@ -78,6 +78,11 @@ func capture() -> void:
 	for swing in 6:
 		await drive(HeroInput.make(Vector2.ZERO, _toward_nearest(), true), 0.13)
 	await _grab("action_build")
+	# The menu with the build beside it.
+	sandbox.open_menu()
+	await create_timer(0.4, true).timeout
+	await _grab("action_menu")
+	sandbox.menu.resume()
 	# Low on health: the edges pulse red.
 	hero.health.hp = hero.health.max_hp / 6
 	await drive(HeroInput.new(), 0.3)

@@ -2,7 +2,9 @@ class_name DungeonMenu
 extends CanvasLayer
 
 # The fight's menu (Esc, or Start on a gamepad): back to the fight, the
-# settings, or leaving the run. The fight waits while it is open. The
+# settings, or leaving the run, and beside it, as action roguelites' pause
+# screens commonly show, the run's build: each boon taken with its emblem,
+# rank and what it does. The fight waits while it is open. The
 # settings are the hub's own page (HubSettings) over the dimmed field, so a
 # change made here is the same change, stored the same way, and takes effect
 # at once. Leaving goes through the area's confirmation, which says what is
@@ -14,6 +16,8 @@ signal abort_requested
 signal settings_changed
 
 const WIDTH := 460.0
+const BUILD_WIDTH := 520.0
+const EMBLEM_SIZE := 48.0
 const SHADE := Color(0.01, 0.02, 0.03, 0.82)
 # The settings read as a page of their own, as dark as the inventory's shade.
 const SETTINGS_SHADE := Color(0.01, 0.02, 0.03, 0.94)
@@ -23,7 +27,11 @@ const PAGE_RECT := Rect2(40, 110, 1480, 700)
 const EDGE := Vector2(40, 22)
 
 var settings: GameSettings
+# The run whose build is shown beside the menu; none shows no build.
+var run: RunState
 var menu: Control
+var build_panel: PanelContainer
+var build_list: VBoxContainer
 var resume_button: Button
 var settings_button: Button
 var abort_button: Button
@@ -57,10 +65,15 @@ func _build_menu() -> void:
 	menu = CenterContainer.new()
 	menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(menu)
+	var side_by_side := HBoxContainer.new()
+	side_by_side.theme_type_variation = &"ListRow"
+	menu.add_child(side_by_side)
+	_build_build(side_by_side)
 	var frame := PanelContainer.new()
 	frame.theme_type_variation = &"MainPanel"
 	frame.custom_minimum_size.x = WIDTH
-	menu.add_child(frame)
+	frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	side_by_side.add_child(frame)
 	# The theme's margins keep the buttons inside the frame's ornaments.
 	var margin := MarginContainer.new()
 	frame.add_child(margin)
@@ -84,6 +97,54 @@ func _build_menu() -> void:
 	guide.add_hint("Enter", "A", "決定")
 	guide.add_hint("Esc", "B", "戻る", back)
 	UIMotion.bind_buttons(column)
+
+
+# The run's build, as a framed list beside the menu.
+func _build_build(parent: Control) -> void:
+	build_panel = PanelContainer.new()
+	build_panel.theme_type_variation = &"MainPanel"
+	build_panel.custom_minimum_size.x = BUILD_WIDTH
+	parent.add_child(build_panel)
+	var margin := MarginContainer.new()
+	build_panel.add_child(margin)
+	var column := VBoxContainer.new()
+	column.theme_type_variation = &"DetailStack"
+	margin.add_child(column)
+	var title := HubUI.label(column, "このランの強化", &"HeadingLabel")
+	title.autowrap_mode = TextServer.AUTOWRAP_OFF
+	HubUI.rule(column)
+	build_list = VBoxContainer.new()
+	build_list.theme_type_variation = &"DetailStack"
+	column.add_child(build_list)
+
+
+func _show_build() -> void:
+	build_panel.visible = run != null
+	if run == null:
+		return
+	for child in build_list.get_children():
+		child.free()
+	var owned := run.build.owned()
+	if owned.is_empty():
+		HubUI.label(build_list, "まだ強化を取っていない。レベルを上げるとカードから選べる。", &"MutedLabel")
+	for boon in owned:
+		var rank := run.build.rank(boon.id)
+		var row := HBoxContainer.new()
+		row.theme_type_variation = &"CompactRow"
+		build_list.add_child(row)
+		var icon := TextureRect.new()
+		icon.texture = EmblemIcons.texture(boon.emblem)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.custom_minimum_size = Vector2(EMBLEM_SIZE, EMBLEM_SIZE)
+		icon.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		row.add_child(icon)
+		var words := VBoxContainer.new()
+		words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(words)
+		var name := HubUI.label(words, boon.display_name if boon.max_level == 1 else "%s　Lv %d / %d" % [boon.display_name, rank, boon.max_level], &"ItemNameLabel")
+		name.autowrap_mode = TextServer.AUTOWRAP_OFF
+		HubUI.label(words, boon.effect_description(rank), &"DescriptionLabel")
 
 
 func _build_settings() -> void:
@@ -112,6 +173,7 @@ func _build_settings() -> void:
 func open() -> void:
 	_shade.color = SHADE
 	settings_view.hide()
+	_show_build()
 	menu.show()
 	show()
 	resume_button.grab_focus()

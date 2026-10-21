@@ -84,6 +84,7 @@ func _ready() -> void:
 	menu = DungeonMenu.new()
 	menu.process_mode = Node.PROCESS_MODE_ALWAYS
 	menu.settings = settings
+	menu.run = run
 	add_child(menu)
 	menu.resumed.connect(_on_resumed)
 	menu.settings_changed.connect(_on_settings_changed)

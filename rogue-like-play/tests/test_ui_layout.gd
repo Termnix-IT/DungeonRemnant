@@ -107,6 +107,7 @@ func run_tests() -> void:
 	await settle(0.3)
 	var menu_panel: Control = area.menu.menu.get_child(0)
 	centered(menu_panel, "The fight's menu")
+	check(area.menu.build_panel.visible and area.menu.build_list.get_child_count() == area.run.build.owned().size(), "Beside the menu, every boon of the build is listed")
 	area.menu.resume()
 	await settle()
 	check(not paused, "Leaving the menu resumes the fight")
