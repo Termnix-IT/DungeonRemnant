@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=9 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/boss_sweep.tres" id="3"]
+[ext_resource type="Resource" path="res://data/attacks/boss_charge.tres" id="4"]
+[ext_resource type="Resource" path="res://data/attacks/boss_quake.tres" id="5"]
+[ext_resource type="Resource" path="res://data/attacks/boss_great_quake.tres" id="6"]
+[ext_resource type="Resource" path="res://data/foes/dashing_rat.tres" id="7"]
+[resource]
+script = ExtResource("1")
+id = &"ruin_king"
+display_name = "遺跡王"
+visual_id = "boss_ruin_king"
+size_scale = 1.3
+elite = false
+max_hp = 1500
+defense = 2
+speed = 85.0
+acceleration = 700.0
+speed_spread = 0.0
+contact_damage = 14
+contact_knockback = 420.0
+contact_cooldown = 0.9
+hit_radius = 34.0
+knockback_resist = 0.95
+hitstun = 0.0
+exp_reward = 40
+attacks = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4"), ExtResource("5")])
+power = 18.0
+attack_cooldown = 1.2
+boss = true
+phase_two_at = 0.5
+phase_two_attacks = Array[ExtResource("2")]([ExtResource("6")])
+phase_two_speed = 1.3
+phase_two_cooldown = 0.6
+summon = ExtResource("7")
+summon_count = 6

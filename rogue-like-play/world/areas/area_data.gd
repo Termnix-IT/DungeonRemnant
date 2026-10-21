@@ -4,9 +4,10 @@ extends Resource
 # One battlefield a run can enter: what the route map tells of it, the
 # ground it is fought on, and how it is cleared. An open field sends a
 # growing crowd (spawn_table) until the hero has lasted survive_time or felled
-# kill_target; an arena sends its waves one after another; a boss hall (for
-# now) is a hard arena. reward_weights decide which reward a node of it
-# offers, so the kind of area leans the reward without fixing it.
+# kill_target; an arena sends its waves one after another; a boss hall sends
+# its boss (and any waves beside it) and is won when the boss falls.
+# reward_weights decide which reward a node of it offers, so the kind of
+# area leans the reward without fixing it.
 
 enum Kind { FIELD, ARENA, BOSS }
 enum Reward { BOON, HEAL, ECHO }
@@ -44,6 +45,8 @@ const REWARD_NAMES := {Reward.BOON: "強化", Reward.HEAL: "回復", Reward.ECHO
 @export_range(0.0, 3600.0) var survive_time := 0.0
 @export_range(0, 10000) var kill_target := 0
 @export var waves: Array[WaveData] = []
+# A boss hall's boss, which comes in BOSS_DELAY after she enters.
+@export var boss: FoeData
 
 
 func kind_name() -> String:

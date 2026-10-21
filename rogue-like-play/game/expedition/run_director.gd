@@ -7,19 +7,22 @@ extends Node
 # run's health and build; a cleared area gives its waypoint's reward (three
 # boon cards, a heal, or echo) and the route moves on a layer. The boss
 # cleared, or the hero fallen, ends the run (RunEndView, and `finished`
-# with the result); Phase 5 will take it back to the base from there.
+# with the result, which the base records in its MetaProgress). Given the
+# base's MetaProgress, the run starts with its lasting upgrades: her
+# tuning, and with the parting blessing a boon chosen before the map.
 
 signal finished(result: Dictionary)
 
 const CHAPTER := preload("res://data/chapters/ash_corridor.tres")
 const CHOICE := preload("res://ui/ability_choice.tscn")
-const HERO_TUNING := preload("res://data/hero/mio.tres")
 # A heal reward restores this share of her health.
 const HEAL_SHARE := 0.35
 # From her fall to the end of the run.
 const FALL_PAUSE := 1.6
 
 @export var seed_value := 0
+# The base's lasting progress; none fights as a new player.
+var meta: MetaProgress
 var chapter: ChapterData = CHAPTER
 var run: RunState
 var area: BattleArea
@@ -29,11 +32,14 @@ var end_view: RunEndView
 var result: Dictionary = {}
 var waypoint: RouteMap.Waypoint
 var _rewarding := false
+var _blessing := false
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	run = RunState.new(seed_value)
+	if meta != null:
+		run.tuning = meta.tuning(run.tuning)
 	run.route = RouteMap.generate(chapter, run.rng)
 	map_view = RouteMapView.new()
 	add_child(map_view)
@@ -45,11 +51,24 @@ func _ready() -> void:
 	end_view = RunEndView.new()
 	add_child(end_view)
 	end_view.again_requested.connect(_again)
-	show_map()
+	if meta != null and meta.starts_with_boon():
+		_bless()
+	else:
+		show_map()
 
 
 func max_hp() -> int:
-	return HERO_TUNING.max_hp
+	return run.tuning.max_hp
+
+
+# The parting blessing: a boon from three before the first choice of area.
+func _bless() -> void:
+	var offer := run.build.offer(run.rng)
+	if offer.is_empty():
+		show_map()
+		return
+	_blessing = true
+	choice.present_boons(offer, run.build, run.progression.level, 1, "旅立ちの加護　強化を1つ選ぶ")
 
 
 func show_map(note: String = "") -> void:
@@ -94,6 +113,12 @@ func grant(reward: AreaData.Reward) -> void:
 
 
 func _on_reward_chosen(id: StringName) -> void:
+	if _blessing:
+		_blessing = false
+		var gift := run.build.find(id)
+		run.build.take(gift)
+		show_map("旅立ちの加護　「%s」を得た" % gift.display_name)
+		return
 	if not _rewarding:
 		return
 	_rewarding = false
@@ -125,6 +150,7 @@ func _after_fall() -> void:
 func _leave_area() -> void:
 	run.kills += area.kills
 	run.time += area.elapsed
+	run.met.merge(area.met)
 	remove_child(area)
 	area.queue_free()
 	area = null
@@ -139,7 +165,7 @@ func finish(cleared: bool) -> void:
 		boons.append(boon.display_name)
 	result = {"cleared": cleared, "layer": mini(run.layer, run.route.size() - 1), "layers": run.route.size(),
 		"chapter": chapter.display_name, "time": run.time, "kills": run.kills,
-		"level": run.progression.level, "boons": boons, "echo": run.echo}
+		"level": run.progression.level, "boons": boons, "echo": run.echo, "met": run.met.keys()}
 	map_view.hide()
 	end_view.present(result)
 	finished.emit(result)

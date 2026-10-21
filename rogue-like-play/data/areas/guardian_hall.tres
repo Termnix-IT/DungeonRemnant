@@ -1,19 +1,15 @@
-[gd_resource type="Resource" script_class="AreaData" load_steps=9 format=3]
+[gd_resource type="Resource" script_class="AreaData" load_steps=10 format=3]
 [ext_resource type="Script" path="res://world/areas/area_data.gd" id="1"]
 [ext_resource type="Script" path="res://world/areas/wave_data.gd" id="2"]
 [ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="3"]
 [ext_resource type="Resource" path="res://data/foes/wandering_sentinel.tres" id="4"]
 [ext_resource type="Resource" path="res://data/foes/dashing_rat.tres" id="5"]
 [ext_resource type="Resource" path="res://data/foes/raging_charger.tres" id="6"]
+[ext_resource type="Resource" path="res://data/foes/ruin_king.tres" id="7"]
 [sub_resource type="Resource" id="Wave0"]
 script = ExtResource("2")
 foes = Array[ExtResource("3")]([ExtResource("4"), ExtResource("5")])
-counts = Array[int]([16, 10])
-spawns_per_second = 6.0
-[sub_resource type="Resource" id="Wave1"]
-script = ExtResource("2")
-foes = Array[ExtResource("3")]([ExtResource("6"), ExtResource("5")])
-counts = Array[int]([2, 10])
+counts = Array[int]([10, 4])
 spawns_per_second = 4.0
 [resource]
 script = ExtResource("1")
@@ -21,12 +17,13 @@ id = &"guardian_hall"
 display_name = "守護者の間"
 kind = 2
 difficulty = 3
-condition = "群れと2体の精鋭を倒す"
-foe_summary = "精鋭の突進獣2体と、その群れ"
+condition = "遺跡王を倒す"
+foe_summary = "遺跡王と番兵の守り。怒ると鼠を呼ぶ"
 expected_time = 120
 reward_weights = {2: 1.0}
 echo = 150
 size = Vector2i(30, 22)
 theme = 3
 pillars = Array[Vector2i]([Vector2i(7, 5), Vector2i(21, 5), Vector2i(7, 15), Vector2i(21, 15)])
-waves = Array[ExtResource("2")]([SubResource("Wave0"), SubResource("Wave1")])
+waves = Array[ExtResource("2")]([SubResource("Wave0")])
+boss = ExtResource("7")

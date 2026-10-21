@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"sturdy_body"
+display_name = "鍛えた体"
+description = "最大HPが15増える"
+costs = Array[int]([80, 160, 280])
+effect = &"max_hp"
+per_rank = 15.0
+emblem = "max_hp"

@@ -62,6 +62,8 @@ var shake_scale := 1.0
 # Spawns since the area opened, and foes brought back from the pool.
 var spawned := 0
 var reused := 0
+# The foes that came into the area, by FoeData.id (for the encyclopedia).
+var met: Dictionary = {}
 var _shake: Tween
 var _last_hit_sound := -HIT_SOUND_GAP
 var _last_death_sound := -DEATH_SOUND_GAP
@@ -125,8 +127,11 @@ func _physics_process(delta: float) -> void:
 		gems.step(hero.global_position, delta)
 
 
-func spawn_hero(at: Vector2) -> Hero:
+# `tuning` replaces the scene's (a run's, with its lasting upgrades).
+func spawn_hero(at: Vector2, tuning: HeroTuning = null) -> Hero:
 	hero = HERO_SCENE.instantiate()
+	if tuning != null:
+		hero.tuning = tuning
 	hero.area = self
 	hero.position = at
 	actors.add_child(hero)
@@ -138,6 +143,7 @@ func spawn_hero(at: Vector2) -> Hero:
 
 func spawn_foe(data: FoeData, at: Vector2) -> Foe:
 	spawned += 1
+	met[data.id] = true
 	var kept: Array = _pool.get(data, [])
 	var foe: Foe
 	if not kept.is_empty():

@@ -26,6 +26,7 @@ var exp_bar: ProgressBar
 var level_label: Label
 var skill_label: Label
 var boons_label: Label
+var boss_gauge: BossGauge
 
 
 func _ready() -> void:
@@ -95,6 +96,15 @@ func _ready() -> void:
 	guide.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	guide.position.y -= 36
 	root.add_child(guide)
+	boss_gauge = BossGauge.new()
+	boss_gauge.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	boss_gauge.offset_left = -380
+	boss_gauge.offset_right = 380
+	boss_gauge.offset_top = 30
+	boss_gauge.offset_bottom = 132
+	boss_gauge.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	root.add_child(boss_gauge)
+	boss_gauge.hide()
 	message = Label.new()
 	message.theme_type_variation = &"HudValue"
 	message.add_theme_font_size_override("font_size", 34)
@@ -149,6 +159,12 @@ func _process(_delta: float) -> void:
 			var rank := run.build.rank(boon.id)
 			taken.append(boon.display_name if boon.max_level == 1 else "%s %d" % [boon.display_name, rank])
 		boons_label.text = "　".join(taken)
+	var boss: Foe = area.get(&"boss_foe")
+	if boss != null and is_instance_valid(boss) and not boss.dying:
+		if boss_gauge.bar == null or not boss_gauge.visible or boss_gauge.bar.value != boss.health.hp:
+			boss_gauge.present(boss.data.display_name, boss.health.hp, boss.health.max_hp)
+	elif boss_gauge.visible:
+		boss_gauge.present("", 0, 0)
 	dashes.queue_redraw()
 
 

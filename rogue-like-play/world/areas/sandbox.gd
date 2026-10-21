@@ -32,7 +32,7 @@ func _lay_out() -> void:
 	hall.size = SIZE
 	hall.pillars.assign(PILLARS)
 	ground.build(SIZE, hall.walls())
-	spawn_hero(ground.bounds().get_center())
+	spawn_hero(ground.bounds().get_center(), run.tuning)
 	director = EnemyDirector.new()
 	director.name = "Director"
 	director.process_mode = Node.PROCESS_MODE_PAUSABLE

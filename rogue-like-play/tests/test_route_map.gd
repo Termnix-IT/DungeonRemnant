@@ -111,11 +111,13 @@ func run_tests() -> void:
 		check(clear, "The middle, where she starts, is open: " + name)
 		if area.kind == AreaData.Kind.FIELD:
 			check(area.spawn_table != null and (area.survive_time > 0.0 or area.kill_target > 0), "A field sends a crowd and has a goal: " + name)
-		else:
+		elif area.kind == AreaData.Kind.ARENA:
 			var total := 0
 			for wave in area.waves:
 				total += wave.total()
-			check(area.waves.size() >= 2 and total > 0, "An arena or the boss hall has its waves: " + name)
+			check(area.waves.size() >= 2 and total > 0, "An arena has its waves: " + name)
+		else:
+			check(area.boss != null and area.boss.boss, "The boss hall has its boss: " + name)
 	var wave: WaveData = arena.waves[2]
 	var order := wave.order()
 	check(order.size() == wave.total() and order[0] == wave.foes[0] and order[1] == wave.foes[1], "A wave's foes arrive with the kinds taken in turn")

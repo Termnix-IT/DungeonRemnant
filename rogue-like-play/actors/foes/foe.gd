@@ -12,6 +12,8 @@ extends CharacterBody2D
 
 signal fell(foe: Foe)
 signal retired(foe: Foe)
+# A boss entered its second phase (FoeData.phase_two_at).
+signal phase_changed(foe: Foe)
 
 const FADE_DELAY := 0.35
 const FADE_TIME := 0.3
@@ -33,6 +35,8 @@ var rng := RandomNumberGenerator.new()
 var hit_radius := 14.0
 var speed := 95.0
 var dying := false
+# 1, or 2 once a boss has entered its second phase.
+var phase := 1
 var walk := Vector2.ZERO
 var on_screen := true
 # The attack under way, and how far into it.
@@ -86,6 +90,7 @@ func revive(at: Vector2) -> void:
 		_fade.kill()
 	health = Combatant.new(data.max_hp, data.defense)
 	speed = data.speed * (1.0 + rng.randf_range(-data.speed_spread, data.speed_spread))
+	phase = 1
 	dying = false
 	walk = Vector2.ZERO
 	_push = Vector2.ZERO
@@ -230,7 +235,28 @@ func receive(info: DamageInfo) -> int:
 	view.hurt(flinch and attack == null)
 	if not health.alive():
 		_fall()
+	elif phase == 1 and data.phase_two_at > 0.0 and health.hp <= health.max_hp * data.phase_two_at:
+		_enter_phase_two()
 	return lost
+
+
+# The attacks it may use now: its own, and in a second phase those too.
+func attack_list() -> Array[AttackData]:
+	if phase < 2:
+		return data.attacks
+	var both: Array[AttackData] = data.attacks.duplicate()
+	both.append_array(data.phase_two_attacks)
+	return both
+
+
+# Breaks off what it was doing, quickens, and tells its area (which calls
+# its summons and shows it).
+func _enter_phase_two() -> void:
+	phase = 2
+	_cancel_attack()
+	speed *= data.phase_two_speed
+	brain.cooldown = data.phase_two_cooldown
+	phase_changed.emit(self)
 
 
 # Puts a status on (or renews it). `power` is the blow's strength, which a

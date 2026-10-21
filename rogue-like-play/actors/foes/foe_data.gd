@@ -39,3 +39,17 @@ extends Resource
 @export_range(0.0, 10000.0) var power := 10.0
 # The least time from the end of one attack to the start of the next.
 @export_range(0.0, 20.0) var attack_cooldown := 1.0
+
+@export_group("Boss")
+# A boss's health is shown across the top of the screen.
+@export var boss := false
+# At or below this share of its health it enters its second phase: its
+# phase_two_attacks join the others, it walks phase_two_speed times as fast,
+# rests phase_two_cooldown between attacks, and calls summon_count of
+# `summon` to its side. Zero: one phase only.
+@export_range(0.0, 1.0) var phase_two_at := 0.0
+@export var phase_two_attacks: Array[AttackData] = []
+@export_range(0.1, 3.0) var phase_two_speed := 1.3
+@export_range(0.0, 20.0) var phase_two_cooldown := 0.6
+@export var summon: FoeData
+@export_range(0, 30) var summon_count := 0

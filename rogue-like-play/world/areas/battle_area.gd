@@ -6,7 +6,9 @@ extends CombatArea
 # pauses the fight for three boon cards. Given an AreaData, it lays out its
 # ground and plays its rules: an open field's growing crowd (EnemyDirector)
 # until the hero has lasted survive_time or felled kill_target, or an
-# arena's waves (WaveRunner). When cleared, the foes left vanish, the gems
+# arena's waves (WaveRunner), or a boss hall's boss (its fall wins it; at
+# its second phase it calls its summons in on marks). When cleared, the
+# foes left vanish, the gems
 # lying about fly to her, and `cleared` follows a moment later. The sandbox
 # extends it with its own hall and no clearing.
 
@@ -16,6 +18,11 @@ const CHOICE := preload("res://ui/ability_choice.tscn")
 # From the clear to `cleared`: the gems fly in and the hero takes a breath.
 const CLEAR_PAUSE := 1.4
 const BANNER_TIME := 2.6
+# From entering a boss hall to the boss's mark, and the mark's time.
+const BOSS_DELAY := 1.5
+const BOSS_MARK_TIME := 1.0
+# The boss comes in this share of the way down from the hall's top.
+const BOSS_PLACE := 0.28
 
 @export var seed_value := 0
 var data: AreaData
@@ -24,6 +31,10 @@ var hud: ActionHud
 var choice: CanvasLayer
 var director: EnemyDirector
 var waves: WaveRunner
+# The boss once it is in, and whether it has fallen.
+var boss_foe: Foe
+var boss_down := false
+var _boss_left := -1.0
 # Seconds fought, counted while the hero stands and the fight runs.
 var elapsed := 0.0
 var finished := false
@@ -64,7 +75,7 @@ func _ready() -> void:
 # The ground, the hero and the rules from its AreaData.
 func _lay_out() -> void:
 	ground.build(data.size, data.walls(), data.theme)
-	spawn_hero(ground.bounds().get_center())
+	spawn_hero(ground.bounds().get_center(), run.tuning)
 	if data.kind == AreaData.Kind.FIELD and data.spawn_table != null:
 		director = EnemyDirector.new()
 		director.name = "Director"
@@ -76,6 +87,8 @@ func _lay_out() -> void:
 		waves.name = "Waves"
 		marks.add_child(waves)
 		waves.start(self, data.waves, seed_value)
+	if data.boss != null:
+		_boss_left = BOSS_DELAY
 
 
 func _physics_process(delta: float) -> void:
@@ -97,6 +110,10 @@ func _physics_process(delta: float) -> void:
 	elapsed += delta
 	if waves != null:
 		waves.advance(delta)
+	if _boss_left >= 0.0:
+		_boss_left -= delta
+		if _boss_left < 0.0:
+			_bring_boss()
 	if is_clear():
 		clear()
 
@@ -104,6 +121,8 @@ func _physics_process(delta: float) -> void:
 func is_clear() -> bool:
 	if data == null:
 		return false
+	if data.boss != null:
+		return boss_down
 	if waves != null:
 		return waves.done()
 	return (data.survive_time > 0.0 and elapsed >= data.survive_time) or (data.kill_target > 0 and kills >= data.kill_target)
@@ -128,6 +147,8 @@ func clear() -> void:
 func objective_text() -> String:
 	if data == null:
 		return ""
+	if data.boss != null:
+		return "%sを倒す" % data.boss.display_name
 	if waves != null:
 		if waves.wave < 0:
 			return "ウェーブ 1/%d　まもなく" % data.waves.size()
@@ -138,6 +159,35 @@ func objective_text() -> String:
 		return "撃破 %d/%d" % [mini(kills, data.kill_target), data.kill_target]
 	var left := maxf(0.0, data.survive_time - elapsed)
 	return "生き延びる　残り %d:%02d" % [floori(left / 60.0), floori(left) % 60]
+
+
+# The boss's mark, then the boss.
+func _bring_boss() -> void:
+	var at := Vector2(ground.bounds().get_center().x, ground.bounds().size.y * BOSS_PLACE)
+	waves.mark(at, data.boss, BOSS_MARK_TIME)
+	waves.spawned.connect(_on_marked_spawn)
+
+
+func _on_marked_spawn(foe: Foe) -> void:
+	if foe.data != data.boss or boss_foe != null:
+		return
+	boss_foe = foe
+	foe.phase_changed.connect(_on_boss_phase)
+	foe.fell.connect(func(_foe: Foe): boss_down = true)
+	shake(HURT_SHAKE)
+
+
+# The boss's second phase: its summons come in on marks around the hall.
+func _on_boss_phase(foe: Foe) -> void:
+	shake(HURT_SHAKE * 1.5)
+	hud.show_message("%sが怒り狂った" % foe.data.display_name)
+	_banner_left = BANNER_TIME * 0.6
+	if foe.data.summon == null:
+		return
+	for index in foe.data.summon_count:
+		var at := waves.spawn_point()
+		if at != Vector2.INF:
+			waves.mark(at, foe.data.summon, WaveRunner.MARK_TIME)
 
 
 func choosing() -> bool:

@@ -10,6 +10,7 @@ extends RefCounted
 # a new RunState.
 
 const LEVELS := preload("res://data/progression/action_levels.tres")
+const HERO := preload("res://data/hero/mio.tres")
 const BOONS: Array[BoonData] = [
 	preload("res://data/boons/thunder_blade.tres"),
 	preload("res://data/boons/chain_lightning.tres"),
@@ -24,6 +25,10 @@ const BOONS: Array[BoonData] = [
 var progression := RunProgression.new()
 var build := BuildState.new(BOONS)
 var rng := RandomNumberGenerator.new()
+# Her tuning for the run (the lasting upgrades applied); never the data itself.
+var tuning: HeroTuning = HERO.duplicate()
+# Foes met in the run, by FoeData.id.
+var met: Dictionary = {}
 # Her health carried from area to area; 0 or less: full.
 var hp := 0
 var route: RouteMap
