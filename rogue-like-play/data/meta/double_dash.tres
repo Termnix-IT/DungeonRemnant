@@ -8,4 +8,4 @@ description = "ダッシュを2回続けて使える"
 costs = Array[int]([300])
 effect = &"dash_charges"
 per_rank = 1.0
-emblem = "vitality"
+emblem = "double_dash"

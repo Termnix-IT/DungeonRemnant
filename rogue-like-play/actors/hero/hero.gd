@@ -54,7 +54,7 @@ func _ready() -> void:
 	motor.skill_used.connect(_on_skill_used)
 	motor.dashed.connect(_on_dashed)
 	motor.dash_ended.connect(_on_dash_ended)
-	motor.charge_ready.connect(view.charge_ready)
+	motor.charge_ready.connect(_on_charge_ready)
 
 
 # Fights with the run's build from now on.
@@ -154,9 +154,16 @@ func _on_skill_used(attack: AttackData) -> void:
 		area.events.skill_used.emit(attack)
 
 
-func _on_dashed(direction: Vector2) -> void:
-	view.dash()
+func _on_charge_ready() -> void:
+	view.charge_ready()
 	if area != null:
+		area.report_charge_ready(self)
+
+
+func _on_dashed(direction: Vector2) -> void:
+	view.dash(direction)
+	if area != null:
+		area.report_dash(self, direction)
 		area.events.dash_started.emit(direction)
 
 

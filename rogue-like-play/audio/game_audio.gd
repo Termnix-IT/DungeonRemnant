@@ -6,7 +6,8 @@ extends RefCounted
 ## set_override() replaces either, e.g. in tests.
 
 const SAMPLE_RATE := 22050
-const MAX_VOICES := 8
+# Enough for a crowd fight: swings, hits, falls, pickups and triggers at once.
+const MAX_VOICES := 12
 const VOICE_GROUP := &"game_audio_voices"
 # duration, start/end frequency, noise share, decay, optional note sequence
 const PROFILES := {
@@ -25,6 +26,10 @@ const PROFILES := {
 	&"boss": [0.7, 0.0, 0.0, 0.18, 0.9, [146.83, 138.59, 110.0]],
 	&"victory": [0.72, 0.0, 0.0, 0.0, 0.9, [523.25, 659.25, 783.99, 1046.5]],
 	&"defeat": [0.62, 0.0, 0.0, 0.04, 1.8, [392.0, 329.63, 261.63, 196.0]],
+	&"dash": [0.16, 900.0, 240.0, 0.92, 1.4, []],
+	&"charge": [0.26, 0.0, 0.0, 0.0, 1.3, [783.99, 1174.66]],
+	&"zap": [0.2, 1800.0, 500.0, 0.7, 1.9, []],
+	&"burst": [0.32, 240.0, 70.0, 0.75, 1.5, []],
 }
 
 const ASSETS := {

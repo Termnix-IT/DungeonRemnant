@@ -16,3 +16,4 @@ hit_stop = 0.06
 move_scale = 0.15
 lunge = 26.0
 effect = &"slash"
+motion = &"attack_heavy"

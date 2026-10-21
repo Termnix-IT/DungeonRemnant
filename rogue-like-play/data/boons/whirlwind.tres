@@ -20,5 +20,5 @@ description = "ダッシュの終わりに周りを斬り払う"
 families = Array[String](["回避", "範囲"])
 max_level = 3
 weight = 1.0
-emblem = "sword_damage"
+emblem = "whirlwind"
 effects = Array[ExtResource("2")]([SubResource("Spin")])

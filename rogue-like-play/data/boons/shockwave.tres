@@ -26,5 +26,5 @@ description = "3段目の攻撃が斬撃の波を飛ばす"
 families = Array[String](["連撃"])
 max_level = 3
 weight = 1.0
-emblem = "spear_range"
+emblem = "shockwave"
 effects = Array[ExtResource("2")]([SubResource("Third")])

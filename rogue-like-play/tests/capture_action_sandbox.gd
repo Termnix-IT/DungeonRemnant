@@ -1,9 +1,11 @@
 extends SceneTree
 
 # The Phase 1 sandbox drawn for real at 1600x900: the hero among sentinels,
-# mid-swing, charging, letting the charged attack loose and dashing, an
+# mid-swing, charging, letting the charged attack loose, dashing with her
+# afterimages, bringing her skill down with its ring on the floor, an
 # elite and a rat winding up their attacks with their warnings, a level-up's
-# cards and a build of lightning, fire and the wave in a crowd, then
+# cards and a build of lightning, fire and the wave in a crowd, the edges
+# pulsing at low health, then
 # the frame time with 12, 30 and 60 sentinels on the field (vsync off, the
 # hero kept alive). Images go to .godot/action_*.png; the times are printed.
 # Needs a rendering display driver:
@@ -47,6 +49,9 @@ func capture() -> void:
 	await drive(HeroInput.new(), 0.5)
 	await drive(HeroInput.make(Vector2.RIGHT, Vector2.ZERO, false, false, true), 0.08)
 	await _grab("action_dash")
+	await drive(HeroInput.new(), 0.5)
+	await drive(HeroInput.make(Vector2.ZERO, _toward_nearest(), false, false, false, true), 0.2)
+	await _grab("action_skill")
 	# A raging charger winding up its slam beside her, and a rat its pounce.
 	sandbox.director.running = false
 	var charger: Foe = sandbox.spawn_foe(load("res://data/foes/raging_charger.tres"), hero.global_position + Vector2(90, 20))
@@ -73,6 +78,11 @@ func capture() -> void:
 	for swing in 6:
 		await drive(HeroInput.make(Vector2.ZERO, _toward_nearest(), true), 0.13)
 	await _grab("action_build")
+	# Low on health: the edges pulse red.
+	hero.health.hp = hero.health.max_hp / 6
+	await drive(HeroInput.new(), 0.3)
+	await _grab("action_danger")
+	hero.health.hp = hero.health.max_hp
 	await drive(HeroInput.new(), 0.3)
 	sandbox.director.fixed_alive = 12
 	var times := {}

@@ -28,6 +28,8 @@ const BOSS_DELAY := 1.5
 const BOSS_MARK_TIME := 1.0
 # The boss comes in this share of the way down from the hall's top.
 const BOSS_PLACE := 0.28
+# The light that rises around her when a level's boon is taken.
+const LEVEL_UP_SCALE := 1.1
 
 @export var seed_value := 0
 var data: AreaData
@@ -92,9 +94,13 @@ func _ready() -> void:
 	prompt.confirmed.connect(_on_abandon_confirmed)
 	prompt.canceled.connect(func(): menu.open())
 	hero_fell.connect(_on_hero_down)
+	var air := BattleAmbience.new()
+	air.name = "Ambience"
+	add_child(air)
 	if data != null:
 		hud.show_message("%s\n%s" % [data.display_name, objective_text()])
 		_banner_left = BANNER_TIME
+		GameAudio.play(self, &"floor", -18.0)
 
 
 # The ground, the hero and the rules from its AreaData.
@@ -164,6 +170,7 @@ func clear() -> void:
 	dismiss_foes()
 	gems.pull_radius = INF
 	hud.show_message("制圧完了")
+	GameAudio.play(self, &"victory", -16.0)
 	_banner_left = CLEAR_PAUSE
 	_clear_left = CLEAR_PAUSE
 
@@ -191,6 +198,7 @@ func _bring_boss() -> void:
 	var at := Vector2(ground.bounds().get_center().x, ground.bounds().size.y * BOSS_PLACE)
 	waves.mark(at, data.boss, BOSS_MARK_TIME)
 	waves.spawned.connect(_on_marked_spawn)
+	GameAudio.play(self, &"boss", -14.0)
 
 
 func _on_marked_spawn(foe: Foe) -> void:
@@ -206,6 +214,7 @@ func _on_marked_spawn(foe: Foe) -> void:
 func _on_boss_phase(foe: Foe) -> void:
 	shake(HURT_SHAKE * 1.5)
 	hud.show_message("%sが怒り狂った" % foe.data.display_name)
+	GameAudio.play(self, &"warning", -16.0)
 	_banner_left = BANNER_TIME * 0.6
 	if foe.data.summon == null:
 		return
@@ -221,6 +230,7 @@ func choosing() -> bool:
 
 func _on_gems(amount: int) -> void:
 	if run.gain(amount):
+		GameAudio.play(self, &"level_up", -16.0)
 		_offer()
 
 
@@ -241,6 +251,8 @@ func _on_chosen(id: StringName) -> void:
 		_offer()
 	if not choosing():
 		get_tree().paused = false
+		# The power taken rises around her as the fight resumes.
+		_effect(&"level_up", hero.global_position + BODY_MIDDLE * 0.5, Vector2.RIGHT, LEVEL_UP_SCALE)
 
 
 func _on_hero_down() -> void:

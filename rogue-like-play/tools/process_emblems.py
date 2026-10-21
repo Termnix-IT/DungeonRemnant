@@ -4,9 +4,10 @@ Each board in art/emblems/painted/source/ is a grid of round medallions on
 flat magenta, in the order listed in BOARDS. Every medallion is cut out (its
 edge pulled in by EDGE_TRIM px so no magenta fringe stays), centred in a
 square and shrunk to SIZE px as art/emblems/<key>.png, which Godot imports
-with mipmaps and the UI draws with mipmapped linear filtering. Keys are the
-AbilityData.Effect names in lower case, plus the upgrade-only vitality and
-mana; see ui/emblem_icons.gd.
+with mipmaps and the UI draws with mipmapped linear filtering. The data
+names its emblem by key (BoonData.emblem, MetaUpgrade.emblem); see
+ui/emblem_icons.gd. The first two boards were drawn for the turn-based
+game's abilities; c and d hold the boons' and the lasting upgrades' own.
 
 	python tools/process_emblems.py
 """
@@ -31,6 +32,8 @@ EDGE_TRIM = 5
 BOARDS = [
 	("emblems_a.png", 2, 3, ["max_hp", "vitality", "kill_heal", "defense", "vision", "mana"]),
 	("emblems_b.png", 2, 3, ["attack", "sword_damage", "spear_damage", "hammer_damage", "spear_range", "spear_pierce"]),
+	("emblems_c.png", 2, 3, ["thunder_blade", "chain_lightning", "whirlwind", "afterimage", "shockwave", "great_charge"]),
+	("emblems_d.png", 2, 2, ["hellfire", "blade_speed", "double_dash", "parting_blessing"]),
 ]
 
 

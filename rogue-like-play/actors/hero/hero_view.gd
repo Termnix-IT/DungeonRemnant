@@ -2,9 +2,11 @@ class_name HeroView
 extends Node2D
 
 # How the hero looks, read from her motor each frame: the illustration rig
-# turned to her facing and walking while she moves, the swing, the dash's
-# fading body, the flash of a hurt, the blink of her mercy time and the ring
-# of a charge at her feet. It never changes what happens in the fight.
+# turned to her facing and walking while she moves, each swing's own motion
+# (AttackData.motion), the wound-back stance while she charges, the dash's
+# lunge with its fading body and the afterimages it leaves, the flinch and
+# flash of a hurt, the blink of her mercy time and the ring of a charge at
+# her feet. It never changes what happens in the fight.
 
 const MIO_RIG := preload("res://art/characters/mio_rig/mio_rig.tscn")
 const RIG_HEIGHT := 64.0
@@ -15,6 +17,11 @@ const RING_RADIUS := 22.0
 const CHARGE_COLOR := Color("ffd27a")
 const DASH_ALPHA := 0.55
 const HURT_TINT := Color(2.2, 0.75, 0.7)
+# The dash's afterimages: one left every GHOST_GAP seconds of the dash, in
+# her pose of that moment, cool and see-through, fading over GHOST_TIME.
+const GHOST_GAP := 0.045
+const GHOST_TIME := 0.26
+const GHOST_TINT := Color(0.62, 0.74, 1.0, 0.55)
 const FACINGS: Array[Vector2i] = [Vector2i.RIGHT, Vector2i(1, 1), Vector2i.DOWN, Vector2i(-1, 1),
 	Vector2i.LEFT, Vector2i(-1, -1), Vector2i.UP, Vector2i(1, -1)]
 
@@ -25,6 +32,7 @@ var _facing_index := 0
 var _flash: Tween
 var _charge_pulse := 0.0
 var _down := false
+var _ghost_left := 0.0
 
 
 func setup(owner_hero: Hero) -> void:
@@ -43,10 +51,18 @@ func _process(delta: float) -> void:
 		return
 	var motor := hero.motor
 	_turn_to(motor.facing)
+	rig.braced = motor.charging()
 	var moving := motor.motion()
-	if motor.state in [HeroMotor.State.FREE, HeroMotor.State.CHARGE] and moving.length() > 30.0:
+	# Charging, she keeps her stance while she creeps.
+	if motor.state == HeroMotor.State.FREE and moving.length() > 30.0:
 		rig.step(moving)
-	var alpha := DASH_ALPHA if motor.state == HeroMotor.State.DASH else 1.0
+	var dashing := motor.state == HeroMotor.State.DASH
+	if dashing:
+		_ghost_left -= delta
+		if _ghost_left <= 0.0:
+			_ghost_left = GHOST_GAP
+			_leave_ghost()
+	var alpha := DASH_ALPHA if dashing else 1.0
 	# Her mercy time blinks.
 	if hero.health.protected() and fmod(Time.get_ticks_msec() / 70.0, 2.0) < 1.0:
 		alpha *= 0.45
@@ -55,12 +71,13 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
-func swing(_attack: AttackData) -> void:
-	rig.attack()
+func swing(attack: AttackData) -> void:
+	rig.attack(attack.motion)
 
 
-func dash() -> void:
-	rig.step(hero.motor.facing)
+func dash(direction: Vector2) -> void:
+	rig.dash(direction)
+	_ghost_left = 0.0
 
 
 func charge_ready() -> void:
@@ -68,11 +85,13 @@ func charge_ready() -> void:
 
 
 func hurt() -> void:
+	rig.hurt()
 	_tint(HURT_TINT, 0.18)
 
 
 func fall() -> void:
 	_down = true
+	rig.braced = false
 	rig.idle()
 	rig_view.modulate.a = 1.0
 	var tween := create_tween()
@@ -88,6 +107,21 @@ func _tint(color: Color, duration: float) -> void:
 	rig.modulate = color
 	_flash = create_tween()
 	_flash.tween_property(rig, "modulate", Color.WHITE, duration)
+
+
+# A still copy of the rig as it is now, left on the floor under the actors
+# where she stands, fading away.
+func _leave_ghost() -> void:
+	var shown := rig.rig
+	var layer: Node = hero.area.marks if hero.area != null else get_parent()
+	var ghost := shown.duplicate() as CharacterRig
+	ghost.frozen = true
+	layer.add_child(ghost)
+	ghost.global_transform = shown.global_transform
+	ghost.modulate = GHOST_TINT
+	var fade := ghost.create_tween()
+	fade.tween_property(ghost, "modulate:a", 0.0, GHOST_TIME)
+	fade.tween_callback(ghost.queue_free)
 
 
 # Turns the rig to the nearest of the eight facings, holding the current one

@@ -76,5 +76,19 @@ func run_tests() -> void:
 		Audio.clear_overrides()
 	parent.queue_free()
 	await process_frame
+	# The battlefield's wind: one seamless loop on the ambience bus.
+	var wind := BattleAmbience.loop()
+	check(wind.loop_mode == AudioStreamWAV.LOOP_FORWARD and wind.loop_end * 2 == wind.data.size() and is_equal_approx(wind.get_length(), BattleAmbience.LENGTH), "The wind loops over its whole length")
+	var tail := wind.data.decode_s16(wind.data.size() - 2)
+	var head := wind.data.decode_s16(0)
+	var peak := 0
+	for index in range(0, wind.data.size(), 64):
+		peak = maxi(peak, absi(wind.data.decode_s16(index)))
+	check(absi(head - tail) < 600 and peak > 800 and peak < 30000, "The wind is heard, unclipped, with no click where it loops")
+	check(BattleAmbience.loop() == wind, "The wind is made once")
+	var air := BattleAmbience.new()
+	root.add_child(air)
+	check(air.bus == GameSettings.AMBIENCE_BUS, "The wind plays on the ambience bus, under its volume setting")
+	air.free()
 	print("Game audio: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures else 0)

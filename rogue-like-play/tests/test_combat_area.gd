@@ -2,7 +2,8 @@ extends SceneTree
 
 # The real-time fight put together in a CombatArea: walls stop the hero, a
 # sentinel chases and hurts her by touch, her swings land, push and fell it,
-# the dash slips through a blow, and her fall is reported. The hero is
+# the dash slips through a blow, each swing, the charge, the dash and the
+# skill show as they should, and her fall is reported. The hero is
 # stepped by hand each physics frame with made-up input; the foes run on
 # their own. Ends with the sandbox scene starting up and filling with foes.
 
@@ -122,6 +123,29 @@ func run_tests() -> void:
 	var hp := hero.health.hp
 	check(hero.receive(DamageInfo.make(30.0, Vector2.RIGHT, 300.0)) == 30 and hero.health.hp == hp - 30, "A blow outside the dash lands")
 	check(hero.receive(DamageInfo.make(30.0, Vector2.RIGHT)) == 0, "Her mercy time protects her right after")
+
+	# How she looks: each swing of the combo its own motion, the stance while
+	# she charges, afterimages along a dash, a ring where the skill lands.
+	await drive(hero, HeroInput.new(), 0.8)
+	var shown := hero.view.rig
+	var motions: Array[StringName] = []
+	for swing in 3:
+		await drive(hero, HeroInput.make(Vector2.ZERO, Vector2.RIGHT, true), FRAME)
+		motions.append(shown.rig.animation_player.current_animation)
+		await drive(hero, HeroInput.new(), 0.24)
+	check(motions == [&"attack_sword", &"attack_back", &"attack_heavy"], "Each swing of the combo plays its own motion: %s" % [motions])
+	await drive(hero, HeroInput.new(), 0.6)
+	await drive(hero, HeroInput.make(Vector2.ZERO, Vector2.RIGHT, true, true), 0.5)
+	check(hero.motor.charging() and shown.braced and shown.rig.animation_player.current_animation == CharacterRig.BRACE, "Charging, she holds the stance")
+	await drive(hero, HeroInput.new(), 0.8)
+	var ghosts := func() -> int: return area.marks.get_children().filter(func(node: Node): return node is CharacterRig).size()
+	await drive(hero, HeroInput.make(Vector2.LEFT, Vector2.ZERO, false, false, true), 0.1)
+	check(ghosts.call() >= 2 and shown.rig.animation_player.current_animation == &"dash", "A dash lunges and leaves afterimages")
+	await drive(hero, HeroInput.new(), 0.5)
+	check(ghosts.call() == 0, "The afterimages fade away")
+	await drive(hero, HeroInput.make(Vector2.ZERO, Vector2.RIGHT, false, false, false, true), FRAME * 2)
+	check(shown.rig.animation_player.current_animation == &"attack_slam" and area.marks.get_children().any(func(node: Node): return node is GroundRing), "The skill brings the sword down and rings over the floor")
+	await drive(hero, HeroInput.new(), 0.8)
 
 	# Her fall is reported, and she stays down.
 	area.hero_fell.connect(_on_hero_fell)

@@ -15,3 +15,4 @@ hit_stop = 0.08
 move_scale = 0.0
 lunge = 0.0
 effect = &"heavy"
+motion = &"attack_heavy"

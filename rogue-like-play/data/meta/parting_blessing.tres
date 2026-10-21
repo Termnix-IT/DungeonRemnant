@@ -8,4 +8,4 @@ description = "ランの始めに強化を3つから1つ選べる"
 costs = Array[int]([200])
 effect = &"start_boon"
 per_rank = 1.0
-emblem = "kill_heal"
+emblem = "parting_blessing"

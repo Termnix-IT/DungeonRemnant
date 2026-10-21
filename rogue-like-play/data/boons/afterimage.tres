@@ -18,5 +18,5 @@ description = "ダッシュ直後の攻撃が大振りになる"
 families = Array[String](["回避", "範囲"])
 max_level = 2
 weight = 1.0
-emblem = "vision"
+emblem = "afterimage"
 effects = Array[ExtResource("2")]([SubResource("Wide")])

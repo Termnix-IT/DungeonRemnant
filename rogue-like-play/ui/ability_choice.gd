@@ -59,7 +59,7 @@ func _open(candidates: Array[BoonData], levels: Array[int], level: int, pending:
 	clear_afterglow()
 	offers = candidates.duplicate()
 	_levels = levels
-	$Panel/Margin/Stack/Title.text = "Lv %d  能力を1つ選択" % (level - pending + 1)
+	$Panel/Margin/Stack/Title.text = "Lv %d　強化を1つ選ぶ" % (level - pending + 1)
 	var keys: Array[String] = []
 	for index in offers.size():
 		keys.append(str(index + 1))

@@ -31,10 +31,15 @@ const HEAVY_KNOCKBACK := 400.0
 # How high on a body its effects and numbers show.
 const BODY_MIDDLE := Vector2(0, -26)
 const NUMBER_HEIGHT := Vector2(0, -58)
-# Hit and death sounds closer together than this (ms) are one sound, so a
-# crowd struck at once does not use up every voice.
+# Hit, death and pickup sounds closer together than this (ms) are one sound,
+# so a crowd struck at once does not use up every voice.
 const HIT_SOUND_GAP := 45
 const DEATH_SOUND_GAP := 70
+const PICKUP_SOUND_GAP := 60
+# A swing's sound by its painted effect.
+const SWING_SOUNDS := {&"slash": &"slash", &"heavy": &"heavy", &"magic": &"magic", &"thrust": &"thrust"}
+# The dust kicked up where a dash starts, as a share of the smoke's size.
+const DASH_DUST := 0.42
 # Painted effects of a kind shown at once, at most: past this a crowd's hits
 # and falls add no more, so the hero is never buried in smoke.
 const EFFECT_CAPS := {&"hit": 18, &"death": 10}
@@ -67,6 +72,7 @@ var met: Dictionary = {}
 var _shake: Tween
 var _last_hit_sound := -HIT_SOUND_GAP
 var _last_death_sound := -DEATH_SOUND_GAP
+var _last_pickup_sound := -PICKUP_SOUND_GAP
 var _effects_shown: Dictionary = {}
 # Retired foes by their FoeData, kept under a node that neither processes
 # nor collides.
@@ -114,6 +120,7 @@ func _ready() -> void:
 	_pool_holder.name = "Pool"
 	_pool_holder.process_mode = Node.PROCESS_MODE_DISABLED
 	add_child(_pool_holder)
+	gems.collected.connect(_on_gem_collected)
 	StrikeEffect.warm()
 
 
@@ -220,6 +227,7 @@ func blast(center: Vector2, radius: float, power: float, knockback: float, infli
 		info.inflicts = inflicts
 		deal(foe, info)
 	shake(HEAVY_SHAKE * 0.6)
+	GameAudio.play(self, &"burst", -20.0)
 
 
 # Lightning from `from`, jumping to the nearest foe not yet struck within
@@ -251,6 +259,7 @@ func chain(from: Vector2, skip: Foe, jumps: int, reach: float, power: float, inf
 		deal(next, info)
 	if points.size() > 1:
 		_lightning(points)
+		GameAudio.play(self, &"zap", -20.0)
 
 
 func _lightning(points: PackedVector2Array) -> void:
@@ -288,7 +297,23 @@ func report_swing(by: Hero, attack: AttackData, facing: Vector2) -> void:
 		effect.position += facing * attack.reach * 0.45
 	effects.add_child(effect)
 	effect.start(attack.effect, points, facing)
-	GameAudio.play(self, &"heavy" if attack.shape == AttackData.Shape.CIRCLE else &"slash", -18.0)
+	# A round blow also races out over the floor to its reach.
+	if attack.shape == AttackData.Shape.CIRCLE:
+		var ring := GroundRing.new()
+		marks.add_child(ring)
+		ring.start(by.global_position, attack.reach, attack.effect)
+	GameAudio.play(self, SWING_SOUNDS.get(attack.effect, &"slash"), -18.0)
+
+
+# A dash: dust kicked up at her feet and the rush of it.
+func report_dash(by: Hero, direction: Vector2) -> void:
+	_effect(&"death", by.global_position - direction * 10.0, Vector2.RIGHT, DASH_DUST)
+	GameAudio.play(self, &"dash", -20.0)
+
+
+# Her charge is full.
+func report_charge_ready(_by: Hero) -> void:
+	GameAudio.play(self, &"charge", -22.0)
 
 
 func report_hit(target: Node2D, lost: int, info: DamageInfo) -> void:
@@ -349,6 +374,13 @@ func _effect(kind: StringName, at: Vector2, direction: Vector2, size: float) -> 
 	effect.tree_exited.connect(func(): _effects_shown[kind] = _effects_shown[kind] - 1)
 	var points: Array[Vector2] = [Vector2.ZERO]
 	effect.start(kind, points, direction)
+
+
+func _on_gem_collected(_amount: int) -> void:
+	var now := Time.get_ticks_msec()
+	if now - _last_pickup_sound >= PICKUP_SOUND_GAP:
+		_last_pickup_sound = now
+		GameAudio.play(self, &"pickup", -24.0)
 
 
 func _on_foe_retired(foe: Foe) -> void:

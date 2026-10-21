@@ -5,7 +5,8 @@ extends Node2D
 # The scene (built by tools/build_character_rig.gd) holds a Skeleton2D, one
 # Polygon2D per part skinned to its bones (drawn in sibling order, so the
 # parts never leak a z_index into the actors' y-sort), and an AnimationPlayer
-# with idle, walk and attack. This script plays them and adds what keys
+# with idle, walk and attack (and, for some, more swings, a dash, a
+# flinch, a fall and a held wind-up). This script plays them and adds what keys
 # cannot know in advance: the lean into a step, the hair and hem that trail
 # the body on springs, and the blink. It never reads or changes game rules.
 #
@@ -23,8 +24,10 @@ const ATTACK := &"attack_sword"
 const HURT := &"hurt"
 const DOWN := &"down"
 # Optional: a looping held wind-up, shown while `braced` (an enemy's warning
-# turn) whenever nothing else plays.
+# turn, the hero's charge) whenever nothing else plays.
 const BRACE := &"brace"
+# Optional: the hero's low lunge.
+const DASH := &"dash"
 # Blending between motions, in seconds: a step starts at once, an attack
 # snaps to its wind-up, and the body settles into the idle more slowly.
 const WALK_BLEND := 0.08
@@ -69,6 +72,9 @@ var mirrored := false:
 			if part.get_meta(&"mirror_hide", false):
 				part.visible = not mirrored
 
+# A still copy (an afterimage): it keeps the pose it was copied in and never
+# moves. Set before it enters the tree.
+var frozen := false
 var animation_player: AnimationPlayer
 var braced := false:
 	set(value):
@@ -93,6 +99,10 @@ func _ready() -> void:
 	rng.randomize()
 	world_height = world_height
 	animation_player = get_node(^"AnimationPlayer")
+	if frozen:
+		set_process(false)
+		animation_player.active = false
+		return
 	# The rig steps the player itself, so the lean and springs apply after it.
 	animation_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	_lean_node = get_node_or_null(lean_bone) as Bone2D
@@ -144,10 +154,23 @@ func step(direction: Vector2) -> void:
 	_impulse = -local
 
 
-func attack() -> void:
+# A swing: `motion` when the rig has it, else the plain sword swing.
+func attack(motion: StringName = ATTACK) -> void:
 	_walk_left = 0.0
 	_lean_target = 0.0
-	animation_player.play(ATTACK, ATTACK_BLEND)
+	animation_player.play(motion if animation_player.has_animation(motion) else ATTACK, ATTACK_BLEND)
+	animation_player.queue(IDLE)
+
+
+# A dash towards direction: the lunge when the rig has one, else a step.
+func dash(direction: Vector2) -> void:
+	if not animation_player.has_animation(DASH):
+		step(direction)
+		return
+	_walk_left = 0.0
+	_lean_target = 0.0
+	_impulse = -_local(direction).normalized() * 2.0
+	animation_player.play(DASH, ATTACK_BLEND)
 	animation_player.queue(IDLE)
 
 
@@ -202,7 +225,7 @@ func resume(state: Dictionary) -> void:
 	if animation_player.has_animation(animation):
 		animation_player.play(animation)
 		animation_player.seek(float(state.get("position", 0.0)), true)
-		if animation == ATTACK:
+		if not animation_player.get_animation(animation).loop_mode and animation != DOWN:
 			animation_player.queue(IDLE)
 	_walk_left = float(state.get("walk_left", 0.0))
 	var lean: Array = state.get("lean", [0.0, 0.0, 0.0])

@@ -1,8 +1,10 @@
 extends SceneTree
 
 # The illustration rig PoC: every facing's built rig loads, keys what the
-# game's timing needs, stays within its budget, ends every motion back on its
-# idle and keeps its origin on the soles; the eight facings resolve to drawn
+# game's timing needs (each swing of the combo, the slam, the held charge,
+# the dash and the flinch), stays within its budget, ends every motion back
+# on its idle and keeps its origin on the soles; a still copy keeps its pose;
+# the eight facings resolve to drawn
 # or mirrored rigs, a mirrored rig hides what a flip puts on the wrong side,
 # and turning mid-stride carries the step on. It touches no game state.
 
@@ -12,6 +14,9 @@ const MAX_PARTS := 20
 const MAX_BONES := 28
 const MAX_VERTICES := 400
 const FRAME := 1.0 / 60.0
+# The hero's motions besides idle, walk and the plain swing.
+const SWINGS: Array[StringName] = [&"attack_back", &"attack_heavy", &"attack_slam"]
+const ONCE: Array[StringName] = [&"dash", CharacterRig.HURT]
 
 var checks := 0
 var failures := 0
@@ -61,6 +66,13 @@ func _check_rig(facing_name: StringName, scene: PackedScene) -> void:
 	var impact := float(attack.get_meta(&"impact", -1.0))
 	check(impact > 0.0 and impact < attack.length, "%s's sword lands within its swing" % facing_name)
 	check(player.get_animation(CharacterRig.IDLE).loop_mode == Animation.LOOP_LINEAR, "%s's idle loops" % facing_name)
+	for swing in SWINGS:
+		var motion := player.get_animation(swing) if player.has_animation(swing) else null
+		var lands := float(motion.get_meta(&"impact", -1.0)) if motion != null else -1.0
+		check(motion != null and lands > 0.0 and lands < motion.length and motion.loop_mode == Animation.LOOP_NONE, "%s has %s, its sword landing within it" % [facing_name, swing])
+	for once in ONCE:
+		check(player.has_animation(once) and player.get_animation(once).loop_mode == Animation.LOOP_NONE, "%s has %s" % [facing_name, once])
+	check(player.has_animation(CharacterRig.BRACE) and player.get_animation(CharacterRig.BRACE).loop_mode == Animation.LOOP_LINEAR, "%s holds a looping charge stance" % facing_name)
 	var tracks := {}
 	for animation_name in player.get_animation_list():
 		var animation := player.get_animation(animation_name)
@@ -96,7 +108,38 @@ func _check_rig(facing_name: StringName, scene: PackedScene) -> void:
 	check(player.current_animation == CharacterRig.ATTACK, "%s's attack plays at once" % facing_name)
 	_advance(rig, attack.length + 0.4)
 	check(player.current_animation == CharacterRig.IDLE, "%s's attack returns to the idle" % facing_name)
+	rig.attack(&"attack_heavy")
+	check(player.current_animation == &"attack_heavy", "%s plays the swing it is asked for" % facing_name)
+	rig.attack(&"no_such_swing")
+	check(player.current_animation == CharacterRig.ATTACK, "%s falls back to the plain swing" % facing_name)
+	_advance(rig, attack.length + 0.4)
+	rig.braced = true
+	_advance(rig, FRAME * 3)
+	check(player.current_animation == CharacterRig.BRACE, "%s takes the charge stance while braced" % facing_name)
+	rig.braced = false
+	_advance(rig, 0.4)
+	rig.dash(Vector2.RIGHT)
+	check(player.current_animation == &"dash", "%s lunges on a dash" % facing_name)
+	_advance(rig, 0.6)
+	rig.hurt()
+	check(player.current_animation == CharacterRig.HURT, "%s flinches when hurt" % facing_name)
+	_advance(rig, 0.6)
+	check(player.current_animation == CharacterRig.IDLE, "%s is back in the idle after them" % facing_name)
 	_check_idle_pose(facing_name, rig)
+	# An afterimage: a copy that keeps the pose it was copied in.
+	rig.attack(&"attack_slam")
+	_advance(rig, 0.12)
+	var ghost := rig.duplicate() as CharacterRig
+	ghost.frozen = true
+	root.add_child(ghost)
+	await process_frame
+	var hand := rig.weapon_anchor().get_parent() as Bone2D
+	var copied := ghost.get_node(rig.get_path_to(hand)) as Bone2D
+	await create_timer(0.3).timeout
+	check(not ghost.is_processing() and is_equal_approx(copied.rotation, hand.rotation), "%s's still copy keeps its pose" % facing_name)
+	ghost.free()
+	# The slam's swing in the hair settles before the next check.
+	_advance(rig, 2.5)
 	# Being placed on a new cell is not a swing: the hair must not whip. A
 	# frame's change, so the swing still settling from the attack is not counted.
 	_advance(rig, FRAME)

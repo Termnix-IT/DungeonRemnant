@@ -16,3 +16,4 @@ hit_stop = 0.035
 move_scale = 0.3
 lunge = 12.0
 effect = &"slash"
+motion = &"attack_back"

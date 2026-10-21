@@ -24,5 +24,5 @@ families = Array[String](["属性", "状態異常"])
 max_level = 3
 weight = 1.0
 requires = Array[StringName]([&"thunder_blade"])
-emblem = "spear_pierce"
+emblem = "chain_lightning"
 effects = Array[ExtResource("2")]([SubResource("Chain")])

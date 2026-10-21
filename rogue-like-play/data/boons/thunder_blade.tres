@@ -14,5 +14,5 @@ description = "攻撃が敵を感電させ、動きを鈍らせる"
 families = Array[String](["属性", "状態異常"])
 max_level = 1
 weight = 1.2
-emblem = "mana"
+emblem = "thunder_blade"
 effects = Array[ExtResource("2")]([SubResource("Shock")])

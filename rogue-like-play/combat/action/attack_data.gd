@@ -33,6 +33,10 @@ enum Shape { ARC, CIRCLE, LINE }
 @export_range(0.0, 200.0) var lunge := 14.0
 # The painted effect it shows (StrikeEffect kinds: slash, heavy, thrust...).
 @export var effect: StringName = &"slash"
+# The hero's motion for it (a CharacterRig animation: attack_sword,
+# attack_back, attack_heavy, attack_slam); her rig plays attack_sword when
+# it has no such motion.
+@export var motion: StringName = &"attack_sword"
 # Lightning, fire...; empty is a plain blow. Read by later effects.
 @export var element: StringName
 # Statuses (Status ids: shock, burn) it leaves on what it hits.

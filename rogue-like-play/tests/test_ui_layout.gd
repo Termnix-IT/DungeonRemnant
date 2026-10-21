@@ -87,6 +87,9 @@ func run_tests() -> void:
 	centered(area.choice.get_node("Panel"), "The level-up cards")
 	area.choice._select(0)
 	await settle()
+	var taken := area.run.build.owned()
+	check(hud.boons.get_child_count() == 1 and (hud.boons.get_child(0) as TextureRect).texture == EmblemIcons.texture(taken[0].emblem), "The boon taken shows as its emblem under the goal")
+	check(screen.grow(-4).encloses(hud.boons.get_global_rect()) and not hud.boons.get_global_rect().intersects(ring), "The boons keep to the corner")
 	area.open_menu()
 	await settle(0.3)
 	var menu_panel: Control = area.menu.menu.get_child(0)
@@ -94,6 +97,13 @@ func run_tests() -> void:
 	area.menu.resume()
 	await settle()
 	check(not paused, "Leaving the menu resumes the fight")
+	# Low on health, the edges pulse; well again, they clear.
+	area.hero.health.hp = 20
+	await settle()
+	check(hud.danger.visible and hud.danger.mouse_filter == Control.MOUSE_FILTER_IGNORE, "At a fifth of her health the edges pulse red, taking no input")
+	area.hero.health.hp = area.hero.health.max_hp
+	await settle()
+	check(not hud.danger.visible, "With her health back the edges clear")
 	# The result.
 	area.hero.health.hp = 1
 	area.hero.receive(DamageInfo.make(1000.0, Vector2.RIGHT))

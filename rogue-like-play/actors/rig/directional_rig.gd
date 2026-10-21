@@ -24,6 +24,12 @@ var facing := Vector2i.DOWN:
 		facing = value
 		if is_node_ready():
 			_show(MioAnimation.direction_name(value))
+# Held in every facing's rig, so a turn keeps it (CharacterRig.braced).
+var braced := false:
+	set(value):
+		braced = value
+		for each in _rigs.values():
+			each.braced = value
 # The facing name now shown, and the rig showing it.
 var facing_name: StringName = &""
 var rig: CharacterRig
@@ -59,8 +65,16 @@ func step(direction: Vector2) -> void:
 	rig.step(direction)
 
 
-func attack() -> void:
-	rig.attack()
+func attack(motion: StringName = CharacterRig.ATTACK) -> void:
+	rig.attack(motion)
+
+
+func dash(direction: Vector2) -> void:
+	rig.dash(direction)
+
+
+func hurt() -> void:
+	rig.hurt()
 
 
 func idle() -> void:
