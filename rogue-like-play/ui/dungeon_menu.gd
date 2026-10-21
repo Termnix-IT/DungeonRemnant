@@ -3,8 +3,10 @@ extends CanvasLayer
 
 # The fight's menu (Esc, or Start on a gamepad): back to the fight, the
 # settings, or leaving the run, and beside it, as action roguelites' pause
-# screens commonly show, the run's build: each boon taken with its emblem,
-# rank and what it does. The fight waits while it is open. The
+# screens commonly show, the run's build: each boon taken as a row with its
+# emblem, name and rank, and what the pointed (or focused) one does under
+# them. Left and right move between the menu and the build. The fight waits
+# while it is open. The
 # settings are the hub's own page (HubSettings) over the dimmed field, so a
 # change made here is the same change, stored the same way, and takes effect
 # at once. Leaving goes through the area's confirmation, which says what is
@@ -32,6 +34,8 @@ var run: RunState
 var menu: Control
 var build_panel: PanelContainer
 var build_list: VBoxContainer
+var build_note: Label
+var _build_rows: Array[Button] = []
 var resume_button: Button
 var settings_button: Button
 var abort_button: Button
@@ -70,7 +74,7 @@ func _build_menu() -> void:
 	menu.add_child(side_by_side)
 	_build_build(side_by_side)
 	var frame := PanelContainer.new()
-	frame.theme_type_variation = &"MainPanel"
+	frame.theme_type_variation = &"QuietWindow"
 	frame.custom_minimum_size.x = WIDTH
 	frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	side_by_side.add_child(frame)
@@ -102,7 +106,7 @@ func _build_menu() -> void:
 # The run's build, as a framed list beside the menu.
 func _build_build(parent: Control) -> void:
 	build_panel = PanelContainer.new()
-	build_panel.theme_type_variation = &"MainPanel"
+	build_panel.theme_type_variation = &"QuietWindow"
 	build_panel.custom_minimum_size.x = BUILD_WIDTH
 	parent.add_child(build_panel)
 	var margin := MarginContainer.new()
@@ -114,37 +118,45 @@ func _build_build(parent: Control) -> void:
 	title.autowrap_mode = TextServer.AUTOWRAP_OFF
 	HubUI.rule(column)
 	build_list = VBoxContainer.new()
-	build_list.theme_type_variation = &"DetailStack"
 	column.add_child(build_list)
+	HubUI.rule(column)
+	build_note = HubUI.label(column, "", &"DescriptionLabel")
 
 
 func _show_build() -> void:
 	build_panel.visible = run != null
+	_build_rows.clear()
+	for button: Button in [resume_button, settings_button, abort_button]:
+		button.focus_neighbor_left = NodePath()
 	if run == null:
 		return
 	for child in build_list.get_children():
 		child.free()
 	var owned := run.build.owned()
-	if owned.is_empty():
-		HubUI.label(build_list, "まだ強化を取っていない。レベルを上げるとカードから選べる。", &"MutedLabel")
+	build_note.text = "まだ強化を取っていない。レベルを上げるとカードから選べる。" if owned.is_empty() else ""
 	for boon in owned:
 		var rank := run.build.rank(boon.id)
-		var row := HBoxContainer.new()
-		row.theme_type_variation = &"CompactRow"
-		build_list.add_child(row)
-		var icon := TextureRect.new()
-		icon.texture = EmblemIcons.texture(boon.emblem)
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.custom_minimum_size = Vector2(EMBLEM_SIZE, EMBLEM_SIZE)
-		icon.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		row.add_child(icon)
-		var words := VBoxContainer.new()
-		words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(words)
-		var name := HubUI.label(words, boon.display_name if boon.max_level == 1 else "%s　Lv %d / %d" % [boon.display_name, rank, boon.max_level], &"ItemNameLabel")
-		name.autowrap_mode = TextServer.AUTOWRAP_OFF
-		HubUI.label(words, boon.effect_description(rank), &"DescriptionLabel")
+		var row := HubUI.button(build_list, boon.display_name if boon.max_level == 1 else "%s　Lv %d / %d" % [boon.display_name, rank, boon.max_level], func(): pass)
+		row.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		row.icon = EmblemIcons.texture(boon.emblem)
+		row.expand_icon = true
+		row.custom_minimum_size.y = EMBLEM_SIZE + 8.0
+		var words := boon.effect_description(rank)
+		row.focus_entered.connect(func(): build_note.text = words)
+		row.mouse_entered.connect(func(): build_note.text = words)
+		_build_rows.append(row)
+	if _build_rows.is_empty():
+		return
+	build_note.text = owned[0].effect_description(run.build.rank(owned[0].id))
+	for index in _build_rows.size():
+		var row := _build_rows[index]
+		row.focus_neighbor_top = _build_rows[posmod(index - 1, _build_rows.size())].get_path()
+		row.focus_neighbor_bottom = _build_rows[posmod(index + 1, _build_rows.size())].get_path()
+		row.focus_neighbor_right = resume_button.get_path()
+		row.focus_neighbor_left = row.get_path()
+	for button: Button in [resume_button, settings_button, abort_button]:
+		button.focus_neighbor_left = _build_rows[0].get_path()
+	UIMotion.bind_buttons(build_list)
 
 
 func _build_settings() -> void:

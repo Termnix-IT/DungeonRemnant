@@ -2,12 +2,13 @@ class_name RunEndView
 extends CanvasLayer
 
 # The end of a real-time run, as roguelites sum a run up: over the chapter's
-# illustration, darkened, a framed panel with the outcome (won, fallen or
-# left) and where it ended, the run's figures as tiles (how far, how long,
-# the foes felled, the level), the boons taken as their emblems, and the
-# echo brought home counted up large; then whether that was saved, and the
-# way on. Enter (or the button) goes on: back to the base when the run came
-# from it, else a new run (a run played on its own).
+# illustration, darkened, a quiet window with the outcome (won, fallen or
+# left) and where it ended, the echo brought home counted up large, whether
+# that was saved, and the way on. The run's figures as tiles (how far, how
+# long, the foes felled, the level) and the boons taken as their emblems
+# open under "詳しく見る" (a click, or the focus moved down to it). Enter
+# (or the button) goes on: back to the base when the run came from it, else
+# a new run (a run played on its own).
 
 signal again_requested
 
@@ -16,7 +17,12 @@ const WIDTH := 860.0
 const EMBLEM_SIZE := 52.0
 # The echo counts up after the panel has come in.
 const COUNT_DELAY := 0.35
+const MORE_TEXT := "詳しく見る　▼"
+const LESS_TEXT := "閉じる　▲"
 
+# The figures and boons, shown when asked for, and the button that asks.
+var details: VBoxContainer
+var more_button: Button
 var _art: TextureRect
 var _title: Label
 var _ending: Label
@@ -48,7 +54,7 @@ func _ready() -> void:
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_child(center)
 	_panel = PanelContainer.new()
-	_panel.theme_type_variation = &"MainPanel"
+	_panel.theme_type_variation = &"QuietWindow"
 	_panel.custom_minimum_size = Vector2(WIDTH, 0)
 	center.add_child(_panel)
 	var margin := MarginContainer.new()
@@ -58,21 +64,37 @@ func _ready() -> void:
 	_title = _centered(stack, &"VictoryTitle")
 	_ending = _centered(stack, &"BodyLabel")
 	HubUI.rule(stack)
-	_tiles = HBoxContainer.new()
-	stack.add_child(_tiles)
-	_centered(stack, &"HeadingLabel").text = "取得した強化"
-	_boons = HBoxContainer.new()
-	_boons.alignment = BoxContainer.ALIGNMENT_CENTER
-	stack.add_child(_boons)
-	_no_boons = _centered(stack, &"MutedLabel")
-	_no_boons.text = "なし"
-	HubUI.rule(stack)
 	_centered(stack, &"MutedLabel").text = "持ち帰った残響"
 	_echo = _centered(stack, &"PurseValue")
 	_save_note = _centered(stack, &"MutedLabel")
 	_save_note.hide()
+	# The figures and the boons, opened on request.
+	details = VBoxContainer.new()
+	details.theme_type_variation = &"DetailStack"
+	stack.add_child(details)
+	_tiles = HBoxContainer.new()
+	details.add_child(_tiles)
+	_centered(details, &"HeadingLabel").text = "取得した強化"
+	_boons = HBoxContainer.new()
+	_boons.alignment = BoxContainer.ALIGNMENT_CENTER
+	details.add_child(_boons)
+	_no_boons = _centered(details, &"MutedLabel")
+	_no_boons.text = "なし"
+	details.hide()
 	_button = HubUI.primary_action(stack, "新しいランを始める", func(): again_requested.emit())
+	more_button = HubUI.button(stack, MORE_TEXT, toggle_details)
+	more_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_button.focus_neighbor_bottom = more_button.get_path()
+	_button.focus_neighbor_top = more_button.get_path()
+	more_button.focus_neighbor_top = _button.get_path()
+	more_button.focus_neighbor_bottom = _button.get_path()
 	hide()
+
+
+# Opens or closes the run's figures and boons.
+func toggle_details() -> void:
+	details.visible = not details.visible
+	more_button.text = LESS_TEXT if details.visible else MORE_TEXT
 
 
 func _centered(parent: Node, role: StringName) -> Label:
@@ -89,6 +111,8 @@ func present(result: Dictionary, home: bool = false, art: Texture2D = null) -> v
 	var won: bool = result.cleared
 	var left: bool = result.get("abandoned", false)
 	_art.texture = art
+	details.hide()
+	more_button.text = MORE_TEXT
 	_title.text = "踏破" if won else ("中断" if left else "敗北")
 	_title.theme_type_variation = &"VictoryTitle" if won else &"DefeatTitle"
 	_ending.text = "%s　%s" % [result.chapter, "ボスを撃破した" if won else ("第%d層で中断した" if left else "第%d層で倒れた") % (int(result.layer) + 1)]
@@ -124,7 +148,7 @@ func present(result: Dictionary, home: bool = false, art: Texture2D = null) -> v
 # A figure of the run: a small caption over a large value, on an inset tile.
 func _tile(caption: String, value: String) -> void:
 	var tile := PanelContainer.new()
-	tile.theme_type_variation = &"InsetPanel"
+	tile.theme_type_variation = &"QuietSection"
 	tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_tiles.add_child(tile)
 	var lines := VBoxContainer.new()

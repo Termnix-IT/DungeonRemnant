@@ -3,9 +3,9 @@ extends HBoxContainer
 
 # The footer's key guide: each hint is a key cap and what it does
 # ("Esc 戻る"), shown as text rather than a boxed button. The cap is a
-# painted key (the theme's "cap" and "cap_active" styles), not a drawn box. A hint with an
-# action can also be clicked. While a gamepad is in use the caps show its
-# buttons (B, A) instead of the keys.
+# painted key (the theme's "cap" and "cap_active" styles) while a gamepad is
+# in use, showing its buttons (B, A); on a keyboard only the key's name is
+# written, without a frame. A hint with an action can also be clicked.
 
 # Each cap starts this far into its hint.
 const CAP_INSET := 4.0
@@ -103,8 +103,10 @@ func _draw_cap(hint: Button) -> void:
 	var rect := Rect2(Vector2(right - width, (hint.size.y - height) * 0.5), Vector2(width, height))
 	var active := hint.is_hovered() or hint.has_focus()
 	var rim := hint.get_theme_color(&"cap_rim_active" if active else &"cap_rim")
-	# A painted bronze key, lit gold while the hint is pointed at.
-	hint.draw_style_box(hint.get_theme_stylebox(&"cap_active" if active else &"cap"), rect)
+	# On a gamepad, a painted bronze key, lit gold while the hint is pointed
+	# at; on a keyboard the key's name alone, frameless, as a quieter hint.
+	if pad:
+		hint.draw_style_box(hint.get_theme_stylebox(&"cap_active" if active else &"cap"), rect)
 	var baseline := rect.position.y + (height + font.get_ascent(size) - font.get_descent(size)) * 0.5
 	hint.draw_string(font, Vector2(rect.position.x, baseline), cap_text(hint), HORIZONTAL_ALIGNMENT_CENTER, width, size, rim)
 

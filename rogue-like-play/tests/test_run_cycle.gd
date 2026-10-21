@@ -78,6 +78,9 @@ func run_tests() -> void:
 	check(not run.result.is_empty() and run.result.cleared, "Every layer cleared, the boss beaten: the run is won")
 	check(run.end_view.visible and run.end_view._button.text == "拠点へ戻る", "The result offers the way home")
 	var summary := run.end_view
+	check(not summary.details.visible and summary._button.has_focus(), "The summary shows the outcome, the echo and the way on; the figures wait folded")
+	summary.toggle_details()
+	check(summary.details.visible and summary.more_button.text == RunEndView.LESS_TEXT, "Asking for more opens the figures and boons")
 	check(summary._tiles.get_child_count() == 4 and summary._boons.get_child_count() == run.result.emblems.size() and run.result.emblems.size() == run.run.build.owned().size(), "The summary shows the run's figures as tiles and every boon as its emblem")
 	await create_timer(1.5).timeout
 	check(summary._art.texture == run.CHAPTER.illustration and summary._echo.text == UIFormat.amount(run.result.echo), "The summary lies over the chapter's illustration, the echo counted up to what was brought home")

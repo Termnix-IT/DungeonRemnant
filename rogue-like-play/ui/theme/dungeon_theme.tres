@@ -1,6 +1,7 @@
 [gd_resource type="Theme" format=3]
 
 [ext_resource type="Script" path="res://ui/slab_style.gd" id="SlabStyleScript"]
+[ext_resource type="Script" path="res://ui/quiet_window_style.gd" id="QuietWindowStyleScript"]
 [ext_resource type="Script" path="res://ui/scroll_rail_style.gd" id="ScrollRailScript"]
 [ext_resource type="Texture2D" path="res://art/ui/cell_frame.png" id="CellFrameTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/slot_frame.png" id="SlotFrameTexture"]
@@ -1084,6 +1085,106 @@ content_margin_top = 100.0
 content_margin_right = 112.0
 content_margin_bottom = 96.0
 
+[sub_resource type="StyleBox" id="QuietWindowSurface"]
+resource_name = "QuietWindowSurface"
+script = ExtResource("QuietWindowStyleScript")
+content_margin_left = 8.0
+content_margin_top = 10.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="QuietSectionSurface"]
+resource_name = "QuietSectionSurface"
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(1, 1, 1, 0.035)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="QuietButtonRest"]
+resource_name = "QuietButtonRest"
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="QuietButtonHover"]
+resource_name = "QuietButtonHover"
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(1, 0.86, 0.6, 0.07)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="QuietButtonFocus"]
+resource_name = "QuietButtonFocus"
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(1, 0.86, 0.6, 0.1)
+border_width_left = 3
+border_color = Color(0.84, 0.72, 0.48, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="QuietButtonPressed"]
+resource_name = "QuietButtonPressed"
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(1, 0.86, 0.6, 0.14)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="DangerButtonRest"]
+resource_name = "DangerButtonRest"
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.86, 0.52, 0.48, 0.06)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.86, 0.52, 0.48, 0.7)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="DangerButtonActive"]
+resource_name = "DangerButtonActive"
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.86, 0.52, 0.48, 0.16)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.96, 0.62, 0.56, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
 [resource]
 DetailStack/base_type = &"VBoxContainer"
 DetailStack/constants/separation = 8
@@ -1180,6 +1281,10 @@ LineEdit/styles/focus = SubResource("FocusOutline")
 LineEdit/styles/normal = SubResource("FieldSurface")
 LineEdit/styles/read_only = SubResource("ButtonDisabled")
 MainPanel/base_type = &"PanelContainer"
+QuietWindow/base_type = &"PanelContainer"
+QuietWindow/styles/panel = SubResource("QuietWindowSurface")
+QuietSection/base_type = &"PanelContainer"
+QuietSection/styles/panel = SubResource("QuietSectionSurface")
 MainPanel/styles/panel = SubResource("DialogPlate")
 MarginContainer/constants/margin_bottom = 24
 MarginContainer/constants/margin_left = 24
@@ -1226,6 +1331,12 @@ DangerButton/colors/font_pressed_color = Color(0.96, 0.62, 0.56, 1)
 DangerButton/colors/font_hover_pressed_color = Color(0.96, 0.62, 0.56, 1)
 DangerButton/font_sizes/font_size = 18
 DangerButton/fonts/font = ExtResource("BodyBold")
+DangerButton/styles/normal = SubResource("DangerButtonRest")
+DangerButton/styles/hover = SubResource("DangerButtonActive")
+DangerButton/styles/focus = SubResource("DangerButtonActive")
+DangerButton/styles/pressed = SubResource("DangerButtonActive")
+DangerButton/styles/hover_pressed = SubResource("DangerButtonActive")
+DangerButton/styles/disabled = SubResource("DangerButtonRest")
 SecondaryButton/base_type = &"Button"
 SecondaryButton/colors/font_color = Color(0.86, 0.84, 0.79, 1)
 SecondaryButton/colors/font_hover_color = Color(0.97, 0.9, 0.72, 1)
@@ -1234,12 +1345,12 @@ SecondaryButton/colors/font_pressed_color = Color(0.97, 0.9, 0.72, 1)
 SecondaryButton/colors/font_hover_pressed_color = Color(0.97, 0.9, 0.72, 1)
 SecondaryButton/colors/font_disabled_color = Color(0.45, 0.44, 0.41, 1)
 SecondaryButton/font_sizes/font_size = 16
-SecondaryButton/styles/normal = SubResource("SecondaryNormal")
-SecondaryButton/styles/hover = SubResource("SecondaryHover")
-SecondaryButton/styles/focus = SubResource("SecondaryHover")
-SecondaryButton/styles/pressed = SubResource("SecondaryPressed")
-SecondaryButton/styles/hover_pressed = SubResource("SecondaryPressed")
-SecondaryButton/styles/disabled = SubResource("SecondaryDisabled")
+SecondaryButton/styles/normal = SubResource("QuietButtonRest")
+SecondaryButton/styles/hover = SubResource("QuietButtonHover")
+SecondaryButton/styles/focus = SubResource("QuietButtonFocus")
+SecondaryButton/styles/pressed = SubResource("QuietButtonPressed")
+SecondaryButton/styles/hover_pressed = SubResource("QuietButtonPressed")
+SecondaryButton/styles/disabled = SubResource("QuietButtonRest")
 SpeechPanel/base_type = &"Panel"
 SpeechPanel/styles/panel = SubResource("SpeechSurface")
 TitleLabel/base_type = &"Label"

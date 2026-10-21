@@ -13,6 +13,7 @@ var level := 0
 var hovered := false:
 	set(value):
 		hovered = value
+		_show_status()
 		queue_redraw()
 # 0..1 strength of the chosen moment: gold accent and the gained rank pip.
 var glow := 0.0:
@@ -66,16 +67,24 @@ func _init() -> void:
 	effect_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 
+# A rank being raised says so; a new boon says it is new, and names its
+# families only while it is pointed at or focused (the card's detail).
+func _show_status() -> void:
+	if status_label == null or ability == null:
+		return
+	if level > 0:
+		status_label.text = "Lv %d → %d" % [level, level + 1]
+	else:
+		status_label.text = ability.families_text() if hovered else "新規"
+
+
 func setup(data: BoonData, current_level: int, shortcut: int) -> void:
 	ability = data
 	level = current_level
 	glow = 0.0
 	hovered = false
 	key_label.text = str(shortcut)
-	status_label.text = "新規習得" if level == 0 else "Lv %d → %d" % [level, level + 1]
-	# A new boon names its families instead (the blue gem already says new).
-	if level == 0:
-		status_label.text = data.families_text()
+	_show_status()
 	name_label.text = data.display_name
 	name_label.tooltip_text = data.display_name
 	TextWrap.set_text(effect_label, data.effect_description(level + 1))

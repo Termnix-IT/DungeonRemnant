@@ -69,7 +69,7 @@ func _ready() -> void:
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
 	_panel = PanelContainer.new()
-	_panel.theme_type_variation = &"MainPanel"
+	_panel.theme_type_variation = &"QuietWindow"
 	center.add_child(_panel)
 	var margin := MarginContainer.new()
 	_panel.add_child(margin)
@@ -115,7 +115,7 @@ func _build_status(stack: VBoxContainer) -> void:
 # The selected node's account and the button that enters it.
 func _build_detail(body: HBoxContainer) -> void:
 	var detail := PanelContainer.new()
-	detail.theme_type_variation = &"InsetPanel"
+	detail.theme_type_variation = &"QuietSection"
 	detail.custom_minimum_size.x = DETAIL_WIDTH
 	body.add_child(detail)
 	var lines := VBoxContainer.new()

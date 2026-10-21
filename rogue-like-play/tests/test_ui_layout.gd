@@ -108,6 +108,10 @@ func run_tests() -> void:
 	var menu_panel: Control = area.menu.menu.get_child(0)
 	centered(menu_panel, "The fight's menu")
 	check(area.menu.build_panel.visible and area.menu.build_list.get_child_count() == area.run.build.owned().size(), "Beside the menu, every boon of the build is listed")
+	var first_boon: BoonData = area.run.build.owned()[0]
+	var rows := area.menu.build_list.get_children()
+	check(area.menu.build_note.text == first_boon.effect_description(area.run.build.rank(first_boon.id)), "What a boon does is told once, under the list")
+	check(area.menu.resume_button.get_node_or_null(area.menu.resume_button.focus_neighbor_left) == rows[0] and (rows[0] as Button).focus_mode == Control.FOCUS_ALL, "Left from the menu reaches the build, which takes focus")
 	area.menu.resume()
 	await settle()
 	check(not paused, "Leaving the menu resumes the fight")

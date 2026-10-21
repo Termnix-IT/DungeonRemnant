@@ -42,7 +42,7 @@ func _ready() -> void:
 	root.add_child(center)
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	panel = PanelContainer.new()
-	panel.theme_type_variation = &"MainPanel"
+	panel.theme_type_variation = &"QuietWindow"
 	panel.custom_minimum_size.x = WIDTH
 	center.add_child(panel)
 	var margin := MarginContainer.new()

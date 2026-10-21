@@ -20,7 +20,7 @@ anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("2")
-theme_type_variation = &"MainPanel"
+theme_type_variation = &"QuietWindow"
 [node name="Margin" type="MarginContainer" parent="Panel"]
 layout_mode = 2
 [node name="Stack" type="VBoxContainer" parent="Panel/Margin"]

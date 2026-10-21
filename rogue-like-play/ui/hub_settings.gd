@@ -217,7 +217,7 @@ func _build_help() -> void:
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	help_view.add_child(center)
 	help_window = PanelContainer.new()
-	help_window.theme_type_variation = &"MainPanel"
+	help_window.theme_type_variation = &"QuietWindow"
 	help_window.custom_minimum_size = HELP_SIZE
 	center.add_child(help_window)
 	var margin := MarginContainer.new()
@@ -249,7 +249,7 @@ func _build_help() -> void:
 		row.focus_entered.connect(select_topic.bind(index))
 		topic_buttons.append(row)
 	var page := PanelContainer.new()
-	page.theme_type_variation = &"InsetPanel"
+	page.theme_type_variation = &"QuietSection"
 	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.add_child(page)
 	var words := VBoxContainer.new()

@@ -97,8 +97,17 @@ func run_tests() -> void:
 	# cannot.
 	for state in [&"normal", &"hover", &"focus", &"pressed", &"hover_pressed", &"disabled"]:
 		check(theme.has_stylebox(state, &"SecondaryButton"), "SecondaryButton has its own %s look" % state)
-	check(theme.get_stylebox(&"normal", &"SecondaryButton") is StyleBoxTexture, "A secondary action is a painted bronze plate")
-	check(theme.get_stylebox(&"normal", &"SecondaryButton") != theme.get_stylebox(&"disabled", &"SecondaryButton"), "A secondary action looks different when it cannot be pressed")
+	# Frames only where needed: a secondary action is its words, a faint band
+	# when pointed at and a gold bar when focused; the primary action keeps its
+	# plate, and an answer that cannot be undone a thin red frame.
+	var rest := theme.get_stylebox(&"normal", &"SecondaryButton") as StyleBoxFlat
+	var marked := theme.get_stylebox(&"focus", &"SecondaryButton") as StyleBoxFlat
+	check(rest != null and rest.border_width_left + rest.border_width_top + rest.border_width_right + rest.border_width_bottom == 0 and rest.bg_color.a == 0.0, "A secondary action has no frame at rest")
+	check(marked != null and marked.border_width_left > 0 and marked.border_width_top == 0, "A focused secondary action is marked by a bar, not a box")
+	check(theme.get_color(&"font_color", &"SecondaryButton") != theme.get_color(&"font_disabled_color", &"SecondaryButton"), "A secondary action looks different when it cannot be pressed")
+	check(theme.get_stylebox(&"normal", &"PrimaryButton") is StyleBoxTexture, "The primary action keeps its plate")
+	check((theme.get_stylebox(&"normal", &"DangerButton") as StyleBoxFlat).border_width_top > 0, "An answer that cannot be undone keeps a frame")
+	check(theme.get_stylebox(&"panel", &"QuietWindow") is QuietWindowStyle, "Popup windows are the quiet surface")
 	check(theme.get_color(&"font_color", &"SecondaryButton").get_luminance() - theme.get_color(&"font_disabled_color", &"SecondaryButton").get_luminance() > 0.3, "Its words dim when it cannot be pressed")
 	# The fight's dialogs (level-up, the route, prompts, menu, result) stand on
 	# warm stone in the bronze frame.
