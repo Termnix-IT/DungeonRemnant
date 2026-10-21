@@ -2,16 +2,18 @@ class_name HubCodex
 extends Control
 
 # The encyclopedia of foes (FoeCatalog): on the slab from the left edge, the
-# kind tabs (all, the crowd, elites, bosses), how many have been met, and a
-# card for each foe with its picture and name; in the column on the right,
+# kind tabs (all, the crowd, elites, bosses), how many have been met, and,
+# as bestiaries commonly lay them out, a grid of tiles, each the foe's
+# picture over its name (a dark silhouette for one not met); in the column
+# on the right,
 # the focused foe's picture, name, kind, figures and how it fights. A foe
 # counts as met once it has come into an area in a run (MetaProgress.met);
 # the others show as dark shapes named "？？？", their kind alone told.
 # Nothing here changes the progress.
 
 const PORTRAIT_SIZE := 180.0
-const CARD_SIZE := Vector2(300, 84)
-const COLUMNS := 2
+const CARD_SIZE := Vector2(160, 176)
+const COLUMNS := 5
 const UNKNOWN_NAME := "？？？"
 const UNKNOWN_NOTE := "まだ出会っていない敵。ランで戦場に現れると記録される。"
 const SHADOW := Color(0.0, 0.0, 0.0, 0.85)
@@ -32,6 +34,8 @@ var _catalog: VBoxContainer
 var _info: VBoxContainer
 var _picture := {}
 var _unknown := false
+# Silhouettes of the foes not met, by visual id, made once.
+static var _shadows: Dictionary = {}
 
 
 func _ready() -> void:
@@ -101,22 +105,43 @@ func _card(foe: FoeData, known: bool) -> Button:
 	var card := Button.new()
 	card.theme_type_variation = &"SecondaryButton"
 	card.custom_minimum_size = CARD_SIZE
-	card.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	card.text = foe.display_name if known else UNKNOWN_NAME
 	card.tooltip_text = foe.display_name if known else UNKNOWN_NOTE
-	# A foe not yet met shows no picture on its card; the column shows its shape.
-	var shown := EnemySprites.portrait(foe.visual_id) if known else {}
-	if not shown.is_empty():
-		var icon := AtlasTexture.new()
-		icon.atlas = shown.texture
-		icon.region = shown.region
-		card.icon = icon
-		card.expand_icon = true
+	# The picture above the name; a foe not met shows only its shape.
+	card.icon = _tile_picture(foe.visual_id, known)
+	card.expand_icon = true
+	card.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	card.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
 	var index := cards.size()
 	card.pressed.connect(_select.bind(index))
 	card.focus_entered.connect(_select.bind(index))
 	_list.add_child(card)
 	return card
+
+
+# The foe's picture for its tile, or its dark silhouette.
+func _tile_picture(visual_id: String, known: bool) -> Texture2D:
+	var shown := EnemySprites.portrait(visual_id)
+	if shown.is_empty():
+		return null
+	if known:
+		var icon := AtlasTexture.new()
+		icon.atlas = shown.texture
+		icon.region = shown.region
+		return icon
+	if not _shadows.has(visual_id):
+		var image := (shown.texture as Texture2D).get_image()
+		if image == null:
+			return null
+		image.decompress()
+		image = image.get_region(Rect2i(shown.region))
+		image.convert(Image.FORMAT_RGBA8)
+		for y in image.get_height():
+			for x in image.get_width():
+				var alpha := image.get_pixel(x, y).a
+				image.set_pixel(x, y, Color(SHADOW, alpha * SHADOW.a))
+		_shadows[visual_id] = ImageTexture.create_from_image(image)
+	return _shadows[visual_id]
 
 
 func _select(place: int, animate: bool = true) -> void:

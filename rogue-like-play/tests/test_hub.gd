@@ -63,6 +63,7 @@ func run_tests() -> void:
 	check(codex.cards.size() == FoeCatalog.FOES.size() and codex.count_label.text.contains("1 / %d" % FoeCatalog.FOES.size()), "Every foe has a card, and the count is of those met")
 	var rat_index := FoeCatalog.FOES.find(load("res://data/foes/dashing_rat.tres"))
 	check(codex.cards[rat_index].text == "疾走ネズミ" and codex.cards[0].text == HubCodex.UNKNOWN_NAME, "A met foe is named, an unmet one is not")
+	check(codex.cards[rat_index].icon is AtlasTexture and codex.cards[0].icon is ImageTexture, "Each tile shows its foe: the picture when met, a silhouette when not")
 	codex._select(rat_index, false)
 	check(codex.name_label.text == "疾走ネズミ" and codex.description_label.text.contains("飛びかかる"), "A met foe's account is told")
 	codex._select(0, false)
