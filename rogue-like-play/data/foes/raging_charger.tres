@@ -7,6 +7,8 @@
 script = ExtResource("1")
 id = &"raging_charger"
 display_name = "猛る突進獣"
+description = "精鋭。斬られてもひるまない。近くでは足元を叩きつけ、離れると長い突進を仕掛ける。どちらも床の赤い印を見て避ける。
+フィールドに時々、アリーナの最後に現れる。"
 visual_id = "charge"
 size_scale = 1.9
 elite = true

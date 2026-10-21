@@ -7,9 +7,8 @@ extends Control
 # gem crowns a new ability, an amber one a rank being raised, and the chosen
 # card turns gold, its frame fading in on hover and on the chosen moment.
 # Ranks are bronze sockets, the owned ones holding an amber gem. It shows a
-# turn-based AbilityData or a real-time BoonData (its emblem and words for
-# the rank on offer).
-var ability: Resource
+# BoonData: its emblem, and its words for the rank on offer.
+var ability: BoonData
 var level := 0
 var hovered := false:
 	set(value):
@@ -67,7 +66,7 @@ func _init() -> void:
 	effect_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 
-func setup(data: Resource, current_level: int, shortcut: int) -> void:
+func setup(data: BoonData, current_level: int, shortcut: int) -> void:
 	ability = data
 	level = current_level
 	glow = 0.0
@@ -75,11 +74,11 @@ func setup(data: Resource, current_level: int, shortcut: int) -> void:
 	key_label.text = str(shortcut)
 	status_label.text = "新規習得" if level == 0 else "Lv %d → %d" % [level, level + 1]
 	# A new boon names its families instead (the blue gem already says new).
-	if data is BoonData and level == 0:
+	if level == 0:
 		status_label.text = data.families_text()
 	name_label.text = data.display_name
 	name_label.tooltip_text = data.display_name
-	TextWrap.set_text(effect_label, data.effect_description(level + 1) if data is BoonData else data.effect_description())
+	TextWrap.set_text(effect_label, data.effect_description(level + 1))
 	symbol.queue_redraw()
 
 
@@ -90,10 +89,6 @@ func _canvas(parent: Node, minimum: Vector2, painter: Callable) -> Control:
 	canvas.draw.connect(painter)
 	parent.add_child(canvas)
 	return canvas
-
-
-func _gold() -> Color:
-	return get_theme_color(&"font_color", &"GoldLabel")
 
 
 func _draw() -> void:
@@ -110,13 +105,8 @@ func _draw() -> void:
 func _draw_symbol() -> void:
 	if ability == null:
 		return
-	var color := _gold()
 	var extent := minf(symbol.size.x, symbol.size.y)
-	var rect := Rect2((symbol.size - Vector2.ONE * extent) / 2, Vector2.ONE * extent)
-	if ability is BoonData:
-		EmblemIcons.paint(symbol, rect, ability.emblem_key())
-		return
-	ItemGlyph.paint_ability(symbol, rect, ability.effect, color)
+	EmblemIcons.paint(symbol, Rect2((symbol.size - Vector2.ONE * extent) / 2, Vector2.ONE * extent), ability.emblem_key())
 
 
 # One socket per rank: owned ranks hold a gem, the offered rank's gem fades

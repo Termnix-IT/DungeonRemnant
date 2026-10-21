@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ChapterData" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="ChapterData" load_steps=9 format=3]
 [ext_resource type="Script" path="res://game/expedition/chapter_data.gd" id="1"]
 [ext_resource type="Script" path="res://world/areas/area_data.gd" id="2"]
 [ext_resource type="Resource" path="res://data/areas/moss_plain.tres" id="3"]
@@ -6,10 +6,13 @@
 [ext_resource type="Resource" path="res://data/areas/pillar_arena.tres" id="5"]
 [ext_resource type="Resource" path="res://data/areas/sanctum_trial.tres" id="6"]
 [ext_resource type="Resource" path="res://data/areas/guardian_hall.tres" id="7"]
+[ext_resource type="Texture2D" path="res://art/hub/ancient_ruins.png" id="8"]
 [resource]
 script = ExtResource("1")
 id = &"ash_corridor"
 display_name = "第1章　灰の回廊"
+description = "灰に沈んだ回廊を抜け、その奥の守護者の間で遺跡王を討つ。"
+illustration = ExtResource("8")
 layers = 3
 choices = Vector2i(2, 3)
 areas = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6")])

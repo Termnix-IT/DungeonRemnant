@@ -21,20 +21,19 @@ func run_test() -> void:
 		push_error("Usage: -- write|read res://.godot/restart-test-<name>.json")
 		quit(1)
 		return
-	var store := SaveStore.new()
+	var store := MetaStore.new()
 	store.path = args[1]
 	var ok := true
 	if args[0] == "write":
-		var state := RunCarryover.new()
-		state.gold = 87
-		state.hp_upgrade_level = 2
-		state.inventory.add(ItemCatalog.POTION, 17)
-		state.equipment.slots[4] = preload("res://data/items/vital_charm.tres")
-		ok = store.save_state(state)
+		var meta := MetaProgress.new()
+		meta.echo = 87
+		meta.ranks["sturdy_body"] = 2
+		meta.runs = 3
+		meta.met[&"dashing_rat"] = true
+		ok = store.save_progress(meta)
 	else:
-		var state := store.load_state()
-		ok = state.gold == 87 and state.hp_upgrade_level == 2 and state.inventory.entries.size() == 1
-		ok = ok and state.inventory.entries[0].count == 17 and state.equipment.slots[4] == preload("res://data/items/vital_charm.tres")
+		var meta := store.load_progress()
+		ok = meta.echo == 87 and meta.rank(&"sturdy_body") == 2 and meta.runs == 3 and meta.has_met(&"dashing_rat") and not store.blocked
 	print("Separate process %s: %s" % [args[0], "passed" if ok else "FAILED"])
 	quit(0 if ok else 1)
 

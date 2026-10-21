@@ -6,6 +6,8 @@
 script = ExtResource("1")
 id = &"dashing_rat"
 display_name = "疾走ネズミ"
+description = "素早く駆け寄り、間合いに入ると身を縮めてからまっすぐ飛びかかる。縮んだところを斬れば止められる。
+フィールドとアリーナに現れる。"
 baked = true
 visual_id = "fast"
 size_scale = 1.2

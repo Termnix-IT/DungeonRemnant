@@ -6,12 +6,12 @@ extends CanvasLayer
 # level; the time, foe count, kills and frame rate at the top left (with how
 # the foes are being sent, when an EnemyDirector is watched) and the boons
 # taken under them; the controls along the bottom and a message in the
-# middle (paused, fallen). The real HUD replaces it in Phase 5; it only
+# middle (paused, fallen). The real HUD replaces it in Phase 6; it only
 # reads the area (and its `director` and `run`, when it has them).
 
 const DASH_FULL := Color("9fe3dc")
 const DASH_EMPTY := Color(0.35, 0.4, 0.42, 0.6)
-const CONTROLS := "WASD 移動　／　左クリック 攻撃（長押しで溜め）　／　Space 回避　／　Q スキル　／　Esc 一時停止"
+const CONTROLS := "WASD 移動　／　左クリック 攻撃（長押しで溜め）　／　Space 回避　／　Q スキル　／　Esc メニュー"
 # The message sits this far above the middle, clear of the hero.
 const MESSAGE_RISE := 190.0
 
@@ -73,20 +73,20 @@ func _ready() -> void:
 	exp_bar.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	exp_bar.offset_left = 120
 	exp_bar.offset_right = -32
-	exp_bar.offset_top = 10
-	exp_bar.offset_bottom = 20
+	exp_bar.offset_top = 16
+	exp_bar.offset_bottom = 26
 	root.add_child(exp_bar)
 	level_label = Label.new()
 	level_label.theme_type_variation = &"HudValue"
-	level_label.position = Vector2(32, 2)
+	level_label.position = Vector2(32, 8)
 	root.add_child(level_label)
 	info = Label.new()
 	info.theme_type_variation = &"HudSmall"
-	info.position = Vector2(32, 30)
+	info.position = Vector2(32, 38)
 	root.add_child(info)
 	boons_label = Label.new()
 	boons_label.theme_type_variation = &"HudSmall"
-	boons_label.position = Vector2(32, 54)
+	boons_label.position = Vector2(32, 62)
 	root.add_child(boons_label)
 	guide = Label.new()
 	guide.theme_type_variation = &"HudSmall"

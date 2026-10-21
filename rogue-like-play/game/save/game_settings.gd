@@ -10,10 +10,10 @@ const DISPLAY_NAMES: Array[String] = ["ウィンドウ", "全画面"]
 # room tone, each under the master volume.
 const EFFECTS_BUS := &"Effects"
 const AMBIENCE_BUS := &"Ambience"
-# How hard the camera shakes when she is hit, as a share of Run.SHAKE_STRENGTH.
+# How hard the camera shakes when she is hit, as a share of the fight's shake (CombatArea.shake).
 const SHAKE_NAMES: Array[String] = ["標準", "弱め", "なし"]
 const SHAKE_SCALES: Array[float] = [1.0, 0.5, 0.0]
-# Whether the dungeon HUD shows the card of what can be done now (HudActions).
+# Whether the fight's HUD shows its line of controls (ActionHud).
 const CONTROLS_NAMES: Array[String] = ["ON", "OFF"]
 # The first settings stored five volume steps; read them as their level.
 const LEGACY_VOLUME_STEPS: Array[float] = [0.0, 0.25, 0.5, 0.75, 1.0]

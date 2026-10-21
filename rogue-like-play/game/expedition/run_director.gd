@@ -6,12 +6,17 @@ extends Node
 # shows it (RouteMapView); the area chosen is fought (BattleArea) with the
 # run's health and build; a cleared area gives its waypoint's reward (three
 # boon cards, a heal, or echo) and the route moves on a layer. The boss
-# cleared, or the hero fallen, ends the run (RunEndView, and `finished`
-# with the result, which the base records in its MetaProgress). Given the
+# cleared, the hero fallen, or the run left from a fight's menu, ends the
+# run (RunEndView, and `finished` with the result, which the base records
+# in its MetaProgress). Given the
 # base's MetaProgress, the run starts with its lasting upgrades: her
 # tuning, and with the parting blessing a boon chosen before the map.
 
 signal finished(result: Dictionary)
+# The result's way home was taken (only when returns_to_base).
+signal base_requested
+# A setting was changed from a fight's menu (the owner saves it).
+signal settings_changed
 
 const CHAPTER := preload("res://data/chapters/ash_corridor.tres")
 const CHOICE := preload("res://ui/ability_choice.tscn")
@@ -23,6 +28,10 @@ const FALL_PAUSE := 1.6
 @export var seed_value := 0
 # The base's lasting progress; none fights as a new player.
 var meta: MetaProgress
+# The player's settings, given to each area; none: the defaults.
+var settings: GameSettings
+# Started from the base: the result leads back there instead of to a new run.
+var returns_to_base := false
 var chapter: ChapterData = CHAPTER
 var run: RunState
 var area: BattleArea
@@ -83,8 +92,11 @@ func enter(next: RouteMap.Waypoint) -> void:
 	area = BattleArea.new()
 	area.name = "Area"
 	area.setup(next.area, run, seed_value + run.layer * 101 if seed_value != 0 else 0)
+	area.settings = settings
 	area.cleared.connect(_on_cleared, CONNECT_DEFERRED)
 	area.hero_fell.connect(_on_fallen)
+	area.abandoned.connect(_on_abandoned, CONNECT_DEFERRED)
+	area.settings_changed.connect(func(): settings_changed.emit())
 	add_child(area)
 
 
@@ -147,6 +159,14 @@ func _after_fall() -> void:
 	finish(false)
 
 
+# Left from the menu: the run ends where it is, its echo kept.
+func _on_abandoned() -> void:
+	if area == null:
+		return
+	_leave_area()
+	finish(false, true)
+
+
 func _leave_area() -> void:
 	run.kills += area.kills
 	run.time += area.elapsed
@@ -157,20 +177,23 @@ func _leave_area() -> void:
 	get_tree().paused = false
 
 
-func finish(cleared: bool) -> void:
+func finish(cleared: bool, abandoned: bool = false) -> void:
 	if not result.is_empty():
 		return
 	var boons: Array[String] = []
 	for boon in run.build.owned():
 		boons.append(boon.display_name)
-	result = {"cleared": cleared, "layer": mini(run.layer, run.route.size() - 1), "layers": run.route.size(),
+	result = {"cleared": cleared, "abandoned": abandoned, "layer": mini(run.layer, run.route.size() - 1), "layers": run.route.size(),
 		"chapter": chapter.display_name, "time": run.time, "kills": run.kills,
 		"level": run.progression.level, "boons": boons, "echo": run.echo, "met": run.met.keys()}
 	map_view.hide()
-	end_view.present(result)
+	end_view.present(result, returns_to_base)
 	finished.emit(result)
 
 
 func _again() -> void:
 	get_tree().paused = false
-	get_tree().reload_current_scene()
+	if returns_to_base:
+		base_requested.emit()
+	else:
+		get_tree().reload_current_scene()

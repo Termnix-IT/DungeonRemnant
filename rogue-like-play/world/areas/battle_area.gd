@@ -13,8 +13,13 @@ extends CombatArea
 # extends it with its own hall and no clearing.
 
 signal cleared
+# A setting was changed from the menu (the owner saves it).
+signal settings_changed
+# The player left the run from the menu (confirmed).
+signal abandoned
 
 const CHOICE := preload("res://ui/ability_choice.tscn")
+const PROMPT := preload("res://ui/choice_prompt.gd")
 # From the clear to `cleared`: the gems fly in and the hero takes a breath.
 const CLEAR_PAUSE := 1.4
 const BANNER_TIME := 2.6
@@ -27,6 +32,10 @@ const BOSS_PLACE := 0.28
 @export var seed_value := 0
 var data: AreaData
 var run: RunState
+# The player's settings (the hub's); none: the defaults.
+var settings: GameSettings
+var menu: DungeonMenu
+var prompt: CanvasLayer
 var hud: ActionHud
 var choice: CanvasLayer
 var director: EnemyDirector
@@ -54,6 +63,9 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if run == null:
 		run = RunState.new(seed_value)
+	if settings == null:
+		settings = GameSettings.new()
+	shake_scale = settings.shake_scale()
 	_lay_out()
 	if run.hp > 0:
 		hero.health.hp = mini(run.hp, hero.health.max_hp)
@@ -66,6 +78,19 @@ func _ready() -> void:
 	choice.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(choice)
 	choice.selected.connect(_on_chosen)
+	hud.guide.visible = settings.show_controls
+	menu = DungeonMenu.new()
+	menu.process_mode = Node.PROCESS_MODE_ALWAYS
+	menu.settings = settings
+	add_child(menu)
+	menu.resumed.connect(_on_resumed)
+	menu.settings_changed.connect(_on_settings_changed)
+	menu.abort_requested.connect(_ask_abandon)
+	prompt = PROMPT.new()
+	prompt.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(prompt)
+	prompt.confirmed.connect(_on_abandon_confirmed)
+	prompt.canceled.connect(func(): menu.open())
 	hero_fell.connect(_on_hero_down)
 	if data != null:
 		hud.show_message("%s\n%s" % [data.display_name, objective_text()])
@@ -223,12 +248,45 @@ func _on_hero_down() -> void:
 	hud.show_message("倒れました")
 
 
+# The menu is open, or its leaving is being confirmed.
+func in_menu() -> bool:
+	return menu.visible or prompt.visible
+
+
+func open_menu() -> void:
+	if choosing() or in_menu() or not hero.health.alive() or finished:
+		return
+	get_tree().paused = true
+	menu.open()
+
+
+func _on_resumed() -> void:
+	if not choosing():
+		get_tree().paused = false
+
+
+func _on_settings_changed() -> void:
+	settings.apply_volume()
+	settings.apply_display()
+	shake_scale = settings.shake_scale()
+	hud.guide.visible = settings.show_controls
+	settings_changed.emit()
+
+
+func _ask_abandon() -> void:
+	menu.hide()
+	prompt.ask("ランの中断", "ランを中断しますか？", "このランで得た残響は持ち帰れます。レベルと強化は残りません。", "中断する", "戻る")
+
+
+func _on_abandon_confirmed() -> void:
+	abandoned.emit()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if choosing() or not hero.health.alive():
 		return
-	if event.is_action_pressed(&"pause"):
-		get_tree().paused = not get_tree().paused
-		hud.show_message("一時停止中　Escで再開" if get_tree().paused else "")
+	if event.is_action_pressed(&"pause") and not in_menu():
+		open_menu()
 		get_viewport().set_input_as_handled()
 
 

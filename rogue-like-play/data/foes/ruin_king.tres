@@ -10,6 +10,8 @@
 script = ExtResource("1")
 id = &"ruin_king"
 display_name = "遺跡王"
+description = "守護者の間の主。薙ぎ払い・突進・地震を使い分ける。傷が深くなると怒り狂い、より広い地震を放ち、ネズミを呼び寄せる。
+第1章の最後に待つ。"
 visual_id = "boss_ruin_king"
 size_scale = 1.3
 elite = false

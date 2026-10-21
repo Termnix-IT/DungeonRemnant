@@ -2,7 +2,7 @@ class_name RunProgression
 extends RefCounted
 
 const MAX_LEVEL := 100
-var settings: LevelSettings = preload("res://data/progression/levels.tres")
+var settings: LevelSettings = preload("res://data/progression/action_levels.tres")
 var level := 1
 var exp := 0
 var pending_choices := 0

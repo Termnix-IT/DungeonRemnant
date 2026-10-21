@@ -10,8 +10,7 @@ const GameAudio := preload("res://audio/game_audio.gd")
 # A takes the focused one; with no card focused, a direction focuses one.
 const FOCUS_DELAY := 0.3
 
-# AbilityData (the turn-based run) or BoonData (the real-time run).
-var offers: Array = []
+var offers: Array[BoonData] = []
 var _levels: Array[int] = []
 var cards: Array[AbilityCard] = []
 # Plays the chosen moment after the dialog has already closed, so the turn
@@ -46,15 +45,7 @@ func _ready() -> void:
 		buttons[index].focus_exited.connect(_hover.bind(index, false))
 
 
-func present(candidates: Array[AbilityData], abilities: AbilitySystem, level: int, pending: int) -> void:
-	var levels: Array[int] = []
-	for ability in candidates:
-		levels.append(abilities.level_of(ability))
-	_open(candidates, levels, level, pending)
-
-
-# The real-time run's level-up: boons, at the ranks the build holds.
-# `title` replaces the level-up title (an area's reward).
+# A level-up's boons, at the ranks the build holds. `title` replaces the level-up title (an area's reward).
 func present_boons(candidates: Array[BoonData], build: BuildState, level: int, pending: int, title: String = "") -> void:
 	var levels: Array[int] = []
 	for boon in candidates:
@@ -64,7 +55,7 @@ func present_boons(candidates: Array[BoonData], build: BuildState, level: int, p
 		$Panel/Margin/Stack/Title.text = title
 
 
-func _open(candidates: Array, levels: Array[int], level: int, pending: int) -> void:
+func _open(candidates: Array[BoonData], levels: Array[int], level: int, pending: int) -> void:
 	clear_afterglow()
 	offers = candidates.duplicate()
 	_levels = levels
@@ -98,7 +89,7 @@ func _open(candidates: Array, levels: Array[int], level: int, pending: int) -> v
 
 
 # Only the same offer, still open and unanswered, takes focus.
-func _focus_first(opened: Array) -> void:
+func _focus_first(opened: Array[BoonData]) -> void:
 	if visible and offers == opened and not buttons.is_empty():
 		buttons[0].grab_focus()
 

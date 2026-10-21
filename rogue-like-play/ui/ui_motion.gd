@@ -209,7 +209,7 @@ func reveal(duration: float = SELECT_TIME) -> void:
 
 
 func select_card() -> void:
-	if not control is ItemCardList or not control.is_visible_in_tree():
+	if not &"selection_strength" in control or not control.is_visible_in_tree():
 		return
 	if selection_tween != null:
 		selection_tween.kill()
@@ -260,7 +260,7 @@ func _move_mark(progress: float) -> void:
 	control.queue_redraw()
 
 
-# Lists that draw their own rows (ItemCardList) bring them in top first:
+# Lists that draw their own rows bring them in top first:
 # tweens the control's `intro` from 0 to 1 over the rows' cascade.
 func intro_rows(count: int) -> void:
 	if not &"intro" in control or not control.is_visible_in_tree():
@@ -382,36 +382,6 @@ func count(from: int, to: int, format: Callable, delay: float = 0.0) -> void:
 	count_tween.tween_method(func(value: float): label.text = format.call(roundi(value)), float(from), float(to), duration)
 
 
-# Success moment for a trade or move: the item's glyph flies from one Control
-# to another on a pointer-transparent copy owned by host, then frees itself.
-# Connect to the returned tween's finished signal to acknowledge the landing.
-static func fly_glyph(host: Control, item: ItemData, from: Control, to: Control) -> Tween:
-	return fly_glyph_at(host, item, from, to.get_global_rect().get_center())
-
-
-# Same as fly_glyph, landing on a global point such as one list row.
-static func fly_glyph_at(host: Control, item: ItemData, from: Control, point: Vector2) -> Tween:
-	var ghost := Control.new()
-	ghost.texture_filter = ItemIcons.filter()
-	ghost.top_level = true
-	# Top-level copies do not inherit a raised parent z (the warehouse uses
-	# one), so draw above any panel explicitly.
-	ghost.z_as_relative = false
-	ghost.z_index = 100
-	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ghost.size = from.size
-	# A top-level copy may not inherit the host's Theme; resolve colour first.
-	var color := from.get_theme_color(&"font_color", &"GoldLabel")
-	ghost.draw.connect(func():
-		var extent := minf(ghost.size.x, ghost.size.y) * 0.68
-		ItemGlyph.paint(ghost, Rect2((ghost.size - Vector2.ONE * extent) / 2, Vector2.ONE * extent), item, color))
-	host.add_child(ghost)
-	ghost.global_position = from.global_position
-	var tween := of(ghost).travel(point - ghost.size * 0.5)
-	tween.finished.connect(ghost.queue_free)
-	return tween
-
-
 # Fills an optional glow property from 0 to 1, e.g. the rank pip just gained.
 func glow_in(duration: float = MOMENT_RISE_TIME) -> void:
 	if not &"glow" in control or not control.is_visible_in_tree():
@@ -523,7 +493,7 @@ func reset() -> void:
 	reset_vital()
 	if selection_tween != null:
 		selection_tween.kill()
-	if control is ItemCardList:
+	if &"selection_strength" in control:
 		control.selection_strength = 1.0
 	if alpha_tween != null:
 		alpha_tween.kill()

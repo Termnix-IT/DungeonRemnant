@@ -1,13 +1,13 @@
 class_name DungeonMenu
 extends CanvasLayer
 
-# The dungeon's menu (Esc, or Start on a gamepad): back to the floor, the
-# settings, or leaving the run. The run waits while it is open. The settings
-# are the hub's own page (HubSettings) over the dimmed floor, so a change made
-# here is the same change, stored the same way, and takes effect at once.
-# Leaving goes through the run's abort confirmation, which says what is lost.
-# Esc (B) steps back one level: from the help to the settings, from the
-# settings to the menu, from the menu to the floor.
+# The fight's menu (Esc, or Start on a gamepad): back to the fight, the
+# settings, or leaving the run. The fight waits while it is open. The
+# settings are the hub's own page (HubSettings) over the dimmed field, so a
+# change made here is the same change, stored the same way, and takes effect
+# at once. Leaving goes through the area's confirmation, which says what is
+# kept. Esc (B) steps back one level: from the help to the settings, from
+# the settings to the menu, from the menu to the fight.
 
 signal resumed
 signal abort_requested
@@ -70,10 +70,10 @@ func _build_menu() -> void:
 	var title := HubUI.label(column, "メニュー", &"TitleLabel")
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	HubUI.rule(column)
-	resume_button = HubUI.button(column, "探索に戻る", resume, &"PrimaryButton")
+	resume_button = HubUI.button(column, "戦いに戻る", resume, &"PrimaryButton")
 	settings_button = HubUI.button(column, "設定", open_settings)
-	abort_button = HubUI.button(column, "冒険を中断する", func(): abort_requested.emit())
-	abort_button.tooltip_text = "中断の確認へ進む。失うものはそこで確かめられる。"
+	abort_button = HubUI.button(column, "ランを中断する", func(): abort_requested.emit())
+	abort_button.tooltip_text = "中断の確認へ進む。持ち帰れるものはそこで確かめられる。"
 	var buttons: Array[Button] = [resume_button, settings_button, abort_button]
 	for index in buttons.size():
 		buttons[index].focus_neighbor_top = buttons[(index + buttons.size() - 1) % buttons.size()].get_path()

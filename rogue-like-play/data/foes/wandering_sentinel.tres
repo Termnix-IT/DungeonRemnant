@@ -4,6 +4,8 @@
 script = ExtResource("1")
 id = &"wandering_sentinel"
 display_name = "さまよう番兵"
+description = "群れで追いかけてきて、ぶつかって傷を負わせる。一体は弱いが、数で囲んでくる。
+フィールドとアリーナに現れる。"
 baked = true
 visual_id = "basic"
 max_hp = 30

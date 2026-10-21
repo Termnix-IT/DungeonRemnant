@@ -35,10 +35,3 @@ static func panel(parent: Node, position: Vector2, extent: Vector2) -> Panel:
 	var control := Panel.new()
 	place(control, parent, position, extent)
 	return control
-
-
-static func fill_inventory(list: ItemList, inventory: Inventory) -> void:
-	list.clear()
-	for entry in inventory.entries:
-		list.add_item("%s  ×%d" % [entry.item.label(), entry.count])
-		list.set_item_tooltip(list.item_count - 1, ItemTooltipList.description(entry.item))

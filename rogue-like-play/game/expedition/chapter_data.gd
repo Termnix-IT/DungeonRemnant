@@ -7,6 +7,9 @@ extends Resource
 
 @export var id: StringName
 @export var display_name := "第1章"
+# The base's departure shows these.
+@export_multiline var description := ""
+@export var illustration: Texture2D
 @export_range(1, 10) var layers := 3
 # Areas offered per layer, picked between these (inclusive).
 @export var choices := Vector2i(2, 3)

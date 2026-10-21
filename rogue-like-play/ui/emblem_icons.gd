@@ -1,28 +1,12 @@
 class_name EmblemIcons
 extends RefCounted
 
-# Optional generated medallions for level-up abilities and permanent upgrades:
-# art/emblems/<key>.png, a 192px painted emblem (tools/process_emblems.py)
-# drawn shrunk from its mipmaps. Keys come from the ability Effect and the upgrade effect, so ability
-# and upgrade data stay untouched. Without a file, ItemGlyph's drawn symbol
-# stays, so art can arrive one emblem at a time.
+# Generated medallions for boons and lasting upgrades: art/emblems/<key>.png,
+# a 192px painted emblem (tools/process_emblems.py) drawn shrunk from its
+# mipmaps. The key is named by the data (BoonData.emblem, MetaUpgrade.emblem);
+# without a file nothing is drawn, so art can arrive one emblem at a time.
 const DIRECTORY := "res://art/emblems/"
-# Permanent upgrades that share an ability's meaning share its emblem; the
-# 生命力 branch and 魔力量 have their own.
-const UPGRADE_KEYS := {&"hp": "max_hp", &"attack": "attack", &"defense": "defense", &"mp": "mana"}
-const VITALITY_KEY := "vitality"
-
 static var _cache: Dictionary = {}
-
-
-static func ability_key(effect: AbilityData.Effect) -> String:
-	return String(AbilityData.Effect.keys()[effect]).to_lower()
-
-
-static func upgrade_key(effect: StringName, branch: bool) -> String:
-	if branch and effect == &"hp":
-		return VITALITY_KEY
-	return UPGRADE_KEYS.get(effect, "")
 
 
 static func texture(key: String) -> Texture2D:

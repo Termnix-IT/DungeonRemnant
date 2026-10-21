@@ -66,12 +66,11 @@ func _ready() -> void:
 	hide()
 
 
-func play_departure(stage: StageData, entry_floor: int) -> void:
-	art.texture = stage.illustration
+func play_departure(chapter: ChapterData) -> void:
+	art.texture = chapter.illustration
 	art.visible = art.texture != null
-	title.text = stage.display_name
-	var floors := "全%d階" % stage.floor_count
-	subtitle.text = floors if entry_floor <= 1 else "%dFから  ·  %s" % [entry_floor, floors]
+	title.text = chapter.display_name
+	subtitle.text = "%d層とボス" % chapter.layers
 	_play()
 
 

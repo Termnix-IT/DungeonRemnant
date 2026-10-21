@@ -1,8 +1,12 @@
 extends SceneTree
 
+# Playing on a gamepad: the fight's actions are bound on it (project.godot's
+# InputMap), the left stick moves and the right stick aims, a pad press
+# swings and dashes, the base is walked with the D-pad and A / B, and the
+# level-up cards and the menu answer the pad too.
+
 var failures := 0
 var checks := 0
-const LEATHER := preload("res://data/items/leather_armor.tres")
 
 
 func _initialize() -> void:
@@ -23,82 +27,98 @@ func pad(button: JoyButton, pressed: bool = true) -> InputEventJoypadButton:
 	return event
 
 
+func stick(axis: JoyAxis, value: float) -> InputEventJoypadMotion:
+	var event := InputEventJoypadMotion.new()
+	event.axis = axis
+	event.axis_value = value
+	return event
+
+
 func run_tests() -> void:
-	check(StickDirections.direction_action(Vector2(1, 0)) == &"move_e" and StickDirections.direction_action(Vector2(0, -1)) == &"move_n", "Stick cardinals map to moves")
-	check(StickDirections.direction_action(Vector2(0.7, 0.7)) == &"move_se" and StickDirections.direction_action(Vector2(-0.7, -0.7)) == &"move_nw", "Stick diagonals map to diagonal moves")
-	check(StickDirections.direction_action(Vector2(0.3, 0.2)).is_empty(), "Stick inside the deadzone moves nothing")
-	var main := preload("res://game/main.tscn").instantiate()
-	main.run_seed = 47
+	for binding: Array in [["strike", JOY_BUTTON_X], ["dash", JOY_BUTTON_A], ["dash", JOY_BUTTON_RIGHT_SHOULDER], ["skill_1", JOY_BUTTON_Y], ["pause", JOY_BUTTON_START], ["move_up", JOY_BUTTON_DPAD_UP]]:
+		check(InputMap.action_has_event(binding[0], pad(binding[1])), "%s is bound on the gamepad" % binding[0])
+	for binding: Array in [["move_left", JOY_AXIS_LEFT_X, -1.0], ["move_down", JOY_AXIS_LEFT_Y, 1.0], ["aim_right", JOY_AXIS_RIGHT_X, 1.0], ["aim_up", JOY_AXIS_RIGHT_Y, -1.0]]:
+		check(InputMap.action_has_event(binding[0], stick(binding[1], binding[2])), "%s is bound to its stick" % binding[0])
+
+	var main: Node = load("res://game/main.tscn").instantiate()
 	main.saving_enabled = false
-	main.state.inventory.add(LEATHER)
+	main.run_seed = 3
 	root.add_child(main)
 	await process_frame
-	for binding: Array in [["attack", JOY_BUTTON_A], ["cancel_attack", JOY_BUTTON_B], ["inventory", JOY_BUTTON_X], ["switch_weapon", JOY_BUTTON_Y], ["restart", JOY_BUTTON_START], ["move_n", JOY_BUTTON_DPAD_UP]]:
-		check(InputMap.action_has_event(binding[0], pad(binding[1])), "%s is bound on the gamepad" % binding[0])
+	var hub = main.get_node("Hub")
+	for binding: Array in [["ui_accept", JOY_BUTTON_A], ["ui_cancel", JOY_BUTTON_B], ["ui_down", JOY_BUTTON_DPAD_DOWN]]:
+		check(InputMap.action_has_event(binding[0], pad(binding[1])), "%s is bound on the gamepad for the base" % binding[0])
+	# The base: down to the upgrades, A to enter, B to come back.
+	hub.home_page.focus_selected()
+	await process_frame
+	root.push_input(pad(JOY_BUTTON_DPAD_DOWN))
+	root.push_input(pad(JOY_BUTTON_DPAD_DOWN, false))
+	await process_frame
+	check(hub.home_page.selected_id() == &"upgrade", "The D-pad moves down the lobby's menu")
+	root.push_input(pad(JOY_BUTTON_A))
+	root.push_input(pad(JOY_BUTTON_A, false))
+	await process_frame
+	check(hub.page == "upgrade", "A enters the chosen page")
+	root.push_input(pad(JOY_BUTTON_B))
+	root.push_input(pad(JOY_BUTTON_B, false))
+	await process_frame
+	check(hub.page == "home", "B comes back to the lobby")
+
+	# A run: into the first area.
 	main.start_run()
 	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
-	var run: Node2D = main.active_run
-	var player: Node2D = run.turns.player
-	root.push_input(pad(JOY_BUTTON_A))
-	root.push_input(pad(JOY_BUTTON_A, false))
-	check(player.aiming, "Gamepad A starts aiming an attack")
+	var run: RunDirector = main.active_run
+	run.map_view._choose(run.run.route.nodes(0)[0])
+	await process_frame
+	var hero: Hero = run.area.hero
+	Input.parse_input_event(stick(JOY_AXIS_LEFT_X, 1.0))
+	Input.parse_input_event(stick(JOY_AXIS_RIGHT_Y, -1.0))
+	await physics_frame
+	var input := hero.read_input()
+	check(input.move.x > 0.9, "The left stick moves")
+	check(input.aim.is_equal_approx(Vector2.UP), "The right stick aims")
+	# The right stick let go (synthetic small axis events do not reach the
+	# action, so it is released directly).
+	Input.action_release(&"aim_up")
+	await physics_frame
+	input = hero.read_input()
+	check(input.aim.x > 0.9, "With the right stick at rest she aims where she moves")
+	Input.parse_input_event(pad(JOY_BUTTON_X))
+	for frame in 5:
+		await physics_frame
+		if hero.motor.swing_serial >= 1:
+			break
+	check(hero.motor.swing_serial >= 1, "X swings")
+	Input.parse_input_event(pad(JOY_BUTTON_X, false))
+	await create_timer(0.5).timeout
+	Input.parse_input_event(pad(JOY_BUTTON_A))
+	for frame in 5:
+		await physics_frame
+		if hero.motor.state == HeroMotor.State.DASH:
+			break
+	check(hero.motor.state == HeroMotor.State.DASH or hero.motor.since_dash < 0.3, "A dashes")
+	Input.parse_input_event(pad(JOY_BUTTON_A, false))
+	Input.parse_input_event(stick(JOY_AXIS_LEFT_X, 0.05))
+	# The menu on Start, and back with B.
+	Input.parse_input_event(pad(JOY_BUTTON_START))
+	root.push_input(pad(JOY_BUTTON_START))
+	await process_frame
+	Input.parse_input_event(pad(JOY_BUTTON_START, false))
+	check(run.area.menu.visible and paused, "Start opens the menu and stops the fight")
 	root.push_input(pad(JOY_BUTTON_B))
 	root.push_input(pad(JOY_BUTTON_B, false))
-	check(not player.aiming, "Gamepad B cancels aiming")
-	root.push_input(pad(JOY_BUTTON_X))
-	root.push_input(pad(JOY_BUTTON_X, false))
 	await process_frame
-	var inventory = run.inventory_panel
-	check(inventory.visible and inventory.stock.cells.has(inventory.get_viewport().gui_get_focus_owner()), "Gamepad X opens the inventory with an icon of the grid focused")
-	var armor_index := -1
-	for index in player.inventory.entries.size():
-		if player.inventory.entries[index].item == LEATHER:
-			armor_index = index
-	inventory.select_item(armor_index)
-	check(inventory.activate_selected() and player.equipment.slots[Equipment.Slot.ARMOR] == LEATHER, "Confirm equips armour into its slot")
-	var main_before: ItemData = player.equipment.slots[Equipment.Slot.MAIN]
-	root.push_input(pad(JOY_BUTTON_Y))
-	root.push_input(pad(JOY_BUTTON_Y, false))
-	check(player.equipment.slots[Equipment.Slot.MAIN] != main_before and inventory.visible, "Gamepad Y switches weapons inside the inventory")
-	root.push_input(pad(JOY_BUTTON_B))
-	root.push_input(pad(JOY_BUTTON_B, false))
-	check(not inventory.visible, "Gamepad B closes the inventory")
-	var choice = run.ability_choice
-	var abilities := AbilitySystem.new()
-	choice.present(abilities.offer(), abilities, 2, 1)
-	check(not choice.buttons[0].has_focus(), "Ability cards take no focus the instant they open")
-	await create_timer(choice.FOCUS_DELAY + 0.05).timeout
-	check(choice.buttons[0].has_focus(), "The first ability card takes focus after a beat")
-	root.push_input(pad(JOY_BUTTON_DPAD_RIGHT))
-	root.push_input(pad(JOY_BUTTON_DPAD_RIGHT, false))
+	run.area.menu.back()
 	await process_frame
-	check(choice.buttons[1].has_focus(), "D-pad right moves to the next ability card")
-	root.push_input(pad(JOY_BUTTON_DPAD_LEFT))
-	root.push_input(pad(JOY_BUTTON_DPAD_LEFT, false))
-	root.push_input(pad(JOY_BUTTON_DPAD_LEFT))
-	root.push_input(pad(JOY_BUTTON_DPAD_LEFT, false))
-	await process_frame
-	check(choice.buttons[choice.offers.size() - 1].has_focus(), "Left from the first card goes round to the last")
-	choice.buttons[choice.offers.size() - 1].release_focus()
-	root.push_input(pad(JOY_BUTTON_DPAD_RIGHT))
-	root.push_input(pad(JOY_BUTTON_DPAD_RIGHT, false))
-	await process_frame
-	check(choice.buttons[0].has_focus(), "With no card focused, a direction focuses one")
-	var picked: Array[StringName] = []
-	choice.selected.connect(func(id: StringName): picked.append(id), CONNECT_ONE_SHOT)
-	var expected: StringName = choice.offers[0].id
+	check(not run.area.menu.visible and not paused, "Backing out of the menu resumes the fight")
+	# The level-up cards: a direction focuses one, A takes it.
+	run.area._on_gems(run.run.progression.required_exp())
+	await create_timer(0.5).timeout
 	root.push_input(pad(JOY_BUTTON_A))
 	root.push_input(pad(JOY_BUTTON_A, false))
 	await process_frame
-	check(picked == [expected] and not choice.visible, "Gamepad A takes the focused ability card")
-	run.turns.busy = false
-	choice.dismiss()
-	run.request_abort()
-	var enter := InputEventAction.new()
-	enter.action = "ui_accept"
-	enter.pressed = true
-	run._input(enter)
-	check(not run.result.is_empty() and not run.result_panel.confirming, "Enter confirms the abort without a mouse")
+	check(run.run.build.owned().size() == 1 and not paused, "A takes the focused card and the fight goes on")
 	main.free()
+	await process_frame
 	print("Gamepad input: %d checks, %d failures" % [checks, failures])
-	quit(1 if failures else 0)
+	quit(0 if failures == 0 else 1)

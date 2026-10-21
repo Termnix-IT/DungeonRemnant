@@ -1,114 +1,75 @@
 extends SceneTree
 
+# The base drawn for real at 1600x900, 1280x720 and 1920x1080: the lobby on
+# its departure, the lasting upgrades, the encyclopedia and the settings;
+# then, at 1600x900, a run's result offering the way home and the fight's
+# menu. Images go to .godot/hub_<page>_<width>.png. Look at them: the
+# hierarchy, the selected state, the main actions and any cut text. Needs a
+# rendering display driver:
+#   godot --path . --rendering-method gl_compatibility --log-file .godot/hub-capture.log --script res://tests/capture_hub.gd
+
+const SIZES: Array[Vector2i] = [Vector2i(1600, 900), Vector2i(1280, 720), Vector2i(1920, 1080)]
+var shots := {}
+
 
 func _initialize() -> void:
 	call_deferred("capture")
 
 
-func settle() -> void:
-	for frame in 2:
-		await process_frame
-		await RenderingServer.frame_post_draw
-
-
-func click(button: Button) -> void:
-	await click_at(button.get_global_rect().get_center())
-
-
-func click_at(position: Vector2) -> void:
-	var event := InputEventMouseButton.new()
-	event.position = position
-	event.button_index = MOUSE_BUTTON_LEFT
-	event.pressed = true
-	Input.parse_input_event(event)
-	var release := event.duplicate() as InputEventMouseButton
-	release.pressed = false
-	Input.parse_input_event(release)
-	await settle()
-
-
 func capture() -> void:
 	if DisplayServer.get_name() == "headless":
+		push_error("Capture requires a rendering display driver.")
 		quit(1)
 		return
-	var main := preload("res://game/main.tscn").instantiate()
+	var main: Node = load("res://game/main.tscn").instantiate()
 	main.saving_enabled = false
+	main.run_seed = 6
+	main.meta.echo = 240
+	main.meta.ranks["sturdy_body"] = 1
+	main.meta.runs = 3
+	main.meta.best_layer = 2
+	main.meta.met[&"wandering_sentinel"] = true
+	main.meta.met[&"dashing_rat"] = true
 	root.add_child(main)
 	var hub = main.get_node("Hub")
-	await settle()
-	var ok := root.get_texture().get_image().save_png("res://.godot/hub_initial.png") == OK
-	await click(hub.hero_button)
-	ok = ok and hub.hero_speech.visible
-	ok = root.get_texture().get_image().save_png("res://.godot/hub_speech.png") == OK and ok
-	var first_line: String = hub.home_page.speech_label.text
-	await click(hub.hero_button)
-	ok = ok and hub.hero_speech.visible and hub.home_page.speech_label.text != first_line
-	await create_timer(HubLobby.SPEECH_TIME + 0.2).timeout
-	ok = ok and not hub.hero_speech.visible
-	# Test-only funds make purchase verification repeatable; production starts at 0.
-	main.state.gold = 101
-	main.state.inventory.add(ItemCatalog.POTION, 10)
-	hub.refresh(main.state)
-	await enter(hub, hub.upgrade_button)
-	await click(hub.purchase_button)
-	ok = ok and main.state.gold == 71 and main.state.hp_upgrade_level == 1
-	ok = root.get_texture().get_image().save_png("res://.godot/hub_purchased.png") == OK and ok
-	await click(hub.back_button)
-	await enter(hub, hub.prepare_button)
-	var warehouse: HubPrepare = hub.prepare_page
-	ok = ok and warehouse.visible
-	ok = root.get_texture().get_image().save_png("res://.godot/hub_prepare.png") == OK and ok
-	await click(warehouse.carried.cells[0])
-	await click(warehouse.primary_button)
-	ok = ok and main.state.inventory.entries.is_empty() and main.state.storage.entries[0].count == 10
-	await click(warehouse.storage.cells[0])
-	await click(warehouse.primary_button)
-	ok = ok and main.state.inventory.entries[0].count == 10 and main.state.storage.entries.is_empty()
-	await click(hub.back_button)
-	ok = ok and not warehouse.visible
-	await enter(hub, hub.prepare_button)
-	var escape := InputEventKey.new()
-	escape.keycode = KEY_ESCAPE
-	escape.pressed = true
-	Input.parse_input_event(escape)
-	var escape_release := escape.duplicate() as InputEventKey
-	escape_release.pressed = false
-	Input.parse_input_event(escape_release)
-	await settle()
-	ok = ok and not warehouse.visible
-	await enter(hub, hub.start_button)
-	await click(hub.departure_page.confirm_button)
-	ok = ok and main.active_run != null and not hub.visible
-	var run: Node2D = main.active_run
-	ok = ok and run.turns.player.hp == 25 and run.turns.gold == 71
-	run.finish_run(false)
-	await settle()
-	ok = root.get_texture().get_image().save_png("res://.godot/hub_result.png") == OK and ok
-	var event := InputEventKey.new()
-	event.physical_keycode = KEY_R
-	event.keycode = KEY_R
-	event.pressed = true
-	Input.parse_input_event(event)
-	var release := event.duplicate() as InputEventKey
-	release.pressed = false
-	Input.parse_input_event(release)
-	await settle()
-	ok = ok and main.active_run == null and hub.visible and main.state.gold == 36
-	ok = root.get_texture().get_image().save_png("res://.godot/hub_returned.png") == OK and ok
-	# The return cover swallows input until it reveals the hub.
-	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
-	await enter(hub, hub.start_button)
-	await click(hub.departure_page.confirm_button)
-	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
-	ok = ok and main.active_run.turns.player.hp == 25 and main.active_run.turns.gold == 36
-	main.active_run.finish_run(true)
-	await settle()
-	await click(main.active_run.result_panel.accept)
-	ok = ok and hub.visible and main.active_run == null and main.state.gold == 36
-	print("Hub capture, mouse preparation/purchase/start/return and keyboard R return: ", "passed" if ok else "FAILED")
-	quit(0 if ok else 1)
+	hub.refresh(main.meta)
+	for size in SIZES:
+		DisplayServer.window_set_size(size)
+		root.size = size
+		await create_timer(0.3).timeout
+		for page in ["home", "upgrade", "codex", "settings"]:
+			hub.show_page(page)
+			await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
+			await _grab("hub_%s_%d" % [page, size.x])
+	DisplayServer.window_set_size(SIZES[0])
+	root.size = SIZES[0]
+	hub.show_page("home")
+	await create_timer(0.3).timeout
+	main.start_run()
+	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.2).timeout
+	var run: RunDirector = main.active_run
+	run.map_view._choose(run.run.route.nodes(0)[0])
+	await create_timer(1.0).timeout
+	run.area.hero.controlled = false
+	run.area.open_menu()
+	await create_timer(0.4).timeout
+	await _grab("hub_run_menu_1600")
+	run.area.menu.resume()
+	run.run.echo = 60
+	run.area.hero.health.hp = 1
+	run.area.hero.receive(DamageInfo.make(1000.0, Vector2.RIGHT))
+	await create_timer(RunDirector.FALL_PAUSE + 0.6).timeout
+	await _grab("hub_run_result_1600")
+	run.end_view._button.pressed.emit()
+	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.4).timeout
+	await _grab("hub_after_run_1600")
+	var result := OK
+	for file_name: String in shots:
+		result |= (shots[file_name] as Image).save_png("res://.godot/%s.png" % file_name)
+	print("Captured the base: ", ", ".join(shots.keys()))
+	quit(0 if result == OK else 1)
 
 
-# One click on a lobby entry enters it.
-func enter(_hub: Node, button: Button) -> void:
-	await click(button)
+func _grab(file_name: String) -> void:
+	await RenderingServer.frame_post_draw
+	shots[file_name] = root.get_texture().get_image()

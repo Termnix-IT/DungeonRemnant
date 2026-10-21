@@ -1,8 +1,8 @@
 class_name MetaStore
 extends RefCounted
 
-# Keeps MetaProgress in user://progress.json, the way the old SaveStore kept
-# the turn-based game's: written to a temporary file and read back before it
+# Keeps MetaProgress in user://progress.json, the way the turn-based game's
+# store kept its own: written to a temporary file and read back before it
 # replaces the save, the replaced save kept as .bak, an unreadable save moved
 # aside rather than overwritten, and saving stopped while a save cannot be
 # read. A save from the turn-based game (versions 1 to 4) is brought in

@@ -7,8 +7,6 @@ extends SceneTree
 # and turning mid-stride carries the step on. It touches no game state.
 
 const SET_SCENE := "res://art/characters/mio_rig/mio_rig.tscn"
-const BattlePresentation := preload("res://combat/battle_presentation.gd")
-const SWORD := preload("res://data/weapons/sword.tres")
 # A budget that keeps thirty rigs on screen cheap.
 const MAX_PARTS := 20
 const MAX_BONES := 28
@@ -60,7 +58,8 @@ func _check_rig(facing_name: StringName, scene: PackedScene) -> void:
 	var walk := player.get_animation(CharacterRig.WALK)
 	check(is_equal_approx(walk.length, 0.4) and walk.loop_mode == Animation.LOOP_LINEAR, "%s walks the hero's 0.4 s step" % facing_name)
 	var attack := player.get_animation(CharacterRig.ATTACK)
-	check(is_equal_approx(float(attack.get_meta(&"impact", -1.0)), BattlePresentation._impact_delay(SWORD)), "%s's sword lands when the presentation's hit does" % facing_name)
+	var impact := float(attack.get_meta(&"impact", -1.0))
+	check(impact > 0.0 and impact < attack.length, "%s's sword lands within its swing" % facing_name)
 	check(player.get_animation(CharacterRig.IDLE).loop_mode == Animation.LOOP_LINEAR, "%s's idle loops" % facing_name)
 	var tracks := {}
 	for animation_name in player.get_animation_list():

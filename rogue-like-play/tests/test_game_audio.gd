@@ -1,7 +1,6 @@
 extends SceneTree
 
 const Audio := preload("res://audio/game_audio.gd")
-const Ambience := preload("res://audio/dungeon_ambience.gd")
 var failures := 0
 var checks := 0
 
@@ -75,30 +74,6 @@ func run_tests() -> void:
 		await process_frame
 		check(parent.get_child_count() == 0, "Looped override cannot leak voices")
 		Audio.clear_overrides()
-	var ambience := Ambience.new()
-	parent.add_child(ambience)
-	for forest in [false, true]:
-		var loop := Ambience.synthesized(forest)
-		check(is_equal_approx(loop.get_length(), 2.0), "Ambience has a bounded two second buffer")
-		check(loop.loop_mode == AudioStreamWAV.LOOP_FORWARD and loop.loop_end == loop.data.size() / 2, "Ambience loops entire buffer")
-		var samples := loop.data
-		var seam_delta := absi(samples.decode_s16(0) - samples.decode_s16(samples.size() - 2))
-		var initial_delta := absi(samples.decode_s16(2) - samples.decode_s16(0))
-		check(absi(seam_delta - initial_delta) <= 2, "Ambience loop seam follows waveform slope")
-		check(loop == Ambience.synthesized(forest), "Ambience caches generated stream")
-		ambience.start(forest)
-		ambience.start(forest)
-		check(parent.get_child_count() == 1 and ambience.get_child_count() == 0, "Restarting ambience creates no voices or children")
-		var recording := Ambience.recorded(forest) as AudioStreamOggVorbis
-		check(recording != null and recording.loop and recording.get_length() > 10.0, "Ambience has a looping recording per environment")
-		check(ambience.volume_db == -32.0 and ambience.stream == recording, "Ambience stays subdued and plays the selected recording")
-		check(ambience.playing == (DisplayServer.get_name() != "headless"), "Ambient playback follows headless mode")
-		ambience.stop()
-		check(not ambience.playing, "Ambience stops immediately")
-	ambience.stream_override = default_stream
-	ambience.start()
-	check(ambience.stream == default_stream, "Ambience accepts a real asset override")
-	ambience.stop()
 	parent.queue_free()
 	await process_frame
 	print("Game audio: %d checks, %d failures" % [checks, failures])

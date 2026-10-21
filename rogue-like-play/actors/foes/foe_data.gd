@@ -5,6 +5,8 @@ extends Resource
 
 @export var id: StringName
 @export var display_name := "敵"
+# How it fights and where it is met, for the encyclopedia.
+@export_multiline var description := ""
 # Which illustration rig draws it (EnemySprites.rig_path).
 @export var visual_id := "basic"
 # Drawn from its rig baked into frames (FoeFrames), for foes that come in

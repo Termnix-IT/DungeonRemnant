@@ -14,7 +14,7 @@ extends Resource
 # The families it builds into (連撃, 範囲, 回避, 属性, 状態異常, スキル); a
 # build mixes them freely. Two at most, to fit the card's top line.
 @export var families: Array[String] = []
-# Named as AbilityData's, so the level-up card shows either.
+# Named max_level as the level-up card reads it.
 @export_range(1, 10) var max_level := 3
 # How often it is offered against the others.
 @export_range(0.0, 100.0) var weight := 1.0

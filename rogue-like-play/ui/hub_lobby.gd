@@ -16,31 +16,24 @@ signal activated(id: StringName)
 # id, menu label, NavigationIcon kind
 const ENTRIES := [
 	[&"departure", "出撃", "出撃"],
-	[&"prepare", "準備", "装備"],
-	[&"shop", "ショップ", "ショップ"],
 	[&"upgrade", "強化", "永久強化"],
 	[&"codex", "図鑑", "図鑑"],
 	[&"settings", "設定", "設定"],
 ]
 const ACTIONS := {
 	&"departure": "出撃する",
-	&"prepare": "準備を整える",
-	&"shop": "ショップに入る",
 	&"upgrade": "強化を選ぶ",
 	&"codex": "図鑑を開く",
 	&"settings": "設定を開く",
 }
 const DESCRIPTIONS := {
-	&"prepare": "武具を装備し、持ち込みと倉庫の間で品を移す。倉庫の品は冒険で失わない。",
-	&"shop": "Goldで薬や武具を買い、要らない品を売る。",
-	&"upgrade": "Goldで能力を永久に強化し、開始階を解放する。",
-	&"codex": "これまでに手にした品と、出会った魔物を見返す。",
+	&"upgrade": "ランで得た残響で、次のランからずっと続く強化を手に入れる。",
+	&"codex": "これまでに戦場で出会った敵を見返す。",
 	&"settings": "音量と画面モードを変え、遊び方を確認する。",
 }
-# Each panel shows the illustration of what it opens.
+# Each panel shows the illustration of what it opens; the departure, its
+# chapter's.
 const ART := {
-	&"prepare": preload("res://art/hub/cards/weapons.png"),
-	&"shop": preload("res://art/hub/cards/shop.png"),
 	&"upgrade": preload("res://art/hub/cards/books.png"),
 	&"codex": preload("res://art/hub/cards/codex.png"),
 	&"settings": preload("res://art/hub/cards/settings.png"),
@@ -51,7 +44,7 @@ const FACE := Vector2(0.38, 0.165)
 const FEET := Vector2(0.52, 0.985)
 # The soles: her right foot stands on the floor, the left a step behind it.
 const SOLES := [Vector2(0.61, 0.985), Vector2(0.42, 0.93)]
-const SPEECH := ["準備ができたら、出発しよう。", "装備の確認は済んだ？", "次は、どこへ潜ろうか。", "倉庫の整理も忘れずにね。"]
+const SPEECH := ["準備ができたら、出発しよう。", "残響が貯まったら、強化を忘れずに。", "次は、どこまで行けるかな。", "遺跡王……今度こそ。"]
 const SPEECH_TIME := 4.0
 # Room between the line and the end studs, and from the tail's tip to her face.
 const SPEECH_GAP := 22.0
@@ -75,8 +68,6 @@ const PANEL_BOTTOM := 64.0
 # the facts and the button at the bottom, so switching entries moves nothing.
 const PANEL_HEIGHT := 256.0
 const STRIP_HEIGHT := 60.0
-# Room for the main weapon's name beside its glyph in half the strip.
-const WEAPON_NAME_WIDTH := 240.0
 # The texture keeps clear margins for swaying hair, so the figure itself
 # stands about 78% of the screen tall.
 const HERO_HEIGHT := 0.8
@@ -97,26 +88,21 @@ var _speech_token := 0
 var _shadow_texture: GradientTexture2D
 var hero_button: Button
 var hero_speech: Panel
-var equipment_label: Label
-var main_glyph: Control
-var carried_label: Label
-var gold_value: Label
-var carried_room: Label
 var upgrade_value: Label
 var upgrade_ready: Label
-var codex_found: Label
-var codex_monsters: Label
+var codex_met: Label
+var codex_runs: Label
 var title_icon: NavigationIcon
-var floors_value: Label
-var difficulty_value: Label
+var route_value: Label
+var best_value: Label
 var volume_value: Label
 var display_value: Label
 var settings: GameSettings
 var panel: PanelContainer
 var _art: TextureRect
 var _details := {}
-var _state: RunCarryover
-var _stage: StageData
+var _meta: MetaProgress
+var _chapter: ChapterData
 var _band_y := 0.0
 var _band_tween: Tween
 
@@ -239,47 +225,19 @@ func _build_panel() -> void:
 	description_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	var route: HBoxContainer = _strip(stack)
 	_details[&"departure"] = route
-	floors_value = _fact(route, "階層")
+	route_value = _fact(route, "道のり")
 	_divider(route)
-	difficulty_value = _fact(route, "難易度")
-	# Preparation: the main weapon and how much she carries.
-	var gear: HBoxContainer = _strip(stack)
-	_details[&"prepare"] = gear
-	# The main weapon's value is its glyph and name side by side.
-	var weapon := _cell(gear, "主武器")
-	var named := HBoxContainer.new()
-	named.theme_type_variation = &"CompactRow"
-	named.alignment = BoxContainer.ALIGNMENT_CENTER
-	weapon.add_child(named)
-	main_glyph = Control.new()
-	main_glyph.texture_filter = ItemIcons.filter()
-	main_glyph.custom_minimum_size = Vector2(26, 26)
-	main_glyph.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	main_glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	main_glyph.draw.connect(_draw_main_glyph)
-	named.add_child(main_glyph)
-	equipment_label = HubUI.label(named, "", &"ValueLabel")
-	equipment_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	equipment_label.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	equipment_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	_divider(gear)
-	carried_label = _fact(gear, "持ち込み")
-	var purse: HBoxContainer = _strip(stack)
-	_details[&"shop"] = purse
-	# Money keeps its gold, at the same size as every other value.
-	gold_value = _fact(purse, "所持金", &"MoneyValueLabel")
-	_divider(purse)
-	carried_room = _fact(purse, "持ち込み空き")
+	best_value = _fact(route, "最深到達")
 	var growth: HBoxContainer = _strip(stack)
 	_details[&"upgrade"] = growth
-	upgrade_value = _fact(growth, "習得した強化")
+	upgrade_value = _fact(growth, "習得した段階")
 	_divider(growth)
 	upgrade_ready = _fact(growth, "強化できる")
 	var records: HBoxContainer = _strip(stack)
 	_details[&"codex"] = records
-	codex_found = _fact(records, "見つけた品")
+	codex_met = _fact(records, "出会った敵")
 	_divider(records)
-	codex_monsters = _fact(records, "出会った魔物")
+	codex_runs = _fact(records, "挑んだラン")
 	var current: HBoxContainer = _strip(stack)
 	_details[&"settings"] = current
 	volume_value = _fact(current, "音量")
@@ -447,40 +405,22 @@ func _fit_speech() -> void:
 	hero_speech.position = Vector2(maxf(0.0, face.x - SPEECH_REACH - hero_speech.size.x), face.y - hero_speech.size.y * 0.5)
 
 
-func refresh(state: RunCarryover, stage: StageData) -> void:
-	_state = state
-	_stage = stage
-	equipment_label.text = state.equipment.slots[Equipment.Slot.MAIN].display_name
-	# A trimming label has no width of its own: give it the name's width, up
-	# to what its half of the strip holds; longer names end in "…" and stay
-	# whole in the tooltip.
-	var font := equipment_label.get_theme_font(&"font")
-	var name_width := font.get_string_size(equipment_label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, equipment_label.get_theme_font_size(&"font_size")).x
-	equipment_label.custom_minimum_size.x = minf(ceilf(name_width) + 2.0, WEAPON_NAME_WIDTH)
-	equipment_label.tooltip_text = equipment_label.text if name_width + 2.0 > WEAPON_NAME_WIDTH else ""
-	equipment_label.mouse_filter = Control.MOUSE_FILTER_PASS
-	main_glyph.queue_redraw()
-	carried_label.text = "%d / %d 枠" % [state.inventory.entries.size(), state.inventory.max_entries]
-	gold_value.text = "%s G" % UIFormat.amount(state.gold)
-	carried_room.text = "%d 枠" % (state.inventory.max_entries - state.inventory.entries.size())
-	# What the current Gold can buy now, by the same rules the tree uses.
-	var ready := 1 if state.upgrade.price(state.hp_upgrade_level) >= 0 and state.gold >= state.upgrade.price(state.hp_upgrade_level) else 0
-	for node in SkillCatalog.NODES:
-		if state.can_purchase_skill(node.id):
+func refresh(meta: MetaProgress, chapter: ChapterData) -> void:
+	_meta = meta
+	_chapter = chapter
+	if chapter != null:
+		route_value.text = "%d層とボス" % chapter.layers
+	best_value.text = "なし" if meta.best_layer == 0 else ("踏破 %d回" % meta.clears if meta.clears > 0 else "第%d層" % meta.best_layer)
+	var ranks := 0
+	var ready := 0
+	for upgrade in MetaProgress.UPGRADES:
+		ranks += meta.rank(upgrade.id)
+		if meta.can_buy(upgrade.id):
 			ready += 1
-	upgrade_ready.text = "%d 件" % ready
-	var ranks := state.hp_upgrade_level
-	for id in state.skill_levels:
-		ranks += int(state.skill_levels[id])
 	upgrade_value.text = "%d 段階" % ranks
-	var all := ItemCatalog.all_items()
-	var found := all.filter(func(item: ItemData): return state.has_discovered(item)).size()
-	codex_found.text = "%d / %d" % [found, all.size()]
-	var monsters := EnemyCatalog.entries()
-	codex_monsters.text = "%d / %d" % [monsters.filter(func(entry: Dictionary): return state.has_met(entry.id)).size(), monsters.size()]
-	if stage != null:
-		floors_value.text = "全%d階" % stage.floor_count
-		difficulty_value.text = stage.difficulty
+	upgrade_ready.text = "%d 件" % ready
+	codex_met.text = "%d / %d" % [FoeCatalog.FOES.filter(func(foe: FoeData): return meta.has_met(foe.id)).size(), FoeCatalog.FOES.size()]
+	codex_runs.text = "%d 回" % meta.runs
 	if settings != null:
 		volume_value.text = "%d%%" % settings.volume_percent()
 		display_value.text = GameSettings.DISPLAY_NAMES[1 if settings.fullscreen else 0]
@@ -555,10 +495,10 @@ func _show_entry() -> void:
 		# Strips sit inside an inset panel and margin; show the outer one.
 		# Each strip's row sits in its band.
 		detail.get_parent().visible = key == id
-	if id == &"departure" and _stage != null:
-		title_label.text = _stage.display_name
-		description_label.text = _stage.description
-		_art.texture = _stage.illustration
+	if id == &"departure" and _chapter != null:
+		title_label.text = _chapter.display_name
+		description_label.text = _chapter.description
+		_art.texture = _chapter.illustration
 	else:
 		title_label.text = ENTRIES[selected][1]
 		description_label.text = DESCRIPTIONS.get(id, "")
@@ -571,20 +511,14 @@ func _show_entry() -> void:
 	title_icon.queue_redraw()
 	decide_button.visible = ACTIONS.has(id)
 	decide_button.text = ACTIONS.get(id, "")
-	# The departure's button sets out for the stage shown: the departure
-	# screen opens with it chosen and waits on its action.
-	if id == &"departure" and _stage != null:
-		decide_button.text = "%sへ向かう" % _stage.display_name
+	# The departure's button sets out for the chapter shown.
+	if id == &"departure" and _chapter != null:
+		decide_button.text = "%sへ出撃する" % _chapter.display_name.get_slice("　", 0)
 	# Right from the menu reaches the panel's button.
 	for button in buttons:
 		button.focus_neighbor_right = decide_button.get_path()
 	decide_button.focus_neighbor_left = buttons[selected].get_path()
 	queue_redraw()
-
-
-func _draw_main_glyph() -> void:
-	if _state != null and _state.equipment.slots[Equipment.Slot.MAIN] != null:
-		ItemGlyph.paint(main_glyph, Rect2(Vector2.ZERO, main_glyph.size), _state.equipment.slots[Equipment.Slot.MAIN], main_glyph.get_theme_color(&"font_color", &"GoldLabel"))
 
 
 func _draw() -> void:

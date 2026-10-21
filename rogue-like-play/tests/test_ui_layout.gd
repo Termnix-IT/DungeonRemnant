@@ -1,6 +1,13 @@
 extends SceneTree
 
+# Where things stand on the 1600x900 screen: the base's content centred, its
+# pages and their actions on the screen; then in a run, the route map and
+# the result centred, the fight's HUD in its corners without overlaps and
+# off the ground round the hero, and the level-up cards and the menu
+# centred over the fight.
+
 var failures := 0
+var checks := 0
 
 
 func _initialize() -> void:
@@ -8,115 +15,89 @@ func _initialize() -> void:
 
 
 func check(ok: bool, message: String) -> void:
+	checks += 1
 	if not ok:
 		failures += 1
 		push_error(message)
 
 
-func centered(control: Control) -> void:
+func centered(control: Control, label: String) -> void:
 	var viewport := root.get_visible_rect()
 	var rect := control.get_global_rect()
-	check(rect.get_center().distance_to(viewport.get_center()) < 1.0, "%s stays centered" % control.name)
-	check(viewport.encloses(rect), "%s fits the viewport" % control.name)
+	check(rect.get_center().distance_to(viewport.get_center()) < 2.0, "%s stays centred" % label)
+	check(viewport.grow(1).encloses(rect), "%s fits the screen" % label)
 
 
-func settle() -> void:
+func settle(seconds: float = 0.0) -> void:
+	if seconds > 0.0:
+		await create_timer(seconds).timeout
 	for frame in 3:
 		await process_frame
 
 
 func run_tests() -> void:
-	var main := preload("res://game/main.tscn").instantiate()
+	var main: Node = load("res://game/main.tscn").instantiate()
 	main.saving_enabled = false
+	main.run_seed = 6
+	main.meta.echo = 500
 	root.add_child(main)
 	await settle()
 	var hub = main.get_node("Hub")
-	centered(hub.get_node("Content"))
-	var action_rects := {}
-	for page in ["prepare", "sell", "upgrade", "stages"]:
+	hub.refresh(main.meta)
+	centered(hub.get_node("Content"), "The base's content")
+	var screen := root.get_visible_rect()
+	for page in ["upgrade", "codex", "settings"]:
 		hub.show_page(page)
 		# Measure the resting layout, after the page has slid into place.
-		await create_timer(UIMotion.WINDOW_TIME + 0.05).timeout
-		await settle()
-		var content: Control = hub.get_node("Content")
-		for control: Control in [hub.prepare_page, hub.sell_page, hub.departure_page, hub.upgrade_page]:
-			if control.visible:
-				# The slabs run off the screen's edges by design; they still have
-				# to stay on the screen.
-				check(root.get_visible_rect().grow(1).encloses(control.get_global_rect()), "%s page fits Hub content" % page)
-		# Every screen keeps its decision column at the same place, its primary
-		# action at the foot of it (docs/MVP_SPEC.md, 個別画面のUI文法).
-		var action: Button = {"prepare": hub.prepare_page.primary_button, "sell": hub.sell_page.sell_button, "upgrade": hub.purchase_button, "stages": hub.departure_page.confirm_button}[page]
-		action_rects[page] = action.get_global_rect()
-		check(root.get_visible_rect().encloses(action.get_global_rect()), "The %s action stays on the screen" % page)
-		if page == "stages":
-			var slots: Array[ItemCell] = hub.departure_page.slot_cells
-			var stats_top: float = hub.departure_page.hero_stats.specs.get_global_rect().position.y
-			check(slots.all(func(cell: ItemCell): return cell.get_global_rect().end.y <= stats_top) and stats_top < hub.departure_page.confirm_button.get_global_rect().position.y, "The departure reads stage, kit, stats, then the action")
-			check(not hub.departure_page.stage_details.get_global_rect().intersects(hub.departure_page.review_button.get_global_rect()), "The stage text leaves the preparation link clear")
-		if page == "prepare":
-			var worn: HubPrepare = hub.prepare_page
-			var screen: Rect2 = root.get_visible_rect()
-			check(worn.slots.all(func(slot: Button): return screen.encloses(slot.get_global_rect())) and screen.encloses(worn.detail_note.get_global_rect()), "Every slot and the detail line stay on the screen")
-			check(worn.slots.all(func(slot: Button): return slot.get_global_rect().end.y <= worn.storage.get_global_rect().position.y), "The slots stand above the two grids")
-			check(worn.storage.get_global_rect().end.x <= worn.carried.get_global_rect().position.x and worn.carried.get_global_rect().end.x <= worn.detail_name.get_global_rect().position.x, "Warehouse, carried and the column read left to right")
-			var divider: Rect2 = worn.divider.get_global_rect()
-			check(divider.position.x >= worn.storage.get_global_rect().end.x and divider.end.x <= worn.carried.get_global_rect().position.x and divider.size.y > worn.storage.get_global_rect().size.y * 0.8, "A rule stands between the warehouse and the carried grids")
-	var lefts := {}
-	for rect: Rect2 in action_rects.values():
-		lefts[roundi(rect.position.x)] = true
-	check(lefts.size() == 1, "Every screen's primary action starts at the same place: %s" % [action_rects])
-	hub.show_page("prepare")
-	await create_timer(UIMotion.WINDOW_TIME + 0.05).timeout
+		await settle(UIMotion.WINDOW_TIME + 0.05)
+		var shown: Control = {"upgrade": hub.upgrade_page, "codex": hub.codex_page, "settings": hub.settings_page}[page]
+		check(screen.grow(1).encloses(shown.get_global_rect()), "The %s page stays on the screen" % page)
+	hub.show_page("upgrade")
+	await settle(UIMotion.WINDOW_TIME + 0.05)
+	for button: Button in hub.upgrade_page.buttons:
+		check(screen.encloses(button.get_global_rect()), "Every upgrade's action stays on the screen")
+	var tops := {}
+	for button: Button in hub.upgrade_page.buttons:
+		tops[roundi(button.get_global_rect().position.y)] = true
+	check(tops.size() == 1, "The upgrades' actions stand in one row")
+	hub.show_page("home")
+	await settle(UIMotion.WINDOW_TIME + 0.05)
+	check(screen.encloses(hub.decide_button.get_global_rect()), "The lobby's action stays on the screen")
+
+	# A run: the route map.
+	main.start_run()
+	await settle(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1)
+	var run: RunDirector = main.active_run
+	centered(run.map_view._panel, "The route map")
+	# An area: the HUD in its corners, off the fight round the hero.
+	run.map_view._choose(run.run.route.nodes(0)[0])
+	await settle(BattleArea.BANNER_TIME + 0.2)
+	var area: BattleArea = run.area
+	area.hero.controlled = false
+	var hud: ActionHud = area.hud
+	var ring := Rect2(Vector2(screen.size) * 0.5 - Vector2(260, 200), Vector2(520, 400))
+	var panels: Array[Control] = [hud.hp_bar, hud.info, hud.guide, hud.exp_bar, hud.level_label, hud.skill_label]
+	for panel in panels:
+		check(screen.grow(-4).encloses(panel.get_global_rect()), "%s keeps off the screen's edge" % panel.name)
+		check(not panel.get_global_rect().intersects(ring), "%s stays off the ground round the hero" % panel.name)
+	check(not hud.hp_bar.get_global_rect().intersects(hud.guide.get_global_rect()) and not hud.info.get_global_rect().intersects(hud.exp_bar.get_global_rect()), "HUD parts do not overlap")
+	# The level-up cards and the menu over the fight.
+	area._on_gems(area.run.progression.required_exp())
+	await settle(0.4)
+	centered(area.choice.get_node("Panel"), "The level-up cards")
+	area.choice._select(0)
 	await settle()
-	var warehouse: HubPrepare = hub.prepare_page
-	var left := warehouse.storage.get_global_rect()
-	var right := warehouse.carried.get_global_rect()
-	# Whatever the column says, nothing round it moves.
-	var steady := true
-	for item in ItemCatalog.shop_items():
-		warehouse._show_item(item, "倉庫")
-		await settle()
-		steady = steady and is_equal_approx(warehouse.carried.get_global_rect().position.x, right.position.x) and is_equal_approx(warehouse.storage.get_global_rect().end.x, left.end.x)
-	check(steady, "A long name in the column never pushes the grids aside")
-	hub.go_back()
-	enter(hub, hub.start_button)
-	hub.departure_page.confirm_button.pressed.emit()
+	area.open_menu()
+	await settle(0.3)
+	var menu_panel: Control = area.menu.menu.get_child(0)
+	centered(menu_panel, "The fight's menu")
+	area.menu.resume()
 	await settle()
-	var run = main.active_run
-	var hud = run.get_node("HUD")
-	var panels: Array[Control] = []
-	# Fights happen within four cells of the hero, so the HUD stays off them.
-	var cell: float = run.dungeon.TILE_SIZE * run.camera.zoom.x
-	var hero: Vector2 = run.turns.player.get_global_transform_with_canvas().origin
-	var ring := Rect2(hero - Vector2.ONE * cell * 4.5, Vector2.ONE * cell * 9.0)
-	for path in ["TopRight", "BottomLeft", "Log", "Actions"]:
-		var panel: Control = hud.get_node(path)
-		# The actions card stands a few pixels from the corner; the rest keep a wider margin.
-		var safe_rect := root.get_visible_rect().grow(-(HudActions.MARGIN - 1.0) if path == "Actions" else -15.0)
-		check(safe_rect.encloses(panel.get_global_rect()), "%s keeps edge padding" % path)
-		check(not panel.get_global_rect().intersects(ring), "%s stays off the floor round the hero" % path)
-		for other in panels:
-			check(not panel.get_global_rect().intersects(other.get_global_rect()), "HUD panels do not overlap")
-		panels.append(panel)
-	run.inventory_panel.present(run.turns.player)
-	await settle()
-	centered(run.inventory_panel.get_node("Panel"))
-	run.inventory_panel.hide()
-	run.ability_choice.show()
-	await settle()
-	centered(run.ability_choice.get_node("Panel"))
-	run.ability_choice.hide()
-	run.result_panel.confirm_abort()
-	await settle()
-	centered(run.result_panel.presentation_panel)
-	run.finish_run(false)
-	await settle()
-	centered(run.result_panel.presentation_panel)
-	print("UI layout: ", "passed" if failures == 0 else "FAILED")
+	check(not paused, "Leaving the menu resumes the fight")
+	# The result.
+	area.hero.health.hp = 1
+	area.hero.receive(DamageInfo.make(1000.0, Vector2.RIGHT))
+	await settle(RunDirector.FALL_PAUSE + 0.3)
+	centered(run.end_view._panel, "The result")
+	print("UI layout: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
-
-
-# One press on a lobby entry enters it.
-func enter(_hub: Node, button: Button) -> void:
-	button.pressed.emit()
