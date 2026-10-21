@@ -1,18 +1,22 @@
 class_name MetaUpgradePage
 extends Control
 
-# The lasting upgrades (MetaProgress.UPGRADES), side by side on the slab:
-# each its emblem, name and words, its ranks as sockets, and the price of
-# the next rank on its button, which asks to buy (buy_requested; the hub
-# saves, then calls present_purchase). A full upgrade says so; one the echo
-# cannot pay for shows its price, its button off. Echo itself is in the
+# The lasting upgrades (MetaProgress.UPGRADES) as an upgrade shop's list, the
+# common form: one row each across the slab, its emblem, its name and what
+# it does, its ranks as sockets with the count under them, and at the row's
+# end the price of the next rank on its button, which asks to buy
+# (buy_requested; the hub saves, then calls present_purchase). A full
+# upgrade says so; one the echo cannot pay for shows its price, its button
+# off. The rows are walked with the up and down keys. Echo itself is in the
 # hub's header.
 
 signal buy_requested(id: StringName)
 
-const CARD_WIDTH := 360.0
-const EMBLEM_SIZE := 120.0
+const EMBLEM_SIZE := 88.0
 const PIP_SIZE := 22.0
+const RANK_WIDTH := 170.0
+const BUTTON_WIDTH := 280.0
+const LIST_WIDTH := 1180.0
 
 var meta: MetaProgress
 var buttons: Array[Button] = []
@@ -28,51 +32,57 @@ func _ready() -> void:
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_slab = HubUI.open_column(columns, 1.0, &"SlabSolid")
-	var lead := HubUI.label(_slab, "ランで得た残響で、次のランからずっと続く強化を手に入れる。", &"NoteLabel")
-	lead.autowrap_mode = TextServer.AUTOWRAP_OFF
-	var row := HBoxContainer.new()
-	row.theme_type_variation = &"ShopColumns"
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_slab.add_child(row)
+	var list := VBoxContainer.new()
+	list.theme_type_variation = &"RowList"
+	list.custom_minimum_size.x = LIST_WIDTH
+	list.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_slab.add_child(list)
 	for upgrade in MetaProgress.UPGRADES:
-		row.add_child(_card(upgrade))
+		list.add_child(_row(upgrade))
 	for index in buttons.size():
-		buttons[index].focus_neighbor_left = buttons[posmod(index - 1, buttons.size())].get_path()
-		buttons[index].focus_neighbor_right = buttons[posmod(index + 1, buttons.size())].get_path()
+		buttons[index].focus_neighbor_top = buttons[posmod(index - 1, buttons.size())].get_path()
+		buttons[index].focus_neighbor_bottom = buttons[posmod(index + 1, buttons.size())].get_path()
+		buttons[index].focus_neighbor_left = buttons[index].get_path()
+		buttons[index].focus_neighbor_right = buttons[index].get_path()
 	UIMotion.bind_buttons(_slab)
 
 
-func _card(upgrade: MetaUpgrade) -> Control:
+func _row(upgrade: MetaUpgrade) -> Control:
 	var card := PanelContainer.new()
 	card.theme_type_variation = &"InsetPanel"
-	card.custom_minimum_size.x = CARD_WIDTH
-	card.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var stack := VBoxContainer.new()
-	stack.theme_type_variation = &"DetailStack"
-	card.add_child(stack)
+	var row := HBoxContainer.new()
+	row.theme_type_variation = &"ListRow"
+	card.add_child(row)
 	var emblem := Control.new()
 	emblem.custom_minimum_size = Vector2.ONE * EMBLEM_SIZE
-	emblem.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	emblem.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	emblem.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	emblem.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	emblem.draw.connect(func(): EmblemIcons.paint(emblem, Rect2(Vector2.ZERO, emblem.size), upgrade.emblem))
-	stack.add_child(emblem)
-	var title := HubUI.label(stack, upgrade.display_name, &"HeadingLabel")
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	row.add_child(emblem)
+	var words := VBoxContainer.new()
+	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	words.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_child(words)
+	HubUI.label(words, upgrade.display_name, &"HeadingLabel").autowrap_mode = TextServer.AUTOWRAP_OFF
+	HubUI.label(words, upgrade.description, &"DescriptionLabel")
+	var ranks := VBoxContainer.new()
+	ranks.custom_minimum_size.x = RANK_WIDTH
+	ranks.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_child(ranks)
 	var pips := Control.new()
 	pips.custom_minimum_size.y = PIP_SIZE
 	pips.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pips.draw.connect(_draw_pips.bind(pips, upgrade))
-	stack.add_child(pips)
+	ranks.add_child(pips)
 	_pips.append(pips)
-	var words := HubUI.label(stack, upgrade.description, &"DescriptionLabel")
-	words.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var rank := HubUI.label(stack, "", &"MutedLabel")
+	var rank := HubUI.label(ranks, "", &"MutedLabel")
 	rank.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rank.autowrap_mode = TextServer.AUTOWRAP_OFF
 	rank_labels.append(rank)
-	var button := HubUI.button(stack, "", func(): buy_requested.emit(upgrade.id), &"PrimaryButton")
-	button.custom_minimum_size.y = HubUI.PRIMARY_ACTION_HEIGHT
+	var button := HubUI.button(row, "", func(): buy_requested.emit(upgrade.id), &"PrimaryButton")
+	button.custom_minimum_size = Vector2(BUTTON_WIDTH, HubUI.PRIMARY_ACTION_HEIGHT)
+	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	buttons.append(button)
 	_cards.append(card)
 	return card

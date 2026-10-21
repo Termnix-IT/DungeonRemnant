@@ -246,7 +246,7 @@ func show_page(target: String) -> void:
 			upgrade_page.show()
 			upgrade_page.focus_first()
 			key_guide.add_hint("Enter", "A", "強化")
-			key_guide.add_hint("← / →", "◀ / ▶", "選ぶ")
+			key_guide.add_hint("↑ / ↓", "▲ / ▼", "選ぶ")
 		"codex":
 			title_label.text = "図鑑"
 			codex_page.show()

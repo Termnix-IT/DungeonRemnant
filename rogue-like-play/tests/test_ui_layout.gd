@@ -56,10 +56,14 @@ func run_tests() -> void:
 	await settle(UIMotion.WINDOW_TIME + 0.05)
 	for button: Button in hub.upgrade_page.buttons:
 		check(screen.encloses(button.get_global_rect()), "Every upgrade's action stays on the screen")
-	var tops := {}
+	# Measured by their middles: the focused one is lifted a little.
+	var middle_x: float = hub.upgrade_page.buttons[0].get_global_rect().get_center().x
+	var last_top := -1.0
+	var stacked := true
 	for button: Button in hub.upgrade_page.buttons:
-		tops[roundi(button.get_global_rect().position.y)] = true
-	check(tops.size() == 1, "The upgrades' actions stand in one row")
+		stacked = stacked and absf(button.get_global_rect().get_center().x - middle_x) < 2.0 and button.get_global_rect().position.y > last_top
+		last_top = button.get_global_rect().end.y
+	check(stacked, "The upgrades are a list, their actions in one column at the rows' end")
 	hub.show_page("home")
 	await settle(UIMotion.WINDOW_TIME + 0.05)
 	check(screen.encloses(hub.decide_button.get_global_rect()), "The lobby's action stays on the screen")
