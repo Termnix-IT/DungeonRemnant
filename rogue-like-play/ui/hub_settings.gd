@@ -1,12 +1,11 @@
 class_name HubSettings
 extends Control
 
-# The settings page, in the shared grammar: the settings as open rows on a
-# slab from the screen's left edge that melts into the hall at its right,
-# as tall as they are and level with the
-# middle of the screen, the focused row on the lobby's warm band (sliding
-# between rows) and what it does in the hall beside the band's tip, level with
-# the row. Changes apply at once and are
+# The settings page, laid out as settings screens commonly are: the
+# settings as rows on a solid slab from the screen's left edge, grouped
+# under small headings (sound, screen, other), the focused row on the
+# lobby's warm band (sliding between rows), and what the focused setting
+# does in a fixed column on the right. Changes apply at once and are
 # stored by GameSettings when the hub reports them, so the page holds no
 # primary action.
 # A row opens the help: the game's rules that the screens keep out of their
@@ -23,13 +22,13 @@ const QUIT_BODY := "設定と拠点での強化は保存済みです。"
 # In a run nothing of it is kept (the base saves at a run's start and end).
 const QUIT_BODY_IN_RUN := "ランの途中で終了すると、このランのレベル・強化・得た残響は残らず、最後に保存した拠点の状態に戻ります。"
 
-const ROW_HEIGHT := 80.0
+const ROW_HEIGHT := 64.0
 const BAND_TIP := 18.0
 # The band starts at the screen's left edge, as the lobby menu's does.
 const EDGE_REACH := 40.0
-# The note's column in the hall, from the band's tip.
-const NOTE_INSET := 36.0
-const NOTE_WIDTH := 420.0
+# The settings' groups: [heading, the first row's index].
+const GROUPS := [["音", 0], ["画面", 3], ["その他", 6]]
+const CAPTIONS := ["全体の音量", "効果音", "環境音", "画面の揺れ", "画面モード", "操作の案内", "ヘルプ", "ゲームの終了"]
 const NOTES := ["すべての音の大きさ。0%で消音。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "戦場の空気の音の大きさ。", "攻撃が当たったときや被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "戦闘中、画面の下に操作の一覧を出す。", "ランの決まりごとと操作。", "ゲームを閉じる。確かめてから終了する。"]
 # The help's topics, in order: [title, paragraphs]. HintMarks name them by index.
 const TOPIC_RUN := 0
@@ -92,8 +91,7 @@ var topic_buttons: Array[Button] = []
 var selected_topic := 0
 var _rows: Array[Control] = []
 var _columns: HBoxContainer
-var _hall: Control
-var _note_shade: PanelContainer
+var note_title: Label
 
 
 func _ready() -> void:
@@ -102,10 +100,8 @@ func _ready() -> void:
 	columns.theme_type_variation = &"ShopColumns"
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var left := HubUI.open_column(columns, 1.5, &"SlabBand")
+	var left := HubUI.open_column(columns, 1.5, &"SlabSolid")
 	left.theme_type_variation = &"DetailStack"
-	# A few settings make a band, not a full-height column of empty slab.
-	(left.get_parent() as Control).size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	rows = VBoxContainer.new()
 	rows.theme_type_variation = &"SettingsRows"
 	left.add_child(rows)
@@ -181,19 +177,12 @@ func _ready() -> void:
 		if index < controls.size() - 1:
 			control.focus_neighbor_bottom = controls[index + 1].get_path()
 		control.focus_entered.connect(_focus_row.bind(index))
-	# The hall stays open on the right, as beside the lobby menu. The focused
-	# row's note stands in it at the row's height, where the band points.
-	_hall = Control.new()
-	_hall.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_hall.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	columns.add_child(_hall)
-	_note_shade = PanelContainer.new()
-	_note_shade.theme_type_variation = &"ShadeColumn"
-	_note_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_note_shade.position.x = NOTE_INSET
-	_hall.add_child(_note_shade)
-	note = HubUI.label(_note_shade, NOTES[0], &"NoteLabel")
-	note.custom_minimum_size.x = NOTE_WIDTH
+	# What the focused setting does, in a fixed column on the right.
+	var info := HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
+	info.theme_type_variation = &"DetailStack"
+	note_title = HubUI.label(info, CAPTIONS[0], &"HeadingLabel")
+	HubUI.rule(info)
+	note = HubUI.label(info, NOTES[0], &"DescriptionLabel")
 	_build_help()
 
 
@@ -272,6 +261,15 @@ func _draw_topic_band() -> void:
 
 
 func _row(caption: String) -> HBoxContainer:
+	for group: Array in GROUPS:
+		if group[1] == _rows.size():
+			if group[1] > 0:
+				var gap := Control.new()
+				gap.custom_minimum_size.y = 12
+				gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				rows.add_child(gap)
+			var heading := HubUI.label(rows, group[0], &"MutedLabel")
+			heading.autowrap_mode = TextServer.AUTOWRAP_OFF
 	var row := HBoxContainer.new()
 	row.theme_type_variation = &"SettingsRow"
 	row.custom_minimum_size.y = ROW_HEIGHT
@@ -321,19 +319,11 @@ func _draw_rows() -> void:
 	var chosen := _rows[focused_row]
 	var mark := UIMotion.of(rows).follow_mark(Rect2(chosen.position + Vector2(-EDGE_REACH, 4), chosen.size + Vector2(EDGE_REACH + BAND_TIP, -8)))
 	_draw_band(rows, mark)
-	_place_note(mark)
 	for index in _rows.size() - 1:
 		if index == focused_row or index + 1 == focused_row:
 			continue
 		var y := _rows[index].position.y + _rows[index].size.y
 		rows.draw_polyline_colors(PackedVector2Array([Vector2(0, y), Vector2(rows.size.x * 0.5, y), Vector2(rows.size.x, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.22), Color(rail, 0.0)]), 1.0, true)
-
-
-# The note keeps level with the band, sliding with it between rows.
-func _place_note(mark: Rect2) -> void:
-	_note_shade.size = _note_shade.get_combined_minimum_size()
-	var middle := rows.global_position.y + mark.get_center().y - _hall.global_position.y
-	_note_shade.position.y = middle - _note_shade.size.y * 0.5
 
 
 # The lobby's warm band, pointed at its right end.
@@ -349,6 +339,7 @@ func _draw_band(canvas: Control, rect: Rect2) -> void:
 
 func _focus_row(index: int) -> void:
 	focused_row = index
+	note_title.text = CAPTIONS[index]
 	note.text = NOTES[index]
 	rows.queue_redraw()
 	UIMotion.reveal_selection([note])

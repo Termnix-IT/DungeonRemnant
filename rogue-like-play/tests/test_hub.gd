@@ -72,6 +72,15 @@ func run_tests() -> void:
 	check(codex.rows.all(func(foe: FoeData): return FoeCatalog.kind_of(foe) == 1), "The kind tabs filter the list")
 	hub.show_page("home")
 
+	# The settings: grouped rows, the focused one told in the column beside.
+	hub.show_page("settings")
+	var settings_page: HubSettings = hub.settings_page
+	settings_page.effects_slider.grab_focus()
+	await process_frame
+	var headings: Array = settings_page.rows.get_children().filter(func(node: Node): return node is Label).map(func(label: Label): return label.text)
+	check(headings == ["音", "画面", "その他"] and settings_page.note_title.text == "効果音" and settings_page.note.text == HubSettings.NOTES[1], "The settings stand in three groups, the focused one told beside them")
+	hub.show_page("home")
+
 	# The help speaks of the real-time game.
 	var help_text := ""
 	for topic: Array in HubSettings.HELP:
