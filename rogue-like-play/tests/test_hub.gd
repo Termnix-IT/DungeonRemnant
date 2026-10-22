@@ -88,6 +88,15 @@ func run_tests() -> void:
 	settings_page.tabs.step(1)
 	await process_frame
 	check(shown_rows.call() == [5, 6, 7] and settings_page.controls_cycler.has_focus(), "The last tab holds the controls guide, the help and quitting")
+	# As in the lobby, the pointer resting on a row (its caption or its
+	# control) chooses it; a chosen row shows by its band, with no frame.
+	settings_page._rows[7].gui_input.emit(InputEventMouseMotion.new())
+	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
+	check(settings_page.quit_button.has_focus() and settings_page.focused_row == 7, "Pointing at a settings row chooses it")
+	settings_page.help_button.mouse_entered.emit()
+	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
+	check(settings_page.help_button.has_focus() and settings_page.note_title.text == "ヘルプ", "Pointing at a row's control chooses it too")
+	check(settings_page.help_button.get_theme_stylebox(&"focus") is StyleBoxEmpty and settings_page.topic_buttons[0].get_theme_stylebox(&"focus") is StyleBoxEmpty, "Chosen settings and help rows draw no frame")
 	settings_page.show_tab(0)
 	# The help opens as a window over the dimmed page and closes back to it.
 	settings_page.open_help(HubSettings.TOPIC_GROWTH)

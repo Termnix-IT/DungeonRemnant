@@ -111,6 +111,7 @@ var help_words: VBoxContainer
 var _shown_note := -1
 var _shown_topic := -1
 var _hover_topic := -1
+var _hover_row := -1
 
 
 func _ready() -> void:
@@ -198,6 +199,15 @@ func _ready() -> void:
 	controls = [volume_slider, effects_slider, ambience_slider, shake_cycler, display_cycler, controls_cycler, help_button, quit_button]
 	for index in controls.size():
 		controls[index].focus_entered.connect(_focus_row.bind(index))
+		# As in the lobby and the help, resting the pointer on a row chooses
+		# it: read from the pointer entering or moving over the row or its
+		# control.
+		_rows[index].mouse_filter = Control.MOUSE_FILTER_PASS
+		for watched: Control in [_rows[index], controls[index]]:
+			watched.mouse_entered.connect(_hover_setting_row.bind(index))
+			watched.gui_input.connect(func(event: InputEvent):
+				if event is InputEventMouseMotion and _hover_row != index:
+					_hover_setting_row(index))
 	# What the focused setting does, in a fixed column on the right.
 	var info := HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
 	info.theme_type_variation = &"DetailStack"
@@ -329,6 +339,15 @@ func select_topic(index: int) -> void:
 	help_title.text = HELP[index][0]
 	help_body.text = "\n\n".join(HELP[index][1])
 	UIMotion.of(help_words).slide_in()
+
+
+func _hover_setting_row(index: int) -> void:
+	_hover_row = index
+	await get_tree().create_timer(HubLobby.HOVER_INTENT).timeout
+	if _hover_row != index or not is_visible_in_tree() or help_shown or quit_prompt.visible:
+		return
+	if _rows[index].visible and not controls[index].has_focus():
+		controls[index].grab_focus()
 
 
 func _hover_topic_row(index: int) -> void:
