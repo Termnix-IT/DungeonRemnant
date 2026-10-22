@@ -204,7 +204,7 @@ func finish(cleared: bool, abandoned: bool = false) -> void:
 	var reached := mini(run.layer, run.route.size() - 1) + 1
 	var record := meta != null and reached > meta.best_layer
 	var first_clear := meta != null and cleared and meta.clears == 0
-	result = {"cleared": cleared, "abandoned": abandoned, "record": record, "first_clear": first_clear, "layer": mini(run.layer, run.route.size() - 1), "layers": run.route.size(),
+	result = {"cleared": cleared, "abandoned": abandoned, "record": record, "first_clear": first_clear, "echo_before": meta.echo if meta != null else -1, "layer": mini(run.layer, run.route.size() - 1), "layers": run.route.size(),
 		"chapter": chapter.display_name, "time": run.time, "kills": run.kills,
 		"level": run.progression.level, "boons": boons, "emblems": emblems, "echo": run.echo, "met": run.met.keys()}
 	map_view.hide()

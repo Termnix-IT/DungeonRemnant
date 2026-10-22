@@ -10,7 +10,7 @@ const TIME := 0.32
 const SEGMENTS := 48
 const WIDTH := 7.0
 # Ring colours by the attack's painted effect.
-const COLORS := {&"magic": Color(0.62, 0.7, 1.0), &"heavy": Color(1.0, 0.8, 0.45)}
+const COLORS := {&"magic": Color(0.62, 0.7, 1.0), &"heavy": Color(1.0, 0.8, 0.45), &"roar": Color(1.0, 0.28, 0.18)}
 const DEFAULT := Color(1.0, 0.92, 0.75)
 
 var radius := 100.0

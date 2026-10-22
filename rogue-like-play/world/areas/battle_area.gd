@@ -70,6 +70,8 @@ var _clear_left := -1.0
 var _banner_left := 0.0
 # A level-up's lead-in is running.
 var _leading := false
+# A boss's entrance is being staged (the world stopped).
+var staging := false
 
 
 # Sets what it plays before it enters the tree.
@@ -225,7 +227,7 @@ func _bring_boss() -> void:
 	var at := Vector2(ground.bounds().get_center().x, ground.bounds().size.y * BOSS_PLACE)
 	waves.mark(at, data.boss, BOSS_MARK_TIME)
 	waves.spawned.connect(_on_marked_spawn)
-	GameAudio.play(self, &"boss", -14.0)
+	GameAudio.play(self, &"warning", -16.0)
 
 
 func _on_marked_spawn(foe: Foe) -> void:
@@ -234,12 +236,25 @@ func _on_marked_spawn(foe: Foe) -> void:
 	boss_foe = foe
 	foe.phase_changed.connect(_on_boss_phase)
 	foe.fell.connect(func(_foe: Foe): boss_down = true)
-	shake(HURT_SHAKE)
-	# It names itself as it arrives.
+	# Its entrance is staged with the world stopped: nothing moves, nothing is taken.
+	staging = true
+	get_tree().paused = true
+	camera_held = true
+	# The area's opening banner gives way to the boss's name.
+	hud.show_message("")
+	_banner_left = 0.0
 	var intro := BossIntro.new()
 	intro.name = "BossIntro"
 	add_child(intro)
-	intro.present(foe.data, HubTheme.create())
+	intro.finished.connect(_after_entrance)
+	intro.present(foe, self, HubTheme.create())
+
+
+func _after_entrance() -> void:
+	staging = false
+	camera_held = false
+	if not choosing() and not in_menu():
+		get_tree().paused = false
 
 
 # The boss's second phase: its summons come in on marks around the hall.
@@ -257,7 +272,7 @@ func _on_boss_phase(foe: Foe) -> void:
 
 
 func choosing() -> bool:
-	return choice.visible or _leading
+	return choice.visible or _leading or staging
 
 
 func _on_gems(amount: int) -> void:

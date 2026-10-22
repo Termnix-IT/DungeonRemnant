@@ -78,14 +78,19 @@ func run_tests() -> void:
 	check(not run.result.is_empty() and run.result.cleared, "Every layer cleared, the boss beaten: the run is won")
 	check(run.end_view.visible and run.end_view._button.text == "拠点へ戻る", "The result offers the way home")
 	var summary := run.end_view
-	check(not summary.details.visible and summary._button.has_focus(), "The summary shows the outcome, the echo and the way on; the figures wait folded")
-	summary.toggle_details()
-	check(summary.details.visible and summary.more_button.text == RunEndView.LESS_TEXT, "Asking for more opens the figures and boons")
-	check(summary._tiles.get_child_count() == 4 and summary._boons.get_child_count() == run.result.emblems.size() and run.result.emblems.size() == run.run.build.owned().size(), "The summary shows the run's figures as tiles and every boon as its emblem")
+	check(summary._button.has_focus() and summary.pages[0].visible and not summary.pages[1].visible, "The summary opens on the run's figures, the way on focused")
+	check(summary._button.get_index() == summary._button.get_parent().get_child_count() - 1, "The way on is at the foot of the window")
+	summary.tabs.step(1)
+	check(summary.pages[1].visible and not summary.pages[0].visible, "The tab switches to the boons taken")
+	check(summary._tiles.get_child_count() == 4 and summary._boons.get_child_count() == run.result.emblems.size() and run.result.emblems.size() == run.run.build.owned().size(), "The summary shows the run's figures as tiles and every boon as its emblem and name")
+	summary.tabs.step(1)
+	check(summary.pages[0].visible, "And back")
+	check(summary.total_label.visible, "The purse's total stands beside the echo")
 	check(run.result.record and run.result.first_clear, "The first win goes deeper than before and is the first clear")
-	await create_timer(1.5).timeout
+	await create_timer(RunEndView.STAMP_DELAY + RunEndView.STAMP_TIME + RunEndView.COUNT_DELAY + summary.count_time() + 0.4).timeout
+	check(summary.counted and summary.total_label.text == "所持 残響 %s" % UIFormat.amount(run.result.echo_before + run.result.echo), "The echo has counted up, and so has the purse")
 	check(summary.seal.visible and summary.seal.texture == RunEndView.SEALS[&"clear"] and summary.seal.scale.is_equal_approx(Vector2.ONE), "The win's seal is stamped beside the heading")
-	check(summary.record_label.visible and summary.record_label.text == "初めての踏破", "And the first clear is told in gold")
+	check(summary.record_label.visible and summary.record_label.modulate.a > 0.95 and summary.record_label.text == "初めての踏破", "And the first clear is told in gold")
 	check(summary._art.texture == run.CHAPTER.illustration and summary._echo.text == UIFormat.amount(run.result.echo), "The summary lies over the chapter's illustration, the echo counted up to what was brought home")
 	var echo: int = run.result.echo
 	check(main.meta.runs == 1 and main.meta.clears == 1 and main.meta.echo == echo and echo > 0, "The win is recorded with its echo")

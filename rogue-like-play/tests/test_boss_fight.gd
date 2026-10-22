@@ -58,12 +58,19 @@ func run_tests() -> void:
 	check(boss.global_position.y < area.hero.global_position.y, "It comes in above her, across the hall")
 	var intro: BossIntro = area.get_node_or_null("BossIntro")
 	check(intro != null and intro._name.text == "遺跡王" and intro._epithet.text == king.epithet and not king.epithet.is_empty(), "It names itself as it arrives, its epithet over its name")
-	check(not paused, "The fight does not wait for its name")
+	check(paused and area.staging and area.choosing() and area.camera_held, "Its entrance stops the world and holds the camera")
+	var boss_spot := boss.global_position
+	var hero_spot := area.hero.global_position
+	area.open_menu()
+	check(not area.menu.visible, "No menu opens during it")
+	await create_timer(BossIntro.PAN_TIME + 0.1).timeout
+	check(area.camera.global_position.distance_to(boss_spot + CombatArea.CAMERA_LEAD) < 2.0 and boss.global_position == boss_spot and area.hero.global_position == hero_spot, "The camera settles on the boss, and neither it nor she moves")
 	await process_frame
 	check(area.hud.boss_gauge.visible and area.hud.boss_gauge.bar.value == king.max_hp, "Its health shows across the top")
 	check(not area.is_clear(), "The hall is not won while it stands")
-	await wait(BossIntro.BAR_TIME + BossIntro.NAME_TIME + BossIntro.HOLD_TIME + BossIntro.OUT_TIME + 0.3)
-	check(area.get_node_or_null("BossIntro") == null, "The nameplate leaves by itself")
+	await create_timer(BossIntro.total_time() - BossIntro.PAN_TIME + 0.3).timeout
+	check(area.get_node_or_null("BossIntro") == null and not paused and not area.staging and not area.camera_held, "Then the camera returns to her and the fight goes on")
+	check(boss.scale == Vector2.ONE and area.camera.global_position.distance_to(area.hero.global_position + CombatArea.CAMERA_LEAD) < 4.0, "The boss is its size again, the camera back on her")
 
 	# The way it picks: at random among the attacks that fit.
 	var picked := {}

@@ -158,7 +158,13 @@ func run_tests() -> void:
 	var start: Vector2 = view.token.position
 	view._enter.pressed.emit()
 	await process_frame
-	check(view.traveling and director.area == null and view.visible, "A pick first sends her token along the path, entering nothing yet")
+	check(view.prompt.visible and view.prompt.title_label.text == "「%s」に進みますか？" % first.area.display_name and not view.traveling and director.area == null, "A pick first asks whether to go there")
+	view.prompt.canceled.emit()
+	check(not view.prompt.visible and view.visible and not view.traveling, "Going back stays on the map")
+	view._enter.pressed.emit()
+	view.prompt.confirmed.emit()
+	await process_frame
+	check(view.traveling and director.area == null and view.visible, "Going ahead sends her token along the path, entering nothing yet")
 	view._enter.pressed.emit()
 	await create_timer(RouteMapView.TRAVEL_TIME * 0.5).timeout
 	check(view.token.position != start and director.area == null, "The token travels, and a second press on the way does nothing")

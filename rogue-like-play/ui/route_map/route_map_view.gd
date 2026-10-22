@@ -28,8 +28,10 @@ const PATH_OPEN := Color(0.84, 0.72, 0.48, 0.7)
 const PATH_FAINT := Color(0.6, 0.6, 0.58, 0.22)
 const EMBLEM_SIZE := 32.0
 # Her token on the map: her face in a gold ring, standing where she is.
-# Opening, the paths open to her draw out from it (DRAW_TIME); a pick sends
-# it along the path to the area chosen (TRAVEL_TIME) before it is entered.
+# Opening, the paths open to her draw out from it (DRAW_TIME); a pick asks
+# first whether to go there (the area, its reward and goal), and once it is
+# answered yes, sends the token along the path to it (TRAVEL_TIME) before it
+# is entered.
 const TOKEN := preload("res://art/ui/route/token.png")
 const TOKEN_SIZE := 46.0
 const DRAW_TIME := 0.45
@@ -64,6 +66,9 @@ var token: Control
 # token is travelling to a pick (nothing else is taken meanwhile).
 var draw_progress := 1.0
 var traveling := false
+# The question asked before a pick is gone ahead with, and the area it asks about.
+var prompt: ChoicePrompt
+var asked: RouteMap.Waypoint
 
 
 func _ready() -> void:
@@ -337,9 +342,36 @@ func _focus_first() -> void:
 		buttons[current.find(selected) if current.has(selected) else 0].grab_focus()
 
 
-# A pick from the player: her token travels the path to it, the node
-# answers, and then it is chosen. Nothing else is taken on the way.
+# A pick from the player: first the question whether to go there.
 func pick(waypoint: RouteMap.Waypoint) -> void:
+	if not visible or traveling or waypoint == null or not current.has(waypoint) or (prompt != null and prompt.visible):
+		return
+	if prompt == null:
+		prompt = ChoicePrompt.new()
+		add_child(prompt)
+		prompt.confirmed.connect(_on_go)
+		prompt.canceled.connect(_on_stay)
+	asked = waypoint
+	var area := waypoint.area
+	prompt.ask("%s　%s" % [area.kind_name(), area.stars()], "「%s」に進みますか？" % area.display_name, "報酬：%s　%s" % [AreaData.reward_name(waypoint.reward), area.condition], "進む", "やめる")
+
+
+func _on_go() -> void:
+	prompt.hide()
+	if asked != null:
+		travel(asked)
+
+
+func _on_stay() -> void:
+	prompt.hide()
+	if asked != null and nodes_by_point.has(asked):
+		nodes_by_point[asked].grab_focus()
+	asked = null
+
+
+# The pick gone ahead with: her token travels the path to it, the node
+# answers, and then it is chosen. Nothing else is taken on the way.
+func travel(waypoint: RouteMap.Waypoint) -> void:
 	if not visible or traveling or waypoint == null or not current.has(waypoint):
 		return
 	traveling = true
@@ -365,7 +397,7 @@ func _choose(waypoint: RouteMap.Waypoint) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not visible or traveling or not (event is InputEventKey and event.pressed and not event.echo):
+	if not visible or traveling or (prompt != null and prompt.visible) or not (event is InputEventKey and event.pressed and not event.echo):
 		return
 	var index: int = [KEY_1, KEY_2, KEY_3].find(event.physical_keycode)
 	if index >= 0 and index < current.size():

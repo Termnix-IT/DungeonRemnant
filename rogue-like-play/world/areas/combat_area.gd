@@ -64,6 +64,8 @@ var gems: GemField
 var events: CombatEvents
 var hit_stop: HitStop
 var camera: Camera2D
+# The camera stays where it is put (a boss's entrance moves it) instead of following her.
+var camera_held := false
 var hero: Hero
 var foes: Array[Foe] = []
 var kills := 0
@@ -132,7 +134,7 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if hero != null:
+	if hero != null and not camera_held:
 		camera.global_position = hero.global_position + CAMERA_LEAD
 
 
