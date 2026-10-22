@@ -9,7 +9,8 @@ extends RefCounted
 # behind (the old file itself is kept beside the new one by MetaStore). The
 # old monsters met carry over where a new foe wears the same picture. A
 # version 5 save from before the upgrade tree had its root is given the root,
-# so the upgrades it holds keep growing.
+# so the upgrades it holds keep growing; one from before the skill slots
+# keeps the new player's.
 
 const VERSION := 5
 const MAX_COUNT := 1000000
@@ -36,8 +37,11 @@ static func encode(meta: MetaProgress) -> Dictionary:
 	for id: StringName in meta.met:
 		met.append(String(id))
 	met.sort()
+	var loadout: Array = []
+	for id in meta.loadout:
+		loadout.append(String(id))
 	return {"version": VERSION, "echo": meta.echo, "ranks": meta.ranks.duplicate(), "runs": meta.runs,
-		"clears": meta.clears, "best_layer": meta.best_layer, "met": met}
+		"clears": meta.clears, "best_layer": meta.best_layer, "met": met, "loadout": loadout}
 
 
 static func integer(value: Variant, minimum: int, maximum: int) -> bool:
@@ -78,7 +82,23 @@ static func decode(data: Variant) -> MetaProgress:
 		meta.ranks[String(MetaProgress.ROOT)] = 1
 	if not _read_met(data.get("met", []), meta, {}):
 		return null
+	if data.has("loadout") and not _read_loadout(data.loadout, meta):
+		return null
 	return meta
+
+
+# The skill slots: as many ids as slots, each a held skill or empty, none
+# twice. A save from before the slots keeps the new player's.
+static func _read_loadout(data: Variant, meta: MetaProgress) -> bool:
+	if not data is Array or data.size() != MetaProgress.SKILL_SLOTS:
+		return false
+	var loadout: Array[StringName] = []
+	for id: Variant in data:
+		if not id is String or (not id.is_empty() and (not meta.owns_skill(StringName(id)) or loadout.has(StringName(id)))):
+			return false
+		loadout.append(StringName(id))
+	meta.loadout = loadout
+	return true
 
 
 # An old save (versions 1 to 4) made into lasting progress; null when it

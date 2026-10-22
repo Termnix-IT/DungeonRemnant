@@ -39,7 +39,7 @@ func capture() -> void:
 		DisplayServer.window_set_size(size)
 		root.size = size
 		await create_timer(0.3).timeout
-		for page in ["home", "upgrade", "codex", "settings"]:
+		for page in ["home", "upgrade", "status", "codex", "settings"]:
 			hub.show_page(page)
 			await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
 			await _grab("hub_%s_%d" % [page, size.x])

@@ -82,6 +82,8 @@ func _ready() -> void:
 	if run.hp > 0:
 		hero.health.hp = mini(run.hp, hero.health.max_hp)
 	hero.use_build(run.build)
+	if not run.skills.is_empty():
+		hero.motor.equip_skills(run.skills)
 	hero.health.last_stands = run.last_stands
 	hero.health.stood.connect(_on_stood)
 	gems.pull_radius = GemField.PULL_RADIUS + run.rule(&"gem_pull")

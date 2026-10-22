@@ -51,13 +51,13 @@ func run_tests() -> void:
 	await process_frame
 	var hub = main.get_node("Hub")
 	var lobby: HubLobby = hub.home_page
-	check(lobby.buttons.size() == 4 and HubLobby.ENTRIES.map(func(entry: Array): return entry[0]) == [&"departure", &"upgrade", &"codex", &"settings"], "The lobby offers departure, upgrades, encyclopedia and settings")
+	check(lobby.buttons.size() == 5 and HubLobby.ENTRIES.map(func(entry: Array): return entry[0]) == [&"departure", &"upgrade", &"status", &"codex", &"settings"], "The lobby offers departure, upgrades, status, encyclopedia and settings")
 	check(hub.page == "home" and lobby.visible and hub.echo_label.text == "100", "The base opens on the lobby with the echo held")
 	check(lobby.route_value.text == "3層とボス" and lobby.best_value.text == "なし", "The departure tells the chapter's way and the deepest reached")
 	check(lobby.upgrade_ready.text == "1 件" and lobby.codex_met.text == "0 / %d" % FoeCatalog.FOES.size(), "The entries tell what can be bought and what has been met")
 	lobby.select(0)
 	check(lobby.title_label.text == hub.chapter.display_name and lobby.decide_button.text.ends_with("出撃する"), "The departure names its chapter")
-	for pair: Array in [[&"upgrade", "upgrade"], [&"codex", "codex"], [&"settings", "settings"]]:
+	for pair: Array in [[&"upgrade", "upgrade"], [&"status", "status"], [&"codex", "codex"], [&"settings", "settings"]]:
 		lobby.activated.emit(pair[0])
 		check(hub.page == pair[1], "%s opens its page" % pair[0])
 		hub.go_back()
@@ -236,12 +236,50 @@ func run_tests() -> void:
 	root.push_input(key(KEY_C))
 	await process_frame
 	check(page.zoom == 1.0 and page.selected == MetaProgress.ROOT, "C brings the root back at the first size")
+	# The status page: Tab from the upgrades, the slots and their tiles, a
+	# skill moved to the other slot (saved), back from the tiles, the details.
+	root.push_input(key(KEY_TAB))
+	await process_frame
+	var status: HubStatus = hub.status_page
+	check(hub.page == "status" and status.slot_buttons[1].has_focus() and status.name_label.text == "叩きつけ", "Tab goes to the status page, on the first skill slot")
+	check(status.slot_buttons.size() == 4 and status.slot_buttons[0].text.contains("剣") and status.slot_buttons[2].text.contains("空き") and status.slot_buttons[3].text.contains("封印"), "The slots tell the sword, the empty slot and the sealed special")
+	var hp_row: Array = status.stat_rows()[0]
+	check(hp_row[1] == "115" and hp_row[2] == "(+15)" and hp_row[3].contains("鍛えた体 +15"), "Her health shows what the upgrades add, and its breakdown")
+	var always := status.stats.get_child_count()
+	root.push_input(key(KEY_R))
+	await process_frame
+	check(status.details_open and status.stats.get_child_count() > always, "R opens the rest of her figures")
+	root.push_input(key(KEY_RIGHT))
+	await process_frame
+	check(status.slot == 2 and status.tiles_label.text.contains("スキル2") and status.tile_ids == [HubStatus.CLEAR_ID, &"slam"], "Choosing the second slot shows its tiles")
+	check(status.tiles[1].text.contains("スキル1"), "A tile tells the slot its skill is set in")
+	root.push_input(key(KEY_ENTER))
+	root.push_input(key(KEY_ENTER, false))
+	await process_frame
+	check(status.tiles[0].has_focus(), "Enter on a slot goes into its tiles")
+	root.push_input(key(KEY_RIGHT))
+	await process_frame
+	check(status.action_button.text == "入れ替える" and not status.action_button.disabled, "A skill set in the other slot offers to change places")
+	root.push_input(key(KEY_ENTER))
+	root.push_input(key(KEY_ENTER, false))
+	await process_frame
+	check(main.meta.loadout == [&"", &"slam"] and status.slot_buttons[2].has_focus() and hub.feedback.text.contains("スキル2"), "Enter on a tile sets it, and the focus returns to the slot")
+	root.push_input(key(KEY_ENTER))
+	root.push_input(key(KEY_ENTER, false))
+	await process_frame
+	root.push_input(key(KEY_ESCAPE))
+	await process_frame
+	check(hub.page == "status" and status.slot_buttons[2].has_focus(), "Back from the tiles returns to their slot")
+	root.push_input(key(KEY_TAB))
+	await process_frame
+	check(hub.page == "upgrade", "Tab goes back to the upgrades")
 	main.free()
 	await process_frame
 	var reader := MetaStore.new()
 	reader.path = path
 	var read_back := reader.load_progress()
 	check(read_back.rank(&"sturdy_body") == 1 and read_back.rank(MetaProgress.ROOT) == 1 and read_back.echo == 70, "The purchases are still there after a restart")
+	check(read_back.loadout == [&"", &"slam"], "So are the skill slots")
 
 	# An unreadable save: an alert, and saving stopped.
 	var broken := folder + "/broken.json"

@@ -178,5 +178,20 @@ func run_tests() -> void:
 	hold(motor, HeroInput.make(Vector2.RIGHT, Vector2.RIGHT, true, false, true), 0.3)
 	check(motor.state == HeroMotor.State.DOWN and motor.motion().is_zero_approx() and motor.swing_serial == 0, "A fallen hero does not move, swing or dash")
 
+	# Two skill slots: each answers its own key and rests on its own.
+	motor = make_motor()
+	var slam: SkillData = load("res://data/skills/slam.tres")
+	check(motor.skill_attacks[0] == motor.moveset.skill and motor.skill_attacks[1] == null, "Unset, the moveset's skill fills the first slot")
+	motor.equip_skills([null, slam])
+	var first_key := HeroInput.make()
+	first_key.skill_pressed = true
+	hold(motor, first_key, 0.1)
+	check(motor.swing_serial == 0, "An empty slot's key does nothing")
+	var other := HeroInput.make()
+	other.skill_2_pressed = true
+	hold(motor, other, 0.1)
+	check(motor.swing_serial == 1 and motor.combo_index == HeroMotor.SKILL and absf(motor.skill_cooldowns_left[1] - (slam.cooldown - 0.1)) < 0.05 and motor.skill_cooldown_left == 0.0, "The second slot's key lets its skill loose, and only it rests")
+	check(motor.skill_emblems[1] == slam.emblem, "The slot keeps its skill's emblem for the HUD")
+
 	print("Hero motor tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)

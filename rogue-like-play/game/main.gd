@@ -34,8 +34,29 @@ func _ready() -> void:
 	add_child(transition)
 	$Hub.start_requested.connect(start_run)
 	$Hub.upgrade_requested.connect(buy_upgrade)
+	$Hub.equip_requested.connect(equip_skill)
 	$Hub.refresh(meta)
 	_update_save_status()
+
+
+# A skill set in a slot (or the slot cleared), kept only once it is saved.
+func equip_skill(slot: int, id: StringName) -> bool:
+	if active_run != null or not has_node("Hub") or not $Hub.visible:
+		return false
+	var loadout := meta.loadout.duplicate()
+	if not meta.equip(slot, id):
+		$Hub.refresh(meta, "このスキルは付けられません。")
+		return false
+	if saving_enabled and not store.save_progress(meta):
+		meta.loadout = loadout
+		$Hub.refresh(meta, "保存に失敗したため、付け替えを取り消しました。")
+		_update_save_status()
+		return false
+	var skill := MetaProgress.find_skill(id)
+	$Hub.refresh(meta, "スキル%dに「%s」を付けました。" % [slot + 1, skill.display_name] if skill != null else "スキル%dを外しました。" % (slot + 1))
+	_update_save_status()
+	$Hub.present_equip()
+	return true
 
 
 func buy_upgrade(id: StringName) -> bool:

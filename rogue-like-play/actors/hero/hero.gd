@@ -105,6 +105,7 @@ func read_input() -> HeroInput:
 	input.strike_held = Input.is_action_pressed(&"strike")
 	input.dash_pressed = Input.is_action_just_pressed(&"dash")
 	input.skill_pressed = Input.is_action_just_pressed(&"skill_1")
+	input.skill_2_pressed = Input.is_action_just_pressed(&"skill_2")
 	return input
 
 

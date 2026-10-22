@@ -122,6 +122,15 @@ func run_tests() -> void:
 	timed.step(10.01)
 	check(timed.stat(&"attack_speed") == 0.0, "And ends on time")
 
+	# The skill slots: a held skill set, moved to the other slot (changing
+	# places), cleared; one not held or out of range refused.
+	var kit := MetaProgress.new()
+	check(kit.loadout == MetaProgress.DEFAULT_LOADOUT and kit.equipped_skills()[0] == MetaProgress.find_skill(&"slam") and kit.equipped_skills()[1] == null, "A new player has the slam in the first slot")
+	check(kit.equip(1, &"slam") and kit.loadout == [&"", &"slam"], "Setting it in the other slot moves it there")
+	check(kit.equip(0, &"slam") and kit.loadout == [&"slam", &""], "And back")
+	check(not kit.equip(0, &"no_such_skill") and not kit.equip(2, &"slam") and kit.loadout == [&"slam", &""], "An unknown skill or slot is refused")
+	check(kit.equip(0, &"") and kit.loadout == [&"", &""] and kit.equipped_skills() == [null, null], "A slot can be cleared")
+
 	# A run's result recorded.
 	var record := MetaProgress.new()
 	record.record_run({"cleared": false, "layer": 1, "echo": 70, "met": [&"wandering_sentinel"]})
@@ -142,6 +151,18 @@ func run_tests() -> void:
 	broken = data.duplicate(true)
 	broken.ranks = {"vitality": 1}
 	check(MetaCodec.decode(broken) == null, "An unknown upgrade is refused")
+	meta.equip(1, &"slam")
+	var kept_loadout := MetaCodec.decode(JSON.parse_string(JSON.stringify(MetaCodec.encode(meta))))
+	check(kept_loadout != null and kept_loadout.loadout == [&"", &"slam"], "The skill slots read back as they were saved")
+	meta.equip(0, &"slam")
+	data = MetaCodec.encode(meta)
+	var slotless: Dictionary = data.duplicate(true)
+	slotless.erase("loadout")
+	check(MetaCodec.decode(slotless).loadout == MetaProgress.DEFAULT_LOADOUT, "A save from before the slots keeps the new player's")
+	for wrong: Variant in [["slam", "slam"], ["slam"], ["bogus", ""], "slam"]:
+		var damaged: Dictionary = data.duplicate(true)
+		damaged.loadout = wrong
+		check(MetaCodec.decode(damaged) == null, "A loadout that does not hold together is refused: %s" % str(wrong))
 	var rootless: Dictionary = data.duplicate(true)
 	rootless.ranks = {"double_dash": 1}
 	var grown_back := MetaCodec.decode(rootless)
@@ -213,6 +234,8 @@ func run_tests() -> void:
 	director.map_view._choose(director.run.route.nodes(0)[0])
 	await process_frame
 	check(director.area.hero.health.max_hp == base.max_hp + 45 and director.area.hero.motor.dash_charges == base.dash_charges + 1, "She fights with them")
+	var slam: SkillData = MetaProgress.find_skill(&"slam")
+	check(director.area.hero.motor.skill_attacks == [slam.attack, null] and director.area.hero.motor.skill_cooldowns[0] == slam.cooldown, "And with the skills in her slots")
 	director.free()
 	await process_frame
 

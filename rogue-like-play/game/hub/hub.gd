@@ -1,14 +1,17 @@
 extends CanvasLayer
 
 # The base between runs: the lobby (HubLobby) over the hall painting, and the
-# pages it opens: the lasting upgrades (MetaUpgradePage), the encyclopedia
-# (HubCodex) and the settings (HubSettings). The header holds the page's
-# name and the echo held; the footer, the keys. It shows a MetaProgress and
-# asks Main to change it (start_requested, upgrade_requested); Main saves,
-# refreshes it and calls present_action for the moment of a purchase.
+# pages it opens: the lasting upgrades (MetaUpgradePage), the status and
+# skill slots (HubStatus), the encyclopedia (HubCodex) and the settings
+# (HubSettings). Tab (View) goes between the upgrades and the status. The
+# header holds the page's name and the echo held; the footer, the keys. It
+# shows a MetaProgress and asks Main to change it (start_requested,
+# upgrade_requested, equip_requested); Main saves, refreshes it and calls
+# present_action or present_equip for the moment.
 
 signal start_requested
 signal upgrade_requested(id: StringName)
+signal equip_requested(slot: int, id: StringName)
 signal settings_changed
 
 # How close the header and the footer come to the screen's edges.
@@ -33,6 +36,7 @@ var hero_button: Button
 var hero_speech: Panel
 var settings := GameSettings.new()
 var upgrade_page: MetaUpgradePage
+var status_page: HubStatus
 var settings_page: HubSettings
 var codex_page: HubCodex
 var page := "home"
@@ -123,6 +127,10 @@ func _ready() -> void:
 	upgrade_page.offset_left = bleed
 	upgrade_page.offset_right = -bleed
 	upgrade_page.buy_requested.connect(func(id: StringName): upgrade_requested.emit(id))
+	status_page = _page(HubStatus.new()) as HubStatus
+	status_page.offset_left = bleed
+	status_page.offset_right = -bleed
+	status_page.equip_requested.connect(func(slot: int, id: StringName): equip_requested.emit(slot, id))
 	codex_page = _page(HubCodex.new()) as HubCodex
 	codex_page.offset_left = bleed
 	codex_page.offset_right = -bleed
@@ -194,6 +202,8 @@ func _enter(id: StringName) -> void:
 			start_requested.emit()
 		&"upgrade":
 			show_page("upgrade")
+		&"status":
+			show_page("status")
 		&"codex":
 			show_page("codex")
 		&"settings":
@@ -213,6 +223,7 @@ func refresh(meta: MetaProgress, message: String = "") -> void:
 	echo_label.text = UIFormat.amount(meta.echo)
 	home_page.refresh(meta, chapter)
 	upgrade_page.refresh(meta)
+	status_page.refresh(meta)
 	codex_page.refresh(meta)
 	feedback.text = message
 	if not home_page.visible and page == "home":
@@ -222,7 +233,7 @@ func refresh(meta: MetaProgress, message: String = "") -> void:
 func show_page(target: String) -> void:
 	page = target
 	hero_speech.hide()
-	for control in [home_page, upgrade_page, codex_page, settings_page]:
+	for control in [home_page, upgrade_page, status_page, codex_page, settings_page]:
 		control.hide()
 	key_guide.clear_hints()
 	# The lobby has nowhere to go back to; it shows how to choose and enter.
@@ -252,6 +263,17 @@ func show_page(target: String) -> void:
 			key_guide.add_hint("ドラッグ", "R スティック", "動かす")
 			key_guide.add_hint("ホイール", "LT / RT", "拡大・縮小")
 			key_guide.add_hint("C", "Y", "中央へ", upgrade_page.center_view)
+			key_guide.add_hint("Tab", "View", "ステータスへ", func(): show_page("status"))
+		"status":
+			title_label.text = "ステータス"
+			status_page.show()
+			if _meta != null:
+				status_page.refresh(_meta)
+			status_page.focus_first()
+			key_guide.add_hint("Enter", "A", "装備")
+			key_guide.add_hint("矢印", "十字", "選ぶ")
+			key_guide.add_hint("R", "Y", "詳しく", status_page.toggle_details)
+			key_guide.add_hint("Tab", "View", "強化へ", func(): show_page("upgrade"))
 		"codex":
 			title_label.text = "図鑑"
 			codex_page.show()
@@ -269,7 +291,7 @@ func show_page(target: String) -> void:
 	# Pages are anchored in a plain host, not laid out by a Container, so the
 	# whole page can slide: forward pages from the right, home from the left.
 	var side := -1.0 if page == "home" else 1.0
-	for control in [home_page, upgrade_page, codex_page, settings_page]:
+	for control in [home_page, upgrade_page, status_page, codex_page, settings_page]:
 		if control.visible:
 			UIMotion.of(control).enter(0.0, Vector2(side * UIMotion.PAGE_DISTANCE, 0), UIMotion.WINDOW_TIME)
 			# Pages built in the screen grammar bring their parts in one by one.
@@ -292,6 +314,13 @@ func present_action(id: StringName, echo_delta: int) -> void:
 		UIMotion.of(echo_label).pulse(1.08, UIMotion.GOLD_TIME)
 	UIMotion.of(feedback).reveal()
 	upgrade_page.present_purchase(id)
+
+
+# Called only after an equip was saved.
+func present_equip() -> void:
+	preload("res://audio/game_audio.gd").play(self, &"confirm", -18.0)
+	UIMotion.of(feedback).reveal()
+	status_page.present_equip()
 
 
 # Opens the settings' help at a topic, from a "?" mark anywhere in the hub;
@@ -329,4 +358,15 @@ func go_back() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if visible and event.is_action_pressed("ui_cancel"):
 		go_back()
+		get_viewport().set_input_as_handled()
+
+
+# Tab (View) between the upgrades and the status, before Tab moves the focus.
+func _input(event: InputEvent) -> void:
+	if not visible or page not in ["upgrade", "status"]:
+		return
+	var key: bool = event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_TAB
+	var pad: bool = event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_BACK
+	if key or pad:
+		show_page("status" if page == "upgrade" else "upgrade")
 		get_viewport().set_input_as_handled()

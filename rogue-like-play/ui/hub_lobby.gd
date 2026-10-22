@@ -17,17 +17,20 @@ signal activated(id: StringName)
 const ENTRIES := [
 	[&"departure", "出撃", "出撃"],
 	[&"upgrade", "強化", "永久強化"],
+	[&"status", "ステータス", "装備"],
 	[&"codex", "図鑑", "図鑑"],
 	[&"settings", "設定", "設定"],
 ]
 const ACTIONS := {
 	&"departure": "出撃する",
 	&"upgrade": "強化を選ぶ",
+	&"status": "ステータスを開く",
 	&"codex": "図鑑を開く",
 	&"settings": "設定を開く",
 }
 const DESCRIPTIONS := {
 	&"upgrade": "ランで得た残響で、次のランからずっと続く強化を手に入れる。",
+	&"status": "強化で育った数値を確かめ、スキルを付け替える。",
 	&"codex": "これまでに戦場で出会った敵を見返す。",
 	&"settings": "音量と画面モードを変え、遊び方を確認する。",
 }
@@ -35,6 +38,7 @@ const DESCRIPTIONS := {
 # chapter's.
 const ART := {
 	&"upgrade": preload("res://art/hub/cards/books.png"),
+	&"status": preload("res://art/hub/cards/status.png"),
 	&"codex": preload("res://art/hub/cards/codex.png"),
 	&"settings": preload("res://art/hub/cards/settings.png"),
 }
@@ -90,6 +94,8 @@ var hero_button: Button
 var hero_speech: Panel
 var upgrade_value: Label
 var upgrade_ready: Label
+var status_skills: Label
+var status_hp: Label
 var codex_met: Label
 var codex_runs: Label
 var title_icon: NavigationIcon
@@ -233,6 +239,11 @@ func _build_panel() -> void:
 	upgrade_value = _fact(growth, "習得した段階")
 	_divider(growth)
 	upgrade_ready = _fact(growth, "強化できる")
+	var loadout: HBoxContainer = _strip(stack)
+	_details[&"status"] = loadout
+	status_skills = _fact(loadout, "装備中のスキル")
+	_divider(loadout)
+	status_hp = _fact(loadout, "最大HP")
 	var records: HBoxContainer = _strip(stack)
 	_details[&"codex"] = records
 	codex_met = _fact(records, "出会った敵")
@@ -421,6 +432,8 @@ func refresh(meta: MetaProgress, chapter: ChapterData) -> void:
 			ready += 1
 	upgrade_value.text = "%d 段階" % ranks
 	upgrade_ready.text = "%d 件" % ready
+	status_skills.text = "%d / %d" % [meta.loadout.filter(func(id: StringName): return not id.is_empty()).size(), MetaProgress.SKILL_SLOTS]
+	status_hp.text = str(meta.tuning(load("res://data/hero/mio.tres")).max_hp)
 	codex_met.text = "%d / %d" % [FoeCatalog.FOES.filter(func(foe: FoeData): return meta.has_met(foe.id)).size(), FoeCatalog.FOES.size()]
 	codex_runs.text = "%d 回" % meta.runs
 	if settings != null:

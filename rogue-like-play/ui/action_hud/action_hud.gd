@@ -25,7 +25,10 @@ const SLOTS := [
 	[&"strike", "sword_damage", "左クリック", "X"],
 	[&"dash", "double_dash", "Space", "A"],
 	[&"skill", "hammer_damage", "Q", "Y"],
+	[&"skill_2", "hammer_damage", "E", "B"],
 ]
+# The skill slots' HUD keys, in the motor's slot order.
+const SKILL_SLOTS: Array[StringName] = [&"skill", &"skill_2"]
 const CHARGE_COLOR := Color("ffd27a")
 # The banner sits this far above the middle, clear of the hero.
 const MESSAGE_RISE := 190.0
@@ -223,6 +226,7 @@ func _build_bottom(root: Control) -> void:
 		actions.add_child(slot)
 		slots[entry[0]] = slot
 	skill_label = slots[&"skill"].key_label
+	slots[&"skill_2"].visible = false
 	guide = _label(root, &"HudSmall")
 	guide.text = CONTROLS
 	guide.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
@@ -345,13 +349,21 @@ func _show_actions() -> void:
 		slots[entry[0]].key_label.text = entry[3] if pad else entry[2]
 	slots[&"strike"].show_state(1.0, motor.charge_progress() if motor.charging() else 0.0)
 	slots[&"dash"].show_state(1.0 if motor.dash_charges > 0 else motor.dash_recharge(), 0.0, motor.dash_charges, motor.tuning.dash_charges if motor.tuning.dash_charges > 1 else 0)
-	var skill := slots[&"skill"]
-	skill.visible = motor.moveset.skill != null
-	if skill.visible:
-		var cooldown := motor.moveset.skill_cooldown
-		skill.show_state(1.0 if cooldown <= 0.0 else 1.0 - motor.skill_cooldown_left / cooldown)
-		if motor.skill_cooldown_left > 0.0:
-			skill_label.text = "%d秒" % ceili(motor.skill_cooldown_left)
+	# Each skill slot shows the skill set in it, or nothing when it is empty.
+	for index in SKILL_SLOTS.size():
+		var skill: ActionSlot = slots[SKILL_SLOTS[index]]
+		skill.visible = motor.skill_attacks[index] != null
+		if not skill.visible:
+			continue
+		var emblem := EmblemIcons.texture(motor.skill_emblems[index]) if not motor.skill_emblems[index].is_empty() else null
+		if emblem != null and skill.icon != emblem:
+			skill.icon = emblem
+			skill.queue_redraw()
+		var cooldown := motor.skill_cooldowns[index]
+		var left := motor.skill_cooldowns_left[index]
+		skill.show_state(1.0 if cooldown <= 0.0 else 1.0 - left / cooldown)
+		if left > 0.0:
+			skill.key_label.text = "%d秒" % ceili(left)
 
 
 # The boons taken, as emblems with their rank; rebuilt only when they change.

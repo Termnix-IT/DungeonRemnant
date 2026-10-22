@@ -11,9 +11,11 @@ extends RefCounted
 # charge, counted from the press, let loose as the charged attack when
 # released after charge_time; released sooner, nothing more happens. A
 # strike pressed during a swing continues the combo from combo_after on; a
-# dash cuts a swing short from dash_after on, and a charge at any time. The
+# dash cuts a swing short from dash_after on, and a charge at any time. A
 # skill comes out when free, or cuts a swing short as a dash does, and then
-# rests for its cooldown. A swing is shaped as it starts by `shaper` (the
+# rests for its cooldown. There are two skill slots (skill_1, skill_2), each
+# with its own attack and rest; the moveset's skill fills the first until
+# equip_skills sets them. A swing is shaped as it starts by `shaper` (the
 # run's build), if set.
 
 signal swing_started(attack: AttackData)
@@ -44,7 +46,18 @@ var combo_index := -1
 var dash_charges := 1
 # Seconds since the last dash ended (after-dash boons read it).
 var since_dash := INF
-var skill_cooldown_left := 0.0
+# Each skill slot's attack (null: empty), its rest, and the rest left.
+var skill_attacks: Array[AttackData] = [null, null]
+var skill_cooldowns: Array[float] = [0.0, 0.0]
+var skill_cooldowns_left: Array[float] = [0.0, 0.0]
+# Each slot's emblem (EmblemIcons key), for the HUD; empty: the moveset's.
+var skill_emblems: Array[String] = ["", ""]
+# The first slot's rest left.
+var skill_cooldown_left: float:
+	get:
+		return skill_cooldowns_left[0]
+	set(value):
+		skill_cooldowns_left[0] = value
 # (attack, kind, combo index, seconds since a dash) -> the swing to play;
 # kind is &"combo", &"charged" or &"skill". Unset, swings play as written.
 var shaper: Callable
@@ -52,6 +65,8 @@ var shaper: Callable
 var charge_scale := 1.0
 
 var _buffered := Press.NONE
+# The slot a buffered skill press is for.
+var _skill_slot := 0
 var _buffer_left := 0.0
 var _holding := false
 var _hold_time := 0.0
@@ -68,6 +83,19 @@ func _init(hero_tuning: HeroTuning, hero_moveset: Moveset) -> void:
 	tuning = hero_tuning
 	moveset = hero_moveset
 	dash_charges = tuning.dash_charges
+	skill_attacks[0] = moveset.skill
+	skill_cooldowns[0] = moveset.skill_cooldown
+
+
+# The skills set in the slots (SkillData or null each), in place of the
+# moveset's.
+func equip_skills(slots: Array) -> void:
+	for index in skill_attacks.size():
+		var skill: SkillData = slots[index] if index < slots.size() else null
+		skill_attacks[index] = skill.attack if skill != null else null
+		skill_cooldowns[index] = skill.cooldown if skill != null else 0.0
+		skill_cooldowns_left[index] = 0.0
+		skill_emblems[index] = skill.emblem if skill != null else ""
 
 
 func step(input: HeroInput, delta: float) -> void:
@@ -140,7 +168,8 @@ func fall() -> void:
 
 func _tick(delta: float) -> void:
 	_invulnerable_left = maxf(0.0, _invulnerable_left - delta)
-	skill_cooldown_left = maxf(0.0, skill_cooldown_left - delta)
+	for index in skill_cooldowns_left.size():
+		skill_cooldowns_left[index] = maxf(0.0, skill_cooldowns_left[index] - delta)
 	_combo_grace_left = maxf(0.0, _combo_grace_left - delta)
 	# A press made during a dash waits for its end.
 	if state != State.DASH and _buffer_left > 0.0:
@@ -170,6 +199,10 @@ func _read(input: HeroInput, delta: float) -> void:
 	if input.dash_pressed:
 		_press(Press.DASH)
 	if input.skill_pressed:
+		_skill_slot = 0
+		_press(Press.SKILL)
+	if input.skill_2_pressed:
+		_skill_slot = 1
 		_press(Press.SKILL)
 
 
@@ -280,14 +313,14 @@ func _start_swing(next: AttackData, index: int, aim: Vector2) -> void:
 
 
 func _skill_ready() -> bool:
-	return _buffered == Press.SKILL and moveset.skill != null and skill_cooldown_left <= 0.0
+	return _buffered == Press.SKILL and skill_attacks[_skill_slot] != null and skill_cooldowns_left[_skill_slot] <= 0.0
 
 
 func _start_skill(aim: Vector2) -> void:
 	_take(Press.SKILL)
 	_holding = false
-	skill_cooldown_left = moveset.skill_cooldown
-	_start_swing(moveset.skill, SKILL, aim)
+	skill_cooldowns_left[_skill_slot] = skill_cooldowns[_skill_slot]
+	_start_swing(skill_attacks[_skill_slot], SKILL, aim)
 
 
 func _start_dash(input: HeroInput, delta: float) -> void:

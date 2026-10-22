@@ -4,9 +4,11 @@ extends RefCounted
 # What lasts between real-time runs: the echo held (the base's currency,
 # earned in runs), the ranks of the lasting upgrades (MetaUpgrade, a tree
 # grown from ROOT: one can be bought once the upgrade it grows from holds a
-# rank), the record of runs, and the foes ever met (for the encyclopedia).
-# A run is shaped by it at its start (tuning, lasting, starts_with_boon) and
-# hands its result back at its end (record_run). Saved by MetaStore.
+# rank), the skills set in the two skill slots (loadout, chosen on the
+# status page), the record of runs, and the foes ever met (for the
+# encyclopedia). A run is shaped by it at its start (tuning, lasting,
+# equipped_skills, starts_with_boon) and hands its result back at its end
+# (record_run). Saved by MetaStore.
 
 const ROOT := &"echo_lantern"
 const UPGRADES: Array[MetaUpgrade] = [
@@ -31,6 +33,13 @@ const UPGRADES: Array[MetaUpgrade] = [
 	preload("res://data/meta/rising_haste.tres"),
 ]
 const MAX_ECHO := 1000000000
+# Every active skill, in the status page's order.
+const SKILLS: Array[SkillData] = [
+	preload("res://data/skills/slam.tres"),
+]
+const SKILL_SLOTS := 2
+# A new player's slots.
+const DEFAULT_LOADOUT: Array[StringName] = [&"slam", &""]
 # Effects a run reads as rules (RunState.lasting) rather than as her tuning.
 const RUN_EFFECTS: Array[StringName] = [&"echo_rate", &"last_stand", &"heal_share", &"gem_pull", &"exp_rate",
 	&"reroll", &"offer_count", &"level_heal", &"level_burst", &"level_ward", &"level_haste"]
@@ -46,6 +55,8 @@ var clears := 0
 var best_layer := 0
 # Foe ids (FoeData.id) ever met -> true.
 var met: Dictionary = {}
+# The skill id in each skill slot (empty: nothing set).
+var loadout: Array[StringName] = DEFAULT_LOADOUT.duplicate()
 
 
 static func find(id: StringName) -> MetaUpgrade:
@@ -128,3 +139,41 @@ func record_run(result: Dictionary) -> void:
 
 func has_met(id: StringName) -> bool:
 	return met.has(id)
+
+
+static func find_skill(id: StringName) -> SkillData:
+	for skill in SKILLS:
+		if skill.id == id:
+			return skill
+	return null
+
+
+# Whether the player holds the skill (later skills are learned on the tree).
+func owns_skill(id: StringName) -> bool:
+	var skill := find_skill(id)
+	return skill != null and skill.owned_from_start
+
+
+# The slot a skill is set in, or -1.
+func slot_of(id: StringName) -> int:
+	return loadout.find(id) if not id.is_empty() else -1
+
+
+# Sets a held skill in a slot, or clears it with an empty id. A skill set in
+# the other slot changes places with what this slot held.
+func equip(slot: int, id: StringName) -> bool:
+	if slot < 0 or slot >= SKILL_SLOTS or (not id.is_empty() and not owns_skill(id)):
+		return false
+	var other := slot_of(id)
+	if other >= 0 and other != slot:
+		loadout[other] = loadout[slot]
+	loadout[slot] = id
+	return true
+
+
+# The skills a run fights with, slot by slot (null for an empty slot).
+func equipped_skills() -> Array:
+	var skills := []
+	for id in loadout:
+		skills.append(find_skill(id))
+	return skills

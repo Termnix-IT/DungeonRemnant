@@ -43,6 +43,8 @@ var time := 0.0
 var areas_cleared := 0
 # The lasting upgrades' rules (effect -> MetaProgress.bonus); none: a new player.
 var lasting: Dictionary = {}
+# The skills in her slots (SkillData or null each); empty: the moveset's skill.
+var skills: Array = []
 var rerolls_left := 0
 var last_stands := 0
 # Experience owed from exp_rate below a whole point, kept for the next gem.
