@@ -175,6 +175,7 @@ func _build_settings() -> void:
 	settings_view.add_child(settings_page)
 	settings_page.changed.connect(func(): settings_changed.emit())
 	settings_page.help_opened.connect(_settings_hints)
+	settings_page.help_close_requested.connect(back)
 	settings_guide = KeyGuide.new()
 	settings_view.add_child(settings_guide)
 	settings_guide.position = Vector2(EDGE.x, 900 - EDGE.y - 40)

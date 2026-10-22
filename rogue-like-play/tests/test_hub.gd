@@ -63,7 +63,18 @@ func run_tests() -> void:
 	check(codex.cards.size() == FoeCatalog.FOES.size() and codex.count_label.text.contains("1 / %d" % FoeCatalog.FOES.size()), "Every foe has a card, and the count is of those met")
 	var rat_index := FoeCatalog.FOES.find(load("res://data/foes/dashing_rat.tres"))
 	check(codex.cards[rat_index].text == "疾走ネズミ" and codex.cards[0].text == HubCodex.UNKNOWN_NAME, "A met foe is named, an unmet one is not")
-	check(codex.cards[rat_index].icon is AtlasTexture and codex.cards[0].icon is ImageTexture, "Each tile shows its foe: the picture when met, a silhouette when not")
+	var picture: Texture2D = codex.cards[rat_index].icon
+	var shadow: Texture2D = codex.cards[0].icon
+	var shade := shadow.get_image()
+	var dark := true
+	for y in range(0, shade.get_height(), 8):
+		for x in range(0, shade.get_width(), 8):
+			var pixel := shade.get_pixel(x, y)
+			if pixel.a > 0.1 and pixel.v > 0.05:
+				dark = false
+	check(picture != null and shadow != null and picture != shadow and dark, "Each tile shows its foe: the picture when met, a dark silhouette when not")
+	var square := codex.cards.all(func(card: Button): return card.icon.get_width() == card.icon.get_height())
+	check(square, "Every tile's picture is a square, so every name sits at the same height")
 	codex._select(rat_index, false)
 	check(codex.name_label.text == "疾走ネズミ" and codex.description_label.text.contains("飛びかかる"), "A met foe's account is told")
 	codex._select(0, false)
@@ -111,8 +122,19 @@ func run_tests() -> void:
 	settings_page.topic_buttons[HubSettings.TOPIC_CONTROLS].gui_input.emit(moved)
 	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
 	check(settings_page.selected_topic == HubSettings.TOPIC_CONTROLS and settings_page.help_title.text == HubSettings.HELP[HubSettings.TOPIC_CONTROLS][0], "Moving the pointer over a topic chooses it even when its entry went unreported")
-	settings_page.close_help()
-	check(not settings_page.help_layer.visible and settings_page.help_button.has_focus(), "Closing the help returns to the settings")
+	# Its close can be clicked: the key hint, or the dimmed backdrop round it.
+	check(settings_page.help_close_hint.mouse_filter != Control.MOUSE_FILTER_IGNORE, "The help's close hint takes a click")
+	settings_page.help_close_hint.pressed.emit()
+	await process_frame
+	check(not settings_page.help_layer.visible and settings_page.help_button.has_focus() and hub.title_label.text == "設定", "Clicking the close returns to the settings")
+	settings_page.open_help(HubSettings.TOPIC_RUN)
+	await process_frame
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	(settings_page.help_view.get_child(0) as Control).gui_input.emit(click)
+	await process_frame
+	check(not settings_page.help_shown, "A click outside the window closes the help too")
 	hub.show_page("home")
 
 	# The help speaks of the real-time game.

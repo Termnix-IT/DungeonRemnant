@@ -37,8 +37,8 @@ var _unknown := false
 # The foe the column tells now: choosing it again (a click lands as a focus
 # and a press) neither redraws nor slides the column.
 var _shown: FoeData
-# Silhouettes of the foes not met, by visual id, made once.
-static var _shadows: Dictionary = {}
+# Tile pictures (and silhouettes of the foes not met), made once.
+static var _tiles: Dictionary = {}
 
 
 func _ready() -> void:
@@ -124,29 +124,32 @@ func _card(foe: FoeData, known: bool) -> Button:
 	return card
 
 
-# The foe's picture for its tile, or its dark silhouette.
+# The foe's picture for its tile, or its dark silhouette: always a square
+# with the figure standing on its bottom edge, so every tile lays its picture
+# and its name out alike whatever the figure's shape.
 func _tile_picture(visual_id: String, known: bool) -> Texture2D:
+	var key := "%s:%s" % [visual_id, known]
+	if _tiles.has(key):
+		return _tiles[key]
 	var shown := EnemySprites.portrait(visual_id)
 	if shown.is_empty():
 		return null
-	if known:
-		var icon := AtlasTexture.new()
-		icon.atlas = shown.texture
-		icon.region = shown.region
-		return icon
-	if not _shadows.has(visual_id):
-		var image := (shown.texture as Texture2D).get_image()
-		if image == null:
-			return null
-		image.decompress()
-		image = image.get_region(Rect2i(shown.region))
-		image.convert(Image.FORMAT_RGBA8)
+	var image := (shown.texture as Texture2D).get_image()
+	if image == null:
+		return null
+	image.decompress()
+	image = image.get_region(Rect2i(shown.region))
+	image.convert(Image.FORMAT_RGBA8)
+	if not known:
 		for y in image.get_height():
 			for x in image.get_width():
 				var alpha := image.get_pixel(x, y).a
 				image.set_pixel(x, y, Color(SHADOW, alpha * SHADOW.a))
-		_shadows[visual_id] = ImageTexture.create_from_image(image)
-	return _shadows[visual_id]
+	var side := maxi(image.get_width(), image.get_height())
+	var square := Image.create_empty(side, side, false, Image.FORMAT_RGBA8)
+	square.blit_rect(image, Rect2i(Vector2i.ZERO, image.get_size()), Vector2i((side - image.get_width()) / 2, side - image.get_height()))
+	_tiles[key] = ImageTexture.create_from_image(square)
+	return _tiles[key]
 
 
 func _select(place: int, animate: bool = true) -> void:

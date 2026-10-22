@@ -131,6 +131,7 @@ func _ready() -> void:
 	settings_page.offset_right = -bleed
 	settings_page.changed.connect(func(): settings_changed.emit())
 	settings_page.help_opened.connect(_settings_hints)
+	settings_page.help_close_requested.connect(go_back)
 	# Footer: the key guide at the bottom left, the same on every screen.
 	var footer_room := Control.new()
 	footer_room.custom_minimum_size.y = 44

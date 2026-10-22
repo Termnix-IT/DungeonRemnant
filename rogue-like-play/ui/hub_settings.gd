@@ -17,6 +17,9 @@ extends Control
 signal changed
 # The help opened from its row; the screen showing the page updates its keys.
 signal help_opened
+# The help's close was clicked (its key hint, or the dimmed backdrop round
+# the window); whoever shows the page closes it as its own Esc would.
+signal help_close_requested
 
 const QUIT_BODY := "設定と拠点での強化は保存済みです。"
 # In a run nothing of it is kept (the base saves at a run's start and end).
@@ -94,6 +97,7 @@ var help_shown := false
 var help_layer: CanvasLayer
 var help_view: Control
 var help_window: PanelContainer
+var help_close_hint: Button
 var help_title: Label
 var help_body: Label
 var topic_rows: VBoxContainer
@@ -236,6 +240,10 @@ func _build_help() -> void:
 	var shade := ColorRect.new()
 	shade.color = HELP_SHADE
 	shade.mouse_filter = Control.MOUSE_FILTER_STOP
+	# A click outside the window closes it, as dialogs commonly do.
+	shade.gui_input.connect(func(event: InputEvent):
+		if help_shown and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			help_close_requested.emit())
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	help_view.add_child(shade)
 	var center := CenterContainer.new()
@@ -300,7 +308,7 @@ func _build_help() -> void:
 	guide.alignment = BoxContainer.ALIGNMENT_CENTER
 	stack.add_child(guide)
 	guide.add_hint("↑ / ↓", "▲ / ▼", "話題")
-	guide.add_hint("Esc", "B", "閉じる")
+	help_close_hint = guide.add_hint("Esc", "B", "閉じる", func(): help_close_requested.emit())
 	# A page hidden behind another takes its help window with it.
 	visibility_changed.connect(func():
 		if not is_visible_in_tree():
