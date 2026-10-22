@@ -49,7 +49,7 @@ func _ready() -> void:
 
 func _row(upgrade: MetaUpgrade) -> Control:
 	var card := PanelContainer.new()
-	card.theme_type_variation = &"InsetPanel"
+	card.theme_type_variation = &"CardSurface"
 	var row := HBoxContainer.new()
 	row.theme_type_variation = &"ListRow"
 	card.add_child(row)
@@ -83,6 +83,9 @@ func _row(upgrade: MetaUpgrade) -> Control:
 	var button := HubUI.button(row, "", func(): buy_requested.emit(upgrade.id), &"PrimaryButton")
 	button.custom_minimum_size = Vector2(BUTTON_WIDTH, HubUI.PRIMARY_ACTION_HEIGHT)
 	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# The row shows where the focus is, not only its button.
+	button.focus_entered.connect(func(): card.theme_type_variation = &"CardSurfaceActive")
+	button.focus_exited.connect(func(): card.theme_type_variation = &"CardSurface")
 	buttons.append(button)
 	_cards.append(card)
 	return card

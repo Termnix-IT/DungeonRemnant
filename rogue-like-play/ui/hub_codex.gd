@@ -103,7 +103,7 @@ func _show_rows() -> void:
 
 func _card(foe: FoeData, known: bool) -> Button:
 	var card := Button.new()
-	card.theme_type_variation = &"SecondaryButton"
+	card.theme_type_variation = &"CardButton"
 	card.custom_minimum_size = CARD_SIZE
 	card.text = foe.display_name if known else UNKNOWN_NAME
 	card.tooltip_text = foe.display_name if known else UNKNOWN_NOTE

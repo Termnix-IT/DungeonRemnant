@@ -128,6 +128,7 @@ func _ready() -> void:
 	codex_page.offset_right = -bleed
 	settings_page = _page(HubSettings.new()) as HubSettings
 	settings_page.offset_left = bleed
+	settings_page.offset_right = -bleed
 	settings_page.changed.connect(func(): settings_changed.emit())
 	settings_page.help_opened.connect(_settings_hints)
 	# Footer: the key guide at the bottom left, the same on every screen.

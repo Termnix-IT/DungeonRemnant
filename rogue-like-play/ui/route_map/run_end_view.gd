@@ -148,7 +148,7 @@ func present(result: Dictionary, home: bool = false, art: Texture2D = null) -> v
 # A figure of the run: a small caption over a large value, on an inset tile.
 func _tile(caption: String, value: String) -> void:
 	var tile := PanelContainer.new()
-	tile.theme_type_variation = &"QuietSection"
+	tile.theme_type_variation = &"CardSurface"
 	tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_tiles.add_child(tile)
 	var lines := VBoxContainer.new()

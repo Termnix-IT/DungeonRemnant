@@ -76,29 +76,38 @@ content_margin_top = 8.0
 content_margin_right = 8.0
 content_margin_bottom = 8.0
 
-[sub_resource type="StyleBoxTexture" id="AbilityCardNew"]
+[sub_resource type="StyleBoxFlat" id="AbilityCardNew"]
 resource_name = "AbilityCardNew"
-texture = ExtResource("CardNewTexture")
-texture_margin_left = 68.0
-texture_margin_top = 92.0
-texture_margin_right = 68.0
-texture_margin_bottom = 84.0
+bg_color = Color(1, 1, 1, 0.045)
+border_width_top = 3
+border_color = Color(0.45, 0.64, 0.98, 0.95)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
-[sub_resource type="StyleBoxTexture" id="AbilityCardRaise"]
+[sub_resource type="StyleBoxFlat" id="AbilityCardRaise"]
 resource_name = "AbilityCardRaise"
-texture = ExtResource("CardRaiseTexture")
-texture_margin_left = 68.0
-texture_margin_top = 92.0
-texture_margin_right = 68.0
-texture_margin_bottom = 84.0
+bg_color = Color(1, 1, 1, 0.045)
+border_width_top = 3
+border_color = Color(0.95, 0.68, 0.32, 0.95)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
-[sub_resource type="StyleBoxTexture" id="AbilityCardChosen"]
+[sub_resource type="StyleBoxFlat" id="AbilityCardChosen"]
 resource_name = "AbilityCardChosen"
-texture = ExtResource("CardChosenTexture")
-texture_margin_left = 68.0
-texture_margin_top = 92.0
-texture_margin_right = 68.0
-texture_margin_bottom = 84.0
+bg_color = Color(1, 0.86, 0.6, 0.07)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.84, 0.72, 0.48, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxTexture" id="FramePanel"]
 resource_name = "FramePanel"
@@ -873,19 +882,14 @@ colors = PackedColorArray(0.075, 0.068, 0.062, 0.95, 0.075, 0.068, 0.062, 0.95)
 
 [sub_resource type="StyleBox" id="SlabSolidEndSurface"]
 resource_name = "SlabSolidEndSurface"
-script = ExtResource("SlabStyleScript")
-horizontal = SubResource("SlabPlateFill")
-feather = 14.0
-expand_right = 80.0
-grain = ExtResource("SlabStoneTexture")
-grain_tint = Color(0.162, 0.162, 0.162, 0.85)
-top_light = 0.05
-rail_edges = 7
-rail_color = Color(0.72, 0.58, 0.36, 0.75)
-content_margin_left = 14.0
-content_margin_top = 18.0
-content_margin_right = 0.0
-content_margin_bottom = 18.0
+script = ExtResource("QuietWindowStyleScript")
+sides = 14
+accent_fade = 2
+content_margin_left = 28.0
+content_margin_top = 24.0
+content_margin_right = 28.0
+content_margin_bottom = 24.0
+
 [sub_resource type="Gradient" id="ShadeFade"]
 offsets = PackedFloat32Array(0, 0.62, 1)
 colors = PackedColorArray(0.02, 0.018, 0.02, 0.66, 0.02, 0.018, 0.02, 0.5, 0.02, 0.018, 0.02, 0)
@@ -935,19 +939,14 @@ colors = PackedColorArray(0.042, 0.039, 0.037, 0.9, 0.042, 0.039, 0.037, 0.9)
 
 [sub_resource type="StyleBox" id="SlabSolidSurface"]
 resource_name = "SlabSolidSurface"
-script = ExtResource("SlabStyleScript")
-horizontal = SubResource("SlabSolidFill")
-feather = 14.0
-expand_left = 80.0
-grain = ExtResource("SlabStoneTexture")
-grain_tint = Color(0.091, 0.091, 0.091, 0.85)
-top_light = 0.025
-rail_edges = 3
-rail_color = Color(0.72, 0.58, 0.36, 0.5)
-content_margin_left = 0.0
-content_margin_top = 18.0
-content_margin_right = 14.0
-content_margin_bottom = 18.0
+script = ExtResource("QuietWindowStyleScript")
+sides = 15
+accent_fade = 1
+content_margin_left = 28.0
+content_margin_top = 24.0
+content_margin_right = 28.0
+content_margin_bottom = 24.0
+
 [sub_resource type="StyleBoxEmpty" id="SelectorPlain"]
 resource_name = "SelectorPlain"
 content_margin_left = 4.0
@@ -1185,6 +1184,64 @@ corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 
+[sub_resource type="StyleBoxFlat" id="CardRest"]
+resource_name = "CardRest"
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0.045)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="CardHover"]
+resource_name = "CardHover"
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="CardFocus"]
+resource_name = "CardFocus"
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.86, 0.6, 0.08)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.94, 0.92, 0.86, 0.85)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="CardSelected"]
+resource_name = "CardSelected"
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 0.86, 0.6, 0.1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.84, 0.72, 0.48, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
 [resource]
 DetailStack/base_type = &"VBoxContainer"
 DetailStack/constants/separation = 8
@@ -1283,6 +1340,17 @@ LineEdit/styles/read_only = SubResource("ButtonDisabled")
 MainPanel/base_type = &"PanelContainer"
 QuietWindow/base_type = &"PanelContainer"
 QuietWindow/styles/panel = SubResource("QuietWindowSurface")
+CardSurface/base_type = &"PanelContainer"
+CardSurface/styles/panel = SubResource("CardRest")
+CardSurfaceActive/base_type = &"PanelContainer"
+CardSurfaceActive/styles/panel = SubResource("CardFocus")
+CardButton/base_type = &"SecondaryButton"
+CardButton/styles/normal = SubResource("CardRest")
+CardButton/styles/hover = SubResource("CardHover")
+CardButton/styles/focus = SubResource("CardFocus")
+CardButton/styles/pressed = SubResource("CardSelected")
+CardButton/styles/hover_pressed = SubResource("CardSelected")
+CardButton/styles/disabled = SubResource("CardRest")
 QuietSection/base_type = &"PanelContainer"
 QuietSection/styles/panel = SubResource("QuietSectionSurface")
 MainPanel/styles/panel = SubResource("DialogPlate")
@@ -1532,10 +1600,10 @@ AbilityCard/styles/chosen = SubResource("AbilityCardChosen")
 AbilityCard/icons/pip_empty = ExtResource("PipEmptyTexture")
 AbilityCard/icons/pip_full = ExtResource("PipFullTexture")
 AbilityCardMargin/base_type = &"MarginContainer"
-AbilityCardMargin/constants/margin_left = 40
-AbilityCardMargin/constants/margin_top = 54
-AbilityCardMargin/constants/margin_right = 40
-AbilityCardMargin/constants/margin_bottom = 40
+AbilityCardMargin/constants/margin_left = 22
+AbilityCardMargin/constants/margin_top = 22
+AbilityCardMargin/constants/margin_right = 22
+AbilityCardMargin/constants/margin_bottom = 22
 RunResult/icons/clear = ExtResource("SealClearTexture")
 RunResult/icons/return = ExtResource("SealReturnTexture")
 RunResult/icons/defeat = ExtResource("SealDefeatTexture")

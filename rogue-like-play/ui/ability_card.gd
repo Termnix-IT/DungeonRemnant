@@ -3,9 +3,9 @@ extends Control
 
 # Display layer of one level-up offer. The owning Button keeps input and
 # layout; this Control only draws, so UIMotion may move it freely.
-# The card is a painted bronze frame (the theme's AbilityCard styles): a blue
-# gem crowns a new ability, an amber one a rank being raised, and the chosen
-# card turns gold, its frame fading in on hover and on the chosen moment.
+# The card is the shared card face (the theme's AbilityCard styles): a blue
+# band along its top for a new boon, an amber one for a rank being raised,
+# and a gold frame fading in over it on hover and on the chosen moment.
 # Ranks are bronze sockets, the owned ones holding an amber gem. It shows a
 # BoonData: its emblem, and its words for the rank on offer.
 var ability: BoonData
@@ -29,7 +29,7 @@ var effect_label: Label
 var symbol: Control
 var pips: Control
 # The gold frame, faded in over the card by its own copy of the style.
-var _chosen: StyleBoxTexture
+var _chosen: StyleBoxFlat
 
 
 func _init() -> void:
@@ -105,9 +105,11 @@ func _draw() -> void:
 	draw_style_box(get_theme_stylebox(&"new" if level == 0 else &"raise", &"AbilityCard"), rect)
 	var lit := maxf(glow, 0.55 if hovered else 0.0)
 	if lit > 0.0:
+		var base := get_theme_stylebox(&"chosen", &"AbilityCard") as StyleBoxFlat
 		if _chosen == null:
-			_chosen = get_theme_stylebox(&"chosen", &"AbilityCard").duplicate() as StyleBoxTexture
-		_chosen.modulate_color = Color(1, 1, 1, lit)
+			_chosen = base.duplicate() as StyleBoxFlat
+		_chosen.border_color = Color(base.border_color, base.border_color.a * lit)
+		_chosen.bg_color = Color(base.bg_color, base.bg_color.a * lit)
 		draw_style_box(_chosen, rect)
 
 

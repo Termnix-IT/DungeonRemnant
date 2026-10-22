@@ -112,6 +112,9 @@ func run_tests() -> void:
 	page.buttons[0].pressed.emit()
 	check(main.meta.rank(&"sturdy_body") == 1 and main.meta.echo == 120 and hub.echo_label.text == "120", "Pressing an upgrade's button buys its rank")
 	check(page.rank_labels[0].text == "段階 1 / 3" and hub.feedback.text.contains("鍛えた体"), "The page and the note show the purchase")
+	page.buttons[2].grab_focus()
+	await process_frame
+	check(page._cards[2].theme_type_variation == &"CardSurfaceActive" and page._cards[0].theme_type_variation == &"CardSurface", "The focused upgrade's whole row shows the focus")
 	page.buttons[1].pressed.emit()
 	check(main.meta.rank(&"double_dash") == 0 and main.meta.echo == 120, "One the echo cannot pay for is refused")
 	main.free()
