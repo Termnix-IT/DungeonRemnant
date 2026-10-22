@@ -29,7 +29,7 @@ COLUMNS = 2
 CARDS = ["stairs", "weapons", "chests", "shop", "books"]
 TRIM = 3
 # name: (source in art/hub/source/, top of the kept band after shrinking)
-SCENES = {"codex": ("codex_card.png", 104)}
+SCENES = {"codex": ("codex_card.png", 104), "status": ("status_card.png", 82)}
 CARD_SIZE = (767, 305)
 
 
