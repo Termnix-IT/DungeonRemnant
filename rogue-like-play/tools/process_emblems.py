@@ -7,7 +7,8 @@ square and shrunk to SIZE px as art/emblems/<key>.png, which Godot imports
 with mipmaps and the UI draws with mipmapped linear filtering. The data
 names its emblem by key (BoonData.emblem, MetaUpgrade.emblem); see
 ui/emblem_icons.gd. The first two boards were drawn for the turn-based
-game's abilities; c and d hold the boons' and the lasting upgrades' own.
+game's abilities; c and d hold the boons' and the lasting upgrades' own,
+and e to g the upgrade tree's nodes and the seals of its branches to come.
 
 	python tools/process_emblems.py
 """
@@ -34,6 +35,9 @@ BOARDS = [
 	("emblems_b.png", 2, 3, ["attack", "sword_damage", "spear_damage", "hammer_damage", "spear_range", "spear_pierce"]),
 	("emblems_c.png", 2, 3, ["thunder_blade", "chain_lightning", "whirlwind", "afterimage", "shockwave", "great_charge"]),
 	("emblems_d.png", 2, 2, ["hellfire", "blade_speed", "double_dash", "parting_blessing"]),
+	("emblems_e.png", 2, 3, ["echo_lantern", "firm_guard", "steady_recovery", "last_stand", "healing_lore", "dash_recovery"]),
+	("emblems_f.png", 2, 3, ["triple_dash", "light_step", "gem_magnet", "quick_study", "reroll", "fourth_card"]),
+	("emblems_g.png", 2, 3, ["rising_heal", "rising_burst", "rising_ward", "rising_haste", "seal_skill", "seal_special"]),
 ]
 
 
