@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"skill_drill"
+display_name = "技の鍛錬"
+description = "スキルの再使用時間が10%縮む"
+costs = Array[int]([220, 380])
+effect = &"skill_cooldown"
+per_rank = -0.1
+emblem = "skill_drill"
+branch = &"skill"
+parent = &"learn_thunder_flash"
+cell = Vector2i(0, -4)
+figure = "スキルの再使用 -%s%%"
+figure_base = 0.0
+figure_scale = -100.0
+grants = &""

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://combat/action/skill_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/attacks/skill_blaze_ring.tres" id="2"]
+[resource]
+script = ExtResource("1")
+id = &"blaze_ring"
+display_name = "烈火輪"
+description = "炎をまとって周りを大きく薙ぎ払い、当たった敵を燃やす"
+emblem = "blaze_ring"
+attack = ExtResource("2")
+cooldown = 8.0
+owned_from_start = false

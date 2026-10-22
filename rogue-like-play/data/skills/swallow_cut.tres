@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://combat/action/skill_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/attacks/skill_swallow_cut.tres" id="2"]
+[resource]
+script = ExtResource("1")
+id = &"swallow_cut"
+display_name = "飛燕"
+description = "振り抜いた斬撃を、敵を貫く波にして遠くまで飛ばす"
+emblem = "swallow_cut"
+attack = ExtResource("2")
+cooldown = 5.0
+owned_from_start = false

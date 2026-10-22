@@ -76,6 +76,8 @@ func use_lasting(rules: Dictionary) -> void:
 	lasting = rules.duplicate()
 	rerolls_left = roundi(rule(&"reroll"))
 	last_stands = roundi(rule(&"last_stand"))
+	# The drill's shorter rest adds to the build's, as a boon's would.
+	build.base_stats[&"skill_cooldown"] = rule(&"skill_cooldown")
 
 
 func rule(effect: StringName) -> float:

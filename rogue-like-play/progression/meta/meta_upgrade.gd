@@ -4,10 +4,11 @@ extends Resource
 # A lasting upgrade bought at the base with echo, kept from run to run: one
 # node of the upgrade tree. Its effect (per_rank per rank) is one of the
 # hero's figures applied to her tuning at a run's start (max_hp, defense,
-# hurt_mercy, dash_charges, dash_cooldown, move_speed), or a rule a run
-# reads from RunState.lasting (echo_rate, last_stand, heal_share, gem_pull,
+# hurt_mercy, dash_charges, dash_cooldown, move_speed), a rule a run reads
+# from RunState.lasting (echo_rate, last_stand, heal_share, gem_pull,
 # start_boon, exp_rate, reroll, offer_count, level_heal, level_burst,
-# level_ward, level_haste). Favouring new ways to fight over bigger numbers.
+# level_ward, level_haste, skill_cooldown), or a skill learned
+# (skill_unlock, its `grants`). Favouring new ways to fight over bigger numbers.
 
 @export var id: StringName
 @export var display_name := ""
@@ -18,12 +19,14 @@ extends Resource
 @export var per_rank := 1.0
 # Its medallion (EmblemIcons key).
 @export var emblem := ""
-# Where it grows in the tree: its branch (&"body", &"growth"), the upgrade
+# Where it grows in the tree: its branch (&"body", &"growth", &"skill"), the upgrade
 # it grows from (empty for the root) and its cell, columns right and rows
 # down from the root.
 @export var branch: StringName
 @export var parent: StringName
 @export var cell := Vector2i.ZERO
+# A skill_unlock's skill (SkillData.id): held from its first rank on.
+@export var grants: StringName
 # The figure the upgrades page tells: `figure` holding the value at a rank,
 # (figure_base + per_rank * rank) * figure_scale. Empty: the description only.
 @export var figure := ""

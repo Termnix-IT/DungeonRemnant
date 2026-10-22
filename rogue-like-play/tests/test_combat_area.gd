@@ -224,6 +224,22 @@ func specials() -> void:
 			rat.set_physics_process(false)
 	await drive(hero, HeroInput.new(), nest_data.summon_every * 2.0 + 0.2)
 	check(count_rats.call() <= nest_data.summon_limit and nest.brood.size() <= nest_data.summon_limit, "But never more than its limit")
+	field.dismiss_foes()
+	await drive(hero, HeroInput.new(), 1.0)
+	# The skills learned on the tree: the thunder flash lunges and shocks, the
+	# swallow cut sends its wave.
+	hero.motor.equip_skills([load("res://data/skills/thunder_flash.tres"), load("res://data/skills/swallow_cut.tres")])
+	var ahead := field.spawn_foe(sentinel, hero.global_position + Vector2(150, 0))
+	ahead.set_physics_process(false)
+	var start := hero.global_position
+	var flash := HeroInput.make(Vector2.ZERO, Vector2.RIGHT)
+	flash.skill_pressed = true
+	await drive(hero, flash, 0.4)
+	check(ahead.has_status(Status.SHOCK) and hero.global_position.x > start.x + 20.0, "The thunder flash carries her forward and shocks the foe in its line")
+	var cut := HeroInput.make(Vector2.ZERO, Vector2.RIGHT)
+	cut.skill_2_pressed = true
+	await drive(hero, cut, FRAME * 8)
+	check(field.effects.get_children().any(func(node: Node): return node is Projectile and not node.hostile), "The swallow cut sends a wave flying")
 	field.hit_stop.release()
 	await process_frame
 	field.free()

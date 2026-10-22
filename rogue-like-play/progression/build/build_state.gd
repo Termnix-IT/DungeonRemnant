@@ -23,6 +23,8 @@ var hero: Hero
 var _resting: Dictionary = {}
 # [stat, amount, seconds left] raised for a while.
 var _boosts: Array = []
+# Stats the run starts with (the lasting upgrades'), under the boons'.
+var base_stats: Dictionary = {}
 var _fire_frame := -1
 var _fired := 0
 
@@ -90,7 +92,7 @@ func take(boon: BoonData) -> bool:
 
 
 func stat(name: StringName) -> float:
-	var total := 0.0
+	var total := float(base_stats.get(name, 0.0))
 	for boost: Array in _boosts:
 		if boost[0] == name:
 			total += boost[1]

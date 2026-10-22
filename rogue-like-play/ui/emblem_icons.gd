@@ -21,6 +21,10 @@ const STAND_INS := {
 	"thunder_step": "thunder_blade",
 	"aftershock": "hammer_damage",
 	"flame_art": "hellfire",
+	"thunder_flash": "spear_range",
+	"swallow_cut": "shockwave",
+	"blaze_ring": "great_charge",
+	"skill_drill": "mana",
 }
 static var _cache: Dictionary = {}
 

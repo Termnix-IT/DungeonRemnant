@@ -40,7 +40,7 @@ func run_tests() -> void:
 
 	# The upgrade tree: one root, every other node grows from one in the tree,
 	# no two share a cell, and the seals keep their cells free.
-	check(MetaProgress.UPGRADES.size() == 19, "The root, ten body nodes and eight growth nodes")
+	check(MetaProgress.UPGRADES.size() == 23, "The root, ten body nodes, eight growth nodes and four skill nodes")
 	var cells := {}
 	var roots := 0
 	var grown := true
@@ -49,7 +49,7 @@ func run_tests() -> void:
 		if upgrade.parent.is_empty():
 			roots += 1
 		else:
-			grown = grown and MetaProgress.find(upgrade.parent) != null and upgrade.branch in [&"body", &"growth"]
+			grown = grown and MetaProgress.find(upgrade.parent) != null and upgrade.branch in [&"body", &"growth", &"skill"]
 	for seal: Array in MetaUpgradePage.SEALS:
 		cells[seal[1]] = true
 	check(roots == 1 and MetaProgress.find(MetaProgress.ROOT).parent.is_empty() and grown, "One root, and every node grows from another in a branch")
@@ -130,6 +130,15 @@ func run_tests() -> void:
 	check(kit.equip(0, &"slam") and kit.loadout == [&"slam", &""], "And back")
 	check(not kit.equip(0, &"no_such_skill") and not kit.equip(2, &"slam") and kit.loadout == [&"slam", &""], "An unknown skill or slot is refused")
 	check(kit.equip(0, &"") and kit.loadout == [&"", &""] and kit.equipped_skills() == [null, null], "A slot can be cleared")
+	check(not kit.owns_skill(&"thunder_flash") and not kit.equip(1, &"thunder_flash"), "A skill not learned cannot be set")
+	kit.ranks[String(MetaProgress.ROOT)] = 1
+	kit.ranks["learn_thunder_flash"] = 1
+	check(kit.owns_skill(&"thunder_flash") and kit.equip(1, &"thunder_flash") and kit.loadout == [&"", &"thunder_flash"], "Learned on the skill branch, it can")
+	check(MetaCodec.decode(MetaCodec.encode(kit)).loadout == [&"", &"thunder_flash"], "A learned skill in a slot reads back")
+	var drilled := RunState.new(1)
+	kit.ranks["skill_drill"] = 2
+	drilled.use_lasting(kit.lasting())
+	check(is_equal_approx(drilled.build.stat(&"skill_cooldown"), -0.2), "The drill shortens the run's skills as a boon would")
 
 	# A run's result recorded.
 	var record := MetaProgress.new()

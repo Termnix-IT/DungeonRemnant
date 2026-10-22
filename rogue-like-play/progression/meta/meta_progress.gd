@@ -31,18 +31,25 @@ const UPGRADES: Array[MetaUpgrade] = [
 	preload("res://data/meta/rising_burst.tres"),
 	preload("res://data/meta/rising_ward.tres"),
 	preload("res://data/meta/rising_haste.tres"),
+	preload("res://data/meta/learn_thunder_flash.tres"),
+	preload("res://data/meta/learn_swallow_cut.tres"),
+	preload("res://data/meta/learn_blaze_ring.tres"),
+	preload("res://data/meta/skill_drill.tres"),
 ]
 const MAX_ECHO := 1000000000
 # Every active skill, in the status page's order.
 const SKILLS: Array[SkillData] = [
 	preload("res://data/skills/slam.tres"),
+	preload("res://data/skills/thunder_flash.tres"),
+	preload("res://data/skills/swallow_cut.tres"),
+	preload("res://data/skills/blaze_ring.tres"),
 ]
 const SKILL_SLOTS := 2
 # A new player's slots.
 const DEFAULT_LOADOUT: Array[StringName] = [&"slam", &""]
 # Effects a run reads as rules (RunState.lasting) rather than as her tuning.
 const RUN_EFFECTS: Array[StringName] = [&"echo_rate", &"last_stand", &"heal_share", &"gem_pull", &"exp_rate",
-	&"reroll", &"offer_count", &"level_heal", &"level_burst", &"level_ward", &"level_haste"]
+	&"reroll", &"offer_count", &"level_heal", &"level_burst", &"level_ward", &"level_haste", &"skill_cooldown"]
 # The dash never comes back quicker than this, whatever is held.
 const MIN_DASH_COOLDOWN := 0.1
 
@@ -148,10 +155,18 @@ static func find_skill(id: StringName) -> SkillData:
 	return null
 
 
-# Whether the player holds the skill (later skills are learned on the tree).
+# Whether the player holds the skill: from the start, or learned on the
+# upgrade tree's skill branch (a skill_unlock holding a rank).
 func owns_skill(id: StringName) -> bool:
 	var skill := find_skill(id)
-	return skill != null and skill.owned_from_start
+	if skill == null:
+		return false
+	if skill.owned_from_start:
+		return true
+	for upgrade in UPGRADES:
+		if upgrade.effect == &"skill_unlock" and upgrade.grants == id and rank(upgrade.id) > 0:
+			return true
+	return false
 
 
 # The slot a skill is set in, or -1.

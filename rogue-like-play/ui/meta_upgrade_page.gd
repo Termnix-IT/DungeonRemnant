@@ -46,7 +46,7 @@ const ZOOM_RATE := 2.2
 const AIM_CONE := PI / 3.0
 const BRANCH_NAMES := {&"": "中央", &"body": "身体", &"growth": "成長", &"skill": "スキル", &"special": "必殺技"}
 # Branches to come, sealed for now: the branch, its cell, its emblem.
-const SEALS := [[&"skill", Vector2i(0, -2), "seal_skill"], [&"special", Vector2i(0, 2), "seal_special"]]
+const SEALS := [[&"special", Vector2i(0, 2), "seal_special"]]
 const SEAL_NOTE := "この枝はまだ開放されていない"
 
 var meta: MetaProgress

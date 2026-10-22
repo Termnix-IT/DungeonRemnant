@@ -322,13 +322,26 @@ func _tell(id: StringName) -> void:
 				name_label.text = skill.display_name
 				var at := meta.slot_of(skill.id)
 				kind_label.text = "スキル　再使用 %s秒%s" % [_number(skill.cooldown), "　%s" % SLOTS[at + SKILL_SLOT_OFFSET][1] if at >= 0 else ""]
-				figure_label.text = "威力 攻撃力の%d%%\n範囲 半径%dpx" % [roundi(skill.attack.damage_scale * 100.0), roundi(skill.attack.reach)]
+				figure_label.text = "威力 攻撃力の%d%%\n%s" % [roundi(skill.attack.damage_scale * 100.0), _reach_text(skill.attack)]
 				description_label.text = skill.description
 				var here := in_skill_slot and at == slot_index
 				action_button.text = "装備中" if here else ("入れ替える" if at >= 0 else "装備する")
 				action_button.disabled = here or not in_skill_slot
 				action_button.visible = in_skill_slot
 	picture.queue_redraw()
+
+
+# How far a skill reaches, as its shape measures it: a wave's flight, a
+# line's length, a circle's radius, an arc's reach.
+func _reach_text(attack: AttackData) -> String:
+	if attack.projectile != null:
+		return "射程 %dpx" % roundi(attack.projectile.distance)
+	match attack.shape:
+		AttackData.Shape.LINE:
+			return "範囲 長さ%dpx" % roundi(attack.reach)
+		AttackData.Shape.CIRCLE:
+			return "範囲 半径%dpx" % roundi(attack.reach)
+	return "範囲 %dpx" % roundi(attack.reach)
 
 
 func _draw_picture() -> void:
