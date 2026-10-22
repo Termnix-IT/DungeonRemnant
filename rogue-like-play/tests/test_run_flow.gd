@@ -238,6 +238,31 @@ func run_tests() -> void:
 	check(ended[0].echo == director.run.echo and ended[0].echo > 0, "The result hands back the echo earned")
 	director.free()
 	await process_frame
+	# The special move set at the base goes with her, and its gauge carries
+	# from area to area.
+	var armed := MetaProgress.new()
+	armed.ranks[String(MetaProgress.ROOT)] = 1
+	armed.ranks["learn_echo_burst"] = 1
+	armed.ranks["special_surge"] = 1
+	armed.special = &"echo_burst"
+	director = RunDirector.new()
+	director.seed_value = 37
+	director.meta = armed
+	root.add_child(director)
+	await process_frame
+	director.map_view._choose(director.run.route.nodes(0)[0])
+	await process_frame
+	var fighter := director.area.hero
+	fighter.controlled = false
+	check(fighter.special == MetaProgress.find_special(&"echo_burst") and is_equal_approx(fighter.special_gain, 1.2), "The run's special move and its gain reach her")
+	fighter.special_charge = 42.0
+	await clear_area(director)
+	director.map_view._choose(director.run.route.nodes(1)[0])
+	await process_frame
+	check(director.run.special_charge == 42.0 and director.area.hero.special_charge == 42.0, "The gauge carries into the next area")
+	director.free()
+	await process_frame
+
 	# The merchant: no fight, a window over the map, wares paid in echo.
 	director = RunDirector.new()
 	director.seed_value = 41

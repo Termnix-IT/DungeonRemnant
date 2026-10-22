@@ -9,9 +9,10 @@ extends CanvasLayer
 # - at the top left, the boons taken as their emblems with their ranks;
 # - at the top right, the foes felled and the echo earned in the run;
 # - at the bottom left, her health (a trail shows what a blow took);
-# - at the bottom right, her actions as round slots (attack, dash, skill)
-#   with their keys, a sweep while they come back, pips for the dashes and a
-#   ring while she charges;
+# - at the bottom right, her actions as round slots (attack, dash, skills,
+#   special move) with their keys, a sweep while they come back, pips for
+#   the dashes, a ring while she charges, and the special's gauge as its
+#   sweep (it pulses gold once full);
 # - the rest of the controls along the bottom, and a banner in the middle
 #   for the area's name, its clearing, her fall and the boss's rage;
 # - at 30% health or less, the screen's edges pulse red, deeper and faster
@@ -26,10 +27,14 @@ const SLOTS := [
 	[&"dash", "double_dash", "Space", "A"],
 	[&"skill", "hammer_damage", "Q", "Y"],
 	[&"skill_2", "hammer_damage", "E", "B"],
+	[&"special", "seal_special", "R", "LB"],
 ]
 # The skill slots' HUD keys, in the motor's slot order.
 const SKILL_SLOTS: Array[StringName] = [&"skill", &"skill_2"]
 const CHARGE_COLOR := Color("ffd27a")
+# The special's slot pulses this fast (per second) and this much once full.
+const SPECIAL_PULSE := 1.6
+const SPECIAL_SWELL := 0.08
 # The banner sits this far above the middle, clear of the hero.
 const MESSAGE_RISE := 190.0
 const EDGE := 32.0
@@ -66,6 +71,8 @@ var message: Label
 var boss_gauge: BossGauge
 var danger: TextureRect
 var _boons_shown := ""
+var _special_full := false
+var _special_time := 0.0
 var _danger_time := 0.0
 
 
@@ -227,6 +234,7 @@ func _build_bottom(root: Control) -> void:
 		slots[entry[0]] = slot
 	skill_label = slots[&"skill"].key_label
 	slots[&"skill_2"].visible = false
+	slots[&"special"].visible = false
 	guide = _label(root, &"HudSmall")
 	guide.text = CONTROLS
 	guide.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
@@ -270,6 +278,7 @@ func _process(delta: float) -> void:
 	_show_goal(boss_in)
 	_show_tally()
 	_show_actions()
+	_show_special(delta)
 	var run: RunState = area.get(&"run")
 	exp_bar.visible = run != null
 	level_label.visible = run != null
@@ -364,6 +373,33 @@ func _show_actions() -> void:
 		skill.show_state(1.0 if cooldown <= 0.0 else 1.0 - left / cooldown)
 		if left > 0.0:
 			skill.key_label.text = "%d秒" % ceili(left)
+
+
+# The special move: its emblem, its gauge as the sweep, a pulse and a chime
+# the moment it is full.
+func _show_special(delta: float) -> void:
+	var hero := area.hero
+	var slot: ActionSlot = slots[&"special"]
+	slot.visible = hero.special != null
+	if not slot.visible:
+		return
+	var emblem := EmblemIcons.texture(hero.special.emblem)
+	if emblem != null and slot.icon != emblem:
+		slot.icon = emblem
+	slot.pivot_offset = Vector2(slot.size.x * 0.5, ActionSlot.SIZE * 0.5)
+	var full := hero.special_ready()
+	# The gauge as the sweep and as a ring of its own round the slot.
+	slot.show_state(hero.special_share(), 0.0 if full else hero.special_share())
+	if full and not _special_full:
+		_special_time = 0.0
+		GameAudio.play(self, &"charge", -16.0)
+	_special_full = full
+	if full:
+		_special_time += delta
+		slot.scale = Vector2.ONE * (1.0 + SPECIAL_SWELL * (0.5 + 0.5 * sin(_special_time * TAU * SPECIAL_PULSE)))
+	else:
+		slot.scale = Vector2.ONE
+		slot.key_label.text = "%d%%" % floori(hero.special_share() * 100.0)
 
 
 # The boons taken, as emblems with their rank; rebuilt only when they change.

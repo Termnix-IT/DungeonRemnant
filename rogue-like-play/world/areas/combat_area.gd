@@ -53,6 +53,12 @@ const BURN_OUTLINE := Color("2a1004")
 const LIGHTNING := Color(0.7, 0.88, 1.0)
 const LIGHTNING_TIME := 0.22
 const LIGHTNING_JAGS := 5
+# A special move: the world nearly stops for its cut-in, and its landing
+# shakes the screen and flashes it white.
+const SPECIAL_SLOW := 0.04
+const SPECIAL_SHAKE := 8.0
+const SPECIAL_FLASH := Color(1.0, 0.97, 0.9, 0.5)
+const SPECIAL_FLASH_TIME := 0.3
 
 var ground: AreaGround
 # The foes' warnings: over the ground, under the actors.
@@ -213,6 +219,8 @@ func deal(foe: Foe, info: DamageInfo) -> int:
 	if info.flinch:
 		report_hit(foe, lost, info)
 		events.attack_hit.emit(foe, info)
+		if hero != null:
+			hero.charge_special(hero.tuning.special_per_hit)
 	elif lost > 0:
 		popups.show_number(str(lost), foe.global_position + NUMBER_HEIGHT, BURN_NUMBER, BURN_OUTLINE, DamagePopups.FONT_SIZE - 6)
 	return lost
@@ -334,6 +342,40 @@ func report_swing(by: Hero, attack: AttackData, facing: Vector2) -> void:
 	GameAudio.play(self, SWING_SOUNDS.get(attack.effect, &"slash"), -18.0)
 
 
+# A special move let loose: the world nearly stops while its cut-in plays,
+# a burst of light rises from her and its chord rings.
+func report_special(by: Hero, move: SpecialData) -> void:
+	hit_stop.hold(SpecialCutIn.total_time(), SPECIAL_SLOW)
+	var cut_in := SpecialCutIn.new()
+	cut_in.name = "SpecialCutIn"
+	add_child(cut_in)
+	cut_in.present(move)
+	_effect(&"level_up", by.global_position + BODY_MIDDLE * 0.5, Vector2.RIGHT, 1.2)
+	GameAudio.play(self, &"special", -12.0)
+
+
+# Its blow landing: a hard shake, a white flash and a heavy boom.
+func report_special_impact(by: Hero, attack: AttackData) -> void:
+	shake(SPECIAL_SHAKE)
+	var flash := CanvasLayer.new()
+	flash.layer = 4
+	add_child(flash)
+	var white := ColorRect.new()
+	white.color = SPECIAL_FLASH
+	white.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	white.set_anchors_preset(Control.PRESET_FULL_RECT)
+	flash.add_child(white)
+	var fade := white.create_tween().set_ignore_time_scale(true)
+	fade.tween_property(white, "color:a", 0.0, SPECIAL_FLASH_TIME)
+	fade.tween_callback(flash.queue_free)
+	if attack.shape == AttackData.Shape.CIRCLE:
+		var ring := GroundRing.new()
+		marks.add_child(ring)
+		ring.start(by.global_position, attack.reach, &"heavy")
+	GameAudio.play(self, &"burst", -10.0)
+	GameAudio.play(self, &"heavy", -12.0)
+
+
 # A dash: dust kicked up at her feet and the rush of it.
 func report_dash(by: Hero, direction: Vector2) -> void:
 	_effect(&"death", by.global_position - direction * 10.0, Vector2.RIGHT, DASH_DUST)
@@ -388,6 +430,8 @@ func _on_foe_fell(foe: Foe) -> void:
 		GameAudio.play(self, &"death", -22.0)
 	foe_fell.emit(foe)
 	events.enemy_killed.emit(foe)
+	if hero != null:
+		hero.charge_special(hero.tuning.special_per_kill)
 
 
 # A painted effect at a point, unless its kind is at its cap.

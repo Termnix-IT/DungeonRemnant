@@ -7,7 +7,8 @@ extends BattleArea
 # end. The hero fights as a run (BattleArea): gems bring levels and boon
 # cards. The number keys instead hold a fixed count for trials (1 = 12,
 # 2 = 30, 3 = 60, 4 = 100, 5 = 200); 0 goes back to the growing crowd; L
-# gives a level at once, to try builds. Enter starts over after a fall; Esc
+# gives a level at once, to try builds. She carries the first special move;
+# G fills its gauge and H sets the next one, to try them. Enter starts over after a fall; Esc
 # opens the menu, whose leaving starts over too.
 
 const SIZE := Vector2i(64, 44)
@@ -20,6 +21,8 @@ const TABLE := preload("res://data/spawns/trial_field.tres")
 
 func _ready() -> void:
 	super()
+	run.special = MetaProgress.SPECIALS[0]
+	hero.equip_special(run.special)
 	hero_fell.connect(func(): hud.show_message("倒れました　Enterで再開"))
 	abandoned.connect(func():
 		get_tree().paused = false
@@ -27,7 +30,7 @@ func _ready() -> void:
 
 
 func trial_keys() -> String:
-	return "1〜5 敵の数を固定　0 時間で増加　／　L レベルアップ（試験用）"
+	return "1〜5 敵の数を固定　0 時間で増加　／　L レベルアップ　G 必殺ゲージ　H 必殺技の切り替え（試験用）"
 
 
 func _lay_out() -> void:
@@ -60,3 +63,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		director.fixed_alive = 0
 	elif event.physical_keycode == KEY_L and hero.health.alive() and not get_tree().paused:
 		_on_gems(run.progression.required_exp() - run.progression.exp)
+	elif event.physical_keycode == KEY_G and hero.special != null:
+		hero.special_charge = hero.special.charge
+	elif event.physical_keycode == KEY_H and not hero.using_special():
+		var at := MetaProgress.SPECIALS.find(hero.special)
+		run.special = MetaProgress.SPECIALS[(at + 1) % MetaProgress.SPECIALS.size()]
+		hero.equip_special(run.special)
+		hud.show_message("必殺技：%s" % run.special.display_name)
+		_banner_left = BANNER_TIME * 0.5

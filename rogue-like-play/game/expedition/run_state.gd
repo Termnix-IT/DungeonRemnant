@@ -69,6 +69,10 @@ var lasting: Dictionary = {}
 var skills: Array = []
 var rerolls_left := 0
 var last_stands := 0
+# The special move set for the run (null: none), and its gauge, carried from
+# area to area.
+var special: SpecialData
+var special_charge := 0.0
 # Curses taken at a cursed stone (CURSES' ids), kept to the run's end.
 var curses: Array[StringName] = []
 # Experience owed from exp_rate below a whole point, kept for the next gem.

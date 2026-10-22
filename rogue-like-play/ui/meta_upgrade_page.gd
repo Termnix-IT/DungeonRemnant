@@ -4,8 +4,8 @@ extends Control
 # The lasting upgrades (MetaProgress.UPGRADES) as an upgrade tree, the
 # common form: on the slab, a board larger than its window, the root in the
 # middle and the branches growing out of it (the body's to the left, growth's
-# to the right; the skill and special-move branches above and below, sealed
-# for now). Each node is its emblem, with sockets under it when it has
+# to the right; the skill and special-move branches above and below; a
+# branch still to come would stand sealed, SEALS). Each node is its emblem, with sockets under it when it has
 # ranks; a line joins it to the node it grows from, brighter once it can be
 # bought and brightest once held. The board lies in an opaque well of its
 # own inside the slab; it is dragged with the pointer or moved with the
@@ -45,8 +45,9 @@ const ZOOM_RATE := 2.2
 # one it is joined to first, then the nearest, then the upper.
 const AIM_CONE := PI / 3.0
 const BRANCH_NAMES := {&"": "中央", &"body": "身体", &"growth": "成長", &"skill": "スキル", &"special": "必殺技"}
-# Branches to come, sealed for now: the branch, its cell, its emblem.
-const SEALS := [[&"special", Vector2i(0, 2), "seal_special"]]
+# Branches to come, sealed for now: the branch, its cell, its emblem (none
+# at present).
+const SEALS := []
 const SEAL_NOTE := "この枝はまだ開放されていない"
 
 var meta: MetaProgress

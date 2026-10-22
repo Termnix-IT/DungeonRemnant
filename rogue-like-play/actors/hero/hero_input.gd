@@ -12,6 +12,7 @@ var strike_held := false
 var dash_pressed := false
 var skill_pressed := false
 var skill_2_pressed := false
+var special_pressed := false
 
 
 static func make(move_value: Vector2 = Vector2.ZERO, aim_value: Vector2 = Vector2.ZERO, strike_press: bool = false, strike_hold: bool = false, dash_press: bool = false, skill_press: bool = false) -> HeroInput:

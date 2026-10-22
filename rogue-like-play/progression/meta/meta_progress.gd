@@ -5,7 +5,7 @@ extends RefCounted
 # earned in runs), the ranks of the lasting upgrades (MetaUpgrade, a tree
 # grown from ROOT: one can be bought once the upgrade it grows from holds a
 # rank), the skills set in the two skill slots (loadout, chosen on the
-# status page), the record of runs, and the foes ever met (for the
+# status page) and the special move in its slot (special), the record of runs, and the foes ever met (for the
 # encyclopedia). A run is shaped by it at its start (tuning, lasting,
 # equipped_skills, starts_with_boon) and hands its result back at its end
 # (record_run). Saved by MetaStore.
@@ -35,6 +35,10 @@ const UPGRADES: Array[MetaUpgrade] = [
 	preload("res://data/meta/learn_swallow_cut.tres"),
 	preload("res://data/meta/learn_blaze_ring.tres"),
 	preload("res://data/meta/skill_drill.tres"),
+	preload("res://data/meta/learn_echo_burst.tres"),
+	preload("res://data/meta/learn_sky_rend.tres"),
+	preload("res://data/meta/special_surge.tres"),
+	preload("res://data/meta/special_mastery.tres"),
 ]
 const MAX_ECHO := 1000000000
 # Every active skill, in the status page's order.
@@ -45,11 +49,19 @@ const SKILLS: Array[SkillData] = [
 	preload("res://data/skills/blaze_ring.tres"),
 ]
 const SKILL_SLOTS := 2
+# Every special move, in the status page's order; equip() takes the special
+# slot as the slot after the skills'.
+const SPECIALS: Array[SpecialData] = [
+	preload("res://data/specials/echo_burst.tres"),
+	preload("res://data/specials/sky_rend.tres"),
+]
+const SPECIAL_SLOT := SKILL_SLOTS
 # A new player's slots.
 const DEFAULT_LOADOUT: Array[StringName] = [&"slam", &""]
 # Effects a run reads as rules (RunState.lasting) rather than as her tuning.
 const RUN_EFFECTS: Array[StringName] = [&"echo_rate", &"last_stand", &"heal_share", &"gem_pull", &"exp_rate",
-	&"reroll", &"offer_count", &"level_heal", &"level_burst", &"level_ward", &"level_haste", &"skill_cooldown"]
+	&"reroll", &"offer_count", &"level_heal", &"level_burst", &"level_ward", &"level_haste", &"skill_cooldown",
+	&"special_charge", &"special_power"]
 # The dash never comes back quicker than this, whatever is held.
 const MIN_DASH_COOLDOWN := 0.1
 
@@ -64,6 +76,8 @@ var best_layer := 0
 var met: Dictionary = {}
 # The skill id in each skill slot (empty: nothing set).
 var loadout: Array[StringName] = DEFAULT_LOADOUT.duplicate()
+# The special move in its slot (empty: none).
+var special: StringName = &""
 
 
 static func find(id: StringName) -> MetaUpgrade:
@@ -94,8 +108,12 @@ func can_buy(id: StringName) -> bool:
 func buy(id: StringName) -> bool:
 	if not can_buy(id):
 		return false
-	echo -= find(id).price(rank(id))
+	var upgrade := find(id)
+	echo -= upgrade.price(rank(id))
 	ranks[String(id)] = rank(id) + 1
+	# The first special move learned goes straight into its empty slot.
+	if upgrade.effect == &"special_unlock" and special.is_empty():
+		special = upgrade.grants
 	return true
 
 
@@ -169,6 +187,33 @@ func owns_skill(id: StringName) -> bool:
 	return false
 
 
+static func find_special(id: StringName) -> SpecialData:
+	for move in SPECIALS:
+		if move.id == id:
+			return move
+	return null
+
+
+# Whether the player has learned the special move (a special_unlock holding
+# a rank).
+func owns_special(id: StringName) -> bool:
+	if find_special(id) == null:
+		return false
+	for upgrade in UPGRADES:
+		if upgrade.effect == &"special_unlock" and upgrade.grants == id and rank(upgrade.id) > 0:
+			return true
+	return false
+
+
+func owns_any_special() -> bool:
+	return SPECIALS.any(func(move: SpecialData): return owns_special(move.id))
+
+
+# The special move a run fights with, or null.
+func equipped_special() -> SpecialData:
+	return find_special(special) if owns_special(special) else null
+
+
 # The slot a skill is set in, or -1.
 func slot_of(id: StringName) -> int:
 	return loadout.find(id) if not id.is_empty() else -1
@@ -177,6 +222,11 @@ func slot_of(id: StringName) -> int:
 # Sets a held skill in a slot, or clears it with an empty id. A skill set in
 # the other slot changes places with what this slot held.
 func equip(slot: int, id: StringName) -> bool:
+	if slot == SPECIAL_SLOT:
+		if not id.is_empty() and not owns_special(id):
+			return false
+		special = id
+		return true
 	if slot < 0 or slot >= SKILL_SLOTS or (not id.is_empty() and not owns_skill(id)):
 		return false
 	var other := slot_of(id)

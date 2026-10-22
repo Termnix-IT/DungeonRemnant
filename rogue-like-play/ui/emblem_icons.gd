@@ -25,6 +25,10 @@ const STAND_INS := {
 	"swallow_cut": "shockwave",
 	"blaze_ring": "great_charge",
 	"skill_drill": "mana",
+	"echo_burst": "rising_burst",
+	"sky_rend": "thunder_blade",
+	"special_surge": "great_charge",
+	"special_mastery": "attack",
 }
 static var _cache: Dictionary = {}
 

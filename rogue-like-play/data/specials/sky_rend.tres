@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SpecialData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://combat/action/special_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/attacks/special_sky_rend.tres" id="2"]
+[resource]
+script = ExtResource("1")
+id = &"sky_rend"
+display_name = "天裂き"
+description = "雷をまとった剣の一閃で、前方を遠くまで一直線に断ち切り、感電させる"
+emblem = "sky_rend"
+attack = ExtResource("2")
+charge = 120.0

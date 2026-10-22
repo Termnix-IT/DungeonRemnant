@@ -95,6 +95,10 @@ func _ready() -> void:
 	hero.use_build(run.build)
 	if not run.skills.is_empty():
 		hero.motor.equip_skills(run.skills)
+	hero.special_gain = 1.0 + run.rule(&"special_charge")
+	hero.special_power = run.rule(&"special_power")
+	hero.equip_special(run.special)
+	hero.special_charge = minf(run.special_charge, run.special.charge) if run.special != null else 0.0
 	hero.health.last_stands = run.last_stands
 	hero.health.stood.connect(_on_stood)
 	gems.pull_radius = GemField.PULL_RADIUS + run.rule(&"gem_pull")
@@ -163,6 +167,7 @@ func _physics_process(delta: float) -> void:
 		_clear_left -= delta
 		if _clear_left < 0.0:
 			run.hp = hero.health.hp
+			run.special_charge = hero.special_charge
 			cleared.emit()
 		return
 	if data == null or finished:

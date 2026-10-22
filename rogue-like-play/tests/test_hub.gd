@@ -190,8 +190,8 @@ func run_tests() -> void:
 	root.push_input(key(KEY_ENTER, false))
 	await process_frame
 	check(main.meta.rank(&"double_dash") == 0 and main.meta.echo == 70, "One the echo cannot pay for is refused")
-	(page.nodes[&"special"] as Button).grab_focus()
-	check(not page.buy_button.visible and page.description_label.text == MetaUpgradePage.SEAL_NOTE, "A sealed branch tells it is not open and offers nothing")
+	(page.nodes[&"learn_echo_burst"] as Button).grab_focus()
+	check(page.buy_button.visible and page.name_label.text == "残響解放の習得", "The special branch is open, its first node a special move to learn")
 	root.push_input(key(KEY_C))
 	await process_frame
 	check(page.selected == MetaProgress.ROOT, "C brings the root back")
@@ -272,6 +272,22 @@ func run_tests() -> void:
 	root.push_input(key(KEY_ESCAPE))
 	await process_frame
 	check(hub.page == "status" and status.slot_buttons[2].has_focus(), "Back from the tiles returns to their slot")
+	# The special slot opens once a special move is learned.
+	main.meta.ranks["learn_echo_burst"] = 1
+	hub.refresh(main.meta, "")
+	root.push_input(key(KEY_RIGHT))
+	await process_frame
+	check(status.slot == 3 and status.tile_ids == [HubStatus.CLEAR_ID, &"echo_burst", &"sky_rend"] and status.tiles[2].text == HubStatus.UNKNOWN_NAME and status.slot_buttons[3].text.contains("空き"), "Once a special move is learned, its slot opens with its tiles")
+	root.push_input(key(KEY_ENTER))
+	root.push_input(key(KEY_ENTER, false))
+	await process_frame
+	root.push_input(key(KEY_RIGHT))
+	await process_frame
+	check(status.name_label.text == "残響解放" and status.action_button.text == "装備する", "The column tells the special move and offers to set it")
+	root.push_input(key(KEY_ENTER))
+	root.push_input(key(KEY_ENTER, false))
+	await process_frame
+	check(main.meta.special == &"echo_burst" and status.slot_buttons[3].text.contains("残響解放") and hub.feedback.text.contains("必殺技"), "Enter on it sets the special move")
 	root.push_input(key(KEY_TAB))
 	await process_frame
 	check(hub.page == "upgrade", "Tab goes back to the upgrades")
@@ -281,7 +297,7 @@ func run_tests() -> void:
 	reader.path = path
 	var read_back := reader.load_progress()
 	check(read_back.rank(&"sturdy_body") == 1 and read_back.rank(MetaProgress.ROOT) == 1 and read_back.echo == 70, "The purchases are still there after a restart")
-	check(read_back.loadout == [&"", &"slam"], "So are the skill slots")
+	check(read_back.loadout == [&"", &"slam"] and read_back.special == &"echo_burst", "So are the skill and special slots")
 
 	# An unreadable save: an alert, and saving stopped.
 	var broken := folder + "/broken.json"

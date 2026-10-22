@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"special_surge"
+display_name = "闘気の高まり"
+description = "必殺技のゲージが20%早く溜まる"
+costs = Array[int]([240, 400])
+effect = &"special_charge"
+per_rank = 0.2
+emblem = "special_surge"
+branch = &"special"
+parent = &"learn_echo_burst"
+cell = Vector2i(1, 3)
+figure = "ゲージの溜まり +%s%%"
+figure_base = 0.0
+figure_scale = 100.0
+grants = &""

@@ -73,6 +73,7 @@ func _ready() -> void:
 		run.tuning = meta.tuning(run.tuning)
 		run.use_lasting(meta.lasting())
 		run.skills = meta.equipped_skills()
+		run.special = meta.equipped_special()
 	run.route = RouteMap.generate(chapter, run.rng)
 	map_view = RouteMapView.new()
 	add_child(map_view)

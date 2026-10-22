@@ -49,14 +49,22 @@ func equip_skill(slot: int, id: StringName) -> bool:
 	if active_run != null or not has_node("Hub") or not $Hub.visible:
 		return false
 	var loadout := meta.loadout.duplicate()
+	var special := meta.special
 	if not meta.equip(slot, id):
 		$Hub.refresh(meta, "このスキルは付けられません。")
 		return false
 	if saving_enabled and not store.save_progress(meta):
 		meta.loadout = loadout
+		meta.special = special
 		$Hub.refresh(meta, "保存に失敗したため、付け替えを取り消しました。")
 		_update_save_status()
 		return false
+	if slot == MetaProgress.SPECIAL_SLOT:
+		var move := MetaProgress.find_special(id)
+		$Hub.refresh(meta, "必殺技に「%s」を付けました。" % move.display_name if move != null else "必殺技を外しました。")
+		_update_save_status()
+		$Hub.present_equip()
+		return true
 	var skill := MetaProgress.find_skill(id)
 	$Hub.refresh(meta, "スキル%dに「%s」を付けました。" % [slot + 1, skill.display_name] if skill != null else "スキル%dを外しました。" % (slot + 1))
 	_update_save_status()

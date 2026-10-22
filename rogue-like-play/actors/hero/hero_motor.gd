@@ -15,20 +15,25 @@ extends RefCounted
 # skill comes out when free, or cuts a swing short as a dash does, and then
 # rests for its cooldown. There are two skill slots (skill_1, skill_2), each
 # with its own attack and rest; the moveset's skill fills the first until
-# equip_skills sets them. A swing is shaped as it starts by `shaper` (the
-# run's build), if set.
+# equip_skills sets them. The special move comes out at any time but a dash
+# (a press during one waits for its end) once Hero says its gauge is full
+# (special_ready), cutting whatever she was doing, and she is untouchable
+# until it ends. A swing is shaped as it starts by `shaper` (the run's
+# build), if set; the special move never is.
 
 signal swing_started(attack: AttackData)
 signal skill_used(attack: AttackData)
+signal special_used(attack: AttackData)
 signal dashed(direction: Vector2)
 signal dash_ended(direction: Vector2)
 signal charge_ready
 
 enum State { FREE, ATTACK, CHARGE, DASH, DOWN }
-enum Press { NONE, STRIKE, DASH, SKILL }
+enum Press { NONE, STRIKE, DASH, SKILL, SPECIAL }
 # combo_index for a swing that is not of the combo.
 const CHARGED := -1
 const SKILL := -2
+const SPECIAL := -3
 
 var tuning: HeroTuning
 var moveset: Moveset
@@ -52,6 +57,10 @@ var skill_cooldowns: Array[float] = [0.0, 0.0]
 var skill_cooldowns_left: Array[float] = [0.0, 0.0]
 # Each slot's emblem (EmblemIcons key), for the HUD; empty: the moveset's.
 var skill_emblems: Array[String] = ["", ""]
+# The special move's attack (null: none set), and whether its gauge is full
+# (set by Hero every frame).
+var special_attack: AttackData
+var special_ready := false
 # The first slot's rest left.
 var skill_cooldown_left: float:
 	get:
@@ -207,6 +216,8 @@ func _read(input: HeroInput, delta: float) -> void:
 	if input.skill_2_pressed:
 		_skill_slot = 1
 		_press(Press.SKILL)
+	if input.special_pressed:
+		_press(Press.SPECIAL)
 
 
 func _press(kind: Press) -> void:
@@ -223,6 +234,9 @@ func _take(kind: Press) -> bool:
 
 
 func _free(input: HeroInput, delta: float) -> void:
+	if _special_go():
+		_start_special(input.aim)
+		return
 	if _buffered == Press.DASH and dash_charges > 0:
 		_take(Press.DASH)
 		_start_dash(input, delta)
@@ -241,6 +255,9 @@ func _free(input: HeroInput, delta: float) -> void:
 
 func _attacking(input: HeroInput, delta: float) -> void:
 	state_time += delta
+	if combo_index != SPECIAL and _special_go():
+		_start_special(input.aim)
+		return
 	if _buffered == Press.DASH and state_time >= attack.dash_after and dash_charges > 0:
 		_take(Press.DASH)
 		_start_dash(input, delta)
@@ -264,6 +281,9 @@ func _attacking(input: HeroInput, delta: float) -> void:
 
 func _charging(input: HeroInput, delta: float) -> void:
 	state_time += delta
+	if _special_go():
+		_start_special(input.aim)
+		return
 	if _buffered == Press.DASH and dash_charges > 0:
 		_take(Press.DASH)
 		_holding = false
@@ -300,7 +320,7 @@ func _dashing(delta: float) -> void:
 
 func _start_swing(next: AttackData, index: int, aim: Vector2) -> void:
 	attack = next
-	if shaper.is_valid():
+	if shaper.is_valid() and index != SPECIAL:
 		var kind := &"skill" if index == SKILL else (&"charged" if index == CHARGED else &"combo")
 		attack = shaper.call(next, kind, index, since_dash)
 	combo_index = index
@@ -309,7 +329,9 @@ func _start_swing(next: AttackData, index: int, aim: Vector2) -> void:
 	state = State.ATTACK
 	state_time = 0.0
 	swing_serial += 1
-	if index == SKILL:
+	if index == SPECIAL:
+		special_used.emit(attack)
+	elif index == SKILL:
 		skill_used.emit(attack)
 	else:
 		swing_started.emit(attack)
@@ -324,6 +346,18 @@ func _start_skill(aim: Vector2) -> void:
 	_holding = false
 	skill_cooldowns_left[_skill_slot] = skill_cooldowns[_skill_slot] * cooldown_scale
 	_start_swing(skill_attacks[_skill_slot], SKILL, aim)
+
+
+func _special_go() -> bool:
+	return _buffered == Press.SPECIAL and special_attack != null and special_ready
+
+
+func _start_special(aim: Vector2) -> void:
+	_take(Press.SPECIAL)
+	_holding = false
+	special_ready = false
+	_start_swing(special_attack, SPECIAL, aim)
+	_invulnerable_left = maxf(_invulnerable_left, attack.duration())
 
 
 func _start_dash(input: HeroInput, delta: float) -> void:

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SpecialData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://combat/action/special_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/attacks/special_echo_burst.tres" id="2"]
+[resource]
+script = ExtResource("1")
+id = &"echo_burst"
+display_name = "残響解放"
+description = "身に宿した残響を一気に解き放ち、周りの敵すべてを大きく吹き飛ばす"
+emblem = "echo_burst"
+attack = ExtResource("2")
+charge = 100.0

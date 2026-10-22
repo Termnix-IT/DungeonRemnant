@@ -18,3 +18,6 @@ defense = 0
 power = 10.0
 hurt_mercy = 0.8
 hit_radius = 14.0
+special_per_hit = 0.4
+special_per_kill = 1.0
+special_per_hurt = 0.8

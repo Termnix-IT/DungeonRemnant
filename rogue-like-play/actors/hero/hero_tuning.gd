@@ -28,3 +28,8 @@ extends Resource
 # Untouchable for this long after being hurt.
 @export_range(0.0, 3.0) var hurt_mercy := 0.8
 @export_range(4.0, 64.0) var hit_radius := 14.0
+# How her special move's gauge fills: for each blow of hers that lands, each
+# foe felled, and each point of health a foe's blow takes.
+@export_range(0.0, 20.0) var special_per_hit := 0.4
+@export_range(0.0, 20.0) var special_per_kill := 1.0
+@export_range(0.0, 20.0) var special_per_hurt := 0.8

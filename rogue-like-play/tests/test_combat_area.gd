@@ -160,6 +160,8 @@ func run_tests() -> void:
 
 	# The specials: a turret shoots, a swell bursts, a nest hatches.
 	await specials()
+	# Her special move.
+	await special_move()
 
 	# The sandbox starts up and its director keeps the foes coming.
 	var sandbox: CombatArea = load("res://world/areas/sandbox.tscn").instantiate()
@@ -183,6 +185,67 @@ func run_tests() -> void:
 func _on_hurt(lost: int) -> void:
 	hurts.append(lost)
 	numbers_shown.append(area.popups.get_child_count())
+
+
+# The special move: the gauge fills from her blows, foes felled and her
+# wounds (the run's gain on top), and the HUD shows it; full, R lets it
+# loose: the gauge empties, the world all but stops for the cut-in, she is
+# untouchable, and its blow lands on every foe in reach with the run's power
+# on top; its own blows do not fill the gauge again.
+func special_move() -> void:
+	var field := make_area()
+	var hero := field.hero
+	var hud := ActionHud.new()
+	field.add_child(hud)
+	hud.watch(field)
+	await process_frame
+	var move: SpecialData = load("res://data/specials/echo_burst.tres")
+	var key := HeroInput.new()
+	key.special_pressed = true
+	await drive(hero, key, FRAME * 2)
+	check(hero.motor.combo_index != HeroMotor.SPECIAL and not hud.slots[&"special"].visible, "Without a special move set, R does nothing and the HUD shows no slot")
+	hero.equip_special(move)
+	hero.special_gain = 1.5
+	var struck := field.spawn_foe(sentinel, hero.global_position + Vector2(400, 0))
+	await process_frame
+	field.deal(struck, DamageInfo.make(1.0, Vector2.RIGHT, 0.0, hero))
+	check(is_equal_approx(hero.special_charge, hero.tuning.special_per_hit * 1.5), "A blow that lands fills the gauge, faster with the run's gain")
+	var before := hero.special_charge
+	field.deal(struck, DamageInfo.make(100000.0, Vector2.RIGHT, 0.0, hero))
+	check(is_equal_approx(hero.special_charge - before, (hero.tuning.special_per_hit + hero.tuning.special_per_kill) * 1.5), "A foe felled fills it more")
+	before = hero.special_charge
+	var lost := hero.receive(DamageInfo.make(10.0, Vector2.RIGHT))
+	check(lost > 0 and is_equal_approx(hero.special_charge - before, lost * hero.tuning.special_per_hurt * 1.5), "So does a wound")
+	await process_frame
+	check(hud.slots[&"special"].visible and hud.slots[&"special"].key_label.text == "%d%%" % floori(hero.special_share() * 100.0), "The HUD shows how full the gauge is")
+	await drive(hero, key, FRAME * 2)
+	check(hero.motor.combo_index != HeroMotor.SPECIAL, "Not full, R does nothing")
+	await drive(hero, HeroInput.new(), hero.tuning.hurt_mercy + 0.1)
+	hero.special_charge = move.charge
+	# The HUD reads it in the frame after.
+	await process_frame
+	await process_frame
+	check(hud.slots[&"special"].key_label.text == "R", "Full, the slot shows its key")
+	var near: Array[Foe] = []
+	for offset: Vector2 in [Vector2(90, 0), Vector2(-120, 40), Vector2(0, -150)]:
+		near.append(field.spawn_foe(sentinel, hero.global_position + offset))
+	var far := field.spawn_foe(sentinel, hero.global_position + Vector2(0, 330))
+	hero.special_power = 0.5
+	await process_frame
+	await drive(hero, key, FRAME)
+	check(hero.motor.combo_index == HeroMotor.SPECIAL and hero.special_charge == 0.0 and hero.invulnerable(), "Full, R lets it loose and spends the gauge")
+	check(field.has_node("SpecialCutIn") and Engine.time_scale < 0.1, "The world all but stops for its cut-in")
+	check(hero.receive(DamageInfo.make(30.0, Vector2.RIGHT)) == 0, "She is untouchable while it plays")
+	await create_timer(SpecialCutIn.total_time() + 0.1, true, false, true).timeout
+	check(not field.has_node("SpecialCutIn") and is_equal_approx(Engine.time_scale, 1.0), "The cut-in leaves and the world goes on")
+	await drive(hero, HeroInput.new(), 0.35)
+	check(near.all(func(foe: Foe): return foe.dying), "Its blow fells every foe in reach")
+	check(not far.dying and far.health.hp == far.health.max_hp, "One out of reach is untouched")
+	check(hero.special_charge == 0.0, "Its own blows do not fill the gauge")
+	field.hit_stop.release()
+	await process_frame
+	field.free()
+	await process_frame
 
 
 # A foe that fights otherwise: a turret's shot flies at her along its line,

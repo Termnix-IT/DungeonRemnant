@@ -40,7 +40,7 @@ func run_tests() -> void:
 
 	# The upgrade tree: one root, every other node grows from one in the tree,
 	# no two share a cell, and the seals keep their cells free.
-	check(MetaProgress.UPGRADES.size() == 23, "The root, ten body nodes, eight growth nodes and four skill nodes")
+	check(MetaProgress.UPGRADES.size() == 27, "The root, ten body nodes, eight growth nodes, four skill nodes and four special nodes")
 	var cells := {}
 	var roots := 0
 	var grown := true
@@ -49,7 +49,7 @@ func run_tests() -> void:
 		if upgrade.parent.is_empty():
 			roots += 1
 		else:
-			grown = grown and MetaProgress.find(upgrade.parent) != null and upgrade.branch in [&"body", &"growth", &"skill"]
+			grown = grown and MetaProgress.find(upgrade.parent) != null and upgrade.branch in [&"body", &"growth", &"skill", &"special"]
 	for seal: Array in MetaUpgradePage.SEALS:
 		cells[seal[1]] = true
 	check(roots == 1 and MetaProgress.find(MetaProgress.ROOT).parent.is_empty() and grown, "One root, and every node grows from another in a branch")
@@ -135,6 +135,24 @@ func run_tests() -> void:
 	kit.ranks["learn_thunder_flash"] = 1
 	check(kit.owns_skill(&"thunder_flash") and kit.equip(1, &"thunder_flash") and kit.loadout == [&"", &"thunder_flash"], "Learned on the skill branch, it can")
 	check(MetaCodec.decode(MetaCodec.encode(kit)).loadout == [&"", &"thunder_flash"], "A learned skill in a slot reads back")
+	# The special moves: learned on the special branch, the first goes
+	# straight into its empty slot; set, swapped, cleared, refused when not
+	# learned; read back from a save, and a save from before it has none.
+	var arts := MetaProgress.new()
+	check(not arts.owns_any_special() and arts.equipped_special() == null and not arts.equip(MetaProgress.SPECIAL_SLOT, &"echo_burst"), "A new player has no special move and cannot set one")
+	arts.echo = 3000
+	check(arts.buy(MetaProgress.ROOT) and arts.buy(&"learn_echo_burst") and arts.special == &"echo_burst" and arts.equipped_special() == MetaProgress.find_special(&"echo_burst"), "Learning the first special move sets it in its slot")
+	check(arts.buy(&"learn_sky_rend") and arts.special == &"echo_burst", "A second one learned does not take its place")
+	check(arts.equip(MetaProgress.SPECIAL_SLOT, &"sky_rend") and arts.special == &"sky_rend" and arts.loadout == MetaProgress.DEFAULT_LOADOUT, "It can be swapped, the skill slots left alone")
+	check(MetaCodec.decode(JSON.parse_string(JSON.stringify(MetaCodec.encode(arts)))).special == &"sky_rend", "The special slot reads back")
+	var unlearned := MetaCodec.encode(MetaProgress.new())
+	unlearned.special = "sky_rend"
+	check(MetaCodec.decode(unlearned) == null, "A special move not learned is refused in a save")
+	var before_specials := MetaCodec.encode(MetaProgress.new())
+	before_specials.erase("special")
+	check(MetaCodec.decode(before_specials) != null and MetaCodec.decode(before_specials).special == &"", "A save from before the special slot has it empty")
+	check(arts.equip(MetaProgress.SPECIAL_SLOT, &"") and arts.equipped_special() == null, "The special slot can be cleared")
+	check(arts.buy(&"special_surge") and arts.buy(&"special_mastery") and is_equal_approx(arts.lasting()[&"special_charge"], 0.2) and is_equal_approx(arts.lasting()[&"special_power"], 0.25), "The branch's upgrades fill the gauge faster and strike harder")
 	var drilled := RunState.new(1)
 	kit.ranks["skill_drill"] = 2
 	drilled.use_lasting(kit.lasting())

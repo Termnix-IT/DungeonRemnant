@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"special_mastery"
+display_name = "奥義の研鑽"
+description = "必殺技の威力が25%上がる"
+costs = Array[int]([280, 460])
+effect = &"special_power"
+per_rank = 0.25
+emblem = "special_mastery"
+branch = &"special"
+parent = &"learn_echo_burst"
+cell = Vector2i(0, 4)
+figure = "必殺技の威力 +%s%%"
+figure_base = 0.0
+figure_scale = 100.0
+grants = &""

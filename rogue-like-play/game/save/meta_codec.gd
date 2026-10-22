@@ -41,7 +41,7 @@ static func encode(meta: MetaProgress) -> Dictionary:
 	for id in meta.loadout:
 		loadout.append(String(id))
 	return {"version": VERSION, "echo": meta.echo, "ranks": meta.ranks.duplicate(), "runs": meta.runs,
-		"clears": meta.clears, "best_layer": meta.best_layer, "met": met, "loadout": loadout}
+		"clears": meta.clears, "best_layer": meta.best_layer, "met": met, "loadout": loadout, "special": String(meta.special)}
 
 
 static func integer(value: Variant, minimum: int, maximum: int) -> bool:
@@ -84,6 +84,12 @@ static func decode(data: Variant) -> MetaProgress:
 		return null
 	if data.has("loadout") and not _read_loadout(data.loadout, meta):
 		return null
+	# The special slot: empty or a learned special move (a save from before
+	# it has none).
+	var special: Variant = data.get("special", "")
+	if not special is String or (not special.is_empty() and not meta.owns_special(StringName(special))):
+		return null
+	meta.special = StringName(special)
 	return meta
 
 

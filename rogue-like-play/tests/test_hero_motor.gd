@@ -193,5 +193,34 @@ func run_tests() -> void:
 	check(motor.swing_serial == 1 and motor.combo_index == HeroMotor.SKILL and absf(motor.skill_cooldowns_left[1] - (slam.cooldown - 0.1)) < 0.05 and motor.skill_cooldown_left == 0.0, "The second slot's key lets its skill loose, and only it rests")
 	check(motor.skill_emblems[1] == slam.emblem, "The slot keeps its skill's emblem for the HUD")
 
+	# The special move: nothing until its gauge is full; full, it cuts a swing
+	# short, and she is untouchable through it; a press during a dash waits
+	# for its end. No build ever shapes it.
+	motor = make_motor()
+	var burst: SpecialData = load("res://data/specials/echo_burst.tres")
+	motor.special_attack = burst.attack
+	var specials_used := []
+	motor.special_used.connect(func(attack: AttackData): specials_used.append(attack))
+	motor.shaper = func(attack: AttackData, _kind: StringName, _index: int, _since: float) -> AttackData: return attack.duplicate()
+	var special_key := HeroInput.make()
+	special_key.special_pressed = true
+	hold(motor, special_key, 0.1)
+	check(motor.swing_serial == 0 and specials_used.is_empty(), "Not full, the special's key does nothing")
+	hold(motor, HeroInput.make(Vector2.ZERO, Vector2.RIGHT, true), FRAME * 3)
+	motor.special_ready = true
+	hold(motor, special_key, FRAME)
+	check(motor.combo_index == HeroMotor.SPECIAL and motor.swing_serial == 2 and motor.attack == burst.attack and specials_used == [burst.attack], "Full, it cuts the swing short, as written")
+	check(motor.invulnerable() and not motor.special_ready, "She is untouchable, and the gauge is spent")
+	hold(motor, idle(), burst.attack.duration() - FRAME * 3)
+	check(motor.invulnerable() and motor.state == HeroMotor.State.ATTACK, "Untouchable through all of it")
+	hold(motor, idle(), 0.3)
+	check(motor.state == HeroMotor.State.FREE and not motor.invulnerable(), "And not after")
+	motor.special_ready = true
+	hold(motor, HeroInput.make(Vector2.RIGHT, Vector2.ZERO, false, false, true), FRAME)
+	hold(motor, special_key, FRAME)
+	check(motor.state == HeroMotor.State.DASH and specials_used.size() == 1, "A press during a dash waits")
+	hold(motor, idle(), motor.tuning.dash_time)
+	check(motor.combo_index == HeroMotor.SPECIAL and specials_used.size() == 2, "And comes out at its end")
+
 	print("Hero motor tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
