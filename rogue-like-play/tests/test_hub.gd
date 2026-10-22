@@ -215,6 +215,27 @@ func run_tests() -> void:
 	release.position = drag.position
 	page.board.gui_input.emit(release)
 	check(page.canvas.position.x > before.x and page.selected == &"parting_blessing", "A drag moves the board and chooses nothing")
+	# The wheel zooms around the pointer, within its bounds; C brings the first size back.
+	var anchor: Vector2 = page.canvas.position + page._centers[&"sturdy_body"] * page.zoom
+	var wheel := InputEventMouseButton.new()
+	wheel.button_index = MOUSE_BUTTON_WHEEL_UP
+	wheel.pressed = true
+	wheel.position = anchor
+	page.board.gui_input.emit(wheel)
+	check(is_equal_approx(page.zoom, MetaUpgradePage.ZOOM_STEP) and page.canvas.scale.is_equal_approx(Vector2.ONE * page.zoom), "The wheel zooms the board in")
+	check((page.canvas.position + page._centers[&"sturdy_body"] * page.zoom).distance_to(anchor) < 1.0, "The node under the pointer stays under it")
+	press.position = anchor
+	page.board.gui_input.emit(press)
+	release.position = anchor
+	page.board.gui_input.emit(release)
+	check(page.selected == &"sturdy_body", "A click still finds the node at the zoomed size")
+	wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
+	for notch in 12:
+		page.board.gui_input.emit(wheel)
+	check(is_equal_approx(page.zoom, MetaUpgradePage.ZOOM_MIN), "Zooming out stops at its bound")
+	root.push_input(key(KEY_C))
+	await process_frame
+	check(page.zoom == 1.0 and page.selected == MetaProgress.ROOT, "C brings the root back at the first size")
 	main.free()
 	await process_frame
 	var reader := MetaStore.new()

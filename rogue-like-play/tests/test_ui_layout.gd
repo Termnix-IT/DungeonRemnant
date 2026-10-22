@@ -58,6 +58,10 @@ func run_tests() -> void:
 	check(screen.encloses(tree.buy_button.get_global_rect()), "The upgrade's action stays on the screen")
 	var board := tree.board.get_global_rect()
 	check(board.end.x <= tree.buy_button.get_global_rect().position.x and tree.board.clip_contents, "The tree's window is left of the column, clipping its board")
+	var well := tree.board.get_parent() as PanelContainer
+	var well_style := well.get_theme_stylebox(&"panel") as StyleBoxFlat if well != null else null
+	check(well != null and well.theme_type_variation == &"TreeWell" and well_style != null and well_style.bg_color.a == 1.0, "The board lies in an opaque well of its own")
+	check(tree.nodes[MetaProgress.ROOT].size.x > tree.nodes[&"sturdy_body"].size.x, "The root is the largest node")
 	var root_node: Button = tree.nodes[MetaProgress.ROOT]
 	check(board.encloses(root_node.get_global_rect()) and absf(root_node.get_global_rect().get_center().x - board.get_center().x) < 2.0, "The root opens in the window's middle")
 	var far: Button = tree.nodes[&"fourth_card"]

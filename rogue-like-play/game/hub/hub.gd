@@ -250,6 +250,7 @@ func show_page(target: String) -> void:
 			key_guide.add_hint("Enter", "A", "強化")
 			key_guide.add_hint("矢印", "十字", "選ぶ")
 			key_guide.add_hint("ドラッグ", "R スティック", "動かす")
+			key_guide.add_hint("ホイール", "LT / RT", "拡大・縮小")
 			key_guide.add_hint("C", "Y", "中央へ", upgrade_page.center_view)
 		"codex":
 			title_label.text = "図鑑"

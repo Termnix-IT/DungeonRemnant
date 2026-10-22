@@ -1310,6 +1310,19 @@ corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
+[sub_resource type="StyleBoxFlat" id="TreeWellSurface"]
+resource_name = "TreeWellSurface"
+bg_color = Color(0.018, 0.017, 0.021, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.72, 0.58, 0.36, 0.14)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
 [resource]
 DetailStack/base_type = &"VBoxContainer"
 DetailStack/constants/separation = 8
@@ -2070,10 +2083,13 @@ UpgradeNode/styles/pressed = SubResource("Invisible")
 UpgradeNode/styles/hover_pressed = SubResource("Invisible")
 UpgradeNode/styles/disabled = SubResource("Invisible")
 UpgradeNode/styles/focus = SubResource("Invisible")
-UpgradeTree/colors/line_closed = Color(0.82, 0.8, 0.74, 0.16)
-UpgradeTree/colors/line_open = Color(0.82, 0.8, 0.74, 0.42)
+UpgradeTree/colors/line_closed = Color(0.82, 0.8, 0.74, 0.3)
+UpgradeTree/colors/line_open = Color(0.82, 0.8, 0.74, 0.55)
 UpgradeTree/colors/line_held = Color(0.93333334, 0.9137255, 0.8745098, 0.9)
-UpgradeTree/colors/disc = Color(0.03, 0.028, 0.03, 0.72)
+UpgradeTree/colors/disc = Color(0.05, 0.047, 0.05, 1)
+UpgradeTree/colors/well = Color(0.018, 0.017, 0.021, 1)
 UpgradeTree/colors/closed_tint = Color(0.42, 0.41, 0.4, 0.75)
 UpgradeTree/colors/focus = Color(0.8392157, 0.7176471, 0.48235294, 1)
 UpgradeTree/colors/seal = Color(0.6, 0.58, 0.56, 0.5)
+TreeWell/base_type = &"PanelContainer"
+TreeWell/styles/panel = SubResource("TreeWellSurface")

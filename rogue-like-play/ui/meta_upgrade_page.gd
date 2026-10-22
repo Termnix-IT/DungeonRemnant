@@ -7,9 +7,10 @@ extends Control
 # to the right; the skill and special-move branches above and below, sealed
 # for now). Each node is its emblem, with sockets under it when it has
 # ranks; a line joins it to the node it grows from, brighter once it can be
-# bought and brightest once held. The board is dragged with the pointer or
-# moved with the right stick, follows the focus, and C (Y) brings the root
-# back. In the column on the right, the chosen node's emblem, name, branch
+# bought and brightest once held. The board lies in an opaque well of its
+# own inside the slab; it is dragged with the pointer or moved with the
+# right stick, zoomed with the wheel (LT / RT), follows the focus, and C (Y)
+# brings the root back at its first size. In the column on the right, the chosen node's emblem, name, branch
 # and rank, its figure now and next, what it does and what it waits for,
 # and the one action: its next rank's price on a button that asks to buy
 # (buy_requested; the hub saves, then calls present_purchase). Enter (A) on
@@ -18,22 +19,28 @@ extends Control
 
 signal buy_requested(id: StringName)
 
-const CELL := Vector2(150, 130)
-const NODE_SIZE := 88.0
-const ROOT_SIZE := 120.0
-const PIP_SIZE := 12.0
+const CELL := Vector2(108, 92)
+const NODE_SIZE := 60.0
+const ROOT_SIZE := 84.0
+const PIP_SIZE := 9.0
 const DETAIL_EMBLEM := 150.0
-const LINE_WIDTH := 3.0
-const RING_WIDTH := 3.0
+const LINE_WIDTH := 2.5
+const RING_WIDTH := 2.5
 # Room past the outermost nodes, as a share of the window, so the board
 # never drifts off into nothing.
 const BOARD_MARGIN := 0.5
 # The focus is kept this far inside the window; past it the board follows.
-const FOLLOW_MARGIN := 120.0
+const FOLLOW_MARGIN := 90.0
 const FOLLOW_TIME := 0.22
 # A press that moves this far is a drag, not a click.
 const DRAG_THRESHOLD := 8.0
 const PAN_SPEED := 900.0
+# How near and far the board zooms, a wheel notch's step, and how fast the
+# triggers zoom (per second, held fully).
+const ZOOM_MIN := 0.7
+const ZOOM_MAX := 1.8
+const ZOOM_STEP := 1.15
+const ZOOM_RATE := 2.2
 # A focus move goes to a node within this angle of the direction pressed:
 # one it is joined to first, then the nearest, then the upper.
 const AIM_CONE := PI / 3.0
@@ -55,6 +62,7 @@ var requirement_label: Label
 var picture: Control
 var board: Control
 var canvas: Control
+var zoom := 1.0
 var _edges: Control
 var _tree_column: VBoxContainer
 var _info: VBoxContainer
@@ -72,6 +80,8 @@ var _hover_node: StringName = &""
 # A focus the pointer gave leaves the board where it is.
 var _pointer_focus := false
 var _shown: StringName = &""
+# The triggers' pull (LT, RT), read from their motion.
+var _triggers := Vector2.ZERO
 
 
 func _ready() -> void:
@@ -80,6 +90,11 @@ func _ready() -> void:
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_tree_column = HubUI.open_column(columns, 2.1, &"SlabSolid")
+	# The tree's own opaque well, so the moving board never runs over the slab.
+	var well := PanelContainer.new()
+	well.theme_type_variation = &"TreeWell"
+	well.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_tree_column.add_child(well)
 	board = Control.new()
 	board.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -87,7 +102,7 @@ func _ready() -> void:
 	board.gui_input.connect(_board_input)
 	board.mouse_exited.connect(func(): _hover_node = &"")
 	board.resized.connect(_on_board_resized)
-	_tree_column.add_child(board)
+	well.add_child(board)
 	# The canvas is the moving layer: no Container lays it out.
 	canvas = Control.new()
 	canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -275,6 +290,8 @@ func center_view() -> void:
 	_pointer_focus = true
 	(nodes[MetaProgress.ROOT] as Button).grab_focus()
 	_pointer_focus = false
+	_stop_pan()
+	_set_zoom(1.0, board.size * 0.5)
 	_pan_to(board.size * 0.5 - _centers[MetaProgress.ROOT])
 
 
@@ -307,7 +324,7 @@ func _on_board_resized() -> void:
 	# The point in the window's middle stays there as the window settles.
 	if not _placed:
 		_placed = true
-		_place(board.size * 0.5 - _centers[MetaProgress.ROOT])
+		_place(board.size * 0.5 - _centers[MetaProgress.ROOT] * zoom)
 	else:
 		_place(canvas.position + (board.size - _board_size) * 0.5)
 	_board_size = board.size
@@ -323,6 +340,7 @@ func _clamp(at: Vector2) -> Vector2:
 	var bounds := Rect2(_centers[MetaProgress.ROOT], Vector2.ZERO)
 	for id: StringName in nodes:
 		bounds = bounds.merge(Rect2(_centers[id], Vector2.ZERO).grow((nodes[id] as Button).size.x * 0.5 + PIP_SIZE * 2.0))
+	bounds = Rect2(bounds.position * zoom, bounds.size * zoom)
 	bounds = bounds.grow_individual(board.size.x * BOARD_MARGIN, board.size.y * BOARD_MARGIN, board.size.x * BOARD_MARGIN, board.size.y * BOARD_MARGIN)
 	var result := at
 	for axis in 2:
@@ -336,7 +354,7 @@ func _clamp(at: Vector2) -> Vector2:
 func _follow(id: StringName) -> void:
 	if board.size.x <= 0.0:
 		return
-	var center: Vector2 = _centers[id] + canvas.position
+	var center := _on_board(id)
 	var inner := Rect2(Vector2.ZERO, board.size).grow(-FOLLOW_MARGIN)
 	if inner.size.x <= 0.0 or inner.size.y <= 0.0 or inner.has_point(center):
 		return
@@ -366,12 +384,29 @@ func _process(delta: float) -> void:
 	if stick != Vector2.ZERO:
 		_stop_pan()
 		_place(canvas.position - stick * PAN_SPEED * delta)
+	var pull := _triggers.y - _triggers.x
+	if absf(pull) > 0.1:
+		_stop_pan()
+		_set_zoom(zoom * pow(ZOOM_RATE, pull * delta), board.size * 0.5)
+
+
+# A node's centre in the window.
+func _on_board(id: StringName) -> Vector2:
+	return canvas.position + _centers[id] * zoom
+
+
+# Zooms to `value`, keeping the board's point under `anchor` where it is.
+func _set_zoom(value: float, anchor: Vector2) -> void:
+	var under := (anchor - canvas.position) / zoom
+	zoom = clampf(value, ZOOM_MIN, ZOOM_MAX)
+	canvas.scale = Vector2.ONE * zoom
+	_place(anchor - under * zoom)
 
 
 # --- The pointer ---
 
 func _node_at(at: Vector2) -> StringName:
-	var point := at - canvas.position
+	var point := (at - canvas.position) / zoom
 	for id: StringName in nodes:
 		if point.distance_to(_centers[id]) <= (nodes[id] as Button).size.x * 0.5:
 			return id
@@ -379,7 +414,12 @@ func _node_at(at: Vector2) -> StringName:
 
 
 func _board_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT, MOUSE_BUTTON_MIDDLE]:
+	if event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		if event.pressed:
+			_stop_pan()
+			_set_zoom(zoom * (ZOOM_STEP if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / ZOOM_STEP), event.position)
+		board.accept_event()
+	elif event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT, MOUSE_BUTTON_MIDDLE]:
 		if event.pressed:
 			_press_at = event.position
 			_press_node = _node_at(event.position)
@@ -426,6 +466,9 @@ func _choose_by_pointer(id: StringName) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
 		return
+	if event is InputEventJoypadMotion and event.axis in [JOY_AXIS_TRIGGER_LEFT, JOY_AXIS_TRIGGER_RIGHT]:
+		_triggers[0 if event.axis == JOY_AXIS_TRIGGER_LEFT else 1] = event.axis_value
+		return
 	var key: bool = event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_C
 	var pad: bool = event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_Y
 	if key or pad:
@@ -457,7 +500,8 @@ func _draw_lines() -> void:
 			canvas.draw_dashed_line(start, end, _state_color(id), LINE_WIDTH, 10.0)
 		else:
 			canvas.draw_line(start, end, _state_color(id), LINE_WIDTH, true)
-	# Each branch's name by its first node: above it, or beside a seal.
+	# Each branch's name by its first node: above it, or below the lower seal,
+	# whose line comes in from above.
 	var font := get_theme_font(&"font", &"MutedLabel")
 	var font_size := get_theme_font_size(&"font_size", &"MutedLabel")
 	var color := get_theme_color(&"font_color", &"MutedLabel")
@@ -468,7 +512,9 @@ func _draw_lines() -> void:
 		var radius := (nodes[id] as Button).size.x * 0.5
 		var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 		var center: Vector2 = _centers[id]
-		var at := center + Vector2(radius + 14.0, font.get_ascent(font_size) * 0.4) if MetaProgress.find(id) == null else center + Vector2(-width * 0.5, -radius - 14.0)
+		var at := center + Vector2(-width * 0.5, -radius - 10.0)
+		if center.y > _centers[MetaProgress.ROOT].y:
+			at.y = center.y + radius + 10.0 + font.get_ascent(font_size)
 		canvas.draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
 
 
@@ -486,9 +532,9 @@ func _draw_node(node: Button, id: StringName) -> void:
 	elif meta != null and meta.rank(id) > 0:
 		node.draw_arc(middle, radius + 2.0, 0.0, TAU, 48, get_theme_color(&"line_held", &"UpgradeTree"), 2.0, true)
 	if node.has_focus():
-		node.draw_arc(middle, radius + 7.0, 0.0, TAU, 64, get_theme_color(&"focus", &"UpgradeTree"), RING_WIDTH, true)
+		node.draw_arc(middle, radius + 5.0, 0.0, TAU, 64, get_theme_color(&"focus", &"UpgradeTree"), RING_WIDTH, true)
 	if upgrade != null and meta != null:
-		_paint_pips(node, Vector2(middle.x, node.size.y + 8.0), upgrade, meta.rank(id))
+		_paint_pips(node, Vector2(middle.x, node.size.y + 5.0), upgrade, meta.rank(id))
 
 
 # An upgrade's ranks as sockets, centred on `top`; one rank shows none.
@@ -499,7 +545,7 @@ func _paint_pips(target: CanvasItem, top: Vector2, upgrade: MetaUpgrade, held: i
 	var empty := get_theme_icon(&"pip_empty", &"AbilityCard")
 	var full := get_theme_icon(&"pip_full", &"AbilityCard")
 	var width := PIP_SIZE * full.get_width() / full.get_height()
-	var gap := 3.0
+	var gap := 2.0
 	var start := top.x - (width * count + gap * (count - 1)) * 0.5
 	for index in count:
 		var rect := Rect2(start + index * (width + gap), top.y, width, PIP_SIZE)
@@ -508,20 +554,24 @@ func _paint_pips(target: CanvasItem, top: Vector2, upgrade: MetaUpgrade, held: i
 			target.draw_texture_rect(full, rect, false)
 
 
-# Arrows at the window's edge toward the branches out of sight.
+# Arrows at the window's edge toward the branches wholly out of sight, the
+# names outlined in the well's colour rather than set on a plate, so the
+# lines running to the edge stay in view.
 func _draw_edges() -> void:
 	var window := Rect2(Vector2.ZERO, board.size)
-	var inset := window.grow(-34.0)
+	var inset := window.grow(-26.0)
 	if inset.size.x <= 0.0 or inset.size.y <= 0.0:
 		return
 	var font := get_theme_font(&"font", &"MutedLabel")
 	var font_size := get_theme_font_size(&"font_size", &"MutedLabel")
 	var color := get_theme_color(&"font_color", &"MutedLabel")
+	var outline := get_theme_color(&"well", &"UpgradeTree")
 	for id: StringName in nodes:
 		if _parents[id] != MetaProgress.ROOT:
 			continue
-		var center: Vector2 = _centers[id] + canvas.position
-		if window.has_point(center):
+		var center := _on_board(id)
+		var extent := (nodes[id] as Button).size * zoom
+		if window.intersects(Rect2(center - extent * 0.5, extent)):
 			continue
 		var at := Vector2(clampf(center.x, inset.position.x, inset.end.x), clampf(center.y, inset.position.y, inset.end.y))
 		var toward := (center - at).normalized()
@@ -529,10 +579,8 @@ func _draw_edges() -> void:
 		var text: String = BRANCH_NAMES.get(_branch(id), "")
 		var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 		# The name runs along the edge beside the arrow, off the nodes inside.
-		var label := at + Vector2(18.0, font.get_ascent(font_size) * 0.4) if absf(toward.y) > absf(toward.x) else at + Vector2(-width * 0.5, -18.0)
-		label.x = clampf(label.x, 8.0, board.size.x - width - 8.0)
-		# On a dark plate, readable over a node that reaches the edge.
-		var plate := Rect2(at - Vector2(14, 14), Vector2(28, 28)).merge(Rect2(label + Vector2(-6, -font.get_ascent(font_size) - 4), Vector2(width + 12, font.get_height(font_size) + 8)))
-		_edges.draw_rect(plate, get_theme_color(&"disc", &"UpgradeTree"))
-		_edges.draw_colored_polygon(PackedVector2Array([at + toward * 12.0, at - toward * 4.0 + side * 9.0, at - toward * 4.0 - side * 9.0]), color)
+		var label := at + Vector2(14.0, font.get_ascent(font_size) * 0.4) if absf(toward.y) > absf(toward.x) else at + Vector2(-width * 0.5, -14.0)
+		label.x = clampf(label.x, 6.0, board.size.x - width - 6.0)
+		_edges.draw_colored_polygon(PackedVector2Array([at + toward * 9.0, at - toward * 3.0 + side * 7.0, at - toward * 3.0 - side * 7.0]), color)
+		_edges.draw_string_outline(font, label, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, 6, outline)
 		_edges.draw_string(font, label, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
