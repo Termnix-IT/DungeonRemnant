@@ -56,14 +56,15 @@ func run_tests() -> void:
 	var run := RunState.new(7)
 	var build := run.build
 
-	# The eight boons.
+	# The twenty boons.
 	var ids := {}
 	for each in build.pool:
 		ids[each.id] = true
 		check(not each.display_name.is_empty() and not each.families.is_empty() and not each.effects.is_empty(), "A boon has a name, families and effects: " + String(each.id))
 		check(EmblemIcons.texture(each.emblem_key()) != null, "A boon's emblem exists: " + String(each.id))
 		check(each.effect_description(1).length() <= 20 and each.families.size() <= 2, "A boon's words and families fit its card: " + String(each.id))
-	check(build.pool.size() == 8 and ids.size() == 8, "Eight boons, each its own id")
+	check(build.pool.size() == 20 and ids.size() == 20, "Twenty boons, each its own id")
+	check(build.find(&"discharge").requires == [&"thunder_blade"], "The discharge waits for the lightning blade")
 
 	# The offer: three different boons, requirements and last ranks respected.
 	var offer := build.offer(run.rng)
@@ -198,6 +199,33 @@ func run_tests() -> void:
 		await drive(HeroInput.make(Vector2.ZERO, Vector2.RIGHT, true), 0.14)
 	await drive(HeroInput.new(), 0.6)
 	check(distant.health.hp < hp_distant, "The third swing's wave strikes a foe far ahead")
+	clear_foes()
+	await drive(HeroInput.new(), 1.0)
+
+	# The newer boons: a second swing that hits harder by rank, quicker steps
+	# and skills, a blast when she is hurt, and health from a kill.
+	var plain_second := hero.motor.shaper.call(moveset.combo[1], &"combo", 1, INF) as AttackData
+	run.build.take(run.build.find(&"follow_up"))
+	var heavier := hero.motor.shaper.call(moveset.combo[1], &"combo", 1, INF) as AttackData
+	run.build.take(run.build.find(&"follow_up"))
+	var heaviest := hero.motor.shaper.call(moveset.combo[1], &"combo", 1, INF) as AttackData
+	check(is_equal_approx(heavier.damage_scale, plain_second.damage_scale * 1.35) and is_equal_approx(heaviest.damage_scale, plain_second.damage_scale * 1.55), "The follow-up's second swing hits harder, more by rank")
+	run.build.take(run.build.find(&"gale_step"))
+	run.build.take(run.build.find(&"keen_art"))
+	await drive(HeroInput.new(), FRAME)
+	check(is_equal_approx(hero.motor.speed_scale, 1.08) and is_equal_approx(hero.motor.cooldown_scale, 0.88), "The gale quickens her steps and the keen art her skills")
+	run.build.take(run.build.find(&"riposte"))
+	var close := still(Vector2(80, 0))
+	var hp_close := close.health.hp
+	hero.health.hp = hero.health.max_hp
+	hero.receive(DamageInfo.make(5.0, Vector2.LEFT, 0.0, close))
+	check(close.health.hp < hp_close, "Hurt, she throws the foes around her back with the riposte")
+	var feast := TriggerBoon.new()
+	feast.action = TriggerBoon.Action.HEAL
+	feast.heal = 3
+	var wounded := hero.health.hp
+	run.build._fire(feast, 2, null)
+	check(hero.health.hp == mini(hero.health.max_hp, wounded + feast.heal_amount(2)) and feast.heal_amount(2) == 4, "A heal gives health back, more by rank")
 	clear_foes()
 	await drive(HeroInput.new(), 1.0)
 

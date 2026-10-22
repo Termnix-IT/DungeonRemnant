@@ -371,6 +371,11 @@ func _on_foe_fell(foe: Foe) -> void:
 
 
 # A painted effect at a point, unless its kind is at its cap.
+# Health given back to her by the build: a soft light at her middle.
+func report_heal(by: Hero) -> void:
+	_effect(&"heal", by.global_position + BODY_MIDDLE * 0.5, Vector2.RIGHT, 0.7)
+
+
 func _effect(kind: StringName, at: Vector2, direction: Vector2, size: float) -> void:
 	var shown: int = _effects_shown.get(kind, 0)
 	if shown >= EFFECT_CAPS.get(kind, 1000):

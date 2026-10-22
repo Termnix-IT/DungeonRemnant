@@ -22,6 +22,18 @@ const BOONS: Array[BoonData] = [
 	preload("res://data/boons/great_charge.tres"),
 	preload("res://data/boons/hellfire.tres"),
 	preload("res://data/boons/blade_speed.tres"),
+	preload("res://data/boons/brute_force.tres"),
+	preload("res://data/boons/follow_up.tres"),
+	preload("res://data/boons/long_reach.tres"),
+	preload("res://data/boons/rending_charge.tres"),
+	preload("res://data/boons/life_feast.tres"),
+	preload("res://data/boons/riposte.tres"),
+	preload("res://data/boons/keen_art.tres"),
+	preload("res://data/boons/gale_step.tres"),
+	preload("res://data/boons/discharge.tres"),
+	preload("res://data/boons/thunder_step.tres"),
+	preload("res://data/boons/aftershock.tres"),
+	preload("res://data/boons/flame_art.tres"),
 ]
 
 var progression := RunProgression.new()

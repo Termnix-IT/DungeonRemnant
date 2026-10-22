@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=5 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/trigger_boon.gd" id="3"]
+[sub_resource type="Resource" id="Effect0"]
+script = ExtResource("3")
+on = 5
+cooldown = 2.0
+action = 0
+at = 1
+radius = 130.0
+damage_scale = 1.5
+damage_per_rank = 0.5
+knockback = 420.0
+effect = &"heavy"
+[resource]
+script = ExtResource("1")
+id = &"riposte"
+display_name = "反撃の構え"
+description = "被弾すると周りを弾き飛ばす"
+families = Array[String](["守り", "範囲"])
+max_level = 3
+weight = 1.0
+emblem = "riposte"
+effects = Array[ExtResource("2")]([SubResource("Effect0")])

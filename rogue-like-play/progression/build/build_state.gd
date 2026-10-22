@@ -131,6 +131,7 @@ func bind(combat_area: CombatArea, owner_hero: Hero) -> void:
 	events.dash_started.connect(func(_direction: Vector2): _answer(TriggerBoon.On.DASH_START, null))
 	events.dash_ended.connect(func(_direction: Vector2): _answer(TriggerBoon.On.DASH_END, null))
 	events.skill_used.connect(func(_attack: AttackData): _answer(TriggerBoon.On.SKILL, null))
+	events.damage_taken.connect(func(_lost: int): _answer(TriggerBoon.On.HURT, null))
 
 
 # Raises a stat by `amount` for `seconds` of the fight.
@@ -180,3 +181,6 @@ func _fire(trigger: TriggerBoon, level: int, foe: Foe) -> void:
 			area.blast(center, trigger.radius, power, trigger.knockback, trigger.inflicts, trigger.effect)
 		TriggerBoon.Action.CHAIN:
 			area.chain(center, foe, trigger.jump_count(level), trigger.radius, power, trigger.inflicts)
+		TriggerBoon.Action.HEAL:
+			if hero.health.heal(trigger.heal_amount(level)) > 0:
+				area.report_heal(hero)

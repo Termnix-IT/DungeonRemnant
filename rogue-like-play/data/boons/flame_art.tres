@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=5 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/attack_boon.gd" id="3"]
+[sub_resource type="Resource" id="Effect0"]
+script = ExtResource("3")
+when = 5
+inflict = &"burn"
+damage_scale = 1.2
+damage_per_rank = 0.15
+[resource]
+script = ExtResource("1")
+id = &"flame_art"
+display_name = "炎の技"
+description = "スキルが敵を燃やし、威力が上がる"
+families = Array[String](["スキル", "状態異常"])
+max_level = 3
+weight = 1.0
+emblem = "flame_art"
+effects = Array[ExtResource("2")]([SubResource("Effect0")])

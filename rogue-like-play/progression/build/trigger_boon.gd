@@ -2,11 +2,12 @@ class_name TriggerBoon
 extends BoonEffect
 
 # Answers a fight event (CombatEvents) with a blow of its own: a blast in a
-# circle, or lightning chaining from foe to foe. It can ask that the foe
-# carried a status, roll a chance, and rest between firings.
+# circle, lightning chaining from foe to foe, or health back for the hero.
+# It can ask that the foe carried a status, roll a chance, and rest between
+# firings.
 
-enum On { HIT, KILL, DASH_START, DASH_END, SKILL }
-enum Action { BLAST, CHAIN }
+enum On { HIT, KILL, DASH_START, DASH_END, SKILL, HURT }
+enum Action { BLAST, CHAIN, HEAL }
 enum At { TARGET, HERO }
 
 @export var on: On = On.KILL
@@ -26,6 +27,9 @@ enum At { TARGET, HERO }
 @export_range(1, 50) var jumps := 3
 @export_range(0, 10) var jumps_per_rank := 1
 @export var inflicts: Array[StringName] = []
+# HEAL: the health it gives back, plus heal_per_rank for each rank past the first.
+@export_range(0, 100) var heal := 2
+@export_range(0, 100) var heal_per_rank := 1
 # The painted effect a blast shows (StrikeEffect kinds).
 @export var effect: StringName = &"heavy"
 
@@ -36,3 +40,7 @@ func damage(rank: int) -> float:
 
 func jump_count(rank: int) -> int:
 	return jumps + jumps_per_rank * (rank - 1)
+
+
+func heal_amount(rank: int) -> int:
+	return heal + heal_per_rank * (rank - 1)

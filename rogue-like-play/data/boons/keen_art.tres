@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=5 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/stat_boon.gd" id="3"]
+[sub_resource type="Resource" id="Effect0"]
+script = ExtResource("3")
+stat_name = &"skill_cooldown"
+per_rank = -0.12
+[resource]
+script = ExtResource("1")
+id = &"keen_art"
+display_name = "技の冴え"
+description = "スキルの再使用時間が12%縮む"
+families = Array[String](["スキル"])
+max_level = 3
+weight = 1.0
+emblem = "keen_art"
+effects = Array[ExtResource("2")]([SubResource("Effect0")])

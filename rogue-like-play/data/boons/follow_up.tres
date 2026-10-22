@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=5 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/attack_boon.gd" id="3"]
+[sub_resource type="Resource" id="Effect0"]
+script = ExtResource("3")
+when = 2
+combo_step = 1
+damage_scale = 1.35
+damage_per_rank = 0.2
+[resource]
+script = ExtResource("1")
+id = &"follow_up"
+display_name = "追い打ち"
+description = "2段目の攻撃の威力が上がる"
+families = Array[String](["連撃"])
+max_level = 3
+weight = 1.0
+emblem = "follow_up"
+effects = Array[ExtResource("2")]([SubResource("Effect0")])

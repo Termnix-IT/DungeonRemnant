@@ -63,6 +63,9 @@ var skill_cooldown_left: float:
 var shaper: Callable
 # The charge's time is moveset.charge_time times this.
 var charge_scale := 1.0
+# Her walking and dashing speed, and her skills' rest, times these (the build's).
+var speed_scale := 1.0
+var cooldown_scale := 1.0
 
 var _buffered := Press.NONE
 # The slot a buffered skill press is for.
@@ -231,7 +234,7 @@ func _free(input: HeroInput, delta: float) -> void:
 		var index := (combo_index + 1) % moveset.combo.size() if _combo_grace_left > 0.0 and combo_index >= 0 else 0
 		_start_swing(moveset.combo[index], index, input.aim)
 		return
-	_walk(input.move, tuning.max_speed, delta)
+	_walk(input.move, tuning.max_speed * speed_scale, delta)
 	if input.move.length() > 0.1:
 		facing = input.move.normalized()
 
@@ -250,7 +253,7 @@ func _attacking(input: HeroInput, delta: float) -> void:
 		_take(Press.STRIKE)
 		_start_swing(moveset.combo[next], next, input.aim)
 		return
-	_walk(input.move, tuning.max_speed * attack.move_scale, delta)
+	_walk(input.move, tuning.max_speed * speed_scale * attack.move_scale, delta)
 	if attack.hitting(state_time) and attack.active > 0.0:
 		_lunge = facing * attack.lunge / attack.active
 	if state_time >= attack.duration():
@@ -266,7 +269,7 @@ func _charging(input: HeroInput, delta: float) -> void:
 		_holding = false
 		_start_dash(input, delta)
 		return
-	_walk(input.move, tuning.max_speed * tuning.charge_move_scale, delta)
+	_walk(input.move, tuning.max_speed * speed_scale * tuning.charge_move_scale, delta)
 	if input.aim.length() > 0.1:
 		facing = input.aim.normalized()
 	elif input.move.length() > 0.1:
@@ -319,7 +322,7 @@ func _skill_ready() -> bool:
 func _start_skill(aim: Vector2) -> void:
 	_take(Press.SKILL)
 	_holding = false
-	skill_cooldowns_left[_skill_slot] = skill_cooldowns[_skill_slot]
+	skill_cooldowns_left[_skill_slot] = skill_cooldowns[_skill_slot] * cooldown_scale
 	_start_swing(skill_attacks[_skill_slot], SKILL, aim)
 
 

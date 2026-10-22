@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=5 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/trigger_boon.gd" id="3"]
+[sub_resource type="Resource" id="Effect0"]
+script = ExtResource("3")
+on = 0
+needs_status = &"shock"
+chance = 0.25
+action = 0
+at = 0
+radius = 70.0
+damage_scale = 0.6
+damage_per_rank = 0.3
+knockback = 120.0
+inflicts = Array[StringName]([&"shock"])
+effect = &"magic"
+[resource]
+script = ExtResource("1")
+id = &"discharge"
+display_name = "放電"
+description = "感電した敵に当てると放電する"
+families = Array[String](["属性"])
+max_level = 3
+weight = 1.0
+requires = Array[StringName]([&"thunder_blade"])
+emblem = "discharge"
+effects = Array[ExtResource("2")]([SubResource("Effect0")])

@@ -82,6 +82,8 @@ func step(input: HeroInput, delta: float) -> void:
 	if build != null:
 		build.step(delta)
 		motor.charge_scale = maxf(0.3, 1.0 + build.stat(&"charge_time"))
+		motor.speed_scale = 1.0 + build.stat(&"move_speed")
+		motor.cooldown_scale = maxf(0.3, 1.0 + build.stat(&"skill_cooldown"))
 	motor.step(input, delta)
 	# She slips through foes while dashing, and is stopped by them otherwise.
 	collision_mask = WALLS if motor.state == HeroMotor.State.DASH else WALLS | FOES

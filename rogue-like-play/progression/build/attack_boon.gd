@@ -19,6 +19,8 @@ enum When { ANY, SWINGS, COMBO_STEP, AFTER_DASH, CHARGED, SKILL }
 # Above zero: the opening becomes this (ARC swings).
 @export var arc_degrees := 0.0
 @export var damage_scale := 1.0
+# Added to damage_scale for each rank past the first.
+@export var damage_per_rank := 0.0
 @export var projectile: ProjectileData
 # Added to the wave's distance for each rank past the first.
 @export var distance_per_rank := 0.0
@@ -49,7 +51,7 @@ func change(attack: AttackData, rank: int) -> void:
 	attack.reach *= reach_scale + reach_per_rank * (rank - 1)
 	if arc_degrees > 0.0:
 		attack.arc_degrees = maxf(attack.arc_degrees, arc_degrees)
-	attack.damage_scale *= damage_scale
+	attack.damage_scale *= damage_scale + damage_per_rank * (rank - 1)
 	if not effect.is_empty():
 		attack.effect = effect
 	if projectile != null:

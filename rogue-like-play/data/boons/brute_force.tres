@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=5 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/stat_boon.gd" id="3"]
+[sub_resource type="Resource" id="Effect0"]
+script = ExtResource("3")
+stat_name = &"damage"
+per_rank = 0.08
+[resource]
+script = ExtResource("1")
+id = &"brute_force"
+display_name = "剛力"
+description = "攻撃力が8%上がる"
+families = Array[String](["連撃", "範囲"])
+max_level = 5
+weight = 1.0
+emblem = "brute_force"
+effects = Array[ExtResource("2")]([SubResource("Effect0")])

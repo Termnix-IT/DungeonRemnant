@@ -6,6 +6,22 @@ extends RefCounted
 # mipmaps. The key is named by the data (BoonData.emblem, MetaUpgrade.emblem);
 # without a file nothing is drawn, so art can arrive one emblem at a time.
 const DIRECTORY := "res://art/emblems/"
+# Emblems not painted yet, drawn meanwhile as an older medallion; a key's
+# entry goes once its own file is in art/emblems/.
+const STAND_INS := {
+	"brute_force": "attack",
+	"follow_up": "spear_damage",
+	"long_reach": "spear_range",
+	"rending_charge": "spear_pierce",
+	"life_feast": "kill_heal",
+	"riposte": "defense",
+	"keen_art": "mana",
+	"gale_step": "vision",
+	"discharge": "chain_lightning",
+	"thunder_step": "thunder_blade",
+	"aftershock": "hammer_damage",
+	"flame_art": "hellfire",
+}
 static var _cache: Dictionary = {}
 
 
@@ -14,6 +30,8 @@ static func texture(key: String) -> Texture2D:
 		return null
 	if not _cache.has(key):
 		var path := DIRECTORY + key + ".png"
+		if not ResourceLoader.exists(path) and STAND_INS.has(key):
+			path = DIRECTORY + STAND_INS[key] + ".png"
 		_cache[key] = load(path) if ResourceLoader.exists(path) else null
 	return _cache[key]
 

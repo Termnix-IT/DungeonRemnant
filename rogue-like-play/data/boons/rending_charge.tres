@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=7 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/attack_boon.gd" id="3"]
+[ext_resource type="Script" path="res://combat/action/projectile_data.gd" id="4"]
+[sub_resource type="Resource" id="Wave"]
+script = ExtResource("4")
+speed = 640.0
+distance = 320.0
+radius = 40.0
+damage_scale = 1.6
+knockback = 300.0
+effect = &"heavy"
+size = 130.0
+[sub_resource type="Resource" id="Effect0"]
+script = ExtResource("3")
+when = 4
+projectile = SubResource("Wave")
+distance_per_rank = 90.0
+[resource]
+script = ExtResource("1")
+id = &"rending_charge"
+display_name = "地裂き"
+description = "溜め攻撃が地を裂く波を飛ばす"
+families = Array[String](["範囲"])
+max_level = 3
+weight = 1.0
+emblem = "rending_charge"
+effects = Array[ExtResource("2")]([SubResource("Effect0")])
