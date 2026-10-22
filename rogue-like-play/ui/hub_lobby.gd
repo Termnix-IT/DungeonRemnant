@@ -244,6 +244,8 @@ func _build_panel() -> void:
 	_divider(current)
 	display_value = _fact(current, "画面")
 	decide_button = HubUI.primary_action(stack, "", func(): activated.emit(selected_id()))
+	# The lobby keeps its painted plate; the pages' actions are quiet.
+	decide_button.theme_type_variation = &"LobbyAction"
 	decide_button.name = "Decide"
 	var frame := Control.new()
 	frame.name = "Frame"

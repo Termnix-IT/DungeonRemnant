@@ -105,7 +105,10 @@ func run_tests() -> void:
 	check(rest != null and rest.border_width_left + rest.border_width_top + rest.border_width_right + rest.border_width_bottom == 0 and rest.bg_color.a == 0.0, "A secondary action has no frame at rest")
 	check(marked != null and marked.border_width_left > 0 and marked.border_width_top == 0, "A focused secondary action is marked by a bar, not a box")
 	check(theme.get_color(&"font_color", &"SecondaryButton") != theme.get_color(&"font_disabled_color", &"SecondaryButton"), "A secondary action looks different when it cannot be pressed")
-	check(theme.get_stylebox(&"normal", &"PrimaryButton") is StyleBoxTexture, "The primary action keeps its plate")
+	var primary := theme.get_stylebox(&"normal", &"PrimaryButton") as StyleBoxFlat
+	check(primary != null and primary.border_width_top == 1 and primary.bg_color.a > 0.0, "The primary action is a quiet gold-tinted plate with a hairline")
+	check((theme.get_stylebox(&"focus", &"PrimaryButton") as StyleBoxFlat).border_width_top > primary.border_width_top, "A focused primary action draws a stronger edge")
+	check(theme.get_stylebox(&"normal", &"LobbyAction") is StyleBoxTexture, "The lobby keeps its painted plate")
 	check((theme.get_stylebox(&"normal", &"DangerButton") as StyleBoxFlat).border_width_top > 0, "An answer that cannot be undone keeps a frame")
 	check(theme.get_stylebox(&"panel", &"QuietWindow") is QuietWindowStyle, "Popup windows are the quiet surface")
 	# The hub pages' main panel is the same quiet surface, its two columns one

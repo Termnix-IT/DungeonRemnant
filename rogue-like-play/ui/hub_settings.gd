@@ -23,9 +23,8 @@ const QUIT_BODY := "設定と拠点での強化は保存済みです。"
 const QUIT_BODY_IN_RUN := "ランの途中で終了すると、このランのレベル・強化・得た残響は残らず、最後に保存した拠点の状態に戻ります。"
 
 const ROW_HEIGHT := 64.0
-const BAND_TIP := 18.0
-# The band starts at the screen's left edge, as the lobby menu's does.
-const EDGE_REACH := 40.0
+# The gold bar at the left of the selected row.
+const SELECTION_BAR := 3.0
 # The help window: over the page and the fight's menu, under the quit's
 # question; its backdrop, size and topic column.
 const HELP_LAYER := 15
@@ -362,7 +361,7 @@ func _hint(row: HBoxContainer, text: String) -> void:
 func _draw_rows() -> void:
 	var rail := rows.get_theme_color(&"rail", &"HubLobby")
 	var chosen := _rows[focused_row]
-	var mark := UIMotion.of(rows).follow_mark(Rect2(chosen.position + Vector2(-EDGE_REACH, 4), chosen.size + Vector2(EDGE_REACH + BAND_TIP, -8)))
+	var mark := UIMotion.of(rows).follow_mark(Rect2(chosen.position + Vector2(-12, 2), chosen.size + Vector2(12, -4)))
 	_draw_band(rows, mark)
 	for index in _rows.size() - 1:
 		if index == focused_row or index + 1 == focused_row:
@@ -371,15 +370,13 @@ func _draw_rows() -> void:
 		rows.draw_polyline_colors(PackedVector2Array([Vector2(0, y), Vector2(rows.size.x * 0.5, y), Vector2(rows.size.x, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.22), Color(rail, 0.0)]), 1.0, true)
 
 
-# The lobby's warm band, pointed at its right end.
+# The selection, as every list shows it: a faint warm band across the row
+# and a gold bar at its left end; no frame round it.
 func _draw_band(canvas: Control, rect: Rect2) -> void:
 	var rail := canvas.get_theme_color(&"rail", &"HubLobby")
 	var band := canvas.get_theme_color(&"band", &"HubLobby")
-	var tip := rect.end.x
-	var middle := rect.get_center().y
-	var outline := PackedVector2Array([rect.position, Vector2(tip - BAND_TIP, rect.position.y), Vector2(tip, middle), Vector2(tip - BAND_TIP, rect.end.y), Vector2(rect.position.x, rect.end.y)])
-	canvas.draw_polygon(outline, PackedColorArray([Color(band, band.a * 0.5), Color(band, band.a * 1.6), Color(band, band.a * 1.8), Color(band, band.a * 1.6), Color(band, band.a * 0.5)]))
-	canvas.draw_polyline_colors(outline, PackedColorArray([Color(rail, 0.0), Color(rail, 0.85), rail, Color(rail, 0.85), Color(rail, 0.0)]), 1.5, true)
+	canvas.draw_rect(rect, Color(band, band.a * 1.4))
+	canvas.draw_rect(Rect2(rect.position, Vector2(SELECTION_BAR, rect.size.y)), rail)
 
 
 func _focus_row(index: int) -> void:
