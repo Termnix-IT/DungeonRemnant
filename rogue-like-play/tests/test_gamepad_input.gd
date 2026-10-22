@@ -113,7 +113,8 @@ func run_tests() -> void:
 	check(not run.area.menu.visible and not paused, "Backing out of the menu resumes the fight")
 	# The level-up cards: a direction focuses one, A takes it.
 	run.area._on_gems(run.run.progression.required_exp())
-	await create_timer(0.5).timeout
+	# The lead-in, then the hand dealt and armed.
+	await create_timer(BattleArea.LEAD_TIME + preload("res://ui/ability_choice.gd").arm_time(3) + 0.15, true, false, true).timeout
 	root.push_input(pad(JOY_BUTTON_A))
 	root.push_input(pad(JOY_BUTTON_A, false))
 	await process_frame

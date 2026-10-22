@@ -27,6 +27,14 @@ func _on_finished(result: Dictionary) -> void:
 	ended.append(result)
 
 
+func _key(code: Key) -> InputEventKey:
+	var event := InputEventKey.new()
+	event.keycode = code
+	event.physical_keycode = code
+	event.pressed = true
+	return event
+
+
 func wait(seconds: float) -> void:
 	for index in roundi(seconds / FRAME):
 		await physics_frame
@@ -102,6 +110,14 @@ func run_tests() -> void:
 	var foe_hp := near_foe.health.hp
 	lifted.hero.health.hp = 10
 	lifted._on_gems(lasting_run.progression.required_exp())
+	check(lifted.choosing() and not lifted.choice.visible and Engine.time_scale == BattleArea.LEAD_SLOW and not paused, "A level-up first slows the world for its lead-in")
+	await create_timer(BattleArea.LEAD_TIME + 0.05, true, false, true).timeout
+	check(paused and Engine.time_scale == 1.0 and lifted.choice.visible and not lifted.choice.armed, "Then the fight stops and the cards are dealt, not yet armed")
+	lifted.choice._unhandled_input(_key(KEY_1))
+	check(lifted.choice.visible and lasting_run.build.owned().is_empty(), "A number key while the cards are dealt takes nothing")
+	check(lifted.choice.buttons[0].mouse_filter == Control.MOUSE_FILTER_IGNORE, "The cards ignore the pointer while they are dealt")
+	await create_timer(preload("res://ui/ability_choice.gd").arm_time(4) + 0.05, true, false, true).timeout
+	check(lifted.choice.armed and lifted.choice.buttons[0].has_focus() and lifted.choice.buttons[0].mouse_filter == Control.MOUSE_FILTER_STOP, "Once dealt they are armed, focused and open to the pointer")
 	check(lifted.choosing() and lifted.choice.offers.size() == 4 and lifted.choice.reroll_hint.visible, "A level-up offers four cards and a reroll")
 	lifted.choice._reroll()
 	check(lasting_run.rerolls_left == 1 and lifted.choice.visible and lifted.choice.offers.size() == 4 and lifted.choice.reroll_hint.text.contains("残り1"), "A reroll draws again and counts down")

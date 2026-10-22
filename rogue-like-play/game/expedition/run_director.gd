@@ -11,7 +11,8 @@ extends Node
 # in its MetaProgress). Given the
 # base's MetaProgress, the run starts with its lasting upgrades: her
 # tuning, the rules they give (RunState.lasting), and with the parting
-# blessing a boon chosen before the map.
+# blessing a boon chosen once the first area has been picked on the map,
+# before it is entered.
 
 signal finished(result: Dictionary)
 # The result's way home was taken (only when returns_to_base).
@@ -43,6 +44,9 @@ var result: Dictionary = {}
 var waypoint: RouteMap.Waypoint
 var _rewarding := false
 var _blessing := false
+# The parting blessing is still to be chosen, and the area it waits to enter.
+var _blessing_due := false
+var _blessed_entry: RouteMap.Waypoint
 
 
 func _ready() -> void:
@@ -63,24 +67,25 @@ func _ready() -> void:
 	end_view = RunEndView.new()
 	add_child(end_view)
 	end_view.again_requested.connect(_again)
-	if meta != null and meta.starts_with_boon():
-		_bless()
-	else:
-		show_map()
+	_blessing_due = meta != null and meta.starts_with_boon()
+	show_map()
 
 
 func max_hp() -> int:
 	return run.tuning.max_hp
 
 
-# The parting blessing: a boon from three before the first choice of area.
-func _bless() -> void:
+# The parting blessing: a boon from three once the first area is picked;
+# false when there is nothing to offer, and the area is entered at once.
+func _bless(next: RouteMap.Waypoint) -> bool:
+	_blessing_due = false
 	var offer := run.build.offer(run.rng)
 	if offer.is_empty():
-		show_map()
-		return
+		return false
 	_blessing = true
+	_blessed_entry = next
 	choice.present_boons(offer, run.build, run.progression.level, 1, "旅立ちの加護　強化を1つ選ぶ")
+	return true
 
 
 func show_map(note: String = "") -> void:
@@ -88,7 +93,9 @@ func show_map(note: String = "") -> void:
 
 
 func enter(next: RouteMap.Waypoint) -> void:
-	if area != null or not result.is_empty():
+	if area != null or not result.is_empty() or _blessing:
+		return
+	if _blessing_due and _bless(next):
 		return
 	waypoint = next
 	run.taken.append(next)
@@ -131,9 +138,10 @@ func grant(reward: AreaData.Reward) -> void:
 func _on_reward_chosen(id: StringName) -> void:
 	if _blessing:
 		_blessing = false
-		var gift := run.build.find(id)
-		run.build.take(gift)
-		show_map("旅立ちの加護　「%s」を得た" % gift.display_name)
+		run.build.take(run.build.find(id))
+		var entry := _blessed_entry
+		_blessed_entry = null
+		enter(entry)
 		return
 	if not _rewarding:
 		return

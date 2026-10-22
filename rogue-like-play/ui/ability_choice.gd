@@ -6,14 +6,23 @@ signal selected(id: StringName)
 signal reroll_requested
 
 const GameAudio := preload("res://audio/game_audio.gd")
-# Focus (and so Enter / gamepad A) arrives a beat after opening, so a
-# confirm pressed for the attack that levelled up cannot pick a card.
-# Mouse and the number keys work immediately. On a gamepad the D-pad or the
-# left stick moves between the cards (round from the last to the first) and
-# A takes the focused one; with no card focused, a direction focuses one.
-# Three cards, or four with the lasting upgrade; with rerolls left, R (Y)
-# asks for the cards to be drawn again.
-const FOCUS_DELAY := 0.3
+# The cards are dealt before they can be taken, as card games deal a hand:
+# the shade falls, then each card rises into its place in turn, dimmed, and
+# only once the last has landed are they armed (they brighten, the key
+# guide comes up and the first card takes the focus). Until then no click,
+# number key or confirm picks one, so the swings mashed when the level came
+# cannot take a card unseen; a mouse button still held when they arm must
+# be let go first. On a gamepad the D-pad or the left stick moves between
+# the cards (round from the last to the first) and A takes the focused one;
+# with no card focused, a direction focuses one. Three cards, or four with
+# the lasting upgrade; with rerolls left, R (Y) asks for the cards to be
+# drawn again (a new hand, dealt and armed the same way).
+const SHADE_TIME := 0.16
+const DEAL_TIME := 0.24
+const DEAL_STAGGER := 0.09
+const DEAL_RISE := 90.0
+# How dim a card waits before the hand is armed.
+const UNARMED_TINT := Color(0.62, 0.62, 0.62, 1.0)
 const PICK_KEYS: Array[Key] = [KEY_1, KEY_2, KEY_3, KEY_4]
 
 var offers: Array[BoonData] = []
@@ -26,6 +35,10 @@ var key_guide: KeyGuide
 var pick_hint: Button
 var reroll_hint: Button
 var rerolls := 0
+# Whether the hand on offer can be taken yet, and whether the mouse waits for
+# a button held through the deal to be let go.
+var armed := false
+var _mouse_held := false
 @onready var panel: PanelContainer = $Panel
 @onready var shade: ColorRect = $Shade
 @onready var buttons: Array[Button] = [$Panel/Margin/Stack/Choices/First, $Panel/Margin/Stack/Choices/Second, $Panel/Margin/Stack/Choices/Third, $Panel/Margin/Stack/Choices/Fourth]
@@ -98,14 +111,60 @@ func _open(candidates: Array[BoonData], levels: Array[int], level: int, pending:
 	UIMotion.of(panel).reveal(UIMotion.WINDOW_TIME)
 	for index in offers.size():
 		UIMotion.of(cards[index]).enter(index * UIMotion.STAGGER_TIME)
-	# A method callable is dropped automatically if this dialog is freed.
-	get_tree().create_timer(FOCUS_DELAY).timeout.connect(_focus_first.bind(offers.duplicate()))
+	_deal()
 
 
-# Only the same offer, still open and unanswered, takes focus.
-func _focus_first(opened: Array[BoonData]) -> void:
-	if visible and offers == opened and not buttons.is_empty():
+# How long a hand of `count` takes to be dealt, from opening to armed.
+static func arm_time(count: int) -> float:
+	return SHADE_TIME + DEAL_STAGGER * maxi(0, count - 1) + DEAL_TIME
+
+
+func _deal() -> void:
+	armed = false
+	_mouse_held = false
+	for button in buttons:
+		button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		button.release_focus()
+	shade.modulate.a = 0.0
+	var fall := create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	fall.tween_property(shade, "modulate:a", 1.0, SHADE_TIME)
+	key_guide.modulate.a = 0.0
+	for index in offers.size():
+		cards[index].self_modulate = UNARMED_TINT
+		UIMotion.of(cards[index]).enter(SHADE_TIME + index * DEAL_STAGGER, Vector2(0, DEAL_RISE), DEAL_TIME)
+	# On the cards' own clock, so a slow frame that holds the deal back holds
+	# the arming back with it: no card is ever armed before it is in sight.
+	var arming := create_tween()
+	arming.tween_interval(arm_time(offers.size()))
+	arming.tween_callback(_arm.bind(offers.duplicate()))
+
+
+# Only the same hand, still open and unanswered, is armed.
+func _arm(dealt: Array[BoonData]) -> void:
+	if not visible or offers != dealt:
+		return
+	armed = true
+	for index in offers.size():
+		cards[index].self_modulate = Color.WHITE
+		UIMotion.of(cards[index]).flash(1.3, UIMotion.SELECT_TIME)
+	create_tween().tween_property(key_guide, "modulate:a", 1.0, UIMotion.SELECT_TIME)
+	_mouse_held = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+	if not _mouse_held:
+		_open_to_mouse()
+	if not buttons.is_empty():
 		buttons[0].grab_focus()
+
+
+func _open_to_mouse() -> void:
+	for index in buttons.size():
+		buttons[index].mouse_filter = Control.MOUSE_FILTER_STOP if index < offers.size() else Control.MOUSE_FILTER_IGNORE
+
+
+func _input(event: InputEvent) -> void:
+	if _mouse_held and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+		_mouse_held = false
+		if visible and armed:
+			_open_to_mouse()
 
 
 func dismiss() -> void:
@@ -127,7 +186,7 @@ func _hover(index: int, value: bool) -> void:
 
 
 func _reroll() -> void:
-	if visible and rerolls > 0:
+	if visible and armed and rerolls > 0:
 		reroll_requested.emit()
 
 
@@ -197,6 +256,11 @@ func _exit_tree() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
+		return
+	# Nothing is taken while the hand is dealt; the keys pressed meanwhile are spent.
+	if not armed:
+		if event is InputEventKey or event is InputEventJoypadButton or event is InputEventMouseButton:
+			get_viewport().set_input_as_handled()
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var index: int = PICK_KEYS.find(event.physical_keycode)

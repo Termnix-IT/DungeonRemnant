@@ -230,6 +230,7 @@ func run_tests() -> void:
 	root.add_child(sandbox)
 	await process_frame
 	sandbox._on_gems(sandbox.run.progression.required_exp())
+	await create_timer(BattleArea.LEAD_TIME + 0.05, true, false, true).timeout
 	check(paused and sandbox.choosing(), "A level-up pauses the fight and shows the cards")
 	sandbox.choice._select(0)
 	check(not paused and not sandbox.choosing() and sandbox.run.build.owned().size() == 1, "Picking a card takes the boon and resumes the fight")

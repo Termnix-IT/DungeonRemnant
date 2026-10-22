@@ -3,7 +3,9 @@ extends CombatArea
 
 # A battlefield fought as part of a run (RunState): the hero comes in with
 # the run's health and build, fallen foes' gems bring levels and each level
-# pauses the fight for three boon cards. Given an AreaData, it lays out its
+# pauses the fight for three boon cards: the world first slows for a beat
+# while a ring of light bursts from her (the lead-in), then stops and the
+# cards are dealt. Given an AreaData, it lays out its
 # ground and plays its rules: an open field's growing crowd (EnemyDirector)
 # until the hero has lasted survive_time or felled kill_target, or an
 # arena's waves (WaveRunner), or a boss hall's boss (its fall wins it; at
@@ -33,6 +35,11 @@ const BOSS_MARK_TIME := 1.0
 const BOSS_PLACE := 0.28
 # The light that rises around her when a level's boon is taken.
 const LEVEL_UP_SCALE := 1.1
+# The lead-in to a level-up's cards: how long (real seconds) and how slow the
+# world runs, and the ring of light that bursts from her meanwhile.
+const LEAD_TIME := 0.32
+const LEAD_SLOW := 0.15
+const LEAD_RING := 170.0
 # The level-up burst (level_burst adds to its radius): its power as a share
 # of hers, and its push.
 const LEVEL_BURST_RADIUS := 120.0
@@ -61,6 +68,8 @@ var elapsed := 0.0
 var finished := false
 var _clear_left := -1.0
 var _banner_left := 0.0
+# A level-up's lead-in is running.
+var _leading := false
 
 
 # Sets what it plays before it enters the tree.
@@ -242,13 +251,35 @@ func _on_boss_phase(foe: Foe) -> void:
 
 
 func choosing() -> bool:
-	return choice.visible
+	return choice.visible or _leading
 
 
 func _on_gems(amount: int) -> void:
 	if run.gain(amount):
 		GameAudio.play(self, &"level_up", -16.0)
-		_offer()
+		_lead_in()
+
+
+# The beat before the cards: the world slows, a ring of light bursts from
+# her, and then the fight stops for the choice.
+func _lead_in() -> void:
+	if choosing() or run.progression.pending_choices <= 0 or not hero.health.alive():
+		return
+	_leading = true
+	hit_stop.hold(LEAD_TIME, LEAD_SLOW)
+	var ring := GroundRing.new()
+	marks.add_child(ring)
+	ring.start(hero.global_position, LEAD_RING, &"heavy")
+	shake(HEAVY_SHAKE * 0.4)
+	get_tree().create_timer(LEAD_TIME, true, false, true).timeout.connect(_after_lead)
+
+
+func _after_lead() -> void:
+	if not _leading:
+		return
+	_leading = false
+	hit_stop.release()
+	_offer()
 
 
 # Opens the next level-up's choice, the world paused, if one waits.

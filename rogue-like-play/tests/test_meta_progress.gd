@@ -227,12 +227,14 @@ func run_tests() -> void:
 	root.add_child(director)
 	await process_frame
 	check(director.max_hp() == base.max_hp + 45 and director.run.tuning.dash_charges == base.dash_charges + 1, "A run starts with the lasting upgrades")
-	check(director.choice.visible and not director.map_view.visible, "With the blessing a boon is chosen before the map")
+	check(director.map_view.visible and not director.choice.visible, "The run opens on its map, the blessing still to come")
+	var first: RouteMap.Waypoint = director.run.route.nodes(0)[0]
+	director.map_view._choose(first)
+	await process_frame
+	check(director.choice.visible and director.area == null, "Picking the first area offers the blessing before entering it")
 	director.choice._select(0)
 	await process_frame
-	check(director.run.build.owned().size() == 1 and director.map_view.visible, "The blessing's boon is taken and the map opens")
-	director.map_view._choose(director.run.route.nodes(0)[0])
-	await process_frame
+	check(director.run.build.owned().size() == 1 and director.area != null and director.waypoint == first, "The blessing's boon is taken and the area picked is entered")
 	check(director.area.hero.health.max_hp == base.max_hp + 45 and director.area.hero.motor.dash_charges == base.dash_charges + 1, "She fights with them")
 	var slam: SkillData = MetaProgress.find_skill(&"slam")
 	check(director.area.hero.motor.skill_attacks == [slam.attack, null] and director.area.hero.motor.skill_cooldowns[0] == slam.cooldown, "And with the skills in her slots")
