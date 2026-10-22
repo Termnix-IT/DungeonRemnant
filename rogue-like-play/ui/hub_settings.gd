@@ -106,6 +106,11 @@ var note_title: Label
 # which slide in from the right when what they tell changes.
 var info_column: VBoxContainer
 var help_words: VBoxContainer
+# What the column and the help's page tell now: telling it again (a click
+# lands as a focus and a press) does not slide them.
+var _shown_note := -1
+var _shown_topic := -1
+var _hover_topic := -1
 
 
 func _ready() -> void:
@@ -258,6 +263,11 @@ func _build_help() -> void:
 		row.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		row.custom_minimum_size.y = 56
 		row.focus_entered.connect(select_topic.bind(index))
+		# As in the lobby, resting the pointer on a topic chooses it.
+		row.mouse_entered.connect(_hover_topic_row.bind(index))
+		row.mouse_exited.connect(func():
+			if _hover_topic == index:
+				_hover_topic = -1)
 		topic_buttons.append(row)
 	var page := PanelContainer.new()
 	page.theme_type_variation = &"QuietSection"
@@ -307,10 +317,20 @@ func select_topic(index: int) -> void:
 	selected_topic = index
 	for other in topic_buttons.size():
 		topic_buttons[other].set_pressed_no_signal(other == index)
+	topic_rows.queue_redraw()
+	if index == _shown_topic:
+		return
+	_shown_topic = index
 	help_title.text = HELP[index][0]
 	help_body.text = "\n\n".join(HELP[index][1])
-	topic_rows.queue_redraw()
 	UIMotion.of(help_words).slide_in()
+
+
+func _hover_topic_row(index: int) -> void:
+	_hover_topic = index
+	await get_tree().create_timer(HubLobby.HOVER_INTENT).timeout
+	if _hover_topic == index and help_shown:
+		topic_buttons[index].grab_focus()
 
 
 func _draw_topic_band() -> void:
@@ -390,9 +410,12 @@ func _draw_band(canvas: Control, rect: Rect2) -> void:
 
 func _focus_row(index: int) -> void:
 	focused_row = index
+	rows.queue_redraw()
+	if index == _shown_note:
+		return
+	_shown_note = index
 	note_title.text = CAPTIONS[index]
 	note.text = NOTES[index]
-	rows.queue_redraw()
 	UIMotion.of(info_column).slide_in()
 
 

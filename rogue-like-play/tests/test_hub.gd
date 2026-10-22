@@ -93,6 +93,10 @@ func run_tests() -> void:
 	settings_page.open_help(HubSettings.TOPIC_GROWTH)
 	await process_frame
 	check(settings_page.help_layer.visible and settings_page.is_visible_in_tree() and settings_page.help_title.text == HubSettings.HELP[HubSettings.TOPIC_GROWTH][0], "The help opens as a window over the page, at its topic")
+	# As in the lobby, resting the pointer on a topic chooses it.
+	settings_page.topic_buttons[HubSettings.TOPIC_CODEX].mouse_entered.emit()
+	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
+	check(settings_page.selected_topic == HubSettings.TOPIC_CODEX and settings_page.topic_buttons[HubSettings.TOPIC_CODEX].has_focus() and settings_page.help_title.text == HubSettings.HELP[HubSettings.TOPIC_CODEX][0], "Pointing at a help topic moves the choice there")
 	settings_page.close_help()
 	check(not settings_page.help_layer.visible and settings_page.help_button.has_focus(), "Closing the help returns to the settings")
 	hub.show_page("home")

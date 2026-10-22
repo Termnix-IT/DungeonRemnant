@@ -152,6 +152,21 @@ func run_tests() -> void:
 	hub.codex_page._select(0)
 	await settle(UIMotion.DETAIL_SLIDE_TIME + 0.15)
 	check(column.position.is_equal_approx(rest) and is_equal_approx(column.modulate.a, 1.0), "It settles in place, whole")
+	# A click lands as a focus and a press: the second asks for the same foe
+	# and must not start the slide over.
+	hub.codex_page._select(1)
+	await process_frame
+	await process_frame
+	await process_frame
+	var under_way := column.position.x
+	hub.codex_page._select(1)
+	await process_frame
+	check(column.position.x <= under_way + 0.01, "Choosing the same foe again does not restart the slide")
+	await settle(UIMotion.DETAIL_SLIDE_TIME + 0.15)
+	hub.codex_page._select(1)
+	await process_frame
+	await process_frame
+	check(column.position.is_equal_approx(rest) and is_equal_approx(column.modulate.a, 1.0), "Choosing the foe already told shows no slide at all")
 	hub.show_page("home")
 	await settle(UIMotion.WINDOW_TIME + 0.2)
 	check(not motion.is_processing(), "The helper has no idle per-frame polling")

@@ -34,6 +34,9 @@ var _catalog: VBoxContainer
 var _info: VBoxContainer
 var _picture := {}
 var _unknown := false
+# The foe the column tells now: choosing it again (a click lands as a focus
+# and a press) neither redraws nor slides the column.
+var _shown: FoeData
 # Silhouettes of the foes not met, by visual id, made once.
 static var _shadows: Dictionary = {}
 
@@ -151,6 +154,9 @@ func _select(place: int, animate: bool = true) -> void:
 		return
 	selected = place
 	var foe := rows[place]
+	if animate and foe == _shown:
+		return
+	_shown = foe
 	_unknown = not meta.has_met(foe.id)
 	_picture = EnemySprites.portrait(foe.visual_id)
 	picture.queue_redraw()
