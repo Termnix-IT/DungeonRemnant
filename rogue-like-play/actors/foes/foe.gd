@@ -5,7 +5,10 @@ extends CharacterBody2D
 # hero by touch, runs its attacks (a warning on the floor through the
 # wind-up, then the blow, which may carry it forward), staggers and is pushed
 # back when struck unless it has super armour, carries statuses (Status:
-# shocked it walks slower, burning it loses health every tick), and falls. A
+# shocked it walks slower, burning it loses health every tick), and falls.
+# Some fight otherwise (FoeData's specials): an attack with a projectile is
+# shot at the hero, a summoner calls its brood around itself now and then,
+# and a burster's attack is its end. A
 # fallen foe fades
 # and is retired; its CombatArea keeps it to bring back (revive) rather than
 # making a new one. Off screen it thinks only every few frames.
@@ -58,6 +61,11 @@ var _desired := Vector2.ZERO
 var _think_left := 0
 var _think_time := 0.0
 var _fade: Tween
+# A summoner's time to its next call, and the brood it has alive.
+var _summon_left := 0.0
+var brood: Array[Foe] = []
+# How far from its middle around it a summoner's brood comes in.
+const BROOD_SPREAD := Vector2(50.0, 90.0)
 
 
 func _ready() -> void:
@@ -101,6 +109,8 @@ func revive(at: Vector2) -> void:
 	attack = null
 	telegraph = null
 	statuses.clear()
+	brood.clear()
+	_summon_left = data.summon_every * 0.5
 	modulate.a = 1.0
 	collision_layer = Hero.FOES
 	collision_mask = Hero.WALLS | Hero.FOES | Hero.HEROES
@@ -123,6 +133,8 @@ func step(delta: float) -> void:
 	_step_statuses(delta)
 	if dying:
 		return
+	if data.summon_every > 0.0 and data.summon != null:
+		_step_summons(delta)
 	if attack != null:
 		_run_attack(delta)
 	else:
@@ -183,9 +195,15 @@ func _run_attack(delta: float) -> void:
 			telegraph.strike()
 			telegraph = null
 	if attack.hitting(attack_time):
-		if attack.lunge > 0.0 and attack.active > 0.0:
-			_lunge = attack_facing * attack.lunge / attack.active
-		_land_attack()
+		if attack.projectile != null:
+			_shoot()
+		else:
+			if attack.lunge > 0.0 and attack.active > 0.0:
+				_lunge = attack_facing * attack.lunge / attack.active
+			_land_attack()
+		if data.bursts:
+			_burst()
+			return
 	if attack_time >= attack.duration():
 		attack = null
 		brain.attack_finished(self)
@@ -205,6 +223,43 @@ func _land_attack() -> void:
 	_attack_spent = true
 	var info := DamageInfo.make(data.power * attack.damage_scale, target.global_position - global_position, attack.knockback, self)
 	target.receive(info)
+
+
+# A ranged attack's shot, once, along the way it faced at the wind-up.
+func _shoot() -> void:
+	if _attack_spent or area == null:
+		return
+	_attack_spent = true
+	# From the height her own waves fly at, so it meets her where blows are measured (at the feet).
+	area.launch(attack.projectile, global_position + Hero.AIM_ORIGIN * 0.5, attack_facing, data.power, true)
+
+
+# A burster's end: its blow has landed (or missed); it goes up and is gone.
+func _burst() -> void:
+	if area != null:
+		area.report_burst(self)
+	attack = null
+	vanish()
+
+
+# A summoner calls its brood while she is near, up to its limit.
+func _step_summons(delta: float) -> void:
+	_summon_left -= delta
+	if _summon_left > 0.0 or area == null or target == null:
+		return
+	_summon_left = data.summon_every
+	brood = brood.filter(func(child: Foe): return is_instance_valid(child) and not child.dying)
+	if global_position.distance_to(target.global_position) > data.summon_range:
+		return
+	var room := mini(data.summon_count, data.summon_limit - brood.size())
+	if room <= 0:
+		return
+	view.strike()
+	for index in room:
+		var at := global_position + Vector2.from_angle(rng.randf() * TAU) * rng.randf_range(BROOD_SPREAD.x, BROOD_SPREAD.y)
+		var child := area.summon(data.summon, at)
+		if child != null:
+			brood.append(child)
 
 
 func _cancel_attack() -> void:

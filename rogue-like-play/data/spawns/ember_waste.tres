@@ -1,9 +1,12 @@
-[gd_resource type="Resource" script_class="SpawnTable" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="SpawnTable" load_steps=14 format=3]
 [ext_resource type="Script" path="res://world/areas/spawn_table.gd" id="1"]
 [ext_resource type="Script" path="res://world/areas/spawn_entry.gd" id="2"]
 [ext_resource type="Resource" path="res://data/foes/wandering_sentinel.tres" id="3"]
 [ext_resource type="Resource" path="res://data/foes/dashing_rat.tres" id="4"]
 [ext_resource type="Resource" path="res://data/foes/raging_charger.tres" id="5"]
+[ext_resource type="Resource" path="res://data/foes/mud_swell.tres" id="6"]
+[ext_resource type="Resource" path="res://data/foes/crystal_turret.tres" id="7"]
+[ext_resource type="Resource" path="res://data/foes/brood_nest.tres" id="8"]
 [sub_resource type="Resource" id="Sentinels"]
 script = ExtResource("2")
 foe = ExtResource("3")
@@ -13,9 +16,24 @@ script = ExtResource("2")
 foe = ExtResource("4")
 weight = 4.0
 from_time = 0.0
+[sub_resource type="Resource" id="MudSwell"]
+script = ExtResource("2")
+foe = ExtResource("6")
+weight = 2.0
+from_time = 20.0
+[sub_resource type="Resource" id="CrystalTurret"]
+script = ExtResource("2")
+foe = ExtResource("7")
+weight = 1.0
+from_time = 30.0
+[sub_resource type="Resource" id="BroodNest"]
+script = ExtResource("2")
+foe = ExtResource("8")
+weight = 0.6
+from_time = 45.0
 [resource]
 script = ExtResource("1")
-entries = Array[ExtResource("2")]([SubResource("Sentinels"), SubResource("Rats")])
+entries = Array[ExtResource("2")]([SubResource("Sentinels"), SubResource("Rats"), SubResource("MudSwell"), SubResource("CrystalTurret"), SubResource("BroodNest")])
 start_alive = 20
 alive_per_minute = 60.0
 max_alive = 160

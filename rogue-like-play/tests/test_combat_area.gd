@@ -158,6 +158,9 @@ func run_tests() -> void:
 	await process_frame
 	area.free()
 
+	# The specials: a turret shoots, a swell bursts, a nest hatches.
+	await specials()
+
 	# The sandbox starts up and its director keeps the foes coming.
 	var sandbox: CombatArea = load("res://world/areas/sandbox.tscn").instantiate()
 	sandbox.seed_value = 5
@@ -180,6 +183,51 @@ func run_tests() -> void:
 func _on_hurt(lost: int) -> void:
 	hurts.append(lost)
 	numbers_shown.append(area.popups.get_child_count())
+
+
+# A foe that fights otherwise: a turret's shot flies at her along its line,
+# a swell's blow is its end (no gem), a nest calls its brood up to its limit.
+func specials() -> void:
+	var turret_data: FoeData = load("res://data/foes/crystal_turret.tres")
+	var swell_data: FoeData = load("res://data/foes/mud_swell.tres")
+	var nest_data: FoeData = load("res://data/foes/brood_nest.tres")
+	var field := make_area()
+	var hero := field.hero
+	await process_frame
+	var turret := field.spawn_foe(turret_data, hero.global_position + Vector2(300, 0))
+	var spot := turret.global_position
+	turret.brain.cooldown = 0.0
+	var hp := hero.health.hp
+	var shot_seen := false
+	for frame in roundi(2.0 / FRAME):
+		await physics_frame
+		hero.step(HeroInput.new(), FRAME)
+		shot_seen = shot_seen or field.effects.get_children().any(func(node: Node): return node is Projectile and node.hostile)
+	check(shot_seen and hero.health.hp < hp, "A turret aims along its line and its shot strikes her")
+	check(turret.global_position.distance_to(spot) < 1.0, "And it never moves")
+	field.dismiss_foes()
+	await drive(hero, HeroInput.new(), 1.0)
+	var swell := field.spawn_foe(swell_data, hero.global_position + Vector2(60, 0))
+	swell.brain.cooldown = 0.0
+	hero.health.hp = hero.health.max_hp
+	var gems_before := field.gems.count()
+	await drive(hero, HeroInput.new(), swell_data.attacks[0].windup + 0.3)
+	check(swell.dying and hero.health.hp < hero.health.max_hp and field.gems.count() == gems_before, "A swell bursts by her, hurting her, and is gone without a gem")
+	await drive(hero, HeroInput.new(), 1.0)
+	var nest := field.spawn_foe(nest_data, hero.global_position + Vector2(200, 0))
+	var rat_id := nest_data.summon.id
+	var count_rats := func() -> int: return field.foes.filter(func(foe: Foe): return foe.data.id == rat_id and not foe.dying).size()
+	await drive(hero, HeroInput.new(), nest_data.summon_every * 0.5 + 0.2)
+	check(count_rats.call() == nest_data.summon_count and nest.brood.size() == nest_data.summon_count, "A nest near her hatches its brood")
+	for rat: Foe in field.foes:
+		if rat.data.id == rat_id:
+			rat.set_physics_process(false)
+	await drive(hero, HeroInput.new(), nest_data.summon_every * 2.0 + 0.2)
+	check(count_rats.call() <= nest_data.summon_limit and nest.brood.size() <= nest_data.summon_limit, "But never more than its limit")
+	field.hit_stop.release()
+	await process_frame
+	field.free()
+	await process_frame
 
 
 func _on_foe_fell(foe: Foe) -> void:

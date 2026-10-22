@@ -1,10 +1,12 @@
-[gd_resource type="Resource" script_class="AreaData" load_steps=10 format=3]
+[gd_resource type="Resource" script_class="AreaData" load_steps=12 format=3]
 [ext_resource type="Script" path="res://world/areas/area_data.gd" id="1"]
 [ext_resource type="Script" path="res://world/areas/wave_data.gd" id="2"]
 [ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="3"]
 [ext_resource type="Resource" path="res://data/foes/wandering_sentinel.tres" id="4"]
 [ext_resource type="Resource" path="res://data/foes/dashing_rat.tres" id="5"]
 [ext_resource type="Resource" path="res://data/foes/raging_charger.tres" id="6"]
+[ext_resource type="Resource" path="res://data/foes/mud_swell.tres" id="7"]
+[ext_resource type="Resource" path="res://data/foes/crystal_turret.tres" id="8"]
 [sub_resource type="Resource" id="Wave0"]
 script = ExtResource("2")
 foes = Array[ExtResource("3")]([ExtResource("4"), ExtResource("5")])
@@ -12,13 +14,13 @@ counts = Array[int]([14, 4])
 spawns_per_second = 4.0
 [sub_resource type="Resource" id="Wave1"]
 script = ExtResource("2")
-foes = Array[ExtResource("3")]([ExtResource("4"), ExtResource("5")])
-counts = Array[int]([16, 10])
+foes = Array[ExtResource("3")]([ExtResource("4"), ExtResource("5"), ExtResource("7")])
+counts = Array[int]([16, 10, 4])
 spawns_per_second = 5.0
 [sub_resource type="Resource" id="Wave2"]
 script = ExtResource("2")
-foes = Array[ExtResource("3")]([ExtResource("6"), ExtResource("4"), ExtResource("5")])
-counts = Array[int]([1, 12, 6])
+foes = Array[ExtResource("3")]([ExtResource("6"), ExtResource("4"), ExtResource("5"), ExtResource("8")])
+counts = Array[int]([1, 12, 6, 2])
 spawns_per_second = 5.0
 [resource]
 script = ExtResource("1")
@@ -27,7 +29,7 @@ display_name = "石柱の闘技場"
 kind = 1
 difficulty = 2
 condition = "3つのウェーブを全滅させる"
-foe_summary = "番兵と疾走ネズミ。最後に精鋭"
+foe_summary = "番兵とネズミ。最後に精鋭と砲塔"
 expected_time = 110
 reward_weights = {0: 0.6, 1: 0.2, 2: 0.2}
 echo = 40

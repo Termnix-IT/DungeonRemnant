@@ -218,11 +218,31 @@ func deal(foe: Foe, info: DamageInfo) -> int:
 	return lost
 
 
-func launch(shot: ProjectileData, from: Vector2, toward: Vector2, power: float) -> Projectile:
+# A shot in flight: the hero's (striking foes) or, `hostile`, a foe's
+# (striking her).
+func launch(shot: ProjectileData, from: Vector2, toward: Vector2, power: float, hostile: bool = false) -> Projectile:
 	var wave := Projectile.new()
 	effects.add_child(wave)
-	wave.launch(shot, self, from, toward, power)
+	wave.launch(shot, self, from, toward, power, hostile)
 	return wave
+
+
+# A foe called in by a summoner, where it says: a puff of the wave marks'
+# colour, then the foe.
+func summon(data: FoeData, at: Vector2) -> Foe:
+	if not ground.is_open(at, 10.0):
+		return null
+	var ring := GroundRing.new()
+	marks.add_child(ring)
+	ring.start(at, 40.0, &"magic")
+	return spawn_foe(data, at)
+
+
+# A burster going up: a heavy burst of light where it stood, and a jolt.
+func report_burst(foe: Foe) -> void:
+	_effect(&"heavy", foe.global_position + BODY_MIDDLE * 0.4, Vector2.RIGHT, 1.3)
+	shake(HEAVY_SHAKE * 0.5)
+	GameAudio.play(self, &"burst", -16.0)
 
 
 # Every foe whose body is inside the circle takes the blow.

@@ -43,6 +43,19 @@ extends Resource
 @export_range(0.0, 10000.0) var power := 10.0
 # The least time from the end of one attack to the start of the next.
 @export_range(0.0, 20.0) var attack_cooldown := 1.0
+# An attack with an AttackData.projectile shoots it at the hero as its blow
+# comes, instead of striking where the foe stands (a ranged foe).
+
+@export_group("Specials")
+# Every this many seconds while the hero is within summon_range, it calls
+# summon_count of `summon` (the Boss group's) around itself, keeping at most
+# summon_limit of its own alive. Zero: never (a boss calls its own at its
+# second phase instead).
+@export_range(0.0, 60.0) var summon_every := 0.0
+@export_range(50.0, 2000.0) var summon_range := 650.0
+@export_range(1, 30) var summon_limit := 4
+# Its attack is its end: as the blow comes it bursts, and is gone without a gem.
+@export var bursts := false
 
 @export_group("Boss")
 # A boss's health is shown across the top of the screen.

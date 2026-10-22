@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/foes/dashing_rat.tres" id="2"]
+[resource]
+script = ExtResource("1")
+id = &"brood_nest"
+display_name = "孵卵の巣"
+description = "動かない巣。近くにいると、6秒ごとに疾走ネズミを2匹孵す（4匹まで）。先に壊すと群れが減る。
+フィールドとアリーナに現れる。"
+visual_id = "summoner"
+size_scale = 1.5
+max_hp = 120
+defense = 1
+speed = 0.0
+acceleration = 10.0
+speed_spread = 0.0
+contact_damage = 4
+contact_knockback = 200.0
+hit_radius = 26.0
+knockback_resist = 1.0
+hitstun = 0.05
+exp_reward = 6
+summon = ExtResource("2")
+summon_count = 2
+summon_every = 6.0
+summon_range = 650.0
+summon_limit = 4

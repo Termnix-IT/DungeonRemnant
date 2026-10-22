@@ -3,7 +3,8 @@ extends Node2D
 
 # A ProjectileData in flight: it moves straight on, hits each foe its circle
 # touches once (through the CombatArea, which shows the hit), and frees
-# itself when its distance is spent or it meets a wall. Drawn as its painted
+# itself when its distance is spent or it meets a wall. A hostile one (a
+# foe's shot) strikes the hero instead, once, and is spent on her. Drawn as its painted
 # effect, turned along its way and fading at the end.
 
 const StrikeEffect := preload("res://combat/strike_effect.gd")
@@ -13,11 +14,13 @@ var area: CombatArea
 var direction := Vector2.RIGHT
 var power := 10.0
 var travelled := 0.0
+var hostile := false
 var _spent := {}
 var _image: Texture2D
 
 
-func launch(shot: ProjectileData, combat_area: CombatArea, from: Vector2, toward: Vector2, hero_power: float) -> void:
+func launch(shot: ProjectileData, combat_area: CombatArea, from: Vector2, toward: Vector2, hero_power: float, from_foe: bool = false) -> void:
+	hostile = from_foe
 	data = shot
 	area = combat_area
 	position = from
@@ -41,6 +44,9 @@ func step(delta: float) -> void:
 	var move := minf(data.speed * delta, data.distance - travelled)
 	position += direction * move
 	travelled += move
+	if hostile:
+		_strike_hero()
+		return
 	for foe in area.foes:
 		if _spent.has(foe) or foe.dying:
 			continue
@@ -50,6 +56,17 @@ func step(delta: float) -> void:
 			info.inflicts = data.inflicts
 			area.deal(foe, info)
 	queue_redraw()
+	if travelled >= data.distance or not area.ground.is_open(global_position):
+		queue_free()
+
+
+func _strike_hero() -> void:
+	var hero := area.hero
+	queue_redraw()
+	if hero != null and hero.health.alive() and hero.global_position.distance_to(global_position) <= data.radius + hero.hit_radius:
+		hero.receive(DamageInfo.make(power * data.damage_scale, direction, data.knockback, self))
+		queue_free()
+		return
 	if travelled >= data.distance or not area.ground.is_open(global_position):
 		queue_free()
 

@@ -8,6 +8,9 @@ extends RefCounted
 const FOES: Array[FoeData] = [
 	preload("res://data/foes/wandering_sentinel.tres"),
 	preload("res://data/foes/dashing_rat.tres"),
+	preload("res://data/foes/mud_swell.tres"),
+	preload("res://data/foes/crystal_turret.tres"),
+	preload("res://data/foes/brood_nest.tres"),
 	preload("res://data/foes/raging_charger.tres"),
 	preload("res://data/foes/ruin_king.tres"),
 ]
