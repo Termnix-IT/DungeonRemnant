@@ -47,15 +47,20 @@ func setup(point: RouteMap.Waypoint, state: Mark) -> void:
 	var across := BOSS_SIZE if boss else SIZE
 	custom_minimum_size = Vector2(across, across)
 	size = custom_minimum_size
-	_icon = EmblemIcons.texture(BOSS_EMBLEM if boss else REWARD_EMBLEMS.get(point.reward, ""))
-	tooltip_text = "%s\n%s　%s\n報酬：%s" % [point.area.display_name, point.area.kind_name(), point.area.stars(), AreaData.reward_name(point.reward)]
+	# An event shows its own emblem rather than a reward.
+	if point.area.is_event():
+		_icon = EmblemIcons.texture(point.area.emblem)
+		tooltip_text = "%s\nイベント\n%s" % [point.area.display_name, point.area.condition]
+	else:
+		_icon = EmblemIcons.texture(BOSS_EMBLEM if boss else REWARD_EMBLEMS.get(point.reward, ""))
+		tooltip_text = "%s\n%s　%s\n報酬：%s" % [point.area.display_name, point.area.kind_name(), point.area.stars(), AreaData.reward_name(point.reward)]
 	focus_mode = Control.FOCUS_ALL if state == Mark.OPEN else Control.FOCUS_NONE
 	modulate = {Mark.OPEN: Color.WHITE, Mark.TAKEN: Color.WHITE, Mark.PASSED: PASSED, Mark.AHEAD: AHEAD}[state]
 	_caption = Label.new()
 	_caption.theme_type_variation = &"MutedLabel" if state != Mark.OPEN else &"BodyLabel"
 	_caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_caption.text = "%s %s" % [point.area.kind_name(), point.area.stars()]
+	_caption.text = point.area.kind_name() if point.area.is_event() else "%s %s" % [point.area.kind_name(), point.area.stars()]
 	add_child(_caption)
 	_caption.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	_caption.grow_horizontal = Control.GROW_DIRECTION_BOTH

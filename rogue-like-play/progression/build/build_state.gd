@@ -60,6 +60,11 @@ func find(id: StringName) -> BoonData:
 	return null
 
 
+# Whether any boon could still be offered (offer would not come back empty).
+func can_offer() -> bool:
+	return pool.any(func(boon: BoonData): return can_take(boon) and boon.weight > 0.0)
+
+
 # Up to `count` different boons that can be taken, picked by weight.
 func offer(rng: RandomNumberGenerator, count: int = OFFER_COUNT) -> Array[BoonData]:
 	var candidates: Array[BoonData] = []

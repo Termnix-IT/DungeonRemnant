@@ -32,6 +32,13 @@ const FALL_PAUSE := 1.6
 var meta: MetaProgress
 # The player's settings, given to each area; none: the defaults.
 var settings: GameSettings
+# The events (stops without a fight): what the merchant asks for a boon and
+# for tending her wounds (and how much it heals), and the share of her
+# health the altar takes for a boon.
+const MERCHANT_BOON_PRICE := 70
+const MERCHANT_HEAL_PRICE := 40
+const MERCHANT_HEAL_SHARE := 0.5
+const ALTAR_HP_SHARE := 0.3
 # Started from the base: the result leads back there instead of to a new run.
 var returns_to_base := false
 var chapter: ChapterData = CHAPTER
@@ -40,10 +47,20 @@ var area: BattleArea
 var map_view: RouteMapView
 var choice: CanvasLayer
 var end_view: RunEndView
+var event_view: EventView
 var result: Dictionary = {}
 var waypoint: RouteMap.Waypoint
 var _rewarding := false
 var _blessing := false
+# The event she stopped at, what she bought there, the curse its stone
+# offers, the boon card it opened, whether the event ends with that card,
+# and the line the map tells after it.
+var _event: AreaData
+var _event_bought := {}
+var _event_curse: StringName
+var _event_card := false
+var _event_ends := false
+var _event_note := ""
 # The parting blessing is still to be chosen, and the area it waits to enter.
 var _blessing_due := false
 var _blessed_entry: RouteMap.Waypoint
@@ -67,6 +84,9 @@ func _ready() -> void:
 	end_view = RunEndView.new()
 	add_child(end_view)
 	end_view.again_requested.connect(_again)
+	event_view = EventView.new()
+	add_child(event_view)
+	event_view.chosen.connect(_on_event_choice)
 	_blessing_due = meta != null and meta.starts_with_boon()
 	show_map()
 
@@ -99,6 +119,9 @@ func enter(next: RouteMap.Waypoint) -> void:
 		return
 	if _blessing_due and _bless(next):
 		return
+	if next.area.is_event():
+		_stop_at(next)
+		return
 	waypoint = next
 	run.taken.append(next)
 	area = BattleArea.new()
@@ -129,7 +152,9 @@ func grant(reward: AreaData.Reward) -> void:
 			_rewarding = true
 			choice.present_boons(offer, run.build, run.progression.level, 1, "報酬　強化を1つ選ぶ")
 		AreaData.Reward.HEAL:
-			var gained := run.heal(HEAL_SHARE + run.rule(&"heal_share"), max_hp())
+			# Thirst halves what a heal brings.
+			var share := (HEAL_SHARE + run.rule(&"heal_share")) * (0.5 if run.curses.has(&"thirst") else 1.0)
+			var gained := run.heal(share, max_hp())
 			advance("報酬　HPが%d回復した" % gained if gained > 0 else "報酬　回復（HPはすでに満タン）")
 		AreaData.Reward.ECHO:
 			var echo := run.echo_reward(waypoint.area.echo)
@@ -138,6 +163,16 @@ func grant(reward: AreaData.Reward) -> void:
 
 
 func _on_reward_chosen(id: StringName) -> void:
+	if _event_card:
+		_event_card = false
+		var bought := run.build.find(id)
+		run.build.take(bought)
+		_event_note = "%s　「%s」を得た" % [_event.display_name, bought.display_name] if _event_note.is_empty() else _event_note + "、「%s」を得た" % bought.display_name
+		if _event_ends:
+			_leave_event()
+		else:
+			_show_event()
+		return
 	if _blessing:
 		_blessing = false
 		run.build.take(run.build.find(id))
@@ -151,6 +186,116 @@ func _on_reward_chosen(id: StringName) -> void:
 	var boon := run.build.find(id)
 	run.build.take(boon)
 	advance("報酬　「%s」を得た" % boon.display_name)
+
+
+# An event: no fight, its window over the map until she leaves it.
+func _stop_at(next: RouteMap.Waypoint) -> void:
+	waypoint = next
+	run.taken.append(next)
+	_event = next.area
+	_event_bought.clear()
+	_event_note = ""
+	var left := run.curses_left()
+	_event_curse = left[run.rng.randi_range(0, left.size() - 1)] if not left.is_empty() else &""
+	map_view.hold()
+	_show_event()
+
+
+func _current_hp() -> int:
+	return run.hp if run.hp > 0 else max_hp()
+
+
+func _show_event() -> void:
+	var options := []
+	var terms := ""
+	match _event.event:
+		&"merchant":
+			options.append(_paid(&"boon", "強化を1つ選ぶ", MERCHANT_BOON_PRICE, not run.build.can_offer()))
+			options.append(_paid(&"heal", "傷の手当て（最大HPの%d%%回復）" % roundi(MERCHANT_HEAL_SHARE * 100.0), MERCHANT_HEAL_PRICE, _current_hp() >= max_hp()))
+		&"altar":
+			var cost := altar_cost()
+			options.append({"id": &"offer", "text": "HPを%d捧げて、強化を1つ選ぶ" % cost, "enabled": _current_hp() > cost, "reason": "HPが足りない"})
+		&"curse":
+			var named: String = RunState.CURSES[_event_curse][0] if not _event_curse.is_empty() else ""
+			if not named.is_empty():
+				terms = "呪い「%s」：%s。以後の残響の報酬 +%d%%" % [named, RunState.CURSES[_event_curse][1], roundi(RunState.CURSE_ECHO * 100.0)]
+			options.append({"id": &"curse", "text": "呪い「%s」を受けて、強化を1つ選ぶ" % named, "enabled": not _event_curse.is_empty(), "reason": "これ以上の呪いは受けられない"})
+	var state := "所持 残響 %s　HP %d / %d" % [UIFormat.amount(run.echo), _current_hp(), max_hp()]
+	if not run.curses.is_empty():
+		state += "　呪い：%s" % run.curse_names()
+	event_view.present(_event, state, options, terms)
+
+
+# A merchant's ware: its price, off when bought, unaffordable or of no use.
+func _paid(id: StringName, text: String, price: int, useless: bool) -> Dictionary:
+	var reason := ""
+	if _event_bought.has(id):
+		reason = "購入済み"
+	elif useless:
+		reason = "今は必要ない" if id == &"heal" else "取れる強化が残っていない"
+	elif run.echo < price:
+		reason = "残響が%s足りない" % UIFormat.amount(price - run.echo)
+	return {"id": id, "text": "%s　残響 %s" % [text, UIFormat.amount(price)], "enabled": reason.is_empty(), "reason": reason}
+
+
+func altar_cost() -> int:
+	return ceili(max_hp() * ALTAR_HP_SHARE)
+
+
+func _on_event_choice(id: StringName) -> void:
+	if _event == null or _event_card:
+		return
+	match id:
+		EventView.LEAVE:
+			_leave_event()
+		&"boon":
+			if run.echo < MERCHANT_BOON_PRICE or _event_bought.has(id):
+				return
+			if _event_choice(false):
+				run.echo -= MERCHANT_BOON_PRICE
+				_event_bought[id] = true
+		&"heal":
+			if run.echo < MERCHANT_HEAL_PRICE or _event_bought.has(id):
+				return
+			run.echo -= MERCHANT_HEAL_PRICE
+			_event_bought[id] = true
+			var gained := run.heal(MERCHANT_HEAL_SHARE, max_hp())
+			_event_note = "%s　HPが%d回復した" % [_event.display_name, gained]
+			_show_event()
+		&"offer":
+			var cost := altar_cost()
+			if _current_hp() <= cost:
+				return
+			run.hp = maxi(1, _current_hp() - cost)
+			_event_note = "%s　HPを%d捧げた" % [_event.display_name, cost]
+			if not _event_choice(true):
+				_leave_event()
+		&"curse":
+			if _event_curse.is_empty():
+				return
+			run.take_curse(_event_curse)
+			_event_note = "%s　呪い「%s」を受けた" % [_event.display_name, RunState.CURSES[_event_curse][0]]
+			if not _event_choice(true):
+				_leave_event()
+
+
+# The event's boon card; false when no boon is left to offer.
+func _event_choice(ends: bool) -> bool:
+	var offer := run.build.offer(run.rng)
+	if offer.is_empty():
+		return false
+	event_view.hide()
+	_event_card = true
+	_event_ends = ends
+	choice.present_boons(offer, run.build, run.progression.level, 1, "%s　強化を1つ選ぶ" % _event.display_name)
+	return true
+
+
+func _leave_event() -> void:
+	event_view.hide()
+	var note := _event_note
+	_event = null
+	advance(note)
 
 
 # On to the next layer, or the run is won past the last.

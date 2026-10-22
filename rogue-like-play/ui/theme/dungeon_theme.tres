@@ -2112,3 +2112,6 @@ ResultEcho/colors/font_outline_color = Color(0, 0, 0, 0.75)
 ResultEcho/constants/outline_size = 6
 ResultEcho/font_sizes/font_size = 72
 ResultEcho/fonts/font = SubResource("DisplayBoldKana")
+CurseLabel/base_type = &"Label"
+CurseLabel/colors/font_color = Color(0.88, 0.45, 0.4, 1)
+CurseLabel/font_sizes/font_size = 18

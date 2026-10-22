@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AreaData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://world/areas/area_data.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"event_merchant"
+display_name = "行商人"
+kind = 3
+difficulty = 1
+condition = "残響で強化や手当てを買える"
+foe_summary = "灰の回廊を渡り歩く商人。戦闘はない"
+expected_time = 10
+reward_weights = {0: 1.0}
+echo = 0
+event = &"merchant"
+emblem = "echo_lantern"

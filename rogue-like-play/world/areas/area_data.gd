@@ -7,12 +7,13 @@ extends Resource
 # kill_target; an arena sends its waves one after another; a boss hall sends
 # its boss (and any waves beside it) and is won when the boss falls.
 # reward_weights decide which reward a node of it offers, so the kind of
-# area leans the reward without fixing it.
+# area leans the reward without fixing it. An event is a stop without a
+# fight (`event` names what happens there: RunDirector plays it).
 
-enum Kind { FIELD, ARENA, BOSS }
+enum Kind { FIELD, ARENA, BOSS, EVENT }
 enum Reward { BOON, HEAL, ECHO }
 
-const KIND_NAMES := {Kind.FIELD: "フィールド", Kind.ARENA: "アリーナ", Kind.BOSS: "ボス"}
+const KIND_NAMES := {Kind.FIELD: "フィールド", Kind.ARENA: "アリーナ", Kind.BOSS: "ボス", Kind.EVENT: "イベント"}
 const REWARD_NAMES := {Reward.BOON: "強化", Reward.HEAL: "回復", Reward.ECHO: "残響"}
 
 @export var id: StringName
@@ -30,6 +31,12 @@ const REWARD_NAMES := {Reward.BOON: "強化", Reward.HEAL: "回復", Reward.ECHO
 @export var reward_weights: Dictionary = {Reward.BOON: 1.0, Reward.HEAL: 1.0, Reward.ECHO: 1.0}
 # Echo given when an ECHO reward is taken.
 @export_range(0, 10000) var echo := 40
+
+@export_group("Event")
+# What happens at an event: merchant, altar or curse (RunDirector). Its
+# node on the map shows `emblem` instead of a reward.
+@export var event: StringName
+@export var emblem := ""
 
 @export_group("Ground")
 @export var size := Vector2i(40, 28)
@@ -57,7 +64,13 @@ static func reward_name(reward: Reward) -> String:
 	return REWARD_NAMES[reward]
 
 
+func is_event() -> bool:
+	return kind == Kind.EVENT
+
+
 func stars() -> String:
+	if is_event():
+		return ""
 	return "★".repeat(difficulty) + "☆".repeat(3 - difficulty)
 
 

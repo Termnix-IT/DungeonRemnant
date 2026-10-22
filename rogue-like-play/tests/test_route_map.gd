@@ -2,7 +2,7 @@ extends SceneTree
 
 # The route through a chapter and the areas on it: the shape of the map
 # (layers, choices, fields first, no two choices alike, the boss last, the
-# same seed the same map), rewards leaning by the kind of area without being
+# same seed the same map, the events from the second layer on), rewards leaning by the kind of area without being
 # fixed, and each area's data (its ground laid out the same every time and
 # clear in the middle, what the map tells of it, how it is cleared).
 
@@ -36,6 +36,9 @@ func run_tests() -> void:
 	var unique := true
 	var boss_last := true
 	var layers_marked := true
+	var events_later := true
+	var events_seen := 0
+	var one_event := true
 	for seed_value in range(1, 61):
 		var rng := RandomNumberGenerator.new()
 		rng.seed = seed_value
@@ -57,8 +60,14 @@ func run_tests() -> void:
 					fields_first = false
 				if waypoint.layer != layer:
 					layers_marked = false
+				if waypoint.area.is_event():
+					events_seen += 1
+					if layer == 0 or not chapter.events.has(waypoint.area):
+						events_later = false
 				if last != (waypoint.area.kind == AreaData.Kind.BOSS):
 					boss_last = false
+			if waypoints.filter(func(point: RouteMap.Waypoint): return point.area.is_event()).size() > 1:
+				one_event = false
 			if last and waypoints.size() != 1:
 				boss_last = false
 	check(shaped, "Each map has the chapter's layers, each with 2 or 3 choices, and the boss")
@@ -66,6 +75,10 @@ func run_tests() -> void:
 	check(unique, "No two choices of a layer are alike")
 	check(boss_last, "The last layer is the boss alone, and only it")
 	check(layers_marked, "Each waypoint knows its layer")
+	check(events_later and one_event, "Events come from the second layer on, one at most to a layer")
+	check(events_seen > 30, "The chapter's events turn up on its maps")
+	for event: AreaData in chapter.events:
+		check(event.is_event() and event.stars() == "" and not event.event.is_empty() and EmblemIcons.texture(event.emblem) != null, "%s is an event with its own emblem" % event.id)
 	var first := RandomNumberGenerator.new()
 	first.seed = 77
 	var second := RandomNumberGenerator.new()

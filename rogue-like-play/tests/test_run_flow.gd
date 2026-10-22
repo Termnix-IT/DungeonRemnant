@@ -4,7 +4,8 @@ extends SceneTree
 # next after the last is down, the goal on the HUD); a run director's map,
 # entering an area with the run's health, clearing it (the crowd leaves, the
 # gems come in), its reward and the next layer; a fall ending the run; and
-# a run taken through every layer to the boss and won.
+# a run taken through every layer to the boss and won; and the events
+# (the merchant's wares, the altar's price, the cursed stone's bargain).
 
 const FRAME := 1.0 / 60.0
 var failures := 0
@@ -51,6 +52,15 @@ func clear_area(director: RunDirector) -> void:
 	await wait(BattleArea.CLEAR_PAUSE + 0.3)
 	if director.choice.visible:
 		director.choice._select(0)
+	await process_frame
+
+
+# Puts an event on the map's current layer and stops at it, as if picked.
+func stop_at(director: RunDirector, path: String) -> void:
+	var point := RouteMap.Waypoint.new(load(path), AreaData.Reward.BOON, director.run.layer)
+	director.run.route.layers[director.run.layer].append(point)
+	director.show_map()
+	director.enter(point)
 	await process_frame
 
 
@@ -226,6 +236,76 @@ func run_tests() -> void:
 	check(ended.size() == 1 and ended[0].cleared and ended[0].layer == director.run.route.size() - 1, "Clearing the boss wins the run")
 	check(director.run.taken.back().area.kind == AreaData.Kind.BOSS and director.run.areas_cleared == director.run.route.size(), "The last area entered was the boss's")
 	check(ended[0].echo == director.run.echo and ended[0].echo > 0, "The result hands back the echo earned")
+	director.free()
+	await process_frame
+	# The merchant: no fight, a window over the map, wares paid in echo.
+	director = RunDirector.new()
+	director.seed_value = 41
+	root.add_child(director)
+	await process_frame
+	var stop := director.event_view
+	director.run.echo = 100
+	director.run.hp = 40
+	await stop_at(director, "res://data/areas/event_merchant.tres")
+	check(director.area == null and stop.visible and director.map_view.visible and stop.title_label.text == "行商人", "An event opens its window over the map, without a fight")
+	check(stop.ids == [&"boon", &"heal", EventView.LEAVE] and stop.buttons.all(func(button: Button): return not button.disabled), "The merchant offers a boon and a heal, and leaving")
+	stop.buttons[0].pressed.emit()
+	await process_frame
+	check(director.choice.visible and not stop.visible and director.run.echo == 100 - RunDirector.MERCHANT_BOON_PRICE, "A boon is bought for echo, from the cards")
+	var owned := director.run.build.owned().size()
+	director.choice._select(0)
+	await process_frame
+	check(director.run.build.owned().size() == owned + 1 and stop.visible and director.run.layer == 0, "The boon is hers, and the merchant is still there")
+	check(stop.buttons[0].disabled and stop.buttons[1].disabled and stop.buttons[1].tooltip_text.contains("足りない"), "A ware bought or too dear is offered but off, saying why")
+	director.run.echo += RunDirector.MERCHANT_HEAL_PRICE
+	director._show_event()
+	stop.buttons[1].pressed.emit()
+	await process_frame
+	check(director.run.hp == 40 + roundi(director.max_hp() * RunDirector.MERCHANT_HEAL_SHARE) and director.run.echo == 100 - RunDirector.MERCHANT_BOON_PRICE, "Her wounds are tended for echo")
+	stop._unhandled_input(_key(KEY_ESCAPE))
+	await process_frame
+	check(not stop.visible and director.run.layer == 1 and director.map_view.visible and not director.map_view.traveling, "Leaving goes on to the next layer")
+	check(director.map_view._note.text.contains("行商人"), "The map tells what the stop gave")
+
+	# The altar: health for a boon, and the stop is over.
+	director.run.hp = 0
+	await stop_at(director, "res://data/areas/event_altar.tres")
+	check(stop.ids == [&"offer", EventView.LEAVE] and not stop.buttons[0].disabled, "The altar asks for health")
+	director.run.hp = director.altar_cost()
+	director._show_event()
+	check(stop.buttons[0].disabled, "The altar cannot take the last of her health")
+	director.run.hp = 0
+	director._show_event()
+	stop.buttons[0].pressed.emit()
+	await process_frame
+	check(director.run.hp == director.max_hp() - director.altar_cost() and director.choice.visible, "Her health is given, and a boon is chosen")
+	director.choice._select(0)
+	await process_frame
+	check(not stop.visible and director.run.layer == 2, "The altar's boon ends the stop")
+
+	# The cursed stone: a curse for a boon, and more echo from then on.
+	var defense := director.run.tuning.defense
+	var speed := director.run.tuning.max_speed
+	var echo_without := director.run.echo_reward(100)
+	await stop_at(director, "res://data/areas/event_curse.tres")
+	var curse := director._event_curse
+	check(stop.ids == [&"curse", EventView.LEAVE] and stop.buttons[0].text.contains(RunState.CURSES[curse][0]), "The stone names the curse it offers")
+	stop.buttons[0].pressed.emit()
+	await process_frame
+	director.choice._select(0)
+	await process_frame
+	check(director.run.curses == [curse] and not stop.visible and director.run.layer == 3, "The curse is taken with a boon, and the stop ends")
+	check(director.run.echo_reward(100) == echo_without + roundi(100 * RunState.CURSE_ECHO), "A curse raises the echo rewards")
+	check(director.map_view._curses.visible and director.map_view._curses.text.contains(RunState.CURSES[curse][0]), "The map shows the curses she carries")
+	director.run.take_curse(&"frailty")
+	director.run.take_curse(&"sluggish")
+	director.run.take_curse(&"thirst")
+	check(director.run.tuning.defense == defense - RunState.FRAILTY and is_equal_approx(director.run.tuning.max_speed, speed * RunState.SLUGGISH), "Frailty and sluggishness reach her tuning")
+	check(not director.run.take_curse(&"thirst") and director.run.curses_left().is_empty(), "A curse is not taken twice")
+	director.run.hp = 10
+	director.waypoint = director.run.route.nodes(director.run.layer)[0]
+	director.grant(AreaData.Reward.HEAL)
+	check(director.run.hp == 10 + roundi(director.max_hp() * RunDirector.HEAL_SHARE * 0.5), "Thirst halves a heal")
 	director.free()
 	await process_frame
 	print("Run flow tests: %d checks, %d failures" % [checks, failures])

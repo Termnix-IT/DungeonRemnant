@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AreaData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://world/areas/area_data.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"event_curse"
+display_name = "呪いの石碑"
+kind = 3
+difficulty = 1
+condition = "呪いと引き換えに強化と残響を得る"
+foe_summary = "鎖に巻かれた石碑。戦闘はない"
+expected_time = 10
+reward_weights = {0: 1.0}
+echo = 0
+event = &"curse"
+emblem = "seal_skill"

@@ -14,4 +14,8 @@ extends Resource
 # Areas offered per layer, picked between these (inclusive).
 @export var choices := Vector2i(2, 3)
 @export var areas: Array[AreaData] = []
+# Stops without a fight: from the second layer on, a layer offers one of
+# them among its choices this often.
+@export var events: Array[AreaData] = []
+@export_range(0.0, 1.0) var event_chance := 0.5
 @export var boss: AreaData

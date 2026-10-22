@@ -4,7 +4,9 @@ extends RefCounted
 # A run's way through a chapter, laid out when the run begins: a list of
 # layers, each a few nodes to choose between, and the boss alone at the end.
 # A waypoint is an area and the reward it offers, rolled from the area's
-# reward_weights. Any node of a layer leads to any node of the next.
+# reward_weights. From the second layer on, a layer may also offer one of
+# the chapter's events (in place of its last choice when it is full). Any
+# node of a layer leads to any node of the next.
 
 class Waypoint:
 	var area: AreaData
@@ -41,6 +43,12 @@ static func generate(chapter_data: ChapterData, rng: RandomNumberGenerator) -> R
 			if nodes.any(func(other: Waypoint): return other.area == node.area and other.reward == node.reward):
 				continue
 			nodes.append(node)
+		if index > 0 and not chapter_data.events.is_empty() and rng.randf() < chapter_data.event_chance:
+			var stop := Waypoint.new(chapter_data.events[rng.randi_range(0, chapter_data.events.size() - 1)], AreaData.Reward.BOON, index)
+			if nodes.size() >= chapter_data.choices.y:
+				nodes[nodes.size() - 1] = stop
+			else:
+				nodes.append(stop)
 		map.layers.append(nodes)
 	var last: Array[Waypoint] = [Waypoint.new(chapter_data.boss, AreaData.Reward.ECHO, chapter_data.layers)]
 	map.layers.append(last)

@@ -51,6 +51,8 @@ var _title: Label
 var _hp: Label
 var _level: Label
 var _echo: Label
+# The curses she carries, in red beside the echo.
+var _curses: Label
 var _boons: HBoxContainer
 var _note: Label
 var _map: Control
@@ -124,7 +126,9 @@ func _build_status(stack: VBoxContainer) -> void:
 	_hp = HubUI.label(bar, "", &"ValueLabel")
 	_level = HubUI.label(bar, "", &"ValueLabel")
 	_echo = HubUI.label(bar, "", &"GoldLabel")
-	for label: Label in [_title, _hp, _level, _echo]:
+	_curses = HubUI.label(bar, "", &"CurseLabel")
+	_curses.hide()
+	for label: Label in [_title, _hp, _level, _echo, _curses]:
 		label.autowrap_mode = TextServer.AUTOWRAP_OFF
 		label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	HubUI.rule(stack)
@@ -166,6 +170,8 @@ func present(route_map: RouteMap, at_layer: int, run: RunState, max_hp: int, not
 	_hp.text = "HP %d / %d" % [hp, max_hp]
 	_level.text = "Lv %d" % run.progression.level
 	_echo.text = "残響 %s" % UIFormat.amount(run.echo)
+	_curses.text = "呪い：%s" % run.curse_names()
+	_curses.visible = not run.curses.is_empty()
 	_show_boons(run)
 	_note.text = note
 	_note.visible = not note.is_empty()
@@ -322,11 +328,18 @@ func _show_detail(point: RouteMap.Waypoint) -> void:
 		return
 	var area := shown.area
 	_detail_name.text = area.display_name
-	_detail_kind.text = "%s　%s　目安 %d分%02d秒" % [area.kind_name(), area.stars(), area.expected_time / 60, area.expected_time % 60]
-	_detail_reward.text = "報酬：%s" % AreaData.reward_name(shown.reward)
-	_detail_goal.text = area.condition
-	_detail_foes.text = area.foe_summary
+	if area.is_event():
+		_detail_kind.text = "イベント　戦闘なし"
+		_detail_reward.text = area.condition
+		_detail_goal.text = area.foe_summary
+		_detail_foes.text = ""
+	else:
+		_detail_kind.text = "%s　%s　目安 %d分%02d秒" % [area.kind_name(), area.stars(), area.expected_time / 60, area.expected_time % 60]
+		_detail_reward.text = "報酬：%s" % AreaData.reward_name(shown.reward)
+		_detail_goal.text = area.condition
+		_detail_foes.text = area.foe_summary
 	_enter.disabled = not current.has(shown)
+	_enter.text = "ここに立ち寄る" if area.is_event() else "このエリアへ進む"
 
 
 func _on_node_pressed(point: RouteMap.Waypoint) -> void:
@@ -353,7 +366,10 @@ func pick(waypoint: RouteMap.Waypoint) -> void:
 		prompt.canceled.connect(_on_stay)
 	asked = waypoint
 	var area := waypoint.area
-	prompt.ask("%s　%s" % [area.kind_name(), area.stars()], "「%s」に進みますか？" % area.display_name, "報酬：%s　%s" % [AreaData.reward_name(waypoint.reward), area.condition], "進む", "やめる")
+	if area.is_event():
+		prompt.ask(area.kind_name(), "「%s」に立ち寄りますか？" % area.display_name, area.condition, "立ち寄る", "やめる")
+	else:
+		prompt.ask("%s　%s" % [area.kind_name(), area.stars()], "「%s」に進みますか？" % area.display_name, "報酬：%s　%s" % [AreaData.reward_name(waypoint.reward), area.condition], "進む", "やめる")
 
 
 func _on_go() -> void:
@@ -385,6 +401,13 @@ func travel(waypoint: RouteMap.Waypoint) -> void:
 		GameAudio.play(self, &"confirm", -16.0))
 	journey.tween_interval(ARRIVE_TIME)
 	journey.tween_callback(_choose.bind(waypoint))
+
+
+# Kept behind an event's window: shown where her token stopped, taking no
+# pick until the map is presented again.
+func hold() -> void:
+	show()
+	traveling = true
 
 
 # The pick taken at once (tests, and the end of a token's journey).

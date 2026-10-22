@@ -12,6 +12,16 @@ extends RefCounted
 # new RunState.
 
 const LEVELS := preload("res://data/progression/action_levels.tres")
+# The curses a cursed stone lays on her: [name, what it does]. Each one taken
+# also raises the run's echo rewards by CURSE_ECHO of themselves.
+const CURSES := {
+	&"frailty": ["脆さ", "受けるダメージが2増える"],
+	&"sluggish": ["鈍足", "移動速度が12%落ちる"],
+	&"thirst": ["渇き", "回復の報酬が半分になる"],
+}
+const CURSE_ECHO := 0.5
+const FRAILTY := 2
+const SLUGGISH := 0.88
 const HERO := preload("res://data/hero/mio.tres")
 const BOONS: Array[BoonData] = [
 	preload("res://data/boons/thunder_blade.tres"),
@@ -59,6 +69,8 @@ var lasting: Dictionary = {}
 var skills: Array = []
 var rerolls_left := 0
 var last_stands := 0
+# Curses taken at a cursed stone (CURSES' ids), kept to the run's end.
+var curses: Array[StringName] = []
 # Experience owed from exp_rate below a whole point, kept for the next gem.
 var _exp_carry := 0.0
 
@@ -118,9 +130,36 @@ func reroll() -> Array[BoonData]:
 	return build.offer(rng, offer_count())
 
 
-# An area's echo reward, with the echo_rate held.
+# An area's echo reward, with the echo_rate held and each curse's share.
 func echo_reward(amount: int) -> int:
-	return roundi(amount * (1.0 + rule(&"echo_rate")))
+	return roundi(amount * (1.0 + rule(&"echo_rate") + CURSE_ECHO * curses.size()))
+
+
+# Lays a curse on her, if she does not carry it yet: its harm reaches her
+# tuning at once (the areas ahead spawn her with it).
+func take_curse(id: StringName) -> bool:
+	if not CURSES.has(id) or curses.has(id):
+		return false
+	curses.append(id)
+	match id:
+		&"frailty":
+			tuning.defense -= FRAILTY
+		&"sluggish":
+			tuning.max_speed *= SLUGGISH
+	return true
+
+
+# The curses she does not carry yet.
+func curses_left() -> Array[StringName]:
+	var left: Array[StringName] = []
+	for id: StringName in CURSES:
+		if not curses.has(id):
+			left.append(id)
+	return left
+
+
+func curse_names() -> String:
+	return "・".join(curses.map(func(id: StringName) -> String: return CURSES[id][0]))
 
 
 # Heals a share of `max_hp`, up to it.
