@@ -263,8 +263,13 @@ func _build_help() -> void:
 		row.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		row.custom_minimum_size.y = 56
 		row.focus_entered.connect(select_topic.bind(index))
-		# As in the lobby, resting the pointer on a topic chooses it.
+		# As in the lobby, resting the pointer on a topic chooses it: read from
+		# the pointer moving over the row, so a pointer already there when the
+		# window opened, or an entry that went unreported, still counts.
 		row.mouse_entered.connect(_hover_topic_row.bind(index))
+		row.gui_input.connect(func(event: InputEvent):
+			if event is InputEventMouseMotion and _hover_topic != index:
+				_hover_topic_row(index))
 		row.mouse_exited.connect(func():
 			if _hover_topic == index:
 				_hover_topic = -1)
@@ -329,8 +334,9 @@ func select_topic(index: int) -> void:
 func _hover_topic_row(index: int) -> void:
 	_hover_topic = index
 	await get_tree().create_timer(HubLobby.HOVER_INTENT).timeout
-	if _hover_topic == index and help_shown:
+	if _hover_topic == index and help_shown and selected_topic != index:
 		topic_buttons[index].grab_focus()
+		select_topic(index)
 
 
 func _draw_topic_band() -> void:

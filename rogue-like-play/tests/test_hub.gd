@@ -97,6 +97,11 @@ func run_tests() -> void:
 	settings_page.topic_buttons[HubSettings.TOPIC_CODEX].mouse_entered.emit()
 	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
 	check(settings_page.selected_topic == HubSettings.TOPIC_CODEX and settings_page.topic_buttons[HubSettings.TOPIC_CODEX].has_focus() and settings_page.help_title.text == HubSettings.HELP[HubSettings.TOPIC_CODEX][0], "Pointing at a help topic moves the choice there")
+	# The pointer moving over a row counts too, with no entry reported.
+	var moved := InputEventMouseMotion.new()
+	settings_page.topic_buttons[HubSettings.TOPIC_CONTROLS].gui_input.emit(moved)
+	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
+	check(settings_page.selected_topic == HubSettings.TOPIC_CONTROLS and settings_page.help_title.text == HubSettings.HELP[HubSettings.TOPIC_CONTROLS][0], "Moving the pointer over a topic chooses it even when its entry went unreported")
 	settings_page.close_help()
 	check(not settings_page.help_layer.visible and settings_page.help_button.has_focus(), "Closing the help returns to the settings")
 	hub.show_page("home")
