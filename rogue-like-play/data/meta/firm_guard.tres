@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"firm_guard"
+display_name = "堅い守り"
+description = "受けるダメージが1減る"
+costs = Array[int]([200, 360])
+effect = &"defense"
+per_rank = 1.0
+emblem = "firm_guard"
+branch = &"body"
+parent = &"sturdy_body"
+cell = Vector2i(-3, -1)
+figure = "受けるダメージ -%s"
+figure_base = 0.0
+figure_scale = 1.0

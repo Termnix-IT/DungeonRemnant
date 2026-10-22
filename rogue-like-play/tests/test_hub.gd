@@ -34,6 +34,14 @@ func make_main(echo: int, save_path: String = "") -> Node:
 	return main
 
 
+func key(code: Key, pressed: bool = true) -> InputEventKey:
+	var event := InputEventKey.new()
+	event.keycode = code
+	event.physical_keycode = code
+	event.pressed = pressed
+	return event
+
+
 func run_tests() -> void:
 	folder = "res://.godot/hub-test-%d" % Time.get_ticks_usec()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
@@ -159,20 +167,60 @@ func run_tests() -> void:
 	check(main.meta.echo == 200 and hub.echo_label.text == "200", "The saved echo is read at the start")
 	hub.show_page("upgrade")
 	var page: MetaUpgradePage = hub.upgrade_page
-	page.buttons[0].pressed.emit()
-	check(main.meta.rank(&"sturdy_body") == 1 and main.meta.echo == 120 and hub.echo_label.text == "120", "Pressing an upgrade's button buys its rank")
-	check(page.rank_labels[0].text == "段階 1 / 3" and hub.feedback.text.contains("鍛えた体"), "The page and the note show the purchase")
-	page.buttons[2].grab_focus()
+	check(page.selected == MetaProgress.ROOT and (page.nodes[MetaProgress.ROOT] as Button).has_focus(), "The tree opens on its root")
+	check(page.nodes.size() == MetaProgress.UPGRADES.size() + MetaUpgradePage.SEALS.size(), "Every upgrade and every sealed branch has its node")
+	page.buy_button.pressed.emit()
+	check(main.meta.rank(MetaProgress.ROOT) == 1 and main.meta.echo == 150 and hub.echo_label.text == "150", "Pressing the column's button buys the chosen node")
+	check(page.buy_button.text == "習得済み" and page.buy_button.disabled and hub.feedback.text.contains("残響の灯"), "The column and the note show the purchase")
+	# Moving the focus: left from the root to the body's branch.
+	root.push_input(key(KEY_LEFT))
 	await process_frame
-	check(page._cards[2].theme_type_variation == &"CardSurfaceActive" and page._cards[0].theme_type_variation == &"CardSurface", "The focused upgrade's whole row shows the focus")
-	page.buttons[1].pressed.emit()
-	check(main.meta.rank(&"double_dash") == 0 and main.meta.echo == 120, "One the echo cannot pay for is refused")
+	check(page.selected == &"sturdy_body" and page.name_label.text == "鍛えた体" and page.rank_label.text.contains("段階 0 / 3"), "Left goes to the body's branch and the column tells it")
+	check(page.figure_label.text == "習得すると　最大HP 115", "The column tells what the first rank gives")
+	root.push_input(key(KEY_ENTER))
+	root.push_input(key(KEY_ENTER, false))
+	await process_frame
+	check(main.meta.rank(&"sturdy_body") == 1 and main.meta.echo == 70 and page.figure_label.text == "最大HP 115 → 130", "Enter on a node buys it, and the figure tells the next rank")
+	root.push_input(key(KEY_DOWN))
+	await process_frame
+	check(page.selected == &"double_dash" and page.buy_button.disabled and page.buy_button.tooltip_text.contains("足りない"), "Down goes along the branch to one the echo cannot pay for")
+	root.push_input(key(KEY_ENTER))
+	root.push_input(key(KEY_ENTER, false))
+	await process_frame
+	check(main.meta.rank(&"double_dash") == 0 and main.meta.echo == 70, "One the echo cannot pay for is refused")
+	(page.nodes[&"skill"] as Button).grab_focus()
+	check(not page.buy_button.visible and page.description_label.text == MetaUpgradePage.SEAL_NOTE, "A sealed branch tells it is not open and offers nothing")
+	root.push_input(key(KEY_C))
+	await process_frame
+	check(page.selected == MetaProgress.ROOT, "C brings the root back")
+	# The pointer: resting on a node chooses it; a press that moves drags the board.
+	var motion := InputEventMouseMotion.new()
+	motion.position = page.canvas.position + page._centers[&"parting_blessing"]
+	page.board.gui_input.emit(motion)
+	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
+	check(page.selected == &"parting_blessing", "Resting the pointer on a node chooses it")
+	var before: Vector2 = page.canvas.position
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	press.position = page.canvas.position + page._centers[MetaProgress.ROOT]
+	page.board.gui_input.emit(press)
+	var drag := InputEventMouseMotion.new()
+	drag.button_mask = MOUSE_BUTTON_MASK_LEFT
+	drag.position = press.position + Vector2(40, 0)
+	drag.relative = Vector2(40, 0)
+	page.board.gui_input.emit(drag)
+	var release := press.duplicate()
+	release.pressed = false
+	release.position = drag.position
+	page.board.gui_input.emit(release)
+	check(page.canvas.position.x > before.x and page.selected == &"parting_blessing", "A drag moves the board and chooses nothing")
 	main.free()
 	await process_frame
 	var reader := MetaStore.new()
 	reader.path = path
 	var read_back := reader.load_progress()
-	check(read_back.rank(&"sturdy_body") == 1 and read_back.echo == 120, "The purchase is still there after a restart")
+	check(read_back.rank(&"sturdy_body") == 1 and read_back.rank(MetaProgress.ROOT) == 1 and read_back.echo == 70, "The purchases are still there after a restart")
 
 	# An unreadable save: an alert, and saving stopped.
 	var broken := folder + "/broken.json"

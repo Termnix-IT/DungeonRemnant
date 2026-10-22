@@ -25,7 +25,9 @@ func capture() -> void:
 	main.saving_enabled = false
 	main.run_seed = 6
 	main.meta.echo = 240
+	main.meta.ranks["echo_lantern"] = 1
 	main.meta.ranks["sturdy_body"] = 1
+	main.meta.ranks["double_dash"] = 1
 	main.meta.runs = 3
 	main.meta.best_layer = 2
 	main.meta.met[&"wandering_sentinel"] = true
@@ -43,6 +45,12 @@ func capture() -> void:
 			await _grab("hub_%s_%d" % [page, size.x])
 	DisplayServer.window_set_size(SIZES[0])
 	root.size = SIZES[0]
+	# The upgrade tree followed out to a branch's end, the root's side out of sight.
+	hub.show_page("upgrade")
+	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
+	(hub.upgrade_page.nodes[&"last_stand"] as Button).grab_focus()
+	await create_timer(MetaUpgradePage.FOLLOW_TIME + 0.3).timeout
+	await _grab("hub_upgrade_far_1600")
 	# A new account sliding into the encyclopedia's column, mid-way.
 	hub.show_page("codex")
 	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout

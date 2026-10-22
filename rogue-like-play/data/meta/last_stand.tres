@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"last_stand"
+display_name = "不屈"
+description = "1ランに1度、倒れるはずの攻撃をHP1で耐え、1秒無敵になる"
+costs = Array[int]([600])
+effect = &"last_stand"
+per_rank = 1.0
+emblem = "last_stand"
+branch = &"body"
+parent = &"steady_recovery"
+cell = Vector2i(-5, -1)
+figure = ""
+figure_base = 0.0
+figure_scale = 1.0

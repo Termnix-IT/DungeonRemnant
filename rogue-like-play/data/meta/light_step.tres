@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"light_step"
+display_name = "軽い足取り"
+description = "移動速度が5%上がる"
+costs = Array[int]([150, 250])
+effect = &"move_speed"
+per_rank = 0.05
+emblem = "light_step"
+branch = &"body"
+parent = &"double_dash"
+cell = Vector2i(-3, 2)
+figure = "移動速度 +%s%%"
+figure_base = 0.0
+figure_scale = 100.0

@@ -1,14 +1,20 @@
 extends CanvasLayer
 
 signal selected(id: StringName)
+# The cards on offer are to be drawn again (the owner spends a reroll and
+# presents the new ones).
+signal reroll_requested
 
 const GameAudio := preload("res://audio/game_audio.gd")
 # Focus (and so Enter / gamepad A) arrives a beat after opening, so a
 # confirm pressed for the attack that levelled up cannot pick a card.
-# Mouse and the 1-3 keys work immediately. On a gamepad the D-pad or the
+# Mouse and the number keys work immediately. On a gamepad the D-pad or the
 # left stick moves between the cards (round from the last to the first) and
 # A takes the focused one; with no card focused, a direction focuses one.
+# Three cards, or four with the lasting upgrade; with rerolls left, R (Y)
+# asks for the cards to be drawn again.
 const FOCUS_DELAY := 0.3
+const PICK_KEYS: Array[Key] = [KEY_1, KEY_2, KEY_3, KEY_4]
 
 var offers: Array[BoonData] = []
 var _levels: Array[int] = []
@@ -18,9 +24,11 @@ var cards: Array[AbilityCard] = []
 var afterglow: CanvasLayer
 var key_guide: KeyGuide
 var pick_hint: Button
+var reroll_hint: Button
+var rerolls := 0
 @onready var panel: PanelContainer = $Panel
 @onready var shade: ColorRect = $Shade
-@onready var buttons: Array[Button] = [$Panel/Margin/Stack/Choices/First, $Panel/Margin/Stack/Choices/Second, $Panel/Margin/Stack/Choices/Third]
+@onready var buttons: Array[Button] = [$Panel/Margin/Stack/Choices/First, $Panel/Margin/Stack/Choices/Second, $Panel/Margin/Stack/Choices/Third, $Panel/Margin/Stack/Choices/Fourth]
 
 
 func _ready() -> void:
@@ -32,6 +40,8 @@ func _ready() -> void:
 	$Panel/Margin/Stack.add_child(key_guide)
 	key_guide.add_hint("← / →", "◀ / ▶", "カード")
 	pick_hint = key_guide.add_hint("1・2・3", "A", "選ぶ")
+	reroll_hint = key_guide.add_hint("R", "Y", "", _reroll)
+	reroll_hint.hide()
 	for index in buttons.size():
 		var card := AbilityCard.new()
 		buttons[index].add_child(card)
@@ -45,11 +55,15 @@ func _ready() -> void:
 		buttons[index].focus_exited.connect(_hover.bind(index, false))
 
 
-# A level-up's boons, at the ranks the build holds. `title` replaces the level-up title (an area's reward).
-func present_boons(candidates: Array[BoonData], build: BuildState, level: int, pending: int, title: String = "") -> void:
+# A level-up's boons, at the ranks the build holds. `title` replaces the
+# level-up title (an area's reward); `rerolls_left` above 0 offers a reroll.
+func present_boons(candidates: Array[BoonData], build: BuildState, level: int, pending: int, title: String = "", rerolls_left: int = 0) -> void:
 	var levels: Array[int] = []
 	for boon in candidates:
 		levels.append(build.rank(boon.id))
+	rerolls = rerolls_left
+	reroll_hint.text = "引き直す（残り%d）" % rerolls
+	reroll_hint.visible = rerolls > 0
 	_open(candidates, levels, level, pending)
 	if not title.is_empty():
 		$Panel/Margin/Stack/Title.text = title
@@ -110,6 +124,11 @@ func _hover(index: int, value: bool) -> void:
 		return
 	cards[index].hovered = value
 	UIMotion.of(cards[index]).lift(value)
+
+
+func _reroll() -> void:
+	if visible and rerolls > 0:
+		reroll_requested.emit()
 
 
 func _select(index: int) -> void:
@@ -180,11 +199,19 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
-		var index: int = [KEY_1, KEY_2, KEY_3].find(event.physical_keycode)
+		var index: int = PICK_KEYS.find(event.physical_keycode)
 		if index >= 0:
 			get_viewport().set_input_as_handled()
 			_select(index)
 			return
+		if event.physical_keycode == KEY_R and rerolls > 0:
+			get_viewport().set_input_as_handled()
+			_reroll()
+			return
+	if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_Y and rerolls > 0:
+		get_viewport().set_input_as_handled()
+		_reroll()
+		return
 	# A focused card already moved with the direction; this is the case with
 	# none focused (the pointer took it away, or the opening beat has passed
 	# without one): the direction picks up from the nearest end.

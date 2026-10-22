@@ -80,6 +80,38 @@ func run_tests() -> void:
 	arena.free()
 	await process_frame
 
+	# A level-up under every lasting upgrade: the gems' pull and the last
+	# stand come in, four cards and a reroll are offered, the boon taken
+	# heals her, and as the fight resumes a burst throws the crowd back, a
+	# shield holds and her swings quicken.
+	var full := MetaProgress.new()
+	for upgrade in MetaProgress.UPGRADES:
+		full.ranks[String(upgrade.id)] = upgrade.max_rank()
+	var lasting_run := RunState.new(7)
+	lasting_run.use_lasting(full.lasting())
+	var lifted := BattleArea.new()
+	lifted.setup(arena_data, lasting_run, 7)
+	root.add_child(lifted)
+	await process_frame
+	lifted.hero.controlled = false
+	check(lifted.gems.pull_radius == GemField.PULL_RADIUS + 40.0 and lifted.hero.health.last_stands == 1, "The gems' pull widens and her last stand comes with her")
+	var near_foe := lifted.spawn_foe(load("res://data/foes/wandering_sentinel.tres"), lifted.hero.global_position + Vector2(120, 0))
+	var foe_hp := near_foe.health.hp
+	lifted.hero.health.hp = 10
+	lifted._on_gems(lasting_run.progression.required_exp())
+	check(lifted.choosing() and lifted.choice.offers.size() == 4 and lifted.choice.reroll_hint.visible, "A level-up offers four cards and a reroll")
+	lifted.choice._reroll()
+	check(lasting_run.rerolls_left == 1 and lifted.choice.visible and lifted.choice.offers.size() == 4 and lifted.choice.reroll_hint.text.contains("残り1"), "A reroll draws again and counts down")
+	lifted.choice._select(0)
+	await process_frame
+	check(not lifted.choosing() and lifted.hero.health.hp == 10 + roundi(lifted.hero.health.max_hp * 0.1), "The boon taken heals her")
+	check(near_foe.health.hp < foe_hp, "The fight resumes with a burst around her")
+	check(lifted.hero.health.protected() and lasting_run.build._boosts.size() == 1, "A shield holds and her swings quicken")
+	lifted.hit_stop.release()
+	await process_frame
+	lifted.free()
+	await process_frame
+
 	# The director: the map, an area entered, cleared, rewarded, the next layer.
 	var director := RunDirector.new()
 	director.seed_value = 12

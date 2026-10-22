@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"rising_burst"
+display_name = "光の衝撃"
+description = "強化を取って戦闘に戻る瞬間、周りの敵に攻撃力の2倍の衝撃を与えて押し返す"
+costs = Array[int]([220, 360])
+effect = &"level_burst"
+per_rank = 40.0
+emblem = "rising_burst"
+branch = &"growth"
+parent = &"rising_heal"
+cell = Vector2i(4, 1)
+figure = "衝撃の半径 %spx"
+figure_base = 120.0
+figure_scale = 1.0

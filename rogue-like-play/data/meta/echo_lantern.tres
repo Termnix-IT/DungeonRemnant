@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"echo_lantern"
+display_name = "残響の灯"
+description = "報酬で得る残響が10%増える"
+costs = Array[int]([50])
+effect = &"echo_rate"
+per_rank = 0.1
+emblem = "echo_lantern"
+branch = &""
+parent = &""
+cell = Vector2i(0, 0)
+figure = "報酬の残響 +%s%%"
+figure_base = 0.0
+figure_scale = 100.0

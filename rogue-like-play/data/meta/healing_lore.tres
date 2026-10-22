@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"healing_lore"
+display_name = "治癒の心得"
+description = "回復の報酬で戻るHPが最大HPの5%分増える"
+costs = Array[int]([180, 300])
+effect = &"heal_share"
+per_rank = 0.05
+emblem = "healing_lore"
+branch = &"body"
+parent = &"firm_guard"
+cell = Vector2i(-3, -2)
+figure = "回復の報酬 最大HPの%s%%"
+figure_base = 0.35
+figure_scale = 100.0

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"rising_ward"
+display_name = "光の加護"
+description = "強化を取って戦闘に戻ってから1.5秒、無敵になる"
+costs = Array[int]([260])
+effect = &"level_ward"
+per_rank = 1.5
+emblem = "rising_ward"
+branch = &"growth"
+parent = &"rising_heal"
+cell = Vector2i(3, 2)
+figure = ""
+figure_base = 0.0
+figure_scale = 1.0

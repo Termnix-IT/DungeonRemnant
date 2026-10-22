@@ -7,7 +7,9 @@ extends RefCounted
 # old prices, kept here so they outlive the old game's data), become echo at
 # ECHO_PER_GOLD; its items and floors have nothing to become and are left
 # behind (the old file itself is kept beside the new one by MetaStore). The
-# old monsters met carry over where a new foe wears the same picture.
+# old monsters met carry over where a new foe wears the same picture. A
+# version 5 save from before the upgrade tree had its root is given the root,
+# so the upgrades it holds keep growing.
 
 const VERSION := 5
 const MAX_COUNT := 1000000
@@ -71,6 +73,9 @@ static func decode(data: Variant) -> MetaProgress:
 		if not id is String or upgrade == null or not integer(ranks[id], 0, upgrade.max_rank()):
 			return null
 		meta.ranks[id] = int(ranks[id])
+	# Saved before the tree had its root: what was bought grows from it.
+	if meta.rank(MetaProgress.ROOT) == 0 and meta.ranks.values().any(func(held: int): return held > 0):
+		meta.ranks[String(MetaProgress.ROOT)] = 1
 	if not _read_met(data.get("met", []), meta, {}):
 		return null
 	return meta

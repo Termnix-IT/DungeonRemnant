@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"gem_magnet"
+display_name = "引き寄せ"
+description = "宝石を吸い寄せる範囲が20px広がる"
+costs = Array[int]([120, 200])
+effect = &"gem_pull"
+per_rank = 20.0
+emblem = "gem_magnet"
+branch = &"body"
+parent = &"light_step"
+cell = Vector2i(-4, 2)
+figure = "宝石を吸い寄せる範囲 %spx"
+figure_base = 110.0
+figure_scale = 1.0

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"rising_heal"
+display_name = "光の癒やし"
+description = "レベルアップで強化を取るたびに、最大HPの5%を回復する"
+costs = Array[int]([150, 260])
+effect = &"level_heal"
+per_rank = 0.05
+emblem = "rising_heal"
+branch = &"growth"
+parent = &"parting_blessing"
+cell = Vector2i(3, 1)
+figure = "レベルアップで回復 最大HPの%s%%"
+figure_base = 0.0
+figure_scale = 100.0

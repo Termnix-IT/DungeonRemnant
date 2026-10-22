@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"rising_haste"
+display_name = "高揚"
+description = "強化を取ってから10秒、攻撃の振りが15%速くなる"
+costs = Array[int]([400])
+effect = &"level_haste"
+per_rank = 0.15
+emblem = "rising_haste"
+branch = &"growth"
+parent = &"rising_burst"
+cell = Vector2i(5, 1)
+figure = ""
+figure_base = 0.0
+figure_scale = 1.0

@@ -39,7 +39,7 @@ func run_tests() -> void:
 	hub.refresh(main.meta)
 	hub.show_page("upgrade")
 	var page: MetaUpgradePage = hub.upgrade_page
-	var button: Button = page.buttons[0]
+	var button: Button = page.buy_button
 	var motion := UIMotion.of(button)
 	await settle()
 	var position_before := button.position
@@ -90,6 +90,7 @@ func run_tests() -> void:
 	button.mouse_exited.emit()
 
 	# A purchase: shown after it is made, with the echo it cost.
+	main.meta.ranks[String(MetaProgress.ROOT)] = 1
 	check(main.buy_upgrade(&"sturdy_body"), "A purchase goes through without waiting on motion")
 	var cost: int = MetaProgress.find(&"sturdy_body").costs[0]
 	check(main.meta.echo == 1000 - cost and hub.echo_label.text == UIFormat.amount(1000 - cost), "Echo and its text change at once")

@@ -10,7 +10,8 @@ extends Node
 # run (RunEndView, and `finished` with the result, which the base records
 # in its MetaProgress). Given the
 # base's MetaProgress, the run starts with its lasting upgrades: her
-# tuning, and with the parting blessing a boon chosen before the map.
+# tuning, the rules they give (RunState.lasting), and with the parting
+# blessing a boon chosen before the map.
 
 signal finished(result: Dictionary)
 # The result's way home was taken (only when returns_to_base).
@@ -49,6 +50,7 @@ func _ready() -> void:
 	run = RunState.new(seed_value)
 	if meta != null:
 		run.tuning = meta.tuning(run.tuning)
+		run.use_lasting(meta.lasting())
 	run.route = RouteMap.generate(chapter, run.rng)
 	map_view = RouteMapView.new()
 	add_child(map_view)
@@ -117,11 +119,12 @@ func grant(reward: AreaData.Reward) -> void:
 			_rewarding = true
 			choice.present_boons(offer, run.build, run.progression.level, 1, "報酬　強化を1つ選ぶ")
 		AreaData.Reward.HEAL:
-			var gained := run.heal(HEAL_SHARE, max_hp())
+			var gained := run.heal(HEAL_SHARE + run.rule(&"heal_share"), max_hp())
 			advance("報酬　HPが%d回復した" % gained if gained > 0 else "報酬　回復（HPはすでに満タン）")
 		AreaData.Reward.ECHO:
-			run.echo += waypoint.area.echo
-			advance("報酬　残響を%d得た" % waypoint.area.echo)
+			var echo := run.echo_reward(waypoint.area.echo)
+			run.echo += echo
+			advance("報酬　残響を%d得た" % echo)
 
 
 func _on_reward_chosen(id: StringName) -> void:

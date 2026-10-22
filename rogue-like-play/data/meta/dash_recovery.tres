@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"dash_recovery"
+display_name = "素早い立ち直り"
+description = "ダッシュの再使用時間が0.05秒縮む"
+costs = Array[int]([200, 320])
+effect = &"dash_cooldown"
+per_rank = -0.05
+emblem = "dash_recovery"
+branch = &"body"
+parent = &"double_dash"
+cell = Vector2i(-4, 1)
+figure = "ダッシュの再使用 %s秒"
+figure_base = 0.45
+figure_scale = 1.0

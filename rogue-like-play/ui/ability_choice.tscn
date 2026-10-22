@@ -54,3 +54,9 @@ layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"AbilityCardButton"
 flat = true
+[node name="Fourth" type="Button" parent="Panel/Margin/Stack/Choices"]
+custom_minimum_size = Vector2(272, 364)
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"AbilityCardButton"
+flat = true

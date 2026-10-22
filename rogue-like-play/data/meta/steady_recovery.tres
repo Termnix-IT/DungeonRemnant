@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"steady_recovery"
+display_name = "立て直し"
+description = "被弾後の無敵が0.2秒延びる"
+costs = Array[int]([240])
+effect = &"hurt_mercy"
+per_rank = 0.2
+emblem = "steady_recovery"
+branch = &"body"
+parent = &"firm_guard"
+cell = Vector2i(-4, -1)
+figure = "被弾後の無敵 %s秒"
+figure_base = 0.8
+figure_scale = 1.0

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"fourth_card"
+display_name = "四枚目の札"
+description = "レベルアップのカードが4枚になる"
+costs = Array[int]([500])
+effect = &"offer_count"
+per_rank = 1.0
+emblem = "fourth_card"
+branch = &"growth"
+parent = &"reroll"
+cell = Vector2i(5, -1)
+figure = "レベルアップのカード %s枚"
+figure_base = 3.0
+figure_scale = 1.0

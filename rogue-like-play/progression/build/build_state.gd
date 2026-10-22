@@ -4,7 +4,8 @@ extends RefCounted
 # The run's build: the boons taken and their ranks. It offers the next
 # choice, adds up the stats, shapes each swing as it starts (AttackBoon and
 # attack_speed), and, bound to a CombatArea, answers its events with the
-# TriggerBoons. A new run starts a new BuildState, so nothing carries over.
+# TriggerBoons. A stat can also be raised for a while (boost). A new run
+# starts a new BuildState, so nothing carries over.
 
 signal changed
 
@@ -20,6 +21,8 @@ var area: CombatArea
 var hero: Hero
 # TriggerBoon -> seconds until it may fire again.
 var _resting: Dictionary = {}
+# [stat, amount, seconds left] raised for a while.
+var _boosts: Array = []
 var _fire_frame := -1
 var _fired := 0
 
@@ -88,6 +91,9 @@ func take(boon: BoonData) -> bool:
 
 func stat(name: StringName) -> float:
 	var total := 0.0
+	for boost: Array in _boosts:
+		if boost[0] == name:
+			total += boost[1]
 	for boon in owned():
 		for effect in boon.effects:
 			total += effect.stat(name, rank(boon.id))
@@ -127,7 +133,15 @@ func bind(combat_area: CombatArea, owner_hero: Hero) -> void:
 	events.skill_used.connect(func(_attack: AttackData): _answer(TriggerBoon.On.SKILL, null))
 
 
+# Raises a stat by `amount` for `seconds` of the fight.
+func boost(name: StringName, amount: float, seconds: float) -> void:
+	_boosts.append([name, amount, seconds])
+
+
 func step(delta: float) -> void:
+	for boost: Array in _boosts:
+		boost[2] -= delta
+	_boosts = _boosts.filter(func(boost: Array): return boost[2] > 0.0)
 	for trigger: TriggerBoon in _resting.keys():
 		_resting[trigger] -= delta
 		if _resting[trigger] <= 0.0:

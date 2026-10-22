@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"reroll"
+display_name = "引き直し"
+description = "レベルアップのカードを1ランに1回引き直せる"
+costs = Array[int]([180, 300])
+effect = &"reroll"
+per_rank = 1.0
+emblem = "reroll"
+branch = &"growth"
+parent = &"quick_study"
+cell = Vector2i(4, -1)
+figure = "引き直し 1ランに%s回"
+figure_base = 0.0
+figure_scale = 1.0

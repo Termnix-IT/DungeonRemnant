@@ -2,17 +2,40 @@ class_name MetaProgress
 extends RefCounted
 
 # What lasts between real-time runs: the echo held (the base's currency,
-# earned in runs), the ranks of the lasting upgrades (MetaUpgrade), the
-# record of runs, and the foes ever met (for the encyclopedia). A run is
-# shaped by it at its start (tuning, starts_with_boon) and hands its result
-# back at its end (record_run). Saved by MetaStore.
+# earned in runs), the ranks of the lasting upgrades (MetaUpgrade, a tree
+# grown from ROOT: one can be bought once the upgrade it grows from holds a
+# rank), the record of runs, and the foes ever met (for the encyclopedia).
+# A run is shaped by it at its start (tuning, lasting, starts_with_boon) and
+# hands its result back at its end (record_run). Saved by MetaStore.
 
+const ROOT := &"echo_lantern"
 const UPGRADES: Array[MetaUpgrade] = [
+	preload("res://data/meta/echo_lantern.tres"),
 	preload("res://data/meta/sturdy_body.tres"),
+	preload("res://data/meta/firm_guard.tres"),
+	preload("res://data/meta/steady_recovery.tres"),
+	preload("res://data/meta/last_stand.tres"),
+	preload("res://data/meta/healing_lore.tres"),
 	preload("res://data/meta/double_dash.tres"),
+	preload("res://data/meta/dash_recovery.tres"),
+	preload("res://data/meta/triple_dash.tres"),
+	preload("res://data/meta/light_step.tres"),
+	preload("res://data/meta/gem_magnet.tres"),
 	preload("res://data/meta/parting_blessing.tres"),
+	preload("res://data/meta/quick_study.tres"),
+	preload("res://data/meta/reroll.tres"),
+	preload("res://data/meta/fourth_card.tres"),
+	preload("res://data/meta/rising_heal.tres"),
+	preload("res://data/meta/rising_burst.tres"),
+	preload("res://data/meta/rising_ward.tres"),
+	preload("res://data/meta/rising_haste.tres"),
 ]
 const MAX_ECHO := 1000000000
+# Effects a run reads as rules (RunState.lasting) rather than as her tuning.
+const RUN_EFFECTS: Array[StringName] = [&"echo_rate", &"last_stand", &"heal_share", &"gem_pull", &"exp_rate",
+	&"reroll", &"offer_count", &"level_heal", &"level_burst", &"level_ward", &"level_haste"]
+# The dash never comes back quicker than this, whatever is held.
+const MIN_DASH_COOLDOWN := 0.1
 
 var echo := 0
 # Upgrade id -> rank.
@@ -36,9 +59,15 @@ func rank(id: StringName) -> int:
 	return int(ranks.get(String(id), 0))
 
 
+# Whether the upgrade it grows from holds a rank (the root always may).
+func unlocked(id: StringName) -> bool:
+	var upgrade := find(id)
+	return upgrade != null and (upgrade.parent.is_empty() or rank(upgrade.parent) > 0)
+
+
 func can_buy(id: StringName) -> bool:
 	var upgrade := find(id)
-	if upgrade == null:
+	if upgrade == null or not unlocked(id):
 		return false
 	var cost := upgrade.price(rank(id))
 	return cost >= 0 and echo >= cost
@@ -65,8 +94,20 @@ func bonus(effect: StringName) -> float:
 func tuning(base: HeroTuning) -> HeroTuning:
 	var shaped: HeroTuning = base.duplicate()
 	shaped.max_hp += roundi(bonus(&"max_hp"))
+	shaped.defense += roundi(bonus(&"defense"))
+	shaped.hurt_mercy += bonus(&"hurt_mercy")
 	shaped.dash_charges += roundi(bonus(&"dash_charges"))
+	shaped.dash_cooldown = maxf(MIN_DASH_COOLDOWN, shaped.dash_cooldown + bonus(&"dash_cooldown"))
+	shaped.max_speed *= 1.0 + bonus(&"move_speed")
 	return shaped
+
+
+# The rules a run reads from the upgrades held (RUN_EFFECTS -> bonus).
+func lasting() -> Dictionary:
+	var rules := {}
+	for effect in RUN_EFFECTS:
+		rules[effect] = bonus(effect)
+	return rules
 
 
 func starts_with_boon() -> bool:

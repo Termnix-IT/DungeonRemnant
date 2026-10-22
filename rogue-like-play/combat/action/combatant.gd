@@ -2,8 +2,12 @@ class_name Combatant
 extends RefCounted
 
 # Health for anything that fights in real time. It settles a blow (defense,
-# a floor of 1, the time it stays untouchable after being hurt) and nothing
-# else: the push, the flinch and the numbers are its owner's.
+# a floor of 1, the time it stays untouchable after being hurt, and the hero's
+# last stands: a blow that would fell her leaves her at 1 instead) and
+# nothing else: the push, the flinch and the numbers are its owner's.
+
+# A last stand was spent: the blow left 1 health.
+signal stood
 
 var max_hp := 10
 var hp := 10
@@ -11,6 +15,9 @@ var defense := 0
 # After a hurt, blows are ignored for this long (the hero's mercy time; zero
 # for enemies, whom each swing may hit once).
 var mercy_time := 0.0
+# Blows that would fell it it survives at 1, and how long it is then untouchable.
+var last_stands := 0
+var stand_mercy := 1.0
 var _mercy_left := 0.0
 
 
@@ -39,9 +46,21 @@ func take(info: DamageInfo) -> int:
 		return 0
 	var damage := maxi(1, roundi(info.amount) - defense)
 	var lost := mini(hp, damage)
+	if lost >= hp and last_stands > 0:
+		last_stands -= 1
+		lost = hp - 1
+		hp = 1
+		_mercy_left = maxf(mercy_time, stand_mercy)
+		stood.emit()
+		return lost
 	hp -= lost
 	_mercy_left = mercy_time
 	return lost
+
+
+# Untouchable for at least `seconds` from now.
+func shield(seconds: float) -> void:
+	_mercy_left = maxf(_mercy_left, seconds)
 
 
 func heal(amount: int) -> int:

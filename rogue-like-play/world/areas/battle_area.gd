@@ -10,7 +10,10 @@ extends CombatArea
 # its second phase it calls its summons in on marks). When cleared, the
 # foes left vanish, the gems
 # lying about fly to her, and `cleared` follows a moment later. The sandbox
-# extends it with its own hall and no clearing.
+# extends it with its own hall and no clearing. The run's lasting rules
+# (RunState.lasting) widen the gems' pull, keep her last stand, let a
+# level-up's cards be drawn again, and make each boon taken from a level
+# heal her and, as the fight resumes, burst, shield and quicken her.
 
 signal cleared
 # A setting was changed from the menu (the owner saves it).
@@ -30,6 +33,13 @@ const BOSS_MARK_TIME := 1.0
 const BOSS_PLACE := 0.28
 # The light that rises around her when a level's boon is taken.
 const LEVEL_UP_SCALE := 1.1
+# The level-up burst (level_burst adds to its radius): its power as a share
+# of hers, and its push.
+const LEVEL_BURST_RADIUS := 120.0
+const LEVEL_BURST_POWER := 2.0
+const LEVEL_BURST_KNOCKBACK := 320.0
+# How long level_haste quickens her swings.
+const LEVEL_HASTE_TIME := 10.0
 
 @export var seed_value := 0
 var data: AreaData
@@ -72,6 +82,9 @@ func _ready() -> void:
 	if run.hp > 0:
 		hero.health.hp = mini(run.hp, hero.health.max_hp)
 	hero.use_build(run.build)
+	hero.health.last_stands = run.last_stands
+	hero.health.stood.connect(_on_stood)
+	gems.pull_radius = GemField.PULL_RADIUS + run.rule(&"gem_pull")
 	gems.collected.connect(_on_gems)
 	hud = ActionHud.new()
 	add_child(hud)
@@ -80,6 +93,7 @@ func _ready() -> void:
 	choice.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(choice)
 	choice.selected.connect(_on_chosen)
+	choice.reroll_requested.connect(_on_reroll)
 	hud.guide.visible = settings.show_controls
 	menu = DungeonMenu.new()
 	menu.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -243,17 +257,54 @@ func _offer() -> void:
 	if offer.is_empty():
 		return
 	get_tree().paused = true
-	choice.present_boons(offer, run.build, run.progression.level, run.progression.pending_choices)
+	choice.present_boons(offer, run.build, run.progression.level, run.progression.pending_choices, "", run.rerolls_left)
+
+
+# The cards on offer drawn again, spending one of the run's rerolls.
+func _on_reroll() -> void:
+	var offer := run.reroll()
+	if offer.is_empty():
+		return
+	choice.present_boons(offer, run.build, run.progression.level, run.progression.pending_choices, "", run.rerolls_left)
 
 
 func _on_chosen(id: StringName) -> void:
 	run.choose(id)
+	var heal := run.rule(&"level_heal")
+	if heal > 0.0:
+		hero.health.heal(roundi(hero.health.max_hp * heal))
 	if run.progression.pending_choices > 0:
 		_offer()
 	if not choosing():
 		get_tree().paused = false
 		# The power taken rises around her as the fight resumes.
 		_effect(&"level_up", hero.global_position + BODY_MIDDLE * 0.5, Vector2.RIGHT, LEVEL_UP_SCALE)
+		_rise()
+
+
+# What the lasting upgrades make of the moment the fight resumes after a
+# level-up: a burst that throws the crowd back, a shield, quicker swings.
+func _rise() -> void:
+	var burst := run.rule(&"level_burst")
+	if burst > 0.0:
+		var radius := LEVEL_BURST_RADIUS + burst
+		blast(hero.global_position, radius, hero.power() * LEVEL_BURST_POWER, LEVEL_BURST_KNOCKBACK, [], &"heavy")
+		var ring := GroundRing.new()
+		marks.add_child(ring)
+		ring.start(hero.global_position, radius, &"heavy")
+	var ward := run.rule(&"level_ward")
+	if ward > 0.0:
+		hero.health.shield(ward)
+	var haste := run.rule(&"level_haste")
+	if haste > 0.0:
+		run.build.boost(&"attack_speed", haste, LEVEL_HASTE_TIME)
+
+
+# A last stand spent: the run keeps one fewer, and the moment shows.
+func _on_stood() -> void:
+	run.last_stands = hero.health.last_stands
+	_effect(&"level_up", hero.global_position + BODY_MIDDLE * 0.5, Vector2.RIGHT, LEVEL_UP_SCALE * 0.8)
+	GameAudio.play(self, &"level_up", -14.0)
 
 
 func _on_hero_down() -> void:

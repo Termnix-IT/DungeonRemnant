@@ -60,12 +60,24 @@ func run_tests() -> void:
 	for frame in 3:
 		await process_frame
 	var upgrades: MetaUpgradePage = hub.upgrade_page
-	var cheap: Button = upgrades.buttons[0]
-	var dear: Button = upgrades.buttons[1]
-	check(not cheap.disabled and dear.disabled, "An upgrade the echo pays for can be bought; one it cannot is off")
-	check(not dear.tooltip_text.is_empty(), "One the echo cannot pay for says how much is missing")
-	for button in upgrades.buttons:
-		check(upgrades.get_global_rect().grow(1).encloses(button.get_global_rect()), "%s fits the page" % button.text)
+	var cheap: Button = upgrades.buy_button
+	(upgrades.nodes[MetaProgress.ROOT] as Button).grab_focus()
+	check(not cheap.disabled and cheap.tooltip_text.is_empty(), "An upgrade the echo pays for can be bought")
+	(upgrades.nodes[&"sturdy_body"] as Button).grab_focus()
+	check(cheap.disabled and cheap.tooltip_text.contains("残響の灯"), "One whose root is not held is off and says what it waits for")
+	main.meta.ranks[String(MetaProgress.ROOT)] = 1
+	hub.refresh(main.meta)
+	(upgrades.nodes[&"double_dash"] as Button).grab_focus()
+	check(cheap.disabled and cheap.tooltip_text.contains("鍛えた体"), "So does one further along")
+	(upgrades.nodes[&"sturdy_body"] as Button).grab_focus()
+	main.meta.echo = 10
+	hub.refresh(main.meta)
+	check(cheap.disabled and cheap.tooltip_text.contains("足りない"), "One the echo cannot pay for says how much is missing")
+	main.meta.echo = 100
+	main.meta.ranks.clear()
+	hub.refresh(main.meta)
+	(upgrades.nodes[MetaProgress.ROOT] as Button).grab_focus()
+	check(upgrades.get_global_rect().grow(1).encloses(cheap.get_global_rect()), "%s fits the page" % cheap.text)
 	var normal := cheap.get_theme_stylebox("normal")
 	for state in ["hover", "pressed", "disabled", "focus"]:
 		check(cheap.get_theme_stylebox(state) != normal, "The gold button has a distinct " + state)

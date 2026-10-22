@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"triple_dash"
+display_name = "三段ダッシュ"
+description = "ダッシュを3回続けて使える"
+costs = Array[int]([700])
+effect = &"dash_charges"
+per_rank = 1.0
+emblem = "triple_dash"
+branch = &"body"
+parent = &"dash_recovery"
+cell = Vector2i(-5, 1)
+figure = "続けて使えるダッシュ %s回"
+figure_base = 2.0
+figure_scale = 1.0

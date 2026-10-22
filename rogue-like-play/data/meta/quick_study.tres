@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"quick_study"
+display_name = "学びの早さ"
+description = "得る経験値が10%増える"
+costs = Array[int]([160, 280])
+effect = &"exp_rate"
+per_rank = 0.1
+emblem = "quick_study"
+branch = &"growth"
+parent = &"parting_blessing"
+cell = Vector2i(3, -1)
+figure = "得る経験値 +%s%%"
+figure_base = 0.0
+figure_scale = 100.0
