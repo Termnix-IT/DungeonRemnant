@@ -37,6 +37,11 @@ CUES = {
 	"warning": ("kenney_music_jingles", "jingles_HIT15.ogg", -16.8),
 	"boss": ("rubberduck_80_cc0_rpg_sfx", "creature_roar_03.ogg", -17.0),
 	"defeat": ("kenney_music_jingles", "jingles_NES05.ogg", -17.8),
+	# The base's interface: a focus moving, going back, a refusal, a page opening.
+	"ui_move": ("kenney_interface_sounds", "select_003.ogg", -26.0),
+	"ui_back": ("kenney_interface_sounds", "back_002.ogg", -21.0),
+	"ui_deny": ("kenney_interface_sounds", "error_004.ogg", -20.0),
+	"ui_open": ("kenney_interface_sounds", "open_002.ogg", -22.0),
 	# Loops: never trimmed, so the seam stays where the author made it.
 	"ambience_ruins": ("paul_wortmann_dark_cavern_ambient", "dark_cavern_ambient_002.ogg", -18.0),
 	"ambience_forest": ("tinyworlds_forest_ambience", "Forest_Ambience.mp3", -21.0),

@@ -1,0 +1,12 @@
+素材名: Epic Boss Battle [Seamlessly Looping]（Boss Battle Music）
+作者: Juhani Junkala（SubspaceAudio）
+入手元: https://opengameart.org/content/boss-battle-music
+ダウンロードURL: https://opengameart.org/sites/default/files/Juhani%20Junkala%20-%20Epic%20Boss%20Battle%20%5BSeamlessly%20Looping%5D.wav
+ライセンス: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
+ライセンスの確認: 配布ページの表記で確認（2026-10-23）
+入手日: 2026-10-23
+
+使用ファイルと加工:
+- source/Epic Boss Battle [Seamlessly Looping].flac → boss.ogg（ボスの曲）
+
+加工の内容: 配布されたWAV（21.8MB）を、リポジトリの容量を抑えるため可逆圧縮のFLACにして source/ に置いた（音の内容は同一）。tools/build_music.py で、ラウドネスを-20 LUFSにそろえて Ogg Vorbis に変換した。作者が継ぎ目なくループするよう作っているため、前後は詰めていない。

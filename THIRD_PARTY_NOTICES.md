@@ -94,3 +94,37 @@ Music Jingles by Kenney (www.kenney.nl): <https://kenney.nl/assets/music-jingles
 Used: `jingles_PIZZI06.ogg` (floor arrival), `jingles_HIT15.ogg` (monster house warning) and `jingles_NES05.ogg` (defeat), in `rogue-like-play/audio/third_party/kenney_music_jingles/`.
 
 License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>
+
+### Interface Sounds
+
+Interface Sounds by Kenney (www.kenney.nl): <https://opengameart.org/content/interface-sounds>
+
+Used: `select_003.ogg` (focus moving), `back_002.ogg` (going back), `error_004.ogg` (refusal) and `open_002.ogg` (a page opening), in `rogue-like-play/audio/third_party/kenney_interface_sounds/`.
+
+License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>
+
+## Music
+
+### Medieval: Exploration
+
+Medieval: Exploration by RandomMind: <https://opengameart.org/content/medieval-exploration>
+
+Used as the base's music, in `rogue-like-play/audio/third_party/randommind_medieval_exploration/`.
+
+License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>
+
+### Battle Theme A
+
+Battle Theme A by cynicmusic: <https://opengameart.org/content/battle-theme-a>
+
+Used as the field and arena music, in `rogue-like-play/audio/third_party/cynicmusic_battle_theme_a/`.
+
+License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>
+
+### Epic Boss Battle
+
+Epic Boss Battle [Seamlessly Looping] by Juhani Junkala (SubspaceAudio): <https://opengameart.org/content/boss-battle-music>
+
+Used as the boss music, in `rogue-like-play/audio/third_party/juhani_junkala_epic_boss_battle/`.
+
+License: Creative Commons Zero 1.0 Universal (CC0 1.0): <https://creativecommons.org/publicdomain/zero/1.0/>

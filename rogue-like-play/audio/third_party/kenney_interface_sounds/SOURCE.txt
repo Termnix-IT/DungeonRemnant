@@ -1,0 +1,17 @@
+素材名: Interface Sounds (1.0)
+作者: Kenney (Kenney Vleugels, kenney.nl)
+入手元: https://opengameart.org/content/interface-sounds
+ダウンロードURL: https://opengameart.org/sites/default/files/kenney_interfaceSounds.zip
+ライセンス: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
+ライセンスの確認: 配布ページの表記と同梱のLicense.txtで確認（2026-10-23）
+入手日: 2026-10-23
+
+使用ファイルと加工:
+- source/select_003.ogg → ui_move.ogg
+- source/back_002.ogg → ui_back.ogg
+- source/error_004.ogg → ui_deny.ogg
+- source/open_002.ogg → ui_open.ogg
+
+加工の内容: tools/build_sound_effects.py で、冒頭の無音を詰め、平均音量をそろえ、ピークをリミッターで抑えて Ogg Vorbis に変換した。source/ の元ファイルは改変していない。
+
+備考: 配布物に同梱のライセンス文をLICENSE.txtとして置いている。

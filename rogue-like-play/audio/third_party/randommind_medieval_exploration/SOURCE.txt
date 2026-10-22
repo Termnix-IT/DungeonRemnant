@@ -1,0 +1,12 @@
+素材名: Medieval: Exploration
+作者: RandomMind
+入手元: https://opengameart.org/content/medieval-exploration
+ダウンロードURL: https://opengameart.org/sites/default/files/Exploration_0.mp3
+ライセンス: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
+ライセンスの確認: 配布ページの表記で確認（2026-10-23）
+入手日: 2026-10-23
+
+使用ファイルと加工:
+- source/Exploration.mp3 → hub.ogg（拠点・分岐マップ・結果画面の曲）
+
+加工の内容: tools/build_music.py で、前後の無音を詰め、ラウドネスを-20 LUFSにそろえて Ogg Vorbis に変換した。source/ の元ファイルは改変していない。
