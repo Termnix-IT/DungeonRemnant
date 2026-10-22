@@ -72,13 +72,23 @@ func run_tests() -> void:
 	check(codex.rows.all(func(foe: FoeData): return FoeCatalog.kind_of(foe) == 1), "The kind tabs filter the list")
 	hub.show_page("home")
 
-	# The settings: grouped rows, the focused one told in the column beside.
+	# The settings: three tabs, one group of rows at a time, the focused one
+	# told in the column beside.
 	hub.show_page("settings")
 	var settings_page: HubSettings = hub.settings_page
+	var shown_rows := func() -> Array: return range(settings_page._rows.size()).filter(func(row: int): return settings_page._rows[row].visible)
+	check(settings_page.tabs.tabs.map(func(tab: Button): return tab.text) == ["サウンド", "グラフィック", "その他"] and settings_page.tabs.selected == 0 and shown_rows.call() == [0, 1, 2], "The settings open on the sound tab, its three volumes alone")
 	settings_page.effects_slider.grab_focus()
 	await process_frame
-	var headings: Array = settings_page.rows.get_children().filter(func(node: Node): return node is Label).map(func(label: Label): return label.text)
-	check(headings == ["音", "画面", "その他"] and settings_page.note_title.text == "効果音" and settings_page.note.text == HubSettings.NOTES[1], "The settings stand in three groups, the focused one told beside them")
+	check(settings_page.note_title.text == "効果音" and settings_page.note.text == HubSettings.NOTES[1], "The focused setting is told beside the rows")
+	settings_page.tabs.step(1)
+	await process_frame
+	check(shown_rows.call() == [3, 4] and settings_page.shake_cycler.has_focus() and settings_page.note_title.text == "画面の揺れ", "The next tab shows the graphics rows and focuses the first")
+	check(settings_page.display_cycler.get_node(settings_page.display_cycler.focus_neighbor_bottom) == settings_page.display_cycler, "The focus stays within the tab")
+	settings_page.tabs.step(1)
+	await process_frame
+	check(shown_rows.call() == [5, 6, 7] and settings_page.controls_cycler.has_focus(), "The last tab holds the controls guide, the help and quitting")
+	settings_page.show_tab(0)
 	# The help opens as a window over the dimmed page and closes back to it.
 	settings_page.open_help(HubSettings.TOPIC_GROWTH)
 	await process_frame

@@ -43,7 +43,14 @@ func capture() -> void:
 			await _grab("hub_%s_%d" % [page, size.x])
 	DisplayServer.window_set_size(SIZES[0])
 	root.size = SIZES[0]
-	# The popups a click opens: the help, and the quit's question.
+	# A new account sliding into the encyclopedia's column, mid-way.
+	hub.show_page("codex")
+	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
+	hub.codex_page._select(1)
+	await create_timer(UIMotion.DETAIL_SLIDE_TIME * 0.35).timeout
+	await _grab("hub_codex_slide_1600")
+	await create_timer(0.3).timeout
+		# The popups a click opens: the help, and the quit's question.
 	hub.show_page("settings")
 	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
 	hub.settings_page.open_help(HubSettings.TOPIC_RUN)

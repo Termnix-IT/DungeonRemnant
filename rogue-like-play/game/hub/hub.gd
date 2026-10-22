@@ -306,6 +306,7 @@ func _settings_hints() -> void:
 	key_guide.add_hint("↑ / ↓", "▲ / ▼", "項目")
 	if not settings_page.help_shown:
 		key_guide.add_hint("← / →", "◀ / ▶", "変更")
+		key_guide.add_hint("Q / E", "LB / RB", "分類")
 
 
 func go_back() -> void:

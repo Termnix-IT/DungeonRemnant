@@ -1,11 +1,11 @@
 class_name HubSettings
 extends Control
 
-# The settings page, laid out as settings screens commonly are: the
-# settings as rows on a solid slab from the screen's left edge, grouped
-# under small headings (sound, screen, other), the focused row on the
-# lobby's warm band (sliding between rows), and what the focused setting
-# does in a fixed column on the right. Changes apply at once and are
+# The settings page, laid out as settings screens commonly are: tabs over
+# the rows (sound, graphics, other; Q / E or LB / RB, or a click) showing one
+# group at a time, the focused row on a warm band (sliding between rows), and
+# what the focused setting does in the column on the right, which slides in
+# anew from the right as the focus moves. Changes apply at once and are
 # stored by GameSettings when the hub reports them, so the page holds no
 # primary action.
 # A row opens the help: the game's rules that the screens keep out of their
@@ -31,8 +31,8 @@ const HELP_LAYER := 15
 const HELP_SHADE := Color(0.01, 0.015, 0.025, 0.7)
 const HELP_SIZE := Vector2(1180, 640)
 const HELP_TOPICS_WIDTH := 300.0
-# The settings' groups: [heading, the first row's index].
-const GROUPS := [["音", 0], ["画面", 3], ["その他", 6]]
+# The settings' tabs: [name, the rows it shows].
+const TABS := [["サウンド", [0, 1, 2]], ["グラフィック", [3, 4]], ["その他", [5, 6, 7]]]
 const CAPTIONS := ["全体の音量", "効果音", "環境音", "画面の揺れ", "画面モード", "操作の案内", "ヘルプ", "ゲームの終了"]
 const NOTES := ["すべての音の大きさ。0%で消音。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "戦場の空気の音の大きさ。", "攻撃が当たったときや被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "戦闘中、画面の下に操作の一覧を出す。", "ランの決まりごとと操作。", "ゲームを閉じる。確かめてから終了する。"]
 # The help's topics, in order: [title, paragraphs]. HintMarks name them by index.
@@ -87,6 +87,9 @@ var settings: GameSettings
 var rows: VBoxContainer
 var note: Label
 var focused_row := 0
+var tabs: CategoryTabs
+# Every row's control, in row order (their focus is chained within a tab).
+var controls: Array[Control] = []
 var help_shown := false
 var help_layer: CanvasLayer
 var help_view: Control
@@ -99,6 +102,10 @@ var selected_topic := 0
 var _rows: Array[Control] = []
 var _columns: HBoxContainer
 var note_title: Label
+# The detail column (what the focused setting does) and the help's page,
+# which slide in from the right when what they tell changes.
+var info_column: VBoxContainer
+var help_words: VBoxContainer
 
 
 func _ready() -> void:
@@ -109,6 +116,13 @@ func _ready() -> void:
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var left := HubUI.open_column(columns, 1.5, &"SlabSolid")
 	left.theme_type_variation = &"DetailStack"
+	tabs = CategoryTabs.new()
+	left.add_child(tabs)
+	var names: Array[String] = []
+	for tab: Array in TABS:
+		names.append(tab[0])
+	tabs.setup(names)
+	tabs.changed.connect(func(_index: int): show_tab(tabs.selected, true))
 	rows = VBoxContainer.new()
 	rows.theme_type_variation = &"SettingsRows"
 	left.add_child(rows)
@@ -176,21 +190,19 @@ func _ready() -> void:
 	quit_prompt.canceled.connect(func():
 		quit_prompt.hide()
 		quit_button.grab_focus())
-	var controls: Array[Control] = [volume_slider, effects_slider, ambience_slider, shake_cycler, display_cycler, controls_cycler, help_button, quit_button]
+	controls = [volume_slider, effects_slider, ambience_slider, shake_cycler, display_cycler, controls_cycler, help_button, quit_button]
 	for index in controls.size():
-		var control := controls[index]
-		if index > 0:
-			control.focus_neighbor_top = controls[index - 1].get_path()
-		if index < controls.size() - 1:
-			control.focus_neighbor_bottom = controls[index + 1].get_path()
-		control.focus_entered.connect(_focus_row.bind(index))
+		controls[index].focus_entered.connect(_focus_row.bind(index))
 	# What the focused setting does, in a fixed column on the right.
 	var info := HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
 	info.theme_type_variation = &"DetailStack"
+	(info.get_parent() as Control).clip_contents = true
+	info_column = info
 	note_title = HubUI.label(info, CAPTIONS[0], &"HeadingLabel")
 	HubUI.rule(info)
 	note = HubUI.label(info, NOTES[0], &"DescriptionLabel")
 	_build_help()
+	show_tab(0)
 
 
 # The help, as games commonly show their manual: a framed window over a
@@ -251,9 +263,11 @@ func _build_help() -> void:
 	page.theme_type_variation = &"QuietSection"
 	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.add_child(page)
+	page.clip_contents = true
 	var words := VBoxContainer.new()
 	words.theme_type_variation = &"DetailStack"
 	page.add_child(words)
+	help_words = words
 	help_title = HubUI.label(words, "", &"HeadingLabel")
 	HubUI.rule(words)
 	help_body = HubUI.label(words, "", &"BodyLabel")
@@ -296,7 +310,7 @@ func select_topic(index: int) -> void:
 	help_title.text = HELP[index][0]
 	help_body.text = "\n\n".join(HELP[index][1])
 	topic_rows.queue_redraw()
-	UIMotion.reveal_selection([help_body])
+	UIMotion.of(help_words).slide_in()
 
 
 func _draw_topic_band() -> void:
@@ -305,15 +319,6 @@ func _draw_topic_band() -> void:
 
 
 func _row(caption: String) -> HBoxContainer:
-	for group: Array in GROUPS:
-		if group[1] == _rows.size():
-			if group[1] > 0:
-				var gap := Control.new()
-				gap.custom_minimum_size.y = 12
-				gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				rows.add_child(gap)
-			var heading := HubUI.label(rows, group[0], &"MutedLabel")
-			heading.autowrap_mode = TextServer.AUTOWRAP_OFF
 	var row := HBoxContainer.new()
 	row.theme_type_variation = &"SettingsRow"
 	row.custom_minimum_size.y = ROW_HEIGHT
@@ -361,10 +366,14 @@ func _hint(row: HBoxContainer, text: String) -> void:
 func _draw_rows() -> void:
 	var rail := rows.get_theme_color(&"rail", &"HubLobby")
 	var chosen := _rows[focused_row]
-	var mark := UIMotion.of(rows).follow_mark(Rect2(chosen.position + Vector2(-12, 2), chosen.size + Vector2(12, -4)))
-	_draw_band(rows, mark)
-	for index in _rows.size() - 1:
-		if index == focused_row or index + 1 == focused_row:
+	if chosen.visible:
+		var mark := UIMotion.of(rows).follow_mark(Rect2(chosen.position + Vector2(-12, 2), chosen.size + Vector2(12, -4)))
+		_draw_band(rows, mark)
+	var shown: Array[int] = []
+	shown.assign(TABS[tabs.selected][1])
+	for place in shown.size() - 1:
+		var index := shown[place]
+		if index == focused_row or shown[place + 1] == focused_row:
 			continue
 		var y := _rows[index].position.y + _rows[index].size.y
 		rows.draw_polyline_colors(PackedVector2Array([Vector2(0, y), Vector2(rows.size.x * 0.5, y), Vector2(rows.size.x, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.22), Color(rail, 0.0)]), 1.0, true)
@@ -384,7 +393,7 @@ func _focus_row(index: int) -> void:
 	note_title.text = CAPTIONS[index]
 	note.text = NOTES[index]
 	rows.queue_redraw()
-	UIMotion.reveal_selection([note])
+	UIMotion.of(info_column).slide_in()
 
 
 func refresh(value: GameSettings) -> void:
@@ -401,8 +410,43 @@ func refresh(value: GameSettings) -> void:
 func focus_first() -> void:
 	if help_shown:
 		close_help()
-	volume_slider.grab_focus()
-	_focus_row(0)
+	var first: int = TABS[tabs.selected][1][0]
+	controls[first].grab_focus()
+	_focus_row(first)
+
+
+# Shows one tab's rows, their focus chained top to bottom; `take_focus` puts
+# the focus on its first row (a tab changed from the keys or a click).
+func show_tab(index: int, take_focus: bool = false) -> void:
+	if tabs.selected != index:
+		tabs.select(index)
+	var shown: Array[int] = []
+	shown.assign(TABS[index][1])
+	for row in _rows.size():
+		_rows[row].visible = shown.has(row)
+	for place in shown.size():
+		var control := controls[shown[place]]
+		control.focus_neighbor_top = controls[shown[place - 1]].get_path() if place > 0 else control.get_path()
+		control.focus_neighbor_bottom = controls[shown[place + 1]].get_path() if place < shown.size() - 1 else control.get_path()
+	UIMotion.of(rows).drop_mark()
+	if take_focus:
+		controls[shown[0]].grab_focus()
+	_focus_row(shown[0])
+
+
+# Q / E (LB / RB) step through the tabs while the page is shown and the help
+# and the quit's question are not.
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_visible_in_tree() or help_shown or quit_prompt.visible:
+		return
+	var pad := event is InputEventJoypadButton
+	if pad or event is InputEventKey:
+		tabs.use_pad(pad)
+	var back: bool = (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_Q) or (pad and event.pressed and event.button_index == JOY_BUTTON_LEFT_SHOULDER)
+	var next: bool = (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E) or (pad and event.pressed and event.button_index == JOY_BUTTON_RIGHT_SHOULDER)
+	if back or next:
+		tabs.step(-1 if back else 1)
+		get_viewport().set_input_as_handled()
 
 
 # Opening the page: the rows arrive top first, the note a beat later.

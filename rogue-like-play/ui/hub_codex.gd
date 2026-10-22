@@ -55,6 +55,8 @@ func _ready() -> void:
 	_list.columns = COLUMNS
 	_catalog.add_child(_list)
 	_info = HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
+	# The account slides in from the right edge, kept inside its column.
+	(_info.get_parent() as Control).clip_contents = true
 	_info.theme_type_variation = &"DetailStack"
 	picture = Control.new()
 	picture.custom_minimum_size = Vector2.ONE * PORTRAIT_SIZE
@@ -162,7 +164,7 @@ func _select(place: int, animate: bool = true) -> void:
 		stats_label.text = "HP %d　ぶつかる力 %d　速さ %d" % [foe.max_hp, foe.contact_damage, roundi(foe.speed)]
 		description_label.text = foe.description
 	if animate:
-		UIMotion.reveal_selection([_info])
+		UIMotion.of(_info).slide_in()
 
 
 func _draw_picture() -> void:

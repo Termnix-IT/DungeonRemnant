@@ -237,3 +237,4 @@ func _settings_hints() -> void:
 	settings_guide.add_hint("↑ / ↓", "▲ / ▼", "項目")
 	if not settings_page.help_shown:
 		settings_guide.add_hint("← / →", "◀ / ▶", "変更")
+		settings_guide.add_hint("Q / E", "LB / RB", "分類")

@@ -15,6 +15,9 @@ const VITAL_PULSE_TIME := 0.22
 const ENTER_TIME := 0.24
 const STAGGER_TIME := 0.06
 const ENTER_DISTANCE := 24.0
+# The detail column's new account comes in from the right by this much.
+const DETAIL_SLIDE_TIME := 0.2
+const DETAIL_SLIDE_DISTANCE := 40.0
 const PAGE_DISTANCE := 16.0
 const LIFT_DISTANCE := 6.0
 const EXIT_TIME := 0.12
@@ -313,6 +316,32 @@ func enter(delay: float = 0.0, offset := Vector2(0, ENTER_DISTANCE), duration: f
 	position_tween.tween_property(control, "position", _base_position, duration)
 	alpha_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	alpha_tween.tween_interval(delay)
+	alpha_tween.tween_property(control, "modulate:a", _base_alpha, duration)
+
+
+# Brings a container's child (a detail column's contents) in from the right,
+# fading up, to where its container lays it out. The container is asked to
+# lay it out first, so a slide begun over another one still ends in place.
+func slide_in(distance: float = DETAIL_SLIDE_DISTANCE, duration: float = DETAIL_SLIDE_TIME) -> void:
+	if not control.is_visible_in_tree():
+		return
+	_stop(position_tween)
+	_stop(alpha_tween)
+	var parent := control.get_parent() as Container
+	if parent != null:
+		parent.queue_sort()
+	_start_slide.call_deferred(distance, duration)
+
+
+func _start_slide(distance: float, duration: float) -> void:
+	if not is_instance_valid(control) or not control.is_visible_in_tree():
+		return
+	var target := control.position
+	control.position = target + Vector2(distance, 0.0)
+	control.modulate.a = _base_alpha * 0.15
+	position_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	position_tween.tween_property(control, "position", target, duration)
+	alpha_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	alpha_tween.tween_property(control, "modulate:a", _base_alpha, duration)
 
 

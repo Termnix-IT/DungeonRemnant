@@ -139,6 +139,21 @@ func run_tests() -> void:
 	await settle(UIMotion.WINDOW_TIME + 0.2)
 	for shown: Control in [hub.home_page, hub.upgrade_page, hub.codex_page, hub.settings_page]:
 		check(is_equal_approx(shown.modulate.a, 1.0) and near_scale(shown, 1.0), "Rapid navigation restores %s's alpha and scale" % shown.name)
+	# A new account comes into the detail column from the right and settles
+	# where the column lays it out, even when asked again mid-way.
+	hub.show_page("codex")
+	await settle(UIMotion.WINDOW_TIME + 0.2)
+	var column: Control = hub.codex_page._info
+	var rest := column.position
+	hub.codex_page._select(1)
+	await process_frame
+	await process_frame
+	check(column.position.x > rest.x + 1.0 and column.modulate.a < 1.0, "A new account starts to the right, faint")
+	hub.codex_page._select(0)
+	await settle(UIMotion.DETAIL_SLIDE_TIME + 0.15)
+	check(column.position.is_equal_approx(rest) and is_equal_approx(column.modulate.a, 1.0), "It settles in place, whole")
+	hub.show_page("home")
+	await settle(UIMotion.WINDOW_TIME + 0.2)
 	check(not motion.is_processing(), "The helper has no idle per-frame polling")
 	await settle(HubAmbience.FOCUS_TIME * 1.5 + 0.05)
 	check(get_processed_tweens().is_empty(), "Completed and cancelled UI tweens do not pile up")
