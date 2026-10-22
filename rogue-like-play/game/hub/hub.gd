@@ -245,6 +245,9 @@ func show_page(target: String) -> void:
 	save_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if page == "home" else HORIZONTAL_ALIGNMENT_LEFT
 	_ambience.focus(home_page.selected_id() if page == "home" else &"")
 	feedback.text = ""
+	GameMusic.cue(self, &"hub")
+	if page != "home":
+		GameAudio.play(self, &"ui_open", -20.0)
 	match page:
 		"home":
 			title_label.text = "旅支度の間"
@@ -343,6 +346,7 @@ func _settings_hints() -> void:
 
 
 func go_back() -> void:
+	GameAudio.play(self, &"ui_back", -18.0)
 	if page == "settings" and settings_page.help_shown:
 		if help_return.is_empty():
 			settings_page.close_help()

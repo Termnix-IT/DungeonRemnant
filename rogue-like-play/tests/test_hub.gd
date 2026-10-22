@@ -53,6 +53,8 @@ func run_tests() -> void:
 	var lobby: HubLobby = hub.home_page
 	check(lobby.buttons.size() == 5 and HubLobby.ENTRIES.map(func(entry: Array): return entry[0]) == [&"departure", &"upgrade", &"status", &"codex", &"settings"], "The lobby offers departure, upgrades, status, encyclopedia and settings")
 	check(hub.page == "home" and lobby.visible and hub.echo_label.text == "100", "The base opens on the lobby with the echo held")
+	var music := GameMusic.find(main)
+	check(music != null and music.track == &"hub" and not music.muffled, "The base plays its own music")
 	check(lobby.route_value.text == "3層とボス" and lobby.best_value.text == "なし", "The departure tells the chapter's way and the deepest reached")
 	check(lobby.upgrade_ready.text == "1 件" and lobby.codex_met.text == "0 / %d" % FoeCatalog.FOES.size(), "The entries tell what can be bought and what has been met")
 	lobby.select(0)
@@ -96,22 +98,22 @@ func run_tests() -> void:
 	hub.show_page("settings")
 	var settings_page: HubSettings = hub.settings_page
 	var shown_rows := func() -> Array: return range(settings_page._rows.size()).filter(func(row: int): return settings_page._rows[row].visible)
-	check(settings_page.tabs.tabs.map(func(tab: Button): return tab.text) == ["サウンド", "グラフィック", "その他"] and settings_page.tabs.selected == 0 and shown_rows.call() == [0, 1, 2], "The settings open on the sound tab, its three volumes alone")
+	check(settings_page.tabs.tabs.map(func(tab: Button): return tab.text) == ["サウンド", "グラフィック", "その他"] and settings_page.tabs.selected == 0 and shown_rows.call() == [0, 1, 2, 3], "The settings open on the sound tab, its four volumes alone")
 	settings_page.effects_slider.grab_focus()
 	await process_frame
-	check(settings_page.note_title.text == "効果音" and settings_page.note.text == HubSettings.NOTES[1], "The focused setting is told beside the rows")
+	check(settings_page.note_title.text == "効果音" and settings_page.note.text == HubSettings.NOTES[2], "The focused setting is told beside the rows")
 	settings_page.tabs.step(1)
 	await process_frame
-	check(shown_rows.call() == [3, 4] and settings_page.shake_cycler.has_focus() and settings_page.note_title.text == "画面の揺れ", "The next tab shows the graphics rows and focuses the first")
+	check(shown_rows.call() == [4, 5] and settings_page.shake_cycler.has_focus() and settings_page.note_title.text == "画面の揺れ", "The next tab shows the graphics rows and focuses the first")
 	check(settings_page.display_cycler.get_node(settings_page.display_cycler.focus_neighbor_bottom) == settings_page.display_cycler, "The focus stays within the tab")
 	settings_page.tabs.step(1)
 	await process_frame
-	check(shown_rows.call() == [5, 6, 7] and settings_page.controls_cycler.has_focus(), "The last tab holds the controls guide, the help and quitting")
+	check(shown_rows.call() == [6, 7, 8] and settings_page.controls_cycler.has_focus(), "The last tab holds the controls guide, the help and quitting")
 	# As in the lobby, the pointer resting on a row (its caption or its
 	# control) chooses it; a chosen row shows by its band, with no frame.
-	settings_page._rows[7].gui_input.emit(InputEventMouseMotion.new())
+	settings_page._rows[8].gui_input.emit(InputEventMouseMotion.new())
 	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
-	check(settings_page.quit_button.has_focus() and settings_page.focused_row == 7, "Pointing at a settings row chooses it")
+	check(settings_page.quit_button.has_focus() and settings_page.focused_row == 8, "Pointing at a settings row chooses it")
 	settings_page.help_button.mouse_entered.emit()
 	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
 	check(settings_page.help_button.has_focus() and settings_page.note_title.text == "ヘルプ", "Pointing at a row's control chooses it too")

@@ -89,6 +89,8 @@ func _bless(next: RouteMap.Waypoint) -> bool:
 
 
 func show_map(note: String = "") -> void:
+	GameMusic.cue(self, &"hub")
+	GameMusic.muffle(self, false)
 	map_view.present(run.route, run.layer, run, max_hp(), note)
 
 
@@ -198,10 +200,16 @@ func finish(cleared: bool, abandoned: bool = false) -> void:
 	for boon in run.build.owned():
 		boons.append(boon.display_name)
 		emblems.append([boon.emblem, boon.display_name if boon.max_level == 1 else "%s %d" % [boon.display_name, run.build.rank(boon.id)]])
-	result = {"cleared": cleared, "abandoned": abandoned, "layer": mini(run.layer, run.route.size() - 1), "layers": run.route.size(),
+	# Measured against the progress before this run is recorded.
+	var reached := mini(run.layer, run.route.size() - 1) + 1
+	var record := meta != null and reached > meta.best_layer
+	var first_clear := meta != null and cleared and meta.clears == 0
+	result = {"cleared": cleared, "abandoned": abandoned, "record": record, "first_clear": first_clear, "layer": mini(run.layer, run.route.size() - 1), "layers": run.route.size(),
 		"chapter": chapter.display_name, "time": run.time, "kills": run.kills,
 		"level": run.progression.level, "boons": boons, "emblems": emblems, "echo": run.echo, "met": run.met.keys()}
 	map_view.hide()
+	GameMusic.cue(self, &"")
+	GameMusic.muffle(self, false)
 	end_view.present(result, returns_to_base, chapter.illustration)
 	finished.emit(result)
 

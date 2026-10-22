@@ -35,9 +35,9 @@ const HELP_SHADE := Color(0.01, 0.015, 0.025, 0.7)
 const HELP_SIZE := Vector2(1180, 640)
 const HELP_TOPICS_WIDTH := 300.0
 # The settings' tabs: [name, the rows it shows].
-const TABS := [["サウンド", [0, 1, 2]], ["グラフィック", [3, 4]], ["その他", [5, 6, 7]]]
-const CAPTIONS := ["全体の音量", "効果音", "環境音", "画面の揺れ", "画面モード", "操作の案内", "ヘルプ", "ゲームの終了"]
-const NOTES := ["すべての音の大きさ。0%で消音。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "戦場の空気の音の大きさ。", "攻撃が当たったときや被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "戦闘中、画面の下に操作の一覧を出す。", "ランの決まりごとと操作。", "ゲームを閉じる。確かめてから終了する。"]
+const TABS := [["サウンド", [0, 1, 2, 3]], ["グラフィック", [4, 5]], ["その他", [6, 7, 8]]]
+const CAPTIONS := ["全体の音量", "音楽", "効果音", "環境音", "画面の揺れ", "画面モード", "操作の案内", "ヘルプ", "ゲームの終了"]
+const NOTES := ["すべての音の大きさ。0%で消音。", "拠点・戦場・ボスの曲の大きさ。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "戦場の空気の音の大きさ。", "攻撃が当たったときや被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "戦闘中、画面の下に操作の一覧を出す。", "ランの決まりごとと操作。", "ゲームを閉じる。確かめてから終了する。"]
 # The help's topics, in order: [title, paragraphs]. HintMarks name them by index.
 const TOPIC_RUN := 0
 const TOPIC_GROWTH := 1
@@ -73,6 +73,7 @@ const HELP := [
 
 var volume_slider: GameSlider
 var effects_slider: GameSlider
+var music_slider: GameSlider
 var ambience_slider: GameSlider
 var help_button: Button
 var quit_button: Button
@@ -82,6 +83,7 @@ var in_run := false
 # What ending the game does; tests replace it.
 var quit_action := func(): get_tree().quit()
 var volume_value: Label
+var music_value: Label
 var effects_value: Label
 var ambience_value: Label
 var shake_cycler: OptionCycler
@@ -139,10 +141,13 @@ func _ready() -> void:
 	left.add_child(rows)
 	UIMotion.of(rows)
 	rows.draw.connect(_draw_rows)
-	# Three volumes, each a bar: everything, the effects, the room tone.
+	# Four volumes, each a bar: everything, the music, the effects, the room tone.
 	var volume_parts := _volume_row("全体の音量", "VolumeSlider")
 	volume_slider = volume_parts[0]
 	volume_value = volume_parts[1]
+	var music_parts := _volume_row("音楽", "MusicSlider")
+	music_slider = music_parts[0]
+	music_value = music_parts[1]
 	var effects_parts := _volume_row("効果音", "EffectsSlider")
 	effects_slider = effects_parts[0]
 	effects_value = effects_parts[1]
@@ -201,7 +206,7 @@ func _ready() -> void:
 	quit_prompt.canceled.connect(func():
 		quit_prompt.hide()
 		quit_button.grab_focus())
-	controls = [volume_slider, effects_slider, ambience_slider, shake_cycler, display_cycler, controls_cycler, help_button, quit_button]
+	controls = [volume_slider, music_slider, effects_slider, ambience_slider, shake_cycler, display_cycler, controls_cycler, help_button, quit_button]
 	for index in controls.size():
 		controls[index].focus_entered.connect(_focus_row.bind(index))
 		# As in the lobby and the help, resting the pointer on a row chooses
@@ -455,7 +460,7 @@ func _focus_row(index: int) -> void:
 
 func refresh(value: GameSettings) -> void:
 	settings = value
-	for pair: Array in [[volume_slider, volume_value, settings.volume], [effects_slider, effects_value, settings.effects_volume], [ambience_slider, ambience_value, settings.ambience_volume]]:
+	for pair: Array in [[volume_slider, volume_value, settings.volume], [music_slider, music_value, settings.music_volume], [effects_slider, effects_value, settings.effects_volume], [ambience_slider, ambience_value, settings.ambience_volume]]:
 		(pair[0] as GameSlider).set_value_no_signal(settings.volume_percent(pair[2]))
 		(pair[0] as GameSlider).queue_redraw()
 		(pair[1] as Label).text = "%d%%" % settings.volume_percent(pair[2])
@@ -515,7 +520,10 @@ func play_entrance() -> void:
 
 func _volume_changed(percent: float, slider: GameSlider) -> void:
 	var level := percent / 100.0
-	if slider == effects_slider:
+	if slider == music_slider:
+		settings.music_volume = level
+		music_value.text = "%d%%" % settings.volume_percent(level)
+	elif slider == effects_slider:
 		settings.effects_volume = level
 		effects_value.text = "%d%%" % settings.volume_percent(level)
 	elif slider == ambience_slider:

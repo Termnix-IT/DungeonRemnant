@@ -30,6 +30,10 @@ const PROFILES := {
 	&"charge": [0.26, 0.0, 0.0, 0.0, 1.3, [783.99, 1174.66]],
 	&"zap": [0.2, 1800.0, 500.0, 0.7, 1.9, []],
 	&"burst": [0.32, 240.0, 70.0, 0.75, 1.5, []],
+	&"ui_move": [0.05, 900.0, 1200.0, 0.0, 2.5, []],
+	&"ui_back": [0.08, 700.0, 420.0, 0.0, 2.0, []],
+	&"ui_deny": [0.14, 220.0, 180.0, 0.1, 1.5, []],
+	&"ui_open": [0.1, 500.0, 900.0, 0.0, 1.8, []],
 }
 
 const ASSETS := {
@@ -45,6 +49,10 @@ const ASSETS := {
 	&"warning": "res://audio/third_party/kenney_music_jingles/warning.ogg",
 	&"boss": "res://audio/third_party/rubberduck_80_cc0_rpg_sfx/boss.ogg",
 	&"defeat": "res://audio/third_party/kenney_music_jingles/defeat.ogg",
+	&"ui_move": "res://audio/third_party/kenney_interface_sounds/ui_move.ogg",
+	&"ui_back": "res://audio/third_party/kenney_interface_sounds/ui_back.ogg",
+	&"ui_deny": "res://audio/third_party/kenney_interface_sounds/ui_deny.ogg",
+	&"ui_open": "res://audio/third_party/kenney_interface_sounds/ui_open.ogg",
 }
 
 static var _streams: Dictionary = {}
@@ -86,7 +94,7 @@ static func synthesized(cue: StringName) -> AudioStream:
 	return _streams[cue]
 
 
-static func play(parent: Node, cue: StringName, volume_db: float = -16.0) -> AudioStreamPlayer:
+static func play(parent: Node, cue: StringName, volume_db: float = -16.0, pitch: float = 1.0) -> AudioStreamPlayer:
 	if not is_instance_valid(parent) or not parent.is_inside_tree() or parent.is_queued_for_deletion():
 		return null
 	if DisplayServer.get_name() == "headless":
@@ -106,6 +114,7 @@ static func play(parent: Node, cue: StringName, volume_db: float = -16.0) -> Aud
 	player.stream = stream
 	player.bus = GameSettings.EFFECTS_BUS
 	player.volume_db = clampf(volume_db, -60.0, -12.0)
+	player.pitch_scale = clampf(pitch, 0.5, 2.0)
 	parent.add_child(player)
 	player.add_to_group(VOICE_GROUP)
 	player.finished.connect(player.queue_free)

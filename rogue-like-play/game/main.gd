@@ -32,6 +32,11 @@ func _ready() -> void:
 			$Hub.settings.save_settings())
 	transition = SceneTransition.new()
 	add_child(transition)
+	var music := GameMusic.new()
+	music.name = "Music"
+	add_child(music)
+	# The interface's small sounds: a focus moving anywhere on screen.
+	get_viewport().gui_focus_changed.connect(_on_focus_changed)
 	$Hub.start_requested.connect(start_run)
 	$Hub.upgrade_requested.connect(buy_upgrade)
 	$Hub.equip_requested.connect(equip_skill)
@@ -57,6 +62,18 @@ func equip_skill(slot: int, id: StringName) -> bool:
 	_update_save_status()
 	$Hub.present_equip()
 	return true
+
+
+var _last_focus_sound := 0
+
+
+# One soft tick per move of the focus, however fast the keys repeat.
+func _on_focus_changed(_control: Control) -> void:
+	var now := Time.get_ticks_msec()
+	if now - _last_focus_sound < 60:
+		return
+	_last_focus_sound = now
+	GameAudio.play(self, &"ui_move", -24.0)
 
 
 func buy_upgrade(id: StringName) -> bool:

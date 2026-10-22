@@ -140,6 +140,9 @@ func run_tests() -> void:
 	# The node map: every area a node, only the first layer open, the first
 	# selected and told in the account, a later one readable but not enterable.
 	var view := director.map_view
+	check(view.draw_progress < 1.0 and view.token != null and view.token.position + view.token.size * 0.5 == view.token_spot(), "The paths open to her draw out from her token, at the start")
+	await create_timer(RouteMapView.DRAW_TIME + 0.1).timeout
+	check(view.draw_progress == 1.0, "And reach the open layer")
 	var all_nodes := 0
 	for index in director.run.route.size():
 		all_nodes += director.run.route.nodes(index).size()
@@ -152,8 +155,14 @@ func run_tests() -> void:
 	check(view.visible and director.area == null, "Choosing a node not open does nothing")
 	view._show_detail(null)
 	var first: RouteMap.Waypoint = director.run.route.nodes(0)[0]
+	var start: Vector2 = view.token.position
 	view._enter.pressed.emit()
 	await process_frame
+	check(view.traveling and director.area == null and view.visible, "A pick first sends her token along the path, entering nothing yet")
+	view._enter.pressed.emit()
+	await create_timer(RouteMapView.TRAVEL_TIME * 0.5).timeout
+	check(view.token.position != start and director.area == null, "The token travels, and a second press on the way does nothing")
+	await create_timer(RouteMapView.TRAVEL_TIME + RouteMapView.ARRIVE_TIME + 0.1).timeout
 	check(director.area != null and director.area.data == first.area and not director.map_view.visible, "A choice enters its area")
 	check(director.area.hero.health.hp == director.max_hp() and director.area.hero.build == director.run.build, "She comes in whole, with the run's build")
 	director.area.hero.controlled = false

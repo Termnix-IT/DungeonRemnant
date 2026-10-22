@@ -82,7 +82,10 @@ func run_tests() -> void:
 	summary.toggle_details()
 	check(summary.details.visible and summary.more_button.text == RunEndView.LESS_TEXT, "Asking for more opens the figures and boons")
 	check(summary._tiles.get_child_count() == 4 and summary._boons.get_child_count() == run.result.emblems.size() and run.result.emblems.size() == run.run.build.owned().size(), "The summary shows the run's figures as tiles and every boon as its emblem")
+	check(run.result.record and run.result.first_clear, "The first win goes deeper than before and is the first clear")
 	await create_timer(1.5).timeout
+	check(summary.seal.visible and summary.seal.texture == RunEndView.SEALS[&"clear"] and summary.seal.scale.is_equal_approx(Vector2.ONE), "The win's seal is stamped beside the heading")
+	check(summary.record_label.visible and summary.record_label.text == "初めての踏破", "And the first clear is told in gold")
 	check(summary._art.texture == run.CHAPTER.illustration and summary._echo.text == UIFormat.amount(run.result.echo), "The summary lies over the chapter's illustration, the echo counted up to what was brought home")
 	var echo: int = run.result.echo
 	check(main.meta.runs == 1 and main.meta.clears == 1 and main.meta.echo == echo and echo > 0, "The win is recorded with its echo")

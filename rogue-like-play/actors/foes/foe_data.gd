@@ -5,6 +5,8 @@ extends Resource
 
 @export var id: StringName
 @export var display_name := "敵"
+# A boss's title, told over its name as it arrives (BossIntro).
+@export var epithet := ""
 # How it fights and where it is met, for the encyclopedia.
 @export_multiline var description := ""
 # Which illustration rig draws it (EnemySprites.rig_path).

@@ -36,6 +36,10 @@ const NUMBER_HEIGHT := Vector2(0, -58)
 const HIT_SOUND_GAP := 45
 const DEATH_SOUND_GAP := 70
 const PICKUP_SOUND_GAP := 60
+# Pickups within this many msec of the last make a run, each a step higher, up to the steps.
+const PICKUP_CHAIN_GAP := 450
+const PICKUP_PITCH_STEP := 0.04
+const PICKUP_CHAIN_STEPS := 12
 # A swing's sound by its painted effect.
 const SWING_SOUNDS := {&"slash": &"slash", &"heavy": &"heavy", &"magic": &"magic", &"thrust": &"thrust"}
 # The dust kicked up where a dash starts, as a share of the smoke's size.
@@ -73,6 +77,9 @@ var _shake: Tween
 var _last_hit_sound := -HIT_SOUND_GAP
 var _last_death_sound := -DEATH_SOUND_GAP
 var _last_pickup_sound := -PICKUP_SOUND_GAP
+# How many pickups in the current run, and when the last came.
+var pickup_chain := 0
+var _last_pickup := -PICKUP_CHAIN_GAP
 var _effects_shown: Dictionary = {}
 # Retired foes by their FoeData, kept under a node that neither processes
 # nor collides.
@@ -376,11 +383,19 @@ func _effect(kind: StringName, at: Vector2, direction: Vector2, size: float) -> 
 	effect.start(kind, points, direction)
 
 
+# Gems taken in a run rise in pitch, as a string of pickups climbs in
+# action games; a pause long enough lets the run start over.
 func _on_gem_collected(_amount: int) -> void:
 	var now := Time.get_ticks_msec()
+	pickup_chain = pickup_chain + 1 if now - _last_pickup <= PICKUP_CHAIN_GAP else 0
+	_last_pickup = now
 	if now - _last_pickup_sound >= PICKUP_SOUND_GAP:
 		_last_pickup_sound = now
-		GameAudio.play(self, &"pickup", -24.0)
+		GameAudio.play(self, &"pickup", -24.0, pickup_pitch())
+
+
+func pickup_pitch() -> float:
+	return 1.0 + mini(pickup_chain, PICKUP_CHAIN_STEPS) * PICKUP_PITCH_STEP
 
 
 func _on_foe_retired(foe: Foe) -> void:

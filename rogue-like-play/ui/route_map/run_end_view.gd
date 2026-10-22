@@ -15,8 +15,22 @@ signal again_requested
 const BACKDROP := Color(0.02, 0.025, 0.035, 0.84)
 const WIDTH := 860.0
 const EMBLEM_SIZE := 52.0
-# The echo counts up after the panel has come in.
+# The echo counts up after the panel has come in. Before it, the outcome's
+# seal is stamped beside the heading, as results screens stamp a rank: it
+# drops in large and turned, lands with a thud and a jolt of the panel; a
+# run that went deeper than any before (or cleared for the first time)
+# then raises a gold line saying so.
 const COUNT_DELAY := 0.35
+# The outcome's seals, and how the stamp drops.
+const SEALS := {
+	&"clear": preload("res://art/ui/hud/seal_clear.png"),
+	&"defeat": preload("res://art/ui/hud/seal_defeat.png"),
+	&"return": preload("res://art/ui/hud/seal_return.png"),
+}
+const SEAL_SIZE := 150.0
+const SEAL_TURN := -0.21
+const STAMP_DELAY := 0.25
+const STAMP_TIME := 0.22
 const MORE_TEXT := "詳しく見る　▼"
 const LESS_TEXT := "閉じる　▲"
 
@@ -33,6 +47,8 @@ var _echo: Label
 var _save_note: Label
 var _panel: PanelContainer
 var _button: Button
+var seal: TextureRect
+var record_label: Label
 
 
 func _ready() -> void:
@@ -63,6 +79,8 @@ func _ready() -> void:
 	margin.add_child(stack)
 	_title = _centered(stack, &"VictoryTitle")
 	_ending = _centered(stack, &"BodyLabel")
+	record_label = _centered(stack, &"GoldLabel")
+	record_label.hide()
 	HubUI.rule(stack)
 	_centered(stack, &"MutedLabel").text = "持ち帰った残響"
 	_echo = _centered(stack, &"PurseValue")
@@ -82,6 +100,16 @@ func _ready() -> void:
 	_no_boons.text = "なし"
 	details.hide()
 	_button = HubUI.primary_action(stack, "新しいランを始める", func(): again_requested.emit())
+	seal = TextureRect.new()
+	seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	seal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	seal.size = Vector2.ONE * SEAL_SIZE
+	seal.pivot_offset = seal.size * 0.5
+	seal.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	# Above the panel, not laid out by it.
+	root.add_child(seal)
+	seal.hide()
 	more_button = HubUI.button(stack, MORE_TEXT, toggle_details)
 	more_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_button.focus_neighbor_bottom = more_button.get_path()
@@ -138,11 +166,39 @@ func present(result: Dictionary, home: bool = false, art: Texture2D = null) -> v
 	_no_boons.visible = emblems.is_empty()
 	var echo := int(result.echo)
 	_echo.text = UIFormat.amount(echo)
+	seal.texture = SEALS[&"clear" if won else (&"return" if left else &"defeat")]
+	record_label.text = "初めての踏破" if result.get("first_clear", false) else ("最深到達を更新" if result.get("record", false) else "")
+	record_label.hide()
 	show()
 	_button.grab_focus()
 	UIMotion.bind_buttons(_panel)
+	_stamp.call_deferred()
 	# Saved already; only the number counts up.
-	UIMotion.of(_echo).count(0, echo, func(value: int) -> String: return UIFormat.amount(value), COUNT_DELAY)
+	UIMotion.of(_echo).count(0, echo, func(value: int) -> String: return UIFormat.amount(value), COUNT_DELAY + STAMP_TIME)
+
+
+# The seal drops onto the panel's top corner, then the record, if any.
+func _stamp() -> void:
+	var corner := _panel.get_global_rect()
+	seal.position = Vector2(corner.end.x - SEAL_SIZE * 0.72, corner.position.y - SEAL_SIZE * 0.28)
+	seal.scale = Vector2.ONE * 2.4
+	seal.rotation = SEAL_TURN * 2.0
+	seal.modulate.a = 0.0
+	seal.show()
+	var drop := create_tween().set_parallel().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	drop.tween_property(seal, "scale", Vector2.ONE, STAMP_TIME).set_delay(STAMP_DELAY)
+	drop.tween_property(seal, "rotation", SEAL_TURN, STAMP_TIME).set_delay(STAMP_DELAY)
+	drop.tween_property(seal, "modulate:a", 1.0, STAMP_TIME * 0.5).set_delay(STAMP_DELAY)
+	drop.chain().tween_callback(_landed)
+
+
+func _landed() -> void:
+	GameAudio.play(self, &"heavy", -14.0)
+	UIMotion.of(_panel).pulse(1.02, UIMotion.SELECT_TIME)
+	if not record_label.text.is_empty():
+		record_label.show()
+		UIMotion.of(record_label).appear(0.0, UIMotion.WINDOW_TIME)
+		UIMotion.of(record_label).flash(1.4, UIMotion.GOLD_TIME)
 
 
 # A figure of the run: a small caption over a large value, on an inset tile.

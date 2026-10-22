@@ -205,13 +205,24 @@ func run_tests() -> void:
 	var levels := RunState.new(5)
 	var gained := []
 	area.gems.collected.connect(func(amount: int): gained.append(amount))
-	area.gems.drop(hero.global_position + Vector2(400, 0), 3)
-	area.gems.step(hero.global_position, FRAME)
-	check(area.gems.count() == 1 and gained.is_empty(), "A gem beyond her pull stays put")
+	var spot := hero.global_position + Vector2(400, 0)
+	area.gems.drop(spot, 3)
+	check(area.gems.hops[0] > 0.0 and area.gems.drifts[0].length() >= GemField.SPRAY_SPEED.x, "A dropped gem springs out of the foe")
+	for frame in 60:
+		area.gems.step(hero.global_position, FRAME)
+	check(area.gems.count() == 1 and gained.is_empty() and area.gems.hops[0] == 0.0 and area.gems.drifts[0] == Vector2.ZERO, "It settles a little way off, beyond her pull, and stays put")
+	check(area.gems.positions[0].distance_to(spot) > 5.0 and area.gems.positions[0].distance_to(spot) < 40.0, "It slid a short way")
 	area.gems.drop(hero.global_position + Vector2(60, 0), 5)
 	for frame in 30:
 		area.gems.step(hero.global_position, FRAME)
 	check(gained == [5] and area.gems.count() == 1, "A gem within her pull flies to her and is collected")
+	var first_pitch := area.pickup_pitch()
+	for pickup in 20:
+		area._on_gem_collected(1)
+	check(area.pickup_pitch() > first_pitch and is_equal_approx(area.pickup_pitch(), 1.0 + CombatArea.PICKUP_CHAIN_STEPS * CombatArea.PICKUP_PITCH_STEP), "Gems taken in a run climb in pitch, up to a ceiling")
+	area._last_pickup -= CombatArea.PICKUP_CHAIN_GAP + 1
+	area._on_gem_collected(1)
+	check(area.pickup_pitch() == 1.0, "After a pause the run starts over")
 	for index in GemField.MAX_GEMS + 20:
 		area.gems.drop(Vector2(index, 0), 1)
 	check(area.gems.count() == GemField.MAX_GEMS and area.gems.total() == 3 + GemField.MAX_GEMS + 20, "Past the cap, gems merge and none are lost")

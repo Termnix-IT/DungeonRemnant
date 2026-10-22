@@ -33,6 +33,11 @@ var _icon: Texture2D
 var _caption: Label
 
 
+# The boss's glow and how long one breath takes.
+const BOSS_GLOW := Color(0.72, 0.16, 0.12, 0.32)
+const BOSS_BEAT := 1.8
+
+
 func setup(point: RouteMap.Waypoint, state: Mark) -> void:
 	waypoint = point
 	mark = state
@@ -60,11 +65,20 @@ func setup(point: RouteMap.Waypoint, state: Mark) -> void:
 	focus_exited.connect(queue_redraw)
 	mouse_entered.connect(queue_redraw)
 	mouse_exited.connect(queue_redraw)
+	set_process(boss)
+
+
+# The boss's node breathes a red glow, slow, like a heartbeat ahead.
+func _process(_delta: float) -> void:
+	queue_redraw()
 
 
 func _draw() -> void:
 	var center := size * 0.5
 	var radius := size.x * 0.5 - 4.0
+	if waypoint != null and waypoint.area.boss != null:
+		var beat := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 1000.0 * TAU / BOSS_BEAT)
+		draw_circle(center, radius + 8.0 + beat * 6.0, Color(BOSS_GLOW, BOSS_GLOW.a * (0.35 + 0.65 * beat)))
 	if selected:
 		draw_circle(center, radius + 12.0, GLOW)
 	draw_circle(center, radius, BACK)

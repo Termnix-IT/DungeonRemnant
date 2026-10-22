@@ -267,6 +267,8 @@ func _tell() -> void:
 func _buy() -> void:
 	if meta != null and meta.can_buy(selected):
 		buy_requested.emit(selected)
+	else:
+		GameAudio.play(self, &"ui_deny", -18.0)
 
 
 # After a purchase has been saved: the node's moment, and the nodes it opens.

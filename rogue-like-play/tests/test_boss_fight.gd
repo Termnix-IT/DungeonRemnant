@@ -56,9 +56,14 @@ func run_tests() -> void:
 	var boss := area.boss_foe
 	check(boss != null and boss.data == king and area.foes.has(boss), "The boss comes in on its mark")
 	check(boss.global_position.y < area.hero.global_position.y, "It comes in above her, across the hall")
+	var intro: BossIntro = area.get_node_or_null("BossIntro")
+	check(intro != null and intro._name.text == "遺跡王" and intro._epithet.text == king.epithet and not king.epithet.is_empty(), "It names itself as it arrives, its epithet over its name")
+	check(not paused, "The fight does not wait for its name")
 	await process_frame
 	check(area.hud.boss_gauge.visible and area.hud.boss_gauge.bar.value == king.max_hp, "Its health shows across the top")
 	check(not area.is_clear(), "The hall is not won while it stands")
+	await wait(BossIntro.BAR_TIME + BossIntro.NAME_TIME + BossIntro.HOLD_TIME + BossIntro.OUT_TIME + 0.3)
+	check(area.get_node_or_null("BossIntro") == null, "The nameplate leaves by itself")
 
 	# The way it picks: at random among the attacks that fit.
 	var picked := {}

@@ -6,10 +6,11 @@ extends RefCounted
 # touches them, and a broken settings file only falls back to the defaults.
 
 const DISPLAY_NAMES: Array[String] = ["ウィンドウ", "全画面"]
-# The buses of default_bus_layout.tres: GameAudio's cues and the dungeon's
-# room tone, each under the master volume.
+# The buses of default_bus_layout.tres: GameAudio's cues, the dungeon's room
+# tone and GameMusic's tracks, each under the master volume.
 const EFFECTS_BUS := &"Effects"
 const AMBIENCE_BUS := &"Ambience"
+const MUSIC_BUS := &"Music"
 # How hard the camera shakes when she is hit, as a share of the fight's shake (CombatArea.shake).
 const SHAKE_NAMES: Array[String] = ["標準", "弱め", "なし"]
 const SHAKE_SCALES: Array[float] = [1.0, 0.5, 0.0]
@@ -23,6 +24,7 @@ var path := "user://settings.cfg"
 var volume := 1.0
 var effects_volume := 1.0
 var ambience_volume := 1.0
+var music_volume := 0.8
 var fullscreen := false
 # An index into SHAKE_NAMES.
 var shake_level := 0
@@ -40,6 +42,7 @@ func load_settings() -> void:
 		volume = LEGACY_VOLUME_STEPS[step]
 	effects_volume = clampf(float(file.get_value("audio", "effects", effects_volume)), 0.0, 1.0)
 	ambience_volume = clampf(float(file.get_value("audio", "ambience", ambience_volume)), 0.0, 1.0)
+	music_volume = clampf(float(file.get_value("audio", "music", music_volume)), 0.0, 1.0)
 	fullscreen = bool(file.get_value("display", "fullscreen", fullscreen))
 	shake_level = clampi(int(file.get_value("display", "shake", shake_level)), 0, SHAKE_NAMES.size() - 1)
 	show_controls = bool(file.get_value("display", "controls", show_controls))
@@ -50,6 +53,7 @@ func save_settings() -> bool:
 	file.set_value("audio", "volume", volume)
 	file.set_value("audio", "effects", effects_volume)
 	file.set_value("audio", "ambience", ambience_volume)
+	file.set_value("audio", "music", music_volume)
 	file.set_value("display", "fullscreen", fullscreen)
 	file.set_value("display", "shake", shake_level)
 	file.set_value("display", "controls", show_controls)
@@ -65,7 +69,7 @@ func shake_scale() -> float:
 
 
 func apply_volume() -> void:
-	for pair: Array in [[&"Master", volume], [EFFECTS_BUS, effects_volume], [AMBIENCE_BUS, ambience_volume]]:
+	for pair: Array in [[&"Master", volume], [EFFECTS_BUS, effects_volume], [AMBIENCE_BUS, ambience_volume], [MUSIC_BUS, music_volume]]:
 		var bus := AudioServer.get_bus_index(pair[0])
 		if bus < 0:
 			continue

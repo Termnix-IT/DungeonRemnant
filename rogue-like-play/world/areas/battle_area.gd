@@ -123,6 +123,7 @@ func _ready() -> void:
 	var air := BattleAmbience.new()
 	air.name = "Ambience"
 	add_child(air)
+	GameMusic.cue(self, &"boss" if data != null and data.boss != null else &"battle")
 	if data != null:
 		hud.show_message("%s\n%s" % [data.display_name, objective_text()])
 		_banner_left = BANNER_TIME
@@ -234,6 +235,11 @@ func _on_marked_spawn(foe: Foe) -> void:
 	foe.phase_changed.connect(_on_boss_phase)
 	foe.fell.connect(func(_foe: Foe): boss_down = true)
 	shake(HURT_SHAKE)
+	# It names itself as it arrives.
+	var intro := BossIntro.new()
+	intro.name = "BossIntro"
+	add_child(intro)
+	intro.present(foe.data, HubTheme.create())
 
 
 # The boss's second phase: its summons come in on marks around the hall.
@@ -290,6 +296,7 @@ func _offer() -> void:
 	if offer.is_empty():
 		return
 	get_tree().paused = true
+	GameMusic.muffle(self, true)
 	choice.present_boons(offer, run.build, run.progression.level, run.progression.pending_choices, "", run.rerolls_left)
 
 
@@ -310,6 +317,7 @@ func _on_chosen(id: StringName) -> void:
 		_offer()
 	if not choosing():
 		get_tree().paused = false
+		GameMusic.muffle(self, false)
 		# The power taken rises around her as the fight resumes.
 		_effect(&"level_up", hero.global_position + BODY_MIDDLE * 0.5, Vector2.RIGHT, LEVEL_UP_SCALE)
 		_rise()
@@ -354,12 +362,14 @@ func open_menu() -> void:
 	if choosing() or in_menu() or not hero.health.alive() or finished:
 		return
 	get_tree().paused = true
+	GameMusic.muffle(self, true)
 	menu.open()
 
 
 func _on_resumed() -> void:
 	if not choosing():
 		get_tree().paused = false
+		GameMusic.muffle(self, false)
 
 
 func _on_settings_changed() -> void:

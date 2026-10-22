@@ -27,6 +27,14 @@ const PATH_TAKEN := Color(0.84, 0.72, 0.48, 0.95)
 const PATH_OPEN := Color(0.84, 0.72, 0.48, 0.7)
 const PATH_FAINT := Color(0.6, 0.6, 0.58, 0.22)
 const EMBLEM_SIZE := 32.0
+# Her token on the map: her face in a gold ring, standing where she is.
+# Opening, the paths open to her draw out from it (DRAW_TIME); a pick sends
+# it along the path to the area chosen (TRAVEL_TIME) before it is entered.
+const TOKEN := preload("res://art/ui/route/token.png")
+const TOKEN_SIZE := 46.0
+const DRAW_TIME := 0.45
+const TRAVEL_TIME := 0.5
+const ARRIVE_TIME := 0.14
 
 var route: RouteMap
 # The layer to choose from now.
@@ -51,6 +59,11 @@ var _detail_goal: Label
 var _detail_foes: Label
 var _enter: Button
 var _panel: PanelContainer
+var token: Control
+# How far the paths open to her have drawn out (0 to 1), and whether her
+# token is travelling to a pick (nothing else is taken meanwhile).
+var draw_progress := 1.0
+var traveling := false
 
 
 func _ready() -> void:
@@ -133,7 +146,7 @@ func _build_detail(body: HBoxContainer) -> void:
 	var gap := Control.new()
 	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	lines.add_child(gap)
-	_enter = HubUI.primary_action(lines, "このエリアへ進む", func(): _choose(selected))
+	_enter = HubUI.primary_action(lines, "このエリアへ進む", func(): pick(selected))
 
 
 # Shows the route at `at_layer` (the next to choose), with the run's state
@@ -151,9 +164,12 @@ func present(route_map: RouteMap, at_layer: int, run: RunState, max_hp: int, not
 	_show_boons(run)
 	_note.text = note
 	_note.visible = not note.is_empty()
+	traveling = false
 	_lay_nodes()
 	_select(current[0] if not current.is_empty() else null)
 	show()
+	draw_progress = 0.0
+	create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT).tween_method(_draw_out, 0.0, 1.0, DRAW_TIME)
 	UIMotion.bind_buttons(_panel)
 	get_tree().create_timer(FOCUS_DELAY).timeout.connect(_focus_first)
 
@@ -216,7 +232,36 @@ func _lay_nodes() -> void:
 		buttons[row].focus_neighbor_right = path
 		buttons[row].focus_neighbor_top = back
 		buttons[row].focus_neighbor_left = back
+	# Her token, above the nodes, where she stands: the area last taken, or
+	# the start, left of the first layer.
+	token = Control.new()
+	token.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	token.size = Vector2.ONE * TOKEN_SIZE
+	token.pivot_offset = token.size * 0.5
+	token.draw.connect(_draw_token)
+	_map.add_child(token)
+	token.position = token_spot() - token.size * 0.5
 	_map.queue_redraw()
+
+
+# Where her token stands before this layer's pick.
+func token_spot() -> Vector2:
+	if route_layer > 0 and route_layer - 1 < _run.taken.size():
+		return _center(_run.taken[route_layer - 1])
+	return Vector2(MAP_MARGIN * 0.35, MAP_SIZE.y * 0.5 - 12.0)
+
+
+func _draw_out(value: float) -> void:
+	draw_progress = value
+	_map.queue_redraw()
+
+
+func _draw_token() -> void:
+	var middle := token.size * 0.5
+	var radius := TOKEN_SIZE * 0.5
+	token.draw_circle(middle, radius + 3.0, Color(0, 0, 0, 0.5))
+	token.draw_texture_rect(TOKEN, Rect2(middle - Vector2.ONE * radius, Vector2.ONE * radius * 2.0), false)
+	token.draw_arc(middle, radius, 0.0, TAU, 48, PATH_TAKEN, 2.5, true)
 
 
 # Where a layer's row sits on the map.
@@ -244,7 +289,14 @@ func _draw_paths() -> void:
 					elif index + 1 == route_layer:
 						color = PATH_OPEN
 						width = 3.0
+						# Drawn out from her as the map opens.
+						_map.draw_line(_center(from), _center(from).lerp(_center(to), draw_progress), color, width, true)
+						continue
 				_map.draw_line(_center(from), _center(to), color, width, true)
+	# From the start to the first layer, before any area is taken.
+	if route_layer == 0:
+		for to: RouteMap.Waypoint in route.nodes(0):
+			_map.draw_line(token_spot(), token_spot().lerp(_center(to), draw_progress), PATH_OPEN, 3.0, true)
 
 
 func _center(point: RouteMap.Waypoint) -> Vector2:
@@ -274,7 +326,7 @@ func _show_detail(point: RouteMap.Waypoint) -> void:
 
 func _on_node_pressed(point: RouteMap.Waypoint) -> void:
 	if selected == point:
-		_choose(point)
+		pick(point)
 	else:
 		_select(point)
 		nodes_by_point[point].grab_focus()
@@ -285,17 +337,37 @@ func _focus_first() -> void:
 		buttons[current.find(selected) if current.has(selected) else 0].grab_focus()
 
 
+# A pick from the player: her token travels the path to it, the node
+# answers, and then it is chosen. Nothing else is taken on the way.
+func pick(waypoint: RouteMap.Waypoint) -> void:
+	if not visible or traveling or waypoint == null or not current.has(waypoint):
+		return
+	traveling = true
+	for button in buttons:
+		button.release_focus()
+	GameAudio.play(self, &"step", -16.0)
+	var journey := create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	journey.tween_property(token, "position", _center(waypoint) - token.size * 0.5, TRAVEL_TIME)
+	journey.tween_callback(func():
+		UIMotion.of(nodes_by_point[waypoint]).pulse(1.08, ARRIVE_TIME)
+		GameAudio.play(self, &"confirm", -16.0))
+	journey.tween_interval(ARRIVE_TIME)
+	journey.tween_callback(_choose.bind(waypoint))
+
+
+# The pick taken at once (tests, and the end of a token's journey).
 func _choose(waypoint: RouteMap.Waypoint) -> void:
 	if not visible or waypoint == null or not current.has(waypoint):
 		return
+	traveling = false
 	hide()
 	chosen.emit(waypoint)
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not visible or not (event is InputEventKey and event.pressed and not event.echo):
+	if not visible or traveling or not (event is InputEventKey and event.pressed and not event.echo):
 		return
 	var index: int = [KEY_1, KEY_2, KEY_3].find(event.physical_keycode)
 	if index >= 0 and index < current.size():
 		get_viewport().set_input_as_handled()
-		_choose(current[index])
+		pick(current[index])

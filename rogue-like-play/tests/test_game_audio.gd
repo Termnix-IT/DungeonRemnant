@@ -90,5 +90,36 @@ func run_tests() -> void:
 	root.add_child(air)
 	check(air.bus == GameSettings.AMBIENCE_BUS, "The wind plays on the ambience bus, under its volume setting")
 	air.free()
+	# The music: one track at a time on the Music bus, crossfading, muffled on demand.
+	check(AudioServer.get_bus_index(GameSettings.MUSIC_BUS) >= 0 and AudioServer.get_bus_effect(AudioServer.get_bus_index(GameSettings.MUSIC_BUS), 0) is AudioEffectLowPassFilter, "The Music bus carries its low-pass filter")
+	for track: StringName in GameMusic.TRACKS:
+		var loop: AudioStream = load(GameMusic.TRACKS[track])
+		check(loop is AudioStreamOggVorbis and loop.get_length() > 60.0, "%s is a long recorded track" % track)
+	var music := GameMusic.new()
+	root.add_child(music)
+	music.play(&"battle")
+	check(music.track == &"battle" and GameMusic.find(root) == music, "A track is cued and the player is found")
+	var playing := music._current
+	music.play(&"battle")
+	check(music._current == playing, "Cueing the same track again changes nothing")
+	music.play(&"boss")
+	check(music.track == &"boss" and music._current != playing, "A new track takes the other player, to crossfade")
+	music.set_muffled(true)
+	await create_timer(GameMusic.MUFFLE_TIME + 0.1).timeout
+	var filter := AudioServer.get_bus_effect(AudioServer.get_bus_index(GameSettings.MUSIC_BUS), 0) as AudioEffectLowPassFilter
+	check(music.muffled and filter.cutoff_hz < 1000.0, "Muffled, the highs are cut")
+	music.set_muffled(false)
+	await create_timer(GameMusic.MUFFLE_TIME + 0.1).timeout
+	check(not music.muffled and filter.cutoff_hz > 20000.0, "And let through again")
+	music.free()
+	var tuned := GameSettings.new()
+	tuned.path = "res://.godot/music-settings-%d.cfg" % Time.get_ticks_usec()
+	tuned.music_volume = 0.35
+	tuned.save_settings()
+	var reread := GameSettings.new()
+	reread.path = tuned.path
+	reread.load_settings()
+	check(is_equal_approx(reread.music_volume, 0.35), "The music's volume is kept with the settings")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(tuned.path))
 	print("Game audio: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures else 0)
