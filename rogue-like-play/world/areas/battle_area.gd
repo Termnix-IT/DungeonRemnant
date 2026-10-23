@@ -47,6 +47,10 @@ const LEVEL_BURST_POWER := 2.0
 const LEVEL_BURST_KNOCKBACK := 320.0
 # How long level_haste quickens her swings.
 const LEVEL_HASTE_TIME := 10.0
+# A forest's trees (tools/build_painted_terrain.py trees), square frames side
+# by side, drawn this many world px across on a 2x2 pillar.
+const TREES := preload("res://art/tiles/painted/forest_trees.png")
+const TREE_ACROSS := 124.0
 
 @export var seed_value := 0
 var data: AreaData
@@ -138,7 +142,15 @@ func _ready() -> void:
 
 # The ground, the hero and the rules from its AreaData.
 func _lay_out() -> void:
-	ground.build(data.size, data.walls(), data.theme)
+	# A forest's pillars stand as trees: their cells stop her but are drawn as floor.
+	var screened := {}
+	if data.trees:
+		for corner in data.pillar_corners():
+			for offset: Vector2i in [Vector2i.ZERO, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.ONE]:
+				screened[corner + offset] = true
+	ground.build(data.size, data.walls(), data.theme, screened)
+	if data.trees:
+		_plant_trees()
 	spawn_hero(ground.bounds().get_center(), run.tuning, run.moveset)
 	if data.kind == AreaData.Kind.FIELD and data.spawn_table != null:
 		director = EnemyDirector.new()
@@ -181,6 +193,24 @@ func _physics_process(delta: float) -> void:
 			_bring_boss()
 	if is_clear():
 		clear()
+
+
+# A tree on each pillar, rooted at the pillar's bottom edge and sorted among
+# the fighters, so one walking behind it is hidden by its crown.
+func _plant_trees() -> void:
+	var frame := TREES.get_height()
+	var kinds := TREES.get_width() / frame
+	for corner in data.pillar_corners():
+		var tree := Sprite2D.new()
+		var picture := AtlasTexture.new()
+		picture.atlas = TREES
+		picture.region = Rect2(posmod(hash(corner), kinds) * frame, 0, frame, frame)
+		tree.texture = picture
+		tree.offset = Vector2(0.0, -frame * 0.5)
+		tree.scale = Vector2.ONE * TREE_ACROSS / frame
+		tree.position = (Vector2(corner) + Vector2(1.0, 2.0)) * AreaGround.CELL
+		tree.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		actors.add_child(tree)
 
 
 func is_clear() -> bool:

@@ -23,7 +23,7 @@ extends CanvasLayer
 const CONTROLS := "WASD 移動　／　長押しで溜め攻撃　／　Esc メニュー"
 # The action slots' emblems, and their keys on a keyboard and a gamepad.
 const SLOTS := [
-	[&"strike", "sword_damage", "左クリック", "X"],
+	[&"strike", "weapon_sword", "左クリック", "X"],
 	[&"dash", "double_dash", "Space", "A"],
 	[&"skill", "hammer_damage", "Q", "Y"],
 	[&"skill_2", "hammer_damage", "E", "B"],

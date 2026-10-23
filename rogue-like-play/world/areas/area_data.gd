@@ -40,12 +40,14 @@ const REWARD_NAMES := {Reward.BOON: "強化", Reward.HEAL: "回復", Reward.ECHO
 
 @export_group("Ground")
 @export var size := Vector2i(40, 28)
-# AreaGround's painted terrain: 0 slate, 1 moss, 2 ember, 3 sanctum.
-@export_range(0, 3) var theme := 0
+# AreaGround's painted terrain: 0 slate, 1 moss, 2 ember, 3 sanctum, 4 grove.
+@export_range(0, 4) var theme := 0
 # The top-left cells of 2x2 pillars.
 @export var pillars: Array[Vector2i] = []
 # Extra 2x2 pillars strewn over the ground, placed the same way every time.
 @export_range(0, 200) var scattered_pillars := 0
+# Each pillar stands as a tree (a forest's), drawn among the fighters.
+@export var trees := false
 
 @export_group("Clearing")
 @export var spawn_table: SpawnTable
@@ -85,7 +87,16 @@ func walls() -> Dictionary:
 	for y in size.y:
 		cells[Vector2i(0, y)] = true
 		cells[Vector2i(size.x - 1, y)] = true
-	var corners := pillars.duplicate()
+	for corner: Vector2i in pillar_corners():
+		for offset: Vector2i in [Vector2i.ZERO, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.ONE]:
+			cells[corner + offset] = true
+	return cells
+
+
+# The top-left cells of its 2x2 pillars: the placed ones, then the strewn
+# ones (from a generator seeded by its id, kept clear of the middle).
+func pillar_corners() -> Array[Vector2i]:
+	var corners: Array[Vector2i] = pillars.duplicate()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(String(id))
 	var middle := Rect2i(size / 2 - Vector2i(5, 4), Vector2i(10, 8))
@@ -93,7 +104,4 @@ func walls() -> Dictionary:
 		var corner := Vector2i(rng.randi_range(3, size.x - 5), rng.randi_range(3, size.y - 5))
 		if not middle.has_point(corner):
 			corners.append(corner)
-	for corner: Vector2i in corners:
-		for offset: Vector2i in [Vector2i.ZERO, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.ONE]:
-			cells[corner + offset] = true
-	return cells
+	return corners

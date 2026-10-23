@@ -22,6 +22,7 @@ edges, a shaded rim on the bottom and right, and a dark gap where a wall
 meets the floor.
 
 	python tools/build_painted_terrain.py slate
+	python tools/build_painted_terrain.py grove
 	python tools/build_painted_terrain.py trees
 
 "trees" writes art/tiles/painted/forest_trees.png from forest_tree_a.png to
@@ -62,6 +63,8 @@ TREES = ["a", "b", "c", "d"]
 # stones are cut off at the edges): each is crossfaded with itself moved by
 # half its size, over SEAM_BAND of it from every edge, so the edges meet.
 SEAM_FIX = {"ember", "sanctum"}
+# The theme whose stairs and pillar a theme without its own takes.
+BORROWS = {"grove": "moss"}
 SEAM_BAND = 0.18
 # Objects on their floor cell, as a share of the cell.
 PILLAR_SIZE = 0.9
@@ -69,7 +72,11 @@ STAIRS_SIZE = 0.96
 
 
 def load(theme: str, part: str) -> Image.Image:
-	return Image.open(SOURCE / f"{theme}_{part}.png").convert("RGBA")
+	path = SOURCE / f"{theme}_{part}.png"
+	# A theme drawn only as floor and wall (the grove) borrows the rest.
+	if not path.exists() and theme in BORROWS:
+		path = SOURCE / f"{BORROWS[theme]}_{part}.png"
+	return Image.open(path).convert("RGBA")
 
 
 # The texture where it is far from the edges, and near them the texture

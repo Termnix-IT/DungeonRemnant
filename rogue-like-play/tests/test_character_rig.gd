@@ -15,7 +15,7 @@ const MAX_BONES := 28
 const MAX_VERTICES := 400
 const FRAME := 1.0 / 60.0
 # The hero's motions besides idle, walk and the plain swing.
-const SWINGS: Array[StringName] = [&"attack_back", &"attack_heavy", &"attack_slam"]
+const SWINGS: Array[StringName] = [&"attack_back", &"attack_heavy", &"attack_slam", &"attack_thrust"]
 const ONCE: Array[StringName] = [&"dash", CharacterRig.HURT]
 
 var checks := 0

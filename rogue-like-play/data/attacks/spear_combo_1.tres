@@ -16,4 +16,4 @@ hit_stop = 0.03
 move_scale = 0.3
 lunge = 16.0
 effect = &"thrust"
-motion = &"attack_sword"
+motion = &"attack_thrust"

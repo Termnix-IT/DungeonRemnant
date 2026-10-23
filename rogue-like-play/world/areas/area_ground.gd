@@ -4,8 +4,10 @@ extends Node2D
 # A battlefield's ground: the painted terrain (the dungeon's atlases, 96 px
 # cells shown at 48 px) laid over a rectangle of cells, its wall cells drawn
 # as joined walls with their shadow on the floor, and one static body that
-# stops anything at them. The fight itself runs in free world px; the cells
-# only place the ground and walls.
+# stops anything at them. Wall cells that something else stands for (a
+# forest's trees, `screened`) stop as walls but are drawn as floor, without
+# a wall's shadow. The fight itself runs in free world px; the cells only
+# place the ground and walls.
 
 const CELL := 48
 const PAINTED_CELL := 96
@@ -14,6 +16,7 @@ const ATLASES: Array[Texture2D] = [
 	preload("res://art/tiles/painted/moss_terrain.png"),
 	preload("res://art/tiles/painted/ember_terrain.png"),
 	preload("res://art/tiles/painted/sanctum_terrain.png"),
+	preload("res://art/tiles/painted/grove_terrain.png"),
 ]
 # Where the atlas keeps its tiles (as world/dungeon/dungeon.gd lays them).
 const COLUMNS := 16
@@ -29,14 +32,16 @@ const WALL_SHADE_DEPTH := 0.45
 
 var size := Vector2i.ZERO
 var walls: Dictionary = {}
+var screened: Dictionary = {}
 var terrain: TileMapLayer
 var body: StaticBody2D
 var _shade: Node2D
 
 
-func build(cells: Vector2i, wall_cells: Dictionary, theme: int = 0) -> void:
+func build(cells: Vector2i, wall_cells: Dictionary, theme: int = 0, screened_cells: Dictionary = {}) -> void:
 	size = cells
 	walls = wall_cells
+	screened = screened_cells
 	terrain = TileMapLayer.new()
 	terrain.name = "Terrain"
 	terrain.tile_set = _tileset(ATLASES[clampi(theme, 0, ATLASES.size() - 1)])
@@ -85,11 +90,16 @@ func _coords(index: int) -> Vector2i:
 	return Vector2i(index % COLUMNS, index / COLUMNS)
 
 
+# A wall drawn as one.
+func _drawn(cell: Vector2i) -> bool:
+	return walls.has(cell) and not screened.has(cell)
+
+
 func _tile(cell: Vector2i) -> int:
-	if walls.has(cell):
+	if _drawn(cell):
 		var mask := 0
 		for bit: int in 4:
-			if walls.has(cell + ([Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT] as Array[Vector2i])[bit]):
+			if _drawn(cell + ([Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT] as Array[Vector2i])[bit]):
 				mask |= 1 << bit
 		var spot := posmod(cell.x, WALL_PERIOD) + posmod(cell.y, WALL_PERIOD) * WALL_PERIOD
 		return WALL_START + mask if spot == 0 else WALL_SPOT_START + (spot - 1) * WALL_COUNT + mask
@@ -125,15 +135,15 @@ func _draw_shade() -> void:
 	for y in size.y:
 		for x in size.x:
 			var cell := Vector2i(x, y)
-			if walls.has(cell):
+			if _drawn(cell):
 				continue
 			var origin := Vector2(cell * CELL)
 			var side := float(CELL)
-			if walls.has(cell + Vector2i.UP):
+			if _drawn(cell + Vector2i.UP):
 				_strip(origin, Vector2(side, 0), Vector2(0, side * WALL_SHADE_DEPTH), 1.0)
-			if walls.has(cell + Vector2i.LEFT):
+			if _drawn(cell + Vector2i.LEFT):
 				_strip(origin, Vector2(0, side), Vector2(side * WALL_SHADE_DEPTH * 0.5, 0), 0.6)
-			if walls.has(cell + Vector2i.RIGHT):
+			if _drawn(cell + Vector2i.RIGHT):
 				_strip(origin + Vector2(side, 0), Vector2(0, side), Vector2(-side * WALL_SHADE_DEPTH * 0.5, 0), 0.6)
 
 

@@ -28,7 +28,7 @@ const UNKNOWN_SPECIAL_NOTE := "強化ツリーの必殺技の枝で習得でき�
 const CLEAR_ID := &"clear"
 # The slots: id, name, its keys (keyboard, gamepad), the emblem it shows.
 const SLOTS := [
-	[&"attack", "攻撃", "左クリック", "X", "sword_damage"],
+	[&"attack", "攻撃", "左クリック", "X", "weapon_sword"],
 	[&"skill_1", "スキル1", "Q", "Y", ""],
 	[&"skill_2", "スキル2", "E", "B", ""],
 	[&"special", "必殺技", "R", "LB", "seal_special"],
