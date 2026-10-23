@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AttackData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="1"]
+[resource]
+script = ExtResource("1")
+shape = 0
+reach = 140.0
+arc_degrees = 160.0
+windup = 0.08
+active = 0.1
+recovery = 0.3
+combo_after = 0.2
+dash_after = 0.14
+damage_scale = 1.3
+knockback = 380.0
+hit_stop = 0.05
+move_scale = 0.2
+lunge = 10.0
+effect = &"slash"
+motion = &"attack_heavy"

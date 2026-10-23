@@ -8,7 +8,8 @@ extends BattleArea
 # cards. The number keys instead hold a fixed count for trials (1 = 12,
 # 2 = 30, 3 = 60, 4 = 100, 5 = 200); 0 goes back to the growing crowd; L
 # gives a level at once, to try builds. She carries the first special move;
-# G fills its gauge and H sets the next one, to try them. Enter starts over after a fall; Esc
+# G fills its gauge and H sets the next one, and J takes up the next weapon,
+# to try them. Enter starts over after a fall; Esc
 # opens the menu, whose leaving starts over too.
 
 const SIZE := Vector2i(64, 44)
@@ -30,7 +31,7 @@ func _ready() -> void:
 
 
 func trial_keys() -> String:
-	return "1〜5 敵の数を固定　0 時間で増加　／　L レベルアップ　G 必殺ゲージ　H 必殺技の切り替え（試験用）"
+	return "1〜5 敵の数を固定　0 時間で増加　／　L レベルアップ　G 必殺ゲージ　H 必殺技　J 武器の切り替え（試験用）"
 
 
 func _lay_out() -> void:
@@ -38,7 +39,7 @@ func _lay_out() -> void:
 	hall.size = SIZE
 	hall.pillars.assign(PILLARS)
 	ground.build(SIZE, hall.walls())
-	spawn_hero(ground.bounds().get_center(), run.tuning)
+	spawn_hero(ground.bounds().get_center(), run.tuning, run.moveset)
 	director = EnemyDirector.new()
 	director.name = "Director"
 	director.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -70,4 +71,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		run.special = MetaProgress.SPECIALS[(at + 1) % MetaProgress.SPECIALS.size()]
 		hero.equip_special(run.special)
 		hud.show_message("必殺技：%s" % run.special.display_name)
+		_banner_left = BANNER_TIME * 0.5
+	elif event.physical_keycode == KEY_J and hero.motor.state == HeroMotor.State.FREE:
+		var held := MetaProgress.WEAPONS.find(hero.motor.moveset)
+		run.moveset = MetaProgress.WEAPONS[(held + 1) % MetaProgress.WEAPONS.size()]
+		hero.motor.moveset = run.moveset
+		hero.motor.combo_index = -1
+		WeaponMount.hold(hero.view.rig, run.moveset)
+		hud.show_message("武器：%s" % run.moveset.display_name)
 		_banner_left = BANNER_TIME * 0.5

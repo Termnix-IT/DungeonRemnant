@@ -42,7 +42,7 @@ static func encode(meta: MetaProgress) -> Dictionary:
 	for id in meta.loadout:
 		loadout.append(String(id))
 	return {"version": VERSION, "echo": meta.echo, "ranks": meta.ranks.duplicate(), "runs": meta.runs,
-		"clears": meta.clears, "best_layer": meta.best_layer, "met": met, "loadout": loadout, "special": String(meta.special),
+		"clears": meta.clears, "best_layer": meta.best_layer, "met": met, "loadout": loadout, "special": String(meta.special), "weapon": String(meta.weapon),
 		"chapters": _chapters_of(meta)}
 
 
@@ -99,6 +99,11 @@ static func decode(data: Variant) -> MetaProgress:
 	if not special is String or (not special.is_empty() and not meta.owns_special(StringName(special))):
 		return null
 	meta.special = StringName(special)
+	# The attack slot: a weapon held (a save from before it has the sword).
+	var weapon: Variant = data.get("weapon", "sword")
+	if not weapon is String or not meta.owns_weapon(StringName(weapon)):
+		return null
+	meta.weapon = StringName(weapon)
 	if not data.has("chapters"):
 		var first := Chapters.ALL[0].id
 		if meta.clears > 0:

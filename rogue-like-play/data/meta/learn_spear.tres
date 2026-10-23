@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"learn_spear"
+display_name = "槍の習得"
+description = "武器「槍」を覚え、ステータスの攻撃の枠で持ち替えられる"
+costs = Array[int]([300])
+effect = &"weapon_unlock"
+per_rank = 1.0
+emblem = "weapon_spear"
+branch = &"weapon"
+parent = &"echo_lantern"
+cell = Vector2i(2, -2)
+figure = ""
+figure_base = 0.0
+figure_scale = 1.0
+grants = &"spear"

@@ -356,6 +356,10 @@ func _show_actions() -> void:
 	var pad := hero.using_pad()
 	for entry: Array in SLOTS:
 		slots[entry[0]].key_label.text = entry[3] if pad else entry[2]
+	# The attack's slot shows the weapon held.
+	var weapon := EmblemIcons.texture(motor.moveset.emblem)
+	if weapon != null and slots[&"strike"].icon != weapon:
+		slots[&"strike"].icon = weapon
 	slots[&"strike"].show_state(1.0, motor.charge_progress() if motor.charging() else 0.0)
 	slots[&"dash"].show_state(1.0 if motor.dash_charges > 0 else motor.dash_recharge(), 0.0, motor.dash_charges, motor.tuning.dash_charges if motor.tuning.dash_charges > 1 else 0)
 	# Each skill slot shows the skill set in it, or nothing when it is empty.

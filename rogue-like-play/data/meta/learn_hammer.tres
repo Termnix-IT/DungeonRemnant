@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"learn_hammer"
+display_name = "大槌の習得"
+description = "武器「大槌」を覚え、ステータスの攻撃の枠で持ち替えられる"
+costs = Array[int]([450])
+effect = &"weapon_unlock"
+per_rank = 1.0
+emblem = "weapon_hammer"
+branch = &"weapon"
+parent = &"learn_spear"
+cell = Vector2i(3, -3)
+figure = ""
+figure_base = 0.0
+figure_scale = 1.0
+grants = &"hammer"

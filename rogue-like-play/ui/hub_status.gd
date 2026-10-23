@@ -3,7 +3,8 @@ extends Control
 
 # The status page, laid out as action games commonly lay out equipment: on
 # the slab from the left, her four slots in a row (the attack, fixed to the
-# sword; the two skills on Q / Y and E / B; the special move on R / LB,
+# weapon (the sword, or one learned on the weapon branch); the two skills on
+# Q / Y and E / B; the special move on R / LB,
 # sealed until one is learned) and under them, as tiles, what the chosen
 # slot can hold (a skill or special move not held yet is a dark "？？？";
 # the first tile clears the slot). In the column
@@ -33,14 +34,15 @@ const SLOTS := [
 	[&"special", "必殺技", "R", "LB", "seal_special"],
 ]
 const SKILL_SLOT_OFFSET := 1
-const ATTACK_NOTE := "3段の連撃と、長押しで溜め攻撃。武器はまだ剣だけ。"
+const UNKNOWN_WEAPON_NOTE := "強化ツリーの武器の枝で習得できる"
+const ATTACK_SLOT := 0
 const SPECIAL_NOTE := "強化ツリーの必殺技の枝で必殺技を覚えると付けられる"
 const SPECIAL_SLOT := 3
 
 var meta: MetaProgress
 var slot_buttons: Array[Button] = []
 var tiles: Array[Button] = []
-# What each tile holds: a SkillData, CLEAR_ID, or the sword's moveset id.
+# What each tile holds: a skill's, special move's or weapon's id, or CLEAR_ID.
 var tile_ids: Array[StringName] = []
 var slot := 1
 var shown_id: StringName = &""
@@ -147,7 +149,7 @@ func refresh(current: MetaProgress) -> void:
 func _slot_content(index: int) -> StringName:
 	match SLOTS[index][0]:
 		&"attack":
-			return &"sword"
+			return meta.weapon if meta != null else &"sword"
 		&"special":
 			if meta == null or not meta.owns_any_special():
 				return &"special"
@@ -164,10 +166,23 @@ func _show_slots() -> void:
 		var held := _slot_content(index)
 		var skill := MetaProgress.find_skill(held)
 		var move := MetaProgress.find_special(held)
+		var weapon := MetaProgress.find_weapon(held)
 		var keys: String = entry[3] if _pad else entry[2]
-		var content := "封印" if held == &"special" else ("剣" if held == &"sword" else (skill.display_name if skill != null else (move.display_name if move != null else "空き")))
+		var content := "空き"
+		var emblem: String = entry[4]
+		if held == &"special":
+			content = "封印"
+		elif weapon != null:
+			content = weapon.display_name
+			emblem = weapon.emblem
+		elif skill != null:
+			content = skill.display_name
+			emblem = skill.emblem
+		elif move != null:
+			content = move.display_name
+			emblem = move.emblem
 		button.text = "%s%s\n%s" % [entry[1], "（%s）" % keys if not keys.is_empty() else "", content]
-		button.icon = EmblemIcons.texture(skill.emblem if skill != null else (move.emblem if move != null else entry[4]))
+		button.icon = EmblemIcons.texture(emblem)
 
 
 func _show_tiles() -> void:
@@ -184,7 +199,11 @@ func _show_tiles() -> void:
 	_tile_note.text = ""
 	match kind:
 		&"attack":
-			_add_tile(&"sword", "剣\n装備中", EmblemIcons.texture("sword_damage"), "")
+			for weapon in MetaProgress.WEAPONS:
+				if not meta.owns_weapon(weapon.id):
+					_add_tile(weapon.id, UNKNOWN_NAME, null, UNKNOWN_WEAPON_NOTE)
+					continue
+				_add_tile(weapon.id, weapon.display_name + ("\n装備中" if meta.weapon == weapon.id else ""), EmblemIcons.texture(weapon.emblem), weapon.display_name)
 		&"special":
 			if not meta.owns_any_special():
 				_tile_note.text = SPECIAL_NOTE
@@ -260,6 +279,10 @@ func _press_tile(index: int) -> void:
 func _equip(id: StringName) -> void:
 	if meta == null:
 		return
+	if slot == ATTACK_SLOT:
+		if meta.owns_weapon(id) and meta.weapon != id:
+			equip_requested.emit(MetaProgress.WEAPON_SLOT, id)
+		return
 	if slot == SPECIAL_SLOT:
 		var move := &"" if id == CLEAR_ID else id
 		if (move.is_empty() and meta.special.is_empty()) or (not move.is_empty() and (not meta.owns_special(move) or meta.special == move)):
@@ -305,16 +328,14 @@ func _tell(id: StringName) -> void:
 	action_button.show()
 	var skill := MetaProgress.find_skill(id)
 	var move := MetaProgress.find_special(id)
+	var weapon := MetaProgress.find_weapon(id)
 	var in_skill_slot: bool = SLOTS[slot][0] in [&"skill_1", &"skill_2"]
 	var slot_index := slot - SKILL_SLOT_OFFSET
+	if weapon != null:
+		_tell_weapon(weapon)
+		picture.queue_redraw()
+		return
 	match id:
-		&"sword":
-			_emblem = "sword_damage"
-			name_label.text = "剣"
-			kind_label.text = "攻撃　左クリック・X"
-			figure_label.text = "攻撃力 %s" % _number(_base.power)
-			description_label.text = ATTACK_NOTE
-			action_button.hide()
 		&"special":
 			_emblem = "seal_special"
 			name_label.text = "必殺技"
@@ -358,6 +379,31 @@ func _tell(id: StringName) -> void:
 				action_button.disabled = here or not in_skill_slot
 				action_button.visible = in_skill_slot
 	picture.queue_redraw()
+
+
+# The column for a weapon: unknown until learned, else its combo, its
+# charged attack's power and reach, and holding it.
+func _tell_weapon(weapon: Moveset) -> void:
+	_emblem = weapon.emblem
+	if not meta.owns_weapon(weapon.id):
+		_unknown = true
+		name_label.text = UNKNOWN_NAME
+		kind_label.text = "武器"
+		figure_label.hide()
+		description_label.text = UNKNOWN_WEAPON_NOTE
+		action_button.hide()
+		return
+	var held := meta.weapon == weapon.id
+	name_label.text = weapon.display_name
+	kind_label.text = "武器　左クリック・X%s" % ("　装備中" if held else "")
+	var strongest := 0.0
+	for swing in weapon.combo:
+		strongest = maxf(strongest, swing.damage_scale)
+	figure_label.text = "連撃 %d段（攻撃力の%d%%まで）\n溜め 攻撃力の%d%%　%s" % [weapon.combo.size(), roundi(strongest * 100.0), roundi(weapon.charged.damage_scale * 100.0), _reach_text(weapon.charged)]
+	description_label.text = weapon.description
+	action_button.text = "装備中" if held else "持ち替える"
+	action_button.disabled = held or slot != ATTACK_SLOT
+	action_button.visible = slot == ATTACK_SLOT
 
 
 # The column for a special move: unknown until learned, else its gauge,

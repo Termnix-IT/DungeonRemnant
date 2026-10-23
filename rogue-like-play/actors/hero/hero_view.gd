@@ -43,6 +43,9 @@ func setup(owner_hero: Hero) -> void:
 	rig = MIO_RIG.instantiate()
 	rig.world_height = RIG_HEIGHT
 	rig_view.setup(rig)
+	# A weapon other than the sword takes the sword's place in her hand.
+	if hero.moveset != null and hero.moveset.art != null:
+		WeaponMount.hold(rig, hero.moveset)
 	_turn_to(Vector2.DOWN, true)
 
 

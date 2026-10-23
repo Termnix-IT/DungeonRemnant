@@ -40,7 +40,7 @@ func run_tests() -> void:
 
 	# The upgrade tree: one root, every other node grows from one in the tree,
 	# no two share a cell, and the seals keep their cells free.
-	check(MetaProgress.UPGRADES.size() == 27, "The root, ten body nodes, eight growth nodes, four skill nodes and four special nodes")
+	check(MetaProgress.UPGRADES.size() == 29, "The root, ten body nodes, eight growth nodes, four skill nodes, four special nodes and two weapon nodes")
 	var cells := {}
 	var roots := 0
 	var grown := true
@@ -49,7 +49,7 @@ func run_tests() -> void:
 		if upgrade.parent.is_empty():
 			roots += 1
 		else:
-			grown = grown and MetaProgress.find(upgrade.parent) != null and upgrade.branch in [&"body", &"growth", &"skill", &"special"]
+			grown = grown and MetaProgress.find(upgrade.parent) != null and upgrade.branch in [&"body", &"growth", &"skill", &"special", &"weapon"]
 	for seal: Array in MetaUpgradePage.SEALS:
 		cells[seal[1]] = true
 	check(roots == 1 and MetaProgress.find(MetaProgress.ROOT).parent.is_empty() and grown, "One root, and every node grows from another in a branch")
@@ -153,6 +153,27 @@ func run_tests() -> void:
 	check(MetaCodec.decode(before_specials) != null and MetaCodec.decode(before_specials).special == &"", "A save from before the special slot has it empty")
 	check(arts.equip(MetaProgress.SPECIAL_SLOT, &"") and arts.equipped_special() == null, "The special slot can be cleared")
 	check(arts.buy(&"special_surge") and arts.buy(&"special_mastery") and is_equal_approx(arts.lasting()[&"special_charge"], 0.2) and is_equal_approx(arts.lasting()[&"special_power"], 0.25), "The branch's upgrades fill the gauge faster and strike harder")
+	# The weapons: the sword from the start, the others learned on the
+	# weapon branch; the attack slot holds one, read back from a save, and a
+	# save from before it holds the sword.
+	var armory := MetaProgress.new()
+	check(armory.weapon == &"sword" and armory.equipped_weapon() == MetaProgress.WEAPONS[0] and not armory.owns_weapon(&"spear"), "A new player holds the sword only")
+	check(not armory.equip(MetaProgress.WEAPON_SLOT, &"spear") and not armory.equip(MetaProgress.WEAPON_SLOT, &"no_such_weapon"), "A weapon not learned, or unknown, cannot be held")
+	armory.ranks[String(MetaProgress.ROOT)] = 1
+	armory.ranks["learn_spear"] = 1
+	check(armory.owns_weapon(&"spear") and not armory.owns_weapon(&"hammer") and armory.equip(MetaProgress.WEAPON_SLOT, &"spear") and armory.equipped_weapon().id == &"spear", "Learned on the weapon branch, the spear can be held")
+	check(MetaCodec.decode(JSON.parse_string(JSON.stringify(MetaCodec.encode(armory)))).weapon == &"spear", "The attack slot reads back")
+	var unarmed := MetaCodec.encode(MetaProgress.new())
+	unarmed.weapon = "hammer"
+	check(MetaCodec.decode(unarmed) == null, "A weapon not learned is refused in a save")
+	var before_weapons := MetaCodec.encode(MetaProgress.new())
+	before_weapons.erase("weapon")
+	check(MetaCodec.decode(before_weapons).weapon == &"sword", "A save from before the attack slot holds the sword")
+	armory.ranks.erase("learn_spear")
+	check(armory.equipped_weapon() == MetaProgress.WEAPONS[0], "A weapon no longer held falls back to the sword")
+	for weapon in MetaProgress.WEAPONS:
+		check(not weapon.id.is_empty() and not weapon.description.is_empty() and weapon.combo.size() >= 2 and weapon.charged != null and EmblemIcons.texture(weapon.emblem) != null, "%s is a whole weapon" % weapon.id)
+		check(weapon.owned_from_start == (weapon.id == &"sword") and (weapon.art != null) == (weapon.id != &"sword"), "%s: only the sword is held from the start, and keeps the rig's own picture" % weapon.id)
 	var drilled := RunState.new(1)
 	kit.ranks["skill_drill"] = 2
 	drilled.use_lasting(kit.lasting())

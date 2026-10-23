@@ -5,7 +5,8 @@ extends RefCounted
 # earned in runs), the ranks of the lasting upgrades (MetaUpgrade, a tree
 # grown from ROOT: one can be bought once the upgrade it grows from holds a
 # rank), the skills set in the two skill slots (loadout, chosen on the
-# status page) and the special move in its slot (special), the record
+# status page), the special move in its slot (special) and the weapon in the
+# attack slot (weapon), the record
 # (in all and chapter by chapter, which opens the later chapters) of runs, and the foes ever met (for the
 # encyclopedia). A run is shaped by it at its start (tuning, lasting,
 # equipped_skills, starts_with_boon) and hands its result back at its end
@@ -40,6 +41,8 @@ const UPGRADES: Array[MetaUpgrade] = [
 	preload("res://data/meta/learn_sky_rend.tres"),
 	preload("res://data/meta/special_surge.tres"),
 	preload("res://data/meta/special_mastery.tres"),
+	preload("res://data/meta/learn_spear.tres"),
+	preload("res://data/meta/learn_hammer.tres"),
 ]
 const MAX_ECHO := 1000000000
 # Every active skill, in the status page's order.
@@ -57,6 +60,14 @@ const SPECIALS: Array[SpecialData] = [
 	preload("res://data/specials/sky_rend.tres"),
 ]
 const SPECIAL_SLOT := SKILL_SLOTS
+# Every weapon, in the status page's order; the attack slot is the slot
+# after the special move's for equip().
+const WEAPONS: Array[Moveset] = [
+	preload("res://data/movesets/sword.tres"),
+	preload("res://data/movesets/spear.tres"),
+	preload("res://data/movesets/hammer.tres"),
+]
+const WEAPON_SLOT := SPECIAL_SLOT + 1
 # A new player's slots.
 const DEFAULT_LOADOUT: Array[StringName] = [&"slam", &""]
 # Effects a run reads as rules (RunState.lasting) rather than as her tuning.
@@ -83,6 +94,8 @@ var met: Dictionary = {}
 var loadout: Array[StringName] = DEFAULT_LOADOUT.duplicate()
 # The special move in its slot (empty: none).
 var special: StringName = &""
+# The weapon in the attack slot.
+var weapon: StringName = &"sword"
 
 
 static func find(id: StringName) -> MetaUpgrade:
@@ -237,6 +250,32 @@ func equipped_special() -> SpecialData:
 	return find_special(special) if owns_special(special) else null
 
 
+static func find_weapon(id: StringName) -> Moveset:
+	for held in WEAPONS:
+		if held.id == id:
+			return held
+	return null
+
+
+# Whether the player holds the weapon: from the start, or learned on the
+# upgrade tree's weapon branch (a weapon_unlock holding a rank).
+func owns_weapon(id: StringName) -> bool:
+	var held := find_weapon(id)
+	if held == null:
+		return false
+	if held.owned_from_start:
+		return true
+	for upgrade in UPGRADES:
+		if upgrade.effect == &"weapon_unlock" and upgrade.grants == id and rank(upgrade.id) > 0:
+			return true
+	return false
+
+
+# The weapon a run fights with (the sword when the one set is not held).
+func equipped_weapon() -> Moveset:
+	return find_weapon(weapon) if owns_weapon(weapon) else WEAPONS[0]
+
+
 # The slot a skill is set in, or -1.
 func slot_of(id: StringName) -> int:
 	return loadout.find(id) if not id.is_empty() else -1
@@ -245,6 +284,11 @@ func slot_of(id: StringName) -> int:
 # Sets a held skill in a slot, or clears it with an empty id. A skill set in
 # the other slot changes places with what this slot held.
 func equip(slot: int, id: StringName) -> bool:
+	if slot == WEAPON_SLOT:
+		if not owns_weapon(id):
+			return false
+		weapon = id
+		return true
 	if slot == SPECIAL_SLOT:
 		if not id.is_empty() and not owns_special(id):
 			return false

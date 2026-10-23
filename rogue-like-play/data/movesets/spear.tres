@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="Moveset" load_steps=9 format=3]
+[ext_resource type="Script" path="res://combat/action/moveset.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/skill_ring.tres" id="3"]
+[ext_resource type="Resource" path="res://data/attacks/spear_combo_1.tres" id="4"]
+[ext_resource type="Resource" path="res://data/attacks/spear_combo_2.tres" id="5"]
+[ext_resource type="Resource" path="res://data/attacks/spear_combo_3.tres" id="6"]
+[ext_resource type="Resource" path="res://data/attacks/spear_charged.tres" id="7"]
+[ext_resource type="Texture2D" path="res://art/characters/mio_rig/weapon_spear.png" id="8"]
+[resource]
+script = ExtResource("1")
+id = &"spear"
+display_name = "槍"
+description = "長い間合いの2段の突きと薙ぎ払いの3段。溜めると前へ大きく踏み込んで遠くまで貫く。囲まれる前に間合いの外から削る。"
+emblem = "weapon_spear"
+charge_time = 0.7
+combo_grace = 0.25
+owned_from_start = false
+art_grip = 0.69
+art_length = 2.4
+combo = Array[ExtResource("2")]([ExtResource("4"), ExtResource("5"), ExtResource("6")])
+charged = ExtResource("7")
+skill = ExtResource("3")
+skill_cooldown = 6.0
+art = ExtResource("8")

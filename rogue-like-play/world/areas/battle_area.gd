@@ -139,7 +139,7 @@ func _ready() -> void:
 # The ground, the hero and the rules from its AreaData.
 func _lay_out() -> void:
 	ground.build(data.size, data.walls(), data.theme)
-	spawn_hero(ground.bounds().get_center(), run.tuning)
+	spawn_hero(ground.bounds().get_center(), run.tuning, run.moveset)
 	if data.kind == AreaData.Kind.FIELD and data.spawn_table != null:
 		director = EnemyDirector.new()
 		director.name = "Director"

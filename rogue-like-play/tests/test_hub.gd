@@ -288,6 +288,27 @@ func run_tests() -> void:
 	root.push_input(key(KEY_ESCAPE))
 	await process_frame
 	check(hub.page == "status" and status.slot_buttons[2].has_focus(), "Back from the tiles returns to their slot")
+	# The attack slot: the sword held, the others unknown until learned;
+	# learned, one is taken up there.
+	root.push_input(key(KEY_LEFT))
+	root.push_input(key(KEY_LEFT))
+	await process_frame
+	check(status.slot == 0 and status.tile_ids == [&"sword", &"spear", &"hammer"] and status.tiles[1].text == HubStatus.UNKNOWN_NAME and status.slot_buttons[0].text.contains("剣"), "The attack slot shows the sword, the other weapons unknown")
+	main.meta.ranks["learn_spear"] = 1
+	hub.refresh(main.meta, "")
+	root.push_input(key(KEY_ENTER))
+	root.push_input(key(KEY_ENTER, false))
+	await process_frame
+	root.push_input(key(KEY_RIGHT))
+	await process_frame
+	check(status.name_label.text == "槍" and status.action_button.text == "持ち替える" and status.figure_label.text.contains("連撃 3段"), "The column tells the spear and offers to take it up")
+	root.push_input(key(KEY_ENTER))
+	root.push_input(key(KEY_ENTER, false))
+	await process_frame
+	check(main.meta.weapon == &"spear" and status.slot_buttons[0].text.contains("槍") and hub.feedback.text.contains("持ち替え"), "Enter on it takes the spear up")
+	root.push_input(key(KEY_RIGHT))
+	root.push_input(key(KEY_RIGHT))
+	await process_frame
 	# The special slot opens once a special move is learned.
 	main.meta.ranks["learn_echo_burst"] = 1
 	hub.refresh(main.meta, "")
@@ -313,7 +334,7 @@ func run_tests() -> void:
 	reader.path = path
 	var read_back := reader.load_progress()
 	check(read_back.rank(&"sturdy_body") == 1 and read_back.rank(MetaProgress.ROOT) == 1 and read_back.echo == 70, "The purchases are still there after a restart")
-	check(read_back.loadout == [&"", &"slam"] and read_back.special == &"echo_burst", "So are the skill and special slots")
+	check(read_back.loadout == [&"", &"slam"] and read_back.special == &"echo_burst" and read_back.weapon == &"spear", "So are the skill, special and attack slots")
 
 	# An unreadable save: an alert, and saving stopped.
 	var broken := folder + "/broken.json"

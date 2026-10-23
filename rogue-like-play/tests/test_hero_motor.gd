@@ -222,5 +222,24 @@ func run_tests() -> void:
 	hold(motor, idle(), motor.tuning.dash_time)
 	check(motor.combo_index == HeroMotor.SPECIAL and specials_used.size() == 2, "And comes out at its end")
 
+	# Another weapon: the hammer's combo is two blows long and starts over
+	# after the second; the spear's charged attack is its long lunge.
+	var hammer: Moveset = load("res://data/movesets/hammer.tres")
+	motor = HeroMotor.new(preload("res://data/hero/mio.tres"), hammer)
+	var blows: Array[AttackData] = []
+	motor.swing_started.connect(func(attack: AttackData): blows.append(attack))
+	var strike := HeroInput.make(Vector2.ZERO, Vector2.RIGHT, true)
+	hold(motor, strike, FRAME)
+	hold(motor, idle(), hammer.combo[0].combo_after + 0.02)
+	hold(motor, strike, FRAME)
+	hold(motor, idle(), hammer.combo[1].duration() + 0.1)
+	hold(motor, strike, FRAME)
+	check(blows.size() >= 3 and blows[0] == hammer.combo[0] and blows[1] == hammer.combo[1] and blows[2] == hammer.combo[0], "The hammer's two blows, then the first again")
+	var spear: Moveset = load("res://data/movesets/spear.tres")
+	motor = HeroMotor.new(preload("res://data/hero/mio.tres"), spear)
+	hold(motor, HeroInput.make(Vector2.ZERO, Vector2.RIGHT, true, true), spear.charge_time + 0.3)
+	hold(motor, idle(), FRAME)
+	check(motor.attack == spear.charged and motor.attack.shape == AttackData.Shape.LINE and motor.attack.reach >= 300.0, "The spear's charge lets loose its long lunge")
+
 	print("Hero motor tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)

@@ -8,7 +8,10 @@
 [ext_resource type="Resource" path="res://data/attacks/skill_ring.tres" id="7"]
 [resource]
 script = ExtResource("1")
+id = &"sword"
 display_name = "剣"
+description = "3段の連撃と、長押しで溜め攻撃。速さと間合いの釣り合った、扱いやすい武器。"
+emblem = "sword_damage"
 combo = Array[ExtResource("6")]([ExtResource("2"), ExtResource("3"), ExtResource("4")])
 charged = ExtResource("5")
 charge_time = 0.75

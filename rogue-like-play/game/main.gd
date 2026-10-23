@@ -50,15 +50,22 @@ func equip_skill(slot: int, id: StringName) -> bool:
 		return false
 	var loadout := meta.loadout.duplicate()
 	var special := meta.special
+	var weapon := meta.weapon
 	if not meta.equip(slot, id):
 		$Hub.refresh(meta, "このスキルは付けられません。")
 		return false
 	if saving_enabled and not store.save_progress(meta):
 		meta.loadout = loadout
 		meta.special = special
+		meta.weapon = weapon
 		$Hub.refresh(meta, "保存に失敗したため、付け替えを取り消しました。")
 		_update_save_status()
 		return false
+	if slot == MetaProgress.WEAPON_SLOT:
+		$Hub.refresh(meta, "武器を「%s」に持ち替えました。" % MetaProgress.find_weapon(id).display_name)
+		_update_save_status()
+		$Hub.present_equip()
+		return true
 	if slot == MetaProgress.SPECIAL_SLOT:
 		var move := MetaProgress.find_special(id)
 		$Hub.refresh(meta, "必殺技に「%s」を付けました。" % move.display_name if move != null else "必殺技を外しました。")

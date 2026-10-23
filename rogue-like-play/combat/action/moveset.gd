@@ -2,9 +2,24 @@ class_name Moveset
 extends Resource
 
 # What a weapon does in real time: the normal attack's combo, swing by swing,
-# the charged attack let loose after holding the strike, and the skill.
+# the charged attack let loose after holding the strike, and the skill; and
+# how the screens and her hand show it. The sword is held from the start;
+# the others are learned on the upgrade tree's weapon branch and set in the
+# status page's attack slot (MetaProgress.weapon).
 
+@export var id: StringName
 @export var display_name := "剣"
+@export_multiline var description := ""
+# Its medallion (EmblemIcons key).
+@export var emblem := "sword_damage"
+@export var owned_from_start := true
+# Its picture in her hand in place of the rig's sword (WeaponMount), upright
+# with its head at the top; none keeps the sword. The hand holds it at
+# art_grip of its height from the head, and it is art_length times as long
+# as the sword.
+@export var art: Texture2D
+@export_range(0.0, 1.0) var art_grip := 0.8
+@export_range(0.2, 4.0) var art_length := 1.0
 @export var combo: Array[AttackData] = []
 @export var charged: AttackData
 # How long the strike is held, counted from the press, before the charged

@@ -149,11 +149,14 @@ func _physics_process(delta: float) -> void:
 		gems.step(hero.global_position, delta)
 
 
-# `tuning` replaces the scene's (a run's, with its lasting upgrades).
-func spawn_hero(at: Vector2, tuning: HeroTuning = null) -> Hero:
+# `tuning` replaces the scene's (a run's, with its lasting upgrades), and
+# `moveset` the scene's sword (the weapon the run is fought with).
+func spawn_hero(at: Vector2, tuning: HeroTuning = null, moveset: Moveset = null) -> Hero:
 	hero = HERO_SCENE.instantiate()
 	if tuning != null:
 		hero.tuning = tuning
+	if moveset != null:
+		hero.moveset = moveset
 	hero.area = self
 	hero.position = at
 	actors.add_child(hero)

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="Moveset" load_steps=8 format=3]
+[ext_resource type="Script" path="res://combat/action/moveset.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/skill_ring.tres" id="3"]
+[ext_resource type="Resource" path="res://data/attacks/hammer_combo_1.tres" id="4"]
+[ext_resource type="Resource" path="res://data/attacks/hammer_combo_2.tres" id="5"]
+[ext_resource type="Resource" path="res://data/attacks/hammer_charged.tres" id="6"]
+[ext_resource type="Texture2D" path="res://art/characters/mio_rig/weapon_hammer.png" id="7"]
+[resource]
+script = ExtResource("1")
+id = &"hammer"
+display_name = "大槌"
+description = "遅いが重い2段の振り下ろし。周りを広く叩き、大きく吹き飛ばす。溜めると地を割って周り一帯を打つ。"
+emblem = "weapon_hammer"
+charge_time = 0.95
+combo_grace = 0.3
+owned_from_start = false
+art_grip = 0.8
+art_length = 1.8
+combo = Array[ExtResource("2")]([ExtResource("4"), ExtResource("5")])
+charged = ExtResource("6")
+skill = ExtResource("3")
+skill_cooldown = 6.0
+art = ExtResource("7")

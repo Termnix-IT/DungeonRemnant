@@ -286,6 +286,8 @@ func run_tests() -> void:
 	armed.ranks["learn_echo_burst"] = 1
 	armed.ranks["special_surge"] = 1
 	armed.special = &"echo_burst"
+	armed.ranks["learn_spear"] = 1
+	armed.weapon = &"spear"
 	director = RunDirector.new()
 	director.seed_value = 37
 	director.meta = armed
@@ -296,6 +298,7 @@ func run_tests() -> void:
 	var fighter := director.area.hero
 	fighter.controlled = false
 	check(fighter.special == MetaProgress.find_special(&"echo_burst") and is_equal_approx(fighter.special_gain, 1.2), "The run's special move and its gain reach her")
+	check(fighter.motor.moveset.id == &"spear", "So does the weapon set at the base")
 	fighter.special_charge = 42.0
 	await clear_area(director)
 	director.map_view._choose(director.run.route.nodes(1)[0])

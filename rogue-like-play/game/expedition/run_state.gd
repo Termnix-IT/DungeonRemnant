@@ -69,6 +69,8 @@ var lasting: Dictionary = {}
 var skills: Array = []
 var rerolls_left := 0
 var last_stands := 0
+# The weapon she fights the run with (null: the hero scene's sword).
+var moveset: Moveset
 # The special move set for the run (null: none), and its gauge, carried from
 # area to area.
 var special: SpecialData

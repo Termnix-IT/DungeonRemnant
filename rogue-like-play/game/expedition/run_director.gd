@@ -74,6 +74,7 @@ func _ready() -> void:
 		run.use_lasting(meta.lasting())
 		run.skills = meta.equipped_skills()
 		run.special = meta.equipped_special()
+		run.moveset = meta.equipped_weapon()
 	run.route = RouteMap.generate(chapter, run.rng)
 	map_view = RouteMapView.new()
 	add_child(map_view)

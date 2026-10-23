@@ -8,8 +8,8 @@ extends Resource
 # from RunState.lasting (echo_rate, last_stand, heal_share, gem_pull,
 # start_boon, exp_rate, reroll, offer_count, level_heal, level_burst,
 # level_ward, level_haste, skill_cooldown, special_charge, special_power),
-# or a skill or special move learned (skill_unlock, special_unlock: its
-# `grants`). Favouring new ways to fight over bigger numbers.
+# or a skill, special move or weapon learned (skill_unlock, special_unlock,
+# weapon_unlock: its `grants`). Favouring new ways to fight over bigger numbers.
 
 @export var id: StringName
 @export var display_name := ""
@@ -21,14 +21,15 @@ extends Resource
 # Its medallion (EmblemIcons key).
 @export var emblem := ""
 # Where it grows in the tree: its branch (&"body", &"growth", &"skill",
-# &"special"), the upgrade
+# &"special", &"weapon"), the upgrade
 # it grows from (empty for the root) and its cell, columns right and rows
 # down from the root.
 @export var branch: StringName
 @export var parent: StringName
 @export var cell := Vector2i.ZERO
-# A skill_unlock's skill (SkillData.id) or a special_unlock's special move
-# (SpecialData.id): held from its first rank on.
+# A skill_unlock's skill (SkillData.id), a special_unlock's special move
+# (SpecialData.id) or a weapon_unlock's weapon (Moveset.id): held from its
+# first rank on.
 @export var grants: StringName
 # The figure the upgrades page tells: `figure` holding the value at a rank,
 # (figure_base + per_rank * rank) * figure_scale. Empty: the description only.

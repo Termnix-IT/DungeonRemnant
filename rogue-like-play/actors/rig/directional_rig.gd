@@ -85,6 +85,12 @@ func weapon_anchor() -> Node2D:
 	return rig.weapon_anchor()
 
 
+func facing_rigs() -> Array[CharacterRig]:
+	var rigs: Array[CharacterRig] = []
+	rigs.assign(_rigs.values())
+	return rigs
+
+
 # Shows or hides a part (the sword, when another weapon is held) in every
 # facing's rig.
 func set_part_shown(part_name: StringName, shown: bool) -> void:

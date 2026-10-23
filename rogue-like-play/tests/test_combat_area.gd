@@ -162,6 +162,8 @@ func run_tests() -> void:
 	await specials()
 	# Her special move.
 	await special_move()
+	# Another weapon in her hand.
+	await other_weapon()
 
 	# The sandbox starts up and its director keeps the foes coming.
 	var sandbox: CombatArea = load("res://world/areas/sandbox.tscn").instantiate()
@@ -185,6 +187,45 @@ func run_tests() -> void:
 func _on_hurt(lost: int) -> void:
 	hurts.append(lost)
 	numbers_shown.append(area.popups.get_child_count())
+
+
+# Another weapon: in every facing the rig's sword gives way to the weapon's
+# picture on the same hand bone, laid along where the sword was, the HUD's
+# attack slot shows it, and its own combo is swung.
+func other_weapon() -> void:
+	var made := CombatArea.new()
+	root.add_child(made)
+	var walls := {}
+	for x in 24:
+		walls[Vector2i(x, 0)] = true
+		walls[Vector2i(x, 15)] = true
+	for y in 16:
+		walls[Vector2i(0, y)] = true
+		walls[Vector2i(23, y)] = true
+	made.ground.build(Vector2i(24, 16), walls)
+	var spear: Moveset = load("res://data/movesets/spear.tres")
+	var hero := made.spawn_hero(Vector2(12, 8) * AreaGround.CELL, null, spear)
+	hero.controlled = false
+	var hud := ActionHud.new()
+	made.add_child(hud)
+	hud.watch(made)
+	await process_frame
+	await process_frame
+	var mounted := true
+	for each: CharacterRig in hero.view.rig.facing_rigs():
+		var sword := each.get_node(^"Parts/Sword") as Polygon2D
+		var weapon := each.get_node_or_null(^"Parts/Weapon") as Polygon2D
+		var axis := WeaponMount.sword_axis(sword)
+		mounted = mounted and not sword.visible and weapon != null and weapon.texture == spear.art and weapon.get_bone_count() == sword.get_bone_count() and weapon.get_index() == sword.get_index() + 1
+		mounted = mounted and axis.size() == 2 and (axis[1] - axis[0]).length() > 20.0
+	check(hero.motor.moveset == spear and mounted, "The spear takes the sword's place in her hand in every facing")
+	check(hud.slots[&"strike"].icon == EmblemIcons.texture(spear.emblem), "The HUD's attack slot shows the spear")
+	await drive(hero, HeroInput.make(Vector2.ZERO, Vector2.RIGHT, true), FRAME)
+	check(hero.motor.attack == spear.combo[0] and hero.motor.attack.effect == &"thrust", "She thrusts with it")
+	made.hit_stop.release()
+	await process_frame
+	made.free()
+	await process_frame
 
 
 # The special move: the gauge fills from her blows, foes felled and her
