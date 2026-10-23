@@ -1,0 +1,48 @@
+{
+	"animations": {
+		"attack_sword": {
+			"count": 9,
+			"fps": 20.0,
+			"loop": false,
+			"start": 19
+		},
+		"brace": {
+			"count": 6,
+			"fps": 10.0,
+			"loop": true,
+			"start": 40
+		},
+		"down": {
+			"count": 6,
+			"fps": 15.0,
+			"loop": false,
+			"start": 34
+		},
+		"hurt": {
+			"count": 6,
+			"fps": 20.0,
+			"loop": false,
+			"start": 28
+		},
+		"idle": {
+			"count": 13,
+			"fps": 8.125,
+			"loop": true,
+			"start": 0
+		},
+		"walk": {
+			"count": 6,
+			"fps": 15.0,
+			"loop": true,
+			"start": 13
+		}
+	},
+	"cell": 172,
+	"columns": 12,
+	"feet": [
+		86.0,
+		138.0
+	],
+	"height": 34.4,
+	"scale": 2.0
+}

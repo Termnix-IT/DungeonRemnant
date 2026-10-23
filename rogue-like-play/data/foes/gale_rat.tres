@@ -8,10 +8,9 @@ id = &"gale_rat"
 display_name = "疾風ネズミ"
 description = "風に乗って駆けるネズミ。疾走ネズミより速く、遠くから飛びかかる。身を縮めたところを斬れば止められる。
 第2章のフィールドとアリーナに現れ、風狼王にも呼ばれる。"
-visual_id = "fast"
+visual_id = "gale_rat"
 baked = true
 size_scale = 1.25
-tint = Color(0.62, 0.86, 1, 1)
 max_hp = 26
 defense = 0
 speed = 205.0

@@ -36,6 +36,8 @@ IMPACT = 0.09
 # no strip, stands as tall as the named bosses.
 HEIGHTS = {
 	"proximity": 30.4, "fast": 34.4, "charge": 40.8, "summoner": 39.2, "turret": 43.2,
+	# Chapter two's kin stand as tall as the chapter-one foes they are kin of.
+	"moss_sentinel": 60.0, "gale_rat": 34.4, "spore_swell": 30.4,
 	"boss_stone_gate": 87.2, "boss_gale_warden": 89.6, "boss_cannon_watcher": 87.2,
 	"boss_summoning_priest": 89.6, "boss_ruin_king": 88.8, "boss_root_warden": 91.2,
 	"boss_gale_wolf_king": 92.0, "boss_spore_cannon": 90.4, "boss_swarm_lord": 92.0,

@@ -9,12 +9,12 @@ extends SceneTree
 # reads them back as SpriteFrames, so a crowd is drawn as sprites rather
 # than skinned rigs (Phase 2 measured about 0.06 ms per rig). The rig stays
 # the source: change it, then bake again. Needs a rendering display driver:
-#   godot --path . --script res://tools/bake_foe_frames.gd
-# and then an import (godot --headless --path . --editor --import --quit).
+#   godot --path . --script res://tools/bake_foe_frames.gd [-- id ...]
+# (the ids named after --, or every one in IDS), and then an import (godot --headless --path . --editor --import --quit).
 
 # Foe: how many times its figure's height the square cell is, so swinging
 # hair, a cape, a figure lying fallen and a long body leaping all fit.
-const IDS := {"basic": 1.7, "fast": 2.5}
+const IDS := {"basic": 1.7, "fast": 2.5, "moss_sentinel": 1.7, "gale_rat": 2.5}
 const OUT := "res://art/enemies/frames/"
 const SCALE := 2.0
 const COLUMNS := 12
@@ -47,8 +47,10 @@ func bake() -> void:
 		return
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	var result := OK
+	var named := OS.get_cmdline_user_args()
 	for id: String in IDS:
-		result |= await _bake(id, IDS[id])
+		if named.is_empty() or named.has(id):
+			result |= await _bake(id, IDS[id])
 	quit(result)
 
 

@@ -604,9 +604,9 @@ SENTINEL_FACINGS: dict[str, dict] = {
 # mound that squashes), "beast" (a long four-legged body bent along its
 # length) or "upright" (a standing figure bent from the feet up).
 ENEMY_MESHES = {
-	"proximity": "blob", "summoner": "blob",
-	"fast": "beast", "charge": "beast", "boss_gale_wolf_king": "beast", "boss_swarm_lord": "beast",
-	"turret": "upright", "boss_stone_gate": "upright", "boss_gale_warden": "upright",
+	"proximity": "blob", "summoner": "blob", "spore_swell": "blob",
+	"fast": "beast", "gale_rat": "beast", "charge": "beast", "boss_gale_wolf_king": "beast", "boss_swarm_lord": "beast",
+	"turret": "upright", "moss_sentinel": "upright", "boss_stone_gate": "upright", "boss_gale_warden": "upright",
 	"boss_cannon_watcher": "upright", "boss_summoning_priest": "upright", "boss_ruin_king": "upright",
 	"boss_root_warden": "upright", "boss_spore_cannon": "upright", "boss_ancient_tree_king": "upright",
 	"boss": "upright",
