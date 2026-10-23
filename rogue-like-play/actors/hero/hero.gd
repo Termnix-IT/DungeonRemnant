@@ -41,6 +41,9 @@ var special_charge := 0.0
 var special_gain := 1.0
 var special_power := 0.0
 var _impact_serial := -1
+# Where she stood as the last physics frame began; her picture is drawn
+# between it and where she stands (TickSmoothing).
+var _tick_from := Vector2.ZERO
 var _spent := {}
 var _spent_serial := -1
 var _launched_serial := -1
@@ -66,6 +69,7 @@ func _ready() -> void:
 	motor.dashed.connect(_on_dashed)
 	motor.dash_ended.connect(_on_dash_ended)
 	motor.charge_ready.connect(_on_charge_ready)
+	_tick_from = global_position
 
 
 # Fights with the run's build from now on.
@@ -126,8 +130,20 @@ func step(input: HeroInput, delta: float) -> void:
 	# She slips through foes while dashing, and is stopped by them otherwise.
 	collision_mask = WALLS if motor.state == HeroMotor.State.DASH else WALLS | FOES
 	velocity = motor.motion()
+	_tick_from = global_position
 	move_and_slide()
 	_land_hits()
+
+
+func _process(_delta: float) -> void:
+	if view != null:
+		view.position = TickSmoothing.lag(_tick_from, global_position)
+
+
+# Where her picture stands this drawn frame (the camera follows it; worked
+# out here, as the camera may move before her picture does).
+func drawn_position() -> Vector2:
+	return global_position + TickSmoothing.lag(_tick_from, global_position)
 
 
 func read_input() -> HeroInput:

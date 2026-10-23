@@ -34,6 +34,7 @@ var brain := FoeBrain.new()
 var target: Hero
 var area: CombatArea
 var view: FoeView
+var _tick_from := Vector2.ZERO
 var rng := RandomNumberGenerator.new()
 var hit_radius := 14.0
 var speed := 95.0
@@ -70,6 +71,7 @@ const BROOD_SPREAD := Vector2(50.0, 90.0)
 
 func _ready() -> void:
 	rng.randomize()
+	_tick_from = global_position
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	hit_radius = data.hit_radius
 	# Bodies as wide as the hit circle plus a little, so a crowd keeps apart
@@ -94,6 +96,7 @@ func _ready() -> void:
 # Back on its feet at `at`, whole: a new foe, or one retired and kept.
 func revive(at: Vector2) -> void:
 	position = at
+	_tick_from = at
 	if _fade != null:
 		_fade.kill()
 	health = Combatant.new(data.max_hp, data.defense)
@@ -122,6 +125,13 @@ func _physics_process(delta: float) -> void:
 	step(delta)
 
 
+# Its picture is drawn between where it stood as the last physics frame
+# began and where it stands (TickSmoothing).
+func _process(_delta: float) -> void:
+	if view != null:
+		view.position = TickSmoothing.lag(_tick_from, global_position)
+
+
 # One physics frame: tests call it directly.
 func step(delta: float) -> void:
 	if dying:
@@ -144,6 +154,7 @@ func step(delta: float) -> void:
 	if _push.length() < 1.0:
 		_push = Vector2.ZERO
 	velocity = walk + _lunge + _push
+	_tick_from = global_position
 	move_and_slide()
 	_touch()
 	if attack == null:

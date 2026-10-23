@@ -16,6 +16,9 @@ var power := 10.0
 var travelled := 0.0
 var hostile := false
 var _spent := {}
+# Where it was as the last physics frame began; it is drawn between that and
+# where it is (TickSmoothing).
+var _tick_from := Vector2.ZERO
 var _image: Texture2D
 
 
@@ -24,6 +27,7 @@ func launch(shot: ProjectileData, combat_area: CombatArea, from: Vector2, toward
 	data = shot
 	area = combat_area
 	position = from
+	_tick_from = from
 	direction = toward.normalized()
 	power = hero_power
 	z_index = 12
@@ -37,11 +41,16 @@ func _physics_process(delta: float) -> void:
 	step(delta)
 
 
+func _process(_delta: float) -> void:
+	queue_redraw()
+
+
 # One physics frame; tests call it directly.
 func step(delta: float) -> void:
 	if data == null:
 		return
 	var move := minf(data.speed * delta, data.distance - travelled)
+	_tick_from = position
 	position += direction * move
 	travelled += move
 	if hostile:
@@ -76,5 +85,5 @@ func _draw() -> void:
 		return
 	var left := 1.0 - travelled / data.distance
 	var alpha := clampf(left * 3.0, 0.0, 1.0)
-	draw_set_transform(Vector2.ZERO, direction.angle(), Vector2.ONE)
+	draw_set_transform(TickSmoothing.lag(_tick_from, position), direction.angle(), Vector2.ONE)
 	draw_texture_rect(_image, Rect2(Vector2.ONE * -data.size * 0.5, Vector2.ONE * data.size), false, Color(1, 1, 1, alpha))

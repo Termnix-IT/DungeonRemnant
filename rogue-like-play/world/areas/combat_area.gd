@@ -140,8 +140,10 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	# The camera follows her picture, which moves every drawn frame, not her
+	# body, which moves on physics frames (TickSmoothing).
 	if hero != null and not camera_held:
-		camera.global_position = hero.global_position + CAMERA_LEAD
+		camera.global_position = hero.drawn_position() + CAMERA_LEAD
 
 
 func _physics_process(delta: float) -> void:
