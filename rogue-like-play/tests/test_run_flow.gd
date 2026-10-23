@@ -238,6 +238,47 @@ func run_tests() -> void:
 	check(ended[0].echo == director.run.echo and ended[0].echo > 0, "The result hands back the echo earned")
 	director.free()
 	await process_frame
+	# The second chapter, taken through every layer to the storm wolf: its
+	# boss comes in, rages at half health and calls its rats, and falls.
+	ended.clear()
+	director = RunDirector.new()
+	director.seed_value = 43
+	director.chapter = load("res://data/chapters/gale_woods.tres")
+	root.add_child(director)
+	director.finished.connect(_on_finished)
+	await process_frame
+	check(director.run.route.size() == 5 and director.map_view._title.text.contains("風哭きの樹海"), "The run lays out the chapter it was given")
+	for layer in director.run.route.size() - 1:
+		director.map_view._choose(director.run.route.nodes(layer)[0])
+		await process_frame
+		director.area.hero.controlled = false
+		await clear_area(director)
+	director.map_view._choose(director.run.route.nodes(director.run.route.size() - 1)[0])
+	await process_frame
+	var den := director.area
+	den.hero.controlled = false
+	# She is not to fall while the wolf is looked at.
+	den.hero.health.max_hp = 100000
+	den.hero.health.hp = 100000
+	await wait(BattleArea.BOSS_DELAY + BattleArea.BOSS_MARK_TIME + 0.4)
+	await create_timer(BossIntro.total_time() + 0.3, true, false, true).timeout
+	var wolf := den.boss_foe
+	check(wolf != null and wolf.data.id == &"gale_wolf_king" and wolf.view.rig != null, "The storm wolf comes in, drawn by its rig")
+	wolf.receive(DamageInfo.make(float(wolf.health.max_hp) * 0.55, Vector2.RIGHT))
+	await wait(0.2)
+	check(wolf.phase == 2, "At half health it rages")
+	wolf.receive(DamageInfo.make(100000.0, Vector2.RIGHT))
+	# Its gems may bring a level, whose cards are taken as they come.
+	for frame in 400:
+		if not ended.is_empty():
+			break
+		if is_instance_valid(den) and den.is_inside_tree() and den.choice.visible:
+			den.choice._select(0)
+		await physics_frame
+	check(ended.size() == 1 and ended[0].cleared and ended[0].chapter_id == "gale_woods", "Felling it wins the second chapter")
+	director.free()
+	await process_frame
+
 	# The special move set at the base goes with her, and its gauge carries
 	# from area to area.
 	var armed := MetaProgress.new()

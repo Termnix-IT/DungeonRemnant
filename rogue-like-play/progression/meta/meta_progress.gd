@@ -5,7 +5,8 @@ extends RefCounted
 # earned in runs), the ranks of the lasting upgrades (MetaUpgrade, a tree
 # grown from ROOT: one can be bought once the upgrade it grows from holds a
 # rank), the skills set in the two skill slots (loadout, chosen on the
-# status page) and the special move in its slot (special), the record of runs, and the foes ever met (for the
+# status page) and the special move in its slot (special), the record
+# (in all and chapter by chapter, which opens the later chapters) of runs, and the foes ever met (for the
 # encyclopedia). A run is shaped by it at its start (tuning, lasting,
 # equipped_skills, starts_with_boon) and hands its result back at its end
 # (record_run). Saved by MetaStore.
@@ -70,8 +71,12 @@ var echo := 0
 var ranks: Dictionary = {}
 var runs := 0
 var clears := 0
-# The deepest layer reached, 1-based (the boss's layer once cleared).
+# The deepest layer reached, 1-based (the boss's layer once cleared), in
+# any chapter.
 var best_layer := 0
+# Chapter id -> its clears, and the deepest layer reached in it (1-based).
+var chapter_clears: Dictionary = {}
+var chapter_best: Dictionary = {}
 # Foe ids (FoeData.id) ever met -> true.
 var met: Dictionary = {}
 # The skill id in each skill slot (empty: nothing set).
@@ -158,8 +163,26 @@ func record_run(result: Dictionary) -> void:
 	if result.get("cleared", false):
 		clears += 1
 	best_layer = maxi(best_layer, int(result.get("layer", 0)) + 1)
+	var chapter := StringName(str(result.get("chapter_id", Chapters.ALL[0].id)))
+	if result.get("cleared", false):
+		chapter_clears[chapter] = clears_of(chapter) + 1
+	chapter_best[chapter] = maxi(best_of(chapter), int(result.get("layer", 0)) + 1)
 	for id: Variant in result.get("met", []):
 		met[StringName(id)] = true
+
+
+func clears_of(chapter: StringName) -> int:
+	return int(chapter_clears.get(chapter, 0))
+
+
+func best_of(chapter: StringName) -> int:
+	return int(chapter_best.get(chapter, 0))
+
+
+# Whether the chapter can be set out for: open from the start, or the one it
+# is unlocked_by has been cleared.
+func chapter_open(chapter: ChapterData) -> bool:
+	return chapter.unlocked_by.is_empty() or clears_of(chapter.unlocked_by) > 0
 
 
 func has_met(id: StringName) -> bool:

@@ -105,7 +105,7 @@ func buy_upgrade(id: StringName) -> bool:
 
 
 func start_run() -> void:
-	if active_run != null or not has_node("Hub") or not $Hub.visible:
+	if active_run != null or not has_node("Hub") or not $Hub.visible or not meta.chapter_open($Hub.chapter):
 		return
 	if saving_enabled and not store.save_progress(meta):
 		_update_save_status()
@@ -117,6 +117,7 @@ func start_run() -> void:
 	active_run.meta = meta
 	active_run.settings = $Hub.settings
 	active_run.returns_to_base = true
+	active_run.chapter = $Hub.chapter
 	active_run.settings_changed.connect(func():
 		if saving_enabled:
 			$Hub.settings.save_settings())

@@ -16,6 +16,9 @@ extends Resource
 @export var baked := false
 # How much larger than its rig's own size it is drawn (and its body made).
 @export_range(0.5, 4.0) var size_scale := 1.0
+# Its picture is drawn in this colour, so a kin of another foe that shares
+# its rig reads as its own (a status's tint goes over it).
+@export var tint := Color.WHITE
 # An elite wears a ring at its feet and a health bar over its head.
 @export var elite := false
 @export_range(1, 100000) var max_hp := 30

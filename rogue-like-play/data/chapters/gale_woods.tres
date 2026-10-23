@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ChapterData" load_steps=12 format=3]
+[ext_resource type="Script" path="res://game/expedition/chapter_data.gd" id="1"]
+[ext_resource type="Script" path="res://world/areas/area_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/areas/howling_grove.tres" id="3"]
+[ext_resource type="Resource" path="res://data/areas/mossy_road.tres" id="4"]
+[ext_resource type="Resource" path="res://data/areas/root_arena.tres" id="5"]
+[ext_resource type="Resource" path="res://data/areas/warden_shrine.tres" id="6"]
+[ext_resource type="Resource" path="res://data/areas/wolf_den.tres" id="7"]
+[ext_resource type="Texture2D" path="res://art/hub/gale_woods.png" id="8"]
+[ext_resource type="Resource" path="res://data/areas/event_merchant.tres" id="9"]
+[ext_resource type="Resource" path="res://data/areas/event_altar.tres" id="10"]
+[ext_resource type="Resource" path="res://data/areas/event_curse.tres" id="11"]
+[resource]
+script = ExtResource("1")
+id = &"gale_woods"
+display_name = "第2章　風哭きの樹海"
+description = "風の吠える古い樹海を抜け、根の奥の寝床で風狼王を討つ。"
+illustration = ExtResource("8")
+layers = 4
+choices = Vector2i(2, 3)
+areas = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6")])
+boss = ExtResource("7")
+events = Array[ExtResource("2")]([ExtResource("9"), ExtResource("10"), ExtResource("11")])
+event_chance = 0.6
+unlocked_by = &"ash_corridor"

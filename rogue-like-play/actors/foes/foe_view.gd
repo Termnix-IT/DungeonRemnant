@@ -53,6 +53,8 @@ func setup(owner_foe: Foe) -> void:
 		add_child(sprite)
 		height = baked.height * foe.data.size_scale
 		_body = sprite
+		_tint = foe.data.tint
+		_body.modulate = _tint
 		_play(IDLE)
 		sprite.frame = randi() % sprite.sprite_frames.get_frame_count(IDLE)
 		return
@@ -67,6 +69,8 @@ func setup(owner_foe: Foe) -> void:
 	rig.world_height = height
 	rig_view.setup(rig)
 	_body = rig_view
+	_tint = foe.data.tint
+	_body.modulate = _tint
 
 
 func walk(direction: Vector2) -> void:
@@ -134,21 +138,21 @@ func fall() -> void:
 
 # Tints by the status it carries: burning over shocked.
 func show_statuses(statuses: Dictionary) -> void:
-	_tint = Color.WHITE
+	_tint = foe.data.tint
 	for id: StringName in [Status.SHOCK, Status.BURN]:
 		if statuses.has(id):
-			_tint = Status.TINT[id]
+			_tint = foe.data.tint * Status.TINT[id]
 	if _body != null and (_flash == null or not _flash.is_running()):
 		_body.modulate = _tint
 
 
 func revive() -> void:
 	_braced = false
-	_tint = Color.WHITE
+	_tint = foe.data.tint
 	if _flash != null:
 		_flash.kill()
 	if _body != null:
-		_body.modulate = Color.WHITE
+		_body.modulate = _tint
 	if rig != null:
 		rig.braced = false
 		rig.idle()

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=4 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/gale_pounce.tres" id="3"]
+[resource]
+script = ExtResource("1")
+id = &"gale_rat"
+display_name = "疾風ネズミ"
+description = "風に乗って駆けるネズミ。疾走ネズミより速く、遠くから飛びかかる。身を縮めたところを斬れば止められる。
+第2章のフィールドとアリーナに現れ、風狼王にも呼ばれる。"
+visual_id = "fast"
+baked = true
+size_scale = 1.25
+tint = Color(0.62, 0.86, 1, 1)
+max_hp = 26
+defense = 0
+speed = 205.0
+acceleration = 1600.0
+speed_spread = 0.15
+contact_damage = 8
+contact_knockback = 240.0
+contact_cooldown = 0.8
+hit_radius = 11.0
+knockback_resist = 0.0
+hitstun = 0.18
+exp_reward = 2
+attacks = Array[ExtResource("2")]([ExtResource("3")])
+power = 10.0
+attack_cooldown = 1.4

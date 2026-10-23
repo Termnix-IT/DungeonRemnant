@@ -9,6 +9,7 @@ names its emblem by key (BoonData.emblem, MetaUpgrade.emblem); see
 ui/emblem_icons.gd. The first two boards were drawn for the turn-based
 game's abilities; c and d hold the boons' and the lasting upgrades' own,
 and e to g the upgrade tree's nodes and the seals of its branches to come.
+Boards h to k hold combat upgrades, special moves, events and chapter seals.
 
 	python tools/process_emblems.py
 """
@@ -38,6 +39,10 @@ BOARDS = [
 	("emblems_e.png", 2, 3, ["echo_lantern", "firm_guard", "steady_recovery", "last_stand", "healing_lore", "dash_recovery"]),
 	("emblems_f.png", 2, 3, ["triple_dash", "light_step", "gem_magnet", "quick_study", "reroll", "fourth_card"]),
 	("emblems_g.png", 2, 3, ["rising_heal", "rising_burst", "rising_ward", "rising_haste", "seal_skill", "seal_special"]),
+	("emblems_h.png", 2, 3, ["brute_force", "follow_up", "long_reach", "rending_charge", "life_feast", "riposte"]),
+	("emblems_i.png", 2, 3, ["keen_art", "gale_step", "discharge", "thunder_step", "aftershock", "flame_art"]),
+	("emblems_j.png", 2, 3, ["thunder_flash", "swallow_cut", "blaze_ring", "skill_drill", "echo_burst", "sky_rend"]),
+	("emblems_k.png", 2, 3, ["special_surge", "special_mastery", "event_merchant", "event_altar", "event_curse", "seal_chapter"]),
 ]
 
 

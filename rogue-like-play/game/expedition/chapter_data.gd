@@ -3,7 +3,8 @@ extends Resource
 
 # A chapter of a run: how many layers of choices lead to its boss, how many
 # areas each layer offers, and the areas they are drawn from. The first
-# layer offers only fields, so a run opens on the crowd.
+# layer offers only fields, so a run opens on the crowd. A later chapter is
+# sealed until the one it is unlocked_by has been cleared once (Chapters).
 
 @export var id: StringName
 @export var display_name := "第1章"
@@ -19,3 +20,5 @@ extends Resource
 @export var events: Array[AreaData] = []
 @export_range(0.0, 1.0) var event_chance := 0.5
 @export var boss: AreaData
+# The chapter whose first clear opens this one; empty: open from the start.
+@export var unlocked_by: StringName

@@ -59,6 +59,22 @@ func run_tests() -> void:
 	check(lobby.upgrade_ready.text == "1 件" and lobby.codex_met.text == "0 / %d" % FoeCatalog.FOES.size(), "The entries tell what can be bought and what has been met")
 	lobby.select(0)
 	check(lobby.title_label.text == hub.chapter.display_name and lobby.decide_button.text.ends_with("出撃する"), "The departure names its chapter")
+	# The chapters: E (RB) shows the next, sealed until the first is cleared.
+	check(lobby.chapter_switch.visible and lobby.chapter_place.text == "1 / 2" and not lobby.chapter_lock.visible, "The departure shows where its chapter stands among them")
+	root.push_input(key(KEY_E))
+	await process_frame
+	check(hub.chapter.id == &"gale_woods" and lobby.title_label.text.contains("風哭きの樹海") and lobby.chapter_place.text == "2 / 2", "E shows the next chapter")
+	check(lobby.chapter_lock.visible and lobby.decide_button.disabled and lobby.decide_button.text.contains("封印中") and lobby.description_label.text.contains("第1章を踏破"), "A sealed chapter says how it opens and cannot be set out for")
+	lobby.activated.emit(&"departure")
+	check(main.active_run == null, "Setting out for a sealed chapter does nothing")
+	main.meta.chapter_clears[&"ash_corridor"] = 1
+	hub.refresh(main.meta)
+	check(not lobby.chapter_lock.visible and not lobby.decide_button.disabled and lobby.decide_button.text == "第2章へ出撃する", "Once the first chapter is cleared, the second opens")
+	root.push_input(key(KEY_Q))
+	await process_frame
+	check(hub.chapter.id == &"ash_corridor", "Q goes back to the chapter before")
+	main.meta.chapter_clears.clear()
+	hub.refresh(main.meta)
 	for pair: Array in [[&"upgrade", "upgrade"], [&"status", "status"], [&"codex", "codex"], [&"settings", "settings"]]:
 		lobby.activated.emit(pair[0])
 		check(hub.page == pair[1], "%s opens its page" % pair[0])

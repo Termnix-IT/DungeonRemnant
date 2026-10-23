@@ -11,8 +11,14 @@ const FOES: Array[FoeData] = [
 	preload("res://data/foes/mud_swell.tres"),
 	preload("res://data/foes/crystal_turret.tres"),
 	preload("res://data/foes/brood_nest.tres"),
+	preload("res://data/foes/moss_sentinel.tres"),
+	preload("res://data/foes/gale_rat.tres"),
+	preload("res://data/foes/spore_swell.tres"),
+	preload("res://data/foes/spore_cannon.tres"),
 	preload("res://data/foes/raging_charger.tres"),
+	preload("res://data/foes/gale_warden.tres"),
 	preload("res://data/foes/ruin_king.tres"),
+	preload("res://data/foes/gale_wolf_king.tres"),
 ]
 const KINDS: Array[String] = ["すべて", "群れ", "精鋭", "ボス"]
 

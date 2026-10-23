@@ -101,10 +101,25 @@ func run_tests() -> void:
 	check(int(field_counts.get(AreaData.Reward.ECHO, 0)) > int(arena_counts.get(AreaData.Reward.ECHO, 0)), "Fields offer echo more often than arenas")
 	check(field_counts.size() == 3 and arena_counts.size() == 3, "Every kind of reward can still come from either")
 
-	# The areas' data.
+	# The second chapter: four layers and its own boss, fields first, sealed
+	# until the first is cleared.
+	var woods: ChapterData = load("res://data/chapters/gale_woods.tres")
+	var woods_shaped := true
+	for seed_value in range(1, 31):
+		var rng := RandomNumberGenerator.new()
+		rng.seed = seed_value
+		var map := RouteMap.generate(woods, rng)
+		woods_shaped = woods_shaped and map.size() == woods.layers + 1 and map.nodes(map.size() - 1)[0].area == woods.boss
+		for waypoint: RouteMap.Waypoint in map.nodes(0):
+			woods_shaped = woods_shaped and waypoint.area.kind == AreaData.Kind.FIELD
+	check(woods_shaped and woods.layers == 4 and woods.boss.boss.id == &"gale_wolf_king", "The second chapter runs four layers to the storm wolf, fields first")
+	check(Chapters.ALL == [chapter, woods] and chapter.unlocked_by.is_empty() and woods.unlocked_by == chapter.id, "The chapters come in order, each opened by the one before")
+
+	# Every chapter's areas' data.
 	var areas: Array[AreaData] = []
-	areas.assign(chapter.areas)
-	areas.append(chapter.boss)
+	for each: ChapterData in Chapters.ALL:
+		areas.append_array(each.areas)
+		areas.append(each.boss)
 	for area in areas:
 		var name := String(area.id)
 		check(not area.display_name.is_empty() and not area.condition.is_empty() and not area.foe_summary.is_empty() and area.expected_time > 0, "The map can tell of it: " + name)

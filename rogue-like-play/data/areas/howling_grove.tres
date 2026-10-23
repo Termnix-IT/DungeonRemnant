@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AreaData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://world/areas/area_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/spawns/howling_grove.tres" id="2"]
+[resource]
+script = ExtResource("1")
+id = &"howling_grove"
+display_name = "風鳴りの林"
+kind = 0
+difficulty = 2
+condition = "2分45秒を生き延びる"
+foe_summary = "苔むす番兵と疾風ネズミ。膨れと胞子砲も"
+expected_time = 165
+reward_weights = {0: 0.35, 1: 0.2, 2: 0.45}
+echo = 90
+size = Vector2i(92, 66)
+theme = 1
+scattered_pillars = 34
+spawn_table = ExtResource("2")
+survive_time = 165.0

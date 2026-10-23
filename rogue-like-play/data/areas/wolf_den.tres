@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="AreaData" load_steps=8 format=3]
+[ext_resource type="Script" path="res://world/areas/area_data.gd" id="1"]
+[ext_resource type="Script" path="res://world/areas/wave_data.gd" id="2"]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="3"]
+[ext_resource type="Resource" path="res://data/foes/moss_sentinel.tres" id="4"]
+[ext_resource type="Resource" path="res://data/foes/gale_rat.tres" id="5"]
+[ext_resource type="Resource" path="res://data/foes/gale_wolf_king.tres" id="6"]
+[sub_resource type="Resource" id="Wave0"]
+script = ExtResource("2")
+foes = Array[ExtResource("3")]([ExtResource("4"), ExtResource("5")])
+counts = Array[int]([10, 5])
+spawns_per_second = 4.0
+[resource]
+script = ExtResource("1")
+id = &"wolf_den"
+display_name = "風狼の寝床"
+kind = 2
+difficulty = 3
+condition = "風狼王を倒す"
+foe_summary = "風狼王と番兵の守り。怒るとネズミを呼ぶ"
+expected_time = 150
+reward_weights = {2: 1.0}
+echo = 220
+size = Vector2i(34, 24)
+theme = 1
+pillars = Array[Vector2i]([Vector2i(8, 6), Vector2i(24, 6), Vector2i(8, 16), Vector2i(24, 16)])
+waves = Array[ExtResource("2")]([SubResource("Wave0")])
+boss = ExtResource("6")

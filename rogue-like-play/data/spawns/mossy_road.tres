@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="SpawnTable" load_steps=14 format=3]
+[ext_resource type="Script" path="res://world/areas/spawn_table.gd" id="1"]
+[ext_resource type="Script" path="res://world/areas/spawn_entry.gd" id="2"]
+[ext_resource type="Resource" path="res://data/foes/moss_sentinel.tres" id="3"]
+[ext_resource type="Resource" path="res://data/foes/gale_rat.tres" id="4"]
+[ext_resource type="Resource" path="res://data/foes/spore_swell.tres" id="5"]
+[ext_resource type="Resource" path="res://data/foes/spore_cannon.tres" id="6"]
+[ext_resource type="Resource" path="res://data/foes/brood_nest.tres" id="7"]
+[ext_resource type="Resource" path="res://data/foes/gale_warden.tres" id="8"]
+[sub_resource type="Resource" id="Entry_moss_sentinel"]
+script = ExtResource("2")
+foe = ExtResource("3")
+weight = 5.0
+[sub_resource type="Resource" id="Entry_gale_rat"]
+script = ExtResource("2")
+foe = ExtResource("4")
+weight = 5.0
+from_time = 10.0
+[sub_resource type="Resource" id="Entry_spore_swell"]
+script = ExtResource("2")
+foe = ExtResource("5")
+weight = 3.0
+from_time = 30.0
+[sub_resource type="Resource" id="Entry_spore_cannon"]
+script = ExtResource("2")
+foe = ExtResource("6")
+weight = 0.6
+from_time = 40.0
+[sub_resource type="Resource" id="Entry_brood_nest"]
+script = ExtResource("2")
+foe = ExtResource("7")
+weight = 0.4
+from_time = 60.0
+[resource]
+script = ExtResource("1")
+entries = Array[ExtResource("2")]([SubResource("Entry_moss_sentinel"), SubResource("Entry_gale_rat"), SubResource("Entry_spore_swell"), SubResource("Entry_spore_cannon"), SubResource("Entry_brood_nest")])
+start_alive = 22
+alive_per_minute = 65.0
+max_alive = 170
+spawns_per_second = 8.0
+elite_first = 35.0
+elite_every = 40.0
+elite_cap = 2
+elite = ExtResource("8")

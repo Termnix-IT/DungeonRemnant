@@ -164,6 +164,27 @@ func run_tests() -> void:
 	record.record_run({"cleared": true, "layer": 3, "echo": 210, "met": [&"ruin_king"]})
 	check(record.echo == 280 and record.runs == 2 and record.clears == 1 and record.best_layer == 4, "Results add echo, runs, clears and the deepest layer")
 	check(record.has_met(&"wandering_sentinel") and record.has_met(&"ruin_king"), "The foes met are remembered")
+	# The chapters: each keeps its own record, and the first clear of one
+	# opens the next; a save keeps them, and one from before gives its record
+	# to the first chapter.
+	var woods: ChapterData = Chapters.find(&"gale_woods")
+	var journey := MetaProgress.new()
+	check(journey.chapter_open(Chapters.ALL[0]) and not journey.chapter_open(woods), "The second chapter is sealed at first")
+	journey.record_run({"cleared": false, "layer": 2, "chapter_id": "ash_corridor"})
+	check(not journey.chapter_open(woods) and journey.best_of(&"ash_corridor") == 3 and journey.best_of(&"gale_woods") == 0, "A run that falls opens nothing, and is the first chapter's record")
+	journey.record_run({"cleared": true, "layer": 3, "chapter_id": "ash_corridor"})
+	check(journey.chapter_open(woods) and journey.clears_of(&"ash_corridor") == 1, "Clearing the first chapter opens the second")
+	journey.record_run({"cleared": false, "layer": 1, "chapter_id": "gale_woods"})
+	check(journey.best_of(&"gale_woods") == 2 and journey.best_of(&"ash_corridor") == 4 and journey.clears == 1 and journey.runs == 3, "Each chapter keeps its own deepest layer; the totals count every run")
+	var journey_back := MetaCodec.decode(JSON.parse_string(JSON.stringify(MetaCodec.encode(journey))))
+	check(journey_back.clears_of(&"ash_corridor") == 1 and journey_back.best_of(&"gale_woods") == 2 and journey_back.chapter_open(woods), "The chapters' records read back")
+	var before_chapters := MetaCodec.encode(record)
+	before_chapters.erase("chapters")
+	var carried := MetaCodec.decode(before_chapters)
+	check(carried.clears_of(&"ash_corridor") == 1 and carried.best_of(&"ash_corridor") == 4 and carried.chapter_open(woods), "A save from before the chapters gives its record to the first")
+	var strange := MetaCodec.encode(journey)
+	strange.chapters = {"no_such_chapter": {"clears": 1, "best": 1}}
+	check(MetaCodec.decode(strange) == null, "An unknown chapter in a save is refused")
 
 	# Version 5 written and read back.
 	var data := MetaCodec.encode(meta)

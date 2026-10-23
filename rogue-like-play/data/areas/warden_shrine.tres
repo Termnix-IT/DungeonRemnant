@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="AreaData" load_steps=13 format=3]
+[ext_resource type="Script" path="res://world/areas/area_data.gd" id="1"]
+[ext_resource type="Script" path="res://world/areas/wave_data.gd" id="2"]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="3"]
+[ext_resource type="Resource" path="res://data/foes/moss_sentinel.tres" id="4"]
+[ext_resource type="Resource" path="res://data/foes/gale_rat.tres" id="5"]
+[ext_resource type="Resource" path="res://data/foes/spore_swell.tres" id="6"]
+[ext_resource type="Resource" path="res://data/foes/spore_cannon.tres" id="7"]
+[ext_resource type="Resource" path="res://data/foes/gale_warden.tres" id="8"]
+[ext_resource type="Resource" path="res://data/foes/brood_nest.tres" id="9"]
+[sub_resource type="Resource" id="Wave0"]
+script = ExtResource("2")
+foes = Array[ExtResource("3")]([ExtResource("5"), ExtResource("4")])
+counts = Array[int]([14, 10])
+spawns_per_second = 5.0
+[sub_resource type="Resource" id="Wave1"]
+script = ExtResource("2")
+foes = Array[ExtResource("3")]([ExtResource("8"), ExtResource("4"), ExtResource("5"), ExtResource("9"), ExtResource("6")])
+counts = Array[int]([1, 14, 8, 1, 5])
+spawns_per_second = 5.0
+[sub_resource type="Resource" id="Wave2"]
+script = ExtResource("2")
+foes = Array[ExtResource("3")]([ExtResource("8"), ExtResource("5"), ExtResource("4"), ExtResource("7"), ExtResource("6")])
+counts = Array[int]([2, 12, 10, 2, 4])
+spawns_per_second = 6.0
+[resource]
+script = ExtResource("1")
+id = &"warden_shrine"
+display_name = "番人の祠"
+kind = 1
+difficulty = 3
+condition = "3つのウェーブを全滅させる"
+foe_summary = "ネズミが多い。巣と胞子砲、番人が2回"
+expected_time = 140
+reward_weights = {0: 0.65, 1: 0.1, 2: 0.25}
+echo = 90
+size = Vector2i(32, 24)
+theme = 3
+pillars = Array[Vector2i]([Vector2i(8, 6), Vector2i(22, 6), Vector2i(15, 4), Vector2i(15, 18), Vector2i(8, 16), Vector2i(22, 16)])
+waves = Array[ExtResource("2")]([SubResource("Wave0"), SubResource("Wave1"), SubResource("Wave2")])

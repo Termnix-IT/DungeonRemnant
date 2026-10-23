@@ -12,6 +12,8 @@ extends Control
 
 signal selection_changed(id: StringName)
 signal activated(id: StringName)
+# The departure's arrows ask for the chapter before (-1) or after (1).
+signal chapter_step(step: int)
 
 # id, menu label, NavigationIcon kind
 const ENTRIES := [
@@ -99,6 +101,11 @@ var status_hp: Label
 var codex_met: Label
 var codex_runs: Label
 var title_icon: NavigationIcon
+# The departure's chapter switch: its arrows, where the chapter shown stands
+# among them, and the lock of a chapter still sealed.
+var chapter_switch: HBoxContainer
+var chapter_place: Label
+var chapter_lock: TextureRect
 var route_value: Label
 var best_value: Label
 var volume_value: Label
@@ -219,6 +226,32 @@ func _build_panel() -> void:
 	title_label = HubUI.label(heading, "", &"LobbyTitle")
 	title_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	title_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	chapter_lock = TextureRect.new()
+	chapter_lock.texture = EmblemIcons.texture("seal_chapter")
+	chapter_lock.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	chapter_lock.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	chapter_lock.custom_minimum_size = Vector2.ONE * 40.0
+	chapter_lock.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	chapter_lock.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	chapter_lock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	heading.add_child(chapter_lock)
+	var spread := Control.new()
+	spread.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spread.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	heading.add_child(spread)
+	chapter_switch = HBoxContainer.new()
+	chapter_switch.theme_type_variation = &"CompactRow"
+	chapter_switch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	heading.add_child(chapter_switch)
+	var before := HubUI.button(chapter_switch, "◀", func(): chapter_step.emit(-1))
+	before.tooltip_text = "前の章（Q・LB）"
+	before.focus_mode = Control.FOCUS_NONE
+	chapter_place = HubUI.label(chapter_switch, "", &"MutedLabel")
+	chapter_place.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	chapter_place.autowrap_mode = TextServer.AUTOWRAP_OFF
+	var after := HubUI.button(chapter_switch, "▶", func(): chapter_step.emit(1))
+	after.tooltip_text = "次の章（E・RB）"
+	after.focus_mode = Control.FOCUS_NONE
 	# One line: a longer description is cut short, whole in a tooltip that
 	# appears only then.
 	description_label = HubUI.label(stack, "", &"DescriptionLabel")
@@ -423,7 +456,9 @@ func refresh(meta: MetaProgress, chapter: ChapterData) -> void:
 	_chapter = chapter
 	if chapter != null:
 		route_value.text = "%d層とボス" % chapter.layers
-	best_value.text = "なし" if meta.best_layer == 0 else ("踏破 %d回" % meta.clears if meta.clears > 0 else "第%d層" % meta.best_layer)
+		var clears := meta.clears_of(chapter.id)
+		var best := meta.best_of(chapter.id)
+		best_value.text = "なし" if best == 0 else ("踏破 %d回" % clears if clears > 0 else "第%d層" % best)
 	var ranks := 0
 	var ready := 0
 	for upgrade in MetaProgress.UPGRADES:
@@ -510,10 +545,19 @@ func _show_entry() -> void:
 		# Strips sit inside an inset panel and margin; show the outer one.
 		# Each strip's row sits in its band.
 		detail.get_parent().visible = key == id
-	if id == &"departure" and _chapter != null:
+	var departure := id == &"departure" and _chapter != null
+	var sealed := departure and _meta != null and not _meta.chapter_open(_chapter)
+	chapter_switch.visible = departure and Chapters.ALL.size() > 1
+	chapter_lock.visible = sealed
+	_art.modulate = get_theme_color(&"art_locked" if sealed else &"art_tint", &"HubLobby")
+	if departure:
 		title_label.text = _chapter.display_name
 		description_label.text = _chapter.description
 		_art.texture = _chapter.illustration
+		chapter_place.text = "%d / %d" % [Chapters.ALL.find(_chapter) + 1, Chapters.ALL.size()]
+		if sealed:
+			var key := Chapters.find(_chapter.unlocked_by)
+			description_label.text = "封印されている。%sを踏破すると開く。" % (Chapters.short_name(key) if key != null else "前の章")
 	else:
 		title_label.text = ENTRIES[selected][1]
 		description_label.text = DESCRIPTIONS.get(id, "")
@@ -526,9 +570,10 @@ func _show_entry() -> void:
 	title_icon.queue_redraw()
 	decide_button.visible = ACTIONS.has(id)
 	decide_button.text = ACTIONS.get(id, "")
-	# The departure's button sets out for the chapter shown.
-	if id == &"departure" and _chapter != null:
-		decide_button.text = "%sへ出撃する" % _chapter.display_name.get_slice("　", 0)
+	# The departure's button sets out for the chapter shown, unless it is sealed.
+	decide_button.disabled = sealed
+	if departure:
+		decide_button.text = "%sは封印中" % Chapters.short_name(_chapter) if sealed else "%sへ出撃する" % Chapters.short_name(_chapter)
 	# Right from the menu reaches the panel's button.
 	for button in buttons:
 		button.focus_neighbor_right = decide_button.get_path()

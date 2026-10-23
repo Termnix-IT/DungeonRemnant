@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[resource]
+script = ExtResource("1")
+id = &"moss_sentinel"
+display_name = "苔むす番兵"
+description = "苔に覆われた古い番兵。さまよう番兵より硬く、強くぶつかってくる。群れで囲んでくるので、ダッシュで抜けて背後から斬る。
+第2章のフィールドとアリーナに現れる。"
+visual_id = "basic"
+baked = true
+size_scale = 1.1
+tint = Color(0.72, 0.95, 0.68, 1)
+max_hp = 60
+defense = 1
+speed = 100.0
+acceleration = 900.0
+speed_spread = 0.12
+contact_damage = 11
+contact_knockback = 280.0
+contact_cooldown = 0.9
+hit_radius = 15.0
+knockback_resist = 0.1
+hitstun = 0.2
+exp_reward = 2

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AreaData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://world/areas/area_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/spawns/mossy_road.tres" id="2"]
+[resource]
+script = ExtResource("1")
+id = &"mossy_road"
+display_name = "苔石の古道"
+kind = 0
+difficulty = 3
+condition = "敵を200体倒す"
+foe_summary = "ネズミが多く番人が早い。胞子砲と巣も"
+expected_time = 160
+reward_weights = {0: 0.3, 1: 0.15, 2: 0.55}
+echo = 110
+size = Vector2i(86, 62)
+theme = 0
+scattered_pillars = 26
+spawn_table = ExtResource("2")
+kill_target = 200

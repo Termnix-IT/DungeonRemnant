@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=4 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/spore_burst.tres" id="3"]
+[resource]
+script = ExtResource("1")
+id = &"spore_swell"
+display_name = "胞子の膨れ"
+description = "胞子をため込んだ膨れ。泥の膨れより大きく爆ぜる。足元の赤い円が満ちる前に斬るか、円の外へ逃げる。
+第2章のフィールドとアリーナに現れる。"
+visual_id = "proximity"
+size_scale = 1.35
+tint = Color(0.86, 0.72, 1, 1)
+max_hp = 40
+speed = 130.0
+acceleration = 900.0
+contact_damage = 8
+hit_radius = 18.0
+hitstun = 0.2
+exp_reward = 3
+attacks = Array[ExtResource("2")]([ExtResource("3")])
+power = 12.0
+attack_cooldown = 0.4
+bursts = true

@@ -348,10 +348,10 @@ func finish(cleared: bool, abandoned: bool = false) -> void:
 		emblems.append([boon.emblem, boon.display_name if boon.max_level == 1 else "%s %d" % [boon.display_name, run.build.rank(boon.id)]])
 	# Measured against the progress before this run is recorded.
 	var reached := mini(run.layer, run.route.size() - 1) + 1
-	var record := meta != null and reached > meta.best_layer
-	var first_clear := meta != null and cleared and meta.clears == 0
+	var record := meta != null and reached > meta.best_of(chapter.id)
+	var first_clear := meta != null and cleared and meta.clears_of(chapter.id) == 0
 	result = {"cleared": cleared, "abandoned": abandoned, "record": record, "first_clear": first_clear, "echo_before": meta.echo if meta != null else -1, "layer": mini(run.layer, run.route.size() - 1), "layers": run.route.size(),
-		"chapter": chapter.display_name, "time": run.time, "kills": run.kills,
+		"chapter": chapter.display_name, "chapter_id": String(chapter.id), "time": run.time, "kills": run.kills,
 		"level": run.progression.level, "boons": boons, "emblems": emblems, "echo": run.echo, "met": run.met.keys()}
 	map_view.hide()
 	GameMusic.cue(self, &"")

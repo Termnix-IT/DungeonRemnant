@@ -7,29 +7,8 @@ extends RefCounted
 # without a file nothing is drawn, so art can arrive one emblem at a time.
 const DIRECTORY := "res://art/emblems/"
 # Emblems not painted yet, drawn meanwhile as an older medallion; a key's
-# entry goes once its own file is in art/emblems/.
-const STAND_INS := {
-	"brute_force": "attack",
-	"follow_up": "spear_damage",
-	"long_reach": "spear_range",
-	"rending_charge": "spear_pierce",
-	"life_feast": "kill_heal",
-	"riposte": "defense",
-	"keen_art": "mana",
-	"gale_step": "vision",
-	"discharge": "chain_lightning",
-	"thunder_step": "thunder_blade",
-	"aftershock": "hammer_damage",
-	"flame_art": "hellfire",
-	"thunder_flash": "spear_range",
-	"swallow_cut": "shockwave",
-	"blaze_ring": "great_charge",
-	"skill_drill": "mana",
-	"echo_burst": "rising_burst",
-	"sky_rend": "thunder_blade",
-	"special_surge": "great_charge",
-	"special_mastery": "attack",
-}
+# entry goes once its own file is in art/emblems/ (none at present).
+const STAND_INS := {}
 static var _cache: Dictionary = {}
 
 

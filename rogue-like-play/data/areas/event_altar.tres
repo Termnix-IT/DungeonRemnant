@@ -12,4 +12,4 @@ expected_time = 10
 reward_weights = {0: 1.0}
 echo = 0
 event = &"altar"
-emblem = "last_stand"
+emblem = "event_altar"

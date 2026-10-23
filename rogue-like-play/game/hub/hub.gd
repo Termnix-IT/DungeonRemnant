@@ -22,7 +22,8 @@ const EDGE_BOTTOM := 16.0
 # whole block shrinks together on smaller screens.
 const CONTENT_SIZE := Vector2(1440, 810)
 
-var chapter: ChapterData = preload("res://data/chapters/ash_corridor.tres")
+# The chapter the departure shows and sets out for.
+var chapter: ChapterData = Chapters.ALL[0]
 var echo_label: Label
 var feedback: Label
 var start_button: Button
@@ -189,6 +190,7 @@ func _build_home() -> void:
 	home_page.hide()
 	home_page.selection_changed.connect(func(id: StringName): _ambience.focus(id))
 	home_page.activated.connect(_enter)
+	home_page.chapter_step.connect(step_chapter)
 	start_button = home_page.buttons[0]
 	upgrade_button = home_page.buttons[1]
 	decide_button = home_page.decide_button
@@ -199,6 +201,9 @@ func _build_home() -> void:
 func _enter(id: StringName) -> void:
 	match id:
 		&"departure":
+			if _meta != null and not _meta.chapter_open(chapter):
+				GameAudio.play(self, &"ui_deny", -18.0)
+				return
 			start_requested.emit()
 		&"upgrade":
 			show_page("upgrade")
@@ -208,6 +213,16 @@ func _enter(id: StringName) -> void:
 			show_page("codex")
 		&"settings":
 			show_page("settings")
+
+
+# The departure shows the chapter before or after, wrapping round.
+func step_chapter(step: int) -> void:
+	var at := Chapters.ALL.find(chapter)
+	chapter = Chapters.ALL[posmod(at + step, Chapters.ALL.size())]
+	GameAudio.play(self, &"ui_move", -18.0)
+	if _meta != null:
+		home_page.refresh(_meta, chapter)
+	UIMotion.of(home_page.panel).reveal(UIMotion.SELECT_TIME)
 
 
 func _resize() -> void:
@@ -257,6 +272,8 @@ func show_page(target: String) -> void:
 			home_page.focus_selected()
 			key_guide.add_hint("Enter", "A", "決定")
 			key_guide.add_hint("↑ / ↓", "▲ / ▼", "選ぶ")
+			if Chapters.ALL.size() > 1:
+				key_guide.add_hint("Q / E", "LB / RB", "章")
 		"upgrade":
 			title_label.text = "永続強化"
 			upgrade_page.show()
@@ -365,8 +382,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-# Tab (View) between the upgrades and the status, before Tab moves the focus.
+# Tab (View) between the upgrades and the status, before Tab moves the focus;
+# on the lobby's departure, Q / E (LB / RB) for the chapter before or after.
 func _input(event: InputEvent) -> void:
+	if visible and page == "home" and home_page.selected_id() == &"departure" and Chapters.ALL.size() > 1:
+		var pad: bool = event is InputEventJoypadButton and event.pressed
+		var back: bool = (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_Q) or (pad and event.button_index == JOY_BUTTON_LEFT_SHOULDER)
+		var next: bool = (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E) or (pad and event.button_index == JOY_BUTTON_RIGHT_SHOULDER)
+		if back or next:
+			step_chapter(-1 if back else 1)
+			get_viewport().set_input_as_handled()
+			return
 	if not visible or page not in ["upgrade", "status"]:
 		return
 	var key: bool = event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_TAB

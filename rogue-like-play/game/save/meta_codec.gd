@@ -10,7 +10,8 @@ extends RefCounted
 # old monsters met carry over where a new foe wears the same picture. A
 # version 5 save from before the upgrade tree had its root is given the root,
 # so the upgrades it holds keep growing; one from before the skill slots
-# keeps the new player's.
+# keeps the new player's; one from before the chapters' own records gives
+# its record to the first chapter.
 
 const VERSION := 5
 const MAX_COUNT := 1000000
@@ -41,7 +42,15 @@ static func encode(meta: MetaProgress) -> Dictionary:
 	for id in meta.loadout:
 		loadout.append(String(id))
 	return {"version": VERSION, "echo": meta.echo, "ranks": meta.ranks.duplicate(), "runs": meta.runs,
-		"clears": meta.clears, "best_layer": meta.best_layer, "met": met, "loadout": loadout, "special": String(meta.special)}
+		"clears": meta.clears, "best_layer": meta.best_layer, "met": met, "loadout": loadout, "special": String(meta.special),
+		"chapters": _chapters_of(meta)}
+
+
+static func _chapters_of(meta: MetaProgress) -> Dictionary:
+	var chapters := {}
+	for id: StringName in meta.chapter_clears.keys() + meta.chapter_best.keys():
+		chapters[String(id)] = {"clears": meta.clears_of(id), "best": meta.best_of(id)}
+	return chapters
 
 
 static func integer(value: Variant, minimum: int, maximum: int) -> bool:
@@ -90,7 +99,32 @@ static func decode(data: Variant) -> MetaProgress:
 	if not special is String or (not special.is_empty() and not meta.owns_special(StringName(special))):
 		return null
 	meta.special = StringName(special)
+	if not data.has("chapters"):
+		var first := Chapters.ALL[0].id
+		if meta.clears > 0:
+			meta.chapter_clears[first] = meta.clears
+		if meta.best_layer > 0:
+			meta.chapter_best[first] = meta.best_layer
+	elif not _read_chapters(data.chapters, meta):
+		return null
 	return meta
+
+
+# The chapters' records: known chapter ids, each with counts in range.
+static func _read_chapters(data: Variant, meta: MetaProgress) -> bool:
+	if not data is Dictionary:
+		return false
+	for id: Variant in data:
+		var entry: Variant = data[id]
+		if not id is String or Chapters.find(StringName(id)) == null or not entry is Dictionary:
+			return false
+		if not integer(entry.get("clears", 0), 0, MAX_COUNT) or not integer(entry.get("best", 0), 0, MAX_COUNT):
+			return false
+		if int(entry.get("clears", 0)) > 0:
+			meta.chapter_clears[StringName(id)] = int(entry.clears)
+		if int(entry.get("best", 0)) > 0:
+			meta.chapter_best[StringName(id)] = int(entry.best)
+	return true
 
 
 # The skill slots: as many ids as slots, each a held skill or empty, none

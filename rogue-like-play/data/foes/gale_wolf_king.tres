@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=8 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/wolf_claw.tres" id="3"]
+[ext_resource type="Resource" path="res://data/attacks/wolf_lunge.tres" id="4"]
+[ext_resource type="Resource" path="res://data/attacks/wolf_gale.tres" id="5"]
+[ext_resource type="Resource" path="res://data/attacks/wolf_howl.tres" id="6"]
+[ext_resource type="Resource" path="res://data/foes/gale_rat.tres" id="7"]
+[resource]
+script = ExtResource("1")
+id = &"gale_wolf_king"
+display_name = "風狼王"
+epithet = "樹海に吠える嵐の牙"
+description = "風狼の寝床の主。爪の薙ぎ払い、遠くまで届く飛びかかり、離れると風の刃を使い分ける。傷が深くなると怒り狂い、周りを吹き飛ばす遠吠えを放ち、疾風ネズミを呼び寄せる。
+第2章の最後に待つ。"
+visual_id = "boss_gale_wolf_king"
+size_scale = 1.4
+elite = false
+max_hp = 2600
+defense = 3
+speed = 115.0
+acceleration = 900.0
+speed_spread = 0.0
+contact_damage = 16
+contact_knockback = 440.0
+contact_cooldown = 0.9
+hit_radius = 34.0
+knockback_resist = 0.95
+hitstun = 0.0
+exp_reward = 60
+attacks = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4"), ExtResource("5")])
+power = 22.0
+attack_cooldown = 1.0
+boss = true
+phase_two_at = 0.5
+phase_two_attacks = Array[ExtResource("2")]([ExtResource("6")])
+phase_two_speed = 1.3
+phase_two_cooldown = 0.5
+summon = ExtResource("7")
+summon_count = 6

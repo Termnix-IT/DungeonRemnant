@@ -113,7 +113,7 @@ func _card(foe: FoeData, known: bool) -> Button:
 	card.text = foe.display_name if known else UNKNOWN_NAME
 	card.tooltip_text = foe.display_name if known else UNKNOWN_NOTE
 	# The picture above the name; a foe not met shows only its shape.
-	card.icon = _tile_picture(foe.visual_id, known)
+	card.icon = _tile_picture(foe.visual_id, known, foe.tint)
 	card.expand_icon = true
 	card.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
@@ -126,9 +126,10 @@ func _card(foe: FoeData, known: bool) -> Button:
 
 # The foe's picture for its tile, or its dark silhouette: always a square
 # with the figure standing on its bottom edge, so every tile lays its picture
-# and its name out alike whatever the figure's shape.
-func _tile_picture(visual_id: String, known: bool) -> Texture2D:
-	var key := "%s:%s" % [visual_id, known]
+# and its name out alike whatever the figure's shape. A foe drawn in a tint
+# of its own (a kin sharing another's rig) is shown in it.
+func _tile_picture(visual_id: String, known: bool, tint: Color = Color.WHITE) -> Texture2D:
+	var key := "%s:%s:%s" % [visual_id, known, tint.to_html()]
 	if _tiles.has(key):
 		return _tiles[key]
 	var shown := EnemySprites.portrait(visual_id)
@@ -145,6 +146,10 @@ func _tile_picture(visual_id: String, known: bool) -> Texture2D:
 			for x in image.get_width():
 				var alpha := image.get_pixel(x, y).a
 				image.set_pixel(x, y, Color(SHADOW, alpha * SHADOW.a))
+	elif tint != Color.WHITE:
+		for y in image.get_height():
+			for x in image.get_width():
+				image.set_pixel(x, y, image.get_pixel(x, y) * tint)
 	var side := maxi(image.get_width(), image.get_height())
 	var square := Image.create_empty(side, side, false, Image.FORMAT_RGBA8)
 	square.blit_rect(image, Rect2i(Vector2i.ZERO, image.get_size()), Vector2i((side - image.get_width()) / 2, side - image.get_height()))
@@ -184,7 +189,7 @@ func _draw_picture() -> void:
 	var fit := extent / maxf(region.size.x, region.size.y)
 	var drawn := region.size * fit
 	var area := Rect2(Vector2((picture.size.x - drawn.x) * 0.5, picture.size.y - drawn.y), drawn)
-	picture.draw_texture_rect_region(_picture.texture, area, region, SHADOW if _unknown else Color.WHITE)
+	picture.draw_texture_rect_region(_picture.texture, area, region, SHADOW if _unknown else _shown.tint)
 
 
 func focus_first() -> void:

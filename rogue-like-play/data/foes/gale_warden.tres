@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=5 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/warden_sweep.tres" id="3"]
+[ext_resource type="Resource" path="res://data/attacks/wind_blade.tres" id="4"]
+[resource]
+script = ExtResource("1")
+id = &"gale_warden"
+display_name = "風の番人"
+description = "精鋭。斬られてもひるまない。近くでは大きく薙ぎ払い、離れると風の刃を飛ばす。床の赤い印を見て、刃は横へかわす。
+第2章のフィールドに時々、アリーナの最後に現れる。"
+visual_id = "boss_gale_warden"
+size_scale = 1.05
+elite = true
+max_hp = 520
+defense = 3
+speed = 80.0
+acceleration = 650.0
+speed_spread = 0.05
+contact_damage = 14
+contact_knockback = 380.0
+contact_cooldown = 0.9
+hit_radius = 26.0
+knockback_resist = 0.85
+hitstun = 0.0
+exp_reward = 20
+attacks = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4")])
+power = 16.0
+attack_cooldown = 1.1
