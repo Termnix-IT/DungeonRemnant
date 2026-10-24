@@ -54,7 +54,6 @@ func _ready() -> void:
 	_emblem.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_emblem.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	stack.add_child(_emblem)
-	_centered(stack, &"MutedLabel").text = "イベント"
 	title_label = _centered(stack, &"TitleLabel")
 	body_label = _centered(stack, &"BodyLabel")
 	body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

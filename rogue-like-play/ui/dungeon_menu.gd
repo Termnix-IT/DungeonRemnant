@@ -35,6 +35,7 @@ var menu: Control
 var build_panel: PanelContainer
 var build_list: VBoxContainer
 var build_note: Label
+var _build_rule: Control
 var _build_rows: Array[Button] = []
 var resume_button: Button
 var settings_button: Button
@@ -90,7 +91,6 @@ func _build_menu() -> void:
 	resume_button = HubUI.button(column, "戦いに戻る", resume, &"PrimaryButton")
 	settings_button = HubUI.button(column, "設定", open_settings)
 	abort_button = HubUI.button(column, "ランを中断する", func(): abort_requested.emit())
-	abort_button.tooltip_text = "中断の確認へ進む。持ち帰れるものはそこで確かめられる。"
 	var buttons: Array[Button] = [resume_button, settings_button, abort_button]
 	for index in buttons.size():
 		buttons[index].focus_neighbor_top = buttons[(index + buttons.size() - 1) % buttons.size()].get_path()
@@ -119,7 +119,7 @@ func _build_build(parent: Control) -> void:
 	HubUI.rule(column)
 	build_list = VBoxContainer.new()
 	column.add_child(build_list)
-	HubUI.rule(column)
+	_build_rule = HubUI.rule(column)
 	build_note = HubUI.label(column, "", &"DescriptionLabel")
 
 
@@ -133,7 +133,9 @@ func _show_build() -> void:
 	for child in build_list.get_children():
 		child.free()
 	var owned := run.build.owned()
-	build_note.text = "まだ強化を取っていない。レベルを上げるとカードから選べる。" if owned.is_empty() else ""
+	build_note.text = "まだない" if owned.is_empty() else ""
+	build_list.visible = not owned.is_empty()
+	_build_rule.visible = not owned.is_empty()
 	for boon in owned:
 		var rank := run.build.rank(boon.id)
 		var row := HubUI.button(build_list, boon.display_name if boon.max_level == 1 else "%s　Lv %d / %d" % [boon.display_name, rank, boon.max_level], func(): pass)

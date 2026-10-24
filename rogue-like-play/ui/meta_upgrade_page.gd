@@ -241,7 +241,7 @@ func _tell() -> void:
 		return
 	var rank := meta.rank(upgrade.id)
 	name_label.text = upgrade.display_name
-	rank_label.text = "%s　段階 %d / %d" % [BRANCH_NAMES.get(upgrade.branch, ""), rank, upgrade.max_rank()]
+	rank_label.text = "段階 %d / %d" % [rank, upgrade.max_rank()]
 	figure_label.text = upgrade.figure_line(rank)
 	figure_label.visible = not figure_label.text.is_empty()
 	description_label.text = upgrade.description

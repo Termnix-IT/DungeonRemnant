@@ -269,7 +269,7 @@ func run_tests() -> void:
 	check(status.details_open and status.stats.get_child_count() > always, "R opens the rest of her figures")
 	root.push_input(key(KEY_RIGHT))
 	await process_frame
-	check(status.slot == 2 and status.tiles_label.text.contains("スキル2") and status.tile_ids == [HubStatus.CLEAR_ID, &"slam", &"thunder_flash", &"swallow_cut", &"blaze_ring"] and status.tiles[2].text == HubStatus.UNKNOWN_NAME, "Choosing the second slot shows its tiles")
+	check(status.slot == 2 and status.tile_ids == [HubStatus.CLEAR_ID, &"slam", &"thunder_flash", &"swallow_cut", &"blaze_ring"] and status.tiles[2].text == HubStatus.UNKNOWN_NAME, "Choosing the second slot shows its tiles")
 	check(status.tiles[1].text.contains("スキル1"), "A tile tells the slot its skill is set in")
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))

@@ -60,7 +60,8 @@ func setup(point: RouteMap.Waypoint, state: Mark) -> void:
 	_caption.theme_type_variation = &"MutedLabel" if state != Mark.OPEN else &"BodyLabel"
 	_caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_caption.text = point.area.kind_name() if point.area.is_event() else "%s %s" % [point.area.kind_name(), point.area.stars()]
+	# The boss needs no name under it: its size, glow and place say it.
+	_caption.text = "" if boss else (point.area.kind_name() if point.area.is_event() else "%s %s" % [point.area.kind_name(), point.area.stars()])
 	add_child(_caption)
 	_caption.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	_caption.grow_horizontal = Control.GROW_DIRECTION_BOTH

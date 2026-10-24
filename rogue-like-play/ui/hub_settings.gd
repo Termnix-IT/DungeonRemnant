@@ -189,12 +189,12 @@ func _ready() -> void:
 		settings.show_controls = index == 0
 		changed.emit())
 	var help_row := _row("ヘルプ")
-	help_button = HubUI.button(help_row, "遊び方と決まりごとを読む  ›", func():
+	help_button = HubUI.button(help_row, "開く  ›", func():
 		open_help(TOPIC_RUN)
 		help_opened.emit(), &"TextAction")
 	help_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var quit_row := _row("ゲームの終了")
-	quit_button = HubUI.button(quit_row, "ゲームを終了する  ›", ask_quit, &"TextAction")
+	quit_button = HubUI.button(quit_row, "終了する  ›", ask_quit, &"TextAction")
 	quit_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	quit_prompt = ChoicePrompt.new()
 	add_child(quit_prompt)
@@ -394,7 +394,6 @@ func _row(caption: String) -> HBoxContainer:
 # Returns [the bar, the value].
 func _volume_row(caption: String, slider_name: String) -> Array:
 	var row := _row(caption)
-	_hint(row, "← 小")
 	var slider := GameSlider.new()
 	slider.name = slider_name
 	slider.min_value = 0
@@ -404,7 +403,6 @@ func _volume_row(caption: String, slider_name: String) -> Array:
 	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	slider.tooltip_text = caption
 	row.add_child(slider)
-	_hint(row, "大 →")
 	var value := HubUI.label(row, "", &"SettingsValue")
 	value.autowrap_mode = TextServer.AUTOWRAP_OFF
 	value.custom_minimum_size.x = 72
@@ -412,12 +410,6 @@ func _volume_row(caption: String, slider_name: String) -> Array:
 	value.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	slider.value_changed.connect(_volume_changed.bind(slider))
 	return [slider, value]
-
-
-func _hint(row: HBoxContainer, text: String) -> void:
-	var hint := HubUI.label(row, text, &"NoteLabel")
-	hint.autowrap_mode = TextServer.AUTOWRAP_OFF
-	hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 
 # The focused row stands on the lobby's warm band, pointing right at the

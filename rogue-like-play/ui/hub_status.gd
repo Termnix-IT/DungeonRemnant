@@ -53,7 +53,6 @@ var kind_label: Label
 var figure_label: Label
 var description_label: Label
 var action_button: Button
-var tiles_label: Label
 var stats: GridContainer
 var _slab: VBoxContainer
 var _info: VBoxContainer
@@ -75,7 +74,6 @@ func _ready() -> void:
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_slab = HubUI.open_column(columns, 2.1, &"SlabSolid")
-	HubUI.label(_slab, "装備", &"NoteLabel")
 	var row := HBoxContainer.new()
 	row.theme_type_variation = &"ListRow"
 	_slab.add_child(row)
@@ -90,7 +88,6 @@ func _ready() -> void:
 		slot_buttons[index].focus_neighbor_right = slot_buttons[mini(slot_buttons.size() - 1, index + 1)].get_path()
 		slot_buttons[index].focus_neighbor_top = slot_buttons[index].get_path()
 	HubUI.rule(_slab)
-	tiles_label = HubUI.label(_slab, "", &"NoteLabel")
 	_tiles = GridContainer.new()
 	_tiles.columns = TILE_COLUMNS
 	_slab.add_child(_tiles)
@@ -111,7 +108,6 @@ func _ready() -> void:
 	description_label = HubUI.label(_info, "", &"DescriptionLabel")
 	action_button = HubUI.primary_action(_info, "", _act)
 	HubUI.rule(_info)
-	HubUI.label(_info, "ステータス", &"NoteLabel")
 	stats = GridContainer.new()
 	stats.columns = 3
 	_info.add_child(stats)
@@ -195,7 +191,6 @@ func _show_tiles() -> void:
 	tiles.clear()
 	tile_ids.clear()
 	var kind: StringName = SLOTS[slot][0]
-	tiles_label.text = "%sに付けるもの" % SLOTS[slot][1]
 	_tile_note.text = ""
 	match kind:
 		&"attack":
@@ -325,6 +320,7 @@ func _tell(id: StringName) -> void:
 	shown_id = id
 	_unknown = false
 	figure_label.show()
+	description_label.show()
 	action_button.show()
 	var skill := MetaProgress.find_skill(id)
 	var move := MetaProgress.find_special(id)
@@ -348,7 +344,7 @@ func _tell(id: StringName) -> void:
 			name_label.text = "空き" if id.is_empty() else "外す"
 			kind_label.text = SLOTS[slot][1]
 			figure_label.hide()
-			description_label.text = "このスロットには何も付いていない。" if id.is_empty() else "このスロットを空ける。"
+			description_label.hide()
 			action_button.text = "外す"
 			action_button.disabled = meta.loadout[slot_index].is_empty() if in_skill_slot else (meta.special.is_empty() if slot == SPECIAL_SLOT else true)
 			action_button.visible = id == CLEAR_ID
@@ -371,7 +367,7 @@ func _tell(id: StringName) -> void:
 				_emblem = skill.emblem
 				name_label.text = skill.display_name
 				var at := meta.slot_of(skill.id)
-				kind_label.text = "スキル　再使用 %s秒%s" % [_number(skill.cooldown), "　%s" % SLOTS[at + SKILL_SLOT_OFFSET][1] if at >= 0 else ""]
+				kind_label.text = "スキル　再使用 %s秒" % _number(skill.cooldown)
 				figure_label.text = "威力 攻撃力の%d%%\n%s" % [roundi(skill.attack.damage_scale * 100.0), _reach_text(skill.attack)]
 				description_label.text = skill.description
 				var here := in_skill_slot and at == slot_index
@@ -395,7 +391,7 @@ func _tell_weapon(weapon: Moveset) -> void:
 		return
 	var held := meta.weapon == weapon.id
 	name_label.text = weapon.display_name
-	kind_label.text = "武器　左クリック・X%s" % ("　装備中" if held else "")
+	kind_label.text = "武器"
 	var strongest := 0.0
 	for swing in weapon.combo:
 		strongest = maxf(strongest, swing.damage_scale)
@@ -419,7 +415,7 @@ func _tell_special(move: SpecialData) -> void:
 		action_button.hide()
 		return
 	name_label.text = move.display_name
-	kind_label.text = "必殺技　ゲージ %s%s" % [_number(move.charge), "　装備中" if meta.special == move.id else ""]
+	kind_label.text = "必殺技　ゲージ %s" % _number(move.charge)
 	var power := 1.0 + meta.bonus(&"special_power")
 	figure_label.text = "威力 攻撃力の%d%%\n%s" % [roundi(move.attack.damage_scale * power * 100.0), _reach_text(move.attack)]
 	description_label.text = move.description
