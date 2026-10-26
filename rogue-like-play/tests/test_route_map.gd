@@ -2,7 +2,8 @@ extends SceneTree
 
 # The route through a chapter and the areas on it: the shape of the map
 # (layers, choices, fields first, no two choices alike, the boss last, the
-# same seed the same map, the events from the second layer on), rewards leaning by the kind of area without being
+# same seed the same map, the events from the second layer on, the paths on
+# from each node), rewards leaning by the kind of area without being
 # fixed, and each area's data (its ground laid out the same every time and
 # clear in the middle, what the map tells of it, how it is cleared).
 
@@ -25,7 +26,8 @@ func describe(map: RouteMap) -> Array:
 	var lines := []
 	for layer in map.size():
 		for waypoint: RouteMap.Waypoint in map.nodes(layer):
-			lines.append("%d:%s:%d" % [layer, waypoint.area.id, waypoint.reward])
+			var ways := waypoint.next.map(func(next: RouteMap.Waypoint): return map.nodes(layer + 1).find(next))
+			lines.append("%d:%s:%d:%s" % [layer, waypoint.area.id, waypoint.reward, ways])
 	return lines
 
 
@@ -79,6 +81,65 @@ func run_tests() -> void:
 	check(events_seen > 30, "The chapter's events turn up on its maps")
 	for event: AreaData in chapter.events:
 		check(event.is_event() and event.stars() == "" and not event.event.is_empty() and EmblemIcons.texture(event.emblem) != null, "%s is an event with its own emblem" % event.id)
+	# The paths: the first layer open whole, then one or two ways on from a
+	# node, three from the trials (the three-star arenas), every node
+	# reached, paths apart.
+	var trials: Array[AreaData] = []
+	var others: Array[AreaData] = []
+	for each: ChapterData in Chapters.ALL:
+		for area in each.areas + each.events:
+			if area.kind == AreaData.Kind.ARENA and area.difficulty == 3:
+				trials.append(area)
+			else:
+				others.append(area)
+	check(trials.size() == 2 and trials.all(func(area: AreaData): return area.branches == Vector2i(3, 3)), "The trials open three ways on")
+	check(others.all(func(area: AreaData): return area.branches == Vector2i(1, 2)), "The other stages and the events open one or two")
+	var opens_whole := true
+	var within := true
+	var all_reached := true
+	var apart := true
+	var to_boss := true
+	var narrowed := 0
+	var widened := 0
+	var picks := 0
+	for each: ChapterData in Chapters.ALL:
+		for seed_value in range(1, 81):
+			var rng := RandomNumberGenerator.new()
+			rng.seed = seed_value
+			var map := RouteMap.generate(each, rng)
+			opens_whole = opens_whole and map.nodes(0).size() == each.first_choices and map.open_after(null) == map.nodes(0)
+			for layer in map.size() - 1:
+				var here := map.nodes(layer)
+				var ahead := map.nodes(layer + 1)
+				var reached := {}
+				var spans := []
+				for point: RouteMap.Waypoint in here:
+					var ways := point.next
+					if layer == map.size() - 2:
+						to_boss = to_boss and ways == ahead
+						continue
+					var reach := mini(point.area.branches.y, ahead.size())
+					within = within and ways.size() >= 1 and ways.size() <= reach and ways.all(func(next: RouteMap.Waypoint): return ahead.has(next))
+					within = within and (point.area.branches.x < 3 or ways.size() == 3)
+					for next: RouteMap.Waypoint in ways:
+						reached[next] = true
+					spans.append([ahead.find(ways.front()), ahead.find(ways.back()), ways.size() == ahead.size()])
+					picks += 1
+					if ways.size() < ahead.size():
+						narrowed += 1
+					if ways.size() == 3:
+						widened += 1
+				all_reached = all_reached and (layer == map.size() - 2 or reached.size() == ahead.size())
+				for upper in spans.size():
+					for lower in range(upper + 1, spans.size()):
+						if not spans[upper][2] and not spans[lower][2]:
+							apart = apart and spans[upper][0] <= spans[lower][0] and spans[upper][1] <= spans[lower][1]
+	check(opens_whole, "The first layer offers three, all open from the start")
+	check(within, "A node leads on to one or two of the next layer, and a three-way stage to three")
+	check(all_reached, "Every node past the first layer is reached by a path")
+	check(apart, "Paths step down both layers together, so they keep apart")
+	check(to_boss, "Every node of the last layer leads to the boss")
+	check(narrowed > picks / 2 and widened > 10 and widened < picks / 4, "Most picks narrow the way ahead; now and then a trial widens it")
 	var first := RandomNumberGenerator.new()
 	first.seed = 77
 	var second := RandomNumberGenerator.new()

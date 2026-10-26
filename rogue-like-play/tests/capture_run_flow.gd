@@ -44,10 +44,10 @@ func capture() -> void:
 	await _grab("run_map_after")
 	# An arena's first wave on its marks.
 	var arena_choice: RouteMap.Waypoint = null
-	for waypoint: RouteMap.Waypoint in director.run.route.nodes(1):
+	for waypoint: RouteMap.Waypoint in director.map_view.current:
 		if waypoint.area.kind == AreaData.Kind.ARENA:
 			arena_choice = waypoint
-	director.map_view._choose(arena_choice if arena_choice != null else director.run.route.nodes(1)[0])
+	director.map_view._choose(arena_choice if arena_choice != null else director.map_view.current[0])
 	await process_frame
 	director.area.hero.controlled = false
 	await create_timer(1.8).timeout

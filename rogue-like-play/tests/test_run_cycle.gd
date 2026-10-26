@@ -75,7 +75,7 @@ func run_tests() -> void:
 	# A won run.
 	var run := await set_out(main)
 	for layer in run.run.route.size():
-		run.map_view._choose(run.run.route.nodes(layer)[0])
+		run.map_view._choose(run.map_view.current[0])
 		await process_frame
 		await clear_area(run)
 	check(not run.result.is_empty() and run.result.cleared, "Every layer cleared, the boss beaten: the run is won")

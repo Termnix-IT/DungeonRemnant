@@ -4,8 +4,9 @@ extends Button
 # One area on the route map, drawn as node maps in roguelites draw them: a
 # round medallion showing what clearing it gives (a boon's light, a heart,
 # an echo coin; the boss's skull), its kind and difficulty under it. Open
-# (the layer to choose from now) it is bright and takes focus; taken, it
-# keeps a gold ring; passed by or still ahead, it is dimmed. The selected
+# (where the paths from her lead now) it is bright and takes focus; taken,
+# it keeps a gold ring; still ahead, it is dimmed; passed by or out of her
+# reach, dimmed further. The selected
 # node wears the gold ring and a soft glow, the focused one a light edge.
 
 const SIZE := 76.0

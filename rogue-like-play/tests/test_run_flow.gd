@@ -208,7 +208,11 @@ func run_tests() -> void:
 			check(director.run.echo == echo_before + first.area.echo, "An echo reward adds the area's echo")
 	check(director.run.layer == 1 and director.map_view.visible and director.run.areas_cleared == 1, "The route moves on a layer")
 	var carried := director.run.hp
-	director.map_view._choose(director.run.route.nodes(1)[0])
+	var after_first: RouteMap.Waypoint = director.run.taken[0]
+	check(director.map_view.current == after_first.next and director.map_view.buttons.size() == after_first.next.size() and after_first.next.size() <= after_first.area.branches.y, "Past the first layer, only the paths from the area taken are open")
+	var shut := director.run.route.nodes(1).filter(func(point: RouteMap.Waypoint): return not after_first.next.has(point))
+	check(shut.all(func(point: RouteMap.Waypoint): return director.map_view.nodes_by_point[point].mark == RouteNode.Mark.PASSED and director.map_view.nodes_by_point[point].disabled), "The rest of that layer is shut, dimmed")
+	director.map_view._choose(director.map_view.current[0])
 	await process_frame
 	check(director.area.hero.health.hp == carried, "Her health is carried into the next area")
 	# A fall ends the run.
@@ -229,7 +233,7 @@ func run_tests() -> void:
 	director.finished.connect(_on_finished)
 	await process_frame
 	for layer in director.run.route.size():
-		director.map_view._choose(director.run.route.nodes(layer)[0])
+		director.map_view._choose(director.map_view.current[0])
 		await process_frame
 		director.area.hero.controlled = false
 		await clear_area(director)
@@ -249,7 +253,7 @@ func run_tests() -> void:
 	await process_frame
 	check(director.run.route.size() == 5 and director.map_view._title.text.contains("風哭きの樹海"), "The run lays out the chapter it was given")
 	for layer in director.run.route.size() - 1:
-		director.map_view._choose(director.run.route.nodes(layer)[0])
+		director.map_view._choose(director.map_view.current[0])
 		await process_frame
 		director.area.hero.controlled = false
 		await clear_area(director)
@@ -301,7 +305,7 @@ func run_tests() -> void:
 	check(fighter.motor.moveset.id == &"spear", "So does the weapon set at the base")
 	fighter.special_charge = 42.0
 	await clear_area(director)
-	director.map_view._choose(director.run.route.nodes(1)[0])
+	director.map_view._choose(director.map_view.current[0])
 	await process_frame
 	check(director.run.special_charge == 42.0 and director.area.hero.special_charge == 42.0, "The gauge carries into the next area")
 	director.free()

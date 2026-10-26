@@ -6,13 +6,15 @@ extends CanvasLayer
 # its top the run so far (the chapter, health, level, echo, the boons as
 # emblems) and what the last area gave. On the left the map: the layers from
 # left to right, each a column of RouteNodes (what clearing it gives, its
-# kind and difficulty), joined by lines (the way already taken bright, the
-# ways open now gold, the rest faint), the boss last. On the right the
-# selected node's account (area, kind, time, reward, goal, foes) and the
-# button that enters it. Only the current layer's nodes can be chosen; the
-# others can still be pointed at to read them. Mouse: pointing reads a
-# node, a click enters an open one. Keys and pad: the arrows move between the
-# open nodes, Enter (A) or the button enters; 1-3 enter one at once.
+# kind and difficulty), joined by each node's paths on (the way already
+# taken bright, the ways open now gold, those still within her reach plain,
+# the rest faint), the boss last. On the right the selected node's account
+# (area, kind, time, reward, goal, foes) and the button that enters it. Only
+# the nodes the last area's paths lead to can be chosen (the whole first
+# layer at the start); a node out of her reach is dimmed. Every node can
+# still be pointed at to read it. Mouse: pointing reads a node, a click
+# enters an open one. Keys and pad: the arrows move between the open nodes,
+# Enter (A) or the button enters; 1-3 enter one at once.
 
 signal chosen(waypoint: RouteMap.Waypoint)
 
@@ -25,6 +27,7 @@ const NODE_GAP := 170.0
 const MAP_MARGIN := 70.0
 const PATH_TAKEN := Color(0.84, 0.72, 0.48, 0.95)
 const PATH_OPEN := Color(0.84, 0.72, 0.48, 0.7)
+const PATH_AHEAD := Color(0.72, 0.71, 0.68, 0.5)
 const PATH_FAINT := Color(0.6, 0.6, 0.58, 0.22)
 const EMBLEM_SIZE := 32.0
 # Her token on the map: her face in a gold ring, standing where she is.
@@ -44,6 +47,8 @@ var route_layer := 0
 var current: Array = []
 var buttons: Array[Button] = []
 var nodes_by_point: Dictionary = {}
+# The nodes still within her reach: the open ones and every one past them.
+var reachable: Dictionary = {}
 var selected: RouteMap.Waypoint
 var _run: RunState
 var _art: TextureRect
@@ -211,14 +216,23 @@ func _lay_nodes() -> void:
 		child.free()
 	buttons.clear()
 	nodes_by_point.clear()
-	current = route.nodes(route_layer)
+	var previous: RouteMap.Waypoint = _run.taken[route_layer - 1] if route_layer > 0 and route_layer - 1 < _run.taken.size() else null
+	current = route.open_after(previous)
+	reachable.clear()
+	var frontier := current.duplicate()
+	while not frontier.is_empty():
+		var point: RouteMap.Waypoint = frontier.pop_back()
+		if not reachable.has(point):
+			reachable[point] = true
+			frontier.append_array(point.next)
 	for index in route.size():
 		var taken_here: RouteMap.Waypoint = _run.taken[index] if index < _run.taken.size() else null
 		var points := route.nodes(index)
 		for row in points.size():
 			var point: RouteMap.Waypoint = points[row]
-			var mark := RouteNode.Mark.AHEAD
-			if index == route_layer:
+			# Ahead and in reach, or dimmed: passed by, or cut off by her picks.
+			var mark := RouteNode.Mark.AHEAD if reachable.has(point) else RouteNode.Mark.PASSED
+			if current.has(point):
 				mark = RouteNode.Mark.OPEN
 			elif index < route_layer:
 				mark = RouteNode.Mark.TAKEN if point == taken_here else RouteNode.Mark.PASSED
@@ -289,8 +303,8 @@ func _draw_paths() -> void:
 	for index in route.size() - 1:
 		var taken_here: RouteMap.Waypoint = _run.taken[index] if index < _run.taken.size() else null
 		for from: RouteMap.Waypoint in route.nodes(index):
-			for to: RouteMap.Waypoint in route.nodes(index + 1):
-				var color := PATH_FAINT
+			for to: RouteMap.Waypoint in from.next:
+				var color := PATH_AHEAD if reachable.has(from) else PATH_FAINT
 				var width := 2.0
 				if index < route_layer and from == taken_here:
 					var next: RouteMap.Waypoint = _run.taken[index + 1] if index + 1 < _run.taken.size() else null

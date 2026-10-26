@@ -31,6 +31,10 @@ const REWARD_NAMES := {Reward.BOON: "強化", Reward.HEAL: "回復", Reward.ECHO
 @export var reward_weights: Dictionary = {Reward.BOON: 1.0, Reward.HEAL: 1.0, Reward.ECHO: 1.0}
 # Echo given when an ECHO reward is taken.
 @export_range(0, 10000) var echo := 40
+# How many paths lead on from it to the next layer once it is left, rolled
+# between these (RouteMap): one or two as a rule, so a pick narrows the way
+# ahead; the trials (the three-star arenas) open three.
+@export var branches := Vector2i(1, 2)
 
 @export_group("Event")
 # What happens at an event: merchant, altar or curse (RunDirector). Its
