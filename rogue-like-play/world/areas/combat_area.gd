@@ -81,6 +81,10 @@ var spawned := 0
 var reused := 0
 # The foes that came into the area, by FoeData.id (for the encyclopedia).
 var met: Dictionary = {}
+# A difficulty step's hold on the foes it brings in: their health this many
+# times their data's, and a boss's second phase this much sooner.
+var foe_hp := 1.0
+var boss_rage := 0.0
 var _shake: Tween
 var _last_hit_sound := -HIT_SOUND_GAP
 var _last_death_sound := -DEATH_SOUND_GAP
@@ -177,10 +181,14 @@ func spawn_foe(data: FoeData, at: Vector2) -> Foe:
 		foe = kept.pop_back()
 		reused += 1
 		_pool_holder.remove_child(foe)
+		foe.hp_scale = foe_hp
+		foe.rage_shift = boss_rage if data.boss else 0.0
 		foe.revive(at)
 	else:
 		foe = FOE_SCENE.instantiate()
 		foe.data = data
+		foe.hp_scale = foe_hp
+		foe.rage_shift = boss_rage if data.boss else 0.0
 		foe.position = at
 		foe.fell.connect(_on_foe_fell)
 		foe.retired.connect(_on_foe_retired)

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="DifficultyStep" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/expedition/difficulty_step.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+summary = "ボスが早く怒り狂い、手下を多く呼ぶ"
+echo = 0.1
+boss_rage = 0.2
+boss_summons = 1.5

@@ -5,6 +5,7 @@ extends Node2D
 # in a few per second, each first shown as a mark on the floor for
 # MARK_TIME, on open ground away from the hero; once every foe of a wave is
 # down, the next one comes after WAVE_GAP. Done when the last wave is down.
+# A difficulty step makes each wave larger (crowd).
 # Drawn among the area's floor marks. A boss hall also puts single foes down
 # through its marks (mark()), outside the waves.
 
@@ -24,6 +25,9 @@ var waves: Array[WaveData] = []
 var rng := RandomNumberGenerator.new()
 # The wave now under way, 0-based; waves.size() once all are down.
 var wave := -1
+# A difficulty step's: each wave brings this many times its foes, the extra
+# ones drawn from its own.
+var crowd := 1.0
 var _queue: Array[FoeData] = []
 # [at, foe data, seconds left, seconds in all]
 var _marks: Array = []
@@ -78,6 +82,9 @@ func advance(delta: float) -> void:
 	_gap_left = WAVE_GAP
 	if not done():
 		_queue = waves[wave].order()
+		var base := _queue.size()
+		for extra in roundi(base * (crowd - 1.0)):
+			_queue.append(_queue[rng.randi_range(0, base - 1)])
 		_credit = 1.0
 
 

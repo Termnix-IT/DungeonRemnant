@@ -125,6 +125,7 @@ func start_run() -> void:
 	active_run.settings = $Hub.settings
 	active_run.returns_to_base = true
 	active_run.chapter = $Hub.chapter
+	active_run.step = clampi($Hub.step, 0, meta.steps_open())
 	active_run.settings_changed.connect(func():
 		if saving_enabled:
 			$Hub.settings.save_settings())
@@ -136,8 +137,16 @@ func start_run() -> void:
 
 
 # The run's end, recorded and saved before its result offers the way home.
+# The first clear of the last chapter is the ending: it opens the difficulty
+# steps; clearing it at the highest step open opens the next.
 func _on_run_finished(result: Dictionary) -> void:
+	var ending_before := meta.ending_seen()
+	var open_before := meta.steps_open()
 	meta.record_run(result)
+	if not ending_before and meta.ending_seen():
+		active_run.end_view.tell_opened("難易度の段階が開いた")
+	elif meta.steps_open() > open_before:
+		active_run.end_view.tell_opened("段階%dが開いた" % meta.steps_open())
 	if saving_enabled:
 		store.save_progress(meta)
 		active_run.end_view.show_save_status(store.message, store.alert)

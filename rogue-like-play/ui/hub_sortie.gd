@@ -8,8 +8,11 @@ extends Control
 # dark and a lock on it). In the column on the right, the chosen chapter's
 # painting, name and line; its way, record and boss (the boss unnamed until
 # met, as in the encyclopedia); the foes that come in it, pictured when met
-# and dark shapes when not; what she carries; and the one action, setting
-# out. A sealed chapter can be chosen to read what opens it, not set out for.
+# and dark shapes when not; what she carries; once the ending has opened the
+# difficulty steps, the step to set out at (as Slay the Spire offers its
+# ascension: the step, what it adds, and the echo it brings back; Q / E or
+# LB / RB change it); and the one action, setting out. A sealed chapter can
+# be chosen to read what opens it, not set out for.
 #
 # Keys and the gamepad choose by moving the focus, and Enter (A) on a
 # chapter sets out at once, as Enter on an upgrade's node buys it. The
@@ -18,6 +21,8 @@ extends Control
 signal departure_requested(chapter: ChapterData)
 # The chosen chapter, when it is open: the lobby shows it next.
 signal chapter_chosen(chapter: ChapterData)
+# The difficulty step chosen to set out at.
+signal step_chosen(step: int)
 
 const CARD_HEIGHT := 132.0
 const THUMB_SIZE := Vector2(192, 108)
@@ -29,6 +34,7 @@ const EMBLEM_SIZE := 48.0
 const CAPTION_WIDTH := 112.0
 # The facts stand on the column's left edge, like the lines above and below.
 const FACT_WIDTH := 240.0
+const STEP_VALUE_WIDTH := 44.0
 const UNKNOWN_NAME := "？？？"
 
 var meta: MetaProgress
@@ -44,6 +50,14 @@ var record_value: Label
 var boss_value: Label
 var foe_row: HBoxContainer
 var gear_row: HBoxContainer
+# The difficulty step row (hidden until the ending opens the steps), the
+# step chosen, and its parts.
+var step_row: HBoxContainer
+var step := 0
+var step_value: Label
+var step_note: Label
+var step_down: Button
+var step_up: Button
 var action_button: Button
 var _list_column: VBoxContainer
 var _info: VBoxContainer
@@ -89,6 +103,7 @@ func _ready() -> void:
 	foe_row = _row("現れる敵")
 	gear_row = _row("装備")
 	HubUI.space(_info)
+	_build_step_row()
 	action_button = HubUI.primary_action(_info, "", set_out)
 	action_button.name = "SetOut"
 	for card in cards:
@@ -206,6 +221,36 @@ func _build_banner() -> void:
 	banner_lock = _lock(banner, BANNER_LOCK_SIZE)
 
 
+# The step to set out at, just above the button: the arrows round the step,
+# then what it adds and the echo it brings back; the whole list of what is
+# in play shows on pointing at that line.
+func _build_step_row() -> void:
+	step_row = HBoxContainer.new()
+	step_row.name = "StepRow"
+	step_row.theme_type_variation = &"CompactRow"
+	_info.add_child(step_row)
+	var kicker := HubUI.label(step_row, "段階", &"MutedLabel")
+	kicker.autowrap_mode = TextServer.AUTOWRAP_OFF
+	kicker.custom_minimum_size.x = CAPTION_WIDTH
+	kicker.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	step_down = HubUI.button(step_row, "◀", func(): choose_step(step - 1))
+	step_down.focus_mode = Control.FOCUS_NONE
+	step_value = HubUI.label(step_row, "", &"ValueLabel")
+	step_value.autowrap_mode = TextServer.AUTOWRAP_OFF
+	step_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	step_value.custom_minimum_size.x = STEP_VALUE_WIDTH
+	step_value.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	step_up = HubUI.button(step_row, "▶", func(): choose_step(step + 1))
+	step_up.focus_mode = Control.FOCUS_NONE
+	step_note = HubUI.label(step_row, "", &"BodyLabel")
+	step_note.autowrap_mode = TextServer.AUTOWRAP_OFF
+	step_note.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	step_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	step_note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	step_note.mouse_filter = Control.MOUSE_FILTER_PASS
+	step_row.hide()
+
+
 # A fact reads as a small caption above its value.
 func _fact(row: HBoxContainer, caption: String) -> Label:
 	var cell := VBoxContainer.new()
@@ -248,8 +293,9 @@ func _picture(row: HBoxContainer, texture: Texture2D, extent: float, tip: String
 	row.add_child(picture)
 
 
-func refresh(current: MetaProgress, chapter: ChapterData) -> void:
+func refresh(current: MetaProgress, chapter: ChapterData, at_step: int = 0) -> void:
 	meta = current
+	step = clampi(at_step, 0, meta.steps_open())
 	var cleared := 0
 	for index in cards.size():
 		var each := Chapters.ALL[index]
@@ -342,7 +388,46 @@ func _tell() -> void:
 		_picture(gear_row, EmblemIcons.texture(move.emblem), EMBLEM_SIZE, move.display_name)
 	action_button.disabled = not open
 	action_button.text = "%sへ出撃する" % Chapters.short_name(chapter) if open else "%sは封印中" % Chapters.short_name(chapter)
+	if open and step > 0:
+		action_button.text += "（段階%d）" % step
 	action_button.tooltip_text = "" if open else opener
+	_show_step()
+
+
+# The step row: shown once the steps are open, with what the chosen step
+# adds and brings back, and why the next one is not open yet.
+func _show_step() -> void:
+	var open := meta.steps_open() if meta != null else 0
+	step_row.visible = open > 0
+	if open == 0:
+		return
+	step_value.text = str(step)
+	step_note.text = "制約なし" if step == 0 else "%s　%s" % [DifficultySteps.ALL[step - 1].summary, DifficultySteps.echo_text(step)]
+	step_note.tooltip_text = "" if step == 0 else DifficultySteps.constraints(step)
+	step_down.disabled = step <= 0
+	step_up.disabled = step >= open
+	var final := Chapters.short_name(Chapters.ALL.back())
+	if step < open:
+		step_up.tooltip_text = "段階を上げる（E・RB）"
+	elif open < DifficultySteps.MAX:
+		step_up.tooltip_text = "段階%dで%sを踏破すると開く" % [open, final]
+	else:
+		step_up.tooltip_text = "最後の段階"
+	step_down.tooltip_text = "段階を下げる（Q・LB）"
+
+
+# A difficulty step chosen (Q / E, LB / RB or the arrows), kept within those open.
+func choose_step(level: int) -> void:
+	if meta == null:
+		return
+	var chosen_step := clampi(level, 0, meta.steps_open())
+	if chosen_step == step:
+		return
+	step = chosen_step
+	GameAudio.play(self, &"ui_move", -18.0)
+	step_chosen.emit(step)
+	_tell()
+	UIMotion.of(step_row).reveal(UIMotion.SELECT_TIME)
 
 
 func focus_selected() -> void:
@@ -363,6 +448,18 @@ func _rest_on(target: Control) -> void:
 	await get_tree().create_timer(HubLobby.HOVER_INTENT).timeout
 	if _hover_target == target and is_instance_valid(target) and target.is_visible_in_tree() and not target.has_focus():
 		target.grab_focus()
+
+
+# Q / E (LB / RB): the step below or above, once the steps are open.
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_visible_in_tree() or meta == null or meta.steps_open() == 0:
+		return
+	var pad: bool = event is InputEventJoypadButton and event.pressed
+	var down: bool = (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_Q) or (pad and event.button_index == JOY_BUTTON_LEFT_SHOULDER)
+	var up: bool = (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E) or (pad and event.button_index == JOY_BUTTON_RIGHT_SHOULDER)
+	if down or up:
+		choose_step(step + (1 if up else -1))
+		get_viewport().set_input_as_handled()
 
 
 func _input(event: InputEvent) -> void:

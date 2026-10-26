@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[resource]
+script = ExtResource("1")
+id = &"blood_moss_sentinel"
+display_name = "血錆の苔番兵"
+description = "苔の下まで血のような錆が回った苔むす番兵。さらに硬く、ぶつかる力も強い。
+難易度の段階7から、第2章のフィールドの群れに混ざる。"
+visual_id = "moss_sentinel"
+tint = Color(1, 0.52, 0.5, 1)
+baked = true
+size_scale = 1.1
+max_hp = 130
+defense = 1
+speed = 100.0
+acceleration = 900.0
+speed_spread = 0.12
+contact_damage = 16
+contact_knockback = 280.0
+contact_cooldown = 0.9
+hit_radius = 15.0
+knockback_resist = 0.1
+hitstun = 0.2
+exp_reward = 3

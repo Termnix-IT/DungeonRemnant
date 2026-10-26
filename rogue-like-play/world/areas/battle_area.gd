@@ -15,7 +15,10 @@ extends CombatArea
 # extends it with its own hall and no clearing. The run's lasting rules
 # (RunState.lasting) widen the gems' pull, keep her last stand, let a
 # level-up's cards be drawn again, and make each boon taken from a level
-# heal her and, as the fight resumes, burst, shield and quicken her.
+# heal her and, as the fight resumes, burst, shield and quicken her. The
+# run's difficulty step (RunState.step_rules) toughens its foes, swells its
+# crowd and waves, hastens its elites, mixes in the chapter's stronger kin,
+# and makes its boss rage sooner and call more help.
 
 signal cleared
 # A setting was changed from the menu (the owner saves it).
@@ -152,16 +155,27 @@ func _lay_out() -> void:
 	if data.trees:
 		_plant_trees()
 	spawn_hero(ground.bounds().get_center(), run.tuning, run.moveset)
+	# The run's difficulty step: tougher foes, a boss quicker to rage.
+	var rules := run.step_rules
+	foe_hp = rules.foe_hp
+	boss_rage = rules.boss_rage
 	if data.kind == AreaData.Kind.FIELD and data.spawn_table != null:
 		director = EnemyDirector.new()
 		director.name = "Director"
 		director.process_mode = Node.PROCESS_MODE_PAUSABLE
 		add_child(director)
+		director.crowd = rules.crowd
+		director.elite_pace = rules.elite_pace
+		director.elite_extra = rules.elite_cap
+		if rules.kin > 0.0 and run.route != null:
+			director.kin = run.route.chapter.kin
+			director.kin_share = rules.kin
 		director.start(self, data.spawn_table, seed_value)
 	else:
 		waves = WaveRunner.new()
 		waves.name = "Waves"
 		marks.add_child(waves)
+		waves.crowd = rules.crowd
 		waves.start(self, data.waves, seed_value)
 	if data.boss != null:
 		_boss_left = BOSS_DELAY
@@ -300,7 +314,7 @@ func _on_boss_phase(foe: Foe) -> void:
 	_banner_left = BANNER_TIME * 0.6
 	if foe.data.summon == null:
 		return
-	for index in foe.data.summon_count:
+	for index in roundi(foe.data.summon_count * run.step_rules.boss_summons):
 		var at := waves.spawn_point()
 		if at != Vector2.INF:
 			waves.mark(at, foe.data.summon, WaveRunner.MARK_TIME)

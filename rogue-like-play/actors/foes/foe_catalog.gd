@@ -15,6 +15,11 @@ const FOES: Array[FoeData] = [
 	preload("res://data/foes/gale_rat.tres"),
 	preload("res://data/foes/spore_swell.tres"),
 	preload("res://data/foes/spore_cannon.tres"),
+	# The stronger kin, met only at the higher difficulty steps.
+	preload("res://data/foes/blood_sentinel.tres"),
+	preload("res://data/foes/blood_rat.tres"),
+	preload("res://data/foes/blood_moss_sentinel.tres"),
+	preload("res://data/foes/blood_gale_rat.tres"),
 	preload("res://data/foes/raging_charger.tres"),
 	preload("res://data/foes/gale_warden.tres"),
 	preload("res://data/foes/ruin_king.tres"),

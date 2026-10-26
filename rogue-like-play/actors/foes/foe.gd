@@ -41,6 +41,11 @@ var speed := 95.0
 var dying := false
 # 1, or 2 once a boss has entered its second phase.
 var phase := 1
+# A difficulty step's hold on it, set by its area before it stands
+# (CombatArea.spawn_foe): its health this many times its data's, and a boss's
+# second phase this much sooner.
+var hp_scale := 1.0
+var rage_shift := 0.0
 var walk := Vector2.ZERO
 var on_screen := true
 # The attack under way, and how far into it.
@@ -99,7 +104,7 @@ func revive(at: Vector2) -> void:
 	_tick_from = at
 	if _fade != null:
 		_fade.kill()
-	health = Combatant.new(data.max_hp, data.defense)
+	health = Combatant.new(maxi(1, roundi(data.max_hp * hp_scale)), data.defense)
 	speed = data.speed * (1.0 + rng.randf_range(-data.speed_spread, data.speed_spread))
 	phase = 1
 	dying = false
@@ -301,7 +306,7 @@ func receive(info: DamageInfo) -> int:
 	view.hurt(flinch and attack == null)
 	if not health.alive():
 		_fall()
-	elif phase == 1 and data.phase_two_at > 0.0 and health.hp <= health.max_hp * data.phase_two_at:
+	elif phase == 1 and data.phase_two_at > 0.0 and health.hp <= health.max_hp * minf(0.95, data.phase_two_at + rage_shift):
 		_enter_phase_two()
 	return lost
 

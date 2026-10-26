@@ -24,5 +24,8 @@ extends Resource
 @export var events: Array[AreaData] = []
 @export_range(0.0, 1.0) var event_chance := 0.5
 @export var boss: AreaData
+# Stronger kin of its crowd's foes (their colour, tougher), mixed into its
+# fields from the difficulty step that calls for them (DifficultyStep.kin).
+@export var kin: Array[FoeData] = []
 # The chapter whose first clear opens this one; empty: open from the start.
 @export var unlocked_by: StringName

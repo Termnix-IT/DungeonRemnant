@@ -7,9 +7,10 @@ extends RefCounted
 # far along it she is, the echo earned (the base's currency), the foes
 # felled and the time fought, the run's own random numbers, and the rules the
 # lasting upgrades give it (lasting: MetaProgress.RUN_EFFECTS, with the
-# rerolls and the last stand they grant still unspent). Nothing in it
-# outlives the run but what its end hands back; the next run starts from a
-# new RunState.
+# rerolls and the last stand they grant still unspent), and the difficulty
+# step it is played at with the constraints that step brings (use_step).
+# Nothing in it outlives the run but what its end hands back; the next run
+# starts from a new RunState.
 
 const LEVELS := preload("res://data/progression/action_levels.tres")
 # The curses a cursed stone lays on her: [name, what it does]. Each one taken
@@ -77,6 +78,10 @@ var special: SpecialData
 var special_charge := 0.0
 # Curses taken at a cursed stone (CURSES' ids), kept to the run's end.
 var curses: Array[StringName] = []
+# The difficulty step the run is played at (0: the game as it is), and the
+# constraints of the steps up to it, folded into one.
+var step := 0
+var step_rules: DifficultyStep = DifficultySteps.combined(0)
 # Experience owed from exp_rate below a whole point, kept for the next gem.
 var _exp_carry := 0.0
 
@@ -102,6 +107,18 @@ func rule(effect: StringName) -> float:
 	return float(lasting.get(effect, 0.0))
 
 
+# Plays the run at a difficulty step, once her tuning is set: the steps'
+# constraints for the areas and rewards to read, and the curse a step lays
+# on her as she sets out.
+func use_step(level: int) -> void:
+	step = clampi(level, 0, DifficultySteps.MAX)
+	step_rules = DifficultySteps.combined(step)
+	if step_rules.curse:
+		var left := curses_left()
+		if not left.is_empty():
+			take_curse(left[rng.randi_range(0, left.size() - 1)])
+
+
 # Experience gained; true when it brought a level-up whose choice waits.
 func gain(amount: int) -> bool:
 	var before := progression.pending_choices
@@ -113,9 +130,15 @@ func gain(amount: int) -> bool:
 	return progression.pending_choices > before
 
 
-# How many cards a level-up offers.
+# How many cards a level-up offers (a difficulty step may take one away).
 func offer_count() -> int:
-	return BuildState.OFFER_COUNT + roundi(rule(&"offer_count"))
+	return maxi(1, BuildState.OFFER_COUNT + roundi(rule(&"offer_count")) + step_rules.offers)
+
+
+# How many cards a reward, the parting blessing or an event's card offers:
+# the usual three, less any a difficulty step takes away.
+func card_count() -> int:
+	return maxi(1, BuildState.OFFER_COUNT + step_rules.offers)
 
 
 # The next level-up's offer; empty when every boon is at its last rank, and
@@ -136,9 +159,10 @@ func reroll() -> Array[BoonData]:
 	return build.offer(rng, offer_count())
 
 
-# An area's echo reward, with the echo_rate held and each curse's share.
+# An area's echo reward, with the echo_rate held, each curse's share and the
+# difficulty step's.
 func echo_reward(amount: int) -> int:
-	return roundi(amount * (1.0 + rule(&"echo_rate") + CURSE_ECHO * curses.size()))
+	return roundi(amount * (1.0 + rule(&"echo_rate") + CURSE_ECHO * curses.size() + step_rules.echo))
 
 
 # Lays a curse on her, if she does not carry it yet: its harm reaches her

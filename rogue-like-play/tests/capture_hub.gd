@@ -53,6 +53,19 @@ func capture() -> void:
 	hub.sortie_page.cards[1].grab_focus()
 	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.3).timeout
 	await _grab("hub_sortie_sealed_1600")
+	# After the ending: the step row, set at step 3 of the three open.
+	main.meta.chapter_clears[Chapters.ALL.back().id] = 1
+	main.meta.chapter_steps[Chapters.ALL.back().id] = 2
+	hub.refresh(main.meta)
+	hub.show_page("sortie")
+	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
+	hub.sortie_page.choose_step(3)
+	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.3).timeout
+	await _grab("hub_sortie_steps_1600")
+	hub.sortie_page.choose_step(0)
+	main.meta.chapter_clears.erase(Chapters.ALL.back().id)
+	main.meta.chapter_steps.clear()
+	hub.refresh(main.meta)
 	# The upgrade tree followed out to a branch's end, the root's side out of sight.
 	hub.show_page("upgrade")
 	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout

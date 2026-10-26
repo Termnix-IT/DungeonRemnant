@@ -4,7 +4,9 @@ extends Node
 # Keeps a CombatArea supplied with foes from its SpawnTable: as many alive as
 # the table aims for at the area's time (or a fixed number, for trials),
 # brought in a few per second just outside what the camera shows, and an
-# elite now and then. It counts time only while the hero stands.
+# elite now and then. It counts time only while the hero stands. A difficulty
+# step makes the crowd larger and quicker, the elites sooner and more, and
+# mixes the chapter's stronger kin into the crowd (set before start()).
 
 # Foes appear at least this far (world px) outside the camera's view.
 const VIEW_MARGIN := 80.0
@@ -21,6 +23,14 @@ var elapsed := 0.0
 var running := true
 # Above zero: keep exactly this many foes alive, no elites, whatever the time.
 var fixed_alive := 0
+# A difficulty step's: the crowd aimed for and brought in this many times
+# the table's, elites after this share of their time and this many more at
+# once, and this share of the crowd drawn from `kin` instead.
+var crowd := 1.0
+var elite_pace := 1.0
+var elite_extra := 0
+var kin: Array[FoeData] = []
+var kin_share := 0.0
 var _credit := 0.0
 var _next_elite := INF
 
@@ -34,11 +44,11 @@ func start(combat_area: CombatArea, spawn_table: SpawnTable, seed_value: int = 0
 		rng.randomize()
 	elapsed = 0.0
 	_credit = 0.0
-	_next_elite = table.elite_first if table.elite != null else INF
+	_next_elite = table.elite_first * elite_pace if table.elite != null else INF
 
 
 func target_alive() -> int:
-	return fixed_alive if fixed_alive > 0 else table.alive_at(elapsed)
+	return fixed_alive if fixed_alive > 0 else roundi(table.alive_at(elapsed) * crowd)
 
 
 func _physics_process(delta: float) -> void:
@@ -51,7 +61,7 @@ func advance(delta: float) -> void:
 		return
 	elapsed += delta
 	# A fixed trial count fills four times as fast.
-	var rate := table.spawns_per_second * (4.0 if fixed_alive > 0 else 1.0)
+	var rate := table.spawns_per_second * (4.0 if fixed_alive > 0 else crowd)
 	_credit = minf(_credit + delta * rate, maxf(1.0, rate))
 	var alive := area.foes.size()
 	var aim := target_alive()
@@ -64,8 +74,8 @@ func advance(delta: float) -> void:
 		_credit -= 1.0
 		alive += 1
 	if fixed_alive <= 0 and elapsed >= _next_elite:
-		_next_elite += table.elite_every
-		if elites_alive() < table.elite_cap:
+		_next_elite += table.elite_every * elite_pace
+		if elites_alive() < table.elite_cap + elite_extra:
 			var at := spawn_point()
 			if at != Vector2.INF:
 				area.spawn_foe(table.elite, at)
@@ -79,8 +89,11 @@ func elites_alive() -> int:
 	return count
 
 
-# A foe from the entries open at this time, by weight; null if none is.
+# A foe from the entries open at this time, by weight, or now and then one of
+# the stronger kin; null if none is.
 func pick() -> FoeData:
+	if not kin.is_empty() and kin_share > 0.0 and rng.randf() < kin_share:
+		return kin[rng.randi_range(0, kin.size() - 1)]
 	var total := 0.0
 	for entry in table.entries:
 		if entry.active_at(elapsed):

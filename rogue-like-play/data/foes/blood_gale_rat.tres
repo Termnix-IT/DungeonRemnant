@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=4 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/gale_pounce.tres" id="3"]
+[resource]
+script = ExtResource("1")
+id = &"blood_gale_rat"
+display_name = "血眼の疾風ネズミ"
+description = "目を赤く光らせた疾風ネズミ。体が硬く、遠くからの飛びかかりも重い。
+難易度の段階7から、第2章のフィールドの群れに混ざる。"
+visual_id = "gale_rat"
+tint = Color(1, 0.52, 0.5, 1)
+baked = true
+size_scale = 1.25
+max_hp = 55
+defense = 0
+speed = 205.0
+acceleration = 1600.0
+speed_spread = 0.15
+contact_damage = 8
+contact_knockback = 240.0
+contact_cooldown = 0.8
+hit_radius = 11.0
+knockback_resist = 0.0
+hitstun = 0.18
+exp_reward = 3
+attacks = Array[ExtResource("2")]([ExtResource("3")])
+power = 15.0
+attack_cooldown = 1.4

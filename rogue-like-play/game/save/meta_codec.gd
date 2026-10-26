@@ -11,7 +11,8 @@ extends RefCounted
 # version 5 save from before the upgrade tree had its root is given the root,
 # so the upgrades it holds keep growing; one from before the skill slots
 # keeps the new player's; one from before the chapters' own records gives
-# its record to the first chapter.
+# its record to the first chapter; one from before the difficulty steps has
+# cleared none at a step.
 
 const VERSION := 5
 const MAX_COUNT := 1000000
@@ -49,7 +50,7 @@ static func encode(meta: MetaProgress) -> Dictionary:
 static func _chapters_of(meta: MetaProgress) -> Dictionary:
 	var chapters := {}
 	for id: StringName in meta.chapter_clears.keys() + meta.chapter_best.keys():
-		chapters[String(id)] = {"clears": meta.clears_of(id), "best": meta.best_of(id)}
+		chapters[String(id)] = {"clears": meta.clears_of(id), "best": meta.best_of(id), "step": meta.step_of(id)}
 	return chapters
 
 
@@ -115,7 +116,8 @@ static func decode(data: Variant) -> MetaProgress:
 	return meta
 
 
-# The chapters' records: known chapter ids, each with counts in range.
+# The chapters' records: known chapter ids, each with counts in range, and a
+# step cleared at only where the chapter has been cleared.
 static func _read_chapters(data: Variant, meta: MetaProgress) -> bool:
 	if not data is Dictionary:
 		return false
@@ -125,10 +127,14 @@ static func _read_chapters(data: Variant, meta: MetaProgress) -> bool:
 			return false
 		if not integer(entry.get("clears", 0), 0, MAX_COUNT) or not integer(entry.get("best", 0), 0, MAX_COUNT):
 			return false
+		if not integer(entry.get("step", 0), 0, DifficultySteps.MAX) or (int(entry.get("step", 0)) > 0 and int(entry.get("clears", 0)) == 0):
+			return false
 		if int(entry.get("clears", 0)) > 0:
 			meta.chapter_clears[StringName(id)] = int(entry.clears)
 		if int(entry.get("best", 0)) > 0:
 			meta.chapter_best[StringName(id)] = int(entry.best)
+		if int(entry.get("step", 0)) > 0:
+			meta.chapter_steps[StringName(id)] = int(entry.step)
 	return true
 
 

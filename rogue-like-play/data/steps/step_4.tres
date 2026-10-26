@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="DifficultyStep" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/expedition/difficulty_step.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+summary = "強化の候補が1枚減る"
+echo = 0.1
+offers = -1

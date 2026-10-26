@@ -12,7 +12,8 @@ extends Node
 # base's MetaProgress, the run starts with its lasting upgrades: her
 # tuning, the rules they give (RunState.lasting), and with the parting
 # blessing a boon chosen once the first area has been picked on the map,
-# before it is entered.
+# before it is entered. Given a difficulty step, the run is played with its
+# constraints (RunState.use_step).
 
 signal finished(result: Dictionary)
 # The result's way home was taken (only when returns_to_base).
@@ -41,6 +42,8 @@ const MERCHANT_HEAL_SHARE := 0.5
 const ALTAR_HP_SHARE := 0.3
 # Started from the base: the result leads back there instead of to a new run.
 var returns_to_base := false
+# The difficulty step the run is played at (DifficultySteps; 0: none).
+var step := 0
 var chapter: ChapterData = CHAPTER
 var run: RunState
 var area: BattleArea
@@ -75,6 +78,7 @@ func _ready() -> void:
 		run.skills = meta.equipped_skills()
 		run.special = meta.equipped_special()
 		run.moveset = meta.equipped_weapon()
+	run.use_step(step)
 	run.route = RouteMap.generate(chapter, run.rng)
 	map_view = RouteMapView.new()
 	add_child(map_view)
@@ -101,7 +105,7 @@ func max_hp() -> int:
 # false when there is nothing to offer, and the area is entered at once.
 func _bless(next: RouteMap.Waypoint) -> bool:
 	_blessing_due = false
-	var offer := run.build.offer(run.rng)
+	var offer := run.build.offer(run.rng, run.card_count())
 	if offer.is_empty():
 		return false
 	_blessing = true
@@ -147,15 +151,15 @@ func _on_cleared() -> void:
 func grant(reward: AreaData.Reward) -> void:
 	match reward:
 		AreaData.Reward.BOON:
-			var offer := run.build.offer(run.rng)
+			var offer := run.build.offer(run.rng, run.card_count())
 			if offer.is_empty():
 				grant(AreaData.Reward.ECHO)
 				return
 			_rewarding = true
 			choice.present_boons(offer, run.build, run.progression.level, 1, "報酬　強化を1つ選ぶ")
 		AreaData.Reward.HEAL:
-			# Thirst halves what a heal brings.
-			var share := (HEAL_SHARE + run.rule(&"heal_share")) * (0.5 if run.curses.has(&"thirst") else 1.0)
+			# Thirst halves what a heal brings; a difficulty step may cut it too.
+			var share := (HEAL_SHARE + run.rule(&"heal_share")) * (0.5 if run.curses.has(&"thirst") else 1.0) * run.step_rules.heal
 			var gained := run.heal(share, max_hp())
 			advance("報酬　HPが%d回復した" % gained if gained > 0 else "報酬　回復（HPはすでに満タン）")
 		AreaData.Reward.ECHO:
@@ -283,7 +287,7 @@ func _on_event_choice(id: StringName) -> void:
 
 # The event's boon card; false when no boon is left to offer.
 func _event_choice(ends: bool) -> bool:
-	var offer := run.build.offer(run.rng)
+	var offer := run.build.offer(run.rng, run.card_count())
 	if offer.is_empty():
 		return false
 	event_view.hide()
@@ -352,7 +356,7 @@ func finish(cleared: bool, abandoned: bool = false) -> void:
 	var record := meta != null and reached > meta.best_of(chapter.id)
 	var first_clear := meta != null and cleared and meta.clears_of(chapter.id) == 0
 	result = {"cleared": cleared, "abandoned": abandoned, "record": record, "first_clear": first_clear, "echo_before": meta.echo if meta != null else -1, "layer": mini(run.layer, run.route.size() - 1), "layers": run.route.size(),
-		"chapter": chapter.display_name, "chapter_id": String(chapter.id), "time": run.time, "kills": run.kills,
+		"chapter": chapter.display_name, "chapter_id": String(chapter.id), "step": run.step, "time": run.time, "kills": run.kills,
 		"level": run.progression.level, "boons": boons, "emblems": emblems, "echo": run.echo, "met": run.met.keys()}
 	map_view.hide()
 	GameMusic.cue(self, &"")

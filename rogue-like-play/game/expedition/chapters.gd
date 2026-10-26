@@ -41,12 +41,14 @@ static func frontier(meta: MetaProgress) -> ChapterData:
 	return last
 
 
-# How far the chapter has been taken: how often it was cleared, else the
-# deepest layer reached (the boss's, past the last layer), else nothing.
+# How far the chapter has been taken: how often it was cleared (and the
+# highest difficulty step it was cleared at), else the deepest layer reached
+# (the boss's, past the last layer), else nothing.
 static func record(meta: MetaProgress, chapter: ChapterData) -> String:
 	var clears := meta.clears_of(chapter.id)
 	if clears > 0:
-		return "踏破 %d回" % clears
+		var step := meta.step_of(chapter.id)
+		return "踏破 %d回" % clears if step == 0 else "踏破 %d回・段階%d" % [clears, step]
 	var best := meta.best_of(chapter.id)
 	if best == 0:
 		return "なし"

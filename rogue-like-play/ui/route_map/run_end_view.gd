@@ -158,7 +158,7 @@ func _centered(parent: Node, role: StringName) -> Label:
 
 
 # {cleared, abandoned, record, first_clear, echo_before, layer, layers,
-# chapter, time, kills, level, boons, emblems, echo}; `home` names the way on
+# chapter, step, time, kills, level, boons, emblems, echo}; `home` names the way on
 # (back to the base, or a new run);
 # `art` (the chapter's illustration) lies darkened behind the window.
 func present(result: Dictionary, home: bool = false, art: Texture2D = null) -> void:
@@ -167,7 +167,8 @@ func present(result: Dictionary, home: bool = false, art: Texture2D = null) -> v
 	_art.texture = art
 	_title.text = "踏破" if won else ("中断" if left else "敗北")
 	_title.theme_type_variation = &"VictoryTitle" if won else &"DefeatTitle"
-	_ending.text = "%s　%s" % [result.chapter, "ボスを撃破した" if won else ("第%d層で中断した" if left else "第%d層で倒れた") % (int(result.layer) + 1)]
+	var place: String = result.chapter if int(result.get("step", 0)) == 0 else "%s（段階%d）" % [result.chapter, int(result.step)]
+	_ending.text = "%s　%s" % [place, "ボスを撃破した" if won else ("第%d層で中断した" if left else "第%d層で倒れた") % (int(result.layer) + 1)]
 	_button.text = "拠点へ戻る" if home else "新しいランを始める"
 	for child in _tiles.get_children():
 		child.free()
@@ -320,6 +321,12 @@ func _boon_row(emblem: String, title: String) -> void:
 	var name := HubUI.label(row, title, &"BodyLabel")
 	name.autowrap_mode = TextServer.AUTOWRAP_OFF
 	name.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+# What the recorded run opened (a difficulty step), told in gold with the
+# record once the seal lands. Called before the seal lands.
+func tell_opened(text: String) -> void:
+	record_label.text = text if record_label.text.is_empty() else "%s　%s" % [record_label.text, text]
 
 
 # Whether the result was saved; shown only when there is something to say.

@@ -26,6 +26,8 @@ const CONTENT_SIZE := Vector2(1440, 810)
 # The chapter the lobby shows and the departure opens on: the frontier at
 # first, then the last one chosen, or one that has just opened.
 var chapter: ChapterData = Chapters.ALL[0]
+# The difficulty step the departure sets out at (0 until the steps open).
+var step := 0
 var echo_label: Label
 var feedback: Label
 var start_button: Button
@@ -146,6 +148,7 @@ func _ready() -> void:
 	sortie_page.offset_left = bleed
 	sortie_page.offset_right = -bleed
 	sortie_page.chapter_chosen.connect(func(chosen: ChapterData): chapter = chosen)
+	sortie_page.step_chosen.connect(func(chosen: int): step = chosen)
 	sortie_page.departure_requested.connect(func(chosen: ChapterData):
 		chapter = chosen
 		start_requested.emit())
@@ -236,9 +239,10 @@ func _resize() -> void:
 func refresh(meta: MetaProgress, message: String = "") -> void:
 	_pick_chapter(meta)
 	_meta = meta
+	step = clampi(step, 0, meta.steps_open())
 	echo_label.text = UIFormat.amount(meta.echo)
 	home_page.refresh(meta, chapter)
-	sortie_page.refresh(meta, chapter)
+	sortie_page.refresh(meta, chapter, step)
 	upgrade_page.refresh(meta)
 	status_page.refresh(meta)
 	codex_page.refresh(meta)
@@ -298,10 +302,12 @@ func show_page(target: String) -> void:
 			title_label.text = "出撃"
 			sortie_page.show()
 			if _meta != null:
-				sortie_page.refresh(_meta, chapter)
+				sortie_page.refresh(_meta, chapter, step)
 			sortie_page.focus_selected()
 			key_guide.add_hint("Enter", "A", "出撃", sortie_page.set_out)
 			key_guide.add_hint("↑ / ↓", "▲ / ▼", "選ぶ")
+			if _meta != null and _meta.steps_open() > 0:
+				key_guide.add_hint("Q / E", "LB / RB", "段階")
 			key_guide.add_hint("Tab", "View", "装備", _status_from_sortie)
 		"upgrade":
 			title_label.text = "永続強化"

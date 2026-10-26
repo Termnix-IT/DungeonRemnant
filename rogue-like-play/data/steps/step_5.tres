@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="DifficultyStep" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/expedition/difficulty_step.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+summary = "敵のHPが25%増える（ボスも）"
+echo = 0.1
+foe_hp = 1.25

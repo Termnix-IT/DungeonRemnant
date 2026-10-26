@@ -4,7 +4,9 @@ extends SceneTree
 # pages they open and the way back, buying a lasting upgrade (saved, read
 # back after a restart, refused when the echo is short), the encyclopedia
 # telling met foes from unmet ones, the help speaking of the real-time game,
-# a save that cannot be read shown as an alert, and setting out on a run.
+# a save that cannot be read shown as an alert, setting out on a run, and
+# the difficulty steps: offered on the departure once the ending opens them,
+# carried into the run, and the next opened by a clear at the highest.
 
 var failures := 0
 var checks := 0
@@ -112,6 +114,29 @@ func run_tests() -> void:
 	check(Chapters.record(deep, Chapters.ALL[0]) == "第2層まで", "A record names the deepest layer")
 	deep.chapter_best[&"ash_corridor"] = Chapters.ALL[0].layers + 1
 	check(Chapters.record(deep, Chapters.ALL[0]) == "ボスまで", "Past the last layer, the record is the boss")
+
+	# The difficulty steps on the departure: no row until the ending opens them.
+	var final: ChapterData = Chapters.ALL.back()
+	hub.show_page("sortie")
+	await process_frame
+	check(not sortie.step_row.visible and not sortie.action_button.text.contains("段階"), "Before the ending the departure offers no step")
+	main.meta.chapter_clears[final.id] = 1
+	hub.refresh(main.meta)
+	check(sortie.step_row.visible and sortie.step_value.text == "0" and sortie.step_note.text == "制約なし" and sortie.step_down.disabled and not sortie.step_up.disabled, "The ending opens the step row, at the game as it is")
+	root.push_input(key(KEY_E))
+	await process_frame
+	check(hub.step == 1 and sortie.step == 1 and sortie.step_note.text.begins_with(DifficultySteps.ALL[0].summary) and sortie.step_note.text.ends_with("残響 +10%"), "E raises the step and tells what it adds and brings back")
+	check(sortie.action_button.text.ends_with("（段階1）") and sortie.step_note.tooltip_text.contains(DifficultySteps.ALL[0].summary), "The button names the step, and pointing at the line lists what is in play")
+	root.push_input(key(KEY_E))
+	await process_frame
+	check(hub.step == 1 and sortie.step_up.disabled and sortie.step_up.tooltip_text.contains("段階1で%sを踏破" % Chapters.short_name(final)), "No step past the highest open; its arrow says how the next opens")
+	root.push_input(key(KEY_Q))
+	await process_frame
+	check(hub.step == 0 and sortie.step_note.text == "制約なし", "Q lowers it")
+	main.meta.chapter_clears.clear()
+	hub.refresh(main.meta)
+	check(not sortie.step_row.visible and hub.step == 0, "Without the ending the row is gone again")
+	hub.show_page("home")
 	for pair: Array in [[&"upgrade", "upgrade"], [&"status", "status"], [&"codex", "codex"], [&"settings", "settings"]]:
 		lobby.activated.emit(pair[0])
 		check(hub.page == pair[1], "%s opens its page" % pair[0])
@@ -405,6 +430,34 @@ func run_tests() -> void:
 	check(run.map_view.visible, "The run opens on its route")
 	hub.sortie_page.set_out()
 	check(main.active_run == run, "A second departure is ignored while a run lasts")
+	main.free()
+	await process_frame
+
+	# The ending: the last chapter's first clear opens the steps, told on the
+	# result; a clear of it at the highest step open opens the next.
+	main = make_main(0)
+	main.run_seed = 4
+	await process_frame
+	hub = main.get_node("Hub")
+	main.meta.chapter_clears[Chapters.ALL[0].id] = 1
+	hub.refresh(main.meta)
+	hub.home_page.activated.emit(&"departure")
+	hub.sortie_page.set_out()
+	await process_frame
+	run = main.active_run
+	check(run.chapter == Chapters.ALL.back() and run.step == 0, "The chapter just opened is set out for at the game as it is")
+	run.finish(true)
+	check(main.meta.ending_seen() and main.meta.steps_open() == 1 and run.end_view.record_label.text.contains("難易度の段階が開いた"), "Its first clear is the ending, which opens the steps, told on the result")
+	run.end_view._button.pressed.emit()
+	await process_frame
+	hub.home_page.activated.emit(&"departure")
+	hub.sortie_page.choose_step(1)
+	hub.sortie_page.set_out()
+	await process_frame
+	run = main.active_run
+	check(run.step == 1 and run.run.step == 1, "The step chosen on the departure is the run's")
+	run.finish(true)
+	check(main.meta.steps_open() == 2 and run.end_view.record_label.text.contains("段階2が開いた"), "Clearing the last chapter at the highest step opens the next, told on the result")
 	main.free()
 	await process_frame
 

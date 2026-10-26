@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ChapterData" load_steps=12 format=3]
+[gd_resource type="Resource" script_class="ChapterData" load_steps=15 format=3]
 [ext_resource type="Script" path="res://game/expedition/chapter_data.gd" id="1"]
 [ext_resource type="Script" path="res://world/areas/area_data.gd" id="2"]
 [ext_resource type="Resource" path="res://data/areas/moss_plain.tres" id="3"]
@@ -10,6 +10,9 @@
 [ext_resource type="Resource" path="res://data/areas/event_merchant.tres" id="9"]
 [ext_resource type="Resource" path="res://data/areas/event_altar.tres" id="10"]
 [ext_resource type="Resource" path="res://data/areas/event_curse.tres" id="11"]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="12"]
+[ext_resource type="Resource" path="res://data/foes/blood_sentinel.tres" id="13"]
+[ext_resource type="Resource" path="res://data/foes/blood_rat.tres" id="14"]
 [resource]
 script = ExtResource("1")
 id = &"ash_corridor"
@@ -22,3 +25,4 @@ areas = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4"), ExtResource
 boss = ExtResource("7")
 events = Array[ExtResource("2")]([ExtResource("9"), ExtResource("10"), ExtResource("11")])
 event_chance = 0.6
+kin = Array[ExtResource("12")]([ExtResource("13"), ExtResource("14")])

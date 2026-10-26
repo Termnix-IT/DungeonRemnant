@@ -3,7 +3,8 @@ extends CanvasLayer
 
 # The run's route between areas, as roguelites commonly show it: a node map.
 # The chapter's illustration, darkened, lies behind a framed panel; along
-# its top the run so far (the chapter, health, level, echo, the boons as
+# its top the run so far (the chapter and its difficulty step, health,
+# level, echo, the boons as
 # emblems) and what the last area gave. On the left the map: the layers from
 # left to right, each a column of RouteNodes (what clearing it gives, its
 # kind and difficulty), joined by each node's paths on (the way already
@@ -170,7 +171,7 @@ func present(route_map: RouteMap, at_layer: int, run: RunState, max_hp: int, not
 	route_layer = at_layer
 	_run = run
 	_art.texture = route.chapter.illustration
-	_title.text = route.chapter.display_name
+	_title.text = route.chapter.display_name if run.step == 0 else "%s　段階%d" % [route.chapter.display_name, run.step]
 	var hp := run.hp if run.hp > 0 else max_hp
 	_hp.text = "HP %d / %d" % [hp, max_hp]
 	_level.text = "Lv %d" % run.progression.level

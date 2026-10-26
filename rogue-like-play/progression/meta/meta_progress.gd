@@ -7,7 +7,9 @@ extends RefCounted
 # rank), the skills set in the two skill slots (loadout, chosen on the
 # status page), the special move in its slot (special) and the weapon in the
 # attack slot (weapon), the record
-# (in all and chapter by chapter, which opens the later chapters) of runs, and the foes ever met (for the
+# (in all and chapter by chapter, which opens the later chapters, and with
+# each chapter's highest difficulty step cleared, which opens the steps) of
+# runs, and the foes ever met (for the
 # encyclopedia). A run is shaped by it at its start (tuning, lasting,
 # equipped_skills, starts_with_boon) and hands its result back at its end
 # (record_run). Saved by MetaStore.
@@ -88,6 +90,8 @@ var best_layer := 0
 # Chapter id -> its clears, and the deepest layer reached in it (1-based).
 var chapter_clears: Dictionary = {}
 var chapter_best: Dictionary = {}
+# Chapter id -> the highest difficulty step it has been cleared at (none: 0).
+var chapter_steps: Dictionary = {}
 # Foe ids (FoeData.id) ever met -> true.
 var met: Dictionary = {}
 # The skill id in each skill slot (empty: nothing set).
@@ -179,6 +183,9 @@ func record_run(result: Dictionary) -> void:
 	var chapter := StringName(str(result.get("chapter_id", Chapters.ALL[0].id)))
 	if result.get("cleared", false):
 		chapter_clears[chapter] = clears_of(chapter) + 1
+		var step := clampi(int(result.get("step", 0)), 0, DifficultySteps.MAX)
+		if step > step_of(chapter):
+			chapter_steps[chapter] = step
 	chapter_best[chapter] = maxi(best_of(chapter), int(result.get("layer", 0)) + 1)
 	for id: Variant in result.get("met", []):
 		met[StringName(id)] = true
@@ -190,6 +197,26 @@ func clears_of(chapter: StringName) -> int:
 
 func best_of(chapter: StringName) -> int:
 	return int(chapter_best.get(chapter, 0))
+
+
+# The highest difficulty step the chapter has been cleared at (0: none, or
+# only at the game as it is).
+func step_of(chapter: StringName) -> int:
+	return int(chapter_steps.get(chapter, 0))
+
+
+# Whether the last chapter has been cleared: the ending has been seen. Kept
+# by the chapter's own record, so a later chapter added moves it along.
+func ending_seen() -> bool:
+	return clears_of(Chapters.ALL.back().id) > 0
+
+
+# The highest difficulty step open: none before the ending; then one past
+# the highest step the last chapter has been cleared at, up to the last.
+func steps_open() -> int:
+	if not ending_seen():
+		return 0
+	return mini(DifficultySteps.MAX, step_of(Chapters.ALL.back().id) + 1)
 
 
 # Whether the chapter can be set out for: open from the start, or the one it

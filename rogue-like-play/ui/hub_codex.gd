@@ -4,7 +4,8 @@ extends Control
 # The encyclopedia of foes (FoeCatalog): on the slab from the left edge, the
 # kind tabs (all, the crowd, elites, bosses), how many have been met, and,
 # as bestiaries commonly lay them out, a grid of tiles, each the foe's
-# picture over its name (a dark silhouette for one not met); in the column
+# picture over its name (a dark silhouette for one not met), scrolling once
+# there are more rows than the slab holds; in the column
 # on the right,
 # the focused foe's picture, name, kind, figures and how it fights. A foe
 # counts as met once it has come into an area in a run (MetaProgress.met);
@@ -54,9 +55,17 @@ func _ready() -> void:
 		_show_rows()
 		focus_first())
 	count_label = HubUI.label(_catalog, "", &"NoteLabel")
+	# More rows than the slab holds scroll within it, and the tile the focus
+	# lands on is drawn into view.
+	var scroll := ScrollContainer.new()
+	scroll.name = "Tiles"
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	_catalog.add_child(scroll)
 	_list = GridContainer.new()
 	_list.columns = COLUMNS
-	_catalog.add_child(_list)
+	scroll.add_child(_list)
 	_info = HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
 	# The account slides in from the right edge, kept inside its column.
 	(_info.get_parent() as Control).clip_contents = true

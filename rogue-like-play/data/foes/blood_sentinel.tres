@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"blood_sentinel"
+display_name = "血錆の番兵"
+description = "さまよう番兵の中でも、血のような錆に覆われたもの。硬く、強くぶつかってくる。
+難易度の段階7から、第1章のフィールドの群れに混ざる。"
+baked = true
+visual_id = "basic"
+tint = Color(1, 0.52, 0.5, 1)
+max_hp = 70
+defense = 0
+speed = 105.0
+acceleration = 900.0
+speed_spread = 0.12
+contact_damage = 12
+contact_knockback = 260.0
+contact_cooldown = 0.9
+hit_radius = 14.0
+knockback_resist = 0.0
+hitstun = 0.22
+exp_reward = 2
