@@ -39,9 +39,11 @@ const UPGRADES: Array[MetaUpgrade] = [
 	preload("res://data/meta/learn_swallow_cut.tres"),
 	preload("res://data/meta/learn_blaze_ring.tres"),
 	preload("res://data/meta/learn_wisp_shot.tres"),
+	preload("res://data/meta/learn_thunder_circle.tres"),
 	preload("res://data/meta/skill_drill.tres"),
 	preload("res://data/meta/learn_echo_burst.tres"),
 	preload("res://data/meta/learn_sky_rend.tres"),
+	preload("res://data/meta/learn_crimson_lotus.tres"),
 	preload("res://data/meta/special_surge.tres"),
 	preload("res://data/meta/special_mastery.tres"),
 	preload("res://data/meta/learn_spear.tres"),
@@ -55,6 +57,7 @@ const SKILLS: Array[SkillData] = [
 	preload("res://data/skills/swallow_cut.tres"),
 	preload("res://data/skills/blaze_ring.tres"),
 	preload("res://data/skills/wisp_shot.tres"),
+	preload("res://data/skills/thunder_circle.tres"),
 ]
 const SKILL_SLOTS := 2
 # Every special move, in the status page's order; equip() takes the special
@@ -62,6 +65,7 @@ const SKILL_SLOTS := 2
 const SPECIALS: Array[SpecialData] = [
 	preload("res://data/specials/echo_burst.tres"),
 	preload("res://data/specials/sky_rend.tres"),
+	preload("res://data/specials/crimson_lotus.tres"),
 ]
 const SPECIAL_SLOT := SKILL_SLOTS
 # Every weapon, in the status page's order; the attack slot is the slot

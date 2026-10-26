@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SpecialData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://combat/action/special_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/attacks/special_crimson_lotus.tres" id="2"]
+[resource]
+script = ExtResource("1")
+id = &"crimson_lotus"
+display_name = "紅蓮"
+description = "周り一帯を炎の渦で薙ぎ払い、敵をまとめて燃やす"
+emblem = "crimson_lotus"
+attack = ExtResource("2")
+charge = 100.0

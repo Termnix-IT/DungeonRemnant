@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=7 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/attack_boon.gd" id="3"]
+[ext_resource type="Script" path="res://combat/action/projectile_data.gd" id="4"]
+[sub_resource type="Resource" id="Shot"]
+script = ExtResource("4")
+speed = 700.0
+distance = 280.0
+radius = 24.0
+damage_scale = 0.8
+knockback = 160.0
+effect = &"slash"
+size = 80.0
+[sub_resource type="Resource" id="Effect0"]
+script = ExtResource("3")
+when = 3
+window = 0.6
+distance_per_rank = 80.0
+projectile = SubResource("Shot")
+[resource]
+script = ExtResource("1")
+id = &"gale_blade"
+display_name = "疾風の刃"
+description = "ダッシュ直後の攻撃が刃を飛ばす"
+families = Array[String](["回避", "連撃"])
+max_level = 3
+weight = 1.0
+emblem = "gale_blade"
+effects = Array[ExtResource("2")]([SubResource("Effect0")])

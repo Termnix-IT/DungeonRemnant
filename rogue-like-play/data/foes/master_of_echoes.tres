@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=9 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/boss_sweep.tres" id="3"]
+[ext_resource type="Resource" path="res://data/attacks/boss_quake.tres" id="4"]
+[ext_resource type="Resource" path="res://data/attacks/wolf_lunge.tres" id="5"]
+[ext_resource type="Resource" path="res://data/attacks/priest_bolt.tres" id="6"]
+[ext_resource type="Resource" path="res://data/attacks/master_wave.tres" id="7"]
+[ext_resource type="Resource" path="res://data/foes/echo_wraith.tres" id="8"]
+[resource]
+script = ExtResource("1")
+id = &"master_of_echoes"
+display_name = "残響の主"
+epithet = "深淵に残響を集める者"
+description = "ダンジョンで果てた者たちの残響を集めてきた、深淵の主。倒されてきた王たちの技を使う。近くでは剣で薙ぎ払い、遺跡王の地震を起こし、離れると風狼王のように飛びかかり、召喚の司祭の霊弾を撃つ。傷が深くなると怒り狂い、大きな残響の波を放って、残響の亡者を呼び寄せる。
+第4章の最後に待つ。"
+visual_id = "boss_master_of_echoes"
+size_scale = 1.45
+elite = false
+max_hp = 4200
+defense = 4
+speed = 100.0
+acceleration = 900.0
+speed_spread = 0.0
+contact_damage = 18
+contact_knockback = 460.0
+contact_cooldown = 0.9
+hit_radius = 34.0
+knockback_resist = 0.95
+hitstun = 0.0
+exp_reward = 90
+attacks = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6")])
+power = 26.0
+attack_cooldown = 1.0
+boss = true
+phase_two_at = 0.5
+phase_two_speed = 1.25
+phase_two_cooldown = 0.55
+summon_count = 6
+phase_two_attacks = Array[ExtResource("2")]([ExtResource("7")])
+summon = ExtResource("8")

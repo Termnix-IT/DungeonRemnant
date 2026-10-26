@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=4 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/cannon_beam.tres" id="3"]
+[resource]
+script = ExtResource("1")
+id = &"crystal_cannon"
+display_name = "結晶の大砲台"
+description = "精鋭。紫の結晶を砲身にした大きな砲台。動かない。床に伸びる太い帯の先へ、重い光の弾を撃つ。帯から外れて近づき叩く。
+第4章のアリーナに現れる。"
+visual_id = "boss_cannon_watcher"
+size_scale = 0.85
+elite = true
+max_hp = 520
+defense = 3
+speed = 0.0
+acceleration = 10.0
+speed_spread = 0.0
+contact_damage = 10
+contact_knockback = 260.0
+contact_cooldown = 0.9
+hit_radius = 28.0
+knockback_resist = 1.0
+hitstun = 0.0
+exp_reward = 24
+attacks = Array[ExtResource("2")]([ExtResource("3")])
+power = 16.0
+attack_cooldown = 2.4

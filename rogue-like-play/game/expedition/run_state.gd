@@ -51,6 +51,12 @@ const BOONS: Array[BoonData] = [
 	preload("res://data/boons/spreading_flame.tres"),
 	preload("res://data/boons/thunder_charge.tres"),
 	preload("res://data/boons/wisp_step.tres"),
+	preload("res://data/boons/thunder_art.tres"),
+	preload("res://data/boons/healing_form.tres"),
+	preload("res://data/boons/gale_blade.tres"),
+	preload("res://data/boons/thunder_riposte.tres"),
+	preload("res://data/boons/echo_edge.tres"),
+	preload("res://data/boons/combo_mastery.tres"),
 ]
 
 var progression := RunProgression.new()
@@ -182,6 +188,20 @@ func take_curse(id: StringName) -> bool:
 			tuning.defense -= FRAILTY
 		&"sluggish":
 			tuning.max_speed *= SLUGGISH
+	return true
+
+
+# Lifts a curse she carries (the spring of cleansing): its harm leaves her
+# tuning, and its share of the echo rewards goes with it.
+func remove_curse(id: StringName) -> bool:
+	if not curses.has(id):
+		return false
+	curses.erase(id)
+	match id:
+		&"frailty":
+			tuning.defense += FRAILTY
+		&"sluggish":
+			tuning.max_speed /= SLUGGISH
 	return true
 
 

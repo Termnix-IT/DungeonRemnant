@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=4 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/wraith_lunge.tres" id="3"]
+[resource]
+script = ExtResource("1")
+id = &"blood_wraith"
+display_name = "血錆の亡者"
+description = "血の色に染まった残響の亡者。硬く、突っ込みも重い。帯から外れるのは変わらない。
+難易度の段階7から、第4章のフィールドの群れに混ざる。"
+visual_id = "wraith"
+tint = Color(1, 0.52, 0.5, 1)
+baked = true
+size_scale = 1.0
+max_hp = 110
+defense = 1
+speed = 90.0
+acceleration = 900.0
+speed_spread = 0.12
+contact_damage = 9
+contact_knockback = 260.0
+contact_cooldown = 0.9
+hit_radius = 14.0
+knockback_resist = 0.0
+hitstun = 0.2
+exp_reward = 4
+attacks = Array[ExtResource("2")]([ExtResource("3")])
+power = 12.0
+attack_cooldown = 2.0

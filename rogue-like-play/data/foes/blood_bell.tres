@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=4 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/bell_toll.tres" id="3"]
+[resource]
+script = ExtResource("1")
+id = &"blood_bell"
+display_name = "血錆の鐘"
+description = "血の色に錆びた嘆きの鐘。硬く、打つ力も強い。輪が満ちる前に離れるのは変わらない。
+難易度の段階7から、第4章のフィールドの群れに混ざる。"
+visual_id = "bell"
+tint = Color(1, 0.52, 0.5, 1)
+baked = true
+size_scale = 1.15
+max_hp = 180
+defense = 2
+speed = 45.0
+acceleration = 500.0
+speed_spread = 0.1
+contact_damage = 6
+contact_knockback = 200.0
+contact_cooldown = 0.9
+hit_radius = 16.0
+knockback_resist = 0.6
+hitstun = 0.12
+exp_reward = 4
+attacks = Array[ExtResource("2")]([ExtResource("3")])
+power = 12.0
+attack_cooldown = 2.2

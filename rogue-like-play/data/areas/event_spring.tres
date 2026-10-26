@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AreaData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://world/areas/area_data.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"event_spring"
+display_name = "浄めの泉"
+kind = 3
+difficulty = 1
+condition = "残響で呪いを解くか、傷を癒やす"
+foe_summary = "深淵に湧く澄んだ泉。戦闘はない"
+expected_time = 30
+reward_weights = {0: 1.0}
+echo = 0
+event = &"spring"
+emblem = "event_spring"

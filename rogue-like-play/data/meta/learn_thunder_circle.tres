@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"learn_thunder_circle"
+display_name = "雷陣の習得"
+description = "スキル「雷陣」を覚え、ステータスで枠に付けられる"
+costs = Array[int]([550])
+effect = &"skill_unlock"
+per_rank = 1.0
+emblem = "thunder_circle"
+branch = &"skill"
+parent = &"learn_swallow_cut"
+cell = Vector2i(-1, -4)
+figure = ""
+figure_base = 0.0
+figure_scale = 1.0
+grants = &"thunder_circle"

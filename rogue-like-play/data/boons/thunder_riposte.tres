@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=5 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/trigger_boon.gd" id="3"]
+[sub_resource type="Resource" id="Effect0"]
+script = ExtResource("3")
+on = 5
+cooldown = 1.5
+action = 1
+at = 1
+radius = 220.0
+damage_scale = 0.8
+damage_per_rank = 0.3
+jumps = 3
+jumps_per_rank = 1
+inflicts = Array[StringName]([&"shock"])
+[resource]
+script = ExtResource("1")
+id = &"thunder_riposte"
+display_name = "雷の反撃"
+description = "被弾すると周りの敵へ雷が走る"
+families = Array[String](["守り", "属性"])
+max_level = 3
+weight = 1.0
+emblem = "thunder_riposte"
+effects = Array[ExtResource("2")]([SubResource("Effect0")])

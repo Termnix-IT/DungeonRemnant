@@ -47,6 +47,8 @@ BOARDS = [
 	("emblems_m.png", 1, 1, ["weapon_sword"]),
 	("emblems_n.png", 2, 3, ["spirit_blade", "crescent_cut", "shatter_crystal", "spreading_flame", "thunder_charge", "wisp_step"]),
 	("emblems_o.png", 1, 2, ["wisp_shot", "event_shelf"]),
+	("emblems_p.png", 2, 3, ["thunder_art", "healing_form", "gale_blade", "thunder_riposte", "echo_edge", "combo_mastery"]),
+	("emblems_q.png", 1, 3, ["thunder_circle", "crimson_lotus", "event_spring"]),
 ]
 
 

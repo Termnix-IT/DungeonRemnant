@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=5 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/boss_sweep.tres" id="3"]
+[ext_resource type="Resource" path="res://data/attacks/boss_charge.tres" id="4"]
+[resource]
+script = ExtResource("1")
+id = &"deep_guardian"
+display_name = "深層の守護者"
+description = "精鋭。深淵の門を守る冠の巨像。斬られてもひるまない。近くでは大きく薙ぎ払い、離れると床の帯に沿って突進してくる。
+第4章のフィールドに時々、アリーナの最後に現れる。"
+visual_id = "boss"
+size_scale = 1.0
+elite = true
+max_hp = 820
+defense = 4
+speed = 70.0
+acceleration = 650.0
+speed_spread = 0.05
+contact_damage = 16
+contact_knockback = 420.0
+contact_cooldown = 0.9
+hit_radius = 28.0
+knockback_resist = 1.0
+hitstun = 0.0
+exp_reward = 28
+attacks = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4")])
+power = 19.0
+attack_cooldown = 1.3

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://combat/action/skill_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/attacks/skill_thunder_circle.tres" id="2"]
+[resource]
+script = ExtResource("1")
+id = &"thunder_circle"
+display_name = "雷陣"
+description = "周りに雷を落とし、当たった敵を感電させる"
+emblem = "thunder_circle"
+attack = ExtResource("2")
+cooldown = 7.0
+owned_from_start = false

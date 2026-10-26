@@ -42,6 +42,10 @@ const MERCHANT_HEAL_SHARE := 0.5
 const ALTAR_HP_SHARE := 0.3
 # The shelf of memories offers to trade at most this many of the boons held.
 const SHELF_CHOICES := 4
+# The spring of cleansing lifts a curse for this much echo, or heals this
+# share of her health; one of them, and the stop is over.
+const SPRING_PRICE := 50
+const SPRING_HEAL_SHARE := 0.35
 # Started from the base: the result leads back there instead of to a new run.
 var returns_to_base := false
 # The difficulty step the run is played at (DifficultySteps; 0: none).
@@ -237,6 +241,13 @@ func _show_event() -> void:
 			if not named.is_empty():
 				terms = "呪い「%s」：%s。以後の残響の報酬 +%d%%" % [named, RunState.CURSES[_event_curse][1], roundi(RunState.CURSE_ECHO * 100.0)]
 			options.append({"id": &"curse", "text": "呪い「%s」を受けて、強化を1つ選ぶ" % named, "enabled": not _event_curse.is_empty(), "reason": "これ以上の呪いは受けられない"})
+		&"spring":
+			if run.curses.is_empty():
+				options.append({"id": &"cleanse", "text": "解く呪いがない", "enabled": false, "reason": "呪いを受けていない"})
+			for id in run.curses:
+				var short := "" if run.echo >= SPRING_PRICE else "残響が%s足りない" % UIFormat.amount(SPRING_PRICE - run.echo)
+				options.append({"id": StringName("cleanse:" + String(id)), "text": "呪い「%s」を解く　残響 %s" % [RunState.CURSES[id][0], UIFormat.amount(SPRING_PRICE)], "enabled": short.is_empty(), "reason": short})
+			options.append({"id": &"drink", "text": "泉の水を飲む（最大HPの%d%%回復）" % roundi(SPRING_HEAL_SHARE * 100.0), "enabled": _current_hp() < max_hp(), "reason": "今は必要ない"})
 		&"shelf":
 			if _shelf_boons.is_empty():
 				options.append({"id": &"give", "text": "手放せる強化がない", "enabled": false, "reason": "強化をまだ持っていない"})
@@ -296,6 +307,19 @@ func _on_event_choice(id: StringName) -> void:
 				_leave_event()
 		_ when String(id).begins_with("give:"):
 			_trade_boon(StringName(String(id).trim_prefix("give:")))
+		_ when String(id).begins_with("cleanse:"):
+			var curse := StringName(String(id).trim_prefix("cleanse:"))
+			if run.echo < SPRING_PRICE or not run.remove_curse(curse):
+				return
+			run.echo -= SPRING_PRICE
+			_event_note = "%s　呪い「%s」が解けた" % [_event.display_name, RunState.CURSES[curse][0]]
+			_leave_event()
+		&"drink":
+			if _current_hp() >= max_hp():
+				return
+			var healed := run.heal(SPRING_HEAL_SHARE, max_hp())
+			_event_note = "%s　HPが%d回復した" % [_event.display_name, healed]
+			_leave_event()
 		&"curse":
 			if _event_curse.is_empty():
 				return

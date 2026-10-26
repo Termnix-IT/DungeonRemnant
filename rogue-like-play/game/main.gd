@@ -5,6 +5,7 @@ extends Node
 # is saved before it is shown, and rolled back if the save fails; a run is
 # shaped by the progress at its start and hands its result back at its end,
 # which is recorded and saved before the result screen offers the way home.
+# The way home after the last chapter's first clear plays the ending first.
 
 @export var run_scene: PackedScene = preload("res://game/expedition/run_director.tscn")
 @export var saving_enabled := true
@@ -15,6 +16,10 @@ var store := MetaStore.new()
 var meta := MetaProgress.new()
 var active_run: RunDirector
 var transition: SceneTransition
+# The ending is owed: the run just recorded was the last chapter's first
+# clear, so the way home plays it first (EndingView).
+var ending_due := false
+var ending_view: EndingView
 
 
 func _ready() -> void:
@@ -145,6 +150,7 @@ func _on_run_finished(result: Dictionary) -> void:
 	meta.record_run(result)
 	if not ending_before and meta.ending_seen():
 		active_run.end_view.tell_opened("難易度の段階が開いた")
+		ending_due = true
 	elif meta.steps_open() > open_before:
 		active_run.end_view.tell_opened("段階%dが開いた" % meta.steps_open())
 	if saving_enabled:
@@ -162,11 +168,27 @@ func return_to_hub() -> void:
 	remove_child(finished)
 	finished.queue_free()
 	get_tree().paused = false
+	if ending_due:
+		ending_due = false
+		if ending_view == null:
+			ending_view = EndingView.new()
+			add_child(ending_view)
+			ending_view.finished.connect(_arrive_home.bind(true))
+		ending_view.play()
+		return
+	_arrive_home(false)
+
+
+# Home to the lobby; after the ending, the steps it opened are named.
+func _arrive_home(after_ending: bool) -> void:
 	$Hub.refresh(meta)
 	$Hub.show()
 	$Hub.show_page("home")
 	_update_save_status()
-	transition.play_return("旅支度の間", "残響と永続強化は次のランへ引き継がれます。")
+	if after_ending:
+		transition.play_return("旅支度の間", "難易度の段階が開いた。出撃の画面で選べる。")
+	else:
+		transition.play_return("旅支度の間", "残響と永続強化は次のランへ引き継がれます。")
 
 
 func _update_save_status() -> void:

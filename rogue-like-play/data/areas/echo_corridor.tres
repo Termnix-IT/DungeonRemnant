@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AreaData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://world/areas/area_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/spawns/echo_corridor.tres" id="2"]
+[resource]
+script = ExtResource("1")
+id = &"echo_corridor"
+display_name = "残響の回廊"
+kind = 0
+difficulty = 2
+condition = "3分15秒を生き延びる"
+foe_summary = "亡者と残響の番兵。鐘と守護者も"
+expected_time = 205
+reward_weights = {0: 0.35, 1: 0.25, 2: 0.4}
+echo = 130
+size = Vector2i(80, 58)
+theme = 6
+scattered_pillars = 22
+survive_time = 195.0
+spawn_table = ExtResource("2")

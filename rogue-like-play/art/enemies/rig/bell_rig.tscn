@@ -1,0 +1,328 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://actors/rig/character_rig.gd" id="1_ndtl3"]
+[ext_resource type="Texture2D" path="res://art/enemies/rig/bell_parts.png" id="2_si6a0"]
+
+[sub_resource type="Animation" id="Animation_0nn0l"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Skeleton/Root/Body:rotation")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Skeleton/Root:scale")
+tracks/1/interp = 2
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(1, 1)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Skeleton/Root:position")
+tracks/2/interp = 2
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(-0.19683838, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_ejmyi"]
+length = 0.45
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Skeleton/Root/Body:rotation")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.05, 0.09, 0.18, 0.45),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, -0.10471975511965978, 0.20943951023931956, 0.13962634015954636, 0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Skeleton/Root:scale")
+tracks/1/interp = 2
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.05, 0.09, 0.18, 0.45),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(1.12, 0.85), Vector2(0.9, 1.12), Vector2(1.05, 0.95), Vector2(1, 1)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Skeleton/Root:position")
+tracks/2/interp = 2
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.05, 0.09, 0.18, 0.45),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(-0.19683838, 0), Vector2(-8.607351, 0), Vector2(25.435202, 0), Vector2(17.024689, 0), Vector2(-0.19683838, 0)]
+}
+metadata/impact = 0.09
+
+[sub_resource type="Animation" id="Animation_muxqc"]
+length = 0.6
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Skeleton/Root/Body:rotation")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Skeleton/Root:scale")
+tracks/1/interp = 2
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.3, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(1.08, 0.9), Vector2(1.11, 0.87), Vector2(1.08, 0.9)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Skeleton/Root:position")
+tracks/2/interp = 2
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(-0.19683838, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_681qk"]
+length = 0.35
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Skeleton/Root/Body:rotation")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Skeleton/Root:scale")
+tracks/1/interp = 2
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.35),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(1.15, 0.7), Vector2(1.3, 0.22)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Skeleton/Root:position")
+tracks/2/interp = 2
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(-0.19683838, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_n4wov"]
+length = 0.3
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Skeleton/Root/Body:rotation")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Skeleton/Root:scale")
+tracks/1/interp = 2
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.06, 0.3),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(1.15, 0.8), Vector2(1, 1)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Skeleton/Root:position")
+tracks/2/interp = 2
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.06, 0.3),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(-0.19683838, 0), Vector2(-11.010355, 0), Vector2(-0.19683838, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_780na"]
+length = 1.8
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Skeleton/Root/Body:rotation")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.9, 1.8),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.03490658503988659, 0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Skeleton/Root:scale")
+tracks/1/interp = 2
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.9, 1.8),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(1.06, 0.93), Vector2(1, 1)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Skeleton/Root:position")
+tracks/2/interp = 2
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(-0.19683838, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_oriwb"]
+length = 0.4
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Skeleton/Root/Body:rotation")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Skeleton/Root:scale")
+tracks/1/interp = 2
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(1.1, 0.88), Vector2(0.94, 1.08), Vector2(1.1, 0.88), Vector2(0.94, 1.08), Vector2(1.1, 0.88)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Skeleton/Root:position")
+tracks/2/interp = 2
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(-0.19683838, 0), Vector2(-0.19683838, -38.44806), Vector2(-0.19683838, 0), Vector2(-0.19683838, -38.44806), Vector2(-0.19683838, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_7wuoa"]
+_data = {
+&"RESET": SubResource("Animation_0nn0l"),
+&"attack_sword": SubResource("Animation_ejmyi"),
+&"brace": SubResource("Animation_muxqc"),
+&"down": SubResource("Animation_681qk"),
+&"hurt": SubResource("Animation_n4wov"),
+&"idle": SubResource("Animation_780na"),
+&"walk": SubResource("Animation_oriwb")
+}
+
+[node name="BellRig" type="Node2D" unique_id=2073230629]
+texture_filter = 4
+script = ExtResource("1_ndtl3")
+figure_height = 320.0
+lean_bone = NodePath("Skeleton/Root/Body")
+metadata/world_height = 40.0
+
+[node name="Skeleton" type="Skeleton2D" parent="." unique_id=685658158]
+
+[node name="Root" type="Bone2D" parent="Skeleton" unique_id=1062777488]
+position = Vector2(-0.19683838, 0)
+rest = Transform2D(1, 0, 0, 1, -0.19683838, 0)
+auto_calculate_length_and_angle = false
+length = 159.79974
+bone_angle = -90.0
+
+[node name="Body" type="Bone2D" parent="Skeleton/Root" unique_id=892045509]
+position = Vector2(0, -159.79974)
+rest = Transform2D(1, 0, 0, 1, 0, -159.79974)
+auto_calculate_length_and_angle = false
+length = 160.20026
+bone_angle = -90.0
+
+[node name="Parts" type="Node2D" parent="." unique_id=1040858212]
+
+[node name="Body" type="Polygon2D" parent="Parts" unique_id=1643181891]
+texture = ExtResource("2_si6a0")
+skeleton = NodePath("../../Skeleton")
+polygon = PackedVector2Array(-106.73, -320, -76.15857, -320, -45.587143, -320, -15.015717, -320, 15.555717, -320, 46.127144, -320, 76.69857, -320, 107.27, -320, -106.73, -256, -76.15857, -256, -45.587143, -256, -15.015717, -256, 15.555717, -256, 46.127144, -256, 76.69857, -256, 107.27, -256, -106.73, -192, -76.15857, -192, -45.587143, -192, -15.015717, -192, 15.555717, -192, 46.127144, -192, 76.69857, -192, 107.27, -192, -106.73, -128, -76.15857, -128, -45.587143, -128, -15.015717, -128, 15.555717, -128, 46.127144, -128, 76.69857, -128, 107.27, -128, -106.73, -64, -76.15857, -64, -45.587143, -64, -15.015717, -64, 15.555717, -64, 46.127144, -64, 76.69857, -64, 107.27, -64, -106.73, 0, -76.15857, 0, -45.587143, 0, -15.015717, 0, 15.555717, 0, 46.127144, 0, 76.69857, 0, 107.27, 0)
+uv = PackedVector2Array(6, 6, 36.57143, 6, 67.14286, 6, 97.71429, 6, 128.28572, 6, 158.85715, 6, 189.42857, 6, 220, 6, 6, 70, 36.57143, 70, 67.14286, 70, 97.71429, 70, 128.28572, 70, 158.85715, 70, 189.42857, 70, 220, 70, 6, 134, 36.57143, 134, 67.14286, 134, 97.71429, 134, 128.28572, 134, 158.85715, 134, 189.42857, 134, 220, 134, 6, 198, 36.57143, 198, 67.14286, 198, 97.71429, 198, 128.28572, 198, 158.85715, 198, 189.42857, 198, 220, 198, 6, 262, 36.57143, 262, 67.14286, 262, 97.71429, 262, 128.28572, 262, 158.85715, 262, 189.42857, 262, 220, 262, 6, 326, 36.57143, 326, 67.14286, 326, 97.71429, 326, 128.28572, 326, 158.85715, 326, 189.42857, 326, 220, 326)
+polygons = [PackedInt32Array(0, 1, 9, 8), PackedInt32Array(1, 2, 10, 9), PackedInt32Array(2, 3, 11, 10), PackedInt32Array(3, 4, 12, 11), PackedInt32Array(4, 5, 13, 12), PackedInt32Array(5, 6, 14, 13), PackedInt32Array(6, 7, 15, 14), PackedInt32Array(8, 9, 17, 16), PackedInt32Array(9, 10, 18, 17), PackedInt32Array(10, 11, 19, 18), PackedInt32Array(11, 12, 20, 19), PackedInt32Array(12, 13, 21, 20), PackedInt32Array(13, 14, 22, 21), PackedInt32Array(14, 15, 23, 22), PackedInt32Array(16, 17, 25, 24), PackedInt32Array(17, 18, 26, 25), PackedInt32Array(18, 19, 27, 26), PackedInt32Array(19, 20, 28, 27), PackedInt32Array(20, 21, 29, 28), PackedInt32Array(21, 22, 30, 29), PackedInt32Array(22, 23, 31, 30), PackedInt32Array(24, 25, 33, 32), PackedInt32Array(25, 26, 34, 33), PackedInt32Array(26, 27, 35, 34), PackedInt32Array(27, 28, 36, 35), PackedInt32Array(28, 29, 37, 36), PackedInt32Array(29, 30, 38, 37), PackedInt32Array(30, 31, 39, 38), PackedInt32Array(32, 33, 41, 40), PackedInt32Array(33, 34, 42, 41), PackedInt32Array(34, 35, 43, 42), PackedInt32Array(35, 36, 44, 43), PackedInt32Array(36, 37, 45, 44), PackedInt32Array(37, 38, 46, 45), PackedInt32Array(38, 39, 47, 46)]
+bones = ["Root", PackedFloat32Array(2.4322617e-07, 2.4322617e-07, 2.4322617e-07, 2.4322617e-07, 2.4322617e-07, 2.4322617e-07, 2.4322617e-07, 2.4322617e-07, 1.1232355e-06, 1.1232355e-06, 1.1232355e-06, 1.1232355e-06, 1.1232355e-06, 1.1232355e-06, 1.1232355e-06, 1.1232355e-06, 2.995084e-05, 2.995084e-05, 2.995084e-05, 2.995084e-05, 2.995084e-05, 2.995084e-05, 2.995084e-05, 2.995084e-05, 0.9999689, 0.9999689, 0.9999689, 0.9999689, 0.9999689, 0.9999689, 0.9999689, 0.9999689, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999976), "Root/Body", PackedFloat32Array(0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999976, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.99999887, 0.9999701, 0.9999701, 0.9999701, 0.9999701, 0.9999701, 0.9999701, 0.9999701, 0.9999701, 3.1096795e-05, 3.1096795e-05, 3.1096795e-05, 3.1096795e-05, 3.1096795e-05, 3.1096795e-05, 3.1096795e-05, 3.1096795e-05, 1.1373824e-06, 1.1373824e-06, 1.1373824e-06, 1.1373824e-06, 1.1373824e-06, 1.1373824e-06, 1.1373824e-06, 1.1373824e-06, 2.4505957e-07, 2.4505957e-07, 2.4505957e-07, 2.4505957e-07, 2.4505957e-07, 2.4505957e-07, 2.4505957e-07, 2.4505957e-07)]
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=979648759]
+libraries/ = SubResource("AnimationLibrary_7wuoa")

@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="ChapterData" load_steps=17 format=3]
+[ext_resource type="Script" path="res://game/expedition/chapter_data.gd" id="1"]
+[ext_resource type="Script" path="res://world/areas/area_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/areas/echo_corridor.tres" id="3"]
+[ext_resource type="Resource" path="res://data/areas/fallen_canopy.tres" id="4"]
+[ext_resource type="Resource" path="res://data/areas/bell_hall.tres" id="5"]
+[ext_resource type="Resource" path="res://data/areas/warden_trial.tres" id="6"]
+[ext_resource type="Resource" path="res://data/areas/echo_throne.tres" id="7"]
+[ext_resource type="Texture2D" path="res://art/hub/abyss_of_echoes.png" id="8"]
+[ext_resource type="Resource" path="res://data/areas/event_merchant.tres" id="9"]
+[ext_resource type="Resource" path="res://data/areas/event_altar.tres" id="10"]
+[ext_resource type="Resource" path="res://data/areas/event_curse.tres" id="11"]
+[ext_resource type="Resource" path="res://data/areas/event_shelf.tres" id="12"]
+[ext_resource type="Resource" path="res://data/areas/event_spring.tres" id="13"]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="14"]
+[ext_resource type="Resource" path="res://data/foes/blood_wraith.tres" id="15"]
+[ext_resource type="Resource" path="res://data/foes/blood_bell.tres" id="16"]
+[resource]
+script = ExtResource("1")
+id = &"abyss_of_echoes"
+display_name = "第4章　残響の深淵"
+description = "ダンジョンで果てた者たちの残響が流れ込む最深部へ下り、残響の主を討つ。"
+illustration = ExtResource("8")
+layers = 4
+choices = Vector2i(2, 3)
+areas = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6")])
+boss = ExtResource("7")
+events = Array[ExtResource("2")]([ExtResource("9"), ExtResource("10"), ExtResource("11"), ExtResource("12"), ExtResource("13")])
+event_chance = 0.6
+unlocked_by = &"amethyst_mausoleum"
+kin = Array[ExtResource("14")]([ExtResource("15"), ExtResource("16")])

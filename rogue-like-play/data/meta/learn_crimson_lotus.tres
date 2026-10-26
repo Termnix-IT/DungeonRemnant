@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="MetaUpgrade" load_steps=2 format=3]
+[ext_resource type="Script" path="res://progression/meta/meta_upgrade.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"learn_crimson_lotus"
+display_name = "紅蓮の習得"
+description = "必殺技「紅蓮」を覚え、ステータスで枠に付けられる"
+costs = Array[int]([650])
+effect = &"special_unlock"
+per_rank = 1.0
+emblem = "crimson_lotus"
+branch = &"special"
+parent = &"learn_sky_rend"
+cell = Vector2i(-1, 4)
+figure = ""
+figure_base = 0.0
+figure_scale = 1.0
+grants = &"crimson_lotus"

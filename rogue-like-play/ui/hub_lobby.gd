@@ -48,7 +48,16 @@ const FACE := Vector2(0.38, 0.165)
 const FEET := Vector2(0.52, 0.985)
 # The soles: her right foot stands on the floor, the left a step behind it.
 const SOLES := [Vector2(0.61, 0.985), Vector2(0.42, 0.93)]
-const SPEECH := ["準備ができたら、出発しよう。", "残響が貯まったら、強化を忘れずに。", "次は、どこまで行けるかな。", "遺跡王……今度こそ。"]
+# Her lines, by how far the journey has come: before the first chapter's
+# clear, after each chapter's (the last one's is the ending), each set
+# turning to the chapter ahead. lines_for() picks the set.
+const SPEECHES := [
+	["準備ができたら、出発しよう。", "残響が貯まったら、強化を忘れずに。", "次は、どこまで行けるかな。", "遺跡王……今度こそ。"],
+	["風の吠える樹海……狼の声が聞こえる。", "強化の組み合わせ、もう少し試してみよう。", "遺跡王の残響が、まだ手に残ってる。"],
+	["地下の霊廟から、誰かが呼んでる。", "骨の兵は、振りかぶりをよく見てから。", "残響が、少しずつ重くなっていく。"],
+	["残響が流れていく先……深淵へ。", "倒してきた王たちの気配が、まだ残ってる。", "ここまで来たら、最後まで行こう。"],
+	["もう、あの声は聞こえない。", "残響は、静かに眠ってる。", "それでも、もう少し深く潜ってみようか。", "段階を上げても、私は負けない。"],
+]
 const SPEECH_TIME := 4.0
 # Room between the line and the end studs, and from the tail's tip to her face.
 const SPEECH_GAP := 22.0
@@ -86,6 +95,8 @@ var description_label: Label
 var hero: LobbyHero
 var speech_label: Label
 var _speech_index := 0
+# The set of lines she speaks from now (SPEECHES).
+var _lines: Array = SPEECHES[0]
 # The entry under the pointer, or -1.
 var _hover_index := -1
 var _speech_token := 0
@@ -382,7 +393,7 @@ func _build_hero() -> void:
 # A click on her: she reacts and says the next line, which fades after a while.
 func talk() -> void:
 	hero.react()
-	speech_label.text = SPEECH[_speech_index % SPEECH.size()]
+	speech_label.text = _lines[_speech_index % _lines.size()]
 	_speech_index += 1
 	_fit_speech()
 	hero_speech.show()
@@ -418,9 +429,26 @@ func _fit_speech() -> void:
 	hero_speech.position = Vector2(maxf(0.0, face.x - SPEECH_REACH - hero_speech.size.x), face.y - hero_speech.size.y * 0.5)
 
 
+# Her lines for how far the journey has come: the chapters cleared in
+# order, one set each, and the last set once the ending has been seen.
+static func lines_for(meta: MetaProgress) -> Array:
+	if meta.ending_seen():
+		return SPEECHES.back()
+	var cleared := 0
+	for chapter in Chapters.ALL:
+		if meta.clears_of(chapter.id) == 0:
+			break
+		cleared += 1
+	return SPEECHES[mini(cleared, SPEECHES.size() - 2)]
+
+
 func refresh(meta: MetaProgress, chapter: ChapterData) -> void:
 	_meta = meta
 	_chapter = chapter
+	var lines := lines_for(meta)
+	if lines != _lines:
+		_lines = lines
+		_speech_index = 0
 	if chapter != null:
 		route_value.text = "%d層とボス" % chapter.layers
 		best_value.text = Chapters.record(meta, chapter)

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AttackData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="1"]
+[resource]
+script = ExtResource("1")
+shape = 1
+reach = 300.0
+windup = 0.12
+active = 0.16
+recovery = 0.45
+combo_after = 0.6
+dash_after = 0.4
+damage_scale = 5.0
+knockback = 520.0
+hit_stop = 0.08
+move_scale = 0.0
+lunge = 0.0
+effect = &"flame"
+motion = &"attack_slam"
+inflicts = Array[StringName]([&"burn"])

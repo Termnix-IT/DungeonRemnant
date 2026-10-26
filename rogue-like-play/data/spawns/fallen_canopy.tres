@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="SpawnTable" load_steps=12 format=3]
+[ext_resource type="Script" path="res://world/areas/spawn_table.gd" id="1"]
+[ext_resource type="Script" path="res://world/areas/spawn_entry.gd" id="2"]
+[ext_resource type="Resource" path="res://data/foes/echo_wraith.tres" id="3"]
+[ext_resource type="Resource" path="res://data/foes/echo_skeleton.tres" id="4"]
+[ext_resource type="Resource" path="res://data/foes/mourning_bell.tres" id="5"]
+[ext_resource type="Resource" path="res://data/foes/echo_gale_rat.tres" id="6"]
+[ext_resource type="Resource" path="res://data/foes/deep_guardian.tres" id="7"]
+[sub_resource type="Resource" id="Entry_echo_wraith"]
+script = ExtResource("2")
+foe = ExtResource("3")
+weight = 5.0
+[sub_resource type="Resource" id="Entry_echo_skeleton"]
+script = ExtResource("2")
+foe = ExtResource("4")
+weight = 4.0
+[sub_resource type="Resource" id="Entry_mourning_bell"]
+script = ExtResource("2")
+foe = ExtResource("5")
+weight = 2.5
+from_time = 15.0
+[sub_resource type="Resource" id="Entry_echo_gale_rat"]
+script = ExtResource("2")
+foe = ExtResource("6")
+weight = 3.0
+from_time = 25.0
+[resource]
+script = ExtResource("1")
+entries = Array[ExtResource("2")]([SubResource("Entry_echo_wraith"), SubResource("Entry_echo_skeleton"), SubResource("Entry_mourning_bell"), SubResource("Entry_echo_gale_rat")])
+start_alive = 26
+alive_per_minute = 75.0
+max_alive = 190
+spawns_per_second = 9.0
+elite_first = 30.0
+elite_every = 35.0
+elite_cap = 2
+elite = ExtResource("7")

@@ -63,7 +63,7 @@ func run_tests() -> void:
 		check(not each.display_name.is_empty() and not each.families.is_empty() and not each.effects.is_empty(), "A boon has a name, families and effects: " + String(each.id))
 		check(EmblemIcons.texture(each.emblem_key()) != null, "A boon's emblem exists: " + String(each.id))
 		check(each.effect_description(1).length() <= 20 and each.families.size() <= 2, "A boon's words and families fit its card: " + String(each.id))
-	check(build.pool.size() == 26 and ids.size() == 26, "Twenty-six boons, each its own id")
+	check(build.pool.size() == 32 and ids.size() == 32, "Thirty-two boons, each its own id")
 	check(build.find(&"discharge").requires == [&"thunder_blade"], "The discharge waits for the lightning blade")
 
 	# The offer: three different boons, requirements and last ranks respected.

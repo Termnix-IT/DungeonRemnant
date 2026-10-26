@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AreaData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://world/areas/area_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/spawns/fallen_canopy.tres" id="2"]
+[resource]
+script = ExtResource("1")
+id = &"fallen_canopy"
+display_name = "崩れた天蓋"
+kind = 0
+difficulty = 3
+condition = "敵を280体倒す"
+foe_summary = "亡者が多く、鐘と守護者が早い"
+expected_time = 185
+reward_weights = {0: 0.3, 1: 0.15, 2: 0.55}
+echo = 155
+size = Vector2i(86, 62)
+theme = 6
+scattered_pillars = 28
+kill_target = 280
+spawn_table = ExtResource("2")

@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=4 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/bell_toll.tres" id="3"]
+[resource]
+script = ExtResource("1")
+id = &"mourning_bell"
+display_name = "嘆きの鐘"
+description = "死者を悼む鐘の残響。ゆっくり漂い、近づくと足元に輪を広げてから鳴り、周りを打つ。輪が満ちる前に離れるか、鳴り終わったところを叩く。
+第4章のフィールドとアリーナに現れる。"
+visual_id = "bell"
+baked = true
+size_scale = 1.15
+max_hp = 90
+defense = 2
+speed = 45.0
+acceleration = 500.0
+speed_spread = 0.1
+contact_damage = 6
+contact_knockback = 200.0
+contact_cooldown = 0.9
+hit_radius = 16.0
+knockback_resist = 0.6
+hitstun = 0.12
+exp_reward = 3
+attacks = Array[ExtResource("2")]([ExtResource("3")])
+power = 12.0
+attack_cooldown = 2.2

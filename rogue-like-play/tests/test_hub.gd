@@ -331,7 +331,7 @@ func run_tests() -> void:
 	check(status.details_open and status.stats.get_child_count() > always, "R opens the rest of her figures")
 	root.push_input(key(KEY_RIGHT))
 	await process_frame
-	check(status.slot == 2 and status.tile_ids == [HubStatus.CLEAR_ID, &"slam", &"thunder_flash", &"swallow_cut", &"blaze_ring", &"wisp_shot"] and status.tiles[2].text == HubStatus.UNKNOWN_NAME, "Choosing the second slot shows its tiles")
+	check(status.slot == 2 and status.tile_ids == [HubStatus.CLEAR_ID, &"slam", &"thunder_flash", &"swallow_cut", &"blaze_ring", &"wisp_shot", &"thunder_circle"] and status.tiles[2].text == HubStatus.UNKNOWN_NAME, "Choosing the second slot shows its tiles")
 	check(status.tiles[1].text.contains("スキル1"), "A tile tells the slot its skill is set in")
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))
@@ -376,7 +376,7 @@ func run_tests() -> void:
 	hub.refresh(main.meta, "")
 	root.push_input(key(KEY_RIGHT))
 	await process_frame
-	check(status.slot == 3 and status.tile_ids == [HubStatus.CLEAR_ID, &"echo_burst", &"sky_rend"] and status.tiles[2].text == HubStatus.UNKNOWN_NAME and status.slot_buttons[3].text.contains("空き"), "Once a special move is learned, its slot opens with its tiles")
+	check(status.slot == 3 and status.tile_ids == [HubStatus.CLEAR_ID, &"echo_burst", &"sky_rend", &"crimson_lotus"] and status.tiles[2].text == HubStatus.UNKNOWN_NAME and status.slot_buttons[3].text.contains("空き"), "Once a special move is learned, its slot opens with its tiles")
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))
 	await process_frame
@@ -451,6 +451,9 @@ func run_tests() -> void:
 	check(main.meta.ending_seen() and main.meta.steps_open() == 1 and run.end_view.record_label.text.contains("難易度の段階が開いた"), "Its first clear is the ending, which opens the steps, told on the result")
 	run.end_view._button.pressed.emit()
 	await process_frame
+	# The ending it owes is played on the way home (tried below); skipped here.
+	main.ending_view.finish()
+	await process_frame
 	hub.home_page.activated.emit(&"departure")
 	hub.sortie_page.choose_step(1)
 	hub.sortie_page.set_out()
@@ -459,6 +462,48 @@ func run_tests() -> void:
 	check(run.step == 1 and run.run.step == 1, "The step chosen on the departure is the run's")
 	run.finish(true)
 	check(main.meta.steps_open() == 2 and run.end_view.record_label.text.contains("段階2が開いた"), "Clearing the last chapter at the highest step opens the next, told on the result")
+	main.free()
+	await process_frame
+
+	# The ending: owed by the last chapter's first clear, played on the way
+	# home (the stills one by one, then the roll), skipped by holding Esc
+	# (B); home after it, she speaks as one who has seen it.
+	main = make_main(0)
+	main.run_seed = 4
+	await process_frame
+	hub = main.get_node("Hub")
+	check(HubLobby.lines_for(main.meta) == HubLobby.SPEECHES[0], "Before any clear she speaks of the first chapter")
+	for earlier: ChapterData in Chapters.ALL.slice(0, Chapters.ALL.size() - 1):
+		main.meta.chapter_clears[earlier.id] = 1
+	check(HubLobby.lines_for(main.meta) == HubLobby.SPEECHES[Chapters.ALL.size() - 1], "Her lines follow the chapters cleared")
+	hub.refresh(main.meta)
+	hub.home_page.activated.emit(&"departure")
+	hub.sortie_page.set_out()
+	await process_frame
+	run = main.active_run
+	run.finish(true)
+	check(main.ending_due, "The last chapter's first clear owes the ending")
+	run.end_view._button.pressed.emit()
+	await process_frame
+	var ending: EndingView = main.ending_view
+	check(ending != null and ending.visible and ending.scene == 0 and not hub.visible and not main.ending_due, "The way home plays the ending first, from its first still")
+	ending.advance()
+	check(ending.scene == 0, "A press before the still is up does nothing")
+	for still in EndingView.SCENES.size() - 1:
+		await create_timer(EndingView.LINE_DELAY + EndingView.STILL_TIME).timeout
+		ending.advance()
+	check(ending.scene == EndingView.SCENES.size() - 1 and not ending.rolling, "Enter moves on through the stills")
+	await create_timer(EndingView.LINE_DELAY + EndingView.STILL_TIME).timeout
+	ending.advance()
+	check(ending.rolling and ending.roll.visible and not ending.art.visible, "After the last still, the staff roll")
+	Input.action_press(&"ui_cancel")
+	await create_timer(EndingView.HOLD_TIME * 0.5).timeout
+	check(ending.visible and not ending.done, "Half a hold of Esc does not skip")
+	await create_timer(EndingView.HOLD_TIME * 0.6 + 0.1).timeout
+	Input.action_release(&"ui_cancel")
+	await process_frame
+	check(ending.done and not ending.visible and hub.visible and hub.page == "home", "Holding Esc to the full ring skips to home")
+	check(hub.home_page._lines == HubLobby.SPEECHES.back(), "Home after the ending, she speaks as one who has seen it")
 	main.free()
 	await process_frame
 

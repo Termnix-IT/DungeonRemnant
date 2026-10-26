@@ -333,6 +333,56 @@ func run_tests() -> void:
 	director.free()
 	await process_frame
 
+	# The last chapter, taken through to the master of echoes: its crowd is
+	# wraiths and bells drawn from baked frames, its ground the abyss's, and
+	# its boss comes in by its rig, rages, calls wraiths and falls.
+	ended.clear()
+	director = RunDirector.new()
+	director.seed_value = 53
+	director.chapter = load("res://data/chapters/abyss_of_echoes.tres")
+	root.add_child(director)
+	director.finished.connect(_on_finished)
+	await process_frame
+	check(director.run.route.size() == 5 and director.map_view._title.text.contains("残響の深淵"), "The last chapter lays out four layers and its boss")
+	var abyss_seen := false
+	var echoes_seen := false
+	for layer in director.run.route.size() - 1:
+		director.map_view._choose(director.map_view.current[0])
+		await process_frame
+		var deep := director.area
+		deep.hero.controlled = false
+		abyss_seen = abyss_seen or deep.data.theme == 6
+		if deep.director != null:
+			deep.director.advance(1.0)
+			echoes_seen = echoes_seen or deep.foes.any(func(foe: Foe): return foe.data.id in [&"echo_wraith", &"mourning_bell"] and foe.view.sprite != null)
+		await clear_area(director)
+	check(abyss_seen, "Its areas lie on the abyss's ground")
+	check(echoes_seen, "Its crowd comes in drawn from their baked frames")
+	director.map_view._choose(director.run.route.nodes(director.run.route.size() - 1)[0])
+	await process_frame
+	var throne := director.area
+	throne.hero.controlled = false
+	throne.hero.health.max_hp = 100000
+	throne.hero.health.hp = 100000
+	await wait(BattleArea.BOSS_DELAY + BattleArea.BOSS_MARK_TIME + 0.4)
+	await create_timer(BossIntro.total_time() + 0.3, true, false, true).timeout
+	var master := throne.boss_foe
+	check(master != null and master.data.id == &"master_of_echoes" and master.view.rig != null, "The master of echoes comes in, drawn by its rig")
+	var wraiths_before := throne.foes.filter(func(foe: Foe): return foe.data.id == &"echo_wraith").size()
+	master.receive(DamageInfo.make(float(master.health.max_hp) * 0.55, Vector2.RIGHT))
+	await wait(WaveRunner.MARK_TIME + 0.3)
+	check(master.phase == 2 and throne.foes.filter(func(foe: Foe): return foe.data.id == &"echo_wraith").size() > wraiths_before, "At half health it rages and calls wraiths")
+	master.receive(DamageInfo.make(100000.0, Vector2.RIGHT))
+	for frame in 400:
+		if not ended.is_empty():
+			break
+		if is_instance_valid(throne) and throne.is_inside_tree() and throne.choice.visible:
+			throne.choice._select(0)
+		await physics_frame
+	check(ended.size() == 1 and ended[0].cleared and ended[0].chapter_id == "abyss_of_echoes", "Felling it wins the last chapter")
+	director.free()
+	await process_frame
+
 	# The special move set at the base goes with her, and its gauge carries
 	# from area to area.
 	var armed := MetaProgress.new()
@@ -455,6 +505,36 @@ func run_tests() -> void:
 	director.choice._select(0)
 	await process_frame
 	check(not stop.visible and director.run.build.owned().size() == 2 and director.map_view._note.text.contains("剣速"), "Taking one ends the stop, and the map tells the trade")
+	director.free()
+	await process_frame
+
+	# The spring of cleansing: echo for a curse lifted, or a drink that heals;
+	# either ends the stop.
+	director = RunDirector.new()
+	director.seed_value = 23
+	root.add_child(director)
+	await process_frame
+	stop = director.event_view
+	await stop_at(director, "res://data/areas/event_spring.tres")
+	check(stop.ids == [&"cleanse", &"drink", EventView.LEAVE] and stop.buttons[0].disabled and stop.buttons[1].disabled, "With no curse and full health, the spring has nothing to give")
+	stop.buttons[-1].pressed.emit()
+	await process_frame
+	var spring_defense := director.run.tuning.defense
+	director.run.take_curse(&"frailty")
+	director.run.echo = 80
+	director.run.hp = 20
+	await stop_at(director, "res://data/areas/event_spring.tres")
+	check(stop.ids == [&"cleanse:frailty", &"drink", EventView.LEAVE] and stop.buttons[0].text.contains("脆さ") and not stop.buttons[0].disabled and not stop.buttons[1].disabled, "The spring offers to lift each curse for echo, or a drink")
+	stop.buttons[0].pressed.emit()
+	await process_frame
+	check(director.run.curses.is_empty() and director.run.tuning.defense == spring_defense and director.run.echo == 80 - RunDirector.SPRING_PRICE and director.run.hp == 20 and not stop.visible, "Lifting the curse takes its harm away for echo, and ends the stop")
+	director.run.take_curse(&"sluggish")
+	director.run.echo = 10
+	await stop_at(director, "res://data/areas/event_spring.tres")
+	check(stop.buttons[0].disabled and stop.buttons[0].tooltip_text.contains("足りない"), "A curse costs more echo than she has: offered, but off")
+	stop.buttons[1].pressed.emit()
+	await process_frame
+	check(director.run.hp == 20 + roundi(director.max_hp() * RunDirector.SPRING_HEAL_SHARE) and director.run.curses == [&"sluggish"] and not stop.visible, "The drink heals instead, and ends the stop")
 	director.free()
 	await process_frame
 	print("Run flow tests: %d checks, %d failures" % [checks, failures])
