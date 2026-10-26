@@ -63,9 +63,20 @@ func run_tests() -> void:
 	root.push_input(pad(JOY_BUTTON_B, false))
 	await process_frame
 	check(hub.page == "home", "B comes back to the lobby")
+	# The departure: up to it, A for where to set out, A on the chapter to go.
+	root.push_input(pad(JOY_BUTTON_DPAD_UP))
+	root.push_input(pad(JOY_BUTTON_DPAD_UP, false))
+	await process_frame
+	root.push_input(pad(JOY_BUTTON_A))
+	root.push_input(pad(JOY_BUTTON_A, false))
+	await process_frame
+	check(hub.page == "sortie" and hub.sortie_page.cards[0].has_focus(), "A on the departure opens where to set out, on its chapter")
+	root.push_input(pad(JOY_BUTTON_A))
+	root.push_input(pad(JOY_BUTTON_A, false))
+	await process_frame
+	check(main.active_run != null, "A on the chapter sets out")
 
 	# A run: into the first area.
-	main.start_run()
 	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
 	var run: RunDirector = main.active_run
 	run.map_view._choose(run.run.route.nodes(0)[0])

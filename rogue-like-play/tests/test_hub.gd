@@ -58,23 +58,60 @@ func run_tests() -> void:
 	check(lobby.route_value.text == "3層とボス" and lobby.best_value.text == "なし", "The departure tells the chapter's way and the deepest reached")
 	check(lobby.upgrade_ready.text == "1 件" and lobby.codex_met.text == "0 / %d" % FoeCatalog.FOES.size(), "The entries tell what can be bought and what has been met")
 	lobby.select(0)
-	check(lobby.title_label.text == hub.chapter.display_name and lobby.decide_button.text.ends_with("出撃する"), "The departure names its chapter")
-	# The chapters: E (RB) shows the next, sealed until the first is cleared.
-	check(lobby.chapter_switch.visible and lobby.chapter_place.text == "1 / 2" and not lobby.chapter_lock.visible, "The departure shows where its chapter stands among them")
-	root.push_input(key(KEY_E))
-	await process_frame
-	check(hub.chapter.id == &"gale_woods" and lobby.title_label.text.contains("風哭きの樹海") and lobby.chapter_place.text == "2 / 2", "E shows the next chapter")
-	check(lobby.chapter_lock.visible and lobby.decide_button.disabled and lobby.decide_button.text.contains("封印中") and lobby.description_label.text.contains("第1章を踏破"), "A sealed chapter says how it opens and cannot be set out for")
+	check(lobby.title_label.text == hub.chapter.display_name and lobby.decide_button.text == "出撃先を選ぶ", "The departure names the chapter it opens on")
+
+	# Where to set out: the chapters as cards, the chosen one told beside them.
 	lobby.activated.emit(&"departure")
-	check(main.active_run == null, "Setting out for a sealed chapter does nothing")
-	main.meta.chapter_clears[&"ash_corridor"] = 1
-	hub.refresh(main.meta)
-	check(not lobby.chapter_lock.visible and not lobby.decide_button.disabled and lobby.decide_button.text == "第2章へ出撃する", "Once the first chapter is cleared, the second opens")
-	root.push_input(key(KEY_Q))
 	await process_frame
-	check(hub.chapter.id == &"ash_corridor", "Q goes back to the chapter before")
-	main.meta.chapter_clears.clear()
+	var sortie: HubSortie = hub.sortie_page
+	check(hub.page == "sortie" and sortie.visible and main.active_run == null, "The departure opens where to set out, without setting out")
+	check(sortie.cards.size() == Chapters.ALL.size() and sortie.chosen() == Chapters.ALL[0] and sortie.cards[0].button_pressed and not sortie.cards[1].button_pressed, "It opens on the first chapter, marked chosen")
+	check(sortie.count_label.text.contains("0 / 2") and sortie._states[0].text == "未踏" and sortie._states[1].text == "封印中", "Each card tells how far its chapter has been taken")
+	check(sortie.route_value.text == "3層とボス" and sortie.record_value.text == "なし" and sortie.boss_value.text == HubSortie.UNKNOWN_NAME, "The column tells the way, the record, and a boss not met yet unnamed")
+	var ruin_king: FoeData = load("res://data/foes/ruin_king.tres")
+	var first_foes := Chapters.foes(Chapters.ALL[0])
+	check(sortie.foe_row.get_child_count() == first_foes.size() and first_foes.has(ruin_king) and not first_foes.has(load("res://data/foes/gale_wolf_king.tres")), "The foes of the chapter are shown, its own boss among them")
+	check(sortie.foe_row.get_children().all(func(picture: TextureRect): return picture.tooltip_text == HubSortie.UNKNOWN_NAME), "Foes not met are not named")
+	check(sortie.gear_row.get_child_count() == 2 and sortie.gear_row.get_child(0).tooltip_text == "剣", "What she carries is shown: the sword and the first skill")
+	check(not sortie.action_button.disabled and sortie.action_button.text == "第1章へ出撃する", "An open chapter can be set out for")
+	# The sealed chapter: chosen to read what opens it, not set out for.
+	root.push_input(key(KEY_DOWN))
+	await process_frame
+	check(sortie.chosen().id == &"gale_woods" and sortie._locks[1].visible and sortie.banner_lock.visible and sortie.cards[1].button_pressed, "Down chooses the sealed chapter, shown locked")
+	check(sortie.action_button.disabled and sortie.action_button.text == "第2章は封印中" and sortie.description_label.text.contains("第1章を踏破") and sortie.action_button.tooltip_text.contains("第1章を踏破"), "A sealed chapter says how it opens and cannot be set out for")
+	check(hub.chapter.id == &"ash_corridor", "Choosing a sealed chapter leaves the next departure where it was")
+	root.push_input(key(KEY_ENTER))
+	root.push_input(key(KEY_ENTER, false))
+	await process_frame
+	check(main.active_run == null, "Enter on a sealed chapter does not set out")
+	# Its first clear opens the next chapter, which is then the one offered.
+	main.meta.chapter_clears[&"ash_corridor"] = 1
+	main.meta.chapter_best[&"ash_corridor"] = 4
+	main.meta.met[ruin_king.id] = true
 	hub.refresh(main.meta)
+	check(hub.chapter.id == &"gale_woods" and sortie.chosen().id == &"gale_woods" and not sortie._locks[1].visible, "A chapter that has just opened is the one offered next")
+	check(not sortie.action_button.disabled and sortie.action_button.text == "第2章へ出撃する" and sortie._states[0].text == "踏破 1回" and sortie.count_label.text.contains("1 / 2"), "Once the first chapter is cleared, the second opens")
+	root.push_input(key(KEY_UP))
+	await process_frame
+	check(hub.chapter.id == &"ash_corridor" and sortie.boss_value.text == ruin_king.display_name, "Choosing an open chapter makes it the next departure, and a boss met is named")
+	# Tab (View) to change what she carries, and back again.
+	root.push_input(key(KEY_TAB))
+	await process_frame
+	check(hub.page == "status", "Tab goes from the departure to the status")
+	hub.go_back()
+	check(hub.page == "sortie", "Back from there returns to the departure")
+	hub.go_back()
+	check(hub.page == "home" and lobby.title_label.text == Chapters.ALL[0].display_name, "Back from the departure returns to the lobby, which shows the chapter chosen")
+	main.meta.chapter_clears.clear()
+	main.meta.chapter_best.clear()
+	main.meta.met.clear()
+	hub.refresh(main.meta)
+	check(lobby.best_value.text == "なし", "The lobby tells the chapter's record")
+	var deep := MetaProgress.new()
+	deep.chapter_best[&"ash_corridor"] = 2
+	check(Chapters.record(deep, Chapters.ALL[0]) == "第2層まで", "A record names the deepest layer")
+	deep.chapter_best[&"ash_corridor"] = Chapters.ALL[0].layers + 1
+	check(Chapters.record(deep, Chapters.ALL[0]) == "ボスまで", "Past the last layer, the record is the boss")
 	for pair: Array in [[&"upgrade", "upgrade"], [&"status", "status"], [&"codex", "codex"], [&"settings", "settings"]]:
 		lobby.activated.emit(pair[0])
 		check(hub.page == pair[1], "%s opens its page" % pair[0])
@@ -355,10 +392,18 @@ func run_tests() -> void:
 	hub = main.get_node("Hub")
 	hub.home_page.activated.emit(&"departure")
 	await process_frame
+	var held := key(KEY_ENTER)
+	held.echo = true
+	root.push_input(held)
+	await process_frame
+	check(hub.page == "sortie" and main.active_run == null, "A held Enter's repeats do not set out from the page it opened")
+	root.push_input(key(KEY_ENTER))
+	root.push_input(key(KEY_ENTER, false))
+	await process_frame
 	var run: RunDirector = main.active_run
-	check(run != null and not hub.visible and run.returns_to_base and run.meta == main.meta, "The departure starts a run shaped by the progress")
+	check(run != null and not hub.visible and run.returns_to_base and run.meta == main.meta and run.chapter == Chapters.ALL[0], "Enter on a chapter starts a run there, shaped by the progress")
 	check(run.map_view.visible, "The run opens on its route")
-	hub.home_page.activated.emit(&"departure")
+	hub.sortie_page.set_out()
 	check(main.active_run == run, "A second departure is ignored while a run lasts")
 	main.free()
 	await process_frame

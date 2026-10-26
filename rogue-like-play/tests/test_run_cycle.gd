@@ -26,8 +26,11 @@ func wait(seconds: float) -> void:
 		await physics_frame
 
 
+# From the lobby to where to set out, and out to the chapter it offers.
 func set_out(main: Node) -> RunDirector:
-	main.get_node("Hub").home_page.activated.emit(&"departure")
+	var hub = main.get_node("Hub")
+	hub.home_page.activated.emit(&"departure")
+	hub.sortie_page.set_out()
 	await process_frame
 	var run: RunDirector = main.active_run
 	if run.choice.visible:
@@ -101,7 +104,8 @@ func run_tests() -> void:
 	run.end_view._button.pressed.emit()
 	await process_frame
 	check(main.active_run == null and hub.visible and hub.page == "home" and not paused, "The way home returns to the lobby")
-	check(hub.echo_label.text == UIFormat.amount(echo) and hub.home_page.best_value.text.begins_with("踏破"), "The base shows the echo brought home and the clear")
+	check(hub.echo_label.text == UIFormat.amount(echo) and hub.sortie_page._states[0].text.begins_with("踏破"), "The base shows the echo brought home and the clear")
+	check(hub.chapter.id == &"gale_woods" and hub.home_page.title_label.text == hub.chapter.display_name, "The chapter the clear opened is the one offered next")
 
 	# A lost run keeps its echo.
 	run = await set_out(main)

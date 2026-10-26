@@ -46,11 +46,11 @@ func run_tests() -> void:
 	hub.refresh(main.meta)
 	centered(hub.get_node("Content"), "The base's content")
 	var screen := root.get_visible_rect()
-	for page in ["upgrade", "status", "codex", "settings"]:
+	for page in ["sortie", "upgrade", "status", "codex", "settings"]:
 		hub.show_page(page)
 		# Measure the resting layout, after the page has slid into place.
 		await settle(UIMotion.WINDOW_TIME + 0.05)
-		var shown: Control = {"upgrade": hub.upgrade_page, "status": hub.status_page, "codex": hub.codex_page, "settings": hub.settings_page}[page]
+		var shown: Control = {"sortie": hub.sortie_page, "upgrade": hub.upgrade_page, "status": hub.status_page, "codex": hub.codex_page, "settings": hub.settings_page}[page]
 		check(screen.grow(1).encloses(shown.get_global_rect()), "The %s page stays on the screen" % page)
 	hub.show_page("upgrade")
 	await settle(UIMotion.WINDOW_TIME + 0.05)

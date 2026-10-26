@@ -133,12 +133,13 @@ func run_tests() -> void:
 
 	# Rapid navigation settles every page.
 	for index in 20:
+		hub.show_page("sortie")
 		hub.show_page("upgrade")
 		hub.show_page("codex")
 		hub.show_page("settings")
 		hub.show_page("home")
 	await settle(UIMotion.WINDOW_TIME + 0.2)
-	for shown: Control in [hub.home_page, hub.upgrade_page, hub.codex_page, hub.settings_page]:
+	for shown: Control in [hub.home_page, hub.sortie_page, hub.upgrade_page, hub.codex_page, hub.settings_page]:
 		check(is_equal_approx(shown.modulate.a, 1.0) and near_scale(shown, 1.0), "Rapid navigation restores %s's alpha and scale" % shown.name)
 	# A new account comes into the detail column from the right and settles
 	# where the column lays it out, even when asked again mid-way.

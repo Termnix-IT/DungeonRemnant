@@ -51,7 +51,7 @@ func run_tests() -> void:
 	root.add_child(main)
 	var hub = main.get_node("Hub")
 	hub.refresh(main.meta)
-	for page in ["upgrade", "status", "codex", "settings", "home"]:
+	for page in ["sortie", "upgrade", "status", "codex", "settings", "home"]:
 		hub.show_page(page)
 		for frame in 3:
 			await process_frame

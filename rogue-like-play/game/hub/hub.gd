@@ -1,13 +1,14 @@
 extends CanvasLayer
 
 # The base between runs: the lobby (HubLobby) over the hall painting, and the
-# pages it opens: the lasting upgrades (MetaUpgradePage), the status and
-# skill slots (HubStatus), the encyclopedia (HubCodex) and the settings
-# (HubSettings). Tab (View) goes between the upgrades and the status. The
-# header holds the page's name and the echo held; the footer, the keys. It
-# shows a MetaProgress and asks Main to change it (start_requested,
-# upgrade_requested, equip_requested); Main saves, refreshes it and calls
-# present_action or present_equip for the moment.
+# pages it opens: where to set out (HubSortie), the lasting upgrades
+# (MetaUpgradePage), the status and skill slots (HubStatus), the
+# encyclopedia (HubCodex) and the settings (HubSettings). Tab (View) goes
+# between the upgrades and the status, and from the departure to the status
+# and back. The header holds the page's name and the echo held; the footer,
+# the keys. It shows a MetaProgress and asks Main to change it
+# (start_requested, upgrade_requested, equip_requested); Main saves,
+# refreshes it and calls present_action or present_equip for the moment.
 
 signal start_requested
 signal upgrade_requested(id: StringName)
@@ -22,7 +23,8 @@ const EDGE_BOTTOM := 16.0
 # whole block shrinks together on smaller screens.
 const CONTENT_SIZE := Vector2(1440, 810)
 
-# The chapter the departure shows and sets out for.
+# The chapter the lobby shows and the departure opens on: the frontier at
+# first, then the last one chosen, or one that has just opened.
 var chapter: ChapterData = Chapters.ALL[0]
 var echo_label: Label
 var feedback: Label
@@ -40,9 +42,14 @@ var upgrade_page: MetaUpgradePage
 var status_page: HubStatus
 var settings_page: HubSettings
 var codex_page: HubCodex
+var sortie_page: HubSortie
 var page := "home"
 # The page a "?" mark opened the help from, which back returns to.
 var help_return := ""
+# The departure, when Tab (View) went from it to the status: back returns.
+var status_return := ""
+# The chapters open at the last refresh, to notice one that has just opened.
+var _open_chapters: Array[ChapterData] = []
 var purse: GoldPurse
 var key_guide: KeyGuide
 var _meta: MetaProgress
@@ -135,6 +142,13 @@ func _ready() -> void:
 	codex_page = _page(HubCodex.new()) as HubCodex
 	codex_page.offset_left = bleed
 	codex_page.offset_right = -bleed
+	sortie_page = _page(HubSortie.new()) as HubSortie
+	sortie_page.offset_left = bleed
+	sortie_page.offset_right = -bleed
+	sortie_page.chapter_chosen.connect(func(chosen: ChapterData): chapter = chosen)
+	sortie_page.departure_requested.connect(func(chosen: ChapterData):
+		chapter = chosen
+		start_requested.emit())
 	settings_page = _page(HubSettings.new()) as HubSettings
 	settings_page.offset_left = bleed
 	settings_page.offset_right = -bleed
@@ -190,7 +204,6 @@ func _build_home() -> void:
 	home_page.hide()
 	home_page.selection_changed.connect(func(id: StringName): _ambience.focus(id))
 	home_page.activated.connect(_enter)
-	home_page.chapter_step.connect(step_chapter)
 	start_button = home_page.buttons[0]
 	upgrade_button = home_page.buttons[1]
 	decide_button = home_page.decide_button
@@ -201,10 +214,7 @@ func _build_home() -> void:
 func _enter(id: StringName) -> void:
 	match id:
 		&"departure":
-			if _meta != null and not _meta.chapter_open(chapter):
-				GameAudio.play(self, &"ui_deny", -18.0)
-				return
-			start_requested.emit()
+			show_page("sortie")
 		&"upgrade":
 			show_page("upgrade")
 		&"status":
@@ -213,16 +223,6 @@ func _enter(id: StringName) -> void:
 			show_page("codex")
 		&"settings":
 			show_page("settings")
-
-
-# The departure shows the chapter before or after, wrapping round.
-func step_chapter(step: int) -> void:
-	var at := Chapters.ALL.find(chapter)
-	chapter = Chapters.ALL[posmod(at + step, Chapters.ALL.size())]
-	GameAudio.play(self, &"ui_move", -18.0)
-	if _meta != null:
-		home_page.refresh(_meta, chapter)
-	UIMotion.of(home_page.panel).reveal(UIMotion.SELECT_TIME)
 
 
 func _resize() -> void:
@@ -234,9 +234,11 @@ func _resize() -> void:
 
 
 func refresh(meta: MetaProgress, message: String = "") -> void:
+	_pick_chapter(meta)
 	_meta = meta
 	echo_label.text = UIFormat.amount(meta.echo)
 	home_page.refresh(meta, chapter)
+	sortie_page.refresh(meta, chapter)
 	upgrade_page.refresh(meta)
 	status_page.refresh(meta)
 	codex_page.refresh(meta)
@@ -245,10 +247,30 @@ func refresh(meta: MetaProgress, message: String = "") -> void:
 		show_page("home")
 
 
+# The first progress shown opens the departure on the frontier; afterwards a
+# chapter that has just opened (a first clear) is the one offered next.
+func _pick_chapter(meta: MetaProgress) -> void:
+	var open: Array[ChapterData] = []
+	for each in Chapters.ALL:
+		if meta.chapter_open(each):
+			open.append(each)
+	if _meta == null:
+		chapter = Chapters.frontier(meta)
+	else:
+		for each in open:
+			if not _open_chapters.has(each):
+				chapter = each
+	if not meta.chapter_open(chapter):
+		chapter = Chapters.frontier(meta)
+	_open_chapters = open
+
+
 func show_page(target: String) -> void:
 	page = target
 	hero_speech.hide()
-	for control in [home_page, upgrade_page, status_page, codex_page, settings_page]:
+	if page in ["home", "sortie"]:
+		status_return = ""
+	for control in [home_page, sortie_page, upgrade_page, status_page, codex_page, settings_page]:
 		control.hide()
 	key_guide.clear_hints()
 	# The lobby has nowhere to go back to; it shows how to choose and enter.
@@ -272,8 +294,15 @@ func show_page(target: String) -> void:
 			home_page.focus_selected()
 			key_guide.add_hint("Enter", "A", "決定")
 			key_guide.add_hint("↑ / ↓", "▲ / ▼", "選ぶ")
-			if Chapters.ALL.size() > 1:
-				key_guide.add_hint("Q / E", "LB / RB", "章")
+		"sortie":
+			title_label.text = "出撃"
+			sortie_page.show()
+			if _meta != null:
+				sortie_page.refresh(_meta, chapter)
+			sortie_page.focus_selected()
+			key_guide.add_hint("Enter", "A", "出撃", sortie_page.set_out)
+			key_guide.add_hint("↑ / ↓", "▲ / ▼", "選ぶ")
+			key_guide.add_hint("Tab", "View", "装備", _status_from_sortie)
 		"upgrade":
 			title_label.text = "永続強化"
 			upgrade_page.show()
@@ -311,7 +340,7 @@ func show_page(target: String) -> void:
 	# Pages are anchored in a plain host, not laid out by a Container, so the
 	# whole page can slide: forward pages from the right, home from the left.
 	var side := -1.0 if page == "home" else 1.0
-	for control in [home_page, upgrade_page, status_page, codex_page, settings_page]:
+	for control in [home_page, sortie_page, upgrade_page, status_page, codex_page, settings_page]:
 		if control.visible:
 			UIMotion.of(control).enter(0.0, Vector2(side * UIMotion.PAGE_DISTANCE, 0), UIMotion.WINDOW_TIME)
 			# Pages built in the screen grammar bring their parts in one by one.
@@ -373,7 +402,17 @@ func go_back() -> void:
 			help_return = ""
 			show_page(back)
 		return
+	if page == "status" and not status_return.is_empty():
+		show_page(status_return)
+		return
 	show_page("home")
+
+
+# Tab (View) on the departure: the status, to change what she carries; back
+# from there returns to the departure.
+func _status_from_sortie() -> void:
+	show_page("status")
+	status_return = "sortie"
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -382,21 +421,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-# Tab (View) between the upgrades and the status, before Tab moves the focus;
-# on the lobby's departure, Q / E (LB / RB) for the chapter before or after.
+# Tab (View) between the upgrades and the status, and from the departure to
+# the status, before Tab moves the focus.
 func _input(event: InputEvent) -> void:
-	if visible and page == "home" and home_page.selected_id() == &"departure" and Chapters.ALL.size() > 1:
-		var pad: bool = event is InputEventJoypadButton and event.pressed
-		var back: bool = (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_Q) or (pad and event.button_index == JOY_BUTTON_LEFT_SHOULDER)
-		var next: bool = (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E) or (pad and event.button_index == JOY_BUTTON_RIGHT_SHOULDER)
-		if back or next:
-			step_chapter(-1 if back else 1)
-			get_viewport().set_input_as_handled()
-			return
-	if not visible or page not in ["upgrade", "status"]:
+	if not visible or page not in ["upgrade", "status", "sortie"]:
 		return
 	var key: bool = event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_TAB
 	var pad: bool = event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_BACK
 	if key or pad:
-		show_page("status" if page == "upgrade" else "upgrade")
+		if page == "sortie":
+			_status_from_sortie()
+		else:
+			show_page("status" if page == "upgrade" else "upgrade")
 		get_viewport().set_input_as_handled()

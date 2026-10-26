@@ -1,8 +1,9 @@
 extends SceneTree
 
 # The base drawn for real at 1600x900, 1280x720 and 1920x1080: the lobby on
-# its departure, the lasting upgrades, the encyclopedia and the settings;
-# then, at 1600x900, the help and the quit's question, a run's result
+# its departure, where to set out, the lasting upgrades, the status, the
+# encyclopedia and the settings; then, at 1600x900, a sealed chapter chosen
+# where to set out, the help and the quit's question, a run's result
 # offering the way home, the fight's menu and its leaving question. Images go to .godot/hub_<page>_<width>.png. Look at them: the
 # hierarchy, the selected state, the main actions and any cut text. Needs a
 # rendering display driver:
@@ -30,6 +31,7 @@ func capture() -> void:
 	main.meta.ranks["double_dash"] = 1
 	main.meta.runs = 3
 	main.meta.best_layer = 2
+	main.meta.chapter_best[&"ash_corridor"] = 2
 	main.meta.met[&"wandering_sentinel"] = true
 	main.meta.met[&"dashing_rat"] = true
 	root.add_child(main)
@@ -39,12 +41,18 @@ func capture() -> void:
 		DisplayServer.window_set_size(size)
 		root.size = size
 		await create_timer(0.3).timeout
-		for page in ["home", "upgrade", "status", "codex", "settings"]:
+		for page in ["home", "sortie", "upgrade", "status", "codex", "settings"]:
 			hub.show_page(page)
 			await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
 			await _grab("hub_%s_%d" % [page, size.x])
 	DisplayServer.window_set_size(SIZES[0])
 	root.size = SIZES[0]
+	# Where to set out, on the sealed chapter.
+	hub.show_page("sortie")
+	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
+	hub.sortie_page.cards[1].grab_focus()
+	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.3).timeout
+	await _grab("hub_sortie_sealed_1600")
 	# The upgrade tree followed out to a branch's end, the root's side out of sight.
 	hub.show_page("upgrade")
 	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
