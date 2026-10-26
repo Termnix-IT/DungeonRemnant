@@ -68,7 +68,7 @@ func run_tests() -> void:
 	var sortie: HubSortie = hub.sortie_page
 	check(hub.page == "sortie" and sortie.visible and main.active_run == null, "The departure opens where to set out, without setting out")
 	check(sortie.cards.size() == Chapters.ALL.size() and sortie.chosen() == Chapters.ALL[0] and sortie.cards[0].button_pressed and not sortie.cards[1].button_pressed, "It opens on the first chapter, marked chosen")
-	check(sortie.count_label.text.contains("0 / 2") and sortie._states[0].text == "未踏" and sortie._states[1].text == "封印中", "Each card tells how far its chapter has been taken")
+	check(sortie.count_label.text.contains("0 / %d" % Chapters.ALL.size()) and sortie._states[0].text == "未踏" and sortie._states.slice(1).all(func(state: Label): return state.text == "封印中"), "Each card tells how far its chapter has been taken")
 	check(sortie.route_value.text == "3層とボス" and sortie.record_value.text == "なし" and sortie.boss_value.text == HubSortie.UNKNOWN_NAME, "The column tells the way, the record, and a boss not met yet unnamed")
 	var ruin_king: FoeData = load("res://data/foes/ruin_king.tres")
 	var first_foes := Chapters.foes(Chapters.ALL[0])
@@ -92,7 +92,7 @@ func run_tests() -> void:
 	main.meta.met[ruin_king.id] = true
 	hub.refresh(main.meta)
 	check(hub.chapter.id == &"gale_woods" and sortie.chosen().id == &"gale_woods" and not sortie._locks[1].visible, "A chapter that has just opened is the one offered next")
-	check(not sortie.action_button.disabled and sortie.action_button.text == "第2章へ出撃する" and sortie._states[0].text == "踏破 1回" and sortie.count_label.text.contains("1 / 2"), "Once the first chapter is cleared, the second opens")
+	check(not sortie.action_button.disabled and sortie.action_button.text == "第2章へ出撃する" and sortie._states[0].text == "踏破 1回" and sortie.count_label.text.contains("1 / %d" % Chapters.ALL.size()), "Once the first chapter is cleared, the second opens")
 	root.push_input(key(KEY_UP))
 	await process_frame
 	check(hub.chapter.id == &"ash_corridor" and sortie.boss_value.text == ruin_king.display_name, "Choosing an open chapter makes it the next departure, and a boss met is named")
@@ -331,7 +331,7 @@ func run_tests() -> void:
 	check(status.details_open and status.stats.get_child_count() > always, "R opens the rest of her figures")
 	root.push_input(key(KEY_RIGHT))
 	await process_frame
-	check(status.slot == 2 and status.tile_ids == [HubStatus.CLEAR_ID, &"slam", &"thunder_flash", &"swallow_cut", &"blaze_ring"] and status.tiles[2].text == HubStatus.UNKNOWN_NAME, "Choosing the second slot shows its tiles")
+	check(status.slot == 2 and status.tile_ids == [HubStatus.CLEAR_ID, &"slam", &"thunder_flash", &"swallow_cut", &"blaze_ring", &"wisp_shot"] and status.tiles[2].text == HubStatus.UNKNOWN_NAME, "Choosing the second slot shows its tiles")
 	check(status.tiles[1].text.contains("スキル1"), "A tile tells the slot its skill is set in")
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))
@@ -439,7 +439,8 @@ func run_tests() -> void:
 	main.run_seed = 4
 	await process_frame
 	hub = main.get_node("Hub")
-	main.meta.chapter_clears[Chapters.ALL[0].id] = 1
+	for earlier: ChapterData in Chapters.ALL.slice(0, Chapters.ALL.size() - 1):
+		main.meta.chapter_clears[earlier.id] = 1
 	hub.refresh(main.meta)
 	hub.home_page.activated.emit(&"departure")
 	hub.sortie_page.set_out()

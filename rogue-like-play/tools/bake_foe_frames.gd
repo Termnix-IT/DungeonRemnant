@@ -14,7 +14,7 @@ extends SceneTree
 
 # Foe: how many times its figure's height the square cell is, so swinging
 # hair, a cape, a figure lying fallen and a long body leaping all fit.
-const IDS := {"basic": 1.7, "fast": 2.5, "moss_sentinel": 1.7, "gale_rat": 2.5}
+const IDS := {"basic": 1.7, "fast": 2.5, "moss_sentinel": 1.7, "gale_rat": 2.5, "skeleton": 1.7, "wisp": 1.9}
 const OUT := "res://art/enemies/frames/"
 const SCALE := 2.0
 const COLUMNS := 12

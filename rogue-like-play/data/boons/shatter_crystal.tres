@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=5 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/trigger_boon.gd" id="3"]
+[sub_resource type="Resource" id="Effect0"]
+script = ExtResource("3")
+on = 1
+chance = 0.35
+cooldown = 0.2
+action = 0
+at = 0
+radius = 80.0
+damage_scale = 0.7
+damage_per_rank = 0.3
+knockback = 160.0
+effect = &"magic"
+[resource]
+script = ExtResource("1")
+id = &"shatter_crystal"
+display_name = "砕晶"
+description = "敵を倒すと時々、結晶が砕けて周りに当たる"
+families = Array[String](["範囲"])
+max_level = 3
+weight = 1.0
+emblem = "shatter_crystal"
+effects = Array[ExtResource("2")]([SubResource("Effect0")])

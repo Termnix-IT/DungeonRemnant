@@ -7,6 +7,7 @@ extends RefCounted
 const ALL: Array[ChapterData] = [
 	preload("res://data/chapters/ash_corridor.tres"),
 	preload("res://data/chapters/gale_woods.tres"),
+	preload("res://data/chapters/amethyst_mausoleum.tres"),
 ]
 
 

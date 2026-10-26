@@ -283,6 +283,56 @@ func run_tests() -> void:
 	director.free()
 	await process_frame
 
+	# The third chapter, taken through to the summoning priest: its crowd is
+	# skeletons and wisps drawn from baked frames, its ground the crypt's,
+	# and its boss comes in by its rig, calls skeletons, rages and falls.
+	ended.clear()
+	director = RunDirector.new()
+	director.seed_value = 47
+	director.chapter = load("res://data/chapters/amethyst_mausoleum.tres")
+	root.add_child(director)
+	director.finished.connect(_on_finished)
+	await process_frame
+	check(director.run.route.size() == 5 and director.map_view._title.text.contains("紫晶の霊廟"), "The third chapter lays out four layers and its boss")
+	var crypt_seen := false
+	var crowd_seen := false
+	for layer in director.run.route.size() - 1:
+		director.map_view._choose(director.map_view.current[0])
+		await process_frame
+		var hall := director.area
+		hall.hero.controlled = false
+		crypt_seen = crypt_seen or hall.data.theme == 5
+		if hall.director != null:
+			hall.director.advance(1.0)
+			crowd_seen = crowd_seen or hall.foes.any(func(foe: Foe): return foe.data.id in [&"skeleton", &"wisp"] and foe.view.sprite != null)
+		await clear_area(director)
+	check(crypt_seen, "Its areas lie on the crypt's ground")
+	check(crowd_seen, "Its crowd comes in drawn from their baked frames")
+	director.map_view._choose(director.run.route.nodes(director.run.route.size() - 1)[0])
+	await process_frame
+	var ossuary := director.area
+	ossuary.hero.controlled = false
+	ossuary.hero.health.max_hp = 100000
+	ossuary.hero.health.hp = 100000
+	await wait(BattleArea.BOSS_DELAY + BattleArea.BOSS_MARK_TIME + 0.4)
+	await create_timer(BossIntro.total_time() + 0.3, true, false, true).timeout
+	var priest := ossuary.boss_foe
+	check(priest != null and priest.data.id == &"summoning_priest" and priest.view.rig != null, "The summoning priest comes in, drawn by its rig")
+	var skeletons_before := ossuary.foes.filter(func(foe: Foe): return foe.data.id == &"skeleton").size()
+	priest.receive(DamageInfo.make(float(priest.health.max_hp) * 0.55, Vector2.RIGHT))
+	await wait(WaveRunner.MARK_TIME + 0.3)
+	check(priest.phase == 2 and ossuary.foes.filter(func(foe: Foe): return foe.data.id == &"skeleton").size() > skeletons_before, "At half health it rages and calls skeletons")
+	priest.receive(DamageInfo.make(100000.0, Vector2.RIGHT))
+	for frame in 400:
+		if not ended.is_empty():
+			break
+		if is_instance_valid(ossuary) and ossuary.is_inside_tree() and ossuary.choice.visible:
+			ossuary.choice._select(0)
+		await physics_frame
+	check(ended.size() == 1 and ended[0].cleared and ended[0].chapter_id == "amethyst_mausoleum", "Felling it wins the third chapter")
+	director.free()
+	await process_frame
+
 	# The special move set at the base goes with her, and its gauge carries
 	# from area to area.
 	var armed := MetaProgress.new()
@@ -379,6 +429,32 @@ func run_tests() -> void:
 	director.waypoint = director.run.route.nodes(director.run.layer)[0]
 	director.grant(AreaData.Reward.HEAL)
 	check(director.run.hp == 10 + roundi(director.max_hp() * RunDirector.HEAL_SHARE * 0.5), "Thirst halves a heal")
+	director.free()
+	await process_frame
+
+	# The shelf of memories: a boon held given up for another, never itself.
+	director = RunDirector.new()
+	director.seed_value = 19
+	root.add_child(director)
+	await process_frame
+	stop = director.event_view
+	await stop_at(director, "res://data/areas/event_shelf.tres")
+	check(stop.ids == [&"give", EventView.LEAVE] and stop.buttons[0].disabled, "With no boon held, the shelf has nothing to trade")
+	stop.buttons[-1].pressed.emit()
+	await process_frame
+	var blade := director.run.build.find(&"blade_speed")
+	director.run.build.take(blade)
+	director.run.build.take(blade)
+	director.run.build.take(director.run.build.find(&"brute_force"))
+	await stop_at(director, "res://data/areas/event_shelf.tres")
+	var trade := stop.ids.find(&"give:blade_speed")
+	check(stop.ids.size() == 3 and trade >= 0 and stop.buttons[trade].text.contains("剣速 2") and stop.ids.has(&"give:brute_force"), "The shelf offers to trade each boon held, with its rank")
+	stop.buttons[trade].pressed.emit()
+	await process_frame
+	check(director.run.build.rank(&"blade_speed") == 0 and director.choice.visible and not director.choice.offers.has(blade) and director.choice.offers.size() == director.run.card_count(), "The boon is given up, and a card of others is dealt")
+	director.choice._select(0)
+	await process_frame
+	check(not stop.visible and director.run.build.owned().size() == 2 and director.map_view._note.text.contains("剣速"), "Taking one ends the stop, and the map tells the trade")
 	director.free()
 	await process_frame
 	print("Run flow tests: %d checks, %d failures" % [checks, failures])

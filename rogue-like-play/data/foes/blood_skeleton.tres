@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=4 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/bone_slash.tres" id="3"]
+[resource]
+script = ExtResource("1")
+id = &"blood_skeleton"
+display_name = "血錆の骨の兵"
+description = "骨まで血のような錆に染まった骨の兵。硬く、斬りも重い。振りかぶりを見て抜けるのは変わらない。
+難易度の段階7から、第3章のフィールドの群れに混ざる。"
+visual_id = "skeleton"
+baked = true
+tint = Color(1, 0.52, 0.5, 1)
+size_scale = 1.0
+max_hp = 85
+defense = 0
+speed = 90.0
+acceleration = 900.0
+speed_spread = 0.12
+contact_damage = 7
+contact_knockback = 240.0
+contact_cooldown = 0.9
+hit_radius = 14.0
+knockback_resist = 0.0
+hitstun = 0.2
+exp_reward = 3
+attacks = Array[ExtResource("2")]([ExtResource("3")])
+power = 14.0
+attack_cooldown = 1.5

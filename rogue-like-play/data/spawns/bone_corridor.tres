@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="SpawnTable" load_steps=12 format=3]
+[ext_resource type="Script" path="res://world/areas/spawn_table.gd" id="1"]
+[ext_resource type="Script" path="res://world/areas/spawn_entry.gd" id="2"]
+[ext_resource type="Resource" path="res://data/foes/skeleton.tres" id="3"]
+[ext_resource type="Resource" path="res://data/foes/dashing_rat.tres" id="4"]
+[ext_resource type="Resource" path="res://data/foes/wisp.tres" id="5"]
+[ext_resource type="Resource" path="res://data/foes/crystal_turret.tres" id="6"]
+[ext_resource type="Resource" path="res://data/foes/stone_gate_warden.tres" id="7"]
+[sub_resource type="Resource" id="Entry_skeleton"]
+script = ExtResource("2")
+foe = ExtResource("3")
+weight = 6.0
+[sub_resource type="Resource" id="Entry_dashing_rat"]
+script = ExtResource("2")
+foe = ExtResource("4")
+weight = 3.0
+from_time = 10.0
+[sub_resource type="Resource" id="Entry_wisp"]
+script = ExtResource("2")
+foe = ExtResource("5")
+weight = 3.0
+from_time = 25.0
+[sub_resource type="Resource" id="Entry_crystal_turret"]
+script = ExtResource("2")
+foe = ExtResource("6")
+weight = 0.5
+from_time = 45.0
+[resource]
+script = ExtResource("1")
+entries = Array[ExtResource("2")]([SubResource("Entry_skeleton"), SubResource("Entry_dashing_rat"), SubResource("Entry_wisp"), SubResource("Entry_crystal_turret")])
+start_alive = 22
+alive_per_minute = 60.0
+max_alive = 160
+spawns_per_second = 8.0
+elite_first = 40.0
+elite_every = 45.0
+elite_cap = 2
+elite = ExtResource("7")

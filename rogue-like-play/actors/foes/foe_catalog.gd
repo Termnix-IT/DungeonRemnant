@@ -15,15 +15,21 @@ const FOES: Array[FoeData] = [
 	preload("res://data/foes/gale_rat.tres"),
 	preload("res://data/foes/spore_swell.tres"),
 	preload("res://data/foes/spore_cannon.tres"),
+	preload("res://data/foes/skeleton.tres"),
+	preload("res://data/foes/wisp.tres"),
 	# The stronger kin, met only at the higher difficulty steps.
 	preload("res://data/foes/blood_sentinel.tres"),
 	preload("res://data/foes/blood_rat.tres"),
 	preload("res://data/foes/blood_moss_sentinel.tres"),
 	preload("res://data/foes/blood_gale_rat.tres"),
+	preload("res://data/foes/blood_skeleton.tres"),
+	preload("res://data/foes/crimson_wisp.tres"),
 	preload("res://data/foes/raging_charger.tres"),
 	preload("res://data/foes/gale_warden.tres"),
+	preload("res://data/foes/stone_gate_warden.tres"),
 	preload("res://data/foes/ruin_king.tres"),
 	preload("res://data/foes/gale_wolf_king.tres"),
+	preload("res://data/foes/summoning_priest.tres"),
 ]
 const KINDS: Array[String] = ["すべて", "群れ", "精鋭", "ボス"]
 

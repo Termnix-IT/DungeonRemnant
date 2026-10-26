@@ -17,6 +17,7 @@ const ATLASES: Array[Texture2D] = [
 	preload("res://art/tiles/painted/ember_terrain.png"),
 	preload("res://art/tiles/painted/sanctum_terrain.png"),
 	preload("res://art/tiles/painted/grove_terrain.png"),
+	preload("res://art/tiles/painted/crypt_terrain.png"),
 ]
 # Where the atlas keeps its tiles (as world/dungeon/dungeon.gd lays them).
 const COLUMNS := 16

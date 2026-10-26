@@ -44,8 +44,9 @@ const REWARD_NAMES := {Reward.BOON: "強化", Reward.HEAL: "回復", Reward.ECHO
 
 @export_group("Ground")
 @export var size := Vector2i(40, 28)
-# AreaGround's painted terrain: 0 slate, 1 moss, 2 ember, 3 sanctum, 4 grove.
-@export_range(0, 4) var theme := 0
+# AreaGround's painted terrain: 0 slate, 1 moss, 2 ember, 3 sanctum, 4 grove,
+# 5 crypt.
+@export_range(0, 5) var theme := 0
 # The top-left cells of 2x2 pillars.
 @export var pillars: Array[Vector2i] = []
 # Extra 2x2 pillars strewn over the ground, placed the same way every time.

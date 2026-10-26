@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=5 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/attack_boon.gd" id="3"]
+[sub_resource type="Resource" id="Effect0"]
+script = ExtResource("3")
+when = 4
+inflict = &"shock"
+damage_scale = 1.1
+damage_per_rank = 0.1
+[resource]
+script = ExtResource("1")
+id = &"thunder_charge"
+display_name = "雷の溜め"
+description = "溜め攻撃が敵を感電させ、威力が上がる"
+families = Array[String](["属性", "状態異常"])
+max_level = 3
+weight = 1.0
+emblem = "thunder_charge"
+effects = Array[ExtResource("2")]([SubResource("Effect0")])

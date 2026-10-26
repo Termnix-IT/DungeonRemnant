@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=5 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/attack_boon.gd" id="3"]
+[sub_resource type="Resource" id="Effect0"]
+script = ExtResource("3")
+when = 2
+combo_step = 2
+arc_degrees = 360.0
+reach_per_rank = 0.1
+damage_per_rank = 0.15
+[resource]
+script = ExtResource("1")
+id = &"crescent_cut"
+display_name = "円月"
+description = "3段目の攻撃が周りを一周斬る"
+families = Array[String](["連撃", "範囲"])
+max_level = 3
+weight = 1.0
+emblem = "crescent_cut"
+effects = Array[ExtResource("2")]([SubResource("Effect0")])

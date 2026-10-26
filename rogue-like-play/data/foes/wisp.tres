@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=4 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/wisp_shot.tres" id="3"]
+[resource]
+script = ExtResource("1")
+id = &"wisp"
+display_name = "霊火"
+description = "霊廟を漂う死者の火。近づいてきて、離れた所から床の帯に沿って遅い霊弾を撃つ。弾は遅いので、帯から外れて近づき叩く。
+第3章のフィールドとアリーナに現れる。"
+visual_id = "wisp"
+baked = true
+size_scale = 1.25
+max_hp = 22
+defense = 0
+speed = 100.0
+acceleration = 700.0
+speed_spread = 0.15
+contact_damage = 5
+contact_knockback = 180.0
+contact_cooldown = 0.9
+hit_radius = 12.0
+knockback_resist = 0.0
+hitstun = 0.25
+exp_reward = 2
+attacks = Array[ExtResource("2")]([ExtResource("3")])
+power = 9.0
+attack_cooldown = 2.4

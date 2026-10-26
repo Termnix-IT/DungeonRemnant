@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=5 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/gate_slam.tres" id="3"]
+[ext_resource type="Resource" path="res://data/attacks/gate_rush.tres" id="4"]
+[resource]
+script = ExtResource("1")
+id = &"stone_gate_warden"
+display_name = "石門の番人"
+description = "精鋭。霊廟の門を背負って動く石の巨像。斬られてもひるまない。近くでは長い予兆のあとに大きく叩きつけ、離れると門ごと突っ込んでくる。予兆の輪の外へ出てから叩く。
+第3章のフィールドに時々、アリーナの最後に現れる。"
+visual_id = "boss_stone_gate"
+size_scale = 1.0
+elite = true
+max_hp = 680
+defense = 4
+speed = 65.0
+acceleration = 600.0
+speed_spread = 0.05
+contact_damage = 15
+contact_knockback = 400.0
+contact_cooldown = 0.9
+hit_radius = 28.0
+knockback_resist = 1.0
+hitstun = 0.0
+exp_reward = 24
+attacks = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4")])
+power = 18.0
+attack_cooldown = 1.3

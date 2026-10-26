@@ -63,7 +63,7 @@ func run_tests() -> void:
 		check(not each.display_name.is_empty() and not each.families.is_empty() and not each.effects.is_empty(), "A boon has a name, families and effects: " + String(each.id))
 		check(EmblemIcons.texture(each.emblem_key()) != null, "A boon's emblem exists: " + String(each.id))
 		check(each.effect_description(1).length() <= 20 and each.families.size() <= 2, "A boon's words and families fit its card: " + String(each.id))
-	check(build.pool.size() == 20 and ids.size() == 20, "Twenty boons, each its own id")
+	check(build.pool.size() == 26 and ids.size() == 26, "Twenty-six boons, each its own id")
 	check(build.find(&"discharge").requires == [&"thunder_blade"], "The discharge waits for the lightning blade")
 
 	# The offer: three different boons, requirements and last ranks respected.
@@ -262,6 +262,23 @@ func run_tests() -> void:
 	await process_frame
 	area.free()
 	await process_frame
+
+	# Giving a boon up (the shelf of memories) and giving it back; an offer
+	# can leave out the boons named.
+	var trading := BuildState.new(RunState.BOONS)
+	var speed_boon := trading.find(&"blade_speed")
+	trading.take(speed_boon)
+	trading.take(speed_boon)
+	check(trading.give_up(&"blade_speed") == 2 and trading.rank(&"blade_speed") == 0 and trading.give_up(&"blade_speed") == 0, "A boon is given up with all its ranks, and only once")
+	trading.restore(&"blade_speed", 2)
+	check(trading.rank(&"blade_speed") == 2, "And can be given back at its rank")
+	var draw := RandomNumberGenerator.new()
+	draw.seed = 3
+	var left_out: Array[StringName] = [&"brute_force", &"gale_step"]
+	var fair := true
+	for attempt in 40:
+		fair = fair and trading.offer(draw, 3, left_out).all(func(boon: BoonData): return not left_out.has(boon.id))
+	check(fair, "An offer leaves out the boons it is told to")
 
 	# The sandbox: a level pauses the world for the cards; a pick resumes it.
 	var sandbox: CombatArea = load("res://world/areas/sandbox.tscn").instantiate()

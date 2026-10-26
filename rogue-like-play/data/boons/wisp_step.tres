@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=5 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/trigger_boon.gd" id="3"]
+[sub_resource type="Resource" id="Effect0"]
+script = ExtResource("3")
+on = 2
+cooldown = 0.8
+action = 0
+at = 1
+radius = 90.0
+damage_scale = 0.6
+damage_per_rank = 0.25
+knockback = 140.0
+inflicts = Array[StringName]([&"burn"])
+effect = &"flame"
+[resource]
+script = ExtResource("1")
+id = &"wisp_step"
+display_name = "霊火の足跡"
+description = "ダッシュの出だしに霊火が爆ぜ、敵を燃やす"
+families = Array[String](["回避", "属性"])
+max_level = 3
+weight = 1.0
+emblem = "wisp_step"
+effects = Array[ExtResource("2")]([SubResource("Effect0")])

@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=5 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/trigger_boon.gd" id="3"]
+[sub_resource type="Resource" id="Effect0"]
+script = ExtResource("3")
+on = 0
+needs_status = &"burn"
+chance = 0.3
+action = 1
+at = 0
+radius = 160.0
+damage_scale = 0.5
+damage_per_rank = 0.2
+knockback = 60.0
+jumps = 2
+jumps_per_rank = 1
+inflicts = Array[StringName]([&"burn"])
+effect = &"flame"
+[resource]
+script = ExtResource("1")
+id = &"spreading_flame"
+display_name = "燃え移り"
+description = "燃えている敵に当てると炎が近くへ移る"
+families = Array[String](["属性", "状態異常"])
+max_level = 3
+weight = 1.0
+requires = Array[StringName]([&"hellfire", &"flame_art", &"wisp_step"])
+emblem = "spreading_flame"
+effects = Array[ExtResource("2")]([SubResource("Effect0")])

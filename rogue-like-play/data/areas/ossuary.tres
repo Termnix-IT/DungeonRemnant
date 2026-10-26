@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="AreaData" load_steps=8 format=3]
+[ext_resource type="Script" path="res://world/areas/area_data.gd" id="1"]
+[ext_resource type="Script" path="res://world/areas/wave_data.gd" id="2"]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="3"]
+[ext_resource type="Resource" path="res://data/foes/skeleton.tres" id="4"]
+[ext_resource type="Resource" path="res://data/foes/wisp.tres" id="5"]
+[ext_resource type="Resource" path="res://data/foes/summoning_priest.tres" id="6"]
+[sub_resource type="Resource" id="Wave0"]
+script = ExtResource("2")
+foes = Array[ExtResource("3")]([ExtResource("4"), ExtResource("5")])
+counts = Array[int]([10, 4])
+spawns_per_second = 4.0
+[resource]
+script = ExtResource("1")
+id = &"ossuary"
+display_name = "納骨堂"
+kind = 2
+difficulty = 3
+condition = "召喚の司祭を倒す"
+foe_summary = "召喚の司祭。骨の兵を呼び続ける"
+expected_time = 160
+reward_weights = {2: 1.0}
+echo = 280
+size = Vector2i(34, 24)
+theme = 5
+pillars = Array[Vector2i]([Vector2i(8, 6), Vector2i(24, 6), Vector2i(8, 16), Vector2i(24, 16)])
+waves = Array[ExtResource("2")]([SubResource("Wave0")])
+boss = ExtResource("6")

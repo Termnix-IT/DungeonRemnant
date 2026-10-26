@@ -45,6 +45,8 @@ BOARDS = [
 	("emblems_k.png", 2, 3, ["special_surge", "special_mastery", "event_merchant", "event_altar", "event_curse", "seal_chapter"]),
 	("emblems_l.png", 1, 2, ["weapon_spear", "weapon_hammer"]),
 	("emblems_m.png", 1, 1, ["weapon_sword"]),
+	("emblems_n.png", 2, 3, ["spirit_blade", "crescent_cut", "shatter_crystal", "spreading_flame", "thunder_charge", "wisp_step"]),
+	("emblems_o.png", 1, 2, ["wisp_shot", "event_shelf"]),
 ]
 
 

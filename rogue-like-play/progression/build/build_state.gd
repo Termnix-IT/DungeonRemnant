@@ -65,11 +65,12 @@ func can_offer() -> bool:
 	return pool.any(func(boon: BoonData): return can_take(boon) and boon.weight > 0.0)
 
 
-# Up to `count` different boons that can be taken, picked by weight.
-func offer(rng: RandomNumberGenerator, count: int = OFFER_COUNT) -> Array[BoonData]:
+# Up to `count` different boons that can be taken, picked by weight, none
+# of those `excluded` names.
+func offer(rng: RandomNumberGenerator, count: int = OFFER_COUNT, excluded: Array[StringName] = []) -> Array[BoonData]:
 	var candidates: Array[BoonData] = []
 	for boon in pool:
-		if can_take(boon) and boon.weight > 0.0:
+		if can_take(boon) and boon.weight > 0.0 and not excluded.has(boon.id):
 			candidates.append(boon)
 	var picked: Array[BoonData] = []
 	while picked.size() < count and not candidates.is_empty():
@@ -94,6 +95,23 @@ func take(boon: BoonData) -> bool:
 	ranks[boon.id] = rank(boon.id) + 1
 	changed.emit()
 	return true
+
+
+# A boon given up with all its ranks (the shelf of memories); returns the
+# rank it had, 0 if it was not held.
+func give_up(id: StringName) -> int:
+	var had := rank(id)
+	if had > 0:
+		ranks.erase(id)
+		changed.emit()
+	return had
+
+
+# A boon given back at the rank it had (a trade that found nothing to offer).
+func restore(id: StringName, at_rank: int) -> void:
+	if at_rank > 0:
+		ranks[id] = at_rank
+		changed.emit()
 
 
 func stat(name: StringName) -> float:

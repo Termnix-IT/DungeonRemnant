@@ -45,6 +45,12 @@ const BOONS: Array[BoonData] = [
 	preload("res://data/boons/thunder_step.tres"),
 	preload("res://data/boons/aftershock.tres"),
 	preload("res://data/boons/flame_art.tres"),
+	preload("res://data/boons/spirit_blade.tres"),
+	preload("res://data/boons/crescent_cut.tres"),
+	preload("res://data/boons/shatter_crystal.tres"),
+	preload("res://data/boons/spreading_flame.tres"),
+	preload("res://data/boons/thunder_charge.tres"),
+	preload("res://data/boons/wisp_step.tres"),
 ]
 
 var progression := RunProgression.new()

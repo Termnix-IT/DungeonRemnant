@@ -92,7 +92,7 @@ func run_tests() -> void:
 				trials.append(area)
 			else:
 				others.append(area)
-	check(trials.size() == 2 and trials.all(func(area: AreaData): return area.branches == Vector2i(3, 3)), "The trials open three ways on")
+	check(trials.size() == 3 and trials.all(func(area: AreaData): return area.branches == Vector2i(3, 3)), "The trials open three ways on")
 	check(others.all(func(area: AreaData): return area.branches == Vector2i(1, 2)), "The other stages and the events open one or two")
 	var opens_whole := true
 	var within := true
@@ -174,7 +174,10 @@ func run_tests() -> void:
 		for waypoint: RouteMap.Waypoint in map.nodes(0):
 			woods_shaped = woods_shaped and waypoint.area.kind == AreaData.Kind.FIELD
 	check(woods_shaped and woods.layers == 4 and woods.boss.boss.id == &"gale_wolf_king", "The second chapter runs four layers to the storm wolf, fields first")
-	check(Chapters.ALL == [chapter, woods] and chapter.unlocked_by.is_empty() and woods.unlocked_by == chapter.id, "The chapters come in order, each opened by the one before")
+	var opened_in_order := Chapters.ALL[0] == chapter and Chapters.ALL[1] == woods and chapter.unlocked_by.is_empty()
+	for index in range(1, Chapters.ALL.size()):
+		opened_in_order = opened_in_order and Chapters.ALL[index].unlocked_by == Chapters.ALL[index - 1].id
+	check(Chapters.ALL.size() == 3 and opened_in_order, "The chapters come in order, each opened by the one before")
 
 	# Every chapter's areas' data.
 	var areas: Array[AreaData] = []

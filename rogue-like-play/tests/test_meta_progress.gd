@@ -40,7 +40,7 @@ func run_tests() -> void:
 
 	# The upgrade tree: one root, every other node grows from one in the tree,
 	# no two share a cell, and the seals keep their cells free.
-	check(MetaProgress.UPGRADES.size() == 29, "The root, ten body nodes, eight growth nodes, four skill nodes, four special nodes and two weapon nodes")
+	check(MetaProgress.UPGRADES.size() == 30, "The root, ten body nodes, eight growth nodes, five skill nodes, four special nodes and two weapon nodes")
 	var cells := {}
 	var roots := 0
 	var grown := true

@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="BoonData" load_steps=7 format=3]
+[ext_resource type="Script" path="res://progression/build/boon_data.gd" id="1"]
+[ext_resource type="Script" path="res://progression/build/boon_effect.gd" id="2"]
+[ext_resource type="Script" path="res://progression/build/attack_boon.gd" id="3"]
+[ext_resource type="Script" path="res://combat/action/projectile_data.gd" id="4"]
+[sub_resource type="Resource" id="Shot"]
+script = ExtResource("4")
+speed = 680.0
+distance = 260.0
+radius = 22.0
+damage_scale = 0.7
+knockback = 120.0
+effect = &"magic"
+size = 72.0
+[sub_resource type="Resource" id="Effect0"]
+script = ExtResource("3")
+when = 2
+combo_step = 0
+distance_per_rank = 80.0
+projectile = SubResource("Shot")
+[resource]
+script = ExtResource("1")
+id = &"spirit_blade"
+display_name = "霊刃"
+description = "1段目の攻撃が霊の刃を飛ばす"
+families = Array[String](["連撃"])
+max_level = 3
+weight = 1.0
+emblem = "spirit_blade"
+effects = Array[ExtResource("2")]([SubResource("Effect0")])

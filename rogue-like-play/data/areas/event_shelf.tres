@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AreaData" load_steps=2 format=3]
+[ext_resource type="Script" path="res://world/areas/area_data.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"event_shelf"
+display_name = "記憶の書架"
+kind = 3
+difficulty = 1
+condition = "強化を手放して、別の強化を得る"
+foe_summary = "古い記憶を綴じた書架。戦闘はない"
+expected_time = 30
+reward_weights = {0: 1.0}
+echo = 0
+event = &"shelf"
+emblem = "event_shelf"

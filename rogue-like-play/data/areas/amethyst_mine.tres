@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AreaData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://world/areas/area_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/spawns/amethyst_mine.tres" id="2"]
+[resource]
+script = ExtResource("1")
+id = &"amethyst_mine"
+display_name = "紫晶の坑道"
+kind = 0
+difficulty = 3
+condition = "敵を240体倒す"
+foe_summary = "霊火とネズミが多く、番人が早い"
+expected_time = 170
+reward_weights = {0: 0.3, 1: 0.15, 2: 0.55}
+echo = 130
+size = Vector2i(86, 62)
+theme = 5
+scattered_pillars = 28
+kill_target = 240
+spawn_table = ExtResource("2")

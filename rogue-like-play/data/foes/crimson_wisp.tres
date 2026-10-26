@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="FoeData" load_steps=4 format=3]
+[ext_resource type="Script" path="res://actors/foes/foe_data.gd" id="1"]
+[ext_resource type="Script" path="res://combat/action/attack_data.gd" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/wisp_shot.tres" id="3"]
+[resource]
+script = ExtResource("1")
+id = &"crimson_wisp"
+display_name = "紅の霊火"
+description = "血の色に燃える霊火。消えにくく、霊弾も重い。帯から外れて近づき叩くのは変わらない。
+難易度の段階7から、第3章のフィールドの群れに混ざる。"
+visual_id = "wisp"
+baked = true
+tint = Color(1, 0.52, 0.5, 1)
+size_scale = 1.25
+max_hp = 45
+defense = 0
+speed = 100.0
+acceleration = 700.0
+speed_spread = 0.15
+contact_damage = 5
+contact_knockback = 180.0
+contact_cooldown = 0.9
+hit_radius = 12.0
+knockback_resist = 0.0
+hitstun = 0.25
+exp_reward = 3
+attacks = Array[ExtResource("2")]([ExtResource("3")])
+power = 13.0
+attack_cooldown = 2.2

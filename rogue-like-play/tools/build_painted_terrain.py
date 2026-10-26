@@ -64,7 +64,7 @@ TREES = ["a", "b", "c", "d"]
 # half its size, over SEAM_BAND of it from every edge, so the edges meet.
 SEAM_FIX = {"ember", "sanctum"}
 # The theme whose stairs and pillar a theme without its own takes.
-BORROWS = {"grove": "moss"}
+BORROWS = {"grove": "moss", "crypt": "sanctum"}
 SEAM_BAND = 0.18
 # Objects on their floor cell, as a share of the cell.
 PILLAR_SIZE = 0.9
