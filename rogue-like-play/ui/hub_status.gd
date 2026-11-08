@@ -2,7 +2,7 @@ class_name HubStatus
 extends Control
 
 # The status page, laid out as the fight shows her actions: on the slab from
-# the left, a stone bar with her four slots as the HUD's round sockets
+# the left, a row of her four slots as the HUD's round sockets
 # (EquipSocket), each with its key under it (the attack, fixed to the weapon
 # (the sword, or one learned on the weapon branch); the two skills on Q / Y
 # and E / B; the special move on R / LB, sealed until one is learned). From
@@ -24,22 +24,13 @@ const SLOT_DIAMETER := 96.0
 const TILE_DIAMETER := 72.0
 const TILE_COLUMNS := 8
 const PICTURE_SIZE := 150.0
-# The tiers stand flush (StatusSlabStack): the reach is the gap between the
-# pedestal and the shelf, and the shelf's pennant hangs in the gap under it
-# and over the tablet's top edge.
+# The slab's parts stand flush (StatusSlabStack): the reach is the gap
+# between the slots and the shelf.
 const REACH_HEIGHT := 30.0
-const PENNANT_ROOM := 26.0
 # The light running down the reach: its speed, spacing and tail (px).
 const FLOW_SPEED := 60.0
 const FLOW_SPACING := 46.0
 const FLOW_TAIL := 16.0
-# Her figure behind the slab: its height against the slab's, its middle's
-# place across it, and how far its feet sink under the foot.
-const FIGURE_HEIGHT := 1.06
-const FIGURE_LEFT := 0.1
-const FIGURE_SINK := 30.0
-# How far a hung ornament tucks up under its panel's edge.
-const ORNAMENT_TUCK := 6.0
 const STAT_MARKER := 14.0
 const UNKNOWN_NAME := "？？？"
 const UNKNOWN_NOTE := "強化ツリーのスキルの枝で習得できる"
@@ -80,7 +71,6 @@ var stats: HBoxContainer
 var _slab: VBoxContainer
 var _info: VBoxContainer
 var _reach: Control
-var _figure: Control
 var _tiles: GridContainer
 var _tile_note: Label
 var _stat_columns: Array[GridContainer] = []
@@ -100,26 +90,11 @@ func _ready() -> void:
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_slab = HubUI.open_column(columns, 2.1, &"SlabSolid")
-	# Behind the slab's three tiers, her figure, dimmed into the dark at the
-	# left; the tiers stand right of her.
-	var slab_panel := _slab.get_parent() as Control
-	slab_panel.clip_contents = true
-	slab_panel.remove_child(_slab)
-	_figure = Control.new()
-	_figure.name = "Figure"
-	_figure.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_figure.draw.connect(_draw_figure)
-	slab_panel.add_child(_figure)
-	var slab_margin := MarginContainer.new()
-	slab_margin.theme_type_variation = &"StatusSlabMargin"
-	slab_panel.add_child(slab_margin)
-	slab_margin.add_child(_slab)
 	_slab.theme_type_variation = &"StatusSlabStack"
-	# The pedestal: her four slots as the fight's HUD shows them, a crest on
-	# its top edge.
+	# Her four slots as the fight's HUD shows them, on the slab itself: no
+	# frame of their own, as no part of the slab has one.
 	var bar := PanelContainer.new()
 	bar.theme_type_variation = &"EquipBar"
-	bar.draw.connect(func() -> void: _draw_ornament(bar, &"EquipBar", &"crest", true))
 	_slab.add_child(bar)
 	var row := HBoxContainer.new()
 	row.theme_type_variation = &"EquipRow"
@@ -142,7 +117,7 @@ func _ready() -> void:
 	_reach.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_reach.draw.connect(_draw_reach)
 	_slab.add_child(_reach)
-	# The shelf: what the chosen slot can hold, a pennant hung under it.
+	# The shelf: what the chosen slot can hold.
 	var shelf := PanelContainer.new()
 	shelf.theme_type_variation = &"EquipShelfPlate"
 	_slab.add_child(shelf)
@@ -154,13 +129,8 @@ func _ready() -> void:
 	_tiles.item_rect_changed.connect(_reach.queue_redraw)
 	middle.add_child(_tiles)
 	_tile_note = _centered(HubUI.label(_slab, "", &"MutedLabel"))
-	var hang := Control.new()
-	hang.custom_minimum_size.y = PENNANT_ROOM
-	hang.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hang.z_index = 1
-	hang.draw.connect(func() -> void: _draw_ornament(hang, &"EquipShelfPlate", &"pennant", false))
-	_slab.add_child(hang)
-	# The tablet: her figures carved in two columns, filling the slab's foot.
+	HubUI.rule(_slab)
+	# Her figures in two columns, under the rule.
 	var tablet := PanelContainer.new()
 	tablet.theme_type_variation = &"StatusTablet"
 	tablet.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -172,7 +142,7 @@ func _ready() -> void:
 		var grid := GridContainer.new()
 		grid.columns = 4
 		grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		grid.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		grid.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		stats.add_child(grid)
 		_stat_columns.append(grid)
 	_info = HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
@@ -483,26 +453,6 @@ func _along(path: PackedVector2Array, distance: float) -> Vector2:
 	return path[path.size() - 1]
 
 
-# Her figure, dimmed, standing at the slab's left from its foot.
-func _draw_figure() -> void:
-	var texture := HubLobby.HERO_TEXTURE
-	var tall := _figure.size.y * FIGURE_HEIGHT
-	var wide := tall * texture.get_width() / texture.get_height()
-	var rect := Rect2(Vector2(FIGURE_LEFT * _figure.size.x - wide * 0.5, _figure.size.y - tall + FIGURE_SINK), Vector2(wide, tall))
-	_figure.draw_texture_rect(texture, rect, false, get_theme_color(&"tint", &"StatusFigure"))
-
-
-# A painted ornament of a tier's theme type, centred across `canvas`: astride
-# its top edge (the pedestal's crest), or hung from its top, tucked up under
-# the tier above (the shelf's pennant, drawn on the gap under the shelf).
-func _draw_ornament(canvas: Control, type: StringName, icon: StringName, astride: bool) -> void:
-	if not canvas.has_theme_icon(icon, type):
-		return
-	var texture := canvas.get_theme_icon(icon, type)
-	var at := Vector2(canvas.size.x * 0.5 - texture.get_width() * 0.5, -texture.get_height() * 0.5 if astride else -ORNAMENT_TUCK)
-	canvas.draw_texture(texture, at)
-
-
 # --- The column ---
 
 func _tell(id: StringName) -> void:
@@ -682,7 +632,7 @@ func _show_stats() -> void:
 	for index in shown.size():
 		var row: Array = shown[index]
 		var grid := _stat_columns[0 if index < half else 1]
-		# Each row opens with a small gilt diamond, as lines carved on a tablet.
+		# Each row opens with a small gilt diamond.
 		var marker := Control.new()
 		marker.custom_minimum_size = Vector2(STAT_MARKER, STAT_MARKER)
 		marker.size_flags_vertical = Control.SIZE_SHRINK_CENTER

@@ -31,11 +31,6 @@
 [ext_resource type="Texture2D" path="res://art/ui/ink_plate.png" id="InkPlateTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/slab_stone.png" id="SlabStoneTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/key_cap.png" id="HudKeyCapTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/status/pedestal.png" id="StatusPedestalTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/status/shelf.png" id="StatusShelfTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/status/tablet.png" id="StatusTabletTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/status/crest.png" id="StatusCrestTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/status/pennant.png" id="StatusPennantTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/key_cap_active.png" id="HudKeyCapActiveTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/dialog_plate.png" id="DialogPlateTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/medallion.png" id="HudMedallionTexture"]
@@ -1333,41 +1328,26 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxTexture" id="EquipBarFrame"]
+[sub_resource type="StyleBoxEmpty" id="EquipBarFrame"]
 resource_name = "EquipBarFrame"
-texture = ExtResource("StatusPedestalTexture")
-texture_margin_left = 50.0
-texture_margin_top = 50.0
-texture_margin_right = 50.0
-texture_margin_bottom = 50.0
-content_margin_left = 44.0
-content_margin_top = 6.0
-content_margin_right = 44.0
-content_margin_bottom = 6.0
+content_margin_left = 0.0
+content_margin_top = 24.0
+content_margin_right = 0.0
+content_margin_bottom = 12.0
 
-[sub_resource type="StyleBoxTexture" id="EquipShelfFrame"]
+[sub_resource type="StyleBoxEmpty" id="EquipShelfFrame"]
 resource_name = "EquipShelfFrame"
-texture = ExtResource("StatusShelfTexture")
-texture_margin_left = 34.0
-texture_margin_top = 26.0
-texture_margin_right = 34.0
-texture_margin_bottom = 42.0
-content_margin_left = 36.0
-content_margin_top = 8.0
-content_margin_right = 36.0
-content_margin_bottom = 34.0
+content_margin_left = 0.0
+content_margin_top = 6.0
+content_margin_right = 0.0
+content_margin_bottom = 20.0
 
-[sub_resource type="StyleBoxTexture" id="StatusTabletFrame"]
+[sub_resource type="StyleBoxEmpty" id="StatusTabletFrame"]
 resource_name = "StatusTabletFrame"
-texture = ExtResource("StatusTabletTexture")
-texture_margin_left = 32.0
-texture_margin_top = 32.0
-texture_margin_right = 32.0
-texture_margin_bottom = 32.0
-content_margin_left = 40.0
-content_margin_top = 16.0
-content_margin_right = 40.0
-content_margin_bottom = 16.0
+content_margin_left = 24.0
+content_margin_top = 20.0
+content_margin_right = 24.0
+content_margin_bottom = 10.0
 
 [resource]
 DetailStack/base_type = &"VBoxContainer"
@@ -2270,10 +2250,5 @@ EquipShelfPlate/base_type = &"PanelContainer"
 EquipShelfPlate/styles/panel = SubResource("EquipShelfFrame")
 StatusTablet/base_type = &"PanelContainer"
 StatusTablet/styles/panel = SubResource("StatusTabletFrame")
-StatusSlabMargin/base_type = &"MarginContainer"
-StatusSlabMargin/constants/margin_left = 200
-StatusFigure/colors/tint = Color(0.42, 0.4, 0.4, 0.42)
-EquipBar/icons/crest = ExtResource("StatusCrestTexture")
-EquipShelfPlate/icons/pennant = ExtResource("StatusPennantTexture")
 StatusSlabStack/base_type = &"VBoxContainer"
 StatusSlabStack/constants/separation = 0
