@@ -36,6 +36,9 @@ extends Resource
 @export var figure := ""
 @export var figure_base := 0.0
 @export var figure_scale := 1.0
+# How finely the figure's numbers are told: 0.1 for a reach in cells (a
+# distance's pixels times 1 / AreaGround.CELL), where finer would be noise.
+@export var figure_snap := 0.01
 
 
 func max_rank() -> int:
@@ -100,5 +103,5 @@ func description_restates_figure(rank: int) -> bool:
 
 
 func _number(raw: float) -> String:
-	var value := snappedf(raw, 0.01)
+	var value := snappedf(raw, figure_snap)
 	return str(roundi(value)) if is_equal_approx(value, roundf(value)) else str(value)

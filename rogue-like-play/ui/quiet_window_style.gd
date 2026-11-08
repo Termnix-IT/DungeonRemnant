@@ -2,11 +2,12 @@ class_name QuietWindowStyle
 extends StyleBox
 
 # The quiet surface of a popup window and of a hub page's main panel: a dark
-# see-through face, a hairline edge, and a gold line along its top, the
-# only ornament. A soft shadow below lifts it off what it covers.
-# A page's two columns are one panel: each draws only its own edges (`sides`)
-# and lets the gold line fade towards its outer end only (`accent_fade`), so
-# the line runs on across the hairline between them.
+# see-through face, a hairline edge, and on a popup a gold line along its
+# top, the only ornament (a page's panel leaves it out, its accent clear, so
+# it does not read as a web page's card). A soft shadow below lifts it off
+# what it covers. A page's two columns are one panel: each draws only its
+# own edges (`sides`), and the line fades towards its outer end only
+# (`accent_fade`), so it would run on across the hairline between them.
 
 const SHADOW_STEPS := 6
 const SIDE_LEFT := 1
@@ -50,6 +51,8 @@ func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 		if sides & side:
 			server.canvas_item_add_rect(to_canvas_item, lines[side], edge)
 	# The gold line along the top, fading towards the ends it is told to.
+	if accent.a <= 0.0:
+		return
 	var top := rect.position.y + accent_width * 0.5
 	var faint := Color(accent, accent.a * 0.15)
 	var left_color := faint if accent_fade in [Fade.BOTH, Fade.LEFT] else accent

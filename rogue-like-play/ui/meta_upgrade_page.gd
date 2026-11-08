@@ -136,7 +136,9 @@ func _ready() -> void:
 	columns.theme_type_variation = &"ShopColumns"
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_tree_column = HubUI.open_column(columns, 2.1, &"SlabSolid")
+	# The right column stands in its own ornate frame, so no hairline parts
+	# the two columns (SlabSolidOpen).
+	_tree_column = HubUI.open_column(columns, 2.1, &"SlabSolidOpen")
 	# The tree's own opaque well, so the moving board never runs over the slab.
 	var well := PanelContainer.new()
 	well.theme_type_variation = &"TreeWell"

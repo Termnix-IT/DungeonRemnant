@@ -32,6 +32,8 @@ const FLOW_SPEED := 60.0
 const FLOW_SPACING := 46.0
 const FLOW_TAIL := 16.0
 const STAT_MARKER := 14.0
+# Distances are told in the floor's cells (AreaGround.CELL), to a tenth.
+const CELL_SNAP := 0.1
 const UNKNOWN_NAME := "？？？"
 const UNKNOWN_NOTE := "強化ツリーのスキルの枝で習得できる"
 const UNKNOWN_SPECIAL_NOTE := "強化ツリーの必殺技の枝で習得できる"
@@ -89,7 +91,9 @@ func _ready() -> void:
 	columns.theme_type_variation = &"ShopColumns"
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_slab = HubUI.open_column(columns, 2.1, &"SlabSolid")
+	# The right column stands in its own ornate frame, so no hairline parts
+	# the two columns (SlabSolidOpen).
+	_slab = HubUI.open_column(columns, 2.1, &"SlabSolidOpen")
 	_slab.theme_type_variation = &"StatusSlabStack"
 	# Her four slots as the fight's HUD shows them, on the slab itself: no
 	# frame of their own, as no part of the slab has one.
@@ -570,13 +574,18 @@ func _tell_special(move: SpecialData) -> void:
 # line's length, a circle's radius, an arc's reach.
 func _reach_text(attack: AttackData) -> String:
 	if attack.projectile != null:
-		return "射程 %dpx" % roundi(attack.projectile.distance)
+		return "射程 %s" % _cells(attack.projectile.distance)
 	match attack.shape:
 		AttackData.Shape.LINE:
-			return "範囲 長さ%dpx" % roundi(attack.reach)
+			return "範囲 長さ%s" % _cells(attack.reach)
 		AttackData.Shape.CIRCLE:
-			return "範囲 半径%dpx" % roundi(attack.reach)
-	return "範囲 %dpx" % roundi(attack.reach)
+			return "範囲 半径%s" % _cells(attack.reach)
+	return "範囲 %s" % _cells(attack.reach)
+
+
+# A distance in pixels as the floor's cells ("2.9マス").
+func _cells(pixels: float) -> String:
+	return _number(pixels / AreaGround.CELL, CELL_SNAP) + "マス"
 
 
 func _draw_picture() -> void:
@@ -598,7 +607,7 @@ func stat_rows() -> Array:
 	rows.append(["移動速度", str(roundi(tuned.max_speed)), _added(roundi(tuned.max_speed - _base.max_speed), ""), _breakdown(&"move_speed", str(roundi(_base.max_speed)), "%", 100.0), true])
 	rows.append(["ダッシュ", "%d回 / %s秒" % [tuned.dash_charges, _number(tuned.dash_cooldown)], "", "基礎 %d回 / %s秒%s%s" % [_base.dash_charges, _number(_base.dash_cooldown), _parts(&"dash_charges", "回", 1.0), _parts(&"dash_cooldown", "秒", 1.0)], true])
 	rows.append(["被弾後の無敵", "%s秒" % _number(tuned.hurt_mercy), "", _breakdown(&"hurt_mercy", "%s秒" % _number(_base.hurt_mercy), "秒"), false])
-	rows.append(["宝石を吸い寄せる範囲", "%dpx" % roundi(GemField.PULL_RADIUS + rules[&"gem_pull"]), "", _breakdown(&"gem_pull", "%dpx" % roundi(GemField.PULL_RADIUS), "px"), false])
+	rows.append(["宝石を吸い寄せる範囲", _cells(GemField.PULL_RADIUS + rules[&"gem_pull"]), "", _breakdown(&"gem_pull", _cells(GemField.PULL_RADIUS), "マス", 1.0 / AreaGround.CELL, CELL_SNAP), false])
 	rows.append(["回復の報酬", "最大HPの%d%%" % roundi((RunDirector.HEAL_SHARE + rules[&"heal_share"]) * 100.0), "", _breakdown(&"heal_share", "%d%%" % roundi(RunDirector.HEAL_SHARE * 100.0), "%", 100.0), false])
 	rows.append(["報酬の残響", "+%d%%" % roundi(rules[&"echo_rate"] * 100.0), "", _breakdown(&"echo_rate", "+0%", "%", 100.0), false])
 	rows.append(["得る経験値", "+%d%%" % roundi(rules[&"exp_rate"] * 100.0), "", _breakdown(&"exp_rate", "+0%", "%", 100.0), false])
@@ -661,22 +670,22 @@ func _added(amount: int, unit: String) -> String:
 
 
 # "基礎 100 ＋ 鍛えた体 +45": the base and each upgrade held that adds to it.
-func _breakdown(effect: StringName, base: String, unit: String, scale: float = 1.0) -> String:
-	return "基礎 %s%s" % [base, _parts(effect, unit, scale)]
+func _breakdown(effect: StringName, base: String, unit: String, scale: float = 1.0, snap: float = 0.01) -> String:
+	return "基礎 %s%s" % [base, _parts(effect, unit, scale, snap)]
 
 
-func _parts(effect: StringName, unit: String, scale: float) -> String:
+func _parts(effect: StringName, unit: String, scale: float, snap: float = 0.01) -> String:
 	var text := ""
 	for upgrade in MetaProgress.UPGRADES:
 		var rank := meta.rank(upgrade.id)
 		if upgrade.effect == effect and rank > 0:
 			var amount := upgrade.per_rank * rank * scale
-			text += "　＋ %s %s%s%s" % [upgrade.display_name, "+" if amount >= 0.0 else "", _number(amount), unit]
+			text += "　＋ %s %s%s%s" % [upgrade.display_name, "+" if amount >= 0.0 else "", _number(amount, snap), unit]
 	return text
 
 
-func _number(value: float) -> String:
-	var snapped := snappedf(value, 0.01)
+func _number(value: float, snap: float = 0.01) -> String:
+	var snapped := snappedf(value, snap)
 	return str(roundi(snapped)) if is_equal_approx(snapped, roundf(snapped)) else str(snapped)
 
 
