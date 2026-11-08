@@ -305,7 +305,7 @@ func show_page(target: String) -> void:
 				sortie_page.refresh(_meta, chapter, step)
 			sortie_page.focus_selected()
 			key_guide.add_hint("Enter", "A", "出撃", sortie_page.set_out)
-			key_guide.add_hint("↑ / ↓", "▲ / ▼", "選ぶ")
+			key_guide.add_hint("← / →", "◀ / ▶", "選ぶ")
 			if _meta != null and _meta.steps_open() > 0:
 				key_guide.add_hint("Q / E", "LB / RB", "段階")
 			key_guide.add_hint("Tab", "View", "装備", _status_from_sortie)

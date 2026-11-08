@@ -104,7 +104,7 @@ func run_tests() -> void:
 	run.end_view._button.pressed.emit()
 	await process_frame
 	check(main.active_run == null and hub.visible and hub.page == "home" and not paused, "The way home returns to the lobby")
-	check(hub.echo_label.text == UIFormat.amount(echo) and hub.sortie_page._states[0].text.begins_with("踏破"), "The base shows the echo brought home and the clear")
+	check(hub.echo_label.text == UIFormat.amount(echo) and hub.sortie_page.cards[0].state_label.text.begins_with("踏破"), "The base shows the echo brought home and the clear")
 	check(hub.chapter.id == &"gale_woods" and hub.home_page.title_label.text == hub.chapter.display_name, "The chapter the clear opened is the one offered next")
 
 	# A lost run keeps its echo.

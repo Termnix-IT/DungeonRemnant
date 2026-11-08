@@ -221,6 +221,24 @@ func select_card() -> void:
 	selection_tween.tween_property(control, "selection_strength", 1.0, SELECT_TIME)
 
 
+# A choice that stands forward while chosen (the departure's doors): its
+# `stand` eases from where it is to 1 (chosen) or 0 (not), in a detail's
+# time. Hidden, it takes its place at once.
+func stand(forward: bool) -> void:
+	if not &"stand" in control:
+		return
+	var goal := 1.0 if forward else 0.0
+	if selection_tween != null:
+		selection_tween.kill()
+	if not control.is_visible_in_tree():
+		control.stand = goal
+		return
+	if is_equal_approx(control.stand, goal):
+		return
+	selection_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	selection_tween.tween_property(control, "stand", goal, DETAIL_SLIDE_TIME)
+
+
 # A mark the control draws itself (a selection band, a tab's underline):
 # give the rect where it now belongs, draw the returned one. A new place
 # starts a slide from wherever the mark is shown now; the first place, and

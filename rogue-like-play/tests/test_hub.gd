@@ -62,14 +62,14 @@ func run_tests() -> void:
 	lobby.select(0)
 	check(lobby.title_label.text == hub.chapter.display_name and lobby.decide_button.text == "出撃先を選ぶ", "The departure names the chapter it opens on")
 
-	# Where to set out: the chapters as cards, the chosen one told beside them.
+	# Where to set out: the chapters as doors, the chosen one told beneath them.
 	lobby.activated.emit(&"departure")
 	await process_frame
 	var sortie: HubSortie = hub.sortie_page
 	check(hub.page == "sortie" and sortie.visible and main.active_run == null, "The departure opens where to set out, without setting out")
 	check(sortie.cards.size() == Chapters.ALL.size() and sortie.chosen() == Chapters.ALL[0] and sortie.cards[0].button_pressed and not sortie.cards[1].button_pressed, "It opens on the first chapter, marked chosen")
-	check(sortie.count_label.text.contains("0 / %d" % Chapters.ALL.size()) and sortie._states[0].text == "未踏" and sortie._states.slice(1).all(func(state: Label): return state.text == "封印中"), "Each card tells how far its chapter has been taken")
-	check(sortie.route_value.text == "3層とボス" and sortie.record_value.text == "なし" and sortie.boss_value.text == HubSortie.UNKNOWN_NAME, "The column tells the way, the record, and a boss not met yet unnamed")
+	check(sortie.count_label.text.contains("0 / %d" % Chapters.ALL.size()) and sortie.cards[0].state_label.text == "未踏" and sortie.cards.slice(1).all(func(door: ChapterDoor): return door.state_label.text == "封印中" and door.sealed), "Each door tells how far its chapter has been taken")
+	check(sortie.route_value.text == "3層とボス" and sortie.record_value.text == "なし" and sortie.boss_value.text == HubSortie.UNKNOWN_NAME, "The band tells the way, the record, and a boss not met yet unnamed")
 	var ruin_king: FoeData = load("res://data/foes/ruin_king.tres")
 	var first_foes := Chapters.foes(Chapters.ALL[0])
 	check(sortie.foe_row.get_child_count() == first_foes.size() and first_foes.has(ruin_king) and not first_foes.has(load("res://data/foes/gale_wolf_king.tres")), "The foes of the chapter are shown, its own boss among them")
@@ -77,9 +77,9 @@ func run_tests() -> void:
 	check(sortie.gear_row.get_child_count() == 2 and sortie.gear_row.get_child(0).tooltip_text == "剣", "What she carries is shown: the sword and the first skill")
 	check(not sortie.action_button.disabled and sortie.action_button.text == "第1章へ出撃する", "An open chapter can be set out for")
 	# The sealed chapter: chosen to read what opens it, not set out for.
-	root.push_input(key(KEY_DOWN))
+	root.push_input(key(KEY_RIGHT))
 	await process_frame
-	check(sortie.chosen().id == &"gale_woods" and sortie._locks[1].visible and sortie.banner_lock.visible and sortie.cards[1].button_pressed, "Down chooses the sealed chapter, shown locked")
+	check(sortie.chosen().id == &"gale_woods" and sortie.cards[1].sealed and sortie.cards[1].button_pressed and sortie.cards[1].has_focus(), "Right chooses the sealed chapter, shown sealed")
 	check(sortie.action_button.disabled and sortie.action_button.text == "第2章は封印中" and sortie.description_label.text.contains("第1章を踏破") and sortie.action_button.tooltip_text.contains("第1章を踏破"), "A sealed chapter says how it opens and cannot be set out for")
 	check(hub.chapter.id == &"ash_corridor", "Choosing a sealed chapter leaves the next departure where it was")
 	root.push_input(key(KEY_ENTER))
@@ -91,9 +91,9 @@ func run_tests() -> void:
 	main.meta.chapter_best[&"ash_corridor"] = 4
 	main.meta.met[ruin_king.id] = true
 	hub.refresh(main.meta)
-	check(hub.chapter.id == &"gale_woods" and sortie.chosen().id == &"gale_woods" and not sortie._locks[1].visible, "A chapter that has just opened is the one offered next")
-	check(not sortie.action_button.disabled and sortie.action_button.text == "第2章へ出撃する" and sortie._states[0].text == "踏破 1回" and sortie.count_label.text.contains("1 / %d" % Chapters.ALL.size()), "Once the first chapter is cleared, the second opens")
-	root.push_input(key(KEY_UP))
+	check(hub.chapter.id == &"gale_woods" and sortie.chosen().id == &"gale_woods" and not sortie.cards[1].sealed, "A chapter that has just opened is the one offered next")
+	check(not sortie.action_button.disabled and sortie.action_button.text == "第2章へ出撃する" and sortie.cards[0].state_label.text == "踏破 1回" and sortie.count_label.text.contains("1 / %d" % Chapters.ALL.size()), "Once the first chapter is cleared, the second opens")
+	root.push_input(key(KEY_LEFT))
 	await process_frame
 	check(hub.chapter.id == &"ash_corridor" and sortie.boss_value.text == ruin_king.display_name, "Choosing an open chapter makes it the next departure, and a boss met is named")
 	# Tab (View) to change what she carries, and back again.

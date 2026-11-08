@@ -1,22 +1,26 @@
 class_name HubSortie
 extends Control
 
-# Where to set out, laid out as quest boards and stage selects commonly lay
-# it out: on the slab from the left, how many chapters have been cleared and
-# the chapters as cards, each its painting, its number and name, and how far
-# it has been taken (未踏, 第2層まで, 踏破 2回, or 封印中 with the painting
-# dark and a lock on it). In the column on the right, the chosen chapter's
-# painting, name and line; its way, record and boss (the boss unnamed until
-# met, as in the encyclopedia); the foes that come in it, pictured when met
-# and dark shapes when not; what she carries; once the ending has opened the
-# difficulty steps, the step to set out at (as Slay the Spire offers its
-# ascension: the step, what it adds, and the echo it brings back; Q / E or
-# LB / RB change it); and the one action, setting out. A sealed chapter can
-# be chosen to read what opens it, not set out for.
+# Where to set out, laid out as stage selects that set their places side by
+# side as doors lay it out (Halls of Torment, Slay the Spire): how many
+# chapters have been cleared, then the chapters as doors standing in the
+# hall (ChapterDoor), each its painting, its number and name, and how far it
+# has been taken (未踏, 第2層まで, 踏破 2回, or 封印中 with the door dark and
+# sealed). The chosen door stands forward; the others stand back.
 #
-# Keys and the gamepad choose by moving the focus, and Enter (A) on a
-# chapter sets out at once, as Enter on an upgrade's node buys it. The
-# pointer chooses by resting or clicking, and sets out with the button.
+# Beneath, one band on the panel's two columns. On the left, the chosen
+# chapter's line; its way, record and boss (the boss unnamed until met, as
+# in the encyclopedia); the foes that come in it, pictured when met and dark
+# shapes when not; and what she carries. On the right, once the ending has
+# opened the difficulty steps, the step to set out at (as Slay the Spire
+# offers its ascension: the step, what it adds, and the echo it brings
+# back; Q / E or LB / RB change it); and the one action, setting out. A
+# sealed chapter can be chosen to read what opens it, not set out for.
+#
+# Left and right (the d-pad, the left stick) choose by moving the focus
+# along the doors, and Enter (A) on a door sets out at once, as Enter on an
+# upgrade's node buys it. The pointer chooses by resting or clicking, and
+# sets out with the button.
 
 signal departure_requested(chapter: ChapterData)
 # The chosen chapter, when it is open: the lobby shows it next.
@@ -24,256 +28,181 @@ signal chapter_chosen(chapter: ChapterData)
 # The difficulty step chosen to set out at.
 signal step_chosen(step: int)
 
-const CARD_HEIGHT := 132.0
-const THUMB_SIZE := Vector2(192, 108)
-const CARD_LOCK_SIZE := 40.0
-const BANNER_HEIGHT := 250.0
-const BANNER_LOCK_SIZE := 64.0
-const FOE_SIZE := 64.0
-const EMBLEM_SIZE := 48.0
-const CAPTION_WIDTH := 112.0
-# The facts stand on the column's left edge, like the lines above and below.
-const FACT_WIDTH := 240.0
+const DOOR_SIZE := Vector2(252, 404)
+# Where across each chapter's painting its door looks: on the way in, the
+# lit stair or gate each painting is drawn round.
+const DOOR_FOCUS := {
+	&"ash_corridor": 0.8,
+	&"gale_woods": 0.84,
+	&"amethyst_mausoleum": 0.73,
+	&"abyss_of_echoes": 0.74,
+}
+const FOE_SIZE := 52.0
+const EMBLEM_SIZE := 40.0
+# Room between the facts, and between the foes and what she carries.
+const FACT_GAP := 40.0
 const STEP_VALUE_WIDTH := 44.0
 const UNKNOWN_NAME := "？？？"
 
 var meta: MetaProgress
-var cards: Array[Button] = []
+var cards: Array[ChapterDoor] = []
 var selected := 0
 var count_label: Label
-var banner_art: TextureRect
-var banner_lock: TextureRect
-var name_label: Label
 var description_label: Label
 var route_value: Label
 var record_value: Label
 var boss_value: Label
 var foe_row: HBoxContainer
 var gear_row: HBoxContainer
-# The difficulty step row (hidden until the ending opens the steps), the
-# step chosen, and its parts.
-var step_row: HBoxContainer
+# The difficulty step (its rows hidden until the ending opens the steps),
+# the step chosen, and its parts.
+var step_row: VBoxContainer
 var step := 0
 var step_value: Label
 var step_note: Label
 var step_down: Button
 var step_up: Button
 var action_button: Button
-var _list_column: VBoxContainer
+var _doors: HBoxContainer
+var _band: HBoxContainer
 var _info: VBoxContainer
-var _thumbs: Array[TextureRect] = []
-var _locks: Array[TextureRect] = []
-var _names: Array[Label] = []
-var _states: Array[Label] = []
+var _decide: VBoxContainer
 var _hover_target: Control
 # The last press came from the pointer (it chooses, never sets out).
 var _by_pointer := false
-# The chapter the column tells now: choosing it again (a click lands as a
-# focus and a press) neither redraws nor slides the column.
+# The chapter the band tells now: choosing it again (a click lands as a
+# focus and a press) neither redraws nor slides the band.
 var _shown: ChapterData
 
 
 func _ready() -> void:
-	var columns := HBoxContainer.new()
-	columns.theme_type_variation = &"ShopColumns"
-	add_child(columns)
-	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_list_column = HubUI.open_column(columns, 0.6, &"SlabSolid")
-	count_label = HubUI.label(_list_column, "", &"NoteLabel")
+	var stack := VBoxContainer.new()
+	stack.theme_type_variation = &"DetailStack"
+	add_child(stack)
+	stack.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	count_label = HubUI.label(stack, "", &"NoteLabel")
+	var hall := CenterContainer.new()
+	hall.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	hall.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stack.add_child(hall)
+	_doors = HBoxContainer.new()
+	_doors.theme_type_variation = &"DoorRow"
+	hall.add_child(_doors)
 	for index in Chapters.ALL.size():
-		cards.append(_card(index))
-	for index in cards.size():
-		cards[index].focus_neighbor_top = cards[maxi(0, index - 1)].get_path()
-		cards[index].focus_neighbor_bottom = cards[mini(cards.size() - 1, index + 1)].get_path()
-	_info = HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
-	# The account slides in from the right edge, kept inside its column.
+		cards.append(_door(index))
+	_band = HBoxContainer.new()
+	_band.theme_type_variation = &"ShopColumns"
+	stack.add_child(_band)
+	_info = HubUI.open_column(_band, 1.75, &"SlabSolid")
+	# The account slides in from the right, kept inside its column.
 	(_info.get_parent() as Control).clip_contents = true
 	_info.theme_type_variation = &"DetailStack"
-	_build_banner()
-	name_label = HubUI.label(_info, "", &"HeadingLabel")
-	name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	description_label = HubUI.label(_info, "", &"DescriptionLabel")
-	HubUI.rule(_info)
 	var facts := HBoxContainer.new()
-	facts.theme_type_variation = &"ListRow"
+	facts.theme_type_variation = &"CompactRow"
 	_info.add_child(facts)
 	route_value = _fact(facts, "道のり")
 	record_value = _fact(facts, "記録")
 	boss_value = _fact(facts, "ボス")
-	foe_row = _row("現れる敵")
-	gear_row = _row("装備")
-	HubUI.space(_info)
+	HubUI.rule(_info)
+	var pictures := HBoxContainer.new()
+	pictures.theme_type_variation = &"CompactRow"
+	_info.add_child(pictures)
+	foe_row = _row(pictures, "現れる敵")
+	gear_row = _row(pictures, "装備")
+	_decide = HubUI.open_column(_band, 1.0, &"SlabSolidEnd")
+	_decide.theme_type_variation = &"DetailStack"
 	_build_step_row()
-	action_button = HubUI.primary_action(_info, "", set_out)
+	HubUI.space(_decide)
+	action_button = HubUI.primary_action(_decide, "", set_out)
 	action_button.name = "SetOut"
-	for card in cards:
-		card.focus_neighbor_right = action_button.get_path()
-	UIMotion.bind_buttons(_list_column)
-	UIMotion.bind_buttons(_info)
+	for index in cards.size():
+		var door := cards[index]
+		door.focus_neighbor_left = cards[maxi(0, index - 1)].get_path()
+		door.focus_neighbor_right = cards[mini(cards.size() - 1, index + 1)].get_path()
+		door.focus_neighbor_top = door.get_path()
+		door.focus_neighbor_bottom = action_button.get_path()
+	UIMotion.bind_buttons(_doors)
+	UIMotion.bind_buttons(_band)
 
 
-# A chapter's card: its painting on the left (dark and locked while sealed),
-# and beside it the number, the name and how far it has been taken. The
-# chosen card keeps the gold frame while the focus is on the button.
-func _card(index: int) -> Button:
-	var card := Button.new()
-	card.name = "Chapter%d" % (index + 1)
-	card.theme_type_variation = &"CardButton"
-	card.toggle_mode = true
-	card.custom_minimum_size.y = CARD_HEIGHT
-	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_list_column.add_child(card)
-	var row := HBoxContainer.new()
-	row.theme_type_variation = &"ListRow"
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.add_child(row)
-	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	row.offset_left = 12
-	row.offset_top = 12
-	row.offset_right = -16
-	row.offset_bottom = -12
-	var thumb := _painting(Chapters.ALL[index].illustration)
-	thumb.custom_minimum_size = THUMB_SIZE
-	thumb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	row.add_child(thumb)
-	_thumbs.append(thumb)
-	_locks.append(_lock(thumb, CARD_LOCK_SIZE))
-	var words := VBoxContainer.new()
-	words.theme_type_variation = &"CompactStack"
-	words.alignment = BoxContainer.ALIGNMENT_CENTER
-	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	words.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(words)
-	var number := HubUI.label(words, Chapters.short_name(Chapters.ALL[index]), &"NoteLabel")
-	number.autowrap_mode = TextServer.AUTOWRAP_OFF
-	var title := HubUI.label(words, Chapters.title(Chapters.ALL[index]), &"ItemNameLabel")
-	title.autowrap_mode = TextServer.AUTOWRAP_OFF
-	title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	_names.append(title)
-	var state := HubUI.label(words, "", &"MutedLabel")
-	state.autowrap_mode = TextServer.AUTOWRAP_OFF
-	_states.append(state)
-	card.pressed.connect(_press.bind(index))
-	card.focus_entered.connect(_choose.bind(index))
-	card.mouse_entered.connect(_rest_on.bind(card))
-	card.mouse_exited.connect(func():
-		if _hover_target == card:
+# A chapter's door, its painting looking where the chapter's way leads.
+func _door(index: int) -> ChapterDoor:
+	var chapter := Chapters.ALL[index]
+	var door := ChapterDoor.new()
+	door.name = "Chapter%d" % (index + 1)
+	door.custom_minimum_size = DOOR_SIZE
+	door.painting = chapter.illustration
+	door.focus_x = DOOR_FOCUS.get(chapter.id, 0.5)
+	door.number_label.text = Chapters.short_name(chapter)
+	door.name_label.text = Chapters.title(chapter)
+	_doors.add_child(door)
+	door.pressed.connect(_press.bind(index))
+	door.focus_entered.connect(_choose.bind(index))
+	door.mouse_entered.connect(_rest_on.bind(door))
+	door.mouse_exited.connect(func():
+		if _hover_target == door:
 			_hover_target = null)
-	return card
+	return door
 
 
-func _painting(texture: Texture2D) -> TextureRect:
-	var art := TextureRect.new()
-	art.texture = texture
-	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return art
-
-
-# The chapter seal laid over the middle of a painting.
-func _lock(over: Control, extent: float) -> TextureRect:
-	var lock := TextureRect.new()
-	lock.texture = EmblemIcons.texture("seal_chapter")
-	lock.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	lock.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	lock.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	lock.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	over.add_child(lock)
-	lock.set_anchors_preset(Control.PRESET_CENTER)
-	lock.offset_left = -extent * 0.5
-	lock.offset_top = -extent * 0.5
-	lock.offset_right = extent * 0.5
-	lock.offset_bottom = extent * 0.5
-	lock.hide()
-	return lock
-
-
-# The chosen chapter's painting across the column, its foot melting into the
-# panel so the name below sits on the panel, not on the picture.
-func _build_banner() -> void:
-	var banner := Control.new()
-	banner.custom_minimum_size.y = BANNER_HEIGHT
-	banner.clip_contents = true
-	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_info.add_child(banner)
-	banner_art = _painting(null)
-	banner.add_child(banner_art)
-	banner_art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var surface := get_theme_stylebox(&"panel", &"SlabSolidEnd") as QuietWindowStyle
-	var ground := surface.fill if surface != null else Color.BLACK
-	var fade := Gradient.new()
-	fade.set_color(0, Color(ground, 0.0))
-	fade.set_color(1, Color(ground, 1.0))
-	fade.add_point(0.55, Color(ground, 0.0))
-	var veil_texture := GradientTexture2D.new()
-	veil_texture.gradient = fade
-	veil_texture.fill_from = Vector2(0.5, 0)
-	veil_texture.fill_to = Vector2(0.5, 1)
-	var veil := TextureRect.new()
-	veil.texture = veil_texture
-	veil.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	veil.stretch_mode = TextureRect.STRETCH_SCALE
-	veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	banner.add_child(veil)
-	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	banner_lock = _lock(banner, BANNER_LOCK_SIZE)
-
-
-# The step to set out at, just above the button: the arrows round the step,
-# then what it adds and the echo it brings back; the whole list of what is
-# in play shows on pointing at that line.
+# The step to set out at, above the button: the arrows round the step, and
+# beneath, what it adds and the echo it brings back; the whole list of what
+# is in play shows on pointing at that line.
 func _build_step_row() -> void:
-	step_row = HBoxContainer.new()
+	step_row = VBoxContainer.new()
 	step_row.name = "StepRow"
-	step_row.theme_type_variation = &"CompactRow"
-	_info.add_child(step_row)
-	var kicker := HubUI.label(step_row, "段階", &"MutedLabel")
+	step_row.theme_type_variation = &"CompactStack"
+	_decide.add_child(step_row)
+	var line := HBoxContainer.new()
+	line.theme_type_variation = &"CompactRow"
+	step_row.add_child(line)
+	var kicker := HubUI.label(line, "段階", &"MutedLabel")
 	kicker.autowrap_mode = TextServer.AUTOWRAP_OFF
-	kicker.custom_minimum_size.x = CAPTION_WIDTH
 	kicker.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	step_down = HubUI.button(step_row, "◀", func(): choose_step(step - 1))
+	step_down = HubUI.button(line, "◀", func(): choose_step(step - 1))
 	step_down.focus_mode = Control.FOCUS_NONE
-	step_value = HubUI.label(step_row, "", &"ValueLabel")
+	step_value = HubUI.label(line, "", &"ValueLabel")
 	step_value.autowrap_mode = TextServer.AUTOWRAP_OFF
 	step_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	step_value.custom_minimum_size.x = STEP_VALUE_WIDTH
 	step_value.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	step_up = HubUI.button(step_row, "▶", func(): choose_step(step + 1))
+	step_up = HubUI.button(line, "▶", func(): choose_step(step + 1))
 	step_up.focus_mode = Control.FOCUS_NONE
 	step_note = HubUI.label(step_row, "", &"BodyLabel")
 	step_note.autowrap_mode = TextServer.AUTOWRAP_OFF
 	step_note.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	step_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	step_note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	step_note.mouse_filter = Control.MOUSE_FILTER_PASS
 	step_row.hide()
 
 
-# A fact reads as a small caption above its value.
+# A fact reads as a small caption before its value, on one line.
 func _fact(row: HBoxContainer, caption: String) -> Label:
-	var cell := VBoxContainer.new()
-	cell.theme_type_variation = &"CompactStack"
-	cell.custom_minimum_size.x = FACT_WIDTH
-	cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(cell)
-	var kicker := HubUI.label(cell, caption, &"MutedLabel")
+	if row.get_child_count() > 0:
+		_gap(row)
+	var kicker := HubUI.label(row, caption, &"MutedLabel")
 	kicker.autowrap_mode = TextServer.AUTOWRAP_OFF
-	var value := HubUI.label(cell, "", &"ValueLabel")
+	kicker.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var value := HubUI.label(row, "", &"ItemNameLabel")
 	value.autowrap_mode = TextServer.AUTOWRAP_OFF
+	value.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	return value
 
 
-# A captioned line of pictures (the foes, what she carries); returns where
-# the pictures go.
-func _row(caption: String) -> HBoxContainer:
-	var line := HBoxContainer.new()
-	line.theme_type_variation = &"CompactRow"
-	_info.add_child(line)
+func _gap(row: HBoxContainer) -> void:
+	var gap := Control.new()
+	gap.custom_minimum_size.x = FACT_GAP
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(gap)
+
+
+# A captioned run of pictures (the foes, what she carries) on the line;
+# returns where the pictures go.
+func _row(line: HBoxContainer, caption: String) -> HBoxContainer:
+	if line.get_child_count() > 0:
+		_gap(line)
 	var kicker := HubUI.label(line, caption, &"MutedLabel")
 	kicker.autowrap_mode = TextServer.AUTOWRAP_OFF
-	kicker.custom_minimum_size.x = CAPTION_WIDTH
 	kicker.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var pictures := HBoxContainer.new()
 	pictures.theme_type_variation = &"CompactRow"
@@ -303,9 +232,8 @@ func refresh(current: MetaProgress, chapter: ChapterData, at_step: int = 0) -> v
 		if meta.clears_of(each.id) > 0:
 			cleared += 1
 		var record := Chapters.record(meta, each)
-		_states[index].text = "封印中" if not open else ("未踏" if record == "なし" else record)
-		_thumbs[index].modulate = get_theme_color(&"art_tint" if open else &"art_locked", &"HubLobby")
-		_locks[index].visible = not open
+		cards[index].state_label.text = "封印中" if not open else ("未踏" if record == "なし" else record)
+		cards[index].sealed = not open
 	count_label.text = "踏破した章  %d / %d" % [cleared, Chapters.ALL.size()]
 	selected = maxi(0, Chapters.ALL.find(chapter))
 	_shown = null
@@ -330,7 +258,7 @@ func _choose(index: int) -> void:
 		chapter_chosen.emit(chosen())
 
 
-# Enter (A) on a chapter sets out for it; a click only chooses it.
+# Enter (A) on a door sets out for its chapter; a click only chooses it.
 func _press(index: int) -> void:
 	_choose(index)
 	if not _by_pointer:
@@ -344,13 +272,17 @@ func set_out() -> void:
 	departure_requested.emit(chosen())
 
 
+# The chosen door stands forward and keeps its gold edge while the focus is
+# on the button; the others stand back.
 func _show_selection() -> void:
 	for index in cards.size():
 		cards[index].set_pressed_no_signal(index == selected)
+		UIMotion.of(cards[index]).stand(index == selected)
+	action_button.focus_neighbor_top = cards[selected].get_path()
 	action_button.focus_neighbor_left = cards[selected].get_path()
 
 
-# The column: what the chosen chapter is, how far it has been taken, what
+# The band: what the chosen chapter is, how far it has been taken, what
 # waits in it, and the button to set out (or why it cannot be).
 func _tell() -> void:
 	if meta == null:
@@ -358,10 +290,6 @@ func _tell() -> void:
 	var chapter := chosen()
 	_shown = chapter
 	var open := meta.chapter_open(chapter)
-	banner_art.texture = chapter.illustration
-	banner_art.modulate = get_theme_color(&"art_tint" if open else &"art_locked", &"HubLobby")
-	banner_lock.visible = not open
-	name_label.text = chapter.display_name
 	var key := Chapters.find(chapter.unlocked_by)
 	var opener := "%sを踏破すると開く" % (Chapters.short_name(key) if key != null else "前の章")
 	TextWrap.set_text(description_label, chapter.description if open else "封印されている。%s。" % opener)
@@ -394,7 +322,7 @@ func _tell() -> void:
 	_show_step()
 
 
-# The step row: shown once the steps are open, with what the chosen step
+# The step rows: shown once the steps are open, with what the chosen step
 # adds and brings back, and why the next one is not open yet.
 func _show_step() -> void:
 	var open := meta.steps_open() if meta != null else 0
@@ -434,15 +362,14 @@ func focus_selected() -> void:
 	cards[selected].grab_focus()
 
 
-# Opening the page: the cards one after another, then the column.
+# Opening the page: the doors one after another, then the band.
 func play_entrance() -> void:
-	UIMotion.of(_list_column).appear(0.0, UIMotion.WINDOW_TIME)
 	for index in cards.size():
 		UIMotion.of(cards[index]).appear(UIMotion.STAGGER_TIME * index)
-	UIMotion.of(_info).appear(UIMotion.STAGGER_TIME * cards.size())
+	UIMotion.of(_band).appear(UIMotion.STAGGER_TIME * cards.size(), UIMotion.WINDOW_TIME)
 
 
-# Resting the pointer on a card a moment chooses it.
+# Resting the pointer on a door a moment chooses it.
 func _rest_on(target: Control) -> void:
 	_hover_target = target
 	await get_tree().create_timer(HubLobby.HOVER_INTENT).timeout
