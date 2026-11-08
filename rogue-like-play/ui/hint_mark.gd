@@ -4,7 +4,7 @@ extends Button
 # A small "?" beside a caption, for a rule the player needs on the spot: its
 # tooltip says the rule in a line, and a press opens the settings' help at
 # the matching topic (the hub connects every mark in GROUP). Longer rules
-# belong in the help, not on the screens (docs/MVP_SPEC.md, 説明の置き場所).
+# belong in the help, not on the screens (docs/ゲーム仕様.md, 説明の置き場所).
 
 const GROUP := &"hint_marks"
 

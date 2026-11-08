@@ -1,7 +1,7 @@
 class_name UIFormat
 extends RefCounted
 
-# How numbers read across the hub (docs/MVP_SPEC.md, 個別画面のUI文法):
+# How numbers read across the hub (docs/ゲーム仕様.md, 個別画面のUI文法):
 # thousands grouped, the unit after the number.
 
 

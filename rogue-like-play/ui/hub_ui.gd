@@ -44,7 +44,7 @@ static func button(parent: Node, text: String, action: Callable, role: StringNam
 	return button
 
 
-# The screen's one primary action (docs/MVP_SPEC.md, 個別画面のUI文法): the
+# The screen's one primary action (docs/ゲーム仕様.md, 個別画面のUI文法): the
 # same plate as the lobby's decide button, full width at the foot of the
 # right panel. Other actions are SecondaryButton above it.
 static func primary_action(parent: Node, text: String, action: Callable) -> Button:
@@ -55,7 +55,7 @@ static func primary_action(parent: Node, text: String, action: Callable) -> Butt
 
 
 # Enter (A) on a chosen row moves to the screen's primary action, and the
-# next press acts there: choosing never acts by itself (docs/MVP_SPEC.md,
+# next press acts there: choosing never acts by itself (docs/ゲーム仕様.md,
 # 個別画面のUI文法). A double click lands there too.
 static func accept_to_action(list: ItemList, action: Button) -> void:
 	list.item_activated.connect(func(_index: int):
