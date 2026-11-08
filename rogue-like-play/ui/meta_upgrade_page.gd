@@ -21,8 +21,9 @@ extends Control
 # RT), follows the focus, and C (Y) brings the root back at its first size.
 #
 # The column on the right, in the lobby's ornate frame: the chosen node's
-# emblem, name, branch and rank, its figure now and next, what it does and
-# what it waits for; the lobby's strip of facts with the price and the echo
+# emblem, name and its ranks as sockets alone, its figure now and next with
+# what the next rank adds, what it does (unless that only says the figure
+# again) and what it waits for; the lobby's strip of facts with the price and the echo
 # held (as Rogue Legacy 2 sets cost beside gold owned), and how much is
 # missing; and the one action, a crest button (CrestButton) with the price,
 # that asks to buy (buy_requested; the hub saves, then calls
@@ -36,6 +37,8 @@ const CELL := Vector2(108, 92)
 const NODE_SIZE := 60.0
 const ROOT_SIZE := 84.0
 const PIP_SIZE := 9.0
+# The sockets in the column, where they alone tell the rank.
+const COLUMN_PIP := 15.0
 const DETAIL_EMBLEM := 150.0
 const LINE_WIDTH := 2.5
 const RING_WIDTH := 2.5
@@ -70,6 +73,15 @@ const LAMP_STEPS := 8
 # The diamond over a node the echo held can buy.
 const BUY_MARK := 6.0
 const STRIP_HEIGHT := 60.0
+# The echo's light flowing out from the lamp along the held lines: how fast
+# it runs (px a second), how far apart its sparks follow, each spark's tail,
+# and how it fades where a line meets a node. The lines to nodes the echo
+# held can buy breathe, once a period.
+const FLOW_SPEED := 70.0
+const FLOW_SPACING := 150.0
+const FLOW_TAIL := 40.0
+const FLOW_FADE := 14.0
+const BECKON_PERIOD := 1.8
 const BRANCH_NAMES := {&"": "中央", &"body": "身体", &"growth": "成長", &"skill": "スキル", &"special": "必殺技", &"weapon": "武器"}
 # Branches to come, sealed for now: the branch, its cell, its emblem (none
 # at present).
@@ -101,6 +113,7 @@ var _pips: Control
 var _cost_strip: Control
 # How far the altar's stone reaches from the root.
 var _altar_radius := 0.0
+var _flow: Control
 # Node id -> its centre on the canvas, and the id it grows from.
 var _centers: Dictionary = {}
 var _parents: Dictionary = {}
@@ -142,6 +155,11 @@ func _ready() -> void:
 	canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	canvas.draw.connect(_draw_lines)
 	board.add_child(canvas)
+	# The echo's light moving along the lines: over them, under the nodes.
+	_flow = Control.new()
+	_flow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_flow.draw.connect(_draw_flow)
+	canvas.add_child(_flow)
 	for upgrade in MetaProgress.UPGRADES:
 		_add_node(upgrade.id, upgrade.cell, upgrade.parent, ROOT_SIZE if upgrade.parent.is_empty() else NODE_SIZE)
 	for seal: Array in SEALS:
@@ -177,12 +195,12 @@ func _ready() -> void:
 	name_label = _centered(HubUI.label(_info, "", &"HeadingLabel"))
 	rank_label = _centered(HubUI.label(_info, "", &"MutedLabel"))
 	_pips = Control.new()
-	_pips.custom_minimum_size.y = PIP_SIZE + 6
+	_pips.custom_minimum_size.y = COLUMN_PIP + 6
 	_pips.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_pips.draw.connect(func():
 		var upgrade := MetaProgress.find(selected)
 		if upgrade != null and meta != null:
-			_paint_pips(_pips, Vector2(_pips.size.x * 0.5, 0), upgrade, meta.rank(upgrade.id)))
+			_paint_pips(_pips, Vector2(_pips.size.x * 0.5, 0), upgrade, meta.rank(upgrade.id), true, COLUMN_PIP))
 	_info.add_child(_pips)
 	HubUI.rule(_info)
 	figure_label = _centered(HubUI.label(_info, "", &"ValueLabel"))
@@ -291,8 +309,10 @@ func _tell() -> void:
 	if upgrade == null:
 		name_label.text = BRANCH_NAMES.get(selected, "")
 		rank_label.text = "未開放の枝"
+		rank_label.show()
 		figure_label.hide()
 		description_label.text = SEAL_NOTE
+		description_label.show()
 		requirement_label.hide()
 		_cost_strip.hide()
 		short_label.hide()
@@ -300,10 +320,14 @@ func _tell() -> void:
 		return
 	var rank := meta.rank(upgrade.id)
 	name_label.text = upgrade.display_name
-	rank_label.text = "%s　段階 %d / %d" % [BRANCH_NAMES.get(upgrade.branch, ""), rank, upgrade.max_rank()]
+	# The ranks are told by the sockets under the name alone; the figure line
+	# carries what the next rank adds, so a description that only says it
+	# again is left off.
+	rank_label.hide()
 	figure_label.text = upgrade.figure_line(rank)
 	figure_label.visible = not figure_label.text.is_empty()
 	description_label.text = upgrade.description
+	description_label.visible = not upgrade.description_restates_figure(rank)
 	var waiting := not meta.unlocked(upgrade.id)
 	var parent := MetaProgress.find(upgrade.parent)
 	requirement_label.text = "「%s」を習得すると解放" % parent.display_name if waiting else ""
@@ -344,7 +368,7 @@ func present_purchase(id: StringName) -> void:
 	if not nodes.has(id):
 		return
 	UIMotion.of(nodes[id]).pulse(1.03, UIMotion.GOLD_TIME)
-	UIMotion.of(rank_label).reveal()
+	UIMotion.of(_pips).reveal()
 	for other: StringName in nodes:
 		if _parents[other] == id and meta != null and meta.rank(other) == 0:
 			UIMotion.of(nodes[other]).reveal(UIMotion.ROW_TIME)
@@ -445,6 +469,7 @@ func _stop_pan() -> void:
 func _process(delta: float) -> void:
 	if not is_visible_in_tree():
 		return
+	_flow.queue_redraw()
 	var stick := Input.get_vector(&"aim_left", &"aim_right", &"aim_up", &"aim_down")
 	if stick != Vector2.ZERO:
 		_stop_pan()
@@ -551,21 +576,80 @@ func _state_color(id: StringName) -> Color:
 	return get_theme_color(&"line_open" if meta.unlocked(id) else &"line_closed", &"UpgradeTree")
 
 
+# A line's two ends: from the rim of the node it grows from to just short of
+# its own.
+func _segment(id: StringName) -> PackedVector2Array:
+	var parent: StringName = _parents[id]
+	var from: Vector2 = _centers[parent]
+	var to: Vector2 = _centers[id]
+	var along := (to - from).normalized()
+	return PackedVector2Array([from + along * (nodes[parent] as Button).size.x * 0.5, to - along * ((nodes[id] as Button).size.x * 0.5 + 4.0)])
+
+
+# How far a node's centre lies from the root's, along the lines between.
+func _path_length(id: StringName) -> float:
+	var parent: StringName = _parents[id]
+	if parent.is_empty():
+		return 0.0
+	return _path_length(parent) + (_centers[id] as Vector2).distance_to(_centers[parent])
+
+
 func _draw_lines() -> void:
 	_draw_altar()
 	for id: StringName in nodes:
-		var parent: StringName = _parents[id]
-		if parent.is_empty():
+		if (_parents[id] as StringName).is_empty():
 			continue
-		var from: Vector2 = _centers[parent]
-		var to: Vector2 = _centers[id]
-		var along := (to - from).normalized()
-		var start := from + along * (nodes[parent] as Button).size.x * 0.5
-		var end := to - along * ((nodes[id] as Button).size.x * 0.5 + 4.0)
+		var ends := _segment(id)
+		var start := ends[0]
+		var end := ends[1]
 		if MetaProgress.find(id) == null:
 			canvas.draw_dashed_line(start, end, _state_color(id), LINE_WIDTH, 10.0)
 		else:
 			canvas.draw_line(start, end, _state_color(id), LINE_WIDTH, true)
+
+
+# The echo's light, from the lamp outward. Along every held line sparks run
+# away from the root, spaced along the whole path so they pass on from line
+# to line as one stream; each fades where its line meets a node. A line to a
+# node the echo held can buy breathes a soft gold, once a period.
+func _draw_flow() -> void:
+	if meta == null:
+		return
+	var now := Time.get_ticks_msec() / 1000.0
+	var head := fmod(now * FLOW_SPEED, FLOW_SPACING)
+	var light := get_theme_color(&"flow", &"UpgradeTree")
+	var glow := get_theme_color(&"flow_glow", &"UpgradeTree")
+	var beckon := get_theme_color(&"beckon", &"UpgradeTree")
+	var breath := 0.5 + 0.5 * sin(now * TAU / BECKON_PERIOD)
+	for id: StringName in nodes:
+		if (_parents[id] as StringName).is_empty() or MetaProgress.find(id) == null:
+			continue
+		var ends := _segment(id)
+		var length := ends[0].distance_to(ends[1])
+		if length <= 0.0:
+			continue
+		var along := (ends[1] - ends[0]) / length
+		if meta.rank(id) == 0:
+			if meta.can_buy(id):
+				_flow.draw_line(ends[0], ends[1], Color(beckon, beckon.a * breath), LINE_WIDTH + 1.0, true)
+			continue
+		# Path distance from the root at this line's start, and the first
+		# spark at or past it.
+		var from := _path_length(_parents[id]) + (nodes[_parents[id]] as Button).size.x * 0.5
+		var spark := head + ceilf((from - head) / FLOW_SPACING) * FLOW_SPACING
+		while spark - from <= length + FLOW_TAIL:
+			var tip := minf(spark - from, length)
+			var tail := maxf(spark - from - FLOW_TAIL, 0.0)
+			if tip > tail:
+				var fade := clampf(minf(tip, length - tail) / FLOW_FADE, 0.0, 1.0)
+				var a := ends[0] + along * tail
+				var b := ends[0] + along * tip
+				_flow.draw_polyline_colors(PackedVector2Array([a, b]), PackedColorArray([Color(glow, 0.0), Color(glow, glow.a * fade)]), LINE_WIDTH * 3.0, true)
+				_flow.draw_polyline_colors(PackedVector2Array([a, b]), PackedColorArray([Color(light, 0.0), Color(light, light.a * fade)]), LINE_WIDTH, true)
+				if tip < length:
+					_flow.draw_circle(b, LINE_WIDTH * 2.4, Color(glow, glow.a * fade))
+					_flow.draw_circle(b, LINE_WIDTH * 1.1, Color(light, light.a * fade))
+			spark += FLOW_SPACING
 
 
 # The altar's stone under the tree, round the root: lighter toward the lamp,
@@ -627,18 +711,20 @@ func _draw_node(node: Button, id: StringName) -> void:
 			HubUI.diamond(node, mark, BUY_MARK, get_theme_color(&"buyable", &"UpgradeTree"))
 
 
-# An upgrade's ranks as sockets, centred on `top`; one rank shows none.
-func _paint_pips(target: CanvasItem, top: Vector2, upgrade: MetaUpgrade, held: int) -> void:
+# An upgrade's ranks as sockets, centred on `top`. On the board one rank
+# shows none; the column, where the sockets are all that tells the rank,
+# shows that one too (`single`).
+func _paint_pips(target: CanvasItem, top: Vector2, upgrade: MetaUpgrade, held: int, single := false, extent := PIP_SIZE) -> void:
 	var count := upgrade.max_rank()
-	if count <= 1:
+	if count < 1 or (count == 1 and not single):
 		return
 	var empty := get_theme_icon(&"pip_empty", &"AbilityCard")
 	var full := get_theme_icon(&"pip_full", &"AbilityCard")
-	var width := PIP_SIZE * full.get_width() / full.get_height()
+	var width := extent * full.get_width() / full.get_height()
 	var gap := 2.0
 	var start := top.x - (width * count + gap * (count - 1)) * 0.5
 	for index in count:
-		var rect := Rect2(start + index * (width + gap), top.y, width, PIP_SIZE)
+		var rect := Rect2(start + index * (width + gap), top.y, width, extent)
 		target.draw_texture_rect(empty, rect, false)
 		if index < held:
 			target.draw_texture_rect(full, rect, false)

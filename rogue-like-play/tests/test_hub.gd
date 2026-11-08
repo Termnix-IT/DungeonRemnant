@@ -259,6 +259,7 @@ func run_tests() -> void:
 	check(main.meta.echo == 200 and hub.echo_label.text == "200", "The saved echo is read at the start")
 	hub.show_page("upgrade")
 	var page: MetaUpgradePage = hub.upgrade_page
+	check(hub.title_label.text == "強化", "The page is titled as the lobby's menu names it")
 	check(page.selected == MetaProgress.ROOT and (page.nodes[MetaProgress.ROOT] as Button).has_focus(), "The tree opens on its root")
 	check(page.nodes.size() == MetaProgress.UPGRADES.size() + MetaUpgradePage.SEALS.size(), "Every upgrade and every sealed branch has its node")
 	page.buy_button.pressed.emit()
@@ -267,13 +268,13 @@ func run_tests() -> void:
 	# Moving the focus: left from the root to the body's branch.
 	root.push_input(key(KEY_LEFT))
 	await process_frame
-	check(page.selected == &"sturdy_body" and page.name_label.text == "鍛えた体" and page.rank_label.text == "身体　段階 0 / 3", "Left goes to the body's branch and the column tells it, with its branch")
+	check(page.selected == &"sturdy_body" and page.name_label.text == "鍛えた体" and not page.rank_label.visible, "Left goes to the body's branch and the column tells it, its ranks by sockets alone")
 	check(page.buy_button is CrestButton and page.price_value.text == "80" and page.held_value.text == "150" and not page.short_label.visible, "The column sets the price beside the echo held, on a crest button")
-	check(page.figure_label.text == "習得すると　最大HP 115", "The column tells what the first rank gives")
+	check(page.figure_label.text == "習得すると　最大HP 115（+15）" and not page.description_label.visible, "The column tells what the first rank gives in one line, without the description saying it again")
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))
 	await process_frame
-	check(main.meta.rank(&"sturdy_body") == 1 and main.meta.echo == 70 and page.figure_label.text == "最大HP 115 → 130", "Enter on a node buys it, and the figure tells the next rank")
+	check(main.meta.rank(&"sturdy_body") == 1 and main.meta.echo == 70 and page.figure_label.text == "最大HP 115 → 130（+15）", "Enter on a node buys it, and the figure tells the next rank")
 	root.push_input(key(KEY_DOWN))
 	await process_frame
 	check(page.selected == &"double_dash" and page.buy_button.disabled and page.buy_button.tooltip_text.contains("足りない"), "Down goes along the branch to one the echo cannot pay for")

@@ -310,7 +310,7 @@ func show_page(target: String) -> void:
 				key_guide.add_hint("Q / E", "LB / RB", "段階")
 			key_guide.add_hint("Tab", "View", "装備", _status_from_sortie)
 		"upgrade":
-			title_label.text = "永続強化"
+			title_label.text = "強化"
 			upgrade_page.show()
 			upgrade_page.focus_first()
 			key_guide.add_hint("Enter", "A", "強化")

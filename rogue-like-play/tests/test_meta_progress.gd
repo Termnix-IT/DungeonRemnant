@@ -75,8 +75,11 @@ func run_tests() -> void:
 	meta.buy(&"double_dash")
 	meta.buy(&"parting_blessing")
 	check(meta.tuning(base).dash_charges == base.dash_charges + 1 and meta.starts_with_boon(), "The double dash and the blessing take effect")
-	check(body.figure_line(0) == "習得すると　最大HP 115" and body.figure_line(1) == "最大HP 115 → 130" and body.figure_line(3) == "最大HP 145", "The figure tells the first rank, now and next, and the last")
-	check(MetaProgress.find(&"dash_recovery").figure_line(1) == "ダッシュの再使用 0.4 → 0.35秒", "A falling figure reads plainly")
+	check(body.figure_line(0) == "習得すると　最大HP 115（+15）" and body.figure_line(1) == "最大HP 115 → 130（+15）" and body.figure_line(3) == "最大HP 145", "The figure tells the first rank, now and next with the gain, and the last")
+	check(MetaProgress.find(&"dash_recovery").figure_line(1) == "ダッシュの再使用 0.4 → 0.35秒（-0.05秒）", "A falling figure reads plainly")
+	check(MetaProgress.find(&"echo_lantern").figure_line(0) == "習得すると　報酬の残響 +10%" and MetaProgress.find(&"skill_drill").figure_gain() == "-10%" and MetaProgress.find(&"firm_guard").figure_gain() == "-1", "A figure from nothing leaves its gain off, and a signed figure keeps its sign")
+	check(body.description_restates_figure(0) and body.description_restates_figure(3) and MetaProgress.find(&"double_dash").description_restates_figure(0), "A description that only says the figure again is known")
+	check(not MetaProgress.find(&"rising_burst").description_restates_figure(0) and not MetaProgress.find(&"last_stand").description_restates_figure(0), "One that tells more, or stands for no figure, is kept")
 
 	# Every node held: the tuning and the run's rules.
 	var full := MetaProgress.new()
