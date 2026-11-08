@@ -5,8 +5,8 @@ extends Button
 # their places side by side as doors show them: the chapter's painting cut
 # to a round-topped arch, and at its foot a dark plate with the number, the
 # name and how far it has been taken. The doors stand shoulder to shoulder;
-# the chosen one steps forward, a little larger and lit, over its neighbours
-# in a glowing gold frame, while the others stay darker. A sealed door is
+# the chosen one steps forward, larger and lit, over its neighbours in a
+# glowing gold frame, while the others stand back, smaller and darker. A sealed door is
 # dark, with the chapter seal on it. The focus adds a thin light edge
 # outside the frame.
 #
@@ -15,6 +15,8 @@ extends Button
 # style of its own (DoorButton).
 
 const CHOSEN_SCALE := 1.05
+# The doors not chosen stand back, smaller, so the chosen one reads at once.
+const REST_SCALE := 0.86
 const SEAL_SIZE := 64.0
 # The plate at the door's foot, and the fall from the painting into it.
 const PLATE_HEIGHT := 112.0
@@ -87,13 +89,14 @@ func _line(role: StringName) -> Label:
 
 
 # The face grows from the door's foot as it steps forward, over its
-# neighbours, and its words brighten with it.
+# neighbours, and shrinks back toward it when another is chosen; its words
+# brighten and quieten with it.
 func _place_face() -> void:
 	if _face == null:
 		return
 	var weight := clampf(stand, 0.0, 1.0)
 	_face.pivot_offset = Vector2(_face.size.x * 0.5, _face.size.y)
-	_face.scale = Vector2.ONE * lerpf(1.0, CHOSEN_SCALE, weight)
+	_face.scale = Vector2.ONE * lerpf(REST_SCALE, CHOSEN_SCALE, weight)
 	_face.z_index = 1 if weight > 0.0 else 0
 	_words.modulate = Color(1, 1, 1, lerpf(0.62, 1.0, weight))
 	_face.queue_redraw()
