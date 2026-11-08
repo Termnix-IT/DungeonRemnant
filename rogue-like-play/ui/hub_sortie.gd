@@ -109,10 +109,13 @@ func _ready() -> void:
 	_decide.theme_type_variation = &"DetailStack"
 	_build_step_row()
 	HubUI.space(_decide)
-	action_button = HubUI.primary_action(_decide, "", set_out)
-	# The lobby's painted plate: setting out is where the lobby's departure leads.
-	action_button.theme_type_variation = &"SortieAction"
+	# Setting out is drawn as the game's crests are, not as the other screens'
+	# plates: the crest kindles as the button is chosen (CrestButton).
+	action_button = CrestButton.new()
 	action_button.name = "SetOut"
+	action_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_decide.add_child(action_button)
+	action_button.pressed.connect(set_out)
 	HubUI.ornate_frame(_band)
 	for index in cards.size():
 		var door := cards[index]

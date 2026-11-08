@@ -76,6 +76,18 @@ func run_tests() -> void:
 	check(sortie.foe_row.get_children().all(func(picture: TextureRect): return picture.tooltip_text == HubSortie.UNKNOWN_NAME), "Foes not met are not named")
 	check(sortie.gear_row.get_child_count() == 2 and sortie.gear_row.get_child(0).tooltip_text == "剣", "What she carries is shown: the sword and the first skill")
 	check(not sortie.action_button.disabled and sortie.action_button.text == "第1章へ出撃する", "An open chapter can be set out for")
+	# The button's crest kindles while the focus is on it, and settles again
+	# once the focus goes back up to the doors; neither sets out.
+	var crest := sortie.action_button as CrestButton
+	check(crest != null and is_zero_approx(crest.stand), "The set-out button is a crest, resting while the doors hold the focus")
+	root.push_input(key(KEY_DOWN))
+	await process_frame
+	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.1).timeout
+	check(crest.has_focus() and is_equal_approx(crest.stand, 1.0) and main.active_run == null, "Down moves to the button and its crest kindles")
+	root.push_input(key(KEY_UP))
+	await process_frame
+	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.1).timeout
+	check(sortie.cards[0].has_focus() and is_zero_approx(crest.stand), "Up goes back to the chosen door and the crest settles")
 	# The sealed chapter: chosen to read what opens it, not set out for.
 	root.push_input(key(KEY_RIGHT))
 	await process_frame

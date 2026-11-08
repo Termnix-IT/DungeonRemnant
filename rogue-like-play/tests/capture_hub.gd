@@ -53,13 +53,15 @@ func capture() -> void:
 	hub.sortie_page.cards[1].grab_focus()
 	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.3).timeout
 	await _grab("hub_sortie_sealed_1600")
-	# After the ending: the step row, set at step 3 of the three open.
+	# After the ending: the step row, set at step 3 of the three open, and the
+	# focus down on the button, its crest kindled round the longest words.
 	main.meta.chapter_clears[Chapters.ALL.back().id] = 1
 	main.meta.chapter_steps[Chapters.ALL.back().id] = 2
 	hub.refresh(main.meta)
 	hub.show_page("sortie")
 	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
 	hub.sortie_page.choose_step(3)
+	hub.sortie_page.action_button.grab_focus()
 	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.3).timeout
 	await _grab("hub_sortie_steps_1600")
 	hub.sortie_page.choose_step(0)
