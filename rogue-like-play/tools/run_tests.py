@@ -10,11 +10,11 @@ The Godot executable comes from --godot, then the GODOT environment variable,
 then `godot` on PATH. Run from the Godot project root:
 
 	python tools/run_tests.py                     # every suite
-	python tools/run_tests.py hub shop ui_theme   # test_hub.gd, test_shop.gd, ...
-	python tools/run_tests.py --skip playthrough  # all but the slow 1F-10F loop
+	python tools/run_tests.py hub run_cycle ui_theme   # test_hub.gd, test_run_cycle.gd, ...
+	python tools/run_tests.py --skip run_cycle         # all but the hub-to-hub run loop
 
 Visual checks (tests/capture_*.gd) need a renderer and are run by hand; see
-AGENTS.md.
+CLAUDE.md.
 """
 
 from __future__ import annotations
