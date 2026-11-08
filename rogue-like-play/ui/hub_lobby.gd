@@ -240,107 +240,36 @@ func _build_panel() -> void:
 	# place at the bottom.
 	description_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	description_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	var route: HBoxContainer = _strip(stack)
+	var route: HBoxContainer = HubUI.fact_strip(stack, STRIP_HEIGHT)
 	_details[&"departure"] = route
-	route_value = _fact(route, "道のり")
-	_divider(route)
-	best_value = _fact(route, "記録")
-	var growth: HBoxContainer = _strip(stack)
+	route_value = HubUI.strip_fact(route, "道のり")
+	HubUI.strip_divider(route)
+	best_value = HubUI.strip_fact(route, "記録")
+	var growth: HBoxContainer = HubUI.fact_strip(stack, STRIP_HEIGHT)
 	_details[&"upgrade"] = growth
-	upgrade_value = _fact(growth, "習得した段階")
-	_divider(growth)
-	upgrade_ready = _fact(growth, "強化できる")
-	var loadout: HBoxContainer = _strip(stack)
+	upgrade_value = HubUI.strip_fact(growth, "習得した段階")
+	HubUI.strip_divider(growth)
+	upgrade_ready = HubUI.strip_fact(growth, "強化できる")
+	var loadout: HBoxContainer = HubUI.fact_strip(stack, STRIP_HEIGHT)
 	_details[&"status"] = loadout
-	status_skills = _fact(loadout, "装備中のスキル")
-	_divider(loadout)
-	status_hp = _fact(loadout, "最大HP")
-	var records: HBoxContainer = _strip(stack)
+	status_skills = HubUI.strip_fact(loadout, "装備中のスキル")
+	HubUI.strip_divider(loadout)
+	status_hp = HubUI.strip_fact(loadout, "最大HP")
+	var records: HBoxContainer = HubUI.fact_strip(stack, STRIP_HEIGHT)
 	_details[&"codex"] = records
-	codex_met = _fact(records, "出会った敵")
-	_divider(records)
-	codex_runs = _fact(records, "挑んだラン")
-	var current: HBoxContainer = _strip(stack)
+	codex_met = HubUI.strip_fact(records, "出会った敵")
+	HubUI.strip_divider(records)
+	codex_runs = HubUI.strip_fact(records, "挑んだラン")
+	var current: HBoxContainer = HubUI.fact_strip(stack, STRIP_HEIGHT)
 	_details[&"settings"] = current
-	volume_value = _fact(current, "音量")
-	_divider(current)
-	display_value = _fact(current, "画面")
+	volume_value = HubUI.strip_fact(current, "音量")
+	HubUI.strip_divider(current)
+	display_value = HubUI.strip_fact(current, "画面")
 	decide_button = HubUI.primary_action(stack, "", func(): activated.emit(selected_id()))
 	# The lobby keeps its painted plate; the pages' actions are quiet.
 	decide_button.theme_type_variation = &"LobbyAction"
 	decide_button.name = "Decide"
-	var frame := Control.new()
-	frame.name = "Frame"
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	frame.draw.connect(_draw_panel_frame.bind(frame))
-	panel.add_child(frame)
-
-
-# The facts lie on a dark band whose ends melt into the panel, between faint
-# gilt hairlines, instead of in a sunken box: laid on the panel, not fenced.
-func _strip(parent: Node) -> HBoxContainer:
-	var band := Control.new()
-	band.custom_minimum_size.y = STRIP_HEIGHT
-	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	band.draw.connect(_draw_band.bind(band))
-	parent.add_child(band)
-	var row := HBoxContainer.new()
-	row.theme_type_variation = &"LobbyFactRow"
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	band.add_child(row)
-	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	return row
-
-
-# A fact reads as a small kicker above its value, both centred.
-func _cell(row: HBoxContainer, caption: String) -> VBoxContainer:
-	var cell := VBoxContainer.new()
-	cell.theme_type_variation = &"LobbyFact"
-	cell.alignment = BoxContainer.ALIGNMENT_CENTER
-	cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(cell)
-	var kicker := HubUI.label(cell, caption, &"LobbyFactCaption")
-	kicker.autowrap_mode = TextServer.AUTOWRAP_OFF
-	kicker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	return cell
-
-
-func _fact(row: HBoxContainer, caption: String, role: StringName = &"LobbyFactValue") -> Label:
-	var value := HubUI.label(_cell(row, caption), "", role)
-	value.autowrap_mode = TextServer.AUTOWRAP_OFF
-	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	return value
-
-
-# A gilt diamond between the facts, with hairlines fading above and below.
-func _divider(row: HBoxContainer) -> void:
-	var mark := Control.new()
-	mark.custom_minimum_size.x = 24
-	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	mark.draw.connect(func():
-		var rail := get_theme_color(&"rail", &"HubLobby")
-		var middle := mark.size * 0.5
-		mark.draw_polyline_colors(PackedVector2Array([middle + Vector2(0, -22), middle + Vector2(0, -8)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.6)]), 1.0, true)
-		mark.draw_polyline_colors(PackedVector2Array([middle + Vector2(0, 8), middle + Vector2(0, 22)]), PackedColorArray([Color(rail, 0.6), Color(rail, 0.0)]), 1.0, true)
-		_diamond_on(mark, middle, 5.0, Color(rail, 0.9)))
-	row.add_child(mark)
-
-
-func _draw_band(band: Control) -> void:
-	var rail := get_theme_color(&"rail", &"HubLobby")
-	var dark := get_theme_color(&"fact_band", &"HubLobby")
-	var clear := Color(dark, 0.0)
-	var w := band.size.x
-	var h := band.size.y
-	band.draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(w * 0.5, 0), Vector2(w * 0.5, h), Vector2(0, h)]), PackedColorArray([clear, dark, dark, clear]))
-	band.draw_polygon(PackedVector2Array([Vector2(w * 0.5, 0), Vector2(w, 0), Vector2(w, h), Vector2(w * 0.5, h)]), PackedColorArray([dark, clear, clear, dark]))
-	for y in [0.5, h - 0.5]:
-		band.draw_polyline_colors(PackedVector2Array([Vector2(0, y), Vector2(w * 0.5, y), Vector2(w, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.45), Color(rail, 0.0)]), 1.0, true)
-
-
-func _diamond_on(canvas: CanvasItem, center: Vector2, radius: float, color: Color) -> void:
-	canvas.draw_colored_polygon(PackedVector2Array([center + Vector2(0, -radius), center + Vector2(radius, 0), center + Vector2(0, radius), center + Vector2(-radius, 0)]), color)
+	HubUI.ornate_frame(panel)
 
 
 func _build_hero() -> void:
@@ -636,20 +565,6 @@ func _draw_selection() -> void:
 	var halo := Vector2(16 + 54, middle)
 	for ring in 4:
 		draw_circle(halo, 26.0 - ring * 5.0, Color(gold, gold.a * 0.3))
-
-
-func _draw_panel_frame(frame: Control) -> void:
-	var rail := get_theme_color(&"rail", &"HubLobby")
-	var rect := Rect2(Vector2.ZERO, frame.size)
-	frame.draw_rect(rect.grow(-1), Color(rail, 0.55), false, 1.0)
-	frame.draw_rect(rect.grow(-6), Color(rail, 0.18), false, 1.0)
-	var arm := 26.0
-	for corner in [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]:
-		var inward := Vector2(signf(rect.get_center().x - corner.x), signf(rect.get_center().y - corner.y))
-		var at: Vector2 = corner + inward * 3.0
-		frame.draw_polyline(PackedVector2Array([at + Vector2(inward.x * arm, 0), at, at + Vector2(0, inward.y * arm)]), rail, 2.0, true)
-	for center in [Vector2(rect.get_center().x, 1), Vector2(rect.get_center().x, rect.end.y - 1)]:
-		frame.draw_colored_polygon(PackedVector2Array([center + Vector2(0, -6), center + Vector2(6, 0), center + Vector2(0, 6), center + Vector2(-6, 0)]), rail)
 
 
 func _diamond(center: Vector2, radius: float, color: Color) -> void:

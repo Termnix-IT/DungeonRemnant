@@ -28,7 +28,7 @@ signal chapter_chosen(chapter: ChapterData)
 # The difficulty step chosen to set out at.
 signal step_chosen(step: int)
 
-const DOOR_SIZE := Vector2(340, 440)
+const DOOR_SIZE := Vector2(330, 408)
 # Where across each chapter's painting its door looks: on the way in, the
 # lit stair or gate each painting is drawn round.
 const DOOR_FOCUS := {
@@ -42,6 +42,9 @@ const EMBLEM_SIZE := 40.0
 # Room between the facts, and between the foes and what she carries.
 const FACT_GAP := 40.0
 const STEP_VALUE_WIDTH := 44.0
+const STRIP_HEIGHT := 60.0
+# The column on the band's right, where the step and the button stand.
+const DECIDE_WIDTH := 460.0
 const UNKNOWN_NAME := "？？？"
 
 var meta: MetaProgress
@@ -63,7 +66,8 @@ var step_down: Button
 var step_up: Button
 var action_button: Button
 var _doors: HBoxContainer
-var _band: HBoxContainer
+var _band: PanelContainer
+var _band_art: TextureRect
 var _info: VBoxContainer
 var _decide: VBoxContainer
 var _hover_target: Control
@@ -88,32 +92,28 @@ func _ready() -> void:
 	hall.add_child(_doors)
 	for index in Chapters.ALL.size():
 		cards.append(_door(index))
-	_band = HBoxContainer.new()
-	_band.theme_type_variation = &"ShopColumns"
-	stack.add_child(_band)
-	_info = HubUI.open_column(_band, 1.75, &"SlabSolid")
-	# The account slides in from the right, kept inside its column.
-	(_info.get_parent() as Control).clip_contents = true
+	_build_band(stack)
 	_info.theme_type_variation = &"DetailStack"
 	description_label = HubUI.label(_info, "", &"DescriptionLabel")
-	var facts := HBoxContainer.new()
-	facts.theme_type_variation = &"CompactRow"
-	_info.add_child(facts)
-	route_value = _fact(facts, "道のり")
-	record_value = _fact(facts, "記録")
-	boss_value = _fact(facts, "ボス")
-	HubUI.rule(_info)
+	var facts := HubUI.fact_strip(_info, STRIP_HEIGHT)
+	route_value = HubUI.strip_fact(facts, "道のり", &"SortieFactValue", &"SortieFactCaption")
+	HubUI.strip_divider(facts)
+	record_value = HubUI.strip_fact(facts, "記録", &"SortieFactValue", &"SortieFactCaption")
+	HubUI.strip_divider(facts)
+	boss_value = HubUI.strip_fact(facts, "ボス", &"SortieFactValue", &"SortieFactCaption")
 	var pictures := HBoxContainer.new()
 	pictures.theme_type_variation = &"CompactRow"
 	_info.add_child(pictures)
 	foe_row = _row(pictures, "現れる敵")
 	gear_row = _row(pictures, "装備")
-	_decide = HubUI.open_column(_band, 1.0, &"SlabSolidEnd")
 	_decide.theme_type_variation = &"DetailStack"
 	_build_step_row()
 	HubUI.space(_decide)
 	action_button = HubUI.primary_action(_decide, "", set_out)
+	# The lobby's painted plate: setting out is where the lobby's departure leads.
+	action_button.theme_type_variation = &"SortieAction"
 	action_button.name = "SetOut"
+	HubUI.ornate_frame(_band)
 	for index in cards.size():
 		var door := cards[index]
 		door.focus_neighbor_left = cards[maxi(0, index - 1)].get_path()
@@ -123,6 +123,55 @@ func _ready() -> void:
 	UIMotion.bind_buttons(_doors)
 	UIMotion.bind_buttons(_band)
 
+
+# The band beneath the doors, dressed as the lobby's panel is: its dark
+# ground, the chosen chapter's painting faint on the right and fading out
+# toward the words, and the ornate frame over it all. Inside, the account
+# on the left and, past an upright hairline, the step and the button.
+func _build_band(stack: VBoxContainer) -> void:
+	_band = PanelContainer.new()
+	_band.name = "Band"
+	_band.theme_type_variation = &"SortieBand"
+	stack.add_child(_band)
+	_band_art = TextureRect.new()
+	_band_art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_band_art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_band_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_band.add_child(_band_art)
+	var fade := Gradient.new()
+	var ground := get_theme_stylebox(&"panel", &"SortieBand").get(&"bg_color") as Color
+	fade.set_color(0, Color(ground, 1.0))
+	fade.set_color(1, Color(ground, 0.15))
+	fade.add_point(0.45, Color(ground, 0.9))
+	var veil_texture := GradientTexture2D.new()
+	veil_texture.gradient = fade
+	veil_texture.fill_from = Vector2(0, 0.5)
+	veil_texture.fill_to = Vector2(1, 0.5)
+	var veil := TextureRect.new()
+	veil.texture = veil_texture
+	veil.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	veil.stretch_mode = TextureRect.STRETCH_SCALE
+	veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_band.add_child(veil)
+	var margin := MarginContainer.new()
+	margin.theme_type_variation = &"SortieBandMargin"
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_band.add_child(margin)
+	var row := HBoxContainer.new()
+	row.theme_type_variation = &"ShopColumns"
+	margin.add_child(row)
+	# The account slides in from the right, kept inside its own room.
+	var room := MarginContainer.new()
+	room.clip_contents = true
+	room.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	room.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(room)
+	_info = VBoxContainer.new()
+	room.add_child(_info)
+	HubUI.column_rule(row, 48)
+	_decide = VBoxContainer.new()
+	_decide.custom_minimum_size.x = DECIDE_WIDTH
+	row.add_child(_decide)
 
 # A chapter's door, its painting looking where the chapter's way leads.
 func _door(index: int) -> ChapterDoor:
@@ -172,19 +221,6 @@ func _build_step_row() -> void:
 	step_note.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	step_note.mouse_filter = Control.MOUSE_FILTER_PASS
 	step_row.hide()
-
-
-# A fact reads as a small caption before its value, on one line.
-func _fact(row: HBoxContainer, caption: String) -> Label:
-	if row.get_child_count() > 0:
-		_gap(row)
-	var kicker := HubUI.label(row, caption, &"MutedLabel")
-	kicker.autowrap_mode = TextServer.AUTOWRAP_OFF
-	kicker.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var value := HubUI.label(row, "", &"ItemNameLabel")
-	value.autowrap_mode = TextServer.AUTOWRAP_OFF
-	value.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	return value
 
 
 func _gap(row: HBoxContainer) -> void:
@@ -284,6 +320,8 @@ func _tell() -> void:
 	var chapter := chosen()
 	_shown = chapter
 	var open := meta.chapter_open(chapter)
+	_band_art.texture = chapter.illustration
+	_band_art.modulate = get_theme_color(&"art_tint" if open else &"art_locked", &"HubLobby")
 	var key := Chapters.find(chapter.unlocked_by)
 	var opener := "%sを踏破すると開く" % (Chapters.short_name(key) if key != null else "前の章")
 	TextWrap.set_text(description_label, chapter.description if open else "封印されている。%s。" % opener)

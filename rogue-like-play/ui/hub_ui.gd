@@ -149,6 +149,92 @@ static func plaque_note(parts: Array[String]) -> String:
 	return joined if joined.length() <= 22 else "\n".join(parts)
 
 
+# The lobby's ornate frame, laid over a panel (the lobby's panel, the
+# departure's band): a gilt line round the edge with a fainter one inside,
+# brackets at the corners and a diamond at the middle of the top and the
+# foot. Returns the frame, which draws over what the panel holds.
+static func ornate_frame(panel: Control) -> Control:
+	var frame := Control.new()
+	frame.name = "Frame"
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.draw.connect(func():
+		var rail := frame.get_theme_color(&"rail", &"HubLobby")
+		var rect := Rect2(Vector2.ZERO, frame.size)
+		frame.draw_rect(rect.grow(-1), Color(rail, 0.55), false, 1.0)
+		frame.draw_rect(rect.grow(-6), Color(rail, 0.18), false, 1.0)
+		var arm := 26.0
+		for corner in [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]:
+			var inward := Vector2(signf(rect.get_center().x - corner.x), signf(rect.get_center().y - corner.y))
+			var at: Vector2 = corner + inward * 3.0
+			frame.draw_polyline(PackedVector2Array([at + Vector2(inward.x * arm, 0), at, at + Vector2(0, inward.y * arm)]), rail, 2.0, true)
+		for center in [Vector2(rect.get_center().x, 1), Vector2(rect.get_center().x, rect.end.y - 1)]:
+			diamond(frame, center, 6.0, rail))
+	panel.add_child(frame)
+	return frame
+
+
+# The lobby's strip of facts: a dark band whose ends melt into the panel,
+# between faint gilt hairlines, instead of a sunken box. Returns the row the
+# facts go in.
+static func fact_strip(parent: Node, height: float) -> HBoxContainer:
+	var band := Control.new()
+	band.custom_minimum_size.y = height
+	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	band.draw.connect(func():
+		var rail := band.get_theme_color(&"rail", &"HubLobby")
+		var dark := band.get_theme_color(&"fact_band", &"HubLobby")
+		var clear := Color(dark, 0.0)
+		var w := band.size.x
+		var h := band.size.y
+		band.draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(w * 0.5, 0), Vector2(w * 0.5, h), Vector2(0, h)]), PackedColorArray([clear, dark, dark, clear]))
+		band.draw_polygon(PackedVector2Array([Vector2(w * 0.5, 0), Vector2(w, 0), Vector2(w, h), Vector2(w * 0.5, h)]), PackedColorArray([dark, clear, clear, dark]))
+		for y in [0.5, h - 0.5]:
+			band.draw_polyline_colors(PackedVector2Array([Vector2(0, y), Vector2(w * 0.5, y), Vector2(w, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.45), Color(rail, 0.0)]), 1.0, true))
+	parent.add_child(band)
+	var row := HBoxContainer.new()
+	row.theme_type_variation = &"LobbyFactRow"
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	band.add_child(row)
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	return row
+
+
+# One fact on a strip: a small kicker above its value, both centred.
+static func strip_fact(row: HBoxContainer, caption: String, value_role: StringName = &"LobbyFactValue", caption_role: StringName = &"LobbyFactCaption") -> Label:
+	var cell := VBoxContainer.new()
+	cell.theme_type_variation = &"LobbyFact"
+	cell.alignment = BoxContainer.ALIGNMENT_CENTER
+	cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(cell)
+	var kicker := label(cell, caption, caption_role)
+	kicker.autowrap_mode = TextServer.AUTOWRAP_OFF
+	kicker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var value := label(cell, "", value_role)
+	value.autowrap_mode = TextServer.AUTOWRAP_OFF
+	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	return value
+
+
+# A gilt diamond between the facts on a strip, with hairlines fading above
+# and below.
+static func strip_divider(row: HBoxContainer) -> void:
+	var mark := Control.new()
+	mark.custom_minimum_size.x = 24
+	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mark.draw.connect(func():
+		var rail := mark.get_theme_color(&"rail", &"HubLobby")
+		var middle := mark.size * 0.5
+		mark.draw_polyline_colors(PackedVector2Array([middle + Vector2(0, -22), middle + Vector2(0, -8)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.6)]), 1.0, true)
+		mark.draw_polyline_colors(PackedVector2Array([middle + Vector2(0, 8), middle + Vector2(0, 22)]), PackedColorArray([Color(rail, 0.6), Color(rail, 0.0)]), 1.0, true)
+		diamond(mark, middle, 5.0, Color(rail, 0.9)))
+	row.add_child(mark)
+
+
+static func diamond(canvas: CanvasItem, center: Vector2, radius: float, color: Color) -> void:
+	canvas.draw_colored_polygon(PackedVector2Array([center + Vector2(0, -radius), center + Vector2(radius, 0), center + Vector2(0, radius), center + Vector2(-radius, 0)]), color)
+
+
 static func space(parent: Node) -> Control:
 	var space := Control.new()
 	space.mouse_filter = Control.MOUSE_FILTER_IGNORE
