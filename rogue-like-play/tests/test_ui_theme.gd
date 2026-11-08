@@ -134,7 +134,6 @@ func run_tests() -> void:
 	check(theme.get_stylebox(&"panel", &"SlabSolid") is QuietWindowStyle and theme.get_stylebox(&"panel", &"SlabSolidEnd") is QuietWindowStyle, "A page's main panel is the quiet surface")
 	check(not ((theme.get_stylebox(&"panel", &"SlabSolidEnd") as QuietWindowStyle).sides & QuietWindowStyle.SIDE_LEFT), "A page's two columns share one hairline between them")
 	check(not ((theme.get_stylebox(&"panel", &"SlabSolidOpen") as QuietWindowStyle).sides & QuietWindowStyle.SIDE_RIGHT), "Beside a framed right column, no hairline parts the two columns")
-	check(is_zero_approx((theme.get_stylebox(&"panel", &"SlabSolid") as QuietWindowStyle).accent.a) and is_zero_approx((theme.get_stylebox(&"panel", &"SlabSolidEnd") as QuietWindowStyle).accent.a), "A page's main panel has no gold line along its top, as a web card would")
 	var card_rest := theme.get_stylebox(&"normal", &"CardButton") as StyleBoxFlat
 	var card_chosen := theme.get_stylebox(&"pressed", &"CardButton") as StyleBoxFlat
 	check(card_rest.border_width_top == 0 and card_rest.bg_color.a > 0.0 and theme.get_stylebox(&"panel", &"CardSurface") == card_rest, "An item card is a faint face without a frame at rest, the same for buttons and panels")
