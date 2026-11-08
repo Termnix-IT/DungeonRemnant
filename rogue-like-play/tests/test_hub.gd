@@ -351,6 +351,7 @@ func run_tests() -> void:
 	await process_frame
 	check(status.slot == 2 and status.tile_ids == [HubStatus.CLEAR_ID, &"slam", &"thunder_flash", &"swallow_cut", &"blaze_ring", &"wisp_shot", &"thunder_circle"] and status.tiles[2].unknown and status.tiles[2].tooltip_text == HubStatus.UNKNOWN_NOTE, "Choosing the second slot shows its tiles, one not learned as its shadow")
 	check(status.tiles[0].clears and status.tiles[1].key == "Q" and not status.tiles[1].held, "A tile tells the slot its skill is set in by that slot's key")
+	check(status.tiles[1].caption == "叩きつけ" and status.tiles[1].note == "6秒" and status.tiles[2].caption == HubStatus.UNKNOWN_NAME and status.tiles[2].note == HubStatus.UNOWNED, "Each tile is named with its short figure, one not learned as unknown and unowned")
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))
 	await process_frame

@@ -24,11 +24,29 @@ const SLOT_DIAMETER := 96.0
 const TILE_DIAMETER := 72.0
 const TILE_COLUMNS := 8
 const PICTURE_SIZE := 150.0
-const REACH_HEIGHT := 34.0
+# The tiers stand flush (StatusSlabStack): the reach is the gap between the
+# pedestal and the shelf, and the shelf's pennant hangs in the gap under it
+# and over the tablet's top edge.
+const REACH_HEIGHT := 30.0
+const PENNANT_ROOM := 26.0
+# The light running down the reach: its speed, spacing and tail (px).
+const FLOW_SPEED := 60.0
+const FLOW_SPACING := 46.0
+const FLOW_TAIL := 16.0
+# Her figure behind the slab: its height against the slab's, its middle's
+# place across it, and how far its feet sink under the foot.
+const FIGURE_HEIGHT := 1.06
+const FIGURE_LEFT := 0.1
+const FIGURE_SINK := 30.0
+# How far a hung ornament tucks up under its panel's edge.
+const ORNAMENT_TUCK := 6.0
+const STAT_MARKER := 14.0
 const UNKNOWN_NAME := "？？？"
 const UNKNOWN_NOTE := "強化ツリーのスキルの枝で習得できる"
 const UNKNOWN_SPECIAL_NOTE := "強化ツリーの必殺技の枝で習得できる"
 const CLEAR_ID := &"clear"
+const CLEAR_NOTE := "このスロットを空ける"
+const UNOWNED := "未所持"
 # The slots: id, name, its keys (keyboard, gamepad), the emblem it shows.
 const SLOTS := [
 	[&"attack", "攻撃", "左クリック", "X", "weapon_sword"],
@@ -62,6 +80,7 @@ var stats: HBoxContainer
 var _slab: VBoxContainer
 var _info: VBoxContainer
 var _reach: Control
+var _figure: Control
 var _tiles: GridContainer
 var _tile_note: Label
 var _stat_columns: Array[GridContainer] = []
@@ -81,9 +100,26 @@ func _ready() -> void:
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_slab = HubUI.open_column(columns, 2.1, &"SlabSolid")
-	# The bar: her four slots as the fight's HUD shows them.
+	# Behind the slab's three tiers, her figure, dimmed into the dark at the
+	# left; the tiers stand right of her.
+	var slab_panel := _slab.get_parent() as Control
+	slab_panel.clip_contents = true
+	slab_panel.remove_child(_slab)
+	_figure = Control.new()
+	_figure.name = "Figure"
+	_figure.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_figure.draw.connect(_draw_figure)
+	slab_panel.add_child(_figure)
+	var slab_margin := MarginContainer.new()
+	slab_margin.theme_type_variation = &"StatusSlabMargin"
+	slab_panel.add_child(slab_margin)
+	slab_margin.add_child(_slab)
+	_slab.theme_type_variation = &"StatusSlabStack"
+	# The pedestal: her four slots as the fight's HUD shows them, a crest on
+	# its top edge.
 	var bar := PanelContainer.new()
 	bar.theme_type_variation = &"EquipBar"
+	bar.draw.connect(func() -> void: _draw_ornament(bar, &"EquipBar", &"crest", true))
 	_slab.add_child(bar)
 	var row := HBoxContainer.new()
 	row.theme_type_variation = &"EquipRow"
@@ -100,30 +136,43 @@ func _ready() -> void:
 		slot_buttons[index].focus_neighbor_left = slot_buttons[maxi(0, index - 1)].get_path()
 		slot_buttons[index].focus_neighbor_right = slot_buttons[mini(slot_buttons.size() - 1, index + 1)].get_path()
 		slot_buttons[index].focus_neighbor_top = slot_buttons[index].get_path()
-	# The line from the chosen slot down to its shelf.
+	# The light from the chosen slot down into its shelf.
 	_reach = Control.new()
 	_reach.custom_minimum_size.y = REACH_HEIGHT
 	_reach.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_reach.draw.connect(_draw_reach)
 	_slab.add_child(_reach)
-	var shelf := CenterContainer.new()
+	# The shelf: what the chosen slot can hold, a pennant hung under it.
+	var shelf := PanelContainer.new()
+	shelf.theme_type_variation = &"EquipShelfPlate"
 	_slab.add_child(shelf)
+	var middle := CenterContainer.new()
+	shelf.add_child(middle)
 	_tiles = GridContainer.new()
 	_tiles.theme_type_variation = &"EquipShelf"
 	_tiles.columns = TILE_COLUMNS
 	_tiles.item_rect_changed.connect(_reach.queue_redraw)
-	shelf.add_child(_tiles)
+	middle.add_child(_tiles)
 	_tile_note = _centered(HubUI.label(_slab, "", &"MutedLabel"))
-	HubUI.space(_slab)
-	HubUI.rule(_slab)
-	# Her figures, in two columns at the slab's foot.
+	var hang := Control.new()
+	hang.custom_minimum_size.y = PENNANT_ROOM
+	hang.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hang.z_index = 1
+	hang.draw.connect(func() -> void: _draw_ornament(hang, &"EquipShelfPlate", &"pennant", false))
+	_slab.add_child(hang)
+	# The tablet: her figures carved in two columns, filling the slab's foot.
+	var tablet := PanelContainer.new()
+	tablet.theme_type_variation = &"StatusTablet"
+	tablet.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_slab.add_child(tablet)
 	stats = HBoxContainer.new()
 	stats.theme_type_variation = &"StatusStats"
-	_slab.add_child(stats)
+	tablet.add_child(stats)
 	for side in 2:
 		var grid := GridContainer.new()
-		grid.columns = 3
+		grid.columns = 4
 		grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		grid.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		stats.add_child(grid)
 		_stat_columns.append(grid)
 	_info = HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
@@ -238,18 +287,19 @@ func _show_tiles() -> void:
 	match kind:
 		&"attack":
 			for weapon in MetaProgress.WEAPONS:
-				_add_tile(weapon.id, weapon.emblem, weapon.display_name, not meta.owns_weapon(weapon.id), UNKNOWN_WEAPON_NOTE)
+				_add_tile(weapon.id, weapon.emblem, weapon.display_name, "%d連撃" % weapon.combo.size(), not meta.owns_weapon(weapon.id), UNKNOWN_WEAPON_NOTE)
 		&"special":
 			if not meta.owns_any_special():
 				_tile_note.text = SPECIAL_NOTE
 			else:
-				_add_tile(CLEAR_ID, "", "このスロットを空ける", false, "")
+				_add_tile(CLEAR_ID, "", "外す", "", false, "")
 				for move in MetaProgress.SPECIALS:
-					_add_tile(move.id, move.emblem, move.display_name, not meta.owns_special(move.id), UNKNOWN_SPECIAL_NOTE)
+					_add_tile(move.id, move.emblem, move.display_name, "ゲージ%s" % _number(move.charge), not meta.owns_special(move.id), UNKNOWN_SPECIAL_NOTE)
 		_:
-			_add_tile(CLEAR_ID, "", "このスロットを空ける", false, "")
+			_add_tile(CLEAR_ID, "", "外す", "", false, "")
 			for skill in MetaProgress.SKILLS:
-				_add_tile(skill.id, skill.emblem, skill.display_name, not meta.owns_skill(skill.id), UNKNOWN_NOTE)
+				_add_tile(skill.id, skill.emblem, skill.display_name, "%s秒" % _number(skill.cooldown), not meta.owns_skill(skill.id), UNKNOWN_NOTE)
+	_tile_note.visible = not _tile_note.text.is_empty()
 	_mark_tiles()
 	for index in tiles.size():
 		var tile := tiles[index]
@@ -262,13 +312,17 @@ func _show_tiles() -> void:
 	_reach.queue_redraw()
 
 
-func _add_tile(id: StringName, emblem: String, tooltip: String, unknown: bool, unknown_note: String) -> void:
-	var tile := EquipSocket.new(TILE_DIAMETER)
+# A tile: its emblem, and under it its name and a short figure ("6秒"); one
+# not held yet, its emblem's shadow over "？？？" and "未所持".
+func _add_tile(id: StringName, emblem: String, title: String, figure: String, unknown: bool, unknown_note: String) -> void:
+	var tile := EquipSocket.new(TILE_DIAMETER, true)
 	_tiles.add_child(tile)
 	tile.emblem = EmblemIcons.texture(emblem) if not emblem.is_empty() else null
 	tile.clears = id == CLEAR_ID
 	tile.unknown = unknown
-	tile.tooltip_text = unknown_note if unknown else tooltip
+	tile.caption = UNKNOWN_NAME if unknown else title
+	tile.note = UNOWNED if unknown else figure
+	tile.tooltip_text = unknown_note if unknown else (CLEAR_NOTE if id == CLEAR_ID else title)
 	var index := tiles.size()
 	tile.focus_entered.connect(_choose_tile.bind(index))
 	tile.pressed.connect(_press_tile.bind(index))
@@ -368,25 +422,85 @@ func _rest_on(target: Control) -> void:
 		target.grab_focus()
 
 
-# From the chosen slot's foot down, then along the shelf beneath it, in the
-# rail's gilt.
+func _process(_delta: float) -> void:
+	if is_visible_in_tree():
+		_reach.queue_redraw()
+
+
+# The reach's path: from the chosen slot's foot down, across to the tile it
+# leads to (the one the focus is on, else the one the slot holds), and down
+# into the shelf over it.
+func _reach_path() -> PackedVector2Array:
+	var origin := _reach.get_global_transform().affine_inverse()
+	var from := (origin * slot_buttons[slot].get_global_rect().get_center()).x
+	var to := from
+	var focused := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
+	var target: Control = focused if tiles.has(focused) else null
+	if target == null:
+		var at := tile_ids.find(_slot_content(slot))
+		target = tiles[at] if at >= 0 and at < tiles.size() else null
+	if target != null:
+		to = (origin * target.get_global_rect().get_center()).x
+	var middle := _reach.size.y * 0.5
+	return PackedVector2Array([Vector2(from, 0.0), Vector2(from, middle), Vector2(to, middle), Vector2(to, _reach.size.y)])
+
+
+# The rail's gilt line along the path, and light running down it as on the
+# upgrade tree's held lines.
 func _draw_reach() -> void:
 	if slot_buttons.is_empty() or slot >= slot_buttons.size():
 		return
+	var path := _reach_path()
 	var rail := _reach.get_theme_color(&"rail", &"HubLobby")
-	var origin := _reach.get_global_transform().affine_inverse()
-	var socket := slot_buttons[slot]
-	var top := origin * (socket.get_global_rect().get_center())
-	var from := Vector2(top.x, 0.0)
-	var middle := _reach.size.y * 0.55
-	_reach.draw_line(from, Vector2(from.x, middle), Color(rail, 0.7), 1.0, true)
-	if tiles.is_empty():
+	_reach.draw_polyline(path, Color(rail, 0.55), 1.5, true)
+	HubUI.diamond(_reach, path[1], 3.0, Color(rail, 0.85))
+	var length := 0.0
+	for index in range(1, path.size()):
+		length += path[index - 1].distance_to(path[index])
+	if length <= 0.0:
 		return
-	var shelf := Rect2(origin * _tiles.global_position, _tiles.size)
-	var left := minf(from.x, shelf.position.x + TILE_DIAMETER * 0.5)
-	var right := maxf(from.x, shelf.end.x - TILE_DIAMETER * 0.5)
-	_reach.draw_line(Vector2(left, middle), Vector2(right, middle), Color(rail, 0.45), 1.0, true)
-	HubUI.diamond(_reach, Vector2(from.x, middle), 3.0, Color(rail, 0.85))
+	var flow := _reach.get_theme_color(&"flow", &"UpgradeTree")
+	var glow := _reach.get_theme_color(&"flow_glow", &"UpgradeTree")
+	var travelled := fmod(Time.get_ticks_msec() * 0.001 * FLOW_SPEED, FLOW_SPACING)
+	while travelled < length:
+		var fade := clampf((length - travelled) / FLOW_TAIL, 0.0, 1.0) * clampf(travelled / FLOW_TAIL, 0.0, 1.0)
+		var head := _along(path, travelled)
+		var tail := _along(path, maxf(0.0, travelled - FLOW_TAIL))
+		_reach.draw_line(tail, head, Color(glow, glow.a * fade), 4.0, true)
+		_reach.draw_line(tail, head, Color(flow, flow.a * fade), 1.5, true)
+		_reach.draw_circle(head, 2.0, Color(flow, flow.a * fade))
+		travelled += FLOW_SPACING
+
+
+# The point `distance` along a polyline.
+func _along(path: PackedVector2Array, distance: float) -> Vector2:
+	var left := distance
+	for index in range(1, path.size()):
+		var step := path[index - 1].distance_to(path[index])
+		if left <= step and step > 0.0:
+			return path[index - 1].lerp(path[index], left / step)
+		left -= step
+	return path[path.size() - 1]
+
+
+# Her figure, dimmed, standing at the slab's left from its foot.
+func _draw_figure() -> void:
+	var texture := HubLobby.HERO_TEXTURE
+	var tall := _figure.size.y * FIGURE_HEIGHT
+	var wide := tall * texture.get_width() / texture.get_height()
+	var rect := Rect2(Vector2(FIGURE_LEFT * _figure.size.x - wide * 0.5, _figure.size.y - tall + FIGURE_SINK), Vector2(wide, tall))
+	_figure.draw_texture_rect(texture, rect, false, get_theme_color(&"tint", &"StatusFigure"))
+
+
+# A painted ornament of a tier's theme type, centred across `canvas`: astride
+# its top edge (the pedestal's crest), or hung from its top, tucked up under
+# the tier above (the shelf's pennant, drawn on the gap under the shelf).
+func _draw_ornament(canvas: Control, type: StringName, icon: StringName, astride: bool) -> void:
+	if not canvas.has_theme_icon(icon, type):
+		return
+	var texture := canvas.get_theme_icon(icon, type)
+	var at := Vector2(canvas.size.x * 0.5 - texture.get_width() * 0.5, -texture.get_height() * 0.5 if astride else -ORNAMENT_TUCK)
+	canvas.draw_texture(texture, at)
 
 
 # --- The column ---
@@ -554,7 +668,8 @@ func stat_rows() -> Array:
 	return rows
 
 
-# The rows shown, the first half in the left column and the rest in the right.
+# The rows shown on the tablet, the first half in the left column and the
+# rest in the right.
 func _show_stats() -> void:
 	if meta == null:
 		return
@@ -567,6 +682,13 @@ func _show_stats() -> void:
 	for index in shown.size():
 		var row: Array = shown[index]
 		var grid := _stat_columns[0 if index < half else 1]
+		# Each row opens with a small gilt diamond, as lines carved on a tablet.
+		var marker := Control.new()
+		marker.custom_minimum_size = Vector2(STAT_MARKER, STAT_MARKER)
+		marker.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		marker.draw.connect(func(): HubUI.diamond(marker, marker.size * 0.5, 4.0, marker.get_theme_color(&"rail", &"HubLobby")))
+		grid.add_child(marker)
 		var name := HubUI.label(grid, row[0], &"BodyLabel")
 		name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var value := HubUI.label(grid, row[1], &"BodyLabel")

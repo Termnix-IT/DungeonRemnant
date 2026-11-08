@@ -31,6 +31,11 @@
 [ext_resource type="Texture2D" path="res://art/ui/ink_plate.png" id="InkPlateTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/slab_stone.png" id="SlabStoneTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/key_cap.png" id="HudKeyCapTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/status/pedestal.png" id="StatusPedestalTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/status/shelf.png" id="StatusShelfTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/status/tablet.png" id="StatusTabletTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/status/crest.png" id="StatusCrestTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/status/pennant.png" id="StatusPennantTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/key_cap_active.png" id="HudKeyCapActiveTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/dialog_plate.png" id="DialogPlateTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/hud/medallion.png" id="HudMedallionTexture"]
@@ -1328,18 +1333,41 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="EquipBarFrame"]
+[sub_resource type="StyleBoxTexture" id="EquipBarFrame"]
 resource_name = "EquipBarFrame"
-content_margin_left = 24.0
-content_margin_top = 10.0
-content_margin_right = 24.0
-content_margin_bottom = 12.0
-bg_color = Color(0.09, 0.083, 0.072, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.29, 0.247, 0.172, 1)
+texture = ExtResource("StatusPedestalTexture")
+texture_margin_left = 50.0
+texture_margin_top = 50.0
+texture_margin_right = 50.0
+texture_margin_bottom = 50.0
+content_margin_left = 44.0
+content_margin_top = 6.0
+content_margin_right = 44.0
+content_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxTexture" id="EquipShelfFrame"]
+resource_name = "EquipShelfFrame"
+texture = ExtResource("StatusShelfTexture")
+texture_margin_left = 34.0
+texture_margin_top = 26.0
+texture_margin_right = 34.0
+texture_margin_bottom = 42.0
+content_margin_left = 36.0
+content_margin_top = 8.0
+content_margin_right = 36.0
+content_margin_bottom = 34.0
+
+[sub_resource type="StyleBoxTexture" id="StatusTabletFrame"]
+resource_name = "StatusTabletFrame"
+texture = ExtResource("StatusTabletTexture")
+texture_margin_left = 32.0
+texture_margin_top = 32.0
+texture_margin_right = 32.0
+texture_margin_bottom = 32.0
+content_margin_left = 40.0
+content_margin_top = 16.0
+content_margin_right = 40.0
+content_margin_bottom = 16.0
 
 [resource]
 DetailStack/base_type = &"VBoxContainer"
@@ -2209,6 +2237,13 @@ SpecialCaption/base_type = &"BossEpithet"
 SpecialCaption/colors/font_color = Color(1, 0.82, 0.48, 1)
 EquipSocket/base_type = &"UpgradeNode"
 EquipSocket/font_sizes/font_size = 14
+EquipSocket/font_sizes/caption_size = 14
+EquipSocket/styles/key_plate = SubResource("KeyCap")
+EquipSocket/styles/key_plate_lit = SubResource("KeyCapActive")
+EquipSocket/colors/caption = Color(0.88, 0.86, 0.82, 1)
+EquipSocket/colors/caption_lit = Color(0.8392157, 0.7176471, 0.48235294, 1)
+EquipSocket/colors/caption_off = Color(0.5, 0.49, 0.47, 1)
+EquipSocket/colors/note = Color(0.6, 0.6, 0.57, 1)
 EquipSocket/colors/disc = Color(0.05, 0.047, 0.05, 1)
 EquipSocket/colors/unknown_tint = Color(0.18, 0.175, 0.17, 1)
 EquipSocket/colors/sealed_tint = Color(0.55, 0.55, 0.55, 1)
@@ -2219,8 +2254,6 @@ EquipSocket/colors/lit = Color(0.8392157, 0.7176471, 0.48235294, 0.45)
 EquipSocket/colors/pointed = Color(0.8392157, 0.7176471, 0.48235294, 0.3)
 EquipSocket/colors/held = Color(0.94, 0.784, 0.47, 1)
 EquipSocket/colors/held_edge = Color(0.1, 0.075, 0.04, 1)
-EquipSocket/colors/key_ground = Color(0.04, 0.037, 0.034, 0.95)
-EquipSocket/colors/key_edge = Color(0.29, 0.282, 0.262, 1)
 EquipSocket/colors/key = Color(0.69803923, 0.7019608, 0.6666667, 1)
 EquipSocket/colors/key_lit = Color(0.8392157, 0.7176471, 0.48235294, 1)
 EquipBar/base_type = &"PanelContainer"
@@ -2228,8 +2261,19 @@ EquipBar/styles/panel = SubResource("EquipBarFrame")
 EquipRow/base_type = &"HBoxContainer"
 EquipRow/constants/separation = 56
 EquipShelf/base_type = &"GridContainer"
-EquipShelf/constants/h_separation = 14
+EquipShelf/constants/h_separation = 6
 EquipShelf/constants/v_separation = 8
 StatusStats/base_type = &"HBoxContainer"
 StatusStats/constants/separation = 48
 StatusInfoMargin/base_type = &"LobbyInfoMargin"
+EquipShelfPlate/base_type = &"PanelContainer"
+EquipShelfPlate/styles/panel = SubResource("EquipShelfFrame")
+StatusTablet/base_type = &"PanelContainer"
+StatusTablet/styles/panel = SubResource("StatusTabletFrame")
+StatusSlabMargin/base_type = &"MarginContainer"
+StatusSlabMargin/constants/margin_left = 200
+StatusFigure/colors/tint = Color(0.42, 0.4, 0.4, 0.42)
+EquipBar/icons/crest = ExtResource("StatusCrestTexture")
+EquipShelfPlate/icons/pennant = ExtResource("StatusPennantTexture")
+StatusSlabStack/base_type = &"VBoxContainer"
+StatusSlabStack/constants/separation = 0
