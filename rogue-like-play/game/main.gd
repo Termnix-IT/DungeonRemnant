@@ -28,6 +28,10 @@ func _ready() -> void:
 	if not has_node("Hub"):
 		return
 	if saving_enabled:
+		# Only the real save is brought over from the old folder; a test's
+		# store points elsewhere and must not touch the player's files.
+		if store.path == MetaStore.DEFAULT_PATH:
+			SaveFolderMove.carry_over(SaveFolderMove.old_folder(), OS.get_user_data_dir())
 		meta = store.load_progress()
 		$Hub.settings.load_settings()
 	$Hub.settings.apply_volume()

@@ -6,10 +6,10 @@ Godot 4.7系で、このゲームを64ビット版Windows向けに書き出す�
 
 登録済みの `Windows Desktop` プリセットは次の構成です。
 
-- 出力先: `rogue-like-play/build/windows/RogueLike_play.exe`
+- 出力先: `rogue-like-play/build/windows/DungeonRemnant.exe`
 - CPUアーキテクチャ: `x86_64`
 - リソース: プロジェクトで利用する全リソース
-- PCK: 実行ファイルへ埋め込まず、`RogueLike_play.pck` として分離
+- PCK: 実行ファイルへ埋め込まず、`DungeonRemnant.pck` として分離
 - コンソールウィンドウ: 表示しない
 - コード署名: 無効
 
@@ -25,11 +25,11 @@ Godot 4.7系で、このゲームを64ビット版Windows向けに書き出す�
 1. `Project > Export...` を開きます。
 2. 左側で `Windows Desktop` を選びます。
 3. `Export Project` を選びます。
-4. `Export With Debug` をオフにし、`build/windows/RogueLike_play.exe` へ書き出します。
+4. `Export With Debug` をオフにし、`build/windows/DungeonRemnant.exe` へ書き出します。
 5. `build/windows/` に最低限、次の2ファイルが生成されたことを確認します。
 
-   - `RogueLike_play.exe`
-   - `RogueLike_play.pck`
+   - `DungeonRemnant.exe`
+   - `DungeonRemnant.pck`
 
 ## コマンドラインから書き出す
 
@@ -37,7 +37,7 @@ Godotのエディター実行ファイルが `godot` として `PATH` に登録�
 
 ```powershell
 godot --headless --path . --editor --import --quit
-godot --headless --path . --export-release "Windows Desktop" "build/windows/RogueLike_play.exe"
+godot --headless --path . --export-release "Windows Desktop" "build/windows/DungeonRemnant.exe"
 ```
 
 1つ目のコマンドはアセットのインポートとスクリプト・シーンの読み込み確認、2つ目はRelease実行ファイルの書き出しです。成功時は終了コードが `0` になり、`build/windows/` に `.exe` と `.pck` が生成されます。
@@ -59,30 +59,32 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/godotengine/godot/4.7.
 
 `build/windows/` の次の6ファイルを同じフォルダーに置いたまま配布します。
 
-- `RogueLike_play.exe`
-- `RogueLike_play.pck`
+- `DungeonRemnant.exe`
+- `DungeonRemnant.pck`
 - `THIRD_PARTY_NOTICES.md`
 - `GODOT_COPYRIGHT.txt`
 - `SHIPPORI_MINCHO_OFL.txt`
 - `BIZ_UDPGOTHIC_OFL.txt`
 
-`.exe`と`.pck`の片方だけでは起動できません。配布時は6ファイルをZIPにまとめ、展開後に `RogueLike_play.exe` を起動してもらいます。`progress.json` などの保存データは配布物に含めません。
+`.exe`と`.pck`の片方だけでは起動できません。配布時は6ファイルをZIPにまとめ、展開後に `DungeonRemnant.exe` を起動してもらいます。`progress.json` などの保存データは配布物に含めません。
 
 このプリセットはコード署名を行いません。そのため、別のPCではWindowsの警告やセキュリティ製品の確認が表示されることがあります。不特定多数への公開前には、配布元を明示し、必要に応じて正規のコード署名証明書を使う別のリリース工程を用意してください。署名用パスワードや証明書は `export_presets.cfg` に保存・コミットしません。
 
 ## 保存データの保存先
 
-ゲームはGodotの `user://progress.json` を使用します。既定のWindows環境では次の場所です。
+ゲームはGodotの `user://progress.json` を使用します。Windowsでは次の場所です。
 
 ```text
-%APPDATA%\Godot\app_userdata\RogueLike_play\progress.json
+%APPDATA%\DungeonRemnant\progress.json
 ```
 
 エクスプローラーのアドレス欄または `Win + R` に次を入力すると、保存フォルダーを直接開けます。
 
 ```text
-%APPDATA%\Godot\app_userdata\RogueLike_play
+%APPDATA%\DungeonRemnant
 ```
+
+開発中の版は `%APPDATA%\Godot\app_userdata\RogueLike_play` に保存していました。新しい保存先にセーブがなく、旧い保存先にあるときは、起動時に一度だけ旧い保存先のセーブと設定をコピーします。旧い保存先のファイルは消さないため、引き継ぎを確かめた後は手作業で消してかまいません。
 
 同じフォルダーに次の関連ファイルが作られる場合があります。
 
@@ -90,6 +92,7 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/godotengine/godot/4.7.
 - `progress.json.bak`: 直前の正常な保存データ
 - `progress.json.tmp`: 保存処理中の一時ファイル。通常は処理完了後に残りません
 - `progress.json.unreadable-*`: 読み込めなかった保存データの退避ファイル
+- `progress.json.carry`: 旧い保存先からコピーしている途中の一時ファイル。通常はコピーの完了後に残りません
 - `progress.json.v4`: ターン制版（保存形式version 1〜4）の保存データを読み込んだときに残す元のファイル。ゲームはこのファイルを読まないため、旧版に戻す場合の控えとして残ります
 - `settings.cfg`: 音量・画面モード・画面の揺れ・操作の案内の設定
 
@@ -99,8 +102,8 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/godotengine/godot/4.7.
 
 配布用ZIPを新しいフォルダーへ展開し、可能なら開発に使っていないWindowsユーザーまたは別PCで確認します。
 
-- [ ] `RogueLike_play.exe`、`RogueLike_play.pck`、`THIRD_PARTY_NOTICES.md`、`GODOT_COPYRIGHT.txt`、`SHIPPORI_MINCHO_OFL.txt`、`BIZ_UDPGOTHIC_OFL.txt`が同じフォルダーにある
-- [ ] `RogueLike_play.exe` をダブルクリックすると、余分なコンソール画面を出さずに起動する
+- [ ] `DungeonRemnant.exe`、`DungeonRemnant.pck`、`THIRD_PARTY_NOTICES.md`、`GODOT_COPYRIGHT.txt`、`SHIPPORI_MINCHO_OFL.txt`、`BIZ_UDPGOTHIC_OFL.txt`が同じフォルダーにある
+- [ ] `DungeonRemnant.exe` をダブルクリックすると、余分なコンソール画面を出さずに起動する
 - [ ] 1600×900のウィンドウで拠点のロビーが表示される
 - [ ] 拠点下部に新規開始を示す保存メッセージが表示される
 - [ ] 「出撃」から分岐マップへ進み、エリアを選んで戦闘を始められる
@@ -108,14 +111,14 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/godotengine/godot/4.7.
 - [ ] Escでメニューを開き、「ランを中断する」を確定すると、結果画面から拠点へ戻れる
 - [ ] 結果画面または拠点下部に保存成功のメッセージが表示される
 - [ ] ゲームを終了して再起動しても、確定済みの残響・永続強化・図鑑の記録が復元される
-- [ ] `%APPDATA%\Godot\app_userdata\RogueLike_play\progress.json` が作成される
+- [ ] `%APPDATA%\DungeonRemnant\progress.json` が作成される
 - [ ] `.exe` と `.pck` がある配布フォルダー内には保存データが作成されない
 
 ## 初回状態で再確認する方法
 
-既存の進行状況を失わないよう、ゲームを終了してから保存フォルダー全体を任意のバックアップ先へコピーします。その後、元の `RogueLike_play` 保存フォルダーを一時的に別名へ変更して起動すると、新規状態を確認できます。
+既存の進行状況を失わないよう、ゲームを終了してから保存フォルダー全体を任意のバックアップ先へコピーします。その後、元の `DungeonRemnant` 保存フォルダーを一時的に別名へ変更して起動すると、新規状態を確認できます。旧い保存先 `%APPDATA%\Godot\app_userdata\RogueLike_play` が残っていると、起動時にそこからセーブがコピーされるため、こちらも一時的に別名へ変更してください。
 
-確認後はゲームを終了し、新しく作られた保存フォルダーを削除してから、退避したフォルダー名を `RogueLike_play` に戻します。破損調査時は `progress.json` だけを削除せず、まずフォルダー全体をバックアップしてください。
+確認後はゲームを終了し、新しく作られた保存フォルダーを削除してから、退避したフォルダー名を `DungeonRemnant`（と旧い保存先の `RogueLike_play`）に戻します。破損調査時は `progress.json` だけを削除せず、まずフォルダー全体をバックアップしてください。
 
 ## リリース前の最終確認
 

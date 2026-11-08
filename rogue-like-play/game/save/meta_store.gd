@@ -10,8 +10,9 @@ extends RefCounted
 # kept as progress.json.v4.
 
 const MAX_BYTES := 65536
+const DEFAULT_PATH := "user://progress.json"
 
-var path := "user://progress.json"
+var path := DEFAULT_PATH
 var message := ""
 var blocked := false
 # True while message reports something the player should notice.
