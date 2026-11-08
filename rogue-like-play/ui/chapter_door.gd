@@ -4,22 +4,27 @@ extends Button
 # A chapter's door on the departure (HubSortie), as stage selects that set
 # their places side by side as doors show them: the chapter's painting cut
 # to a round-topped arch, and at its foot a dark plate with the number, the
-# name and how far it has been taken. The chosen door stands forward, full
-# size in a gold edge; the others stand back, smaller and darker. A sealed
-# door is dark, with the chapter seal on it. The focus adds a thin light
-# edge outside the arch.
+# name and how far it has been taken. The doors stand shoulder to shoulder;
+# the chosen one steps forward, a little larger and lit, over its neighbours
+# in a glowing gold frame, while the others stay darker. A sealed door is
+# dark, with the chapter seal on it. The focus adds a thin light edge
+# outside the frame.
 #
-# The door draws itself on a face inside the button, so it can stand back
+# The door draws itself on a face inside the button, so it can step forward
 # (scale) without moving what the container laid out; the button keeps no
 # style of its own (DoorButton).
 
-const REST_SCALE := 0.88
+const CHOSEN_SCALE := 1.05
 const SEAL_SIZE := 64.0
 # The plate at the door's foot, and the fall from the painting into it.
 const PLATE_HEIGHT := 112.0
 const PLATE_FADE := 72.0
 const ARCH_STEPS := 40
-const FOCUS_GAP := 5.0
+const FOCUS_GAP := 10.0
+# The chosen frame: a gold line, a finer line inside it, and a glow round it.
+const FRAME_WIDTH := 3.0
+const INNER_INSET := 6.0
+const GLOW_WIDTHS := [16.0, 9.0]
 
 var painting: Texture2D:
 	set(value):
@@ -34,7 +39,7 @@ var sealed := false:
 	set(value):
 		sealed = value
 		_face.queue_redraw()
-# 0 stands back, 1 stands forward as the chosen door (UIMotion.stand()).
+# 0 stands in line, 1 stands forward as the chosen door (UIMotion.stand()).
 var stand := 0.0:
 	set(value):
 		stand = value
@@ -81,14 +86,15 @@ func _line(role: StringName) -> Label:
 	return line
 
 
-# The face shrinks toward the door's foot as it stands back, and its words
-# quieten with it.
+# The face grows from the door's foot as it steps forward, over its
+# neighbours, and its words brighten with it.
 func _place_face() -> void:
 	if _face == null:
 		return
 	var weight := clampf(stand, 0.0, 1.0)
 	_face.pivot_offset = Vector2(_face.size.x * 0.5, _face.size.y)
-	_face.scale = Vector2.ONE * lerpf(REST_SCALE, 1.0, weight)
+	_face.scale = Vector2.ONE * lerpf(1.0, CHOSEN_SCALE, weight)
+	_face.z_index = 1 if weight > 0.0 else 0
 	_words.modulate = Color(1, 1, 1, lerpf(0.62, 1.0, weight))
 	_face.queue_redraw()
 
@@ -131,6 +137,13 @@ func _draw_face() -> void:
 		return
 	var weight := clampf(stand, 0.0, 1.0)
 	var shape := _outline(rect)
+	var closed := shape.duplicate()
+	closed.append(shape[0])
+	# The chosen door's glow spreads round it, behind the door itself.
+	if weight > 0.0:
+		var glow := get_theme_color(&"glow", &"DoorButton")
+		for width: float in GLOW_WIDTHS:
+			_face.draw_polyline(closed, Color(glow, glow.a * weight), width, true)
 	# A shadow falls behind the door so it stands off the hall.
 	var shadow := PackedVector2Array()
 	for point in shape:
@@ -158,11 +171,15 @@ func _draw_face() -> void:
 		var seal := EmblemIcons.texture("seal_chapter")
 		var middle := Vector2(rect.size.x * 0.5, (rect.size.x * 0.5 + plate_top) * 0.5)
 		_face.draw_texture_rect(seal, Rect2(middle - Vector2.ONE * SEAL_SIZE * 0.5, Vector2.ONE * SEAL_SIZE), false, Color(1, 1, 1, lerpf(0.7, 1.0, weight)))
-	# The edge: quiet bronze while standing back, gold once chosen.
-	var closed := shape.duplicate()
-	closed.append(shape[0])
-	var edge := get_theme_color(&"edge", &"DoorButton").lerp(get_theme_color(&"chosen_edge", &"DoorButton"), weight)
-	_face.draw_polyline(closed, edge, lerpf(1.0, 2.0, weight), true)
+	# The edge: quiet bronze in line; once chosen, a gold frame with a finer
+	# line inside it.
+	var gold := get_theme_color(&"chosen_edge", &"DoorButton")
+	if weight > 0.0:
+		var inner := _outline(rect.grow(-INNER_INSET))
+		inner.append(inner[0])
+		_face.draw_polyline(inner, Color(gold, 0.55 * weight), 1.0, true)
+	var edge := get_theme_color(&"edge", &"DoorButton").lerp(gold, weight)
+	_face.draw_polyline(closed, edge, lerpf(1.0, FRAME_WIDTH, weight), true)
 	if has_focus():
 		var outer := _outline(rect.grow(FOCUS_GAP))
 		outer.append(outer[0])

@@ -2,11 +2,11 @@ class_name HubSortie
 extends Control
 
 # Where to set out, laid out as stage selects that set their places side by
-# side as doors lay it out (Halls of Torment, Slay the Spire): how many
-# chapters have been cleared, then the chapters as doors standing in the
-# hall (ChapterDoor), each its painting, its number and name, and how far it
-# has been taken (未踏, 第2層まで, 踏破 2回, or 封印中 with the door dark and
-# sealed). The chosen door stands forward; the others stand back.
+# side as doors lay it out (Halls of Torment, Slay the Spire): the chapters
+# as doors standing shoulder to shoulder in the hall (ChapterDoor), each its
+# painting, its number and name, and how far it has been taken (未踏,
+# 第2層まで, 踏破 2回, or 封印中 with the door dark and sealed). The chosen door
+# steps forward in a glowing gold frame; the others stay darker.
 #
 # Beneath, one band on the panel's two columns. On the left, the chosen
 # chapter's line; its way, record and boss (the boss unnamed until met, as
@@ -28,7 +28,7 @@ signal chapter_chosen(chapter: ChapterData)
 # The difficulty step chosen to set out at.
 signal step_chosen(step: int)
 
-const DOOR_SIZE := Vector2(252, 404)
+const DOOR_SIZE := Vector2(340, 440)
 # Where across each chapter's painting its door looks: on the way in, the
 # lit stair or gate each painting is drawn round.
 const DOOR_FOCUS := {
@@ -47,7 +47,6 @@ const UNKNOWN_NAME := "？？？"
 var meta: MetaProgress
 var cards: Array[ChapterDoor] = []
 var selected := 0
-var count_label: Label
 var description_label: Label
 var route_value: Label
 var record_value: Label
@@ -80,7 +79,6 @@ func _ready() -> void:
 	stack.theme_type_variation = &"DetailStack"
 	add_child(stack)
 	stack.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	count_label = HubUI.label(stack, "", &"NoteLabel")
 	var hall := CenterContainer.new()
 	hall.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	hall.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -225,16 +223,12 @@ func _picture(row: HBoxContainer, texture: Texture2D, extent: float, tip: String
 func refresh(current: MetaProgress, chapter: ChapterData, at_step: int = 0) -> void:
 	meta = current
 	step = clampi(at_step, 0, meta.steps_open())
-	var cleared := 0
 	for index in cards.size():
 		var each := Chapters.ALL[index]
 		var open := meta.chapter_open(each)
-		if meta.clears_of(each.id) > 0:
-			cleared += 1
 		var record := Chapters.record(meta, each)
 		cards[index].state_label.text = "封印中" if not open else ("未踏" if record == "なし" else record)
 		cards[index].sealed = not open
-	count_label.text = "踏破した章  %d / %d" % [cleared, Chapters.ALL.size()]
 	selected = maxi(0, Chapters.ALL.find(chapter))
 	_shown = null
 	_show_selection()

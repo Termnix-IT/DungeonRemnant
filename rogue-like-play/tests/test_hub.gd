@@ -68,7 +68,7 @@ func run_tests() -> void:
 	var sortie: HubSortie = hub.sortie_page
 	check(hub.page == "sortie" and sortie.visible and main.active_run == null, "The departure opens where to set out, without setting out")
 	check(sortie.cards.size() == Chapters.ALL.size() and sortie.chosen() == Chapters.ALL[0] and sortie.cards[0].button_pressed and not sortie.cards[1].button_pressed, "It opens on the first chapter, marked chosen")
-	check(sortie.count_label.text.contains("0 / %d" % Chapters.ALL.size()) and sortie.cards[0].state_label.text == "未踏" and sortie.cards.slice(1).all(func(door: ChapterDoor): return door.state_label.text == "封印中" and door.sealed), "Each door tells how far its chapter has been taken")
+	check(sortie.cards[0].state_label.text == "未踏" and sortie.cards.slice(1).all(func(door: ChapterDoor): return door.state_label.text == "封印中" and door.sealed), "Each door tells how far its chapter has been taken")
 	check(sortie.route_value.text == "3層とボス" and sortie.record_value.text == "なし" and sortie.boss_value.text == HubSortie.UNKNOWN_NAME, "The band tells the way, the record, and a boss not met yet unnamed")
 	var ruin_king: FoeData = load("res://data/foes/ruin_king.tres")
 	var first_foes := Chapters.foes(Chapters.ALL[0])
@@ -92,7 +92,7 @@ func run_tests() -> void:
 	main.meta.met[ruin_king.id] = true
 	hub.refresh(main.meta)
 	check(hub.chapter.id == &"gale_woods" and sortie.chosen().id == &"gale_woods" and not sortie.cards[1].sealed, "A chapter that has just opened is the one offered next")
-	check(not sortie.action_button.disabled and sortie.action_button.text == "第2章へ出撃する" and sortie.cards[0].state_label.text == "踏破 1回" and sortie.count_label.text.contains("1 / %d" % Chapters.ALL.size()), "Once the first chapter is cleared, the second opens")
+	check(not sortie.action_button.disabled and sortie.action_button.text == "第2章へ出撃する" and sortie.cards[0].state_label.text == "踏破 1回", "Once the first chapter is cleared, the second opens")
 	root.push_input(key(KEY_LEFT))
 	await process_frame
 	check(hub.chapter.id == &"ash_corridor" and sortie.boss_value.text == ruin_king.display_name, "Choosing an open chapter makes it the next departure, and a boss met is named")
