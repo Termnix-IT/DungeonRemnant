@@ -337,17 +337,20 @@ func run_tests() -> void:
 	await process_frame
 	var status: HubStatus = hub.status_page
 	check(hub.page == "status" and status.slot_buttons[1].has_focus() and status.name_label.text == "叩きつけ", "Tab goes to the status page, on the first skill slot")
-	check(status.slot_buttons.size() == 4 and status.slot_buttons[0].text.contains("剣") and status.slot_buttons[2].text.contains("空き") and status.slot_buttons[3].text.contains("封印"), "The slots tell the sword, the empty slot and the sealed special")
+	check(status.slot_buttons.size() == 4 and status.slot_buttons[0].tooltip_text.contains("剣") and status.slot_buttons[2].tooltip_text.contains("空き") and status.slot_buttons[3].tooltip_text.contains("封印"), "The slots tell the sword, the empty slot and the sealed special")
+	check(status.slot_buttons[0].emblem != null and status.slot_buttons[2].empty and status.slot_buttons[3].sealed, "The slots show the sword's emblem, a dashed ring for the empty slot and the dimmed seal")
+	check(status.slot_buttons.map(func(socket: EquipSocket): return socket.key) == ["左クリック", "Q", "E", "R"] and status.slot_buttons[1].lit and not status.slot_buttons[2].lit, "Each slot carries its key as the fight's HUD does, the chosen one lit")
 	var hp_row: Array = status.stat_rows()[0]
 	check(hp_row[1] == "115" and hp_row[2] == "(+15)" and hp_row[3].contains("鍛えた体 +15"), "Her health shows what the upgrades add, and its breakdown")
-	var always := status.stats.get_child_count()
+	var always := status.shown_rows
+	check(always == 5, "The table shows her five main figures")
 	root.push_input(key(KEY_R))
 	await process_frame
-	check(status.details_open and status.stats.get_child_count() > always, "R opens the rest of her figures")
+	check(status.details_open and status.shown_rows > always, "R opens the rest of her figures")
 	root.push_input(key(KEY_RIGHT))
 	await process_frame
-	check(status.slot == 2 and status.tile_ids == [HubStatus.CLEAR_ID, &"slam", &"thunder_flash", &"swallow_cut", &"blaze_ring", &"wisp_shot", &"thunder_circle"] and status.tiles[2].text == HubStatus.UNKNOWN_NAME, "Choosing the second slot shows its tiles")
-	check(status.tiles[1].text.contains("スキル1"), "A tile tells the slot its skill is set in")
+	check(status.slot == 2 and status.tile_ids == [HubStatus.CLEAR_ID, &"slam", &"thunder_flash", &"swallow_cut", &"blaze_ring", &"wisp_shot", &"thunder_circle"] and status.tiles[2].unknown and status.tiles[2].tooltip_text == HubStatus.UNKNOWN_NOTE, "Choosing the second slot shows its tiles, one not learned as its shadow")
+	check(status.tiles[0].clears and status.tiles[1].key == "Q" and not status.tiles[1].held, "A tile tells the slot its skill is set in by that slot's key")
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))
 	await process_frame
@@ -359,6 +362,7 @@ func run_tests() -> void:
 	root.push_input(key(KEY_ENTER, false))
 	await process_frame
 	check(main.meta.loadout == [&"", &"slam"] and status.slot_buttons[2].has_focus() and hub.feedback.text.contains("スキル2"), "Enter on a tile sets it, and the focus returns to the slot")
+	check(status.tiles[1].held and status.tiles[1].key.is_empty() and status.slot_buttons[1].empty, "What the slot now holds carries the gold mark, and the slot it left is empty")
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))
 	await process_frame
@@ -370,7 +374,7 @@ func run_tests() -> void:
 	root.push_input(key(KEY_LEFT))
 	root.push_input(key(KEY_LEFT))
 	await process_frame
-	check(status.slot == 0 and status.tile_ids == [&"sword", &"spear", &"hammer"] and status.tiles[1].text == HubStatus.UNKNOWN_NAME and status.slot_buttons[0].text.contains("剣"), "The attack slot shows the sword, the other weapons unknown")
+	check(status.slot == 0 and status.tile_ids == [&"sword", &"spear", &"hammer"] and status.tiles[1].unknown and status.tiles[0].held and status.slot_buttons[0].tooltip_text.contains("剣"), "The attack slot shows the sword, the other weapons unknown")
 	main.meta.ranks["learn_spear"] = 1
 	hub.refresh(main.meta, "")
 	root.push_input(key(KEY_ENTER))
@@ -382,7 +386,7 @@ func run_tests() -> void:
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))
 	await process_frame
-	check(main.meta.weapon == &"spear" and status.slot_buttons[0].text.contains("槍") and hub.feedback.text.contains("持ち替え"), "Enter on it takes the spear up")
+	check(main.meta.weapon == &"spear" and status.slot_buttons[0].tooltip_text.contains("槍") and hub.feedback.text.contains("持ち替え"), "Enter on it takes the spear up")
 	root.push_input(key(KEY_RIGHT))
 	root.push_input(key(KEY_RIGHT))
 	await process_frame
@@ -391,7 +395,7 @@ func run_tests() -> void:
 	hub.refresh(main.meta, "")
 	root.push_input(key(KEY_RIGHT))
 	await process_frame
-	check(status.slot == 3 and status.tile_ids == [HubStatus.CLEAR_ID, &"echo_burst", &"sky_rend", &"crimson_lotus"] and status.tiles[2].text == HubStatus.UNKNOWN_NAME and status.slot_buttons[3].text.contains("空き"), "Once a special move is learned, its slot opens with its tiles")
+	check(status.slot == 3 and status.tile_ids == [HubStatus.CLEAR_ID, &"echo_burst", &"sky_rend", &"crimson_lotus"] and status.tiles[2].unknown and status.slot_buttons[3].empty and status.slot_buttons[3].tooltip_text.contains("空き"), "Once a special move is learned, its slot opens with its tiles")
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))
 	await process_frame
@@ -401,7 +405,7 @@ func run_tests() -> void:
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))
 	await process_frame
-	check(main.meta.special == &"echo_burst" and status.slot_buttons[3].text.contains("残響解放") and hub.feedback.text.contains("必殺技"), "Enter on it sets the special move")
+	check(main.meta.special == &"echo_burst" and status.slot_buttons[3].tooltip_text.contains("残響解放") and hub.feedback.text.contains("必殺技"), "Enter on it sets the special move")
 	root.push_input(key(KEY_TAB))
 	await process_frame
 	check(hub.page == "upgrade", "Tab goes back to the upgrades")

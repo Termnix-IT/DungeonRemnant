@@ -80,6 +80,15 @@ func capture() -> void:
 	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.3).timeout
 	await _grab("hub_upgrade_buy_1600")
 	UIMotion.of(hub.upgrade_page.buy_button).stand(false)
+	# The status's shelf, the focus down on a skill not learned yet (its
+	# shadow), the first slot still lit, and all her figures open.
+	hub.show_page("status")
+	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
+	hub.status_page.toggle_details()
+	hub.status_page.tiles[2].grab_focus()
+	await create_timer(0.3).timeout
+	await _grab("hub_status_shelf_1600")
+	hub.status_page.toggle_details()
 	# A new account sliding into the encyclopedia's column, mid-way.
 	hub.show_page("codex")
 	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout

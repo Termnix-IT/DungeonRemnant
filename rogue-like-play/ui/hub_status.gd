@@ -1,27 +1,30 @@
 class_name HubStatus
 extends Control
 
-# The status page, laid out as action games commonly lay out equipment: on
-# the slab from the left, her four slots in a row (the attack, fixed to the
-# weapon (the sword, or one learned on the weapon branch); the two skills on
-# Q / Y and E / B; the special move on R / LB,
-# sealed until one is learned) and under them, as tiles, what the chosen
-# slot can hold (a skill or special move not held yet is a dark "？？？";
-# the first tile clears the slot). In the column
-# on the right, the chosen thing's emblem, name, kind and figures, what it
-# does and the one action (equip or clear), and under it her figures as the
-# lasting upgrades make them, each with what the upgrades add; R (Y) opens
-# the rest. Choosing a slot shows its tiles; Enter (A) on a slot goes into
-# them, Enter on a tile equips it (equip_requested; the hub saves, then
-# calls present_equip), and back from the tiles returns to the slot. The
-# pointer chooses by resting or clicking, and equips with the button.
+# The status page, laid out as the fight shows her actions: on the slab from
+# the left, a stone bar with her four slots as the HUD's round sockets
+# (EquipSocket), each with its key under it (the attack, fixed to the weapon
+# (the sword, or one learned on the weapon branch); the two skills on Q / Y
+# and E / B; the special move on R / LB, sealed until one is learned). From
+# the chosen slot a line runs down to the shelf of what it can hold, smaller
+# sockets (a thing not held yet is its emblem's shadow; the first clears the
+# slot; what the slot holds carries a gold diamond, a skill set in the other
+# slot that slot's key). At the slab's foot, her figures as the lasting
+# upgrades make them, each with what the upgrades add; R (Y) opens the rest.
+# In the column on the right, the chosen thing's emblem, name, kind and
+# figures, what it does and the one action (equip or clear) as the crest
+# button. Choosing a slot shows its tiles; Enter (A) on a slot goes into
+# them, Enter on a tile equips it (equip_requested; the hub saves, then calls
+# present_equip), and back from the tiles returns to the slot. The pointer
+# chooses by resting or clicking, and equips with the button.
 
 signal equip_requested(slot: int, id: StringName)
 
-const SLOT_SIZE := Vector2(150, 150)
-const TILE_SIZE := Vector2(128, 140)
-const TILE_COLUMNS := 5
-const PICTURE_SIZE := 120.0
+const SLOT_DIAMETER := 96.0
+const TILE_DIAMETER := 72.0
+const TILE_COLUMNS := 8
+const PICTURE_SIZE := 150.0
+const REACH_HEIGHT := 34.0
 const UNKNOWN_NAME := "？？？"
 const UNKNOWN_NOTE := "強化ツリーのスキルの枝で習得できる"
 const UNKNOWN_SPECIAL_NOTE := "強化ツリーの必殺技の枝で習得できる"
@@ -40,24 +43,28 @@ const SPECIAL_NOTE := "強化ツリーの必殺技の枝で必殺技を覚える
 const SPECIAL_SLOT := 3
 
 var meta: MetaProgress
-var slot_buttons: Array[Button] = []
-var tiles: Array[Button] = []
+var slot_buttons: Array[EquipSocket] = []
+var tiles: Array[EquipSocket] = []
 # What each tile holds: a skill's, special move's or weapon's id, or CLEAR_ID.
 var tile_ids: Array[StringName] = []
 var slot := 1
 var shown_id: StringName = &""
 var details_open := false
+# How many of her figures the table shows.
+var shown_rows := 0
 var picture: Control
 var name_label: Label
 var kind_label: Label
 var figure_label: Label
 var description_label: Label
-var action_button: Button
-var stats: GridContainer
+var action_button: CrestButton
+var stats: HBoxContainer
 var _slab: VBoxContainer
 var _info: VBoxContainer
+var _reach: Control
 var _tiles: GridContainer
 var _tile_note: Label
+var _stat_columns: Array[GridContainer] = []
 var _emblem := ""
 var _unknown := false
 var _pad := false
@@ -74,11 +81,17 @@ func _ready() -> void:
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_slab = HubUI.open_column(columns, 2.1, &"SlabSolid")
+	# The bar: her four slots as the fight's HUD shows them.
+	var bar := PanelContainer.new()
+	bar.theme_type_variation = &"EquipBar"
+	_slab.add_child(bar)
 	var row := HBoxContainer.new()
-	row.theme_type_variation = &"ListRow"
-	_slab.add_child(row)
+	row.theme_type_variation = &"EquipRow"
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	bar.add_child(row)
 	for index in SLOTS.size():
-		var button := _card(row, SLOT_SIZE)
+		var button := EquipSocket.new(SLOT_DIAMETER)
+		row.add_child(button)
 		button.pressed.connect(_enter_tiles.bind(index))
 		button.focus_entered.connect(_choose_slot.bind(index))
 		button.mouse_entered.connect(_rest_on.bind(button))
@@ -87,13 +100,42 @@ func _ready() -> void:
 		slot_buttons[index].focus_neighbor_left = slot_buttons[maxi(0, index - 1)].get_path()
 		slot_buttons[index].focus_neighbor_right = slot_buttons[mini(slot_buttons.size() - 1, index + 1)].get_path()
 		slot_buttons[index].focus_neighbor_top = slot_buttons[index].get_path()
-	HubUI.rule(_slab)
+	# The line from the chosen slot down to its shelf.
+	_reach = Control.new()
+	_reach.custom_minimum_size.y = REACH_HEIGHT
+	_reach.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_reach.draw.connect(_draw_reach)
+	_slab.add_child(_reach)
+	var shelf := CenterContainer.new()
+	_slab.add_child(shelf)
 	_tiles = GridContainer.new()
+	_tiles.theme_type_variation = &"EquipShelf"
 	_tiles.columns = TILE_COLUMNS
-	_slab.add_child(_tiles)
-	_tile_note = HubUI.label(_slab, "", &"MutedLabel")
+	_tiles.item_rect_changed.connect(_reach.queue_redraw)
+	shelf.add_child(_tiles)
+	_tile_note = _centered(HubUI.label(_slab, "", &"MutedLabel"))
+	HubUI.space(_slab)
+	HubUI.rule(_slab)
+	# Her figures, in two columns at the slab's foot.
+	stats = HBoxContainer.new()
+	stats.theme_type_variation = &"StatusStats"
+	_slab.add_child(stats)
+	for side in 2:
+		var grid := GridContainer.new()
+		grid.columns = 3
+		grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		stats.add_child(grid)
+		_stat_columns.append(grid)
 	_info = HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
-	(_info.get_parent() as Control).clip_contents = true
+	# The account stands inside the ornate frame laid over the column, as on
+	# the upgrade tree's column.
+	var info_panel := _info.get_parent() as Control
+	info_panel.clip_contents = true
+	var info_margin := MarginContainer.new()
+	info_margin.theme_type_variation = &"StatusInfoMargin"
+	info_panel.remove_child(_info)
+	info_panel.add_child(info_margin)
+	info_margin.add_child(_info)
 	_info.theme_type_variation = &"DetailStack"
 	picture = Control.new()
 	picture.custom_minimum_size = Vector2.ONE * PICTURE_SIZE
@@ -104,32 +146,24 @@ func _ready() -> void:
 	_info.add_child(picture)
 	name_label = _centered(HubUI.label(_info, "", &"HeadingLabel"))
 	kind_label = _centered(HubUI.label(_info, "", &"MutedLabel"))
+	HubUI.rule(_info)
 	figure_label = _centered(HubUI.label(_info, "", &"ValueLabel"))
 	description_label = HubUI.label(_info, "", &"DescriptionLabel")
-	action_button = HubUI.primary_action(_info, "", _act)
-	HubUI.rule(_info)
-	stats = GridContainer.new()
-	stats.columns = 3
-	_info.add_child(stats)
-	UIMotion.bind_buttons(_slab)
+	HubUI.space(_info)
+	# Setting a thing in a slot: the crest with the lobby's mark for the status.
+	action_button = CrestButton.new()
+	action_button.name = "Equip"
+	action_button.kind = "装備"
+	action_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	action_button.pressed.connect(_act)
+	_info.add_child(action_button)
+	HubUI.ornate_frame(info_panel)
 	UIMotion.bind_buttons(_info)
 
 
 func _centered(label: Label) -> Label:
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	return label
-
-
-func _card(parent: Node, extent: Vector2) -> Button:
-	var card := Button.new()
-	card.theme_type_variation = &"CardButton"
-	card.custom_minimum_size = extent
-	card.expand_icon = true
-	card.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	card.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
-	card.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	parent.add_child(card)
-	return card
 
 
 func refresh(current: MetaProgress) -> void:
@@ -153,6 +187,10 @@ func _slot_content(index: int) -> StringName:
 	return meta.loadout[index - SKILL_SLOT_OFFSET] if meta != null else &""
 
 
+func _slot_key(index: int) -> String:
+	return SLOTS[index][3] if _pad else SLOTS[index][2]
+
+
 func _show_slots() -> void:
 	if meta == null:
 		return
@@ -163,11 +201,11 @@ func _show_slots() -> void:
 		var skill := MetaProgress.find_skill(held)
 		var move := MetaProgress.find_special(held)
 		var weapon := MetaProgress.find_weapon(held)
-		var keys: String = entry[3] if _pad else entry[2]
 		var content := "空き"
-		var emblem: String = entry[4]
+		var emblem := ""
 		if held == &"special":
 			content = "封印"
+			emblem = entry[4]
 		elif weapon != null:
 			content = weapon.display_name
 			emblem = weapon.emblem
@@ -177,8 +215,13 @@ func _show_slots() -> void:
 		elif move != null:
 			content = move.display_name
 			emblem = move.emblem
-		button.text = "%s%s\n%s" % [entry[1], "（%s）" % keys if not keys.is_empty() else "", content]
-		button.icon = EmblemIcons.texture(emblem)
+		button.emblem = EmblemIcons.texture(emblem)
+		button.empty = emblem.is_empty()
+		button.sealed = held == &"special"
+		button.key = _slot_key(index)
+		button.lit = index == slot
+		button.tooltip_text = "%s（%s）：%s" % [entry[1], _slot_key(index), content]
+		button.queue_redraw()
 
 
 func _show_tiles() -> void:
@@ -195,29 +238,19 @@ func _show_tiles() -> void:
 	match kind:
 		&"attack":
 			for weapon in MetaProgress.WEAPONS:
-				if not meta.owns_weapon(weapon.id):
-					_add_tile(weapon.id, UNKNOWN_NAME, null, UNKNOWN_WEAPON_NOTE)
-					continue
-				_add_tile(weapon.id, weapon.display_name + ("\n装備中" if meta.weapon == weapon.id else ""), EmblemIcons.texture(weapon.emblem), weapon.display_name)
+				_add_tile(weapon.id, weapon.emblem, weapon.display_name, not meta.owns_weapon(weapon.id), UNKNOWN_WEAPON_NOTE)
 		&"special":
 			if not meta.owns_any_special():
 				_tile_note.text = SPECIAL_NOTE
 			else:
-				_add_tile(CLEAR_ID, "外す", null, "このスロットを空ける")
+				_add_tile(CLEAR_ID, "", "このスロットを空ける", false, "")
 				for move in MetaProgress.SPECIALS:
-					if not meta.owns_special(move.id):
-						_add_tile(move.id, UNKNOWN_NAME, null, UNKNOWN_SPECIAL_NOTE)
-						continue
-					_add_tile(move.id, move.display_name + ("\n装備中" if meta.special == move.id else ""), EmblemIcons.texture(move.emblem), move.display_name)
+					_add_tile(move.id, move.emblem, move.display_name, not meta.owns_special(move.id), UNKNOWN_SPECIAL_NOTE)
 		_:
-			_add_tile(CLEAR_ID, "外す", null, "このスロットを空ける")
+			_add_tile(CLEAR_ID, "", "このスロットを空ける", false, "")
 			for skill in MetaProgress.SKILLS:
-				if not meta.owns_skill(skill.id):
-					_add_tile(skill.id, UNKNOWN_NAME, null, UNKNOWN_NOTE)
-					continue
-				var at := meta.slot_of(skill.id)
-				var mark := "" if at < 0 else ("\n装備中" if at == slot - SKILL_SLOT_OFFSET else "\n%s" % SLOTS[at + SKILL_SLOT_OFFSET][1])
-				_add_tile(skill.id, skill.display_name + mark, EmblemIcons.texture(skill.emblem), skill.display_name)
+				_add_tile(skill.id, skill.emblem, skill.display_name, not meta.owns_skill(skill.id), UNKNOWN_NOTE)
+	_mark_tiles()
 	for index in tiles.size():
 		var tile := tiles[index]
 		tile.focus_neighbor_top = slot_buttons[slot].get_path()
@@ -226,14 +259,16 @@ func _show_tiles() -> void:
 		if index == tiles.size() - 1:
 			tile.focus_neighbor_right = tile.get_path()
 	slot_buttons[slot].focus_neighbor_bottom = tiles[0].get_path() if not tiles.is_empty() else slot_buttons[slot].get_path()
-	UIMotion.bind_buttons(_tiles)
+	_reach.queue_redraw()
 
 
-func _add_tile(id: StringName, text: String, icon: Texture2D, tooltip: String) -> void:
-	var tile := _card(_tiles, TILE_SIZE)
-	tile.text = text
-	tile.icon = icon
-	tile.tooltip_text = tooltip
+func _add_tile(id: StringName, emblem: String, tooltip: String, unknown: bool, unknown_note: String) -> void:
+	var tile := EquipSocket.new(TILE_DIAMETER)
+	_tiles.add_child(tile)
+	tile.emblem = EmblemIcons.texture(emblem) if not emblem.is_empty() else null
+	tile.clears = id == CLEAR_ID
+	tile.unknown = unknown
+	tile.tooltip_text = unknown_note if unknown else tooltip
 	var index := tiles.size()
 	tile.focus_entered.connect(_choose_tile.bind(index))
 	tile.pressed.connect(_press_tile.bind(index))
@@ -242,9 +277,30 @@ func _add_tile(id: StringName, text: String, icon: Texture2D, tooltip: String) -
 	tile_ids.append(id)
 
 
+# What the chosen slot holds carries the gold diamond; a skill set in the
+# other skill slot carries that slot's key.
+func _mark_tiles() -> void:
+	if meta == null:
+		return
+	var held := _slot_content(slot)
+	for index in tiles.size():
+		var id := tile_ids[index]
+		var tile := tiles[index]
+		tile.held = id == held and id != CLEAR_ID and not tile.unknown
+		var key := ""
+		if SLOTS[slot][0] in [&"skill_1", &"skill_2"] and meta.owns_skill(id):
+			var at := meta.slot_of(id)
+			if at >= 0 and at != slot - SKILL_SLOT_OFFSET:
+				key = _slot_key(at + SKILL_SLOT_OFFSET)
+		tile.key = key
+		tile.queue_redraw()
+
+
 func _choose_slot(index: int) -> void:
 	if index != slot:
 		slot = index
+		for at in slot_buttons.size():
+			slot_buttons[at].lit = at == slot
 		_show_tiles()
 	_tell(_slot_content(index))
 
@@ -300,7 +356,7 @@ func _act() -> void:
 
 # After an equip was saved: the slot's moment, and the focus back on it.
 func present_equip() -> void:
-	UIMotion.of(slot_buttons[slot]).pulse(1.04, UIMotion.GOLD_TIME)
+	UIMotion.of(slot_buttons[slot]).pulse(1.06, UIMotion.GOLD_TIME)
 	slot_buttons[slot].grab_focus()
 
 
@@ -310,6 +366,27 @@ func _rest_on(target: Control) -> void:
 	await get_tree().create_timer(HubLobby.HOVER_INTENT).timeout
 	if _hover_target == target and is_instance_valid(target) and target.is_visible_in_tree() and not target.has_focus():
 		target.grab_focus()
+
+
+# From the chosen slot's foot down, then along the shelf beneath it, in the
+# rail's gilt.
+func _draw_reach() -> void:
+	if slot_buttons.is_empty() or slot >= slot_buttons.size():
+		return
+	var rail := _reach.get_theme_color(&"rail", &"HubLobby")
+	var origin := _reach.get_global_transform().affine_inverse()
+	var socket := slot_buttons[slot]
+	var top := origin * (socket.get_global_rect().get_center())
+	var from := Vector2(top.x, 0.0)
+	var middle := _reach.size.y * 0.55
+	_reach.draw_line(from, Vector2(from.x, middle), Color(rail, 0.7), 1.0, true)
+	if tiles.is_empty():
+		return
+	var shelf := Rect2(origin * _tiles.global_position, _tiles.size)
+	var left := minf(from.x, shelf.position.x + TILE_DIAMETER * 0.5)
+	var right := maxf(from.x, shelf.end.x - TILE_DIAMETER * 0.5)
+	_reach.draw_line(Vector2(left, middle), Vector2(right, middle), Color(rail, 0.45), 1.0, true)
+	HubUI.diamond(_reach, Vector2(from.x, middle), 3.0, Color(rail, 0.85))
 
 
 # --- The column ---
@@ -441,7 +518,7 @@ func _reach_text(attack: AttackData) -> String:
 func _draw_picture() -> void:
 	var emblem := EmblemIcons.texture(_emblem)
 	if emblem != null:
-		picture.draw_texture_rect(emblem, Rect2(Vector2.ZERO, picture.size), false, Color(0.12, 0.12, 0.12, 1.0) if _unknown else Color.WHITE)
+		picture.draw_texture_rect(emblem, Rect2(Vector2.ZERO, picture.size), false, get_theme_color(&"unknown_tint", &"EquipSocket") if _unknown else Color.WHITE)
 
 
 # --- Her figures ---
@@ -477,19 +554,24 @@ func stat_rows() -> Array:
 	return rows
 
 
+# The rows shown, the first half in the left column and the rest in the right.
 func _show_stats() -> void:
 	if meta == null:
 		return
-	for child in stats.get_children():
-		child.free()
-	for row: Array in stat_rows():
-		if not row[4] and not details_open:
-			continue
-		var name := HubUI.label(stats, row[0], &"BodyLabel")
+	for grid in _stat_columns:
+		for child in grid.get_children():
+			child.free()
+	var shown := stat_rows().filter(func(row: Array): return row[4] or details_open)
+	shown_rows = shown.size()
+	var half := ceili(shown.size() * 0.5)
+	for index in shown.size():
+		var row: Array = shown[index]
+		var grid := _stat_columns[0 if index < half else 1]
+		var name := HubUI.label(grid, row[0], &"BodyLabel")
 		name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var value := HubUI.label(stats, row[1], &"BodyLabel")
+		var value := HubUI.label(grid, row[1], &"BodyLabel")
 		value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		var added := HubUI.label(stats, row[2], &"MutedLabel")
+		var added := HubUI.label(grid, row[2], &"MutedLabel")
 		added.custom_minimum_size.x = 56
 		for label: Label in [name, value, added]:
 			label.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -550,6 +632,7 @@ func _input(event: InputEvent) -> void:
 	if now_pad != _pad:
 		_pad = now_pad
 		_show_slots()
+		_mark_tiles()
 
 
 func _unhandled_input(event: InputEvent) -> void:
