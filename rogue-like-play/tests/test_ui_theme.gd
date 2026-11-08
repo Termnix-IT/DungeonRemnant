@@ -78,13 +78,19 @@ func run_tests() -> void:
 	hub.refresh(main.meta)
 	(upgrades.nodes[MetaProgress.ROOT] as Button).grab_focus()
 	check(upgrades.get_global_rect().grow(1).encloses(cheap.get_global_rect()), "%s fits the page" % cheap.text)
-	var normal := cheap.get_theme_stylebox("normal")
+	# The upgrade's buy button is a crest, drawing its own states; its styles
+	# only make room for the crest. The other screens' primary action keeps a
+	# style for each state.
+	check(cheap is CrestButton and cheap.theme_type_variation == &"CrestAction", "Buying is the crest button")
 	for state in ["hover", "pressed", "disabled", "focus"]:
-		check(cheap.get_theme_stylebox(state) != normal, "The gold button has a distinct " + state)
-	var focus := cheap.get_theme_stylebox("focus") as StyleBoxFlat
+		check(theme_style(theme, state, &"CrestAction") == theme_style(theme, "normal", &"CrestAction"), "The crest keeps one room for its words when " + state)
+	var normal := theme_style(theme, "normal", &"PrimaryAction")
+	for state in ["hover", "pressed", "disabled", "focus"]:
+		check(theme_style(theme, state, &"PrimaryAction") != normal, "The primary action has a distinct " + state)
+	var focus := theme_style(theme, "focus", &"PrimaryAction") as StyleBoxFlat
 	check(focus != null and not focus.draw_center and focus.border_width_left >= 2, "Focus overlays a visible outline without hiding state")
 	check(cheap.get_theme_color("font_disabled_color") != cheap.get_theme_color("font_color"), "Disabled text is distinct")
-	check(cheap.get_theme_stylebox("focus") == hub.back_button.get_theme_stylebox("focus"), "Buttons share one focus resource")
+	check(theme_style(theme, "focus", &"PrimaryAction") == hub.back_button.get_theme_stylebox("focus"), "Buttons share one focus resource")
 	var original := theme.get_color("font_color", "GoldLabel")
 	var probe := Color(0.7, 0.8, 0.9)
 	theme.set_color("font_color", "GoldLabel", probe)

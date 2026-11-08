@@ -91,7 +91,7 @@ static func of(target: Control) -> UIMotion:
 
 
 static func bind_buttons(root: Node) -> void:
-	if root is Button and root.theme_type_variation in [&"PrimaryButton", &"PrimaryAction", &"LobbyAction", &"SortieAction", &"GoldButton", &"ItemButton", &"SecondaryButton", &"TabActive", &"HomeCard", &"HomeCardPrimary"]:
+	if root is Button and root.theme_type_variation in [&"PrimaryButton", &"PrimaryAction", &"LobbyAction", &"CrestAction", &"GoldButton", &"ItemButton", &"SecondaryButton", &"TabActive", &"HomeCard", &"HomeCardPrimary"]:
 		of(root)
 	for child in root.get_children():
 		bind_buttons(child)
@@ -135,7 +135,7 @@ func _rest_scale() -> Vector2:
 		var button := control as Button
 		if not button.disabled and (_hovered or button.has_focus()):
 			match button.theme_type_variation:
-				&"PrimaryButton", &"PrimaryAction", &"LobbyAction", &"SortieAction", &"GoldButton", &"HomeCardPrimary": return _base_scale * 1.015
+				&"PrimaryButton", &"PrimaryAction", &"LobbyAction", &"CrestAction", &"GoldButton", &"HomeCardPrimary": return _base_scale * 1.015
 				&"HomeCard": return _base_scale * 1.01
 				&"ItemButton": return _base_scale * 1.01
 	return _base_scale

@@ -267,7 +267,8 @@ func run_tests() -> void:
 	# Moving the focus: left from the root to the body's branch.
 	root.push_input(key(KEY_LEFT))
 	await process_frame
-	check(page.selected == &"sturdy_body" and page.name_label.text == "鍛えた体" and page.rank_label.text.contains("段階 0 / 3"), "Left goes to the body's branch and the column tells it")
+	check(page.selected == &"sturdy_body" and page.name_label.text == "鍛えた体" and page.rank_label.text == "身体　段階 0 / 3", "Left goes to the body's branch and the column tells it, with its branch")
+	check(page.buy_button is CrestButton and page.price_value.text == "80" and page.held_value.text == "150" and not page.short_label.visible, "The column sets the price beside the echo held, on a crest button")
 	check(page.figure_label.text == "習得すると　最大HP 115", "The column tells what the first rank gives")
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))
@@ -276,6 +277,7 @@ func run_tests() -> void:
 	root.push_input(key(KEY_DOWN))
 	await process_frame
 	check(page.selected == &"double_dash" and page.buy_button.disabled and page.buy_button.tooltip_text.contains("足りない"), "Down goes along the branch to one the echo cannot pay for")
+	check(page.short_label.visible and page.short_label.text.begins_with("残響があと") and page.held_value.text == "70", "The column says how much echo is missing")
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))
 	await process_frame

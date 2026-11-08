@@ -74,6 +74,12 @@ func capture() -> void:
 	(hub.upgrade_page.nodes[&"last_stand"] as Button).grab_focus()
 	await create_timer(MetaUpgradePage.FOLLOW_TIME + 0.3).timeout
 	await _grab("hub_upgrade_far_1600")
+	# A node the echo held can buy, its crest button kindled under the pointer.
+	(hub.upgrade_page.nodes[&"sturdy_body"] as Button).grab_focus()
+	UIMotion.of(hub.upgrade_page.buy_button).stand(true)
+	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.3).timeout
+	await _grab("hub_upgrade_buy_1600")
+	UIMotion.of(hub.upgrade_page.buy_button).stand(false)
 	# A new account sliding into the encyclopedia's column, mid-way.
 	hub.show_page("codex")
 	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout

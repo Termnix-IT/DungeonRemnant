@@ -7,16 +7,28 @@ extends Control
 # to the right; the skill and special-move branches above and below, and
 # the weapons' up to the right; a
 # branch still to come would stand sealed, SEALS). Each node is its emblem, with sockets under it when it has
-# ranks; a line joins it to the node it grows from, brighter once it can be
-# bought and brightest once held. The board lies in an opaque well of its
-# own inside the slab; it is dragged with the pointer or moved with the
-# right stick, zoomed with the wheel (LT / RT), follows the focus, and C (Y)
-# brings the root back at its first size. In the column on the right, the chosen node's emblem, name, branch
-# and rank, its figure now and next, what it does and what it waits for,
-# and the one action: its next rank's price on a button that asks to buy
-# (buy_requested; the hub saves, then calls present_purchase). Enter (A) on
-# a node asks the same. The pointer chooses a node by resting on it or
-# clicking it, never buys by it, and a press that moves is a drag.
+# ranks, and a small gold diamond over it while the echo held can buy its
+# next rank; a line joins it to the node it grows from, brighter once it can
+# be bought and brightest once held. The tree carries no words: what each
+# branch is for reads from its emblems, and its name is in the column.
+#
+# The board is a carved stone altar (as Diablo IV sets its tree in a carved
+# arch): a round stone round the root, the echo's lamp, lighter toward it,
+# with rings and spokes cut shallow into it, a rim and studs, all drawn
+# dark enough to keep the lines and emblems as easy to read as on bare
+# black. It lies in an opaque well of its own inside the slab; it is dragged
+# with the pointer or moved with the right stick, zoomed with the wheel (LT /
+# RT), follows the focus, and C (Y) brings the root back at its first size.
+#
+# The column on the right, in the lobby's ornate frame: the chosen node's
+# emblem, name, branch and rank, its figure now and next, what it does and
+# what it waits for; the lobby's strip of facts with the price and the echo
+# held (as Rogue Legacy 2 sets cost beside gold owned), and how much is
+# missing; and the one action, a crest button (CrestButton) with the price,
+# that asks to buy (buy_requested; the hub saves, then calls
+# present_purchase). Enter (A) on a node asks the same. The pointer chooses a
+# node by resting on it or clicking it, never buys by it, and a press that
+# moves is a drag.
 
 signal buy_requested(id: StringName)
 
@@ -45,6 +57,19 @@ const ZOOM_RATE := 2.2
 # A focus move goes to a node within this angle of the direction pressed:
 # one it is joined to first, then the nearest, then the upper.
 const AIM_CONE := PI / 3.0
+# The altar: how far its stone reaches past the outermost node, the steps of
+# its lightening toward the lamp, the rings cut a row apart, the spokes and
+# studs round it, and the rim's width.
+const ALTAR_MARGIN := 70.0
+const STONE_STEPS := 28
+const RING_STEP := 92.0
+const SPOKES := 24
+const STUDS := 16
+const RIM_WIDTH := 8.0
+const LAMP_STEPS := 8
+# The diamond over a node the echo held can buy.
+const BUY_MARK := 6.0
+const STRIP_HEIGHT := 60.0
 const BRANCH_NAMES := {&"": "中央", &"body": "身体", &"growth": "成長", &"skill": "スキル", &"special": "必殺技", &"weapon": "武器"}
 # Branches to come, sealed for now: the branch, its cell, its emblem (none
 # at present).
@@ -61,6 +86,10 @@ var rank_label: Label
 var figure_label: Label
 var description_label: Label
 var requirement_label: Label
+# The price and the echo held, side by side, and how much is missing.
+var price_value: Label
+var held_value: Label
+var short_label: Label
 var picture: Control
 var board: Control
 var canvas: Control
@@ -69,6 +98,9 @@ var _edges: Control
 var _tree_column: VBoxContainer
 var _info: VBoxContainer
 var _pips: Control
+var _cost_strip: Control
+# How far the altar's stone reaches from the root.
+var _altar_radius := 0.0
 # Node id -> its centre on the canvas, and the id it grows from.
 var _centers: Dictionary = {}
 var _parents: Dictionary = {}
@@ -114,6 +146,9 @@ func _ready() -> void:
 		_add_node(upgrade.id, upgrade.cell, upgrade.parent, ROOT_SIZE if upgrade.parent.is_empty() else NODE_SIZE)
 	for seal: Array in SEALS:
 		_add_node(seal[0], seal[1], MetaProgress.ROOT, NODE_SIZE)
+	for id: StringName in nodes:
+		_altar_radius = maxf(_altar_radius, (_centers[id] as Vector2).distance_to(_centers[MetaProgress.ROOT]) + (nodes[id] as Button).size.x * 0.5)
+	_altar_radius += ALTAR_MARGIN
 	_link_focus()
 	_edges = Control.new()
 	_edges.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -122,7 +157,15 @@ func _ready() -> void:
 	_edges.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_info = HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
 	# The account slides in from the right edge, kept inside its column.
-	(_info.get_parent() as Control).clip_contents = true
+	var info_panel := _info.get_parent() as Control
+	info_panel.clip_contents = true
+	# The account stands inside the ornate frame laid over the column, as the
+	# lobby's panel keeps its words off its frame.
+	var info_margin := MarginContainer.new()
+	info_margin.theme_type_variation = &"UpgradeInfoMargin"
+	info_panel.remove_child(_info)
+	info_panel.add_child(info_margin)
+	info_margin.add_child(_info)
 	_info.theme_type_variation = &"DetailStack"
 	picture = Control.new()
 	picture.custom_minimum_size = Vector2.ONE * DETAIL_EMBLEM
@@ -146,7 +189,21 @@ func _ready() -> void:
 	description_label = HubUI.label(_info, "", &"DescriptionLabel")
 	requirement_label = HubUI.label(_info, "", &"MutedLabel")
 	HubUI.space(_info)
-	buy_button = HubUI.primary_action(_info, "", _buy)
+	var strip := HubUI.fact_strip(_info, STRIP_HEIGHT)
+	_cost_strip = strip.get_parent() as Control
+	price_value = HubUI.strip_fact(strip, "必要", &"UpgradeFactValue", &"UpgradeFactCaption")
+	HubUI.strip_divider(strip)
+	held_value = HubUI.strip_fact(strip, "所持", &"UpgradeFactValue", &"UpgradeFactCaption")
+	short_label = _centered(HubUI.label(_info, "", &"MutedLabel"))
+	# Buying is this screen's moment: the crest with the lobby's mark for it.
+	var button := CrestButton.new()
+	button.name = "Buy"
+	button.kind = "永久強化"
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.pressed.connect(_buy)
+	_info.add_child(button)
+	buy_button = button
+	HubUI.ornate_frame(info_panel)
 	UIMotion.bind_buttons(_info)
 
 
@@ -237,11 +294,13 @@ func _tell() -> void:
 		figure_label.hide()
 		description_label.text = SEAL_NOTE
 		requirement_label.hide()
+		_cost_strip.hide()
+		short_label.hide()
 		buy_button.hide()
 		return
 	var rank := meta.rank(upgrade.id)
 	name_label.text = upgrade.display_name
-	rank_label.text = "段階 %d / %d" % [rank, upgrade.max_rank()]
+	rank_label.text = "%s　段階 %d / %d" % [BRANCH_NAMES.get(upgrade.branch, ""), rank, upgrade.max_rank()]
 	figure_label.text = upgrade.figure_line(rank)
 	figure_label.visible = not figure_label.text.is_empty()
 	description_label.text = upgrade.description
@@ -251,11 +310,18 @@ func _tell() -> void:
 	requirement_label.visible = waiting
 	buy_button.show()
 	var price := upgrade.price(rank)
+	# The price beside the echo held; once all its ranks are held there is no
+	# price to set beside it.
+	_cost_strip.visible = price >= 0
+	short_label.visible = price >= 0 and meta.echo < price
 	if price < 0:
 		buy_button.text = "習得済み"
 		buy_button.disabled = true
 		buy_button.tooltip_text = ""
 		return
+	price_value.text = UIFormat.amount(price)
+	held_value.text = UIFormat.amount(meta.echo)
+	short_label.text = "残響があと%s足りない" % UIFormat.amount(price - meta.echo)
 	buy_button.text = "残響 %s で%s" % [UIFormat.amount(price), "習得" if rank == 0 else "強化"]
 	buy_button.disabled = not meta.can_buy(upgrade.id)
 	if waiting:
@@ -313,11 +379,6 @@ func _emblem(id: StringName) -> String:
 		if seal[0] == id:
 			return seal[2]
 	return ""
-
-
-func _branch(id: StringName) -> StringName:
-	var upgrade := MetaProgress.find(id)
-	return upgrade.branch if upgrade != null else id
 
 
 # --- The board's position ---
@@ -491,6 +552,7 @@ func _state_color(id: StringName) -> Color:
 
 
 func _draw_lines() -> void:
+	_draw_altar()
 	for id: StringName in nodes:
 		var parent: StringName = _parents[id]
 		if parent.is_empty():
@@ -504,22 +566,41 @@ func _draw_lines() -> void:
 			canvas.draw_dashed_line(start, end, _state_color(id), LINE_WIDTH, 10.0)
 		else:
 			canvas.draw_line(start, end, _state_color(id), LINE_WIDTH, true)
-	# Each branch's name by its first node: above it, or below the lower seal,
-	# whose line comes in from above.
-	var font := get_theme_font(&"font", &"MutedLabel")
-	var font_size := get_theme_font_size(&"font_size", &"MutedLabel")
-	var color := get_theme_color(&"font_color", &"MutedLabel")
-	for id: StringName in nodes:
-		if _parents[id] != MetaProgress.ROOT:
-			continue
-		var text: String = BRANCH_NAMES.get(_branch(id), "")
-		var radius := (nodes[id] as Button).size.x * 0.5
-		var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
-		var center: Vector2 = _centers[id]
-		var at := center + Vector2(-width * 0.5, -radius - 10.0)
-		if center.y > _centers[MetaProgress.ROOT].y:
-			at.y = center.y + radius + 10.0 + font.get_ascent(font_size)
-		canvas.draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+
+
+# The altar's stone under the tree, round the root: lighter toward the lamp,
+# the rings and spokes cut into it (a dark groove with a faint lit lip), the
+# rim, and studs inside the rim. The spokes sit between the eight ways the
+# branches leave the root, so no groove runs under a line.
+func _draw_altar() -> void:
+	var core: Vector2 = _centers[MetaProgress.ROOT]
+	var reach := _altar_radius
+	var face := get_theme_color(&"stone_face", &"UpgradeTree")
+	var heart := get_theme_color(&"stone_core", &"UpgradeTree")
+	for step in STONE_STEPS:
+		var weight := float(step) / float(STONE_STEPS - 1)
+		canvas.draw_circle(core, lerpf(reach, ROOT_SIZE * 0.5, weight), face.lerp(heart, pow(weight, 1.6)))
+	var lamp := get_theme_color(&"lamp", &"UpgradeTree")
+	for step in LAMP_STEPS:
+		canvas.draw_circle(core, lerpf(ROOT_SIZE * 2.4, ROOT_SIZE * 0.6, float(step) / float(LAMP_STEPS - 1)), lamp)
+	var groove := get_theme_color(&"groove", &"UpgradeTree")
+	var lip := get_theme_color(&"groove_light", &"UpgradeTree")
+	var radius := RING_STEP
+	while radius < reach - RING_STEP * 0.5:
+		canvas.draw_arc(core, radius, 0.0, TAU, 96, groove, 2.0, true)
+		canvas.draw_arc(core, radius + 1.5, 0.0, TAU, 96, lip, 1.0, true)
+		radius += RING_STEP
+	var inner := ROOT_SIZE * 0.5 + 18.0
+	for index in SPOKES:
+		var way := Vector2.from_angle((index + 0.5) * TAU / SPOKES)
+		canvas.draw_line(core + way * inner, core + way * (reach - RIM_WIDTH - 24.0), groove, 1.0, true)
+	var rim := get_theme_color(&"stone_rim", &"UpgradeTree")
+	canvas.draw_arc(core, reach - RIM_WIDTH * 0.5, 0.0, TAU, 128, rim, RIM_WIDTH, true)
+	canvas.draw_arc(core, reach - RIM_WIDTH - 1.0, 0.0, TAU, 128, groove, 2.0, true)
+	canvas.draw_arc(core, reach + 1.0, 0.0, TAU, 128, groove, 2.0, true)
+	var stud := get_theme_color(&"stud", &"UpgradeTree")
+	for index in STUDS:
+		HubUI.diamond(canvas, core + Vector2.from_angle((index + 0.5) * TAU / STUDS) * (reach - RIM_WIDTH - 12.0), 5.0, stud)
 
 
 func _draw_node(node: Button, id: StringName) -> void:
@@ -539,6 +620,11 @@ func _draw_node(node: Button, id: StringName) -> void:
 		node.draw_arc(middle, radius + 5.0, 0.0, TAU, 64, get_theme_color(&"focus", &"UpgradeTree"), RING_WIDTH, true)
 	if upgrade != null and meta != null:
 		_paint_pips(node, Vector2(middle.x, node.size.y + 5.0), upgrade, meta.rank(id))
+		# The echo held can buy its next rank: a gold diamond over it.
+		if meta.can_buy(id):
+			var mark := Vector2(middle.x, -BUY_MARK - 1.0)
+			HubUI.diamond(node, mark, BUY_MARK + 1.5, get_theme_color(&"buyable_edge", &"UpgradeTree"))
+			HubUI.diamond(node, mark, BUY_MARK, get_theme_color(&"buyable", &"UpgradeTree"))
 
 
 # An upgrade's ranks as sockets, centred on `top`; one rank shows none.
@@ -558,18 +644,14 @@ func _paint_pips(target: CanvasItem, top: Vector2, upgrade: MetaUpgrade, held: i
 			target.draw_texture_rect(full, rect, false)
 
 
-# Arrows at the window's edge toward the branches wholly out of sight, the
-# names outlined in the well's colour rather than set on a plate, so the
-# lines running to the edge stay in view.
+# Arrows at the window's edge toward the branches wholly out of sight. Like
+# the tree, they carry no words.
 func _draw_edges() -> void:
 	var window := Rect2(Vector2.ZERO, board.size)
 	var inset := window.grow(-26.0)
 	if inset.size.x <= 0.0 or inset.size.y <= 0.0:
 		return
-	var font := get_theme_font(&"font", &"MutedLabel")
-	var font_size := get_theme_font_size(&"font_size", &"MutedLabel")
 	var color := get_theme_color(&"font_color", &"MutedLabel")
-	var outline := get_theme_color(&"well", &"UpgradeTree")
 	for id: StringName in nodes:
 		if _parents[id] != MetaProgress.ROOT:
 			continue
@@ -580,11 +662,4 @@ func _draw_edges() -> void:
 		var at := Vector2(clampf(center.x, inset.position.x, inset.end.x), clampf(center.y, inset.position.y, inset.end.y))
 		var toward := (center - at).normalized()
 		var side := toward.orthogonal()
-		var text: String = BRANCH_NAMES.get(_branch(id), "")
-		var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
-		# The name runs along the edge beside the arrow, off the nodes inside.
-		var label := at + Vector2(14.0, font.get_ascent(font_size) * 0.4) if absf(toward.y) > absf(toward.x) else at + Vector2(-width * 0.5, -14.0)
-		label.x = clampf(label.x, 6.0, board.size.x - width - 6.0)
 		_edges.draw_colored_polygon(PackedVector2Array([at + toward * 9.0, at - toward * 3.0 + side * 7.0, at - toward * 3.0 - side * 7.0]), color)
-		_edges.draw_string_outline(font, label, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, 6, outline)
-		_edges.draw_string(font, label, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
