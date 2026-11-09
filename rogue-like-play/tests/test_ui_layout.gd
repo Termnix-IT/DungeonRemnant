@@ -84,11 +84,11 @@ func run_tests() -> void:
 	area.hero.controlled = false
 	var hud: ActionHud = area.hud
 	var ring := Rect2(Vector2(screen.size) * 0.5 - Vector2(260, 200), Vector2(520, 400))
-	var panels: Array[Control] = [hud.hp_bar, hud.info, hud.guide, hud.exp_bar, hud.level_label, hud.skill_label]
+	var panels: Array[Control] = [hud.hp_gauge, hud.info, hud.guide, hud.exp_bar, hud.level_label, hud.skill_label]
 	for panel in panels:
 		check(screen.grow(-4).encloses(panel.get_global_rect()), "%s keeps off the screen's edge" % panel.name)
 		check(not panel.get_global_rect().intersects(ring), "%s stays off the ground round the hero" % panel.name)
-	check(not hud.hp_bar.get_global_rect().intersects(hud.guide.get_global_rect()) and not hud.info.get_global_rect().intersects(hud.exp_bar.get_global_rect()), "HUD parts do not overlap")
+	check(not hud.hp_gauge.get_global_rect().intersects(hud.guide.get_global_rect()) and not hud.info.get_global_rect().intersects(hud.exp_bar.get_global_rect()), "HUD parts do not overlap")
 	# The common arrangement: the goal at the top centre, the tally at the
 	# top right, health at the bottom left, the actions at the bottom right.
 	var middle := screen.get_center().x
@@ -100,6 +100,10 @@ func run_tests() -> void:
 	# The controls are the key guide the other screens use.
 	check(hud.guide is KeyGuide and hud.guide.get_child_count() == ActionHud.CONTROLS.size(), "The controls under the fight are a key guide")
 	check(hud.hp_bar.get_global_rect().end.x < middle and hud.hp_bar.get_global_rect().position.y > ring.end.y, "Health keeps to the bottom left")
+	# The health runs inside its painted frame's channel, past the crest.
+	var frame_rect := hud.hp_gauge.frame.get_global_rect()
+	var fill_rect := hud.hp_bar.get_global_rect()
+	check(hud.hp_gauge.frame.texture == ActionHud.HP_FRAME and frame_rect.encloses(fill_rect) and is_equal_approx(fill_rect.position.x - frame_rect.position.x, ActionHud.HP_CAP_LEFT) and is_equal_approx(fill_rect.size.x, ActionHud.BAR_WIDTH), "Health fills the channel of its painted frame")
 	for key: StringName in hud.slots:
 		var slot_rect := hud.slots[key].get_global_rect()
 		check(screen.grow(-4).encloses(slot_rect) and slot_rect.position.x > middle and slot_rect.position.y > ring.end.y and not slot_rect.intersects(hud.guide.get_global_rect()), "The %s slot keeps to the bottom right" % key)

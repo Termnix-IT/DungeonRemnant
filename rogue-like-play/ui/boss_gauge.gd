@@ -2,11 +2,11 @@ class_name BossGauge
 extends Control
 
 # The boss's health across the top of the screen while it is in view: its name
-# in the display face above a generated frame (art/ui/boss_gauge.png, built by
-# tools/build_boss_gauge.py) whose dark channel holds the fill, a trail that
-# drains after each hit, and quarter ticks like the player's HP bar.
+# in the display face above a painted frame (art/ui/boss_gauge.png, a crowned
+# skull crest, as a FramedGauge) whose dark channel holds the fill, a trail
+# that drains after each hit, and quarter ticks like the player's HP bar.
 const FRAME := preload("res://art/ui/boss_gauge.png")
-# Measured by `python tools/build_boss_gauge.py --measure`; update them when
+# Measured by `python tools/build_gauges.py boss --measure`; update them when
 # the picture changes.
 const CAP_LEFT := 62
 const CAP_RIGHT := 33
@@ -18,10 +18,9 @@ const HIT_FLASH_TIME := 0.16
 
 var name_label: Label
 var value_label: Label
-var frame: NinePatchRect
+var gauge: FramedGauge
 var trail: ProgressBar
 var bar: ProgressBar
-var ticks: VitalTicks
 var _boss_name := ""
 var _flash: Tween
 
@@ -31,32 +30,15 @@ func _init() -> void:
 
 
 func _ready() -> void:
-	frame = NinePatchRect.new()
-	frame.texture = FRAME
-	frame.patch_margin_left = CAP_LEFT
-	frame.patch_margin_right = CAP_RIGHT
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(frame)
-	trail = _bar(&"BossHpTrail")
-	trail.step = 0.0
-	bar = _bar(&"BossHp")
-	ticks = VitalTicks.new()
-	ticks.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(ticks)
+	gauge = FramedGauge.new(FRAME, CAP_LEFT, CAP_RIGHT, CHANNEL_TOP, CHANNEL_BOTTOM, &"BossHp", &"BossHpTrail")
+	add_child(gauge)
+	trail = gauge.trail
+	bar = gauge.bar
 	name_label = _label(&"BossGaugeName", HORIZONTAL_ALIGNMENT_LEFT)
 	value_label = _label(&"BossGaugeValue", HORIZONTAL_ALIGNMENT_RIGHT)
 	resized.connect(_layout)
 	_layout()
 	hide()
-
-
-func _bar(role: StringName) -> ProgressBar:
-	var progress := ProgressBar.new()
-	progress.theme_type_variation = role
-	progress.show_percentage = false
-	progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(progress)
-	return progress
 
 
 func _label(role: StringName, alignment: HorizontalAlignment) -> Label:
@@ -70,12 +52,9 @@ func _label(role: StringName, alignment: HorizontalAlignment) -> Label:
 
 
 func _layout() -> void:
-	frame.position = Vector2(0, NAME_HEIGHT)
-	frame.size = Vector2(size.x, FRAME.get_height())
-	var channel := Rect2(CAP_LEFT, NAME_HEIGHT + CHANNEL_TOP, size.x - CAP_LEFT - CAP_RIGHT, CHANNEL_BOTTOM - CHANNEL_TOP)
-	for control: Control in [trail, bar, ticks]:
-		control.position = channel.position
-		control.size = channel.size
+	gauge.position = Vector2(0, NAME_HEIGHT)
+	gauge.size = Vector2(size.x, FRAME.get_height())
+	var channel := gauge.channel()
 	name_label.position = Vector2(CAP_LEFT, 0)
 	name_label.size = Vector2(channel.size.x * 0.7, NAME_HEIGHT)
 	value_label.position = Vector2(channel.end.x - channel.size.x * 0.3, 0)

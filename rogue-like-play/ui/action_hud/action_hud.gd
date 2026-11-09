@@ -10,7 +10,8 @@ extends CanvasLayer
 # - at the top right, the echo earned in the run (gold, the larger) over the
 #   foes felled (left out while the area's goal itself counts the foes, so
 #   one count is not shown twice);
-# - at the bottom left, her health (a trail shows what a blow took);
+# - at the bottom left, her health in a painted frame with a heart crest,
+#   the boss gauge's counterpart (a trail shows what a blow took);
 # - at the bottom right, her actions as round slots (attack, dash, skills,
 #   special move) with their keys, a sweep while they come back, pips for
 #   the dashes, a ring while she charges, and the special's gauge as its
@@ -49,7 +50,16 @@ const SPECIAL_SWELL := 0.08
 # The banner sits this far above the middle, clear of the hero.
 const MESSAGE_RISE := 190.0
 const EDGE := 32.0
+# The health fill's length, inside the frame's channel.
 const BAR_WIDTH := 360.0
+# The health bar's frame (built by tools/build_gauges.py) and, measured by
+# `python tools/build_gauges.py hero --measure`, its caps and channel; update
+# them when the picture changes.
+const HP_FRAME := preload("res://art/ui/hero_gauge.png")
+const HP_CAP_LEFT := 45
+const HP_CAP_RIGHT := 17
+const HP_CHANNEL_TOP := 17
+const HP_CHANNEL_BOTTOM := 32
 const GOAL_WIDTH := 380.0
 const EMBLEM_SIZE := 40.0
 const BOONS_WIDTH := 360.0
@@ -62,6 +72,7 @@ const DANGER_SHARE := 0.3
 const DANGER_RATE := Vector2(1.2, 2.6)
 
 var area: CombatArea
+var hp_gauge: FramedGauge
 var hp_bar: ProgressBar
 var hp_trail: ProgressBar
 var hp_value: Label
@@ -242,29 +253,24 @@ func _build_bottom(root: Control) -> void:
 	vitals.offset_left = EDGE
 	vitals.offset_bottom = -EDGE
 	root.add_child(vitals)
+	# The numbers start over the channel, past the crest, as the boss's name
+	# does over its gauge.
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vitals.add_child(row)
+	var indent := Control.new()
+	indent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	indent.custom_minimum_size.x = HP_CAP_LEFT - row.get_theme_constant(&"separation")
+	row.add_child(indent)
 	var caption := _label(row, &"HpCaption")
 	caption.text = "HP"
 	hp_value = _label(row, &"HudValue")
-	# The bar over its trail, with quarter notches on top.
-	var gauge := Control.new()
-	gauge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	gauge.custom_minimum_size = Vector2(BAR_WIDTH, 20)
-	vitals.add_child(gauge)
-	hp_trail = ProgressBar.new()
-	hp_trail.theme_type_variation = &"HpTrail"
-	hp_bar = ProgressBar.new()
-	hp_bar.theme_type_variation = &"HpCurrent"
-	for bar: ProgressBar in [hp_trail, hp_bar]:
-		bar.show_percentage = false
-		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		bar.set_anchors_preset(Control.PRESET_FULL_RECT)
-		gauge.add_child(bar)
-	var ticks := VitalTicks.new()
-	ticks.set_anchors_preset(Control.PRESET_FULL_RECT)
-	gauge.add_child(ticks)
+	# The bar over its trail in the frame, with quarter notches on top.
+	hp_gauge = FramedGauge.new(HP_FRAME, HP_CAP_LEFT, HP_CAP_RIGHT, HP_CHANNEL_TOP, HP_CHANNEL_BOTTOM, &"HpCurrent", &"HpTrail")
+	hp_gauge.custom_minimum_size.x = HP_CAP_LEFT + BAR_WIDTH + HP_CAP_RIGHT
+	vitals.add_child(hp_gauge)
+	hp_trail = hp_gauge.trail
+	hp_bar = hp_gauge.bar
 	var actions := HBoxContainer.new()
 	actions.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	actions.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)

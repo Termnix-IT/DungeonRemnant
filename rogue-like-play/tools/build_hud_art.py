@@ -23,7 +23,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
-from build_stage_dioramas import key_out
+from image_boards import key_out
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "art" / "ui" / "source"
