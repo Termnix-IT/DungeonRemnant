@@ -73,6 +73,10 @@ var _down := false
 var _press_animating := false
 var _pulsing := false
 var _disabled := false
+# A slide asked for and not started yet: asked again in the same frame, it
+# starts once, from where the container lays the control out (a second start
+# would take the first one's offset for its goal).
+var _slide_pending := false
 
 
 static func of(target: Control) -> UIMotion:
@@ -348,10 +352,14 @@ func slide_in(distance: float = DETAIL_SLIDE_DISTANCE, duration: float = DETAIL_
 	var parent := control.get_parent() as Container
 	if parent != null:
 		parent.queue_sort()
+	if _slide_pending:
+		return
+	_slide_pending = true
 	_start_slide.call_deferred(distance, duration)
 
 
 func _start_slide(distance: float, duration: float) -> void:
+	_slide_pending = false
 	if not is_instance_valid(control) or not control.is_visible_in_tree():
 		return
 	var target := control.position

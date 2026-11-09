@@ -970,16 +970,6 @@ content_margin_bottom = 4.0
 resource_name = "SlotHover"
 bg_color = Color(1, 1, 1, 0.04)
 
-[sub_resource type="StyleBoxFlat" id="TextActionHover"]
-resource_name = "TextActionHover"
-content_margin_left = 2.0
-content_margin_top = 8.0
-content_margin_right = 2.0
-content_margin_bottom = 8.0
-bg_color = Color(0, 0, 0, 0)
-border_width_bottom = 1
-border_color = Color(0.62, 0.59, 0.52, 0.6)
-
 [sub_resource type="StyleBoxEmpty" id="TextActionRest"]
 resource_name = "TextActionRest"
 content_margin_left = 2.0
@@ -1145,6 +1135,18 @@ content_margin_bottom = 8.0
 bg_color = Color(1, 0.86, 0.6, 0.1)
 border_width_left = 3
 border_color = Color(0.84, 0.72, 0.48, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="PromptButtonFocus"]
+resource_name = "PromptButtonFocus"
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(1, 0.86, 0.6, 0.1)
 corner_radius_top_left = 2
 corner_radius_top_right = 2
 corner_radius_bottom_right = 2
@@ -2097,9 +2099,9 @@ TextAction/colors/font_hover_pressed_color = Color(0.93333334, 0.9137255, 0.8745
 TextAction/colors/font_disabled_color = Color(0.36, 0.35, 0.33, 1)
 TextAction/font_sizes/font_size = 16
 TextAction/styles/normal = SubResource("TextActionRest")
-TextAction/styles/hover = SubResource("TextActionHover")
+TextAction/styles/hover = SubResource("TextActionRest")
 TextAction/styles/pressed = SubResource("TextActionRest")
-TextAction/styles/hover_pressed = SubResource("TextActionHover")
+TextAction/styles/hover_pressed = SubResource("TextActionRest")
 TextAction/styles/disabled = SubResource("TextActionRest")
 TextAction/styles/focus = SubResource("Invisible")
 SlotRows/base_type = &"VBoxContainer"
@@ -2274,3 +2276,5 @@ CodexStats/base_type = &"GridContainer"
 CodexStats/constants/h_separation = 16
 CodexStats/constants/v_separation = 4
 EquipSocket/colors/rim = Color(0.56, 0.478, 0.322, 0.28)
+PromptButton/base_type = &"SecondaryButton"
+PromptButton/styles/focus = SubResource("PromptButtonFocus")

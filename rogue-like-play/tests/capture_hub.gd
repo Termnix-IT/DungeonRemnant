@@ -3,7 +3,7 @@ extends SceneTree
 # The base drawn for real at 1600x900, 1280x720 and 1920x1080: the lobby on
 # its departure, where to set out, the lasting upgrades, the status, the
 # encyclopedia and the settings; then, at 1600x900, a sealed chapter chosen
-# where to set out, the help and the quit's question, a run's result
+# where to set out, the settings' last tab, the help and the quit's question, a run's result
 # offering the way home, the fight's menu and its leaving question. Images go to .godot/hub_<page>_<width>.png. Look at them: the
 # hierarchy, the selected state, the main actions and any cut text. Needs a
 # rendering display driver:
@@ -99,6 +99,11 @@ func capture() -> void:
 		# The popups a click opens: the help, and the quit's question.
 	hub.show_page("settings")
 	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
+	# The last tab, its help row focused: no band on the row.
+	hub.settings_page.show_tab(2)
+	hub.settings_page.help_button.grab_focus()
+	await create_timer(0.3).timeout
+	await _grab("hub_settings_other_1600")
 	hub.settings_page.open_help(HubSettings.TOPIC_RUN)
 	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
 	await _grab("hub_help_1600")

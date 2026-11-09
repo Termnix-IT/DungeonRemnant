@@ -199,7 +199,7 @@ func run_tests() -> void:
 	await process_frame
 	check(shown_rows.call() == [6, 7, 8] and settings_page.controls_cycler.has_focus(), "The last tab holds the controls guide, the help and quitting")
 	# As in the lobby, the pointer resting on a row (its caption or its
-	# control) chooses it; a chosen row shows by its band, with no frame.
+	# control) chooses it; a chosen row draws no band or frame.
 	settings_page._rows[8].gui_input.emit(InputEventMouseMotion.new())
 	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
 	check(settings_page.quit_button.has_focus() and settings_page.focused_row == 8, "Pointing at a settings row chooses it")

@@ -123,6 +123,13 @@ func run_tests() -> void:
 	check(rest != null and rest.border_width_left + rest.border_width_top + rest.border_width_right + rest.border_width_bottom == 0 and rest.bg_color.a == 0.0, "A secondary action has no frame at rest")
 	check(marked != null and marked.border_width_left > 0 and marked.border_width_top == 0, "A focused secondary action is marked by a bar, not a box")
 	check(theme.get_color(&"font_color", &"SecondaryButton") != theme.get_color(&"font_disabled_color", &"SecondaryButton"), "A secondary action looks different when it cannot be pressed")
+	# A dialog's way back stands beside its way ahead, not in a list: lit, not
+	# barred, when focused.
+	var prompt_focus := theme.get_stylebox(&"focus", &"PromptButton") as StyleBoxFlat
+	check(prompt_focus != null and prompt_focus.border_width_left + prompt_focus.border_width_top + prompt_focus.border_width_right + prompt_focus.border_width_bottom == 0 and prompt_focus.bg_color.a > 0.0, "A dialog's quiet button is lit when focused, with no bar")
+	# The settings' help and quit are their words alone: no underline when
+	# pointed at.
+	check(theme.get_stylebox(&"hover", &"TextAction") is StyleBoxEmpty, "A text action draws no underline when pointed at")
 	var primary := theme.get_stylebox(&"normal", &"PrimaryButton") as StyleBoxFlat
 	check(primary != null and primary.border_width_top == 1 and primary.bg_color.a > 0.0, "The primary action is a quiet gold-tinted plate with a hairline")
 	check((theme.get_stylebox(&"focus", &"PrimaryButton") as StyleBoxFlat).border_width_top > primary.border_width_top, "A focused primary action draws a stronger edge")

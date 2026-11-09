@@ -62,7 +62,9 @@ func _ready() -> void:
 	actions.theme_type_variation = &"ListRow"
 	actions.alignment = BoxContainer.ALIGNMENT_CENTER
 	column.add_child(actions)
-	cancel_button = HubUI.button(actions, "", func(): canceled.emit())
+	# The way back: a quiet button lit, not barred, when focused, as a dialog's
+	# buttons stand side by side rather than as a list's rows.
+	cancel_button = HubUI.button(actions, "", func(): canceled.emit(), &"PromptButton")
 	accept_button = HubUI.button(actions, "", func(): confirmed.emit(), &"PrimaryButton")
 	for button: Button in [cancel_button, accept_button]:
 		button.custom_minimum_size = Vector2(BUTTON_WIDTH, HubUI.PRIMARY_ACTION_HEIGHT)

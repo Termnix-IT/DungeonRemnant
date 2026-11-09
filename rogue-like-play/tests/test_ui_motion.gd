@@ -169,6 +169,12 @@ func run_tests() -> void:
 	await process_frame
 	await process_frame
 	check(column.position.is_equal_approx(rest) and is_equal_approx(column.modulate.a, 1.0), "Choosing the foe already told shows no slide at all")
+	# Two new accounts asked for in one frame slide once and still settle in
+	# place, not at the first slide's offset.
+	hub.codex_page._select(2)
+	hub.codex_page._select(3)
+	await settle(UIMotion.DETAIL_SLIDE_TIME + 0.15)
+	check(column.position.is_equal_approx(rest), "Two slides asked in one frame settle in place")
 	hub.show_page("home")
 	await settle(UIMotion.WINDOW_TIME + 0.2)
 	check(not motion.is_processing(), "The helper has no idle per-frame polling")

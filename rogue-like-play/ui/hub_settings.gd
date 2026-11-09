@@ -3,10 +3,12 @@ extends Control
 
 # The settings page, laid out as action roguelites commonly lay theirs: one
 # panel in the middle of the screen, tabs over the rows (sound, graphics,
-# other; Q / E or LB / RB, or a click) showing one group at a time, the
-# focused row on a warm band (sliding between rows), and under a gilt rule
-# what the focused setting does, sliding in anew as the focus moves. With so
-# few rows a column of its own for one line of account stood mostly empty. Changes apply at once and are
+# other; Q / E or LB / RB, or a click) showing one group at a time, and
+# under a gilt rule what the focused setting does, sliding in anew as the
+# focus moves. With so few rows a column of its own for one line of account
+# stood mostly empty. The focused row draws no band: the control on it shows
+# the focus itself (the bar's knob glows, the selector's arrows light, the
+# help's and the quit's words brighten). Changes apply at once and are
 # stored by GameSettings when the hub reports them, so the page holds no
 # primary action.
 # A row opens the help: the game's rules that the screens keep out of their
@@ -203,12 +205,12 @@ func _ready() -> void:
 		settings.show_controls = index == 0
 		changed.emit())
 	var help_row := _row("ヘルプ")
-	help_button = HubUI.button(help_row, "開く  ›", func():
+	help_button = HubUI.button(help_row, "開く", func():
 		open_help(TOPIC_RUN)
 		help_opened.emit(), &"TextAction")
 	help_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var quit_row := _row("ゲームの終了")
-	quit_button = HubUI.button(quit_row, "終了する  ›", ask_quit, &"TextAction")
+	quit_button = HubUI.button(quit_row, "終了する", ask_quit, &"TextAction")
 	quit_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	quit_prompt = ChoicePrompt.new()
 	add_child(quit_prompt)
@@ -424,20 +426,13 @@ func _volume_row(caption: String, slider_name: String) -> Array:
 	return [slider, value]
 
 
-# The focused row stands on the lobby's warm band, pointing right at the
-# note; the others are parted by faint rules.
+# The rows are parted by faint rules; the focused one draws no band.
 func _draw_rows() -> void:
 	var rail := rows.get_theme_color(&"rail", &"HubLobby")
-	var chosen := _rows[focused_row]
-	if chosen.visible:
-		var mark := UIMotion.of(rows).follow_mark(Rect2(chosen.position + Vector2(-12, 2), chosen.size + Vector2(12, -4)))
-		_draw_band(rows, mark)
 	var shown: Array[int] = []
 	shown.assign(TABS[tabs.selected][1])
 	for place in shown.size() - 1:
 		var index := shown[place]
-		if index == focused_row or shown[place + 1] == focused_row:
-			continue
 		var y := _rows[index].position.y + _rows[index].size.y
 		rows.draw_polyline_colors(PackedVector2Array([Vector2(0, y), Vector2(rows.size.x * 0.5, y), Vector2(rows.size.x, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.22), Color(rail, 0.0)]), 1.0, true)
 
@@ -453,7 +448,6 @@ func _draw_band(canvas: Control, rect: Rect2) -> void:
 
 func _focus_row(index: int) -> void:
 	focused_row = index
-	rows.queue_redraw()
 	if index == _shown_note:
 		return
 	_shown_note = index
@@ -493,7 +487,7 @@ func show_tab(index: int, take_focus: bool = false) -> void:
 		var control := controls[shown[place]]
 		control.focus_neighbor_top = controls[shown[place - 1]].get_path() if place > 0 else control.get_path()
 		control.focus_neighbor_bottom = controls[shown[place + 1]].get_path() if place < shown.size() - 1 else control.get_path()
-	UIMotion.of(rows).drop_mark()
+	rows.queue_redraw()
 	if take_focus:
 		controls[shown[0]].grab_focus()
 	_focus_row(shown[0])
