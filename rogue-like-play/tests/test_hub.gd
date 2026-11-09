@@ -207,6 +207,10 @@ func run_tests() -> void:
 	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
 	check(settings_page.help_button.has_focus() and settings_page.note.text == HubSettings.NOTES[7], "Pointing at a row's control chooses it too")
 	check(settings_page.help_button.get_theme_stylebox(&"focus") is StyleBoxEmpty and settings_page.topic_buttons[0].get_theme_stylebox(&"focus") is StyleBoxEmpty, "Chosen settings and help rows draw no frame")
+	# Quitting's way back says so, beside the way out.
+	settings_page.ask_quit()
+	check(settings_page.quit_prompt.visible and settings_page.quit_prompt.cancel_button.text == "戻る" and settings_page.quit_prompt.cancel_button.has_focus(), "Quitting asks first, its way back named and waiting")
+	settings_page.quit_prompt.canceled.emit()
 	settings_page.show_tab(0)
 	# The help opens as a window over the dimmed page and closes back to it.
 	settings_page.open_help(HubSettings.TOPIC_GROWTH)

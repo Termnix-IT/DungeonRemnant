@@ -32,53 +32,52 @@ const ROW_HEIGHT := 64.0
 # The panel's width; its height holds the longest tab, so it keeps its size
 # from tab to tab.
 const PANEL_WIDTH := 1000.0
-# The gold bar at the left of the selected row.
-const SELECTION_BAR := 3.0
 # The help window: over the page and the fight's menu, under the quit's
 # question; its backdrop, size and topic column.
 const HELP_LAYER := 15
 const HELP_SHADE := Color(0.01, 0.015, 0.025, 0.7)
-const HELP_SIZE := Vector2(1180, 700)
-const HELP_TOPICS_WIDTH := 300.0
+const HELP_SIZE := Vector2(1280, 780)
+const HELP_TOPICS_WIDTH := 260.0
 # The settings' tabs: [name, the rows it shows].
 const TABS := [["サウンド", [0, 1, 2, 3]], ["グラフィック", [4, 5]], ["その他", [6, 7, 8]]]
 const CAPTIONS := ["全体の音量", "音楽", "効果音", "環境音", "画面の揺れ", "画面モード", "操作の案内", "ヘルプ", "ゲームの終了"]
 const NOTES := ["すべての音の大きさ。0%で消音。", "拠点・戦場・ボスの曲の大きさ。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "戦場の空気の音の大きさ。", "攻撃が当たったときや被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "戦闘中、画面の下に操作の一覧を出す。", "ランの決まりごとと操作。", "ゲームを閉じる。確かめてから終了する。"]
 # The help's topics, in order: [title, points], each point a line of its own
-# behind a gilt diamond, as action games' tips are told. HintMarks name the
-# topics by index.
+# behind a gilt diamond, as action games' tips are told, in the polite form
+# the game's other messages use. HintMarks name the topics by index.
 const TOPIC_RUN := 0
 const TOPIC_GROWTH := 1
 const TOPIC_CONTROLS := 2
 const TOPIC_CODEX := 3
 const HELP := [
 	["ランの流れ", [
-		"ランはいつもLv 1から始まる。分岐マップで次のエリアを選び、制圧して進み、最後にボスを倒すと踏破になる。",
-		"フィールドは、時間を生き延びるか決まった数の敵を倒すと制圧できる。アリーナは、すべてのウェーブを倒すと制圧できる。",
-		"倒した敵が落とす宝石でレベルが上がり、そのたびに強化を3つ（永続強化で4つ）から1つ選ぶ。カードは配り終えて光るまで選べない。",
-		"エリアを制圧すると、カードに書かれた報酬（強化・回復・残響）を得る。",
-		"ランで得たレベルと強化は、ランが終わると消える。HPはエリアからエリアへ持ち越す。",
-		"最後の章を初めて踏破すると、難易度の段階が開く。出撃画面で段階を選ぶと、その段階までの制約がすべて効き、持ち帰る残響が1段階ごとに1割増える。",
-		"開いている最高の段階で最後の章を踏破すると、次の段階が開く。",
+		"出撃するたびに、Lv 1から始まります。分岐マップで次のエリアを選んで制圧しながら進み、章の最後にいるボスを倒すと踏破です。",
+		"フィールドは、決められた時間を生き延びるか、決められた数の敵を倒すと制圧できます。どちらの目標かは、戦闘中の画面の上に表示されます。",
+		"アリーナは、すべてのウェーブを倒すと制圧できます。",
+		"敵が落とす宝石を拾うとレベルが上がり、そのたびに3枚（永続強化で4枚）のカードから強化を1つ選びます。カードは、並び終えて光ってから選べます。",
+		"分岐マップのエリアに示された報酬（強化・回復・残響）は、そのエリアを制圧すると受け取れます。",
+		"HPは次のエリアへ持ち越します。レベルと強化は、そのランが終わると消えます。",
+		"最後の章を初めて踏破すると「難易度の段階」が開きます。出撃画面で段階を選ぶと、その段階までの制約がすべて加わる代わりに、持ち帰る残響が1段階ごとに1割増えます。",
+		"開いている中で最も高い段階で最後の章を踏破すると、次の段階が開きます。",
 	]],
 	["残響と永続強化", [
-		"残響はランで得る。勝っても倒れても中断しても、得た分はすべて拠点へ持ち帰れる。",
-		"拠点の強化で残響を使うと、次のランからずっと続く強化が手に入る。",
-		"強化は中央の「残響の灯」から枝分かれする木。左の枝は体の強さ、右の枝はレベルアップを強くし、上の枝ではスキルを覚える。",
-		"節は、線でつながった1つ手前の節を習得すると買えるようになる。下の枝はまだ開いていない。",
-		"強化はそのたびに自動で保存される。",
+		"残響はランの中で手に入ります。踏破しても、倒れても、ランを中断しても、得た分はすべて拠点へ持ち帰れます。",
+		"拠点の「強化」で残響を使うと、次のランからずっと効く強化を習得できます。",
+		"強化は、中央の「残響の灯」から枝分かれする木の形をしています。左の枝で体を、右の枝でレベルアップを強くし、上の枝でスキルを覚えます。",
+		"節は、線でつながった1つ手前の節を習得すると買えるようになります。下の枝はまだ開いていません。",
+		"習得した強化は、その場で自動的に保存されます。",
 	]],
 	["操作", [
-		"攻撃はマウスの方向へ振る。続けて押すと3段の連撃、長押しで溜め攻撃。",
-		"回避のダッシュの間は攻撃を受けない。",
-		"敵の攻撃は床の赤い印で予告される。印が埋まりきる前に外へ出るか、ダッシュでくぐり抜ける。",
-		"付けるスキルと必殺技は、拠点のステータスで選ぶ。必殺技は、戦うと溜まるゲージが満ちたら放てる。",
-		"拠点では、Enterで選んだものへ移り、もう一度Enterで実行する。Escで戻る。",
+		"攻撃は、マウスの方向（ゲームパッドは右スティックの方向）へ振ります。続けて押すと3段の連撃、長押しで溜め攻撃です。",
+		"回避のダッシュをしている間は、攻撃を受けません。",
+		"敵の攻撃の前には、床に赤い印が出ます。印が埋まる前に外へ出るか、ダッシュでくぐり抜けてください。",
+		"スキルと必殺技は、拠点の「ステータス」で付け替えます。必殺技は、戦ってゲージを満たすと使えます。",
+		"拠点の画面では、Enter（ゲームパッドはA）で項目を選び、もう一度押すと決定します。Esc（ゲームパッドはB）で前の画面に戻ります。",
 	]],
 	["図鑑", [
-		"拠点の図鑑では、ランの戦場で出会った敵を見返せる。",
-		"まだ出会っていない敵は、影と「？？？」で示す。種類だけは分かる。",
-		"Q・Eで種類を切り替える。",
+		"拠点の「図鑑」では、ランで出会った敵をいつでも見返せます。",
+		"まだ出会っていない敵は、影と「？？？」で表示されます。どの種類の敵かだけは分かります。",
+		"Q・E（ゲームパッドはLB・RB）で種類を切り替えます。",
 	]],
 ]
 # The controls topic's table, over its points: [what it does, the keys, the
@@ -95,6 +94,9 @@ const HELP_KEYS := [
 ]
 # The point's gilt diamond: its box, as tall as a line of the words.
 const POINT_MARKER := Vector2(14, 25)
+# The chosen topic's glow: the widths of its halo's outlines, each laid over
+# the last, so the halo is brightest by the letters.
+const TOPIC_GLOW: Array[int] = [14, 9, 5]
 
 var volume_slider: GameSlider
 var effects_slider: GameSlider
@@ -266,10 +268,10 @@ func _ready() -> void:
 
 # The help, as action games commonly show their tips: a framed window over a
 # dimmed backdrop (on a layer of its own, above the page and the fight's
-# menu), its title over the topics listed on the left and, on the right, the
+# menu), its title over the topics listed on the left (the chosen one's words
+# lit, no band behind them) and, on the right, a sunk frame holding the
 # chosen one's title, a table of the keys for the controls, and its points a
-# line each; the keys at the window's foot. One frame only: the page is not
-# boxed again inside the window.
+# line each; the keys at the window's foot.
 func _build_help() -> void:
 	help_layer = CanvasLayer.new()
 	help_layer.layer = HELP_LAYER
@@ -314,8 +316,7 @@ func _build_help() -> void:
 	topic_rows = VBoxContainer.new()
 	topic_rows.theme_type_variation = &"SlotRows"
 	topics.add_child(topic_rows)
-	UIMotion.of(topic_rows)
-	topic_rows.draw.connect(_draw_topic_band)
+	topic_rows.draw.connect(_draw_topic_glow)
 	for index in HELP.size():
 		var row := HubUI.button(topic_rows, HELP[index][0], select_topic.bind(index), &"HelpTopic")
 		row.toggle_mode = true
@@ -333,8 +334,9 @@ func _build_help() -> void:
 			if _hover_topic == index:
 				_hover_topic = -1)
 		topic_buttons.append(row)
-	# The page slides in from the right, kept inside its own bounds.
-	var page := MarginContainer.new()
+	# The page, in a sunk frame of its own, slides in from the right, kept
+	# inside the frame.
+	var page := PanelContainer.new()
 	page.theme_type_variation = &"HelpPage"
 	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	page.clip_contents = true
@@ -387,7 +389,7 @@ func _build_help() -> void:
 # Asks before ending the game; Esc or the cancel button keeps playing. The
 # focus waits on the cancel button, so a second Enter never ends the game.
 func ask_quit() -> void:
-	quit_prompt.ask("", "ゲームを終了しますか？", QUIT_BODY_IN_RUN if in_run else QUIT_BODY, "終了する", "やめる", true)
+	quit_prompt.ask("", "ゲームを終了しますか？", QUIT_BODY_IN_RUN if in_run else QUIT_BODY, "終了する", "戻る", true)
 	quit_prompt.cancel_button.grab_focus()
 
 
@@ -455,9 +457,18 @@ func _hover_topic_row(index: int) -> void:
 		select_topic(index)
 
 
-func _draw_topic_band() -> void:
+# The chosen topic's words glow: a soft gilt halo under the gold letters,
+# laid as outlines of the words, the widest faintest, so it gathers to the
+# letters; the row itself draws no band or frame.
+func _draw_topic_glow() -> void:
 	var chosen := topic_buttons[selected_topic]
-	_draw_band(topic_rows, UIMotion.of(topic_rows).follow_mark(Rect2(chosen.position + Vector2(-8, 2), chosen.size + Vector2(8, -4))))
+	var font := chosen.get_theme_font(&"font")
+	var font_size := chosen.get_theme_font_size(&"font_size")
+	var x := chosen.position.x + chosen.get_theme_stylebox(&"normal").get_margin(SIDE_LEFT)
+	var y := chosen.position.y + (chosen.size.y - font.get_height(font_size)) * 0.5 + font.get_ascent(font_size)
+	var glow := chosen.get_theme_color(&"glow")
+	for spread: int in TOPIC_GLOW:
+		topic_rows.draw_string_outline(font, Vector2(x, y), chosen.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, spread, glow)
 
 
 func _row(caption: String) -> HBoxContainer:
@@ -504,15 +515,6 @@ func _draw_rows() -> void:
 		var index := shown[place]
 		var y := _rows[index].position.y + _rows[index].size.y
 		rows.draw_polyline_colors(PackedVector2Array([Vector2(0, y), Vector2(rows.size.x * 0.5, y), Vector2(rows.size.x, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.22), Color(rail, 0.0)]), 1.0, true)
-
-
-# The selection, as every list shows it: a faint warm band across the row
-# and a gold bar at its left end; no frame round it.
-func _draw_band(canvas: Control, rect: Rect2) -> void:
-	var rail := canvas.get_theme_color(&"rail", &"HubLobby")
-	var band := canvas.get_theme_color(&"band", &"HubLobby")
-	canvas.draw_rect(rect, Color(band, band.a * 1.4))
-	canvas.draw_rect(Rect2(rect.position, Vector2(SELECTION_BAR, rect.size.y)), rail)
 
 
 func _focus_row(index: int) -> void:

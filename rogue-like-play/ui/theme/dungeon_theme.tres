@@ -769,25 +769,12 @@ gradient = SubResource("ClearGradient")
 width = 24
 height = 24
 
-[sub_resource type="StyleBoxFlat" id="CyclerRest"]
+[sub_resource type="StyleBoxEmpty" id="CyclerRest"]
 resource_name = "CyclerRest"
 content_margin_left = 48.0
 content_margin_top = 8.0
 content_margin_right = 52.0
 content_margin_bottom = 8.0
-bg_color = Color(0, 0, 0, 0)
-border_width_bottom = 1
-border_color = Color(0.72, 0.58, 0.36, 0.35)
-
-[sub_resource type="StyleBoxFlat" id="CyclerActive"]
-resource_name = "CyclerActive"
-content_margin_left = 48.0
-content_margin_top = 8.0
-content_margin_right = 52.0
-content_margin_bottom = 8.0
-bg_color = Color(0.86, 0.66, 0.32, 0.1)
-border_width_bottom = 1
-border_color = Color(0.96, 0.85, 0.6, 0.85)
 
 [sub_resource type="StyleBoxEmpty" id="KeyGuideHint"]
 resource_name = "KeyGuideHint"
@@ -1335,6 +1322,23 @@ corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="HelpPageWell"]
+resource_name = "HelpPageWell"
+content_margin_left = 32.0
+content_margin_top = 22.0
+content_margin_right = 32.0
+content_margin_bottom = 24.0
+bg_color = Color(0.018, 0.017, 0.021, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.72, 0.58, 0.36, 0.2)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="TreeWellSurface"]
 resource_name = "TreeWellSurface"
@@ -1891,10 +1895,10 @@ OptionCycler/constants/arrow_inset = 14
 OptionCycler/font_sizes/font_size = 20
 OptionCycler/fonts/font = ExtResource("BodyBold")
 OptionCycler/styles/normal = SubResource("CyclerRest")
-OptionCycler/styles/hover = SubResource("CyclerActive")
-OptionCycler/styles/pressed = SubResource("CyclerActive")
-OptionCycler/styles/hover_pressed = SubResource("CyclerActive")
-OptionCycler/styles/focus = SubResource("CyclerActive")
+OptionCycler/styles/hover = SubResource("CyclerRest")
+OptionCycler/styles/pressed = SubResource("CyclerRest")
+OptionCycler/styles/hover_pressed = SubResource("CyclerRest")
+OptionCycler/styles/focus = SubResource("CyclerRest")
 OptionCycler/styles/disabled = SubResource("CyclerRest")
 SettingsRows/base_type = &"VBoxContainer"
 SettingsRows/constants/separation = 0
@@ -2039,13 +2043,15 @@ HintMark/styles/hover_pressed = SubResource("Invisible")
 HintMark/styles/disabled = SubResource("Invisible")
 HintMark/styles/focus = SubResource("Invisible")
 HelpTopic/base_type = &"SlotRow"
-HelpTopic/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+HelpTopic/colors/font_color = Color(0.72, 0.69, 0.63, 1)
 HelpTopic/colors/font_hover_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
 HelpTopic/colors/font_focus_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-HelpTopic/colors/font_pressed_color = Color(0.96, 0.85, 0.6, 1)
-HelpTopic/colors/font_hover_pressed_color = Color(0.96, 0.85, 0.6, 1)
+HelpTopic/colors/font_pressed_color = Color(1, 0.88, 0.62, 1)
+HelpTopic/colors/font_hover_pressed_color = Color(1, 0.88, 0.62, 1)
+HelpTopic/colors/glow = Color(0.96, 0.72, 0.36, 0.1)
 HelpTopic/font_sizes/font_size = 18
 HelpTopic/styles/focus = SubResource("Invisible")
+HelpTopic/styles/hover = SubResource("Invisible")
 SkillNode/base_type = &"Button"
 SkillNode/colors/disc = Color(0.035, 0.032, 0.035, 0.96)
 SkillNode/colors/disc_hover = Color(0.1, 0.09, 0.085, 0.98)
@@ -2290,11 +2296,8 @@ CodexStats/constants/v_separation = 4
 EquipSocket/colors/rim = Color(0.56, 0.478, 0.322, 0.28)
 PromptButton/base_type = &"SecondaryButton"
 PromptButton/styles/focus = SubResource("PromptButtonFocus")
-HelpPage/base_type = &"MarginContainer"
-HelpPage/constants/margin_left = 0
-HelpPage/constants/margin_top = 0
-HelpPage/constants/margin_right = 0
-HelpPage/constants/margin_bottom = 0
+HelpPage/base_type = &"PanelContainer"
+HelpPage/styles/panel = SubResource("HelpPageWell")
 HelpBody/base_type = &"HBoxContainer"
 HelpBody/constants/separation = 40
 HelpKeys/base_type = &"GridContainer"

@@ -130,6 +130,14 @@ func run_tests() -> void:
 	# The settings' help and quit are their words alone: no underline when
 	# pointed at.
 	check(theme.get_stylebox(&"hover", &"TextAction") is StyleBoxEmpty, "A text action draws no underline when pointed at")
+	# A selector's value stands on nothing: its arrows alone light up.
+	for state: StringName in [&"normal", &"hover", &"focus", &"pressed"]:
+		check(theme.get_stylebox(state, &"OptionCycler") is StyleBoxEmpty, "A selector draws no underline (%s)" % state)
+	# The help's topics show the chosen one by its glowing words, not a band.
+	check(theme.get_stylebox(&"hover", &"HelpTopic") is StyleBoxEmpty and theme.get_color(&"glow", &"HelpTopic").a > 0.0 and theme.get_color(&"font_pressed_color", &"HelpTopic") != theme.get_color(&"font_color", &"HelpTopic"), "A help topic is chosen by its lit words")
+	# The help's page stands in a frame of its own inside the window.
+	var page_frame := theme.get_stylebox(&"panel", &"HelpPage") as StyleBoxFlat
+	check(page_frame != null and page_frame.border_width_top > 0 and page_frame.content_margin_left > 0.0, "The help's page is framed")
 	var primary := theme.get_stylebox(&"normal", &"PrimaryButton") as StyleBoxFlat
 	check(primary != null and primary.border_width_top == 1 and primary.bg_color.a > 0.0, "The primary action is a quiet gold-tinted plate with a hairline")
 	check((theme.get_stylebox(&"focus", &"PrimaryButton") as StyleBoxFlat).border_width_top > primary.border_width_top, "A focused primary action draws a stronger edge")
