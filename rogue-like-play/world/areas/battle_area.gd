@@ -261,7 +261,7 @@ func objective_text() -> String:
 		return "%sを倒す" % data.boss.display_name
 	if waves != null:
 		if waves.wave < 0:
-			return "ウェーブ 1/%d　まもなく" % data.waves.size()
+			return "ウェーブ 1/%d" % data.waves.size()
 		if waves.done():
 			return "全ウェーブ撃破"
 		return "ウェーブ %d/%d　残り %d体" % [waves.wave + 1, data.waves.size(), waves.remaining()]
