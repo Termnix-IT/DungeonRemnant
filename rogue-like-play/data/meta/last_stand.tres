@@ -4,7 +4,7 @@
 script = ExtResource("1")
 id = &"last_stand"
 display_name = "不屈"
-description = "1ランに1度、倒れるはずの攻撃をHP1で耐え、1秒無敵になる"
+description = "探索ごとに1度、倒れるはずの攻撃をHP1で耐え、1秒無敵になる"
 costs = Array[int]([600])
 effect = &"last_stand"
 per_rank = 1.0

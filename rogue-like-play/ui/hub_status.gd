@@ -612,7 +612,7 @@ func stat_rows() -> Array:
 	rows.append(["報酬の残響", "+%d%%" % roundi(rules[&"echo_rate"] * 100.0), "", _breakdown(&"echo_rate", "+0%", "%", 100.0), false])
 	rows.append(["得る経験値", "+%d%%" % roundi(rules[&"exp_rate"] * 100.0), "", _breakdown(&"exp_rate", "+0%", "%", 100.0), false])
 	rows.append(["レベルアップのカード", "%d枚" % (BuildState.OFFER_COUNT + roundi(rules[&"offer_count"])), "", _breakdown(&"offer_count", "%d枚" % BuildState.OFFER_COUNT, "枚"), false])
-	rows.append(["引き直し", "1ランに%d回" % roundi(rules[&"reroll"]), "", _breakdown(&"reroll", "0回", "回"), false])
+	rows.append(["引き直し", "探索ごとに%d回" % roundi(rules[&"reroll"]), "", _breakdown(&"reroll", "0回", "回"), false])
 	rows.append(["不屈", "あり" if rules[&"last_stand"] > 0.0 else "なし", "", _breakdown(&"last_stand", "なし", ""), false])
 	var rising: Array[String] = []
 	if rules[&"level_heal"] > 0.0:

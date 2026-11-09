@@ -90,7 +90,7 @@ func _build_menu() -> void:
 	HubUI.rule(column)
 	resume_button = HubUI.button(column, "戦いに戻る", resume, &"PrimaryButton")
 	settings_button = HubUI.button(column, "設定", open_settings)
-	abort_button = HubUI.button(column, "ランを中断する", func(): abort_requested.emit())
+	abort_button = HubUI.button(column, "探索を中断する", func(): abort_requested.emit())
 	var buttons: Array[Button] = [resume_button, settings_button, abort_button]
 	for index in buttons.size():
 		buttons[index].focus_neighbor_top = buttons[(index + buttons.size() - 1) % buttons.size()].get_path()
@@ -114,7 +114,7 @@ func _build_build(parent: Control) -> void:
 	var column := VBoxContainer.new()
 	column.theme_type_variation = &"DetailStack"
 	margin.add_child(column)
-	var title := HubUI.label(column, "このランの強化", &"HeadingLabel")
+	var title := HubUI.label(column, "この探索の強化", &"HeadingLabel")
 	title.autowrap_mode = TextServer.AUTOWRAP_OFF
 	HubUI.rule(column)
 	build_list = VBoxContainer.new()

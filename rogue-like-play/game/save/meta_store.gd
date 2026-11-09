@@ -60,7 +60,7 @@ func load_progress() -> MetaProgress:
 		return meta
 	migrated = false
 	blocked = FileAccess.file_exists(path) or FileAccess.file_exists(path + ".bak")
-	message = "保存データを読めません。元ファイルを保護し、保存を停止しています。" if blocked else "新規開始。ランの途中の状態は保存されません。"
+	message = "保存データを読めません。元ファイルを保護し、保存を停止しています。" if blocked else "新規開始。探索の途中の状態は保存されません。"
 	alert = blocked
 	return MetaProgress.new()
 
@@ -105,7 +105,7 @@ func save_progress(meta: MetaProgress) -> bool:
 	if DirAccess.rename_absolute(temporary, path) != OK:
 		return _failed("保存ファイルを確定できません")
 	migrated = false
-	message = "保存済み。ランの途中で終了すると、最後に保存した拠点の状態に戻ります。"
+	message = "保存済み。探索の途中で終了すると、最後に保存した拠点の状態に戻ります。"
 	alert = false
 	return true
 

@@ -20,7 +20,7 @@ const TILE_INSET := 0.9
 const COLUMNS := 8
 const STAT_MARKER := 14.0
 const UNKNOWN_NAME := "？？？"
-const UNKNOWN_NOTE := "まだ出会っていない敵。ランで戦場に現れると記録される。"
+const UNKNOWN_NOTE := "まだ出会っていない敵。探索で戦場に現れると記録される。"
 const SHADOW := Color(0.0, 0.0, 0.0, 0.85)
 
 var meta: MetaProgress

@@ -192,7 +192,7 @@ func _arrive_home(after_ending: bool) -> void:
 	if after_ending:
 		transition.play_return("旅支度の間", "難易度の段階が開いた。出撃の画面で選べる。")
 	else:
-		transition.play_return("旅支度の間", "残響と永続強化は次のランへ引き継がれます。")
+		transition.play_return("旅支度の間", "残響と強化は次の探索へ引き継がれます。")
 
 
 func _update_save_status() -> void:

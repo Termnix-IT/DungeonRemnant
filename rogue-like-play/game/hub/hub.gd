@@ -122,7 +122,7 @@ func _ready() -> void:
 	purse = GoldPurse.new()
 	purse.custom_minimum_size.x = 220
 	purse.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	purse.tooltip_text = "残響：ランで得て、拠点で永続強化に使う"
+	purse.tooltip_text = "残響：探索で得て、拠点の強化に使う"
 	header.add_child(purse)
 	echo_label = purse.value_label
 	_page_host = Control.new()

@@ -29,7 +29,7 @@ const ACTIONS := {
 	&"settings": "設定を開く",
 }
 const DESCRIPTIONS := {
-	&"upgrade": "ランで得た残響で、次のランからずっと続く強化を手に入れる。",
+	&"upgrade": "探索で得た残響で、次の探索からずっと続く強化を手に入れる。",
 	&"status": "強化で育った数値を確かめ、スキルを付け替える。",
 	&"codex": "これまでに戦場で出会った敵を見返す。",
 	&"settings": "音量と画面モードを変え、遊び方を確認する。",
@@ -259,7 +259,7 @@ func _build_panel() -> void:
 	_details[&"codex"] = records
 	codex_met = HubUI.strip_fact(records, "出会った敵")
 	HubUI.strip_divider(records)
-	codex_runs = HubUI.strip_fact(records, "挑んだラン")
+	codex_runs = HubUI.strip_fact(records, "探索の回数")
 	var current: HBoxContainer = HubUI.fact_strip(stack, STRIP_HEIGHT)
 	_details[&"settings"] = current
 	volume_value = HubUI.strip_fact(current, "音量")

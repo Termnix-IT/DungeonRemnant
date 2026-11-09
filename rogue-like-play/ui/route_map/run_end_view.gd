@@ -126,11 +126,11 @@ func _ready() -> void:
 	_boons.columns = BOON_COLUMNS
 	boons.add_child(_boons)
 	_no_boons = _centered(boons, &"MutedLabel")
-	_no_boons.text = "このランで取得した強化はない"
+	_no_boons.text = "この探索で取得した強化はない"
 	pages = [record, boons]
 	HubUI.space(stack)
 	# The way on, at the foot.
-	_button = HubUI.primary_action(stack, "新しいランを始める", func(): again_requested.emit())
+	_button = HubUI.primary_action(stack, "新しい探索を始める", func(): again_requested.emit())
 	seal = TextureRect.new()
 	seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -169,7 +169,7 @@ func present(result: Dictionary, home: bool = false, art: Texture2D = null) -> v
 	_title.theme_type_variation = &"VictoryTitle" if won else &"DefeatTitle"
 	var place: String = result.chapter if int(result.get("step", 0)) == 0 else "%s（段階%d）" % [result.chapter, int(result.step)]
 	_ending.text = "%s　%s" % [place, "ボスを撃破した" if won else ("第%d層で中断した" if left else "第%d層で倒れた") % (int(result.layer) + 1)]
-	_button.text = "拠点へ戻る" if home else "新しいランを始める"
+	_button.text = "拠点へ戻る" if home else "新しい探索を始める"
 	for child in _tiles.get_children():
 		child.free()
 	var reached := "ボス" if won else "第%d層" % (int(result.layer) + 1)

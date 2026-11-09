@@ -4,7 +4,7 @@
 script = ExtResource("1")
 id = &"parting_blessing"
 display_name = "旅立ちの加護"
-description = "ランの始めに強化を3つから1つ選べる"
+description = "探索の始めに強化を3つから1つ選べる"
 costs = Array[int]([200])
 effect = &"start_boon"
 per_rank = 1.0
