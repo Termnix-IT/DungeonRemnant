@@ -7,20 +7,31 @@ extends CanvasLayer
 # - at the top centre, the goal (the area, what to do, a bar of how far it
 #   has come); the boss's gauge takes its place once the boss is in;
 # - at the top left, the boons taken as their emblems with their ranks;
-# - at the top right, the foes felled and the echo earned in the run;
+# - at the top right, the echo earned in the run (gold, the larger) over the
+#   foes felled (left out while the area's goal itself counts the foes, so
+#   one count is not shown twice);
 # - at the bottom left, her health (a trail shows what a blow took);
 # - at the bottom right, her actions as round slots (attack, dash, skills,
 #   special move) with their keys, a sweep while they come back, pips for
 #   the dashes, a ring while she charges, and the special's gauge as its
 #   sweep (it pulses gold once full);
-# - the rest of the controls along the bottom, and a banner in the middle
+# - the rest of the controls along the bottom as the key guide the other
+#   screens use (keys named on a keyboard, painted caps on a gamepad), and a
+#   banner in the middle
 #   for the area's name, its clearing, her fall and the boss's rage;
 # - at 30% health or less, the screen's edges pulse red, deeper and faster
 #   the less is left.
+# A faint shade darkens the top and bottom edges, under all of it, so the
+# words read the same on a bright, busy floor as on a dark one.
 # It only reads the area (and its `run`, `director`, `waves` and `boss_foe`,
 # when it has them). A trial area (the sandbox) adds its keys and counters.
 
-const CONTROLS := "WASD 移動　／　長押しで溜め攻撃　／　Esc メニュー"
+# The controls under the fight: [keys, gamepad buttons, what they do].
+const CONTROLS := [
+	["WASD", "左スティック", "移動"],
+	["左クリック長押し", "X長押し", "溜め攻撃"],
+	["Esc", "START", "メニュー"],
+]
 # The action slots' emblems, and their keys on a keyboard and a gamepad.
 const SLOTS := [
 	[&"strike", "weapon_sword", "左クリック", "X"],
@@ -42,6 +53,9 @@ const BAR_WIDTH := 360.0
 const GOAL_WIDTH := 380.0
 const EMBLEM_SIZE := 40.0
 const BOONS_WIDTH := 360.0
+# How far the edges' shade reaches in from the top and from the bottom.
+const TOP_SHADE := 120.0
+const BOTTOM_SHADE := 150.0
 # The share of health from which the edges pulse, and their pulse rates (per
 # second) at that share and at the last of it.
 const DANGER_SHARE := 0.3
@@ -61,11 +75,16 @@ var goal_bar: ProgressBar
 var boons: HFlowContainer
 var kills_label: Label
 var echo_label: Label
+# The tally's rows: the echo (its caption and value) and the foes felled.
+var echo_row: HBoxContainer
+var kills_row: HBoxContainer
 var trial_label: Label
 var slots: Dictionary[StringName, ActionSlot] = {}
 # The skill slot's key (the seconds left while it comes back).
 var skill_label: Label
-var guide: Label
+var guide: KeyGuide
+# A trial area's own keys, over the guide.
+var trial_keys: Label
 var banner: PanelContainer
 var message: Label
 var boss_gauge: BossGauge
@@ -84,6 +103,7 @@ func _ready() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
 	_build_danger(root)
+	_build_shade(root)
 	_build_top(root)
 	_build_bottom(root)
 	boss_gauge = BossGauge.new()
@@ -128,6 +148,33 @@ func _build_danger(root: Control) -> void:
 	danger.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_child(danger)
 	danger.hide()
+
+
+# Dark at the very edge, clear by the reach in; one band at the top, one at
+# the bottom.
+func _build_shade(root: Control) -> void:
+	var dark := root.get_theme_color(&"shade", &"HudEdge")
+	for top: bool in [true, false]:
+		var fade := Gradient.new()
+		fade.set_color(0, Color(dark, dark.a if top else 0.0))
+		fade.set_color(1, Color(dark, 0.0 if top else dark.a))
+		var texture := GradientTexture2D.new()
+		texture.gradient = fade
+		texture.fill_from = Vector2(0.5, 0.0)
+		texture.fill_to = Vector2(0.5, 1.0)
+		texture.width = 4
+		texture.height = 64
+		var band := TextureRect.new()
+		band.texture = texture
+		band.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		band.stretch_mode = TextureRect.STRETCH_SCALE
+		band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		band.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE if top else Control.PRESET_BOTTOM_WIDE)
+		if top:
+			band.offset_bottom = TOP_SHADE
+		else:
+			band.offset_top = -BOTTOM_SHADE
+		root.add_child(band)
 
 
 func _build_top(root: Control) -> void:
@@ -179,10 +226,10 @@ func _build_top(root: Control) -> void:
 	tally.offset_right = -EDGE
 	tally.offset_top = 40
 	root.add_child(tally)
-	kills_label = _label(tally, &"HudValue")
-	kills_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	echo_label = _label(tally, &"HudGoldCaption")
-	echo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	echo_row = _tally_row(tally, "残響")
+	echo_label = _label(echo_row, &"HudGoldValue")
+	kills_row = _tally_row(tally, "撃破")
+	kills_label = _label(kills_row, &"HudTallyValue")
 	trial_label = _label(tally, &"HudSmall")
 	trial_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
@@ -235,12 +282,36 @@ func _build_bottom(root: Control) -> void:
 	skill_label = slots[&"skill"].key_label
 	slots[&"skill_2"].visible = false
 	slots[&"special"].visible = false
-	guide = _label(root, &"HudSmall")
-	guide.text = CONTROLS
+	# In the tree before its hints, so they take their style from the theme.
+	guide = KeyGuide.new()
+	root.add_child(guide)
+	for entry: Array in CONTROLS:
+		guide.add_hint(entry[0], entry[1], entry[2])
 	guide.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	guide.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	guide.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	guide.position.y -= 36
+	guide.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	guide.offset_bottom = -EDGE + 6.0
+	trial_keys = _label(root, &"HudCaption")
+	trial_keys.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	trial_keys.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	trial_keys.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	trial_keys.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	trial_keys.offset_bottom = -EDGE - 40.0
+	trial_keys.hide()
+
+
+# A row of the tally, right-aligned: its caption, then (added by the caller)
+# its value.
+func _tally_row(tally: VBoxContainer, caption: String) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.theme_type_variation = &"HudTallyRow"
+	row.alignment = BoxContainer.ALIGNMENT_END
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tally.add_child(row)
+	var label := _label(row, &"HudCaption")
+	label.text = caption
+	label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	return row
 
 
 func _label(parent: Control, role: StringName) -> Label:
@@ -251,11 +322,12 @@ func _label(parent: Control, role: StringName) -> Label:
 	return label
 
 
-# An area may add keys of its own to the controls line (trial_keys()).
+# An area may add keys of its own over the controls (trial_keys()).
 func watch(combat_area: CombatArea) -> void:
 	area = combat_area
-	if area.has_method(&"trial_keys"):
-		guide.text = CONTROLS + "　／　" + area.trial_keys()
+	trial_keys.visible = area.has_method(&"trial_keys")
+	if trial_keys.visible:
+		trial_keys.text = area.trial_keys()
 
 
 # The banner in the middle; empty hides it.
@@ -332,13 +404,16 @@ func _goal_progress(data: AreaData) -> float:
 	return -1.0
 
 
-# The foes felled and the run's echo; a trial area's counters under them.
+# The run's echo and the foes felled; a trial area's counters under them.
+# While the area's goal counts the foes, the goal alone shows them.
 func _show_tally() -> void:
 	var run: RunState = area.get(&"run")
-	kills_label.text = "撃破 %d" % ((run.kills if run != null else 0) + area.kills)
-	echo_label.visible = run != null
+	kills_label.text = str((run.kills if run != null else 0) + area.kills)
+	var data: AreaData = area.get(&"data")
+	kills_row.visible = not (goal.visible and data != null and data.kill_target > 0)
+	echo_row.visible = run != null
 	if run != null:
-		echo_label.text = "残響 %s" % UIFormat.amount(run.echo)
+		echo_label.text = UIFormat.amount(run.echo)
 	trial_label.visible = area.has_method(&"trial_keys")
 	if trial_label.visible:
 		var director: EnemyDirector = area.get(&"director")

@@ -108,6 +108,11 @@ func _draw_cap(hint: Button) -> void:
 	if pad:
 		hint.draw_style_box(hint.get_theme_stylebox(&"cap_active" if active else &"cap"), rect)
 	var baseline := rect.position.y + (height + font.get_ascent(size) - font.get_descent(size)) * 0.5
+	# The key's name keeps the words' dark outline, so it reads over a busy
+	# field (the fight's HUD) as well as on a panel.
+	var outline := hint.get_theme_constant(&"outline_size")
+	if not pad and outline > 0:
+		hint.draw_string_outline(font, Vector2(rect.position.x, baseline), cap_text(hint), HORIZONTAL_ALIGNMENT_CENTER, width, size, outline, hint.get_theme_color(&"font_outline_color"))
 	hint.draw_string(font, Vector2(rect.position.x, baseline), cap_text(hint), HORIZONTAL_ALIGNMENT_CENTER, width, size, rim)
 
 

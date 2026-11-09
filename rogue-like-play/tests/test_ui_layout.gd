@@ -94,6 +94,11 @@ func run_tests() -> void:
 	var middle := screen.get_center().x
 	check(absf(hud.goal.get_global_rect().get_center().x - middle) < 2.0 and hud.goal.get_global_rect().end.y < ring.position.y, "The goal stands at the top centre")
 	check(hud.kills_label.get_global_rect().position.x > middle and hud.kills_label.get_global_rect().end.y < ring.position.y, "The tally keeps to the top right")
+	# One count is not shown twice: while the goal counts the foes, the tally
+	# leaves them out; the echo is always there.
+	check(hud.echo_row.visible and hud.kills_row.visible == not (hud.goal.visible and area.data.kill_target > 0), "The tally shows the echo, and the foes only when the goal does not count them")
+	# The controls are the key guide the other screens use.
+	check(hud.guide is KeyGuide and hud.guide.get_child_count() == ActionHud.CONTROLS.size(), "The controls under the fight are a key guide")
 	check(hud.hp_bar.get_global_rect().end.x < middle and hud.hp_bar.get_global_rect().position.y > ring.end.y, "Health keeps to the bottom left")
 	for key: StringName in hud.slots:
 		var slot_rect := hud.slots[key].get_global_rect()
