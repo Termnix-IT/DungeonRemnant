@@ -38,37 +38,41 @@ const SELECTION_BAR := 3.0
 # question; its backdrop, size and topic column.
 const HELP_LAYER := 15
 const HELP_SHADE := Color(0.01, 0.015, 0.025, 0.7)
-const HELP_SIZE := Vector2(1180, 640)
+const HELP_SIZE := Vector2(1180, 700)
 const HELP_TOPICS_WIDTH := 300.0
 # The settings' tabs: [name, the rows it shows].
 const TABS := [["サウンド", [0, 1, 2, 3]], ["グラフィック", [4, 5]], ["その他", [6, 7, 8]]]
 const CAPTIONS := ["全体の音量", "音楽", "効果音", "環境音", "画面の揺れ", "画面モード", "操作の案内", "ヘルプ", "ゲームの終了"]
 const NOTES := ["すべての音の大きさ。0%で消音。", "拠点・戦場・ボスの曲の大きさ。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "戦場の空気の音の大きさ。", "攻撃が当たったときや被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "戦闘中、画面の下に操作の一覧を出す。", "ランの決まりごとと操作。", "ゲームを閉じる。確かめてから終了する。"]
-# The help's topics, in order: [title, paragraphs]. HintMarks name them by index.
+# The help's topics, in order: [title, points], each point a line of its own
+# behind a gilt diamond, as action games' tips are told. HintMarks name the
+# topics by index.
 const TOPIC_RUN := 0
 const TOPIC_GROWTH := 1
 const TOPIC_CONTROLS := 2
 const TOPIC_CODEX := 3
 const HELP := [
 	["ランの流れ", [
-		"ランはいつもLv 1から始まる。分岐マップで次のエリアを選び、フィールドやアリーナを制圧して進み、最後にボスを倒すと踏破になる。",
-		"フィールドは時間を生き延びるか、決まった数の敵を倒すと制圧できる。アリーナは、すべてのウェーブを倒すと制圧できる。",
-		"倒した敵が落とす宝石でレベルが上がり、そのたびに強化を3つ（永続強化で4つ）から1つ選ぶ。カードは配り終えて光るまで選べない。エリアを制圧すると、カードに書かれた報酬（強化・回復・残響）を得る。",
+		"ランはいつもLv 1から始まる。分岐マップで次のエリアを選び、制圧して進み、最後にボスを倒すと踏破になる。",
+		"フィールドは、時間を生き延びるか決まった数の敵を倒すと制圧できる。アリーナは、すべてのウェーブを倒すと制圧できる。",
+		"倒した敵が落とす宝石でレベルが上がり、そのたびに強化を3つ（永続強化で4つ）から1つ選ぶ。カードは配り終えて光るまで選べない。",
+		"エリアを制圧すると、カードに書かれた報酬（強化・回復・残響）を得る。",
 		"ランで得たレベルと強化は、ランが終わると消える。HPはエリアからエリアへ持ち越す。",
-		"最後の章を初めて踏破すると、難易度の段階が開く。出撃画面で段階を選ぶと、その段階までの制約がすべて効き、持ち帰る残響が1段階ごとに1割増える。開いている最高の段階で最後の章を踏破すると、次の段階が開く。",
+		"最後の章を初めて踏破すると、難易度の段階が開く。出撃画面で段階を選ぶと、その段階までの制約がすべて効き、持ち帰る残響が1段階ごとに1割増える。",
+		"開いている最高の段階で最後の章を踏破すると、次の段階が開く。",
 	]],
 	["残響と永続強化", [
-		"残響はランで得て、勝っても倒れても中断しても、得た分はすべて拠点へ持ち帰れる。",
-		"拠点の強化で残響を使うと、次のランからずっと続く強化が手に入る。強化は中央の「残響の灯」から枝分かれする木で、左の枝は体の強さ、右の枝はレベルアップを強くし、上の枝ではスキルを覚える。",
+		"残響はランで得る。勝っても倒れても中断しても、得た分はすべて拠点へ持ち帰れる。",
+		"拠点の強化で残響を使うと、次のランからずっと続く強化が手に入る。",
+		"強化は中央の「残響の灯」から枝分かれする木。左の枝は体の強さ、右の枝はレベルアップを強くし、上の枝ではスキルを覚える。",
 		"節は、線でつながった1つ手前の節を習得すると買えるようになる。下の枝はまだ開いていない。",
 		"強化はそのたびに自動で保存される。",
 	]],
 	["操作", [
-		"移動：WASD・矢印キー。ゲームパッドは左スティック。",
-		"攻撃：左クリック（マウスの方向へ振る）。続けて押すと3段の連撃、長押しで溜め攻撃。ゲームパッドはX、狙いは右スティック。",
-		"回避：Space（ゲームパッドはA・RB）。ダッシュの間は攻撃を受けない。スキル：Q と E（ゲームパッドはYとB）。付けるスキルは拠点のステータスで選ぶ。",
-		"敵の攻撃は、床の赤い印で予告される。印が埋まりきる前に外へ出るか、ダッシュでくぐり抜ける。",
-		"レベルアップのカードは、1・2・3かクリックで選ぶ。メニュー（設定・ランの中断）：Esc。",
+		"攻撃はマウスの方向へ振る。続けて押すと3段の連撃、長押しで溜め攻撃。",
+		"回避のダッシュの間は攻撃を受けない。",
+		"敵の攻撃は床の赤い印で予告される。印が埋まりきる前に外へ出るか、ダッシュでくぐり抜ける。",
+		"付けるスキルと必殺技は、拠点のステータスで選ぶ。必殺技は、戦うと溜まるゲージが満ちたら放てる。",
 		"拠点では、Enterで選んだものへ移り、もう一度Enterで実行する。Escで戻る。",
 	]],
 	["図鑑", [
@@ -77,6 +81,20 @@ const HELP := [
 		"Q・Eで種類を切り替える。",
 	]],
 ]
+# The controls topic's table, over its points: [what it does, the keys, the
+# gamepad's buttons], each key on a cap of its own.
+const HELP_KEYS := [
+	["移動", ["WASD", "矢印キー"], ["左スティック", "十字キー"]],
+	["攻撃", ["左クリック"], ["X"]],
+	["狙い", ["マウス"], ["右スティック"]],
+	["回避", ["Space"], ["A", "RB"]],
+	["スキル", ["Q", "E"], ["Y", "B"]],
+	["必殺技", ["R"], ["LB"]],
+	["強化を選ぶ", ["1", "2", "3", "クリック"], ["◀ / ▶", "A"]],
+	["メニュー", ["Esc"], ["START"]],
+]
+# The point's gilt diamond: its box, as tall as a line of the words.
+const POINT_MARKER := Vector2(14, 25)
 
 var volume_slider: GameSlider
 var effects_slider: GameSlider
@@ -109,7 +127,9 @@ var help_view: Control
 var help_window: PanelContainer
 var help_close_hint: Button
 var help_title: Label
-var help_body: Label
+# The chosen topic's table of keys (the controls only) and its points.
+var help_keys: GridContainer
+var help_points: VBoxContainer
 var topic_rows: VBoxContainer
 var topic_buttons: Array[Button] = []
 var selected_topic := 0
@@ -244,10 +264,12 @@ func _ready() -> void:
 	show_tab(0)
 
 
-# The help, as games commonly show their manual: a framed window over a
+# The help, as action games commonly show their tips: a framed window over a
 # dimmed backdrop (on a layer of its own, above the page and the fight's
-# menu), the topics listed on its left and the chosen one's paragraphs on
-# its right, the keys at its foot.
+# menu), its title over the topics listed on the left and, on the right, the
+# chosen one's title, a table of the keys for the controls, and its points a
+# line each; the keys at the window's foot. One frame only: the page is not
+# boxed again inside the window.
 func _build_help() -> void:
 	help_layer = CanvasLayer.new()
 	help_layer.layer = HELP_LAYER
@@ -279,17 +301,16 @@ func _build_help() -> void:
 	var stack := VBoxContainer.new()
 	stack.theme_type_variation = &"DetailStack"
 	margin.add_child(stack)
+	var heading := HubUI.label(stack, "ヘルプ", &"TitleLabel")
+	heading.autowrap_mode = TextServer.AUTOWRAP_OFF
 	var body := HBoxContainer.new()
-	body.theme_type_variation = &"ListRow"
+	body.theme_type_variation = &"HelpBody"
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	stack.add_child(body)
 	var topics := VBoxContainer.new()
 	topics.theme_type_variation = &"DetailStack"
 	topics.custom_minimum_size.x = HELP_TOPICS_WIDTH
 	body.add_child(topics)
-	var heading := HubUI.label(topics, "ヘルプ", &"TitleLabel")
-	heading.autowrap_mode = TextServer.AUTOWRAP_OFF
-	HubUI.rule(topics)
 	topic_rows = VBoxContainer.new()
 	topic_rows.theme_type_variation = &"SlotRows"
 	topics.add_child(topic_rows)
@@ -312,18 +333,46 @@ func _build_help() -> void:
 			if _hover_topic == index:
 				_hover_topic = -1)
 		topic_buttons.append(row)
-	var page := PanelContainer.new()
-	page.theme_type_variation = &"QuietSection"
+	# The page slides in from the right, kept inside its own bounds.
+	var page := MarginContainer.new()
+	page.theme_type_variation = &"HelpPage"
 	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	body.add_child(page)
 	page.clip_contents = true
+	body.add_child(page)
 	var words := VBoxContainer.new()
 	words.theme_type_variation = &"DetailStack"
 	page.add_child(words)
 	help_words = words
 	help_title = HubUI.label(words, "", &"HeadingLabel")
 	HubUI.rule(words)
-	help_body = HubUI.label(words, "", &"BodyLabel")
+	help_keys = GridContainer.new()
+	help_keys.theme_type_variation = &"HelpKeys"
+	help_keys.columns = 3
+	words.add_child(help_keys)
+	for title: String in ["", "キーボード", "ゲームパッド"]:
+		HubUI.label(help_keys, title, &"MutedLabel").autowrap_mode = TextServer.AUTOWRAP_OFF
+	for entry: Array in HELP_KEYS:
+		var action := HubUI.label(help_keys, entry[0], &"BodyLabel")
+		action.autowrap_mode = TextServer.AUTOWRAP_OFF
+		action.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		for keys: Array in [entry[1], entry[2]]:
+			var caps := HBoxContainer.new()
+			caps.theme_type_variation = &"HelpKeyCaps"
+			help_keys.add_child(caps)
+			for key: String in keys:
+				var cap := PanelContainer.new()
+				cap.theme_type_variation = &"HelpKeyCap"
+				cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				caps.add_child(cap)
+				var name := HubUI.label(cap, key, &"HelpKeyName")
+				name.autowrap_mode = TextServer.AUTOWRAP_OFF
+				name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var gap := Control.new()
+	gap.custom_minimum_size.y = 6
+	words.add_child(gap)
+	help_points = VBoxContainer.new()
+	help_points.theme_type_variation = &"HelpPoints"
+	words.add_child(help_points)
 	var guide := KeyGuide.new()
 	guide.alignment = BoxContainer.ALIGNMENT_CENTER
 	stack.add_child(guide)
@@ -365,8 +414,28 @@ func select_topic(index: int) -> void:
 		return
 	_shown_topic = index
 	help_title.text = HELP[index][0]
-	help_body.text = "\n\n".join(HELP[index][1])
+	help_keys.visible = index == TOPIC_CONTROLS
+	for child in help_points.get_children():
+		child.free()
+	for point: String in HELP[index][1]:
+		_help_point(point)
 	UIMotion.of(help_words).slide_in()
+
+
+# One of the topic's points: a small gilt diamond by its first line, then
+# the words.
+func _help_point(text: String) -> void:
+	var row := HBoxContainer.new()
+	row.theme_type_variation = &"HelpPoint"
+	help_points.add_child(row)
+	var marker := Control.new()
+	marker.custom_minimum_size = POINT_MARKER
+	marker.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	marker.draw.connect(func(): HubUI.diamond(marker, marker.size * 0.5, 4.0, marker.get_theme_color(&"rail", &"HubLobby")))
+	row.add_child(marker)
+	var words := HubUI.label(row, text, &"DescriptionLabel")
+	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 
 func _hover_setting_row(index: int) -> void:

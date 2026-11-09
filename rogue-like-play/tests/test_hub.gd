@@ -221,6 +221,11 @@ func run_tests() -> void:
 	settings_page.topic_buttons[HubSettings.TOPIC_CONTROLS].gui_input.emit(moved)
 	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
 	check(settings_page.selected_topic == HubSettings.TOPIC_CONTROLS and settings_page.help_title.text == HubSettings.HELP[HubSettings.TOPIC_CONTROLS][0], "Moving the pointer over a topic chooses it even when its entry went unreported")
+	# The controls show their keys as a table over the points; a topic is told
+	# a point a line.
+	check(settings_page.help_keys.visible and settings_page.help_keys.get_child_count() == 3 * (HubSettings.HELP_KEYS.size() + 1) and settings_page.help_points.get_child_count() == HubSettings.HELP[HubSettings.TOPIC_CONTROLS][1].size(), "The controls are a table of keys over their points")
+	settings_page.select_topic(HubSettings.TOPIC_RUN)
+	check(not settings_page.help_keys.visible and settings_page.help_points.get_child_count() == HubSettings.HELP[HubSettings.TOPIC_RUN][1].size(), "Another topic is its points alone")
 	# Its close can be clicked: the key hint, or the dimmed backdrop round it.
 	check(settings_page.help_close_hint.mouse_filter != Control.MOUSE_FILTER_IGNORE, "The help's close hint takes a click")
 	settings_page.help_close_hint.pressed.emit()

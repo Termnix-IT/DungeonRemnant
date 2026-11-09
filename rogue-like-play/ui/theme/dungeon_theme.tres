@@ -654,6 +654,18 @@ texture_margin_top = 7.0
 texture_margin_right = 7.0
 texture_margin_bottom = 7.0
 
+[sub_resource type="StyleBoxTexture" id="HelpKeyCapPlate"]
+resource_name = "HelpKeyCapPlate"
+content_margin_left = 10.0
+content_margin_top = 2.0
+content_margin_right = 10.0
+content_margin_bottom = 2.0
+texture = ExtResource("HudKeyCapTexture")
+texture_margin_left = 7.0
+texture_margin_top = 7.0
+texture_margin_right = 7.0
+texture_margin_bottom = 7.0
+
 [sub_resource type="StyleBoxTexture" id="KeyCapActive"]
 resource_name = "KeyCapActive"
 texture = ExtResource("HudKeyCapActiveTexture")
@@ -2278,3 +2290,24 @@ CodexStats/constants/v_separation = 4
 EquipSocket/colors/rim = Color(0.56, 0.478, 0.322, 0.28)
 PromptButton/base_type = &"SecondaryButton"
 PromptButton/styles/focus = SubResource("PromptButtonFocus")
+HelpPage/base_type = &"MarginContainer"
+HelpPage/constants/margin_left = 0
+HelpPage/constants/margin_top = 0
+HelpPage/constants/margin_right = 0
+HelpPage/constants/margin_bottom = 0
+HelpBody/base_type = &"HBoxContainer"
+HelpBody/constants/separation = 40
+HelpKeys/base_type = &"GridContainer"
+HelpKeys/constants/h_separation = 32
+HelpKeys/constants/v_separation = 6
+HelpKeyCaps/base_type = &"HBoxContainer"
+HelpKeyCaps/constants/separation = 6
+HelpKeyCap/base_type = &"PanelContainer"
+HelpKeyCap/styles/panel = SubResource("HelpKeyCapPlate")
+HelpKeyName/base_type = &"Label"
+HelpKeyName/colors/font_color = Color(0.86, 0.84, 0.79, 1)
+HelpKeyName/font_sizes/font_size = 16
+HelpPoints/base_type = &"VBoxContainer"
+HelpPoints/constants/separation = 14
+HelpPoint/base_type = &"HBoxContainer"
+HelpPoint/constants/separation = 10
