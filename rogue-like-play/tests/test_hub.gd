@@ -190,10 +190,10 @@ func run_tests() -> void:
 	check(settings_page.tabs.tabs.map(func(tab: Button): return tab.text) == ["サウンド", "グラフィック", "その他"] and settings_page.tabs.selected == 0 and shown_rows.call() == [0, 1, 2, 3], "The settings open on the sound tab, its four volumes alone")
 	settings_page.effects_slider.grab_focus()
 	await process_frame
-	check(settings_page.note_title.text == "効果音" and settings_page.note.text == HubSettings.NOTES[2], "The focused setting is told beside the rows")
+	check(settings_page.note.text == HubSettings.NOTES[2], "The focused setting is told under the rows")
 	settings_page.tabs.step(1)
 	await process_frame
-	check(shown_rows.call() == [4, 5] and settings_page.shake_cycler.has_focus() and settings_page.note_title.text == "画面の揺れ", "The next tab shows the graphics rows and focuses the first")
+	check(shown_rows.call() == [4, 5] and settings_page.shake_cycler.has_focus() and settings_page.note.text == HubSettings.NOTES[4], "The next tab shows the graphics rows and focuses the first")
 	check(settings_page.display_cycler.get_node(settings_page.display_cycler.focus_neighbor_bottom) == settings_page.display_cycler, "The focus stays within the tab")
 	settings_page.tabs.step(1)
 	await process_frame
@@ -205,7 +205,7 @@ func run_tests() -> void:
 	check(settings_page.quit_button.has_focus() and settings_page.focused_row == 8, "Pointing at a settings row chooses it")
 	settings_page.help_button.mouse_entered.emit()
 	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
-	check(settings_page.help_button.has_focus() and settings_page.note_title.text == "ヘルプ", "Pointing at a row's control chooses it too")
+	check(settings_page.help_button.has_focus() and settings_page.note.text == HubSettings.NOTES[7], "Pointing at a row's control chooses it too")
 	check(settings_page.help_button.get_theme_stylebox(&"focus") is StyleBoxEmpty and settings_page.topic_buttons[0].get_theme_stylebox(&"focus") is StyleBoxEmpty, "Chosen settings and help rows draw no frame")
 	settings_page.show_tab(0)
 	# The help opens as a window over the dimmed page and closes back to it.

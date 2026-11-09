@@ -1,11 +1,12 @@
 class_name HubSettings
 extends Control
 
-# The settings page, laid out as settings screens commonly are: tabs over
-# the rows (sound, graphics, other; Q / E or LB / RB, or a click) showing one
-# group at a time, the focused row on a warm band (sliding between rows), and
-# what the focused setting does in the column on the right, which slides in
-# anew from the right as the focus moves. Changes apply at once and are
+# The settings page, laid out as action roguelites commonly lay theirs: one
+# panel in the middle of the screen, tabs over the rows (sound, graphics,
+# other; Q / E or LB / RB, or a click) showing one group at a time, the
+# focused row on a warm band (sliding between rows), and under a gilt rule
+# what the focused setting does, sliding in anew as the focus moves. With so
+# few rows a column of its own for one line of account stood mostly empty. Changes apply at once and are
 # stored by GameSettings when the hub reports them, so the page holds no
 # primary action.
 # A row opens the help: the game's rules that the screens keep out of their
@@ -26,6 +27,9 @@ const QUIT_BODY := "設定と拠点での強化は保存済みです。"
 const QUIT_BODY_IN_RUN := "ランの途中で終了すると、このランのレベル・強化・得た残響は残らず、最後に保存した拠点の状態に戻ります。"
 
 const ROW_HEIGHT := 64.0
+# The panel's width; its height holds the longest tab, so it keeps its size
+# from tab to tab.
+const PANEL_WIDTH := 1000.0
 # The gold bar at the left of the selected row.
 const SELECTION_BAR := 3.0
 # The help window: over the page and the fight's menu, under the quit's
@@ -109,7 +113,6 @@ var topic_buttons: Array[Button] = []
 var selected_topic := 0
 var _rows: Array[Control] = []
 var _columns: HBoxContainer
-var note_title: Label
 # The detail column (what the focused setting does) and the help's page,
 # which slide in from the right when what they tell changes.
 var info_column: VBoxContainer
@@ -128,7 +131,13 @@ func _ready() -> void:
 	columns.theme_type_variation = &"ShopColumns"
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var left := HubUI.open_column(columns, 1.5, &"SlabSolid")
+	columns.alignment = BoxContainer.ALIGNMENT_CENTER
+	var left := HubUI.open_column(columns, 1.0, &"SlabSolid")
+	var panel := left.get_parent() as Control
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	panel.custom_minimum_size.x = PANEL_WIDTH
+	panel.clip_contents = true
 	left.theme_type_variation = &"DetailStack"
 	tabs = CategoryTabs.new()
 	left.add_child(tabs)
@@ -139,6 +148,10 @@ func _ready() -> void:
 	tabs.changed.connect(func(_index: int): show_tab(tabs.selected, true))
 	rows = VBoxContainer.new()
 	rows.theme_type_variation = &"SettingsRows"
+	var longest := 0
+	for tab: Array in TABS:
+		longest = maxi(longest, (tab[1] as Array).size())
+	rows.custom_minimum_size.y = ROW_HEIGHT * longest
 	left.add_child(rows)
 	UIMotion.of(rows)
 	rows.draw.connect(_draw_rows)
@@ -219,13 +232,11 @@ func _ready() -> void:
 			watched.gui_input.connect(func(event: InputEvent):
 				if event is InputEventMouseMotion and _hover_row != index:
 					_hover_setting_row(index))
-	# What the focused setting does, in a fixed column on the right.
-	var info := HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
-	info.theme_type_variation = &"DetailStack"
-	(info.get_parent() as Control).clip_contents = true
+	# What the focused setting does, under the rows.
+	HubUI.rule(left)
+	var info := VBoxContainer.new()
+	left.add_child(info)
 	info_column = info
-	note_title = HubUI.label(info, CAPTIONS[0], &"HeadingLabel")
-	HubUI.rule(info)
 	note = HubUI.label(info, NOTES[0], &"DescriptionLabel")
 	_build_help()
 	show_tab(0)
@@ -446,7 +457,6 @@ func _focus_row(index: int) -> void:
 	if index == _shown_note:
 		return
 	_shown_note = index
-	note_title.text = CAPTIONS[index]
 	note.text = NOTES[index]
 	UIMotion.of(info_column).slide_in()
 
