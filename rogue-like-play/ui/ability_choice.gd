@@ -17,6 +17,10 @@ const GameAudio := preload("res://audio/game_audio.gd")
 # with no card focused, a direction focuses one. Three cards, or four with
 # the lasting upgrade; with rerolls left, R (Y) asks for the cards to be
 # drawn again (a new hand, dealt and armed the same way).
+# No window holds the hand: as card games lay a hand on the table, the title,
+# the cards and their keys float over the darkened field, so the deal and the
+# cards themselves are what the eye meets. The cards are as tall as their
+# words need.
 const SHADE_TIME := 0.16
 const DEAL_TIME := 0.24
 const DEAL_STAGGER := 0.09
@@ -222,11 +226,6 @@ func _play_afterglow(chosen: int) -> void:
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(dim)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var frame := Panel.new()
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(frame)
-	frame.position = panel.global_position
-	frame.size = panel.size
 	for index in offers.size():
 		var source := cards[index]
 		var copy := AbilityCard.new()
@@ -240,7 +239,6 @@ func _play_afterglow(chosen: int) -> void:
 			UIMotion.of(copy).emphasize()
 		else:
 			UIMotion.of(copy).recede()
-	UIMotion.of(frame).fade_out(0.0, UIMotion.EXIT_TIME)
 	UIMotion.of(dim).fade_out(0.0, UIMotion.MOMENT_TIME)
 	var ending := UIMotion.of(root).fade_out(UIMotion.MOMENT_RISE_TIME + UIMotion.MOMENT_HOLD_TIME, UIMotion.EXIT_TIME)
 	var layer_node := afterglow

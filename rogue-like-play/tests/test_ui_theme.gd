@@ -156,6 +156,11 @@ func run_tests() -> void:
 	var fresh := theme.get_stylebox(&"new", &"AbilityCard") as StyleBoxFlat
 	var ranked := theme.get_stylebox(&"raise", &"AbilityCard") as StyleBoxFlat
 	check(fresh.bg_color == card_rest.bg_color and fresh.border_width_top > 0 and fresh.border_width_left == 0 and fresh.border_color != ranked.border_color, "Level-up cards share the card face, a coloured band telling new from raised")
+	# The hand floats with no window behind it: each card stands on a plate of
+	# the windows' dark stone, edged and shadowed.
+	var plate := theme.get_stylebox(&"plate", &"AbilityCard") as StyleBoxFlat
+	check(plate != null and plate.bg_color.a > 0.9 and plate.border_width_left > 0 and plate.shadow_size > 0, "A level-up card stands on an opaque plate of its own")
+	check(theme.get_stylebox(&"panel", &"FloatingHand") is StyleBoxEmpty, "The level-up hand has no window")
 	check(theme.get_color(&"font_color", &"SecondaryButton").get_luminance() - theme.get_color(&"font_disabled_color", &"SecondaryButton").get_luminance() > 0.3, "Its words dim when it cannot be pressed")
 	# The fight's dialogs (level-up, the route, prompts, menu, result) stand on
 	# warm stone in the bronze frame.

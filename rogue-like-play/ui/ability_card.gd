@@ -3,7 +3,9 @@ extends Control
 
 # Display layer of one level-up offer. The owning Button keeps input and
 # layout; this Control only draws, so UIMotion may move it freely.
-# The card is the shared card face (the theme's AbilityCard styles): a blue
+# With no window behind the hand, each card stands on a plate of the windows'
+# dark stone, its hairline edge and its shadow (the theme's AbilityCard
+# plate), and on it the shared card face (the AbilityCard styles): a blue
 # band along its top for a new boon, an amber one for a rank being raised,
 # and a gold frame fading in over it on hover and on the chosen moment.
 # Ranks are bronze sockets, the owned ones holding an amber gem. It shows a
@@ -102,6 +104,7 @@ func _canvas(parent: Node, minimum: Vector2, painter: Callable) -> Control:
 
 func _draw() -> void:
 	var rect := Rect2(Vector2.ZERO, size)
+	draw_style_box(get_theme_stylebox(&"plate", &"AbilityCard"), rect)
 	draw_style_box(get_theme_stylebox(&"new" if level == 0 else &"raise", &"AbilityCard"), rect)
 	var lit := maxf(glow, 0.55 if hovered else 0.0)
 	if lit > 0.0:

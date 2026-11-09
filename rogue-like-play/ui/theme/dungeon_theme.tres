@@ -86,6 +86,22 @@ corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
+[sub_resource type="StyleBoxFlat" id="AbilityCardPlate"]
+resource_name = "AbilityCardPlate"
+bg_color = Color(0.045, 0.05, 0.058, 0.97)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.32, 0.31, 0.29, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 10
+shadow_offset = Vector2(0, 4)
+
 [sub_resource type="StyleBoxFlat" id="AbilityCardRaise"]
 resource_name = "AbilityCardRaise"
 bg_color = Color(1, 1, 1, 0.045)
@@ -1778,6 +1794,7 @@ BannerBand/base_type = &"PanelContainer"
 BannerBand/styles/panel = SubResource("BannerBand")
 BannerBandWarning/base_type = &"PanelContainer"
 BannerBandWarning/styles/panel = SubResource("BannerBandWarning")
+AbilityCard/styles/plate = SubResource("AbilityCardPlate")
 AbilityCard/styles/new = SubResource("AbilityCardNew")
 AbilityCard/styles/raise = SubResource("AbilityCardRaise")
 AbilityCard/styles/chosen = SubResource("AbilityCardChosen")
@@ -2314,3 +2331,5 @@ HelpPoints/base_type = &"VBoxContainer"
 HelpPoints/constants/separation = 14
 HelpPoint/base_type = &"HBoxContainer"
 HelpPoint/constants/separation = 10
+FloatingHand/base_type = &"PanelContainer"
+FloatingHand/styles/panel = SubResource("Invisible")

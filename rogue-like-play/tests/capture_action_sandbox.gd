@@ -66,7 +66,8 @@ func capture() -> void:
 	# A level-up's cards, then a build of lightning, fire and the wave at work
 	# in a crowd.
 	sandbox._on_gems(sandbox.run.progression.required_exp())
-	await create_timer(0.6, true).timeout
+	# Once the hand is dealt and armed (its keys shown).
+	await create_timer(BattleArea.LEAD_TIME + preload("res://ui/ability_choice.gd").arm_time(3) + 0.4, true, false, true).timeout
 	await _grab("action_levelup")
 	sandbox.choice._select(0)
 	for id: StringName in [&"thunder_blade", &"chain_lightning", &"hellfire", &"shockwave", &"shockwave"]:
