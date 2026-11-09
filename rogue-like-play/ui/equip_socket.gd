@@ -14,7 +14,9 @@ extends Button
 # dimmed (`sealed`). What the chosen slot holds carries a gold diamond over
 # it (`held`). The slot whose tiles are on the shelf keeps a quiet gold ring
 # (`lit`); the focus rings it in full gold with a glow, and the pointer
-# resting on it rings it faintly.
+# resting on it rings it faintly. A bare socket (the encyclopedia's tiles)
+# carries nothing under or over its disc, and may draw its picture inset in
+# the disc (`inset`), a standing figure kept inside the round.
 #
 # The button's styles are all empty (EquipSocket); it carries no words of its
 # own, its name being in its tooltip, its caption and the page's column.
@@ -36,6 +38,9 @@ const ARC_POINTS := 64
 
 var diameter := 80.0
 var captioned := false
+var bare := false
+# The picture's side against the disc's (1: the disc's full square).
+var inset := 1.0
 var emblem: Texture2D
 var key := "":
 	set(value):
@@ -54,20 +59,28 @@ var lit := false:
 		queue_redraw()
 
 
-# A slot (its key under it), or with `with_caption` a tile (its name and
-# figure under it).
-func _init(extent := 80.0, with_caption := false) -> void:
+# A slot (its key under it), with `with_caption` a tile (its name and figure
+# under it), or with `without_marks` a bare socket.
+func _init(extent := 80.0, with_caption := false, without_marks := false) -> void:
 	theme_type_variation = &"EquipSocket"
 	diameter = extent
 	captioned = with_caption
+	bare = without_marks
 	focus_mode = Control.FOCUS_ALL
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	var under := CAPTION_GAP + 2.0 * CAPTION_LINE if captioned else KEY_GAP + KEY_HEIGHT
-	custom_minimum_size = Vector2(diameter + 2.0 * (RING_GAP + RING_WIDTH), TOP_ROOM + diameter + under)
+	if bare:
+		under = _top()
+	custom_minimum_size = Vector2(diameter + 2.0 * (RING_GAP + RING_WIDTH), _top() + diameter + under)
+
+
+# Room over the disc: for its ring alone on a bare socket.
+func _top() -> float:
+	return RING_GAP + RING_WIDTH + 2.0 if bare else TOP_ROOM
 
 
 func _centre() -> Vector2:
-	return Vector2(size.x * 0.5, TOP_ROOM + diameter * 0.5)
+	return Vector2(size.x * 0.5, _top() + diameter * 0.5)
 
 
 func _draw() -> void:
@@ -86,7 +99,8 @@ func _draw() -> void:
 			tint = get_theme_color(&"unknown_tint")
 		elif sealed:
 			tint = get_theme_color(&"sealed_tint")
-		draw_texture_rect(emblem, Rect2(centre - Vector2.ONE * radius, Vector2.ONE * diameter), false, tint)
+		var side := diameter * inset
+		draw_texture_rect(emblem, Rect2(centre - Vector2.ONE * side * 0.5, Vector2.ONE * side), false, tint)
 	if empty or clears:
 		var dash := get_theme_color(&"empty_ring")
 		var step := TAU / DASHES
@@ -102,6 +116,9 @@ func _draw() -> void:
 		ring = get_theme_color(&"lit")
 	elif pointed:
 		ring = get_theme_color(&"pointed")
+	elif bare:
+		# A bare socket keeps a faint rim, its disc being all it has to show.
+		ring = get_theme_color(&"rim")
 	if ring.a > 0.0:
 		draw_arc(centre, radius + RING_GAP, 0.0, TAU, ARC_POINTS, ring, RING_WIDTH, true)
 	if held:

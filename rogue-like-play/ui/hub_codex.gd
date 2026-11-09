@@ -3,18 +3,22 @@ extends Control
 
 # The encyclopedia of foes (FoeCatalog): on the slab from the left edge, the
 # kind tabs (all, the crowd, elites, bosses), how many have been met, and,
-# as bestiaries commonly lay them out, a grid of tiles, each the foe's
-# picture over its name (a dark silhouette for one not met), scrolling once
-# there are more rows than the slab holds; in the column
-# on the right,
-# the focused foe's picture, name, kind, figures and how it fights. A foe
-# counts as met once it has come into an area in a run (MetaProgress.met);
-# the others show as dark shapes named "？？？", their kind alone told.
-# Nothing here changes the progress.
+# as bestiaries commonly lay them out, a close grid of small round sockets
+# (EquipSocket, as the status page's shelf), each the foe's picture without
+# its name (dimmed to a shade for one not met, so the foes met stand out),
+# scrolling once there are more rows than the slab holds; in the column on
+# the right, inside the ornate frame of the upgrade and status pages, the
+# focused foe's picture, large, its name, kind, figures and how it fights. A
+# foe counts as met once it has come into an area in a run
+# (MetaProgress.met); the others show as shades named "？？？", their kind
+# alone told. Nothing here changes the progress.
 
-const PORTRAIT_SIZE := 180.0
-const CARD_SIZE := Vector2(160, 176)
-const COLUMNS := 5
+const PORTRAIT_SIZE := 240.0
+const TILE_DIAMETER := 80.0
+# A standing figure's square inside the round disc.
+const TILE_INSET := 0.9
+const COLUMNS := 8
+const STAT_MARKER := 14.0
 const UNKNOWN_NAME := "？？？"
 const UNKNOWN_NOTE := "まだ出会っていない敵。ランで戦場に現れると記録される。"
 const SHADOW := Color(0.0, 0.0, 0.0, 0.85)
@@ -22,12 +26,13 @@ const SHADOW := Color(0.0, 0.0, 0.0, 0.85)
 var meta: MetaProgress
 var kind_tabs: CategoryTabs
 var count_label: Label
-var cards: Array[Button] = []
+var cards: Array[EquipSocket] = []
 var rows: Array[FoeData] = []
 var picture: Control
 var name_label: Label
 var kind_label: Label
-var stats_label: Label
+# The met foe's figures, a row each (empty for one not met).
+var stats: GridContainer
 var description_label: Label
 var selected := 0
 var _list: GridContainer
@@ -47,7 +52,9 @@ func _ready() -> void:
 	columns.theme_type_variation = &"ShopColumns"
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_catalog = HubUI.open_column(columns, 2.1, &"SlabSolid")
+	# The right column stands in its own ornate frame, so no hairline parts
+	# the two columns (SlabSolidOpen).
+	_catalog = HubUI.open_column(columns, 2.1, &"SlabSolidOpen")
 	kind_tabs = CategoryTabs.new()
 	_catalog.add_child(kind_tabs)
 	kind_tabs.setup(FoeCatalog.KINDS)
@@ -63,12 +70,27 @@ func _ready() -> void:
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
 	_catalog.add_child(scroll)
+	# Room inside the scroll for the focused socket's glow.
+	var room := MarginContainer.new()
+	room.theme_type_variation = &"CodexGridMargin"
+	room.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(room)
 	_list = GridContainer.new()
+	_list.theme_type_variation = &"CodexGrid"
 	_list.columns = COLUMNS
-	scroll.add_child(_list)
+	_list.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	room.add_child(_list)
 	_info = HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
-	# The account slides in from the right edge, kept inside its column.
-	(_info.get_parent() as Control).clip_contents = true
+	# The account stands inside the ornate frame laid over the column, as on
+	# the upgrade and status pages, and slides in from the right edge, kept
+	# inside its column.
+	var info_panel := _info.get_parent() as Control
+	info_panel.clip_contents = true
+	var info_margin := MarginContainer.new()
+	info_margin.theme_type_variation = &"CodexInfoMargin"
+	info_panel.remove_child(_info)
+	info_panel.add_child(info_margin)
+	info_margin.add_child(_info)
 	_info.theme_type_variation = &"DetailStack"
 	picture = Control.new()
 	picture.custom_minimum_size = Vector2.ONE * PORTRAIT_SIZE
@@ -81,11 +103,19 @@ func _ready() -> void:
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	kind_label = HubUI.label(_info, "", &"MutedLabel")
 	kind_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	stats_label = HubUI.label(_info, "", &"BodyLabel")
-	stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	HubUI.rule(_info)
+	stats = GridContainer.new()
+	stats.theme_type_variation = &"CodexStats"
+	stats.columns = 3
+	stats.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_info.add_child(stats)
+	# A breath between the figures and the account.
+	var breath := Control.new()
+	breath.custom_minimum_size.y = 6
+	_info.add_child(breath)
 	description_label = HubUI.label(_info, "", &"DescriptionLabel")
 	HubUI.space(_info)
+	HubUI.ornate_frame(info_panel)
 
 
 func refresh(current: MetaProgress) -> void:
@@ -115,17 +145,14 @@ func _show_rows() -> void:
 		_select(0, false)
 
 
-func _card(foe: FoeData, known: bool) -> Button:
-	var card := Button.new()
-	card.theme_type_variation = &"CardButton"
-	card.custom_minimum_size = CARD_SIZE
-	card.text = foe.display_name if known else UNKNOWN_NAME
+func _card(foe: FoeData, known: bool) -> EquipSocket:
+	var card := EquipSocket.new(TILE_DIAMETER, false, true)
+	card.inset = TILE_INSET
 	card.tooltip_text = foe.display_name if known else UNKNOWN_NOTE
-	# The picture above the name; a foe not met shows only its shape.
-	card.icon = tile_picture(foe.visual_id, known, foe.tint)
-	card.expand_icon = true
-	card.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	card.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+	# The foe's picture; one not met, dimmed to a shade as the upgrade tree's
+	# nodes not open yet.
+	card.emblem = tile_picture(foe.visual_id, true, foe.tint)
+	card.unknown = not known
 	var index := cards.size()
 	card.pressed.connect(_select.bind(index))
 	card.focus_entered.connect(_select.bind(index))
@@ -134,7 +161,7 @@ func _card(foe: FoeData, known: bool) -> Button:
 
 
 # The foe's picture for its tile, or its dark silhouette: always a square
-# with the figure standing on its bottom edge, so every tile lays its picture
+# the figure fills, standing on its bottom edge, so every tile lays its picture
 # and its name out alike whatever the figure's shape. A foe drawn in a tint
 # of its own (a kin sharing another's rig) is shown in it. The departure's
 # foes are drawn with it too.
@@ -151,6 +178,10 @@ static func tile_picture(visual_id: String, known: bool, tint: Color = Color.WHI
 	image.decompress()
 	image = image.get_region(Rect2i(shown.region))
 	image.convert(Image.FORMAT_RGBA8)
+	# Trimmed to the figure, so a small foe fills its tile as a large one does.
+	var used := image.get_used_rect()
+	if used.has_area():
+		image = image.get_region(used)
 	if not known:
 		for y in image.get_height():
 			for x in image.get_width():
@@ -179,16 +210,33 @@ func _select(place: int, animate: bool = true) -> void:
 	_picture = EnemySprites.portrait(foe.visual_id)
 	picture.queue_redraw()
 	kind_label.text = FoeCatalog.kind_name(foe)
+	for child in stats.get_children():
+		child.free()
 	if _unknown:
 		name_label.text = UNKNOWN_NAME
-		stats_label.text = ""
 		description_label.text = UNKNOWN_NOTE
 	else:
 		name_label.text = foe.display_name
-		stats_label.text = "HP %d　ぶつかる力 %d　速さ %d" % [foe.max_hp, foe.contact_damage, roundi(foe.speed)]
+		for row: Array in [["HP", str(foe.max_hp)], ["ぶつかる力", str(foe.contact_damage)], ["速さ", str(roundi(foe.speed))]]:
+			_stat_row(row[0], row[1])
 		description_label.text = foe.description
 	if animate:
 		UIMotion.of(_info).slide_in()
+
+
+# One of the foe's figures: a small gilt diamond, its name, its value.
+func _stat_row(title: String, value: String) -> void:
+	var marker := Control.new()
+	marker.custom_minimum_size = Vector2(STAT_MARKER, STAT_MARKER)
+	marker.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	marker.draw.connect(func(): HubUI.diamond(marker, marker.size * 0.5, 4.0, marker.get_theme_color(&"rail", &"HubLobby")))
+	stats.add_child(marker)
+	var name := HubUI.label(stats, title, &"BodyLabel")
+	var figure := HubUI.label(stats, value, &"BodyLabel")
+	figure.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	for label: Label in [name, figure]:
+		label.autowrap_mode = TextServer.AUTOWRAP_OFF
 
 
 func _draw_picture() -> void:
