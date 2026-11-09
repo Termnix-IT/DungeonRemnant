@@ -7,8 +7,13 @@ extends Button
 # lay theirs out. The words are drawn here, letter by letter, in the
 # button's own Theme font and state colours; `text` stays empty so the
 # button draws no words of its own. A span narrower than the words leaves
-# them at their natural spacing. align_spans() gives a set of buttons the
-# span of the longest.
+# them at their natural spacing, and no gap grows past MAX_GAP_EMS letters,
+# so a short word ("設定") stays one word rather than letters apart; it then
+# stands centred, narrower than the span. align_spans() gives a set of
+# buttons the span of the longest.
+
+# The widest gap between two letters, in letters (the font size).
+const MAX_GAP_EMS := 1.0
 
 var caption := "":
 	set(value):
@@ -40,16 +45,27 @@ func natural_width() -> float:
 	return width
 
 
+# The gap between letters: what reaches the span, at most MAX_GAP_EMS.
+func gap() -> float:
+	var natural := natural_width()
+	if caption.length() < 2 or span <= natural:
+		return 0.0
+	return minf((span - natural) / (caption.length() - 1), MAX_GAP_EMS * get_theme_font_size(&"font_size"))
+
+
+# How wide the words are drawn.
+func drawn_width() -> float:
+	return natural_width() + gap() * maxi(caption.length() - 1, 0)
+
+
 func _draw() -> void:
 	if caption.is_empty():
 		return
 	var font := get_theme_font(&"font")
 	var font_size := get_theme_font_size(&"font_size")
 	var natural := natural_width()
-	var gap := 0.0
-	if caption.length() > 1 and span > natural:
-		gap = (span - natural) / (caption.length() - 1)
-	var x := (size.x - (natural + gap * (caption.length() - 1))) * 0.5
+	var spacing := gap()
+	var x := (size.x - (natural + spacing * (caption.length() - 1))) * 0.5
 	var baseline := (size.y - font.get_height(font_size)) * 0.5 + font.get_ascent(font_size)
 	var colour := _colour()
 	var outline := get_theme_constant(&"outline_size")
@@ -59,7 +75,7 @@ func _draw() -> void:
 		if outline > 0 and outline_colour.a > 0.0:
 			draw_string_outline(font, at, letter, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline, outline_colour)
 		draw_string(font, at, letter, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, colour)
-		x += font.get_string_size(letter, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + gap
+		x += font.get_string_size(letter, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + spacing
 
 
 # The colour Button gives its words in the state it is in.

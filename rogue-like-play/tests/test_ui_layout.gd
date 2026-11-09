@@ -144,6 +144,10 @@ func run_tests() -> void:
 	for button: JustifiedButton in spread:
 		widest = maxf(widest, button.natural_width())
 	check(spread.all(func(button: JustifiedButton) -> bool: return button.text.is_empty() and is_equal_approx(button.span, widest)), "The menu's words are spread to the longest one's width")
+	# A short word spreads no further than a letter between letters.
+	var short_word: JustifiedButton = area.menu.settings_button
+	var letter := float(short_word.get_theme_font_size(&"font_size"))
+	check(short_word.gap() <= letter * JustifiedButton.MAX_GAP_EMS + 0.01 and short_word.drawn_width() < widest and is_equal_approx(area.menu.resume_button.drawn_width(), widest), "A short word keeps its letters within a letter of each other")
 	var build_heading := area.menu.build_panel.get_child(0) as Label
 	var build_axis := area.menu.build_panel.get_global_rect().get_center().x
 	check(build_heading.horizontal_alignment == HORIZONTAL_ALIGNMENT_CENTER and absf(area.menu.build_grid.get_global_rect().get_center().x - build_axis) < 2.0, "The build's heading and grid share their column's centre")
