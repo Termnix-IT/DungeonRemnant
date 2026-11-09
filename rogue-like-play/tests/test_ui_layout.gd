@@ -127,6 +127,16 @@ func run_tests() -> void:
 	check(cells[0] is EquipSocket and (cells[0] as EquipSocket).emblem == EmblemIcons.texture(first_boon.emblem), "Each boon is its emblem in a socket")
 	check(area.menu.build_name.text == first_boon.display_name and area.menu.build_note.text == first_boon.effect_description(area.run.build.rank(first_boon.id)), "What a boon is and does is told once, under the grid")
 	check(area.menu.resume_button.get_node_or_null(area.menu.resume_button.focus_neighbor_left) == cells[0] and (cells[0] as Button).focus_mode == Control.FOCUS_ALL and (cells[0] as Button).get_node_or_null((cells[0] as Button).focus_neighbor_right) == area.menu.resume_button, "Left from the menu reaches the build and right comes back")
+	# The menu's column stands on one axis: the heading, the buttons and the
+	# keys share its centre.
+	var menu_column := area.menu.resume_button.get_parent() as Control
+	var axis := area.menu.resume_button.get_global_rect().get_center().x
+	var heading := menu_column.get_child(0) as Label
+	var keys := menu_column.get_child(menu_column.get_child_count() - 1) as Control
+	var first_key := keys.get_child(0) as Control
+	var last_key := keys.get_child(keys.get_child_count() - 1) as Control
+	var keys_middle := (first_key.get_global_rect().position.x + last_key.get_global_rect().end.x) * 0.5
+	check(heading.horizontal_alignment == HORIZONTAL_ALIGNMENT_CENTER and absf(heading.get_global_rect().get_center().x - axis) < 2.0 and keys is KeyGuide and absf(keys_middle - axis) < 2.0, "The menu's heading, buttons and keys share one centre")
 	# Every boon there is, at its top rank, still fits on the screen; the
 	# build goes back as it was after.
 	var ranks_before: Dictionary = area.run.build.ranks.duplicate()

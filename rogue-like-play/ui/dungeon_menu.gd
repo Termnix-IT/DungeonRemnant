@@ -98,8 +98,11 @@ func _build_menu() -> void:
 	column.theme_type_variation = &"DetailStack"
 	column.custom_minimum_size.x = WIDTH
 	side_by_side.add_child(column)
+	# The column keeps one axis: the heading, the buttons and the keys all
+	# stand on its centre, as the rule's diamond does.
 	var title := HubUI.label(column, "メニュー", &"HeadingLabel")
 	title.autowrap_mode = TextServer.AUTOWRAP_OFF
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	HubUI.rule(column)
 	resume_button = HubUI.button(column, "戦いに戻る", resume, &"PrimaryButton")
 	settings_button = HubUI.button(column, "設定", open_settings)
@@ -111,7 +114,7 @@ func _build_menu() -> void:
 	# The keys stand at the column's foot, level with the boon's account.
 	HubUI.space(column)
 	var guide := KeyGuide.new()
-	guide.alignment = BoxContainer.ALIGNMENT_END
+	guide.alignment = BoxContainer.ALIGNMENT_CENTER
 	column.add_child(guide)
 	guide.add_hint("Enter", "A", "決定")
 	guide.add_hint("Esc", "B", "戻る", back)
