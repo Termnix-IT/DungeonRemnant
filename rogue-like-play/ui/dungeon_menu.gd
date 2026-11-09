@@ -50,9 +50,9 @@ var build_note: Label
 var _build_cells: Array[EquipSocket] = []
 var _build_rule: Control
 var _column_rule: Control
-var resume_button: Button
-var settings_button: Button
-var abort_button: Button
+var resume_button: JustifiedButton
+var settings_button: JustifiedButton
+var abort_button: JustifiedButton
 var settings_view: Control
 var settings_page: HubSettings
 var settings_guide: KeyGuide
@@ -104,10 +104,13 @@ func _build_menu() -> void:
 	title.autowrap_mode = TextServer.AUTOWRAP_OFF
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	HubUI.rule(column)
-	resume_button = HubUI.button(column, "戦いに戻る", resume, &"PrimaryButton")
-	settings_button = HubUI.button(column, "設定", open_settings)
-	abort_button = HubUI.button(column, "探索を中断する", func(): abort_requested.emit())
+	resume_button = _menu_button(column, "戦いに戻る", resume, &"PrimaryButton")
+	settings_button = _menu_button(column, "設定", open_settings, &"SecondaryButton")
+	abort_button = _menu_button(column, "探索を中断する", func(): abort_requested.emit(), &"SecondaryButton")
 	var buttons: Array[Button] = [resume_button, settings_button, abort_button]
+	# The three words spread to the longest one's width, so they read as one
+	# even block down the column's centre.
+	JustifiedButton.align_spans(buttons)
 	for index in buttons.size():
 		buttons[index].focus_neighbor_top = buttons[(index + buttons.size() - 1) % buttons.size()].get_path()
 		buttons[index].focus_neighbor_bottom = buttons[(index + 1) % buttons.size()].get_path()
@@ -121,18 +124,34 @@ func _build_menu() -> void:
 	UIMotion.bind_buttons(column)
 
 
+# One of the menu's buttons, its words spread (JustifiedButton).
+func _menu_button(parent: Node, words: String, action: Callable, role: StringName) -> JustifiedButton:
+	var button := JustifiedButton.new()
+	button.caption = words
+	button.theme_type_variation = role
+	button.custom_minimum_size.y = 44
+	button.pressed.connect(action)
+	parent.add_child(button)
+	return button
+
+
 # The run's build, the window's left column: the grid of boons, and the
 # chosen one's account under it.
 func _build_build(parent: Control) -> void:
 	build_panel = VBoxContainer.new()
 	build_panel.theme_type_variation = &"DetailStack"
 	parent.add_child(build_panel)
+	# The heading and the grid stand on the column's centre, as the menu's
+	# do; the boon's account under them, being running text, keeps to the
+	# left.
 	var title := HubUI.label(build_panel, "この探索の強化", &"HeadingLabel")
 	title.autowrap_mode = TextServer.AUTOWRAP_OFF
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	HubUI.rule(build_panel)
 	build_grid = GridContainer.new()
 	build_grid.theme_type_variation = &"CodexGrid"
 	build_grid.columns = BUILD_COLUMNS
+	build_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	build_panel.add_child(build_grid)
 	# As wide as a full row, however few boons are taken.
 	var cell := EMBLEM_SIZE + 2.0 * (EquipSocket.RING_GAP + EquipSocket.RING_WIDTH)
@@ -167,6 +186,9 @@ func _show_build() -> void:
 	_build_rule.visible = not owned.is_empty()
 	build_name.get_parent().visible = not owned.is_empty()
 	build_note.text = EMPTY_NOTE
+	# The one line said while the build is empty stands under the heading;
+	# a boon's account, running text, keeps to the left.
+	build_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if owned.is_empty() else HORIZONTAL_ALIGNMENT_LEFT
 	for boon in owned:
 		var rank := run.build.rank(boon.id)
 		var cell := EquipSocket.new(EMBLEM_SIZE, false, true)

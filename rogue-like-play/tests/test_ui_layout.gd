@@ -137,6 +137,16 @@ func run_tests() -> void:
 	var last_key := keys.get_child(keys.get_child_count() - 1) as Control
 	var keys_middle := (first_key.get_global_rect().position.x + last_key.get_global_rect().end.x) * 0.5
 	check(heading.horizontal_alignment == HORIZONTAL_ALIGNMENT_CENTER and absf(heading.get_global_rect().get_center().x - axis) < 2.0 and keys is KeyGuide and absf(keys_middle - axis) < 2.0, "The menu's heading, buttons and keys share one centre")
+	# The menu's words spread to one width, the longest's; the build's
+	# heading and grid stand on their column's centre too.
+	var spread: Array = [area.menu.resume_button, area.menu.settings_button, area.menu.abort_button]
+	var widest := 0.0
+	for button: JustifiedButton in spread:
+		widest = maxf(widest, button.natural_width())
+	check(spread.all(func(button: JustifiedButton) -> bool: return button.text.is_empty() and is_equal_approx(button.span, widest)), "The menu's words are spread to the longest one's width")
+	var build_heading := area.menu.build_panel.get_child(0) as Label
+	var build_axis := area.menu.build_panel.get_global_rect().get_center().x
+	check(build_heading.horizontal_alignment == HORIZONTAL_ALIGNMENT_CENTER and absf(area.menu.build_grid.get_global_rect().get_center().x - build_axis) < 2.0, "The build's heading and grid share their column's centre")
 	# Every boon there is, at its top rank, still fits on the screen; the
 	# build goes back as it was after.
 	var ranks_before: Dictionary = area.run.build.ranks.duplicate()
