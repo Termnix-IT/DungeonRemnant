@@ -120,11 +120,24 @@ func run_tests() -> void:
 	await settle(0.3)
 	var menu_panel: Control = area.menu.menu.get_child(0)
 	centered(menu_panel, "The fight's menu")
-	check(area.menu.build_panel.visible and area.menu.build_list.get_child_count() == area.run.build.owned().size(), "Beside the menu, every boon of the build is listed")
+	check(area.menu.build_panel.visible and area.menu.build_grid.get_child_count() == area.run.build.owned().size(), "Beside the menu, every boon of the build is in the grid")
+	check(area.menu.build_panel.get_parent() == area.menu.resume_button.get_parent().get_parent(), "The build and the menu share one window")
 	var first_boon: BoonData = area.run.build.owned()[0]
-	var rows := area.menu.build_list.get_children()
-	check(area.menu.build_note.text == first_boon.effect_description(area.run.build.rank(first_boon.id)), "What a boon does is told once, under the list")
-	check(area.menu.resume_button.get_node_or_null(area.menu.resume_button.focus_neighbor_left) == rows[0] and (rows[0] as Button).focus_mode == Control.FOCUS_ALL, "Left from the menu reaches the build, which takes focus")
+	var cells := area.menu.build_grid.get_children()
+	check(cells[0] is EquipSocket and (cells[0] as EquipSocket).emblem == EmblemIcons.texture(first_boon.emblem), "Each boon is its emblem in a socket")
+	check(area.menu.build_name.text == first_boon.display_name and area.menu.build_note.text == first_boon.effect_description(area.run.build.rank(first_boon.id)), "What a boon is and does is told once, under the grid")
+	check(area.menu.resume_button.get_node_or_null(area.menu.resume_button.focus_neighbor_left) == cells[0] and (cells[0] as Button).focus_mode == Control.FOCUS_ALL and (cells[0] as Button).get_node_or_null((cells[0] as Button).focus_neighbor_right) == area.menu.resume_button, "Left from the menu reaches the build and right comes back")
+	# Every boon there is, at its top rank, still fits on the screen; the
+	# build goes back as it was after.
+	var ranks_before: Dictionary = area.run.build.ranks.duplicate()
+	for boon in RunState.BOONS:
+		area.run.build.restore(boon.id, boon.max_level)
+	area.menu.open()
+	await settle(0.3)
+	check(area.menu.build_grid.get_child_count() == RunState.BOONS.size(), "A full build is all in the grid")
+	centered(menu_panel, "The fight's menu with every boon")
+	area.run.build.ranks = ranks_before
+	area.run.build.changed.emit()
 	area.menu.resume()
 	await settle()
 	check(not paused, "Leaving the menu resumes the fight")

@@ -83,6 +83,17 @@ func capture() -> void:
 	sandbox.open_menu()
 	await create_timer(0.4, true).timeout
 	await _grab("action_menu")
+	# Every boon at its top rank: the grid still fits; the build goes back
+	# as it was after.
+	var build: BuildState = sandbox.menu.run.build
+	var ranks_before: Dictionary = build.ranks.duplicate()
+	for boon in RunState.BOONS:
+		build.restore(boon.id, boon.max_level)
+	sandbox.menu.open()
+	await create_timer(0.4, true).timeout
+	await _grab("action_menu_full")
+	build.ranks = ranks_before
+	build.changed.emit()
 	sandbox.menu.resume()
 	# Low on health: the edges pulse red.
 	hero.health.hp = hero.health.max_hp / 6

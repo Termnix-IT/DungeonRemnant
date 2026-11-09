@@ -1,12 +1,14 @@
 class_name DungeonMenu
 extends CanvasLayer
 
-# The fight's menu (Esc, or Start on a gamepad): back to the fight, the
-# settings, or leaving the run, and beside it, as action roguelites' pause
-# screens commonly show, the run's build: each boon taken as a row with its
-# emblem, name and rank, and what the pointed (or focused) one does under
-# them. Left and right move between the menu and the build. The fight waits
-# while it is open. The
+# The fight's menu (Esc, or Start on a gamepad): one window holding, as
+# survivor-likes' pause screens commonly do, the run's build on the left and
+# the menu (back to the fight, the settings, or leaving the run) on the
+# right. The build is a grid of the boons taken, each its emblem in a round
+# socket with its rank at the lower right as the HUD shows it, so it fits
+# however many are taken; under the grid, the pointed (or focused) boon's
+# name, rank and what it does. Left and right move between the grid and the
+# menu. The fight waits while it is open. The
 # settings are the hub's own page (HubSettings) over the dimmed field, so a
 # change made here is the same change, stored the same way, and takes effect
 # at once. Leaving goes through the area's confirmation, which says what is
@@ -17,9 +19,16 @@ signal resumed
 signal abort_requested
 signal settings_changed
 
-const WIDTH := 460.0
-const BUILD_WIDTH := 520.0
-const EMBLEM_SIZE := 48.0
+# The menu's column.
+const WIDTH := 300.0
+# The build's grid: emblems this wide, this many to a row (all 32 boons fit
+# in six rows).
+const EMBLEM_SIZE := 56.0
+const BUILD_COLUMNS := 6
+# The boon's account under the grid keeps room for this many lines, so the
+# window does not change height as the focus moves.
+const NOTE_LINES := 2
+const EMPTY_NOTE := "レベルアップで選んだ強化が、ここに並ぶ"
 const SHADE := Color(0.01, 0.02, 0.03, 0.82)
 # The settings read as a page of their own, as dark as the inventory's shade.
 const SETTINGS_SHADE := Color(0.01, 0.02, 0.03, 0.94)
@@ -32,11 +41,15 @@ var settings: GameSettings
 # The run whose build is shown beside the menu; none shows no build.
 var run: RunState
 var menu: Control
-var build_panel: PanelContainer
-var build_list: VBoxContainer
+# The build's column, its grid of boons and the chosen boon's account.
+var build_panel: VBoxContainer
+var build_grid: GridContainer
+var build_name: Label
+var build_rank: Label
 var build_note: Label
+var _build_cells: Array[EquipSocket] = []
 var _build_rule: Control
-var _build_rows: Array[Button] = []
+var _column_rule: Control
 var resume_button: Button
 var settings_button: Button
 var abort_button: Button
@@ -70,23 +83,23 @@ func _build_menu() -> void:
 	menu = CenterContainer.new()
 	menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(menu)
-	var side_by_side := HBoxContainer.new()
-	side_by_side.theme_type_variation = &"ListRow"
-	menu.add_child(side_by_side)
-	_build_build(side_by_side)
 	var frame := PanelContainer.new()
 	frame.theme_type_variation = &"QuietWindow"
-	frame.custom_minimum_size.x = WIDTH
-	frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	side_by_side.add_child(frame)
-	# The theme's margins keep the buttons inside the frame's ornaments.
+	menu.add_child(frame)
+	# The theme's margins keep the contents inside the frame's ornaments.
 	var margin := MarginContainer.new()
 	frame.add_child(margin)
+	var side_by_side := HBoxContainer.new()
+	side_by_side.theme_type_variation = &"ListRow"
+	margin.add_child(side_by_side)
+	_build_build(side_by_side)
+	_column_rule = HubUI.column_rule(side_by_side, 16.0)
 	var column := VBoxContainer.new()
 	column.theme_type_variation = &"DetailStack"
-	margin.add_child(column)
-	var title := HubUI.label(column, "メニュー", &"TitleLabel")
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.custom_minimum_size.x = WIDTH
+	side_by_side.add_child(column)
+	var title := HubUI.label(column, "メニュー", &"HeadingLabel")
+	title.autowrap_mode = TextServer.AUTOWRAP_OFF
 	HubUI.rule(column)
 	resume_button = HubUI.button(column, "戦いに戻る", resume, &"PrimaryButton")
 	settings_button = HubUI.button(column, "設定", open_settings)
@@ -95,6 +108,8 @@ func _build_menu() -> void:
 	for index in buttons.size():
 		buttons[index].focus_neighbor_top = buttons[(index + buttons.size() - 1) % buttons.size()].get_path()
 		buttons[index].focus_neighbor_bottom = buttons[(index + 1) % buttons.size()].get_path()
+	# The keys stand at the column's foot, level with the boon's account.
+	HubUI.space(column)
 	var guide := KeyGuide.new()
 	guide.alignment = BoxContainer.ALIGNMENT_END
 	column.add_child(guide)
@@ -103,62 +118,96 @@ func _build_menu() -> void:
 	UIMotion.bind_buttons(column)
 
 
-# The run's build, as a framed list beside the menu.
+# The run's build, the window's left column: the grid of boons, and the
+# chosen one's account under it.
 func _build_build(parent: Control) -> void:
-	build_panel = PanelContainer.new()
-	build_panel.theme_type_variation = &"QuietWindow"
-	build_panel.custom_minimum_size.x = BUILD_WIDTH
+	build_panel = VBoxContainer.new()
+	build_panel.theme_type_variation = &"DetailStack"
 	parent.add_child(build_panel)
-	var margin := MarginContainer.new()
-	build_panel.add_child(margin)
-	var column := VBoxContainer.new()
-	column.theme_type_variation = &"DetailStack"
-	margin.add_child(column)
-	var title := HubUI.label(column, "この探索の強化", &"HeadingLabel")
+	var title := HubUI.label(build_panel, "この探索の強化", &"HeadingLabel")
 	title.autowrap_mode = TextServer.AUTOWRAP_OFF
-	HubUI.rule(column)
-	build_list = VBoxContainer.new()
-	column.add_child(build_list)
-	_build_rule = HubUI.rule(column)
-	build_note = HubUI.label(column, "", &"DescriptionLabel")
+	HubUI.rule(build_panel)
+	build_grid = GridContainer.new()
+	build_grid.theme_type_variation = &"CodexGrid"
+	build_grid.columns = BUILD_COLUMNS
+	build_panel.add_child(build_grid)
+	# As wide as a full row, however few boons are taken.
+	var cell := EMBLEM_SIZE + 2.0 * (EquipSocket.RING_GAP + EquipSocket.RING_WIDTH)
+	build_panel.custom_minimum_size.x = BUILD_COLUMNS * cell + (BUILD_COLUMNS - 1) * build_grid.get_theme_constant(&"h_separation")
+	_build_rule = HubUI.rule(build_panel)
+	var heading := HBoxContainer.new()
+	heading.theme_type_variation = &"HudTallyRow"
+	build_panel.add_child(heading)
+	build_name = HubUI.label(heading, "", &"ItemNameLabel")
+	build_name.autowrap_mode = TextServer.AUTOWRAP_OFF
+	build_rank = HubUI.label(heading, "", &"MutedLabel")
+	build_rank.autowrap_mode = TextServer.AUTOWRAP_OFF
+	build_rank.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	build_note = HubUI.label(build_panel, "", &"DescriptionLabel")
+	var font := build_note.get_theme_font(&"font")
+	var font_size := build_note.get_theme_font_size(&"font_size")
+	build_note.custom_minimum_size.y = NOTE_LINES * font.get_height(font_size)
 
 
 func _show_build() -> void:
 	build_panel.visible = run != null
-	_build_rows.clear()
+	_column_rule.visible = run != null
+	_build_cells.clear()
 	for button: Button in [resume_button, settings_button, abort_button]:
 		button.focus_neighbor_left = NodePath()
 	if run == null:
 		return
-	for child in build_list.get_children():
+	for child in build_grid.get_children():
 		child.free()
 	var owned := run.build.owned()
-	build_note.text = "まだない" if owned.is_empty() else ""
-	build_list.visible = not owned.is_empty()
+	build_grid.visible = not owned.is_empty()
 	_build_rule.visible = not owned.is_empty()
+	build_name.get_parent().visible = not owned.is_empty()
+	build_note.text = EMPTY_NOTE
 	for boon in owned:
 		var rank := run.build.rank(boon.id)
-		var row := HubUI.button(build_list, boon.display_name if boon.max_level == 1 else "%s　Lv %d / %d" % [boon.display_name, rank, boon.max_level], func(): pass)
-		row.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		row.icon = EmblemIcons.texture(boon.emblem)
-		row.expand_icon = true
-		row.custom_minimum_size.y = EMBLEM_SIZE + 8.0
-		var words := boon.effect_description(rank)
-		row.focus_entered.connect(func(): build_note.text = words)
-		row.mouse_entered.connect(func(): build_note.text = words)
-		_build_rows.append(row)
-	if _build_rows.is_empty():
+		var cell := EquipSocket.new(EMBLEM_SIZE, false, true)
+		cell.emblem = EmblemIcons.texture(boon.emblem)
+		cell.tooltip_text = boon.display_name
+		build_grid.add_child(cell)
+		if boon.max_level > 1:
+			# The rank at the emblem's lower right, as the HUD's row shows it.
+			var digit := HubUI.label(cell, str(rank), &"HudCaption")
+			digit.autowrap_mode = TextServer.AUTOWRAP_OFF
+			digit.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+			digit.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+			digit.grow_vertical = Control.GROW_DIRECTION_BEGIN
+		cell.focus_entered.connect(_tell.bind(boon, rank, cell))
+		cell.mouse_entered.connect(_tell.bind(boon, rank, cell))
+		_build_cells.append(cell)
+	if _build_cells.is_empty():
 		return
-	build_note.text = owned[0].effect_description(run.build.rank(owned[0].id))
-	for index in _build_rows.size():
-		var row := _build_rows[index]
-		row.focus_neighbor_top = _build_rows[posmod(index - 1, _build_rows.size())].get_path()
-		row.focus_neighbor_bottom = _build_rows[posmod(index + 1, _build_rows.size())].get_path()
-		row.focus_neighbor_right = resume_button.get_path()
-		row.focus_neighbor_left = row.get_path()
+	for index in _build_cells.size():
+		var cell := _build_cells[index]
+		var column := index % BUILD_COLUMNS
+		var last := _build_cells.size() - 1
+		cell.focus_neighbor_left = _build_cells[index - 1].get_path() if column > 0 else cell.get_path()
+		cell.focus_neighbor_right = _build_cells[index + 1].get_path() if column < BUILD_COLUMNS - 1 and index < last else resume_button.get_path()
+		cell.focus_neighbor_top = _build_cells[index - BUILD_COLUMNS].get_path() if index >= BUILD_COLUMNS else cell.get_path()
+		# Down from a row over a shorter last row lands on its last boon.
+		var below := index + BUILD_COLUMNS
+		if below > last and index / BUILD_COLUMNS < last / BUILD_COLUMNS:
+			below = last
+		cell.focus_neighbor_bottom = _build_cells[below].get_path() if below <= last else cell.get_path()
+	_tell(owned[0], run.build.rank(owned[0].id), _build_cells[0])
+
+
+# The boon's name, rank and what it does, under the grid; its socket keeps a
+# quiet gold ring while the focus is on the menu, and the menu's way left
+# returns to it.
+func _tell(boon: BoonData, rank: int, cell: EquipSocket) -> void:
+	for other in _build_cells:
+		other.lit = other == cell
+	build_name.text = boon.display_name
+	build_rank.text = "" if boon.max_level == 1 else "Lv %d / %d" % [rank, boon.max_level]
+	build_note.text = boon.effect_description(rank)
 	for button: Button in [resume_button, settings_button, abort_button]:
-		button.focus_neighbor_left = _build_rows[0].get_path()
-	UIMotion.bind_buttons(build_list)
+		button.focus_neighbor_left = cell.get_path()
 
 
 func _build_settings() -> void:
