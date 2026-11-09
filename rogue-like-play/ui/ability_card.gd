@@ -5,9 +5,10 @@ extends Control
 # layout; this Control only draws, so UIMotion may move it freely.
 # With no window behind the hand, each card stands on a plate of the windows'
 # dark stone, its hairline edge and its shadow (the theme's AbilityCard
-# plate), and on it the shared card face (the AbilityCard styles): a blue
-# band along its top for a new boon, an amber one for a rank being raised,
-# and a gold frame fading in over it on hover and on the chosen moment.
+# plate), and on it the shared card face (the AbilityCard face), with a gold
+# frame fading in over it on hover and on the chosen moment. No coloured
+# line along one side: a new boon and a rank being raised tell themselves
+# apart by the words over the emblem ("新規", "Lv 1 → 2").
 # Ranks are bronze sockets, the owned ones holding an amber gem. It shows a
 # BoonData: its emblem, and its words for the rank on offer.
 var ability: BoonData
@@ -105,7 +106,7 @@ func _canvas(parent: Node, minimum: Vector2, painter: Callable) -> Control:
 func _draw() -> void:
 	var rect := Rect2(Vector2.ZERO, size)
 	draw_style_box(get_theme_stylebox(&"plate", &"AbilityCard"), rect)
-	draw_style_box(get_theme_stylebox(&"new" if level == 0 else &"raise", &"AbilityCard"), rect)
+	draw_style_box(get_theme_stylebox(&"face", &"AbilityCard"), rect)
 	var lit := maxf(glow, 0.55 if hovered else 0.0)
 	if lit > 0.0:
 		var base := get_theme_stylebox(&"chosen", &"AbilityCard") as StyleBoxFlat

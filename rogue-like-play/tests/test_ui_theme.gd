@@ -153,9 +153,9 @@ func run_tests() -> void:
 	var card_chosen := theme.get_stylebox(&"pressed", &"CardButton") as StyleBoxFlat
 	check(card_rest.border_width_top == 0 and card_rest.bg_color.a > 0.0 and theme.get_stylebox(&"panel", &"CardSurface") == card_rest, "An item card is a faint face without a frame at rest, the same for buttons and panels")
 	check(card_chosen.border_width_top > 0 and (theme.get_stylebox(&"focus", &"CardButton") as StyleBoxFlat).border_width_top > 0, "A chosen or focused card gets its frame")
-	var fresh := theme.get_stylebox(&"new", &"AbilityCard") as StyleBoxFlat
-	var ranked := theme.get_stylebox(&"raise", &"AbilityCard") as StyleBoxFlat
-	check(fresh.bg_color == card_rest.bg_color and fresh.border_width_top > 0 and fresh.border_width_left == 0 and fresh.border_color != ranked.border_color, "Level-up cards share the card face, a coloured band telling new from raised")
+	# A level-up card is the card face alone: no coloured line along one side.
+	var face := theme.get_stylebox(&"face", &"AbilityCard") as StyleBoxFlat
+	check(face.bg_color == card_rest.bg_color and face.border_width_top + face.border_width_left + face.border_width_right + face.border_width_bottom == 0, "Level-up cards share the card face, with no coloured band")
 	# The hand floats with no window behind it: each card stands on a plate of
 	# the windows' dark stone, edged and shadowed.
 	var plate := theme.get_stylebox(&"plate", &"AbilityCard") as StyleBoxFlat

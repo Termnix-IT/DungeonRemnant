@@ -76,11 +76,9 @@ content_margin_top = 8.0
 content_margin_right = 8.0
 content_margin_bottom = 8.0
 
-[sub_resource type="StyleBoxFlat" id="AbilityCardNew"]
-resource_name = "AbilityCardNew"
+[sub_resource type="StyleBoxFlat" id="AbilityCardFace"]
+resource_name = "AbilityCardFace"
 bg_color = Color(1, 1, 1, 0.045)
-border_width_top = 3
-border_color = Color(0.45, 0.64, 0.98, 0.95)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
@@ -101,16 +99,6 @@ corner_radius_bottom_left = 3
 shadow_color = Color(0, 0, 0, 0.4)
 shadow_size = 10
 shadow_offset = Vector2(0, 4)
-
-[sub_resource type="StyleBoxFlat" id="AbilityCardRaise"]
-resource_name = "AbilityCardRaise"
-bg_color = Color(1, 1, 1, 0.045)
-border_width_top = 3
-border_color = Color(0.95, 0.68, 0.32, 0.95)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="AbilityCardChosen"]
 resource_name = "AbilityCardChosen"
@@ -1795,8 +1783,7 @@ BannerBand/styles/panel = SubResource("BannerBand")
 BannerBandWarning/base_type = &"PanelContainer"
 BannerBandWarning/styles/panel = SubResource("BannerBandWarning")
 AbilityCard/styles/plate = SubResource("AbilityCardPlate")
-AbilityCard/styles/new = SubResource("AbilityCardNew")
-AbilityCard/styles/raise = SubResource("AbilityCardRaise")
+AbilityCard/styles/face = SubResource("AbilityCardFace")
 AbilityCard/styles/chosen = SubResource("AbilityCardChosen")
 AbilityCard/icons/pip_empty = ExtResource("PipEmptyTexture")
 AbilityCard/icons/pip_full = ExtResource("PipFullTexture")
