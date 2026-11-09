@@ -90,6 +90,7 @@ func _ready() -> void:
 	run.use_step(step)
 	run.route = RouteMap.generate(chapter, run.rng)
 	map_view = RouteMapView.new()
+	map_view.meta = meta
 	add_child(map_view)
 	map_view.chosen.connect(enter)
 	choice = CHOICE.instantiate()

@@ -60,11 +60,21 @@ static func record(meta: MetaProgress, chapter: ChapterData) -> String:
 # Every foe that can come in the chapter, in the encyclopedia's order: its
 # areas' crowds, elites and waves, its boss, and those they call.
 static func foes(chapter: ChapterData) -> Array[FoeData]:
-	var found := {}
 	var halls: Array[AreaData] = chapter.areas.duplicate()
 	if chapter.boss != null:
 		halls.append(chapter.boss)
-	for area in halls:
+	return _listed(halls)
+
+
+# The foes one area sends (the route map's card shows them), in the
+# encyclopedia's order.
+static func area_foes(area: AreaData) -> Array[FoeData]:
+	return _listed([area])
+
+
+static func _listed(halls: Array) -> Array[FoeData]:
+	var found := {}
+	for area: AreaData in halls:
 		if area.spawn_table != null:
 			for entry in area.spawn_table.entries:
 				found[entry.foe] = true

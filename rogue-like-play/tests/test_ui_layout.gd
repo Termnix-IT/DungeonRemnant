@@ -1,8 +1,9 @@
 extends SceneTree
 
 # Where things stand on the 1600x900 screen: the base's content centred, its
-# pages and their actions on the screen; then in a run, the route map and
-# the result centred, the fight's HUD in its corners without overlaps and
+# pages and their actions on the screen; then in a run, the route map
+# filling the screen with its card beside the focused node, the result
+# centred, the fight's HUD in its corners without overlaps and
 # off the ground round the hero, and the level-up cards and the menu
 # centred over the fight.
 
@@ -76,7 +77,19 @@ func run_tests() -> void:
 	main.start_run()
 	await settle(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1)
 	var run: RunDirector = main.active_run
-	centered(run.map_view._panel, "The route map")
+	# The route map: the whole screen, the run's state in its corners; once
+	# panned back to her, the open nodes on the screen and the focused one's
+	# card beside it, on the screen and clear of the HUD's corners.
+	var map := run.map_view
+	check(map._frame.get_global_rect().is_equal_approx(screen), "The route map fills the screen")
+	await settle(RouteMapView.PAN_HOLD + RouteMapView.PAN_TIME + RouteMapView.DRAW_TIME + RouteMapView.FOCUS_DELAY + 0.2)
+	check(map.buttons.all(func(node: RouteNode): return screen.encloses(node.get_global_rect())), "The open nodes are on the screen")
+	var card := map._card.get_global_rect()
+	var told: Rect2 = map.nodes_by_point[map.told].get_global_rect()
+	check(map._card.visible and screen.encloses(card) and not card.intersects(told), "The focused node's card is on the screen beside it")
+	check(not card.intersects(map._title.get_global_rect()) and not card.intersects(map._hp_gauge.get_global_rect()) and not card.intersects(map._guide.get_global_rect()), "The card keeps clear of the corners and the keys")
+	for corner: Control in [map._title, map._level, map._echo, map._hp_gauge, map._guide]:
+		check(screen.encloses(corner.get_global_rect()), "The map's %s stays on the screen" % corner.get_class())
 	# An area: the HUD in its corners, off the fight round the hero.
 	run.map_view._choose(run.run.route.nodes(0)[0])
 	await settle(BattleArea.BANNER_TIME + 0.2)

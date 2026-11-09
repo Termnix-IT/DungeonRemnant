@@ -1,6 +1,7 @@
 extends SceneTree
 
-# A real-time run drawn for real at 1600x900: the route map at the start,
+# A real-time run drawn for real at 1600x900: the route map at the start
+# (resting on the boss, then panned back to her, her card shown),
 # an open field a few seconds in (its goal on the HUD), the map after the
 # first area with its reward noted, an arena's wave arriving on its marks,
 # a boon reward's cards, and the end of the run. Images go to
@@ -25,6 +26,8 @@ func capture() -> void:
 	director.seed_value = 12
 	root.add_child(director)
 	await create_timer(0.6).timeout
+	await _grab("run_map_boss")
+	await create_timer(RouteMapView.PAN_TIME + RouteMapView.DRAW_TIME + RouteMapView.FOCUS_DELAY + 0.4).timeout
 	await _grab("run_map")
 	director.map_view._choose(director.run.route.nodes(0)[0])
 	await process_frame
@@ -40,7 +43,7 @@ func capture() -> void:
 	if director.choice.visible:
 		await _grab("run_reward")
 		director.choice._select(0)
-	await create_timer(0.6).timeout
+	await create_timer(RouteMapView.DRAW_TIME + RouteMapView.FOCUS_DELAY + 0.4).timeout
 	await _grab("run_map_after")
 	# An arena's first wave on its marks.
 	var arena_choice: RouteMap.Waypoint = null

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bwiwgvqhbnq4b"
-path="res://.godot/imported/token.png-ce323ee81960a905ecf95a5a8c3ae1e3.ctex"
+uid="uid://bit7j53av40jw"
+path="res://.godot/imported/road_gale_woods.png-9a0436b90ebf9425efdfe8730a1eb65b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/ui/route/token.png"
-dest_files=["res://.godot/imported/token.png-ce323ee81960a905ecf95a5a8c3ae1e3.ctex"]
+source_file="res://art/ui/route/road_gale_woods.png"
+dest_files=["res://.godot/imported/road_gale_woods.png-9a0436b90ebf9425efdfe8730a1eb65b.ctex"]
 
 [params]
 

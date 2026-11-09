@@ -147,38 +147,58 @@ func run_tests() -> void:
 	root.add_child(director)
 	await process_frame
 	check(director.map_view.visible and director.map_view.route_layer == 0 and director.map_view.buttons.size() == director.run.route.nodes(0).size(), "A run opens on its map, the first layer to choose")
-	# The node map: every area a node, only the first layer open, the first
-	# selected and told in the account, a later one readable but not enterable.
+	# The node map: the whole screen, wider than it (a chapter of four
+	# columns scrolls), the boss shown first and the view panning back to her.
 	var view := director.map_view
-	check(view.draw_progress < 1.0 and view.token != null and view.token.position + view.token.size * 0.5 == view.token_spot(), "The paths open to her draw out from her token, at the start")
-	await create_timer(RouteMapView.DRAW_TIME + 0.1).timeout
-	check(view.draw_progress == 1.0, "And reach the open layer")
+	check(view._frame.size == root.get_visible_rect().size and view._world.size.x > view._frame.size.x and view.scroll_limit() > 0.0, "The map fills the screen and runs past its edge")
+	check(view.panning and view.scroll == view.scroll_limit() and not view._card.visible, "At the chapter's start the view rests on the boss, no card yet")
+	check(view.draw_progress < 1.0 and view.hero != null and view.hero.position == view.hero_spot() and view.hero_spot() == view.anchor() + RouteMapView.HERO_OFFSET, "She stands on the road at the start, the open roads not yet drawn")
+	await create_timer(RouteMapView.PAN_HOLD + RouteMapView.PAN_TIME + RouteMapView.DRAW_TIME + RouteMapView.FOCUS_DELAY + 0.2).timeout
+	check(not view.panning and is_equal_approx(view.scroll, view.follow_scroll()) and view.draw_progress == 1.0, "The view pans back to her and the open roads draw out")
 	var all_nodes := 0
 	for index in director.run.route.size():
 		all_nodes += director.run.route.nodes(index).size()
 	check(view.nodes_by_point.size() == all_nodes and view.buttons.all(func(node: RouteNode): return node.mark == RouteNode.Mark.OPEN and node.focus_mode == Control.FOCUS_ALL), "Every area is a node; the first layer's are open")
-	check(view.selected == director.run.route.nodes(0)[0] and view._detail_name.text == view.selected.area.display_name and not view._enter.disabled, "The first open node is selected and told, ready to enter")
+	check(view.nodes_by_point.values().all(func(node: RouteNode): return node._caption.text == ("" if node.waypoint.area.boss != null else node.waypoint.area.stars()) and node.tooltip_text.is_empty()), "A node shows its reward and its stars, nothing more")
+	var column_gap: float = view._center(director.run.route.nodes(1)[0]).x - view._center(director.run.route.nodes(0)[0]).x
+	check(is_equal_approx(column_gap, RouteMapView.COLUMN_GAP), "The layers stand in columns along the map")
+	var road := view.road_texture()
+	var lines := view._roads.get_children()
+	check(lines.size() == director.run.route.nodes(0).size() * 2 and lines.filter(func(line: Line2D): return line.width == RouteMapView.ROAD_WIDTH).all(func(line: Line2D): return line.texture == road), "The open ways are roads in the chapter's ground, each over its glow")
+	check(view.selected == director.run.route.nodes(0)[0] and view.buttons[0].has_focus() and view._card.visible and view._detail_name.text == view.selected.area.display_name and not view._detail_state.visible, "The first open node is focused and its card shows")
+	var first_rect: Rect2 = view.nodes_by_point[view.selected].get_global_rect()
+	check(view._card.get_global_rect().end.x <= first_rect.position.x or view._card.get_global_rect().position.x >= first_rect.end.x, "The card stands beside its node, not over it")
+	check(view._detail_foe_row.get_child_count() == Chapters.area_foes(view.selected.area).size() and view._detail_foe_row.get_child_count() > 0, "The card shows the area's foes as pictures")
 	var later: RouteMap.Waypoint = director.run.route.nodes(1)[0]
-	view._show_detail(later)
-	check(view._detail_name.text == later.area.display_name and view._enter.disabled and view.nodes_by_point[later].disabled, "A later node can be read, not entered")
+	view._point_at(later)
+	check(view.told == later and view._detail_name.text == later.area.display_name and view._detail_state.text == RouteMapView.AHEAD_NOTE and view.nodes_by_point[later].disabled, "A later node can be read, not entered")
+	check(view._card.get_global_rect().end.x <= view.nodes_by_point[later].get_global_rect().position.x, "Its card stands on its left, the side already passed")
+	view._point_at(null)
+	check(view.told == view.selected, "Pointing away tells the selected node again")
 	view._choose(later)
 	check(view.visible and director.area == null, "Choosing a node not open does nothing")
-	view._show_detail(null)
+	var looked := view.scroll
+	view.look(RouteMapView.LOOK_STEP)
+	check(view.scroll > looked or looked == view.scroll_limit(), "The wheel or the stick looks along the map")
+	view.look(-view.scroll_limit() * 2.0)
+	check(view.scroll == 0.0, "And no further than its ends")
 	var first: RouteMap.Waypoint = director.run.route.nodes(0)[0]
-	var start: Vector2 = view.token.position
-	view._enter.pressed.emit()
+	var start: Vector2 = view.hero.position
+	view.nodes_by_point[first].pressed.emit()
 	await process_frame
-	check(view.prompt.visible and view.prompt.title_label.text == "「%s」に進みますか？" % first.area.display_name and not view.traveling and director.area == null, "A pick first asks whether to go there")
+	check(view.prompt.visible and view.prompt.title_label.text == "「%s」に進みますか？" % first.area.display_name and not view.traveling and director.area == null and not view._card.visible, "A pick first asks whether to go there")
 	view.prompt.canceled.emit()
-	check(not view.prompt.visible and view.visible and not view.traveling, "Going back stays on the map")
-	view._enter.pressed.emit()
+	check(not view.prompt.visible and view.visible and not view.traveling and view._card.visible, "Going back stays on the map")
+	view.nodes_by_point[first].pressed.emit()
 	view.prompt.confirmed.emit()
 	await process_frame
-	check(view.traveling and director.area == null and view.visible, "Going ahead sends her token along the path, entering nothing yet")
-	view._enter.pressed.emit()
+	check(view.traveling and director.area == null and view.visible and not view._card.visible, "Going ahead walks her along the road, entering nothing yet")
+	view.nodes_by_point[first].pressed.emit()
 	await create_timer(RouteMapView.TRAVEL_TIME * 0.5).timeout
-	check(view.token.position != start and director.area == null, "The token travels, and a second press on the way does nothing")
-	await create_timer(RouteMapView.TRAVEL_TIME + RouteMapView.ARRIVE_TIME + 0.1).timeout
+	check(view.hero.position != start and view.hero.rig.animation_player.current_animation == CharacterRig.WALK and director.area == null, "She walks, and a second press on the way does nothing")
+	await create_timer(RouteMapView.TRAVEL_TIME * 0.5 + 0.05).timeout
+	check(view.hero.position.distance_to(view._center(first) + RouteMapView.HERO_OFFSET) < 1.0, "She stops on the road at the area she picked")
+	await create_timer(RouteMapView.ARRIVE_TIME + 0.1).timeout
 	check(director.area != null and director.area.data == first.area and not director.map_view.visible, "A choice enters its area")
 	check(director.area.hero.health.hp == director.max_hp() and director.area.hero.build == director.run.build, "She comes in whole, with the run's build")
 	director.area.hero.controlled = false
