@@ -78,6 +78,12 @@ func run_tests() -> void:
 
 	var body := Combatant.new(20, 3, 0.5)
 	check(body.take(DamageInfo.make(10.0, Vector2.RIGHT)) == 7, "Defense takes off the damage")
+	# Never more than three tenths of the blow, so light blows still land on
+	# heavy armour; a defense below zero adds to every blow.
+	var armoured := Combatant.new(1000, 4)
+	check(armoured.take(DamageInfo.make(24.0, Vector2.RIGHT)) == 20 and armoured.take(DamageInfo.make(8.0, Vector2.RIGHT)) == 6 and armoured.take(DamageInfo.make(3.0, Vector2.RIGHT)) == 2, "Defense takes at most three tenths off a blow")
+	var frail := Combatant.new(1000, -2)
+	check(frail.take(DamageInfo.make(3.0, Vector2.RIGHT)) == 5 and frail.take(DamageInfo.make(40.0, Vector2.RIGHT)) == 42, "A defense below zero adds its points to every blow")
 	check(body.protected() and body.take(DamageInfo.make(10.0, Vector2.RIGHT)) == 0, "A hurt body is protected for its mercy time")
 	body.step(0.6)
 	check(not body.protected() and body.take(DamageInfo.make(1.0, Vector2.RIGHT)) == 1, "A blow always takes at least 1")
