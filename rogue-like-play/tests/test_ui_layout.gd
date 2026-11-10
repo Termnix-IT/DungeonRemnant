@@ -145,6 +145,19 @@ func run_tests() -> void:
 		check(screen.grow(-4).encloses(guide_rect) and not guide_rect.intersects(hud.hp_gauge.get_global_rect()) and guide_rect.get_center().x < middle, "They give way to the left, short of the health, on %s" % device)
 	hud.guide.pad = false
 	hud.guide.refresh()
+	# An elite out of view is pointed at from the frame kept clear of the
+	# HUD; one in view, and the crowd of a field, are not.
+	var brute_data: FoeData = load("res://data/foes/raging_charger.tres")
+	var far_elite := area.spawn_foe(brute_data, area.hero.global_position + Vector2(2000, 900))
+	var near_elite := area.spawn_foe(brute_data, area.hero.global_position + Vector2(200, 0))
+	await settle()
+	var arrow_at := hud.pointer_spot(far_elite.global_position)
+	var clear_frame := Rect2(ActionHud.POINTER_INSET.x - 1.0, ActionHud.POINTER_TOP - 1.0, screen.size.x - ActionHud.POINTER_INSET.x * 2.0 + 2.0, screen.size.y - ActionHud.POINTER_TOP - ActionHud.POINTER_BOTTOM + 2.0)
+	check(hud.pointer_targets().has(far_elite) and arrow_at != Vector2.INF and clear_frame.has_point(arrow_at) and arrow_at.x > middle, "An elite out of view is pointed at from the edge of the ground kept clear")
+	check(hud.pointer_spot(near_elite.global_position) == Vector2.INF, "One in view needs no arrow")
+	check(hud.pointer_targets().all(func(foe: Foe) -> bool: return foe.data.elite or foe.data.boss), "A field's crowd is not pointed at")
+	far_elite.vanish()
+	near_elite.vanish()
 	# The level-up cards and the menu over the fight.
 	area._on_gems(area.run.progression.required_exp())
 	await settle(0.4)

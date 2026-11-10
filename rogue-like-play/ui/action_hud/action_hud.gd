@@ -24,7 +24,11 @@ extends CanvasLayer
 #   banner in the middle
 #   for the area's name, its clearing, her fall and the boss's rage;
 # - at 30% health or less, the screen's edges pulse red, deeper and faster
-#   the less is left.
+#   the less is left;
+# - toward a boss, an elite, or the last few foes of an arena's wave that
+#   stand outside the view, a small arrow at the edge of the ground kept
+#   clear, so what is left to fell (and what may shoot from out of sight)
+#   can be found.
 # A faint shade darkens the top and bottom edges, under all of it, so the
 # words read the same on a bright, busy floor as on a dark one.
 # It only reads the area (and its `run`, `director`, `waves` and `boss_foe`,
@@ -75,6 +79,14 @@ const BOTTOM_SHADE := 150.0
 # second) at that share and at the last of it.
 const DANGER_SHARE := 0.3
 const DANGER_RATE := Vector2(1.2, 2.6)
+# The arrows toward foes out of view stand on a frame this far in from the
+# screen's sides, top and bottom (clear of the HUD's rows); an arena's
+# crowd is pointed at once this few are left in its wave.
+const POINTER_INSET := Vector2(56.0, 0.0)
+const POINTER_TOP := 132.0
+const POINTER_BOTTOM := 156.0
+const POINTER_FEW := 5
+const POINTER_SIZE := 11.0
 
 var area: CombatArea
 var hp_gauge: FramedGauge
@@ -109,6 +121,8 @@ var banner: PanelContainer
 var message: Label
 var boss_gauge: BossGauge
 var danger: TextureRect
+# The arrows toward foes out of view, drawn every frame.
+var pointers: Control
 var _boons_shown := ""
 var _special_full := false
 var _special_time := 0.0
@@ -124,6 +138,11 @@ func _ready() -> void:
 	add_child(root)
 	_build_danger(root)
 	_build_shade(root)
+	pointers = Control.new()
+	pointers.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pointers.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pointers.draw.connect(_draw_pointers)
+	root.add_child(pointers)
 	_build_top(root)
 	_build_bottom(root)
 	boss_gauge = BossGauge.new()
@@ -367,6 +386,7 @@ func _process(delta: float) -> void:
 	_show_actions()
 	_show_special(delta)
 	_place_guide()
+	pointers.queue_redraw()
 	var run: RunState = area.get(&"run")
 	exp_bar.visible = run != null
 	level_label.visible = run != null
@@ -380,6 +400,59 @@ func _process(delta: float) -> void:
 			boss_gauge.present(boss.data.display_name, boss.health.hp, boss.health.max_hp)
 	elif boss_gauge.visible:
 		boss_gauge.present("", 0, 0)
+
+
+# The foes worth pointing at when out of view: the boss, the elites, and an
+# arena's crowd once only a few of its wave are left.
+func pointer_targets() -> Array[Foe]:
+	var targets: Array[Foe] = []
+	var waves: WaveRunner = area.get(&"waves")
+	var few := waves != null and waves.wave >= 0 and not waves.done() and waves.remaining() <= POINTER_FEW
+	for foe in area.foes:
+		if not foe.dying and (foe.data.boss or foe.data.elite or few):
+			targets.append(foe)
+	return targets
+
+
+# Where on the screen the arrow toward a point of the world stands: on the
+# frame kept clear, along the line from the screen's middle; INF while the
+# point is in view.
+func pointer_spot(world_at: Vector2) -> Vector2:
+	var view := area.view_rect()
+	if view.has_point(world_at):
+		return Vector2.INF
+	var screen := pointers.size
+	var at := (world_at - view.position) / view.size * screen
+	var middle := screen * 0.5
+	var toward := (at - middle).normalized()
+	var frame := Rect2(POINTER_INSET.x, POINTER_TOP, screen.x - POINTER_INSET.x * 2.0, screen.y - POINTER_TOP - POINTER_BOTTOM)
+	var reach := INF
+	if not is_zero_approx(toward.x):
+		reach = minf(reach, ((frame.end.x if toward.x > 0.0 else frame.position.x) - middle.x) / toward.x)
+	if not is_zero_approx(toward.y):
+		reach = minf(reach, ((frame.end.y if toward.y > 0.0 else frame.position.y) - middle.y) / toward.y)
+	return middle + toward * reach
+
+
+func _draw_pointers() -> void:
+	if area == null or area.hero == null or not area.hero.health.alive():
+		return
+	var threat := pointers.get_theme_color(&"font_color", &"HpCaption")
+	var plain := pointers.get_theme_color(&"font_color", &"HudValue")
+	var rim := pointers.get_theme_color(&"font_outline_color", &"HudValue")
+	var middle := pointers.size * 0.5
+	for foe in pointer_targets():
+		var spot := pointer_spot(foe.global_position)
+		if spot == Vector2.INF:
+			continue
+		var toward := (spot - middle).normalized()
+		var across := toward.orthogonal()
+		var size := POINTER_SIZE * (1.5 if foe.data.boss else (1.2 if foe.data.elite else 1.0))
+		# An arrowhead notched at the back: a plain triangle this small reads
+		# as pointing any of three ways.
+		var arrow := PackedVector2Array([spot + toward * size, spot - toward * size * 0.9 + across * size * 0.75, spot - toward * size * 0.3, spot - toward * size * 0.9 - across * size * 0.75])
+		pointers.draw_colored_polygon(arrow, threat if foe.data.boss or foe.data.elite else plain)
+		pointers.draw_polyline(PackedVector2Array([arrow[0], arrow[1], arrow[2], arrow[3], arrow[0]]), rim, 1.5, true)
 
 
 func _show_danger(share: float, delta: float) -> void:
