@@ -148,6 +148,7 @@ func _bless(next: RouteMap.Waypoint) -> bool:
 		return false
 	_blessing = true
 	_blessed_entry = next
+	choice.show_vitals(_current_hp(), max_hp())
 	choice.present_boons(offer, run.build, run.progression.level, 1, "旅立ちの加護　強化を1つ選ぶ")
 	return true
 
@@ -225,6 +226,7 @@ func grant(reward: AreaData.Reward) -> void:
 				grant(AreaData.Reward.ECHO)
 				return
 			_rewarding = true
+			choice.show_vitals(_current_hp(), max_hp())
 			choice.present_boons(offer, run.build, run.progression.level, 1, "報酬　強化を1つ選ぶ")
 		AreaData.Reward.HEAL:
 			# A difficulty step may cut what a heal reward brings (thirst
@@ -407,6 +409,7 @@ func _open_deal(deal: StringName, ends: bool, title: String, excluded: Array[Str
 	_event_ends = ends
 	_event_paid = false
 	_event_picks_left = 0
+	choice.show_vitals(_current_hp(), max_hp())
 	choice.present_boons(offer, run.build, run.progression.level, 1, title, 0, true)
 
 
@@ -444,6 +447,7 @@ func _settle_deal(id: StringName) -> void:
 		var given := StringName(String(_event_deal).trim_prefix("give:"))
 		var more := run.build.offer(run.rng, run.card_count(), [given] as Array[StringName])
 		if not more.is_empty():
+			choice.show_vitals(_current_hp(), max_hp())
 			choice.present_boons(more, run.build, run.progression.level, 1, "%s　強化を選ぶ（残り%d）" % [place, _event_picks_left])
 			return
 	_event_card = false

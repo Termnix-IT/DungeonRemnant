@@ -736,7 +736,8 @@ func run_tests() -> void:
 	check(map_menu.showing_settings() and map_menu.settings_page.help_shown and map_menu.settings_page.selected_topic == HubSettings.TOPIC_CONTROLS, "The controls open straight from the menu")
 	map_menu._unhandled_input(_key(KEY_ESCAPE))
 	await process_frame
-	check(map_menu.visible and not map_menu.showing_settings() and map_menu.controls_button.has_focus(), "Back from them leads to the menu")
+	check(map_menu.visible and not map_menu.showing_settings() and not map_menu.settings_page.help_shown, "Back from them leads to the menu")
+	check(map_menu.controls_button.has_focus(), "With the focus back on the controls entry (focus: %s)" % root.gui_get_focus_owner())
 	map_menu._unhandled_input(_key(KEY_ESCAPE))
 	await process_frame
 	check(not map_menu.visible and not director.map_view.covered, "Esc again lifts the menu off the map")

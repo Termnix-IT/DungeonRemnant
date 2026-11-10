@@ -382,6 +382,7 @@ func _offer() -> void:
 		return
 	get_tree().paused = true
 	GameMusic.muffle(self, true)
+	choice.show_vitals(hero.health.hp, hero.health.max_hp)
 	choice.present_boons(offer, run.build, run.progression.level, run.progression.pending_choices, "", run.rerolls_left)
 
 
@@ -390,6 +391,7 @@ func _on_reroll() -> void:
 	var offer := run.reroll()
 	if offer.is_empty():
 		return
+	choice.show_vitals(hero.health.hp, hero.health.max_hp)
 	choice.present_boons(offer, run.build, run.progression.level, run.progression.pending_choices, "", run.rerolls_left)
 
 

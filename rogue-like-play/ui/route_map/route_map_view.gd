@@ -1001,7 +1001,7 @@ func _tell(point: RouteMap.Waypoint) -> void:
 	_detail_state.text = state
 	_detail_state.visible = not state.is_empty()
 	_card.reset_size()
-	_card.visible = visible and not traveling and not panning
+	_card.visible = visible and not traveling and not panning and not covered
 	_place_card()
 
 
@@ -1049,7 +1049,8 @@ func _input(event: InputEvent) -> void:
 
 
 func _focus_first() -> void:
-	if visible and not traveling and not buttons.is_empty():
+	# Never from under the run's menu: its opening may still be playing out.
+	if visible and not traveling and not covered and not buttons.is_empty():
 		buttons[current.find(selected) if current.has(selected) else 0].grab_focus()
 
 

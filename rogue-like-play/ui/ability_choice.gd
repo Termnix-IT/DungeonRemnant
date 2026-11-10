@@ -24,6 +24,9 @@ const GameAudio := preload("res://audio/game_audio.gd")
 # with no card focused, a direction focuses one. Three cards, or four with
 # the lasting upgrade; with rerolls left, R (Y) asks for the cards to be
 # drawn again (a new hand, dealt and armed the same way).
+# Under the keys stands what the choice is made by: her health, and the
+# boons the build already holds with their ranks. The shade over the fight
+# dims the HUD's own.
 # No window holds the hand: as card games lay a hand on the table, the title,
 # the cards and their keys float over the darkened field, so the deal and the
 # cards themselves are what the eye meets. The cards are as tall as their
@@ -53,6 +56,13 @@ var rerolls := 0
 # Whether this hand may be left untaken (Esc, B), and the hint that says so.
 var declinable := false
 var decline_hint: Button
+# Her health and the boons held, under the keys (show_vitals, _show_held).
+const HELD_SIZE := 36.0
+const HELD_PER_ROW := 16
+var status_row: HBoxContainer
+var hp_caption: Label
+var hp_label: Label
+var held_row: HFlowContainer
 # Whether the hand on offer can be taken yet, and whether the mouse waits for
 # a button held through the deal to be let go.
 var armed := false
@@ -78,6 +88,19 @@ func _ready() -> void:
 	reroll_hint.hide()
 	decline_hint = key_guide.add_hint("Esc", "B", "やめる", _decline)
 	decline_hint.hide()
+	status_row = HBoxContainer.new()
+	status_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	status_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	$Panel/Margin/Stack.add_child(status_row)
+	hp_caption = HubUI.label(status_row, "HP", &"HpCaption")
+	hp_caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+	hp_label = HubUI.label(status_row, "", &"HudValue")
+	hp_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	held_row = HFlowContainer.new()
+	held_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	held_row.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	status_row.add_child(held_row)
+	show_vitals(-1, 0)
 	for index in buttons.size():
 		var card := AbilityCard.new()
 		buttons[index].add_child(card)
@@ -93,7 +116,38 @@ func _ready() -> void:
 
 # A level-up's boons, at the ranks the build holds. `title` replaces the
 # level-up title (an area's reward); `rerolls_left` above 0 offers a reroll.
+# Her health, told under the cards from the next hand on (below zero: not told).
+func show_vitals(hp: int, max_hp: int) -> void:
+	hp_caption.visible = hp >= 0
+	hp_label.visible = hp >= 0
+	hp_label.text = "%d / %d" % [hp, max_hp]
+
+
+# The boons the build holds, as their emblems with their ranks.
+func _show_held(build: BuildState) -> void:
+	for child in held_row.get_children():
+		child.free()
+	var owned := build.owned()
+	held_row.custom_minimum_size.x = mini(owned.size(), HELD_PER_ROW) * (HELD_SIZE + held_row.get_theme_constant(&"h_separation"))
+	for boon in owned:
+		var icon := TextureRect.new()
+		icon.texture = EmblemIcons.texture(boon.emblem)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.custom_minimum_size = Vector2.ONE * HELD_SIZE
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		held_row.add_child(icon)
+		if boon.max_level > 1:
+			var rank := HubUI.label(icon, str(build.rank(boon.id)), &"HudCaption")
+			rank.autowrap_mode = TextServer.AUTOWRAP_OFF
+			rank.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+			rank.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+			rank.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	status_row.visible = hp_label.visible or not owned.is_empty()
+
+
 func present_boons(candidates: Array[BoonData], build: BuildState, level: int, pending: int, title: String = "", rerolls_left: int = 0, may_decline: bool = false) -> void:
+	_show_held(build)
 	declinable = may_decline
 	decline_hint.visible = may_decline
 	var levels: Array[int] = []
