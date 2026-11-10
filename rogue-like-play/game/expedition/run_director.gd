@@ -62,6 +62,8 @@ var waypoint: RouteMap.Waypoint
 # The kind of foe whose blow felled her, when one did (null for a burn).
 var fallen_to: FoeData
 var _rewarding := false
+# The echo the area just cleared gave for being cleared (RunState.clear_echo).
+var _cleared_echo := 0
 var _blessing := false
 # The event she stopped at, what she bought there, the curse its stone
 # offers, the boon card it opened, whether the event ends with that card,
@@ -156,10 +158,19 @@ func enter(next: RouteMap.Waypoint) -> void:
 func _on_cleared() -> void:
 	_leave_area()
 	run.areas_cleared += 1
+	# Clearing an area always gives a share of its echo; its reward follows.
+	_cleared_echo = run.clear_echo(waypoint.area)
+	run.echo += _cleared_echo
 	grant(waypoint.reward)
 
 
-# The cleared waypoint's reward; a boon reward waits for its card.
+# What the map tells of the echo the cleared area gave, after its reward.
+func _echo_note() -> String:
+	return "　残響 +%s" % UIFormat.amount(_cleared_echo) if _cleared_echo > 0 else ""
+
+
+# The cleared waypoint's reward; a boon reward waits for its card. An echo
+# reward adds the rest of the area's echo to what clearing it gave.
 func grant(reward: AreaData.Reward) -> void:
 	match reward:
 		AreaData.Reward.BOON:
@@ -173,11 +184,11 @@ func grant(reward: AreaData.Reward) -> void:
 			# Thirst halves what a heal brings; a difficulty step may cut it too.
 			var share := (HEAL_SHARE + run.rule(&"heal_share")) * (0.5 if run.curses.has(&"thirst") else 1.0) * run.step_rules.heal
 			var gained := run.heal(share, max_hp())
-			advance("報酬　HPが%d回復した" % gained if gained > 0 else "報酬　回復（HPはすでに満タン）")
+			advance(("報酬　HPが%d回復した" % gained if gained > 0 else "報酬　回復（HPはすでに満タン）") + _echo_note())
 		AreaData.Reward.ECHO:
-			var echo := run.echo_reward(waypoint.area.echo)
+			var echo := run.bonus_echo(waypoint.area)
 			run.echo += echo
-			advance("報酬　残響を%d得た" % echo)
+			advance("報酬　残響を%d得た" % (echo + _cleared_echo))
 
 
 func _on_reward_chosen(id: StringName) -> void:
@@ -203,7 +214,7 @@ func _on_reward_chosen(id: StringName) -> void:
 	_rewarding = false
 	var boon := run.build.find(id)
 	run.build.take(boon)
-	advance("報酬　「%s」を得た" % boon.display_name)
+	advance("報酬　「%s」を得た" % boon.display_name + _echo_note())
 
 
 # An event: no fight, its window over the map until she leaves it.

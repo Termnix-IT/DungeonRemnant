@@ -30,6 +30,9 @@ const CHOICE := preload("res://ui/ability_choice.tscn")
 const PROMPT := preload("res://ui/choice_prompt.gd")
 # From the clear to `cleared`: the gems fly in and the hero takes a breath.
 const CLEAR_PAUSE := 1.4
+# An elite's echo, as a number over where it fell.
+const ECHO_NUMBER := Color("ffd27a")
+const ECHO_OUTLINE := Color("2a1a04")
 const BANNER_TIME := 2.6
 # From entering a boss hall to the boss's mark, and the mark's time.
 const BOSS_DELAY := 1.5
@@ -133,6 +136,7 @@ func _ready() -> void:
 	prompt.confirmed.connect(_on_abandon_confirmed)
 	prompt.canceled.connect(func(): menu.open())
 	hero_fell.connect(_on_hero_down)
+	foe_fell.connect(_on_foe_echo)
 	Input.joy_connection_changed.connect(_on_joy_connection)
 	var air := BattleAmbience.new()
 	air.name = "Ambience"
@@ -319,6 +323,16 @@ func _on_boss_phase(foe: Foe) -> void:
 		var at := waves.spawn_point()
 		if at != Vector2.INF:
 			waves.mark(at, foe.data.summon, WaveRunner.MARK_TIME)
+
+
+# An elite's fall adds its echo to the run's, told over where it fell in the
+# echo's gold.
+func _on_foe_echo(foe: Foe) -> void:
+	if foe.data.echo_reward <= 0:
+		return
+	var echo := run.echo_reward(foe.data.echo_reward)
+	run.echo += echo
+	popups.show_number("残響 +%d" % echo, number_spot(foe), ECHO_NUMBER, ECHO_OUTLINE)
 
 
 func choosing() -> bool:

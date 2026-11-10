@@ -23,6 +23,7 @@ hit_radius = 28.0
 knockback_resist = 1.0
 hitstun = 0.0
 exp_reward = 24
+echo_reward = 4
 attacks = Array[ExtResource("2")]([ExtResource("3")])
 power = 16.0
 attack_cooldown = 2.4

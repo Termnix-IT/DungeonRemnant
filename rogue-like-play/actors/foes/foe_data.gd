@@ -39,6 +39,9 @@ extends Resource
 # it, nor breaks off the wind-up of its attack.
 @export_range(0.0, 2.0) var hitstun := 0.22
 @export_range(0, 10000) var exp_reward := 1
+# Echo its fall adds to the run's (an elite's; the crowd gives none), before
+# the run's own shares (RunState.echo_reward).
+@export_range(0, 1000) var echo_reward := 0
 # Its attacks, each with the range it is used at (AttackData.use_from and
 # use_until); the first that fits is used. None: it only chases and touches.
 @export var attacks: Array[AttackData] = []

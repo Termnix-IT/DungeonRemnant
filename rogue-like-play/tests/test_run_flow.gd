@@ -291,6 +291,18 @@ func run_tests() -> void:
 	director.area.hero.controlled = false
 	director.area.hero.health.hp = 60
 	director.area.gems.drop(director.area.hero.global_position + Vector2(600, 0), 2)
+	# An elite felled in the fight adds its echo to the run's at once.
+	var brute: FoeData = load("res://data/foes/raging_charger.tres")
+	var elite := director.area.spawn_foe(brute, director.area.hero.global_position + Vector2(300, 0))
+	var echo_fight := director.run.echo
+	director.area._on_foe_echo(elite)
+	check(brute.echo_reward > 0 and director.run.echo == echo_fight + brute.echo_reward, "An elite's fall adds its echo to the run's, mid-fight")
+	var crowd_foe := director.area.spawn_foe(load("res://data/foes/wandering_sentinel.tres") as FoeData, director.area.hero.global_position + Vector2(300, 0))
+	director.area._on_foe_echo(crowd_foe)
+	check(director.run.echo == echo_fight + brute.echo_reward, "The crowd gives none")
+	# (Told to the area directly: a fall would leave a gem, and a level-up.)
+	elite.vanish()
+	crowd_foe.vanish()
 	var echo_before := director.run.echo
 	var rank_before := director.run.build.owned().size()
 	var reward := first.reward
@@ -306,13 +318,15 @@ func run_tests() -> void:
 	match reward:
 		AreaData.Reward.BOON:
 			check(director.choice.visible, "A boon reward offers its cards")
+			check(director.run.echo == echo_before + roundi(first.area.echo * RunState.CLEAR_ECHO_SHARE) and director.run.echo > echo_before, "Clearing the area gave a share of its echo, whatever its reward")
 			director.choice._select(0)
 			await process_frame
 			check(director.run.build.owned().size() == rank_before + 1 or director.run.build.owned().size() == rank_before, "The card's boon is taken")
 		AreaData.Reward.HEAL:
 			check(director.run.hp == 60 + roundi(director.max_hp() * RunDirector.HEAL_SHARE), "A heal reward restores her health")
+			check(director.run.echo == echo_before + roundi(first.area.echo * RunState.CLEAR_ECHO_SHARE) and director.run.echo > echo_before, "Clearing the area gave a share of its echo, whatever its reward")
 		AreaData.Reward.ECHO:
-			check(director.run.echo == echo_before + first.area.echo, "An echo reward adds the area's echo")
+			check(director.run.echo == echo_before + first.area.echo, "An echo reward makes the area's echo whole")
 	check(director.run.layer == 1 and director.map_view.visible and director.run.areas_cleared == 1, "The route moves on a layer")
 	var carried := director.run.hp
 	var after_first: RouteMap.Waypoint = director.run.taken[0]

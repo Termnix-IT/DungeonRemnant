@@ -21,6 +21,8 @@ const CURSES := {
 	&"thirst": ["渇き", "回復の報酬が半分になる"],
 }
 const CURSE_ECHO := 0.5
+# The share of an area's echo that clearing it always gives (clear_echo).
+const CLEAR_ECHO_SHARE := 0.3
 const FRAILTY := 2
 const SLUGGISH := 0.88
 const HERO := preload("res://data/hero/mio.tres")
@@ -175,6 +177,17 @@ func reroll() -> Array[BoonData]:
 # difficulty step's.
 func echo_reward(amount: int) -> int:
 	return roundi(amount * (1.0 + rule(&"echo_rate") + CURSE_ECHO * curses.size() + step_rules.echo))
+
+
+# The echo clearing an area gives whatever its reward is (CLEAR_ECHO_SHARE of
+# its echo), so a run that took only boons and heals still brings some home;
+# and what an echo reward adds on top, the two making the area's whole echo.
+func clear_echo(area: AreaData) -> int:
+	return echo_reward(roundi(area.echo * CLEAR_ECHO_SHARE))
+
+
+func bonus_echo(area: AreaData) -> int:
+	return maxi(0, echo_reward(area.echo) - clear_echo(area))
 
 
 # Lays a curse on her, if she does not carry it yet: its harm reaches her

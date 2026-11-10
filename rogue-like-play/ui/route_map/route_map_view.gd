@@ -953,7 +953,12 @@ func _tell(point: RouteMap.Waypoint) -> void:
 		_detail_foes.text = ""
 	else:
 		_detail_kind.text = "%s　%s　目安 %d分%02d秒" % [area.kind_name(), area.stars(), area.expected_time / 60, area.expected_time % 60]
-		_detail_reward.text = "報酬：%s" % AreaData.reward_name(point.reward)
+		# What clearing it brings: its reward, and the echo every clearing
+		# gives (an echo reward's amount holds both).
+		if point.reward == AreaData.Reward.ECHO:
+			_detail_reward.text = "報酬：残響 %s" % UIFormat.amount(_run.echo_reward(area.echo))
+		else:
+			_detail_reward.text = "報酬：%s　残響 +%s" % [AreaData.reward_name(point.reward), UIFormat.amount(_run.clear_echo(area))]
 		_detail_goal.text = area.condition
 		_detail_foes.text = area.foe_summary
 		for foe in Chapters.area_foes(area):
