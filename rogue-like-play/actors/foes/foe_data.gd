@@ -38,6 +38,9 @@ extends Resource
 # How long a hit stops it walking. Zero is super armour: a hit never stops
 # it, nor breaks off the wind-up of its attack.
 @export_range(0.0, 2.0) var hitstun := 0.22
+# It flinches while it walks, but a hit never breaks off its attack once the
+# wind-up has begun: its blow has to be seen coming and stepped out of.
+@export var steady_windup := false
 @export_range(0, 10000) var exp_reward := 1
 # Echo its fall adds to the run's (an elite's; the crowd gives none), before
 # the run's own shares (RunState.echo_reward).

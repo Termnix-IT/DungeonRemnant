@@ -296,7 +296,7 @@ func receive(info: DamageInfo) -> int:
 	for id in info.inflicts:
 		apply_status(id, info.amount)
 	_push += info.direction * info.knockback * (1.0 - data.knockback_resist)
-	var flinch := data.hitstun > 0.0 and info.flinch
+	var flinch := data.hitstun > 0.0 and info.flinch and not (data.steady_windup and attack != null)
 	if flinch:
 		_stun_left = data.hitstun
 		walk = Vector2.ZERO

@@ -100,6 +100,40 @@ func run_tests() -> void:
 	check(hero.health.hp == hp, "A broken-off pounce does no harm")
 	foe.receive(DamageInfo.make(1000.0, Vector2.RIGHT))
 
+	# A wraith holds its wind-up through a hit: its lunge has to be dodged.
+	fresh_hero()
+	var wraith: FoeData = load("res://data/foes/echo_wraith.tres")
+	foe = spawn(wraith, Vector2(200, 0))
+	await until_attack(foe)
+	var lunge := foe.attack
+	await run(foe, 0.2)
+	foe.receive(DamageInfo.make(1.0, Vector2.RIGHT, 100.0))
+	check(wraith.steady_windup and foe.attack == lunge and foe.telegraph != null and foe._stun_left <= 0.0, "A hit does not break off a wraith's wind-up")
+	foe.receive(DamageInfo.make(1000.0, Vector2.RIGHT))
+	foe = spawn(wraith, Vector2(600, 0))
+	await run(foe, 0.1)
+	foe.receive(DamageInfo.make(1.0, Vector2.RIGHT, 100.0))
+	check(foe.attack == null and foe._stun_left > 0.0, "Walking, it flinches like the rest of the crowd")
+	foe.receive(DamageInfo.make(1000.0, Vector2.RIGHT))
+
+	# A boss in reach of two of its attacks never uses one twice running.
+	fresh_hero()
+	var king_data: FoeData = load("res://data/foes/ruin_king.tres")
+	var king := spawn(king_data, Vector2(100, 0))
+	king.set_physics_process(false)
+	var chosen: Array[AttackData] = []
+	for turn in 14:
+		king._cancel_attack()
+		king.brain.cooldown = 0.0
+		king.brain.step(king, FRAME)
+		chosen.append(king.attack)
+	var repeated := false
+	for turn in range(1, chosen.size()):
+		repeated = repeated or chosen[turn] == chosen[turn - 1]
+	check(chosen.all(func(attack: AttackData) -> bool: return attack != null) and not repeated, "With two attacks in reach, a boss never uses the same one twice running")
+	king._cancel_attack()
+	king.receive(DamageInfo.make(100000.0, Vector2.RIGHT))
+
 	# A dash through the pounce makes it miss for good.
 	fresh_hero()
 	foe = spawn(rat, Vector2(0, 120))

@@ -22,6 +22,7 @@ contact_cooldown = 0.9
 hit_radius = 16.0
 knockback_resist = 0.6
 hitstun = 0.12
+steady_windup = true
 exp_reward = 3
 attacks = Array[ExtResource("2")]([ExtResource("3")])
 power = 12.0
