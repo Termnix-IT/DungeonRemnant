@@ -19,7 +19,7 @@
 script = ExtResource("1")
 id = &"abyss_of_echoes"
 display_name = "第4章　残響の深淵"
-description = "ダンジョンで果てた者たちの残響が流れ込む最深部へ下り、残響の主を討つ。"
+description = "ダンジョンで果てた者たちの残響が流れ込む最深部へ下り、その底に座す者を討つ。"
 illustration = ExtResource("8")
 layers = 4
 choices = Vector2i(2, 3)

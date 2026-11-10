@@ -5,7 +5,7 @@
 script = ExtResource("1")
 id = &"slam"
 display_name = "叩きつけ"
-description = "剣を頭上から地面へ叩きつけ、周りの敵をまとめて打って押し返す"
+description = "武器を頭上から地面へ叩きつけ、周りの敵をまとめて打って押し返す"
 emblem = "hammer_damage"
 attack = ExtResource("2")
 cooldown = 6.0

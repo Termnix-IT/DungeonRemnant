@@ -17,7 +17,7 @@
 script = ExtResource("1")
 id = &"ash_corridor"
 display_name = "第1章　灰の回廊"
-description = "灰に沈んだ回廊を抜け、その奥の守護者の間で遺跡王を討つ。"
+description = "灰に沈んだ回廊を抜け、その奥の守護者の間に待つ者を討つ。"
 illustration = ExtResource("8")
 layers = 3
 choices = Vector2i(2, 3)

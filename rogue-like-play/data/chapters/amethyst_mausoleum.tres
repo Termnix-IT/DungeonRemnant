@@ -18,7 +18,7 @@
 script = ExtResource("1")
 id = &"amethyst_mausoleum"
 display_name = "第3章　紫晶の霊廟"
-description = "紫の結晶に侵された地下の霊廟を下り、最奥の納骨堂で召喚の司祭を討つ。"
+description = "紫の結晶に侵された地下の霊廟を下り、最奥の納骨堂で祈り続ける者を討つ。"
 illustration = ExtResource("8")
 layers = 4
 choices = Vector2i(2, 3)
