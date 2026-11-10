@@ -59,6 +59,10 @@ const PATH_GLOW := Color(1.0, 0.82, 0.48, 0.42)
 const FAINT_WIDTH := 28.0
 const AHEAD_ALPHA := 0.36
 const SHUT_ALPHA := 0.13
+# A road's middle: this share of its width (the rim is the rest), its cut
+# edges fading over this share of the band.
+const MIDDLE_SHARE := 0.64
+const MIDDLE_FADE := 0.22
 # Points along each path's curve.
 const CURVE_STEPS := 24
 # Where things stand: her start, the gap between layers (room for a card
@@ -177,6 +181,8 @@ var draw_progress := 1.0
 var traveling := false
 # The open roads and their glows, with the ends they join.
 var _open_roads: Array[Dictionary] = []
+# Each chapter's road's middle band, cut once.
+static var _middles: Dictionary = {}
 # How far the map is scrolled (px from its left end), and the route whose
 # opening pan has been shown.
 var scroll := 0.0:
@@ -609,11 +615,17 @@ func _lay_nodes() -> void:
 	hero.position = hero_spot()
 
 
-# Every way between the areas, as Line2Ds in the chapter's road: first the
-# ways cut off, then those still within her reach (so the plainer lies over
-# the fainter where they cross), then the ways walked, then the open ones.
+# Every way between the areas in the chapter's road, in layers: the ways cut
+# off, then those still within her reach (so the plainer lies over the
+# fainter where they cross), then the open ways' glow, then the ways walked
+# and the open ones. Within a layer every road is drawn whole first (its
+# rim) and then once more by its middle only, so where roads meet their
+# middles run into one surface and the rims stay on the outside, as at a
+# fork in a real road. A see-through layer is drawn whole into one picture
+# and then made faint, so two faint roads crossing are no plainer than one.
 func _lay_roads() -> void:
 	var walked := mini(route_layer, _run.taken.size())
+	var shut: Array = []
 	var ahead: Array = []
 	for index in route.size() - 1:
 		var taken_here: RouteMap.Waypoint = _run.taken[index] if index < walked else null
@@ -623,40 +635,64 @@ func _lay_roads() -> void:
 				if from == taken_here and (to == next or index + 1 == route_layer):
 					continue
 				if index >= route_layer and reachable.has(from):
-					ahead.append([from, to])
+					ahead.append([_center(from), _center(to), Way.AHEAD])
 				else:
-					_road(_center(from), _center(to), Way.SHUT)
-	for pair: Array in ahead:
-		_road(_center(pair[0]), _center(pair[1]), Way.AHEAD)
+					shut.append([_center(from), _center(to), Way.SHUT])
+	var solid: Array = []
 	if walked > 0:
-		_road(_start(), _center(_run.taken[0]), Way.WALKED)
+		solid.append([_start(), _center(_run.taken[0]), Way.WALKED])
 	for index in walked - 1:
-		_road(_center(_run.taken[index]), _center(_run.taken[index + 1]), Way.WALKED)
+		solid.append([_center(_run.taken[index]), _center(_run.taken[index + 1]), Way.WALKED])
 	for to: RouteMap.Waypoint in current:
-		_road(anchor(), _center(to), Way.OPEN)
+		solid.append([anchor(), _center(to), Way.OPEN])
+	_lay_layer(shut, SHUT_ALPHA)
+	_lay_layer(ahead, AHEAD_ALPHA)
+	var glows := Node2D.new()
+	glows.name = "Glows"
+	_roads.add_child(glows)
+	_lay_layer(solid, 1.0, glows)
 
 
-func _road(from: Vector2, to: Vector2, way: Way) -> void:
-	var texture := road_texture()
-	var open := way == Way.OPEN
-	var glow: Line2D = null
-	if open:
-		glow = Line2D.new()
-		glow.width = GLOW_WIDTH
-		glow.texture = _glow_texture()
-		glow.texture_mode = Line2D.LINE_TEXTURE_STRETCH
-		glow.joint_mode = Line2D.LINE_JOINT_ROUND
-		glow.begin_cap_mode = Line2D.LINE_CAP_ROUND
-		glow.end_cap_mode = Line2D.LINE_CAP_ROUND
-		_roads.add_child(glow)
+# One layer of roads: each whole, then each by its middle. A faint layer is a
+# CanvasGroup, drawn whole and then made see-through as one.
+func _lay_layer(ways: Array, alpha: float, glows: Node2D = null) -> void:
+	if ways.is_empty():
+		return
+	var layer: Node2D = CanvasGroup.new() if alpha < 1.0 else Node2D.new()
+	layer.self_modulate.a = alpha
+	_roads.add_child(layer)
+	var lines: Array[Line2D] = []
+	for way: Array in ways:
+		lines.append(_road(layer, way[0], way[1], way[2], false))
+	for index in ways.size():
+		var way: Array = ways[index]
+		var middle := _road(layer, way[0], way[1], way[2], true)
+		if way[2] == Way.OPEN and glows != null:
+			var glow := Line2D.new()
+			glow.width = GLOW_WIDTH
+			glow.texture = _glow_texture()
+			glow.texture_mode = Line2D.LINE_TEXTURE_STRETCH
+			glow.joint_mode = Line2D.LINE_JOINT_ROUND
+			glow.begin_cap_mode = Line2D.LINE_CAP_ROUND
+			glow.end_cap_mode = Line2D.LINE_CAP_ROUND
+			glow.points = middle.points
+			glows.add_child(glow)
+			_open_roads.append({"line": lines[index], "middle": middle, "glow": glow, "from": way[0], "to": way[1]})
+
+
+# A road along the curve: whole (it carries its way as meta) or by its middle
+# only, the same road narrower so its stones line up with the whole one's.
+func _road(layer: Node2D, from: Vector2, to: Vector2, way: Way, middle: bool) -> Line2D:
 	var line := Line2D.new()
-	line.width = FAINT_WIDTH if way == Way.AHEAD or way == Way.SHUT else ROAD_WIDTH
-	line.modulate.a = {Way.AHEAD: AHEAD_ALPHA, Way.SHUT: SHUT_ALPHA}.get(way, 1.0)
-	line.set_meta(&"way", way)
+	var width := FAINT_WIDTH if way == Way.AHEAD or way == Way.SHUT else ROAD_WIDTH
+	line.width = width * MIDDLE_SHARE if middle else width
+	if not middle:
+		line.set_meta(&"way", way)
 	line.joint_mode = Line2D.LINE_JOINT_ROUND
 	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	line.end_cap_mode = Line2D.LINE_CAP_ROUND
 	line.antialiased = true
+	var texture := middle_texture() if middle else road_texture()
 	if texture != null:
 		line.texture = texture
 		line.texture_mode = Line2D.LINE_TEXTURE_TILE
@@ -664,9 +700,17 @@ func _road(from: Vector2, to: Vector2, way: Way) -> void:
 	else:
 		line.default_color = ROAD_PLAIN
 	line.points = curve(from, to)
-	_roads.add_child(line)
-	if open:
-		_open_roads.append({"line": line, "glow": glow, "from": from, "to": to})
+	layer.add_child(line)
+	return line
+
+
+# The whole roads, in the order drawn (bottom first), each carrying its way.
+func road_lines() -> Array[Line2D]:
+	var lines: Array[Line2D] = []
+	for line in _roads.find_children("*", "Line2D", true, false):
+		if line.has_meta(&"way"):
+			lines.append(line)
+	return lines
 
 
 # The open road's glow: gold along its middle, fading out to both sides.
@@ -690,14 +734,42 @@ func road_texture() -> Texture2D:
 	return load(path) if not path.is_empty() and ResourceLoader.exists(path) else null
 
 
+# The middle band of the chapter's road: its rim cut away and the cut edges
+# fading out, so a middle laid over another road's rim shows no seam.
+func middle_texture() -> Texture2D:
+	var road := road_texture()
+	if road == null:
+		return null
+	if _middles.has(road.resource_path):
+		return _middles[road.resource_path]
+	var image := road.get_image()
+	if image.is_compressed():
+		image.decompress()
+	image.convert(Image.FORMAT_RGBA8)
+	var high := roundi(image.get_height() * MIDDLE_SHARE)
+	var top := (image.get_height() - high) / 2
+	var band := image.get_region(Rect2i(0, top, image.get_width(), high))
+	var fade := high * MIDDLE_FADE
+	for y in high:
+		var keep := clampf(minf(y + 0.5, high - y - 0.5) / fade, 0.0, 1.0)
+		if keep >= 1.0:
+			continue
+		for x in band.get_width():
+			var color := band.get_pixel(x, y)
+			color.a *= keep
+			band.set_pixel(x, y, color)
+	var texture := ImageTexture.create_from_image(band)
+	_middles[road.resource_path] = texture
+	return texture
+
+
 func _draw_out(value: float) -> void:
 	draw_progress = value
 	for entry in _open_roads:
 		var points := curve(entry.from, entry.to, value)
-		entry.line.points = points
-		entry.glow.points = points
-		entry.line.visible = value > 0.0
-		entry.glow.visible = value > 0.0
+		for part: Line2D in [entry.line, entry.middle, entry.glow]:
+			part.points = points
+			part.visible = value > 0.0
 
 
 # Points along the gentle S from one place to another: it leaves and arrives
