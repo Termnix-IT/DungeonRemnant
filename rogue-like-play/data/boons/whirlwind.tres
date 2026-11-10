@@ -5,6 +5,7 @@
 [sub_resource type="Resource" id="Spin"]
 script = ExtResource("3")
 on = 3
+cooldown = 0.5
 action = 0
 at = 1
 radius = 95.0
