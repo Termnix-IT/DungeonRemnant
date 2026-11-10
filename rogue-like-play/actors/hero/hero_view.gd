@@ -16,6 +16,12 @@ const TURN_HYSTERESIS := 0.12
 const RING_RADIUS := 22.0
 const CHARGE_COLOR := Color("ffd27a")
 const DASH_ALPHA := 0.55
+# The arrowhead at her feet that shows where she aims: how far from her feet
+# and how large.
+const AIM_RADIUS := 30.0
+const AIM_SIZE := 7.0
+const AIM_COLOR := Color(1.0, 0.95, 0.84, 0.85)
+const AIM_RIM := Color(0.1, 0.07, 0.04, 0.8)
 # Her mercy time blinks brighter and only a little see-through: thinned to
 # near nothing, she was lost in the crowd at the very moment she had to see
 # where to run.
@@ -163,3 +169,14 @@ func _draw() -> void:
 	if _charge_pulse > 0.0:
 		draw_arc(Vector2.ZERO, RING_RADIUS + (1.0 - _charge_pulse) * 14.0, 0.0, TAU, 40, Color(CHARGE_COLOR, _charge_pulse), 2.0)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	# Where her next swing goes: a small arrowhead on the floor at her feet,
+	# for a player's hero only. The pointer alone is lost among a crowd and
+	# its effects, and a gamepad has none.
+	if hero.controlled and hero.motor.state != HeroMotor.State.DASH:
+		var toward := hero.aim
+		var across := toward.orthogonal()
+		var tip := toward * (AIM_RADIUS + AIM_SIZE)
+		var back := toward * (AIM_RADIUS - AIM_SIZE * 0.6)
+		var head := PackedVector2Array([tip, back + across * AIM_SIZE * 0.8, toward * AIM_RADIUS, back - across * AIM_SIZE * 0.8])
+		draw_colored_polygon(head, AIM_COLOR)
+		draw_polyline(PackedVector2Array([head[0], head[1], head[2], head[3], head[0]]), AIM_RIM, 1.5, true)

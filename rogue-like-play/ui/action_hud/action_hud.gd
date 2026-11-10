@@ -37,7 +37,7 @@ extends CanvasLayer
 # The controls under the fight: [keys, gamepad buttons, what they do].
 const CONTROLS := [
 	["WASD", "左スティック", "移動"],
-	["左クリック長押し", "X長押し", "溜め攻撃"],
+	["左クリック長押し", "X・RT長押し", "溜め攻撃"],
 	["Esc", "START", "メニュー"],
 ]
 # The action slots' emblems, and their keys on a keyboard and a gamepad.

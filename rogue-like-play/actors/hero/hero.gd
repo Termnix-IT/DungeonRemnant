@@ -38,6 +38,9 @@ var build: BuildState
 # it (special_power, added to its damage).
 var special: SpecialData
 var special_charge := 0.0
+# Where she aims now (the mouse, the right stick, or the way she moves): her
+# next swing goes that way, and her view marks it at her feet.
+var aim := Vector2.RIGHT
 # The last blow that cost her health (the result names who felled her).
 var last_blow: DamageInfo
 var special_gain := 1.0
@@ -129,6 +132,8 @@ func step(input: HeroInput, delta: float) -> void:
 		motor.speed_scale = 1.0 + build.stat(&"move_speed")
 		motor.cooldown_scale = maxf(0.3, 1.0 + build.stat(&"skill_cooldown"))
 	motor.special_ready = special_ready()
+	if input.aim.length() > 0.1:
+		aim = input.aim.normalized()
 	motor.step(input, delta)
 	# She slips through foes while dashing, and is stopped by them otherwise.
 	collision_mask = WALLS if motor.state == HeroMotor.State.DASH else WALLS | FOES

@@ -37,6 +37,8 @@ func stick(axis: JoyAxis, value: float) -> InputEventJoypadMotion:
 func run_tests() -> void:
 	for binding: Array in [["strike", JOY_BUTTON_X], ["dash", JOY_BUTTON_A], ["dash", JOY_BUTTON_RIGHT_SHOULDER], ["skill_1", JOY_BUTTON_Y], ["pause", JOY_BUTTON_START], ["move_up", JOY_BUTTON_DPAD_UP]]:
 		check(InputMap.action_has_event(binding[0], pad(binding[1])), "%s is bound on the gamepad" % binding[0])
+	# The right trigger swings too, so the thumb can stay on the aiming stick.
+	check(InputMap.action_has_event(&"strike", stick(JOY_AXIS_TRIGGER_RIGHT, 1.0)), "strike is bound to the right trigger as well")
 	for binding: Array in [["move_left", JOY_AXIS_LEFT_X, -1.0], ["move_down", JOY_AXIS_LEFT_Y, 1.0], ["aim_right", JOY_AXIS_RIGHT_X, 1.0], ["aim_up", JOY_AXIS_RIGHT_Y, -1.0]]:
 		check(InputMap.action_has_event(binding[0], stick(binding[1], binding[2])), "%s is bound to its stick" % binding[0])
 
