@@ -16,6 +16,11 @@ const TURN_HYSTERESIS := 0.12
 const RING_RADIUS := 22.0
 const CHARGE_COLOR := Color("ffd27a")
 const DASH_ALPHA := 0.55
+# Her mercy time blinks brighter and only a little see-through: thinned to
+# near nothing, she was lost in the crowd at the very moment she had to see
+# where to run.
+const MERCY_ALPHA := 0.82
+const MERCY_GLOW := 1.7
 const HURT_TINT := Color(2.2, 0.75, 0.7)
 # The dash's afterimages: one left every GHOST_GAP seconds of the dash, in
 # her pose of that moment, cool and see-through, fading over GHOST_TIME.
@@ -66,10 +71,12 @@ func _process(delta: float) -> void:
 			_ghost_left = GHOST_GAP
 			_leave_ghost()
 	var alpha := DASH_ALPHA if dashing else 1.0
+	var glow := 1.0
 	# Her mercy time blinks.
 	if hero.health.protected() and fmod(Time.get_ticks_msec() / 70.0, 2.0) < 1.0:
-		alpha *= 0.45
-	rig_view.modulate.a = alpha
+		alpha *= MERCY_ALPHA
+		glow = MERCY_GLOW
+	rig_view.modulate = Color(glow, glow, glow, alpha)
 	_charge_pulse = maxf(0.0, _charge_pulse - delta * 3.0)
 	queue_redraw()
 
