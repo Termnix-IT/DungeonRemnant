@@ -221,21 +221,30 @@ func _stand(state: Mark) -> void:
 
 
 func _foe(foe: FoeData, share: float, at: Vector2, boss: bool) -> void:
-	var holder := Node2D.new()
+	var holder := foe_figure(foe, BOSS_TALLEST if boss else FIGURE_TALLEST, share)
 	holder.position = at
-	# The fight draws them facing right; here they face her, on the left.
-	holder.scale = Vector2(-1.0, 1.0)
 	figure.add_child(holder)
+
+
+# A foe standing braced and facing her (on the left; the fight draws them
+# facing right), `grow` times its size in the fight but no taller than
+# `tallest`, then `share` of that: its rig, else its picture.
+static func foe_figure(foe: FoeData, tallest: float, share: float = 1.0, grow: float = FIGURE_SCALE) -> Node2D:
+	var holder := Node2D.new()
+	holder.scale = Vector2(-1.0, 1.0)
 	var path := EnemySprites.rig_path(foe.visual_id)
-	var tallest := BOSS_TALLEST if boss else FIGURE_TALLEST
 	if ResourceLoader.exists(path):
 		var rig: CharacterRig = (load(path) as PackedScene).instantiate()
 		var fight := float(rig.get_meta(&"world_height", 64.0)) * foe.size_scale
-		rig.world_height = minf(fight * FIGURE_SCALE, tallest) * share
+		rig.world_height = minf(fight * grow, tallest) * share
 		rig.modulate = foe.tint
 		holder.add_child(rig)
-		rig.braced = true
-		return
+		# Its stance is played once the rig is ready to play it.
+		if rig.is_node_ready():
+			rig.braced = true
+		else:
+			rig.ready.connect(func(): rig.braced = true, CONNECT_ONE_SHOT)
+		return holder
 	var picture := HubCodex.tile_picture(foe.visual_id, true, foe.tint)
 	if picture != null:
 		var sprite := Sprite2D.new()
@@ -244,6 +253,7 @@ func _foe(foe: FoeData, share: float, at: Vector2, boss: bool) -> void:
 		sprite.offset = Vector2(-picture.get_width() * 0.5, -picture.get_height())
 		sprite.scale = Vector2.ONE * tallest * 0.7 * share / picture.get_height()
 		holder.add_child(sprite)
+	return holder
 
 
 # Where the figures stand and the roads meet: the middle of the stage's top.

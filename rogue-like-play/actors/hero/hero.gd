@@ -38,6 +38,8 @@ var build: BuildState
 # it (special_power, added to its damage).
 var special: SpecialData
 var special_charge := 0.0
+# The last blow that cost her health (the result names who felled her).
+var last_blow: DamageInfo
 var special_gain := 1.0
 var special_power := 0.0
 var _impact_serial := -1
@@ -190,6 +192,7 @@ func receive(info: DamageInfo) -> int:
 	var lost := health.take(info)
 	if lost <= 0:
 		return 0
+	last_blow = info
 	motor.push(info.direction * info.knockback)
 	charge_special(lost * tuning.special_per_hurt)
 	view.hurt()

@@ -247,7 +247,7 @@ func _shoot() -> void:
 		return
 	_attack_spent = true
 	# From the height her own waves fly at, so it meets her where blows are measured (at the feet).
-	area.launch(attack.projectile, global_position + Hero.AIM_ORIGIN * 0.5, attack_facing, data.power, true)
+	area.launch(attack.projectile, global_position + Hero.AIM_ORIGIN * 0.5, attack_facing, data.power, true).shooter = data
 
 
 # A burster's end: its blow has landed (or missed); it goes up and is gone.

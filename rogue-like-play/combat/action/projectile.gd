@@ -15,6 +15,8 @@ var direction := Vector2.RIGHT
 var power := 10.0
 var travelled := 0.0
 var hostile := false
+# The foe that shot it, when it is a foe's (so a fall to it names who).
+var shooter: FoeData
 var _spent := {}
 # Where it was as the last physics frame began; it is drawn between that and
 # where it is (TickSmoothing).

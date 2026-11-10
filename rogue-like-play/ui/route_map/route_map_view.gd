@@ -730,14 +730,21 @@ func _glow_texture() -> GradientTexture2D:
 
 # The chapter's road, or null when it has none.
 func road_texture() -> Texture2D:
-	var path: String = ROADS.get(route.chapter.id, "")
+	return road_for(route.chapter.id)
+
+
+static func road_for(chapter_id: StringName) -> Texture2D:
+	var path: String = ROADS.get(chapter_id, "")
 	return load(path) if not path.is_empty() and ResourceLoader.exists(path) else null
 
 
 # The middle band of the chapter's road: its rim cut away and the cut edges
 # fading out, so a middle laid over another road's rim shows no seam.
 func middle_texture() -> Texture2D:
-	var road := road_texture()
+	return middle_of(road_texture())
+
+
+static func middle_of(road: Texture2D) -> Texture2D:
 	if road == null:
 		return null
 	if _middles.has(road.resource_path):

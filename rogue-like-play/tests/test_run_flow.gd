@@ -322,10 +322,17 @@ func run_tests() -> void:
 	# A fall ends the run.
 	director.finished.connect(_on_finished)
 	director.area.hero.health.hp = 1
+	var last_area: AreaData = director.area.data
 	director.area.hero.receive(DamageInfo.make(1000.0, Vector2.RIGHT))
 	await wait(RunDirector.FALL_PAUSE + 0.3)
 	check(ended.size() == 1 and not ended[0].cleared and ended[0].layer == 1, "A fall ends the run where it happened")
 	check(director.end_view.visible and director.area == null and not paused, "The end is shown and the area left")
+	var journey := director.end_view.journey
+	check(ended[0].fallen_to == null and journey.ended_at == 2 and journey.spots.size() == director.run.route.size() + 1 and not (journey.figure is DirectionalRig) and journey.caption.text == "%sに倒された" % RouteNode.leader(last_area).display_name, "A blow that names no foe leaves the area's foe standing where she fell")
+	var dummy := Foe.new()
+	dummy.data = RouteNode.leader(last_area)
+	check(RunDirector.foe_of(DamageInfo.make(1.0, Vector2.RIGHT, 0.0, dummy)) == dummy.data and RunDirector.foe_of(DamageInfo.make(1.0, Vector2.RIGHT)) == null, "A foe's own blow names it")
+	dummy.free()
 	director.free()
 	await process_frame
 

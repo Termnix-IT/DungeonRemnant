@@ -81,13 +81,18 @@ func run_tests() -> void:
 	check(not run.result.is_empty() and run.result.cleared, "Every layer cleared, the boss beaten: the run is won")
 	check(run.end_view.visible and run.end_view._button.text == "拠点へ戻る", "The result offers the way home")
 	var summary := run.end_view
-	check(summary._button.has_focus() and summary.pages[0].visible and not summary.pages[1].visible, "The summary opens on the run's figures, the way on focused")
+	check(summary._button.has_focus(), "The summary opens with the way on focused")
 	check(summary._button.get_index() == summary._button.get_parent().get_child_count() - 1, "The way on is at the foot of the window")
-	summary.tabs.step(1)
-	check(summary.pages[1].visible and not summary.pages[0].visible, "The tab switches to the boons taken")
-	check(summary._tiles.get_child_count() == 4 and summary._boons.get_child_count() == run.result.emblems.size() and run.result.emblems.size() == run.run.build.owned().size(), "The summary shows the run's figures as tiles and every boon as its emblem and name")
-	summary.tabs.step(1)
-	check(summary.pages[0].visible, "And back")
+	check(summary._tiles.get_child_count() == 4 and summary._boons.visible and summary._boons.get_child_count() == run.result.build.size() and run.result.build.size() == run.run.build.owned().size() and run.result.build.size() > 0, "The run's figures and every boon taken are in view at once, without tabs")
+	var first_boon: BoonData = run.result.build[0][0]
+	check(summary._boon_name.text == first_boon.display_name and summary._boon_cells[0].lit and summary._button.focus_neighbor_top == summary._boon_cells[0].get_path(), "The first boon is told under the grid, and up from the way on reaches it")
+	summary._boon_cells[-1].grab_focus()
+	var last_boon: BoonData = run.result.build[-1][0]
+	check(summary._boon_name.text == last_boon.display_name and summary._boon_cells[-1].lit and summary._boon_cells[-1].focus_neighbor_bottom == summary._button.get_path(), "Focusing a boon tells it, and down from the last row goes back to the way on")
+	summary._button.grab_focus()
+	var journey := summary.journey
+	check(journey.spots.size() == run.run.route.size() + 1 and journey.ended_at == run.run.route.size() and journey.figure is DirectionalRig and journey.figure.position.distance_to(journey.spots[-1]) < 20.0, "The way the run went ends with her on the boss's stage")
+	check(journey.caption.text == "%sを倒した" % run.run.route.nodes(run.run.route.size() - 1)[0].area.boss.display_name, "And says whom she beat")
 	check(summary.total_label.visible, "The purse's total stands beside the echo")
 	check(run.result.record and run.result.first_clear, "The first win goes deeper than before and is the first clear")
 	await create_timer(RunEndView.STAMP_DELAY + RunEndView.STAMP_TIME + RunEndView.COUNT_DELAY + summary.count_time() + 0.4).timeout
@@ -114,9 +119,15 @@ func run_tests() -> void:
 	run.area.hero.controlled = false
 	run.run.echo = 25
 	run.area.hero.health.hp = 1
-	run.area.hero.receive(DamageInfo.make(1000.0, Vector2.RIGHT))
+	# Felled by a foe's shot: the result names the foe that shot it.
+	var shooter: FoeData = load("res://data/foes/gale_warden.tres")
+	var shot := Projectile.new()
+	shot.shooter = shooter
+	run.area.hero.receive(DamageInfo.make(1000.0, Vector2.RIGHT, 0.0, shot))
+	shot.free()
 	await wait(RunDirector.FALL_PAUSE + 0.3)
 	check(not run.result.cleared and not run.result.abandoned and main.meta.echo == echo + 25 and main.meta.runs == 2, "A lost run is recorded, its echo kept")
+	check(run.result.fallen_to == shooter and run.end_view.journey.ended_at == 1 and not (run.end_view.journey.figure is DirectionalRig) and run.end_view.journey.caption.text == "%sに倒された" % shooter.display_name, "The way ends on the stage she fell on, the foe that felled her standing there")
 	run.end_view._button.pressed.emit()
 	await process_frame
 	check(main.active_run == null and hub.visible, "A lost run comes home too")
@@ -138,6 +149,7 @@ func run_tests() -> void:
 	await process_frame
 	check(run.result.abandoned and main.meta.echo == echo + 35 and main.meta.runs == 3, "A run left is recorded as left, its echo kept")
 	check(run.area == null and run.end_view.visible and not paused, "Leaving ends the run on its result")
+	check(run.result.fallen_to == null and run.end_view.journey.figure is DirectionalRig and run.end_view.journey.caption.text.ends_with("で引き返した"), "A run left ends with her where she turned back")
 	run.end_view._button.pressed.emit()
 	await process_frame
 	check(main.active_run == null and hub.visible, "A run left comes home too")

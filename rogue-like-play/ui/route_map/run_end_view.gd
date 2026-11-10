@@ -1,24 +1,28 @@
 class_name RunEndView
 extends CanvasLayer
 
-# The end of a real-time run, as roguelites sum a run up: over the chapter's
+# The end of a real-time run, as roguelites report a run: over the chapter's
 # illustration, darkened, a quiet window with the outcome (won, fallen or
 # left) and where it ended, its seal stamped on the window's corner and, for
-# a new deepest layer or a first clear, a gold line saying so; then the echo
-# brought home, made the moment of the screen; under it, two pages switched
-# with tabs (Q / E, LB / RB, or a click): the run's figures as tiles (how
-# far, how long, the foes felled, the level) and the boons taken this run,
-# each its emblem, name and rank; and at the foot the one way on. Enter (or
-# the button) goes on: back to the base when the run came from it, else a
-# new run (a run played on its own).
+# a new deepest layer or a first clear, a gold line saying so; under it the
+# way the run went, drawn as the route map draws it (RunJourney), ending on
+# who felled her, or her; then two columns, all in view at once: on the left
+# the echo brought home, made the moment of the screen, and the run's
+# figures as tiles (how far, how long, the foes felled, the level); on the
+# right the build it took, as the run's menu shows it (a grid of emblems,
+# the one pointed at or focused told under it); and at the foot the one way
+# on. Enter (or the button) goes on: back to the base when the run came from
+# it, else a new run (a run played on its own).
 
 signal again_requested
 
 const BACKDROP := Color(0.02, 0.025, 0.035, 0.84)
-const WIDTH := 860.0
-const EMBLEM_SIZE := 44.0
-const BOON_COLUMNS := 2
-const PAGES: Array[String] = ["記録", "取得した強化"]
+const WIDTH := 1180.0
+# The build's grid: as the run's menu draws it, ten to a row (all the boons fit in four).
+const EMBLEM_SIZE := 48.0
+const BOON_COLUMNS := 10
+const NOTE_LINES := 2
+const NO_BOONS := "この探索で取得した強化はない"
 # The outcome's seals, and how the stamp drops.
 const SEALS := {
 	&"clear": preload("res://art/ui/hud/seal_clear.png"),
@@ -40,8 +44,7 @@ const SPARKS := 16
 const SPARK_TIME := 0.6
 const SPARK_REACH := Vector2(70.0, 150.0)
 
-var tabs: CategoryTabs
-var pages: Array[Control] = []
+var journey: RunJourney
 var seal: TextureRect
 var record_label: Label
 var total_label: Label
@@ -50,9 +53,12 @@ var counted := false
 var _art: TextureRect
 var _title: Label
 var _ending: Label
-var _tiles: HBoxContainer
+var _tiles: GridContainer
 var _boons: GridContainer
-var _no_boons: Label
+var _boon_cells: Array[EquipSocket] = []
+var _boon_name: Label
+var _boon_rank: Label
+var _boon_note: Label
 var _echo: Label
 var _sparks: Control
 var _spark_dirs: Array[Vector2] = []
@@ -95,39 +101,58 @@ func _ready() -> void:
 	_ending = _centered(stack, &"BodyLabel")
 	record_label = _centered(stack, &"GoldLabel")
 	record_label.hide()
+	# The way the run went, ending where it ended.
+	journey = RunJourney.new()
+	journey.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	stack.add_child(journey)
 	HubUI.rule(stack)
-	# The echo brought home, large, with the purse's new total under it.
-	_centered(stack, &"MutedLabel").text = "持ち帰った残響"
-	_echo = _centered(stack, &"ResultEcho")
+	var columns := HBoxContainer.new()
+	columns.theme_type_variation = &"ListRow"
+	stack.add_child(columns)
+	# Left: the echo brought home, large, with the purse's new total under
+	# it, then the run's figures.
+	var left := VBoxContainer.new()
+	left.theme_type_variation = &"DetailStack"
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columns.add_child(left)
+	_centered(left, &"MutedLabel").text = "持ち帰った残響"
+	_echo = _centered(left, &"ResultEcho")
 	_sparks = Control.new()
 	_sparks.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_sparks.draw.connect(_draw_sparks)
 	_echo.add_child(_sparks)
 	_sparks.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	total_label = _centered(stack, &"MutedLabel")
-	_save_note = _centered(stack, &"MutedLabel")
+	total_label = _centered(left, &"MutedLabel")
+	_save_note = _centered(left, &"MutedLabel")
 	_save_note.hide()
-	HubUI.rule(stack)
-	# Two pages under tabs: the run's figures, and the boons it took.
-	tabs = CategoryTabs.new()
-	tabs.alignment = BoxContainer.ALIGNMENT_CENTER
-	stack.add_child(tabs)
-	tabs.setup(PAGES)
-	tabs.changed.connect(_show_page)
-	var record := VBoxContainer.new()
-	record.theme_type_variation = &"DetailStack"
-	stack.add_child(record)
-	_tiles = HBoxContainer.new()
-	record.add_child(_tiles)
-	var boons := VBoxContainer.new()
-	boons.theme_type_variation = &"DetailStack"
-	stack.add_child(boons)
+	_tiles = GridContainer.new()
+	_tiles.theme_type_variation = &"CodexGrid"
+	_tiles.columns = 2
+	left.add_child(_tiles)
+	HubUI.column_rule(columns, 16.0)
+	# Right: the build, its heading and grid on the column's centre, the
+	# boon's account under them, running text, to the left.
+	var right := VBoxContainer.new()
+	right.theme_type_variation = &"DetailStack"
+	columns.add_child(right)
+	_centered(right, &"HeadingLabel").text = "取得した強化"
 	_boons = GridContainer.new()
+	_boons.theme_type_variation = &"CodexGrid"
 	_boons.columns = BOON_COLUMNS
-	boons.add_child(_boons)
-	_no_boons = _centered(boons, &"MutedLabel")
-	_no_boons.text = "この探索で取得した強化はない"
-	pages = [record, boons]
+	_boons.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	right.add_child(_boons)
+	var cell := EMBLEM_SIZE + 2.0 * (EquipSocket.RING_GAP + EquipSocket.RING_WIDTH)
+	right.custom_minimum_size.x = BOON_COLUMNS * cell + (BOON_COLUMNS - 1) * _boons.get_theme_constant(&"h_separation")
+	var heading := HBoxContainer.new()
+	heading.theme_type_variation = &"HudTallyRow"
+	right.add_child(heading)
+	_boon_name = HubUI.label(heading, "", &"ItemNameLabel")
+	_boon_name.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_boon_rank = HubUI.label(heading, "", &"MutedLabel")
+	_boon_rank.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_boon_rank.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_boon_note = HubUI.label(right, "", &"DescriptionLabel")
+	_boon_note.custom_minimum_size.y = NOTE_LINES * _boon_note.get_theme_font(&"font").get_height(_boon_note.get_theme_font_size(&"font_size"))
 	HubUI.space(stack)
 	# The way on, at the foot.
 	_button = HubUI.primary_action(stack, "新しい探索を始める", func(): again_requested.emit())
@@ -141,13 +166,8 @@ func _ready() -> void:
 	# Above the panel, not laid out by it.
 	root.add_child(seal)
 	seal.hide()
-	_show_page(0)
+	_panel.item_rect_changed.connect(_place_seal)
 	hide()
-
-
-func _show_page(index: int) -> void:
-	for page in pages.size():
-		pages[page].visible = page == index
 
 
 func _centered(parent: Node, role: StringName) -> Label:
@@ -158,7 +178,8 @@ func _centered(parent: Node, role: StringName) -> Label:
 
 
 # {cleared, abandoned, record, first_clear, echo_before, layer, layers,
-# chapter, step, time, kills, level, boons, emblems, echo}; `home` names the way on
+# chapter, chapter_id, step, time, kills, level, build, echo, path,
+# fallen_to, moveset}; `home` names the way on
 # (back to the base, or a new run);
 # `art` (the chapter's illustration) lies darkened behind the window.
 func present(result: Dictionary, home: bool = false, art: Texture2D = null) -> void:
@@ -176,15 +197,8 @@ func present(result: Dictionary, home: bool = false, art: Texture2D = null) -> v
 	for pair: Array in [["到達", reached], ["戦った時間", "%d:%02d" % [floori(float(result.time) / 60.0), floori(float(result.time)) % 60]],
 			["撃破", "%d体" % result.kills], ["レベル", "Lv %d" % result.level]]:
 		_tile(pair[0], pair[1])
-	for child in _boons.get_children():
-		child.free()
-	var emblems: Array = result.get("emblems", [])
-	for entry: Array in emblems:
-		_boon_row(entry[0], entry[1])
-	_boons.visible = not emblems.is_empty()
-	_no_boons.visible = emblems.is_empty()
-	tabs.select(0)
-	_show_page(0)
+	journey.show_run(result)
+	_show_build(result.get("build", []))
 	_echo_amount = int(result.echo)
 	_total_before = int(result.get("echo_before", -1))
 	counted = false
@@ -208,8 +222,7 @@ func _total_text(counted_so_far: int) -> String:
 
 # The seal drops onto the panel's top corner, then the record, if any.
 func _stamp() -> void:
-	var corner := _panel.get_global_rect()
-	seal.position = Vector2(corner.end.x - SEAL_SIZE * 0.72, corner.position.y - SEAL_SIZE * 0.28)
+	_place_seal()
 	seal.scale = Vector2.ONE * 2.4
 	seal.rotation = SEAL_TURN * 2.0
 	seal.modulate.a = 0.0
@@ -219,6 +232,13 @@ func _stamp() -> void:
 	drop.tween_property(seal, "rotation", SEAL_TURN, STAMP_TIME).set_delay(STAMP_DELAY)
 	drop.tween_property(seal, "modulate:a", 1.0, STAMP_TIME * 0.5).set_delay(STAMP_DELAY)
 	drop.chain().tween_callback(_landed)
+
+
+# On the panel's top right corner, wherever the panel's contents have laid
+# it (it is placed again whenever the panel moves or grows).
+func _place_seal() -> void:
+	var corner := _panel.get_global_rect()
+	seal.position = Vector2(corner.end.x - SEAL_SIZE * 0.72, corner.position.y - SEAL_SIZE * 0.28)
 
 
 func _landed() -> void:
@@ -305,22 +325,59 @@ func _tile(caption: String, value: String) -> void:
 	_centered(lines, &"ValueLabel").text = value
 
 
-# A boon taken: its emblem and its name with its rank.
-func _boon_row(emblem: String, title: String) -> void:
-	var row := HBoxContainer.new()
-	row.theme_type_variation = &"ListRow"
-	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_boons.add_child(row)
-	var icon := TextureRect.new()
-	icon.texture = EmblemIcons.texture(emblem)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.custom_minimum_size = Vector2(EMBLEM_SIZE, EMBLEM_SIZE)
-	icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	row.add_child(icon)
-	var name := HubUI.label(row, title, &"BodyLabel")
-	name.autowrap_mode = TextServer.AUTOWRAP_OFF
-	name.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+# The build: each boon an emblem in a socket, its rank at the lower right as
+# the HUD's row shows it; pointing at one or focusing it tells it under the
+# grid. Up from the way on goes into the grid, down from its last row back.
+func _show_build(build: Array) -> void:
+	for child in _boons.get_children():
+		child.free()
+	_boon_cells.clear()
+	_button.focus_neighbor_top = NodePath()
+	_boons.visible = not build.is_empty()
+	_boon_name.get_parent().visible = not build.is_empty()
+	_boon_note.text = NO_BOONS
+	_boon_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if build.is_empty() else HORIZONTAL_ALIGNMENT_LEFT
+	for entry: Array in build:
+		var boon: BoonData = entry[0]
+		var rank: int = entry[1]
+		var cell := EquipSocket.new(EMBLEM_SIZE, false, true)
+		cell.emblem = EmblemIcons.texture(boon.emblem)
+		cell.tooltip_text = boon.display_name
+		_boons.add_child(cell)
+		if boon.max_level > 1:
+			var digit := HubUI.label(cell, str(rank), &"HudCaption")
+			digit.autowrap_mode = TextServer.AUTOWRAP_OFF
+			digit.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+			digit.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+			digit.grow_vertical = Control.GROW_DIRECTION_BEGIN
+		cell.focus_entered.connect(_tell_boon.bind(boon, rank, cell))
+		cell.mouse_entered.connect(_tell_boon.bind(boon, rank, cell))
+		_boon_cells.append(cell)
+	var last := _boon_cells.size() - 1
+	for index in _boon_cells.size():
+		var cell := _boon_cells[index]
+		var column := index % BOON_COLUMNS
+		cell.focus_neighbor_left = _boon_cells[index - 1].get_path() if column > 0 else cell.get_path()
+		cell.focus_neighbor_right = _boon_cells[index + 1].get_path() if column < BOON_COLUMNS - 1 and index < last else cell.get_path()
+		cell.focus_neighbor_top = _boon_cells[index - BOON_COLUMNS].get_path() if index >= BOON_COLUMNS else cell.get_path()
+		var below := index + BOON_COLUMNS
+		if below > last and index / BOON_COLUMNS < last / BOON_COLUMNS:
+			below = last
+		cell.focus_neighbor_bottom = _boon_cells[below].get_path() if below <= last else _button.get_path()
+	if not build.is_empty():
+		_button.focus_neighbor_top = _boon_cells[0].get_path()
+		_tell_boon(build[0][0], build[0][1], _boon_cells[0])
+
+
+# The boon's name, rank and what it does, under the grid; its socket keeps a
+# quiet gold ring, and the way up from the button returns to it.
+func _tell_boon(boon: BoonData, rank: int, cell: EquipSocket) -> void:
+	for other in _boon_cells:
+		other.lit = other == cell
+	_boon_name.text = boon.display_name
+	_boon_rank.text = "" if boon.max_level == 1 else "Lv %d / %d" % [rank, boon.max_level]
+	_boon_note.text = boon.effect_description(rank)
+	_button.focus_neighbor_top = cell.get_path()
 
 
 # What the recorded run opened (a difficulty step), told in gold with the
@@ -337,15 +394,6 @@ func show_save_status(text: String, alert: bool) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
-		return
-	var pad := event is InputEventJoypadButton
-	if pad or event is InputEventKey:
-		tabs.use_pad(pad)
-	var back: bool = (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_Q) or (pad and event.pressed and event.button_index == JOY_BUTTON_LEFT_SHOULDER)
-	var next: bool = (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E) or (pad and event.pressed and event.button_index == JOY_BUTTON_RIGHT_SHOULDER)
-	if back or next:
-		tabs.step(-1 if back else 1)
-		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode in [KEY_ENTER, KEY_KP_ENTER]:
 		get_viewport().set_input_as_handled()

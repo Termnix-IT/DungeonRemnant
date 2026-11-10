@@ -59,6 +59,8 @@ var end_view: RunEndView
 var event_view: EventView
 var result: Dictionary = {}
 var waypoint: RouteMap.Waypoint
+# The kind of foe whose blow felled her, when one did (null for a burn).
+var fallen_to: FoeData
 var _rewarding := false
 var _blessing := false
 # The event she stopped at, what she bought there, the curse its stone
@@ -380,7 +382,19 @@ func advance(note: String = "") -> void:
 
 
 func _on_fallen() -> void:
+	fallen_to = RunDirector.foe_of(area.hero.last_blow) if area != null and area.hero != null else null
 	get_tree().create_timer(FALL_PAUSE, true).timeout.connect(_after_fall)
+
+
+# The kind of foe a blow came from: the foe itself, or the one that shot it.
+static func foe_of(blow: DamageInfo) -> FoeData:
+	if blow == null or not is_instance_valid(blow.source):
+		return null
+	if blow.source is Foe:
+		return (blow.source as Foe).data
+	if blow.source is Projectile:
+		return (blow.source as Projectile).shooter
+	return null
 
 
 func _after_fall() -> void:
@@ -414,7 +428,10 @@ func finish(cleared: bool, abandoned: bool = false) -> void:
 	var boons: Array[String] = []
 	# [emblem, name with its rank] for the summary's row of emblems.
 	var emblems: Array = []
+	# [BoonData, rank] for the summary's grid of the build.
+	var build: Array = []
 	for boon in run.build.owned():
+		build.append([boon, run.build.rank(boon.id)])
 		boons.append(boon.display_name)
 		emblems.append([boon.emblem, boon.display_name if boon.max_level == 1 else "%s %d" % [boon.display_name, run.build.rank(boon.id)]])
 	# Measured against the progress before this run is recorded.
@@ -423,7 +440,8 @@ func finish(cleared: bool, abandoned: bool = false) -> void:
 	var first_clear := meta != null and cleared and meta.clears_of(chapter.id) == 0
 	result = {"cleared": cleared, "abandoned": abandoned, "record": record, "first_clear": first_clear, "echo_before": meta.echo if meta != null else -1, "layer": mini(run.layer, run.route.size() - 1), "layers": run.route.size(),
 		"chapter": chapter.display_name, "chapter_id": String(chapter.id), "step": run.step, "time": run.time, "kills": run.kills,
-		"level": run.progression.level, "boons": boons, "emblems": emblems, "echo": run.echo, "met": run.met.keys()}
+		"level": run.progression.level, "boons": boons, "emblems": emblems, "echo": run.echo, "met": run.met.keys(),
+		"path": run.taken.map(func(point: RouteMap.Waypoint) -> AreaData: return point.area), "fallen_to": fallen_to if not cleared and not abandoned else null, "build": build, "moveset": run.moveset}
 	map_view.hide()
 	GameMusic.cue(self, &"")
 	GameMusic.muffle(self, false)
