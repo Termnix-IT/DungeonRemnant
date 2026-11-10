@@ -120,6 +120,31 @@ func run_tests() -> void:
 	for key: StringName in hud.slots:
 		var slot_rect := hud.slots[key].get_global_rect()
 		check(screen.grow(-4).encloses(slot_rect) and slot_rect.position.x > middle and slot_rect.position.y > ring.end.y and not slot_rect.intersects(hud.guide.get_global_rect()), "The %s slot keeps to the bottom right" % key)
+	check(absf(hud.guide.get_global_rect().get_center().x - middle) < 2.0, "With few action slots the controls keep to the bottom centre")
+	# Two skills and the special make five slots, which reach under the
+	# centre: the controls give way to the left, whichever device's caps
+	# they show, and stay off the health.
+	var slam: SkillData = load("res://data/skills/slam.tres")
+	var flash: SkillData = load("res://data/skills/thunder_flash.tres")
+	var burst: SpecialData = load("res://data/specials/echo_burst.tres")
+	area.hero.motor.equip_skills([slam, flash])
+	area.hero.equip_special(burst)
+	for pad: bool in [false, true]:
+		hud.guide.pad = pad
+		hud.guide.refresh()
+		await settle()
+		var guide_rect := hud.guide.get_global_rect()
+		var shown := 0
+		var clear := true
+		for key: StringName in hud.slots:
+			if hud.slots[key].visible:
+				shown += 1
+				clear = clear and not hud.slots[key].get_global_rect().intersects(guide_rect)
+		var device := "a gamepad" if pad else "the keyboard"
+		check(shown == ActionHud.SLOTS.size() and clear, "With all five action slots the controls keep clear of them on %s" % device)
+		check(screen.grow(-4).encloses(guide_rect) and not guide_rect.intersects(hud.hp_gauge.get_global_rect()) and guide_rect.get_center().x < middle, "They give way to the left, short of the health, on %s" % device)
+	hud.guide.pad = false
+	hud.guide.refresh()
 	# The level-up cards and the menu over the fight.
 	area._on_gems(area.run.progression.required_exp())
 	await settle(0.4)

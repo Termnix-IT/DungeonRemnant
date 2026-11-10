@@ -17,7 +17,9 @@ extends CanvasLayer
 #   the dashes, a ring while she charges, and the special's gauge as its
 #   sweep (it pulses gold once full);
 # - the rest of the controls along the bottom as the key guide the other
-#   screens use (keys named on a keyboard, painted caps on a gamepad), and a
+#   screens use (keys named on a keyboard, painted caps on a gamepad), at
+#   the centre, and moved left as far as it takes to keep clear of the
+#   action slots once there are enough of them to reach under it; and a
 #   banner in the middle
 #   for the area's name, its clearing, her fall and the boss's rage;
 # - at 30% health or less, the screen's edges pulse red, deeper and faster
@@ -50,6 +52,8 @@ const SPECIAL_SWELL := 0.08
 # The banner sits this far above the middle, clear of the hero.
 const MESSAGE_RISE := 190.0
 const EDGE := 32.0
+# The key guide keeps this far from the action slots and from the health.
+const GUIDE_GAP := 24.0
 # The health fill's length, inside the frame's channel.
 const BAR_WIDTH := 360.0
 # The health bar's frame (built by tools/build_gauges.py) and, measured by
@@ -94,6 +98,10 @@ var slots: Dictionary[StringName, ActionSlot] = {}
 # The skill slot's key (the seconds left while it comes back).
 var skill_label: Label
 var guide: KeyGuide
+# The health (bottom left) and the action slots (bottom right), which the
+# guide stands between.
+var vitals: VBoxContainer
+var actions: HBoxContainer
 # A trial area's own keys, over the guide.
 var trial_keys: Label
 var banner: PanelContainer
@@ -246,7 +254,7 @@ func _build_top(root: Control) -> void:
 
 
 func _build_bottom(root: Control) -> void:
-	var vitals := VBoxContainer.new()
+	vitals = VBoxContainer.new()
 	vitals.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vitals.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	vitals.grow_vertical = Control.GROW_DIRECTION_BEGIN
@@ -271,7 +279,7 @@ func _build_bottom(root: Control) -> void:
 	vitals.add_child(hp_gauge)
 	hp_trail = hp_gauge.trail
 	hp_bar = hp_gauge.bar
-	var actions := HBoxContainer.new()
+	actions = HBoxContainer.new()
 	actions.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	actions.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
 	actions.grow_horizontal = Control.GROW_DIRECTION_BEGIN
@@ -357,6 +365,7 @@ func _process(delta: float) -> void:
 	_show_tally()
 	_show_actions()
 	_show_special(delta)
+	_place_guide()
 	var run: RunState = area.get(&"run")
 	exp_bar.visible = run != null
 	level_label.visible = run != null
@@ -485,6 +494,19 @@ func _show_special(delta: float) -> void:
 	else:
 		slot.scale = Vector2.ONE
 		slot.key_label.text = "%d%%" % floori(hero.special_share() * 100.0)
+
+
+# The key guide at the bottom centre, as wide as its hints; moved left when
+# the action slots would reach under it (two skills and the special make
+# five), but never onto the health.
+func _place_guide() -> void:
+	var half := guide.get_combined_minimum_size().x * 0.5
+	var middle := guide.get_parent_area_size().x * 0.5
+	var slots_left := actions.position.x + actions.size.x - actions.get_combined_minimum_size().x
+	var shift := minf(0.0, slots_left - GUIDE_GAP - (middle + half))
+	shift = maxf(shift, minf(0.0, vitals.position.x + vitals.size.x + GUIDE_GAP - (middle - half)))
+	guide.offset_left = shift - half
+	guide.offset_right = shift + half
 
 
 # The boons taken, as emblems with their rank; rebuilt only when they change.
