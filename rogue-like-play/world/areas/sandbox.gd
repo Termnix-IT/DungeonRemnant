@@ -76,6 +76,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		var held := MetaProgress.WEAPONS.find(hero.motor.moveset)
 		run.moveset = MetaProgress.WEAPONS[(held + 1) % MetaProgress.WEAPONS.size()]
 		hero.motor.moveset = run.moveset
+		run.build.combo_length = run.moveset.combo.size()
 		hero.motor.combo_index = -1
 		WeaponMount.hold(hero.view.rig, run.moveset)
 		hud.show_message("武器：%s" % run.moveset.display_name)

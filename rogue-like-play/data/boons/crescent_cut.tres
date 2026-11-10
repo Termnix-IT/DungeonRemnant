@@ -5,15 +5,16 @@
 [sub_resource type="Resource" id="Effect0"]
 script = ExtResource("3")
 when = 2
-combo_step = 2
+combo_step = -1
 arc_degrees = 360.0
+reach_scale = 1.1
 reach_per_rank = 0.1
 damage_per_rank = 0.15
 [resource]
 script = ExtResource("1")
 id = &"crescent_cut"
 display_name = "円月"
-description = "3段目の攻撃が周りを一周斬る"
+description = "締めの一撃が周りを一周斬る"
 families = Array[String](["連撃", "範囲"])
 max_level = 3
 weight = 1.0

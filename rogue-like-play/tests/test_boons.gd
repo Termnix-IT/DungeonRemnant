@@ -112,6 +112,20 @@ func run_tests() -> void:
 	build.take(boon(build, &"shockwave"))
 	var wave_data: ProjectileData = boon(build, &"shockwave").effects[0].projectile
 	check(is_equal_approx(build.shape(moveset.combo[2], &"combo", 2).projectile.distance, wave_data.distance + 100.0) and is_equal_approx(wave_data.distance, 340.0), "A higher rank sends the wave farther; the data is untouched")
+	# The closing swing is the last of the weapon held: the hammer's second
+	# takes what the sword's third does, so no boon is dead in her hand.
+	var hammer: Moveset = load("res://data/movesets/hammer.tres")
+	var maul := RunState.new(7).build
+	maul.combo_length = hammer.combo.size()
+	for id: StringName in [&"shockwave", &"crescent_cut", &"combo_mastery"]:
+		maul.take(boon(maul, id))
+	var closing := maul.shape(hammer.combo[1], &"combo", 1)
+	var opening := maul.shape(hammer.combo[0], &"combo", 0)
+	check(closing.projectile != null and closing.reach > hammer.combo[1].reach and closing.damage_scale > hammer.combo[1].damage_scale, "The hammer's second swing closes its combo: the wave, the reach and the weight are its")
+	check(opening.projectile == null and is_equal_approx(opening.reach, hammer.combo[0].reach) and is_equal_approx(opening.damage_scale, hammer.combo[0].damage_scale), "Its first swing is left as it is")
+	var blade := RunState.new(7).build
+	blade.take(boon(blade, &"crescent_cut"))
+	check(is_equal_approx(blade.shape(moveset.combo[2], &"combo", 2).arc_degrees, 360.0) and is_equal_approx(blade.shape(moveset.combo[1], &"combo", 1).arc_degrees, moveset.combo[1].arc_degrees), "The sword's third swing still closes its combo")
 
 	# The motor: the skill, its cooldown, and a charge the build shortens.
 	var motor := HeroMotor.new(load("res://data/hero/mio.tres"), moveset)

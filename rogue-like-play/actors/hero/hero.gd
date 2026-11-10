@@ -77,6 +77,7 @@ func _ready() -> void:
 # Fights with the run's build from now on.
 func use_build(run_build: BuildState) -> void:
 	build = run_build
+	build.combo_length = motor.moveset.combo.size()
 	motor.shaper = build.shape
 	if area != null:
 		build.bind(area, self)

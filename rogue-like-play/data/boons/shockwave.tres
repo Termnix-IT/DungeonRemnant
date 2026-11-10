@@ -15,14 +15,14 @@ size = 96.0
 [sub_resource type="Resource" id="Third"]
 script = ExtResource("3")
 when = 2
-combo_step = 2
+combo_step = -1
 projectile = SubResource("Wave")
 distance_per_rank = 100.0
 [resource]
 script = ExtResource("1")
 id = &"shockwave"
 display_name = "衝撃波"
-description = "3段目の攻撃が斬撃の波を飛ばす"
+description = "締めの一撃が斬撃の波を飛ばす"
 families = Array[String](["連撃"])
 max_level = 3
 weight = 1.0

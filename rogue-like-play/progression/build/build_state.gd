@@ -25,6 +25,9 @@ var _resting: Dictionary = {}
 var _boosts: Array = []
 # Stats the run starts with (the lasting upgrades'), under the boons'.
 var base_stats: Dictionary = {}
+# How many swings the combo of the weapon held has (its last is the closing
+# swing the AttackBoon.LAST boons shape); the sword's until a hero says.
+var combo_length := 3
 var _fire_frame := -1
 var _fired := 0
 
@@ -131,9 +134,10 @@ func stat(name: StringName) -> float:
 func shape(attack: AttackData, kind: StringName, combo_index: int = -1, since_dash: float = INF) -> AttackData:
 	var shaped: AttackData = attack.duplicate()
 	shaped.inflicts = attack.inflicts.duplicate()
+	var closing := kind == &"combo" and combo_index == combo_length - 1
 	for boon in owned():
 		for effect in boon.effects:
-			if effect is AttackBoon and effect.applies(kind, combo_index, since_dash):
+			if effect is AttackBoon and effect.applies(kind, combo_index, since_dash, closing):
 				effect.change(shaped, rank(boon.id))
 	var speed := stat(&"attack_speed")
 	if kind != &"skill" and speed > 0.0:

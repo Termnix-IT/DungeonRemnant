@@ -8,7 +8,10 @@ extends BoonEffect
 enum When { ANY, SWINGS, COMBO_STEP, AFTER_DASH, CHARGED, SKILL }
 
 @export var when: When = When.ANY
-# COMBO_STEP: which swing of the combo (0 is the first).
+# COMBO_STEP: which swing of the combo (0 is the first), or LAST for its
+# closing swing, whichever that is for the weapon held (the sword's third,
+# the hammer's second).
+const LAST := -1
 @export var combo_step := 0
 # AFTER_DASH: how long after a dash ends, in seconds.
 @export var window := 0.6
@@ -29,13 +32,14 @@ enum When { ANY, SWINGS, COMBO_STEP, AFTER_DASH, CHARGED, SKILL }
 
 
 # Whether it changes a swing of this kind (BuildState's: combo, charged,
-# skill), at this combo step, this long after a dash.
-func applies(kind: StringName, combo_index: int, since_dash: float) -> bool:
+# skill), at this combo step (`combo_last`: it closes the combo), this long
+# after a dash.
+func applies(kind: StringName, combo_index: int, since_dash: float, combo_last: bool = false) -> bool:
 	match when:
 		When.SWINGS:
 			return kind != &"skill"
 		When.COMBO_STEP:
-			return kind == &"combo" and combo_index == combo_step
+			return kind == &"combo" and (combo_last if combo_step == LAST else combo_index == combo_step)
 		When.AFTER_DASH:
 			return kind != &"skill" and since_dash <= window
 		When.CHARGED:
