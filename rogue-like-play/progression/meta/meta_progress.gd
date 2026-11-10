@@ -120,6 +120,15 @@ func rank(id: StringName) -> int:
 
 
 # Whether the upgrade it grows from holds a rank (the root always may).
+# The progress a new player starts from: the tree's root already held, so
+# the first echo brought home goes to a branch of her choosing rather than
+# to the one node everything waits on.
+static func started() -> MetaProgress:
+	var meta := MetaProgress.new()
+	meta.ranks[String(ROOT)] = 1
+	return meta
+
+
 func unlocked(id: StringName) -> bool:
 	var upgrade := find(id)
 	return upgrade != null and (upgrade.parent.is_empty() or rank(upgrade.parent) > 0)

@@ -62,7 +62,7 @@ func load_progress() -> MetaProgress:
 	blocked = FileAccess.file_exists(path) or FileAccess.file_exists(path + ".bak")
 	message = "保存データを読めません。元ファイルを保護し、保存を停止しています。" if blocked else "新規開始。探索の途中の状態は保存されません。"
 	alert = blocked
-	return MetaProgress.new()
+	return MetaProgress.started()
 
 
 func save_progress(meta: MetaProgress) -> bool:

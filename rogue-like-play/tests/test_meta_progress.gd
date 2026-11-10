@@ -260,6 +260,8 @@ func run_tests() -> void:
 	# The store: a new player, a save, and its backup.
 	var store := store_at("fresh")
 	var fresh := store.load_progress()
+	# A new player starts with the tree's root held, so the first echo goes to a branch.
+	check(fresh.rank(MetaProgress.ROOT) == 1 and fresh.unlocked(&"sturdy_body") and fresh.unlocked(&"learn_thunder_flash") and MetaProgress.new().rank(MetaProgress.ROOT) == 0, "A new player holds the root from the start")
 	check(fresh.echo == 0 and not store.blocked and not store.alert, "No save starts fresh")
 	fresh.echo = 120
 	check(store.save_progress(fresh) and FileAccess.file_exists(store.path), "Progress is saved")
