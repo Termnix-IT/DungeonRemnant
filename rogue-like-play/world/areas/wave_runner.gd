@@ -29,6 +29,8 @@ var wave := -1
 # ones drawn from its own.
 var crowd := 1.0
 var _queue: Array[FoeData] = []
+# How many foes the wave under way brought (its own, and a step's extras).
+var _wave_size := 0
 # [at, foe data, seconds left, seconds in all]
 var _marks: Array = []
 var _credit := 0.0
@@ -60,6 +62,18 @@ func remaining() -> int:
 	return _queue.size() + _marks.size() + area.foes.size()
 
 
+# How far the waves have come, 0 to 1: the waves down, and how much of the
+# one under way has fallen (foes a nest hatches into it are not counted
+# against it).
+func progress() -> float:
+	if waves.is_empty() or done():
+		return 1.0
+	if wave < 0:
+		return 0.0
+	var fallen := clampf(1.0 - float(remaining()) / maxf(1.0, _wave_size), 0.0, 1.0)
+	return clampf((wave + fallen) / waves.size(), 0.0, 1.0)
+
+
 func advance(delta: float) -> void:
 	# Marks run on after the last wave: a boss hall's boss and its summons.
 	_step_marks(delta)
@@ -85,6 +99,7 @@ func advance(delta: float) -> void:
 		var base := _queue.size()
 		for extra in roundi(base * (crowd - 1.0)):
 			_queue.append(_queue[rng.randi_range(0, base - 1)])
+		_wave_size = _queue.size()
 		_credit = 1.0
 
 

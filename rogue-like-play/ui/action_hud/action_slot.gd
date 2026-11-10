@@ -3,8 +3,10 @@ extends Control
 
 # One of the hero's actions in the HUD's bottom right: its emblem in a round
 # slot, darkened by a sweep while it comes back and ringed gold when ready,
-# its key (or gamepad button) under it, and for the dash, a pip for each
-# charge. Never takes input.
+# its key (or gamepad button) under it, always, so the slot never stops
+# saying which key it is; what it waits for (the seconds a skill has left,
+# how full the special move's gauge is) is written over the emblem; and for
+# the dash, a pip for each charge. Never takes input.
 
 const SIZE := 72.0
 const BACK := Color(0.02, 0.025, 0.035, 0.88)
@@ -25,6 +27,8 @@ var fill_color := READY
 var charges := 0
 var charges_max := 0
 var key_label: Label
+# Over the emblem: what the slot waits for; empty when it is ready.
+var note_label: Label
 
 
 func _init() -> void:
@@ -37,6 +41,14 @@ func _init() -> void:
 	key_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	key_label.offset_top = -24.0
 	add_child(key_label)
+	note_label = Label.new()
+	note_label.theme_type_variation = &"HudTallyValue"
+	note_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	note_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	note_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	note_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	note_label.offset_bottom = SIZE
+	add_child(note_label)
 
 
 func show_state(ready_share: float, ring: float = 0.0, charge_count: int = 0, charge_max: int = 0) -> void:

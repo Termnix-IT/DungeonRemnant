@@ -77,8 +77,16 @@ func run_tests() -> void:
 	var per_wave := [0, 0, 0]
 	var placed_well := true
 	var said_second := false
+	# The goal's bar: it never falls back, and it moves within a wave.
+	var bar_last := 0.0
+	var bar_steady := true
+	var bar_within := false
 	for step in 3000:
 		arena.waves.advance(0.1)
+		var bar := arena.waves.progress()
+		bar_steady = bar_steady and bar >= bar_last - 0.0001
+		bar_within = bar_within or (bar > 0.02 and bar < 1.0 / 3.0 - 0.02)
+		bar_last = bar
 		for foe in arena.foes.duplicate():
 			if foe.global_position.distance_to(arena.hero.global_position) < WaveRunner.MIN_DISTANCE or not arena.ground.is_open(foe.global_position, 10.0):
 				placed_well = false
@@ -93,6 +101,7 @@ func run_tests() -> void:
 	check(per_wave == [arena_data.waves[0].total(), arena_data.waves[1].total(), arena_data.waves[2].total()], "Each wave sends exactly its foes")
 	check(placed_well, "Wave foes appear on open ground, away from her")
 	check(said_second, "The goal follows the waves")
+	check(bar_steady and bar_within and is_equal_approx(arena.waves.progress(), 1.0), "The goal's bar fills as the foes of each wave fall, not only when a wave ends")
 	arena.hit_stop.release()
 	await process_frame
 	arena.free()

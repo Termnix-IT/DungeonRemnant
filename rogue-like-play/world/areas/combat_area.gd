@@ -51,6 +51,8 @@ const DASH_DUST := 0.42
 # and falls add no more, so the hero is never buried in smoke.
 const EFFECT_CAPS := {&"hit": 18, &"death": 10}
 const DEATH_SCALE := 0.9
+const HEAL_NUMBER := Color("9fe8b4")
+const HEAL_OUTLINE := Color("06220f")
 const BURN_NUMBER := Color("ffa45c")
 const BURN_OUTLINE := Color("2a1004")
 const LIGHTNING := Color(0.7, 0.88, 1.0)
@@ -462,8 +464,11 @@ func _on_foe_fell(foe: Foe) -> void:
 
 # A painted effect at a point, unless its kind is at its cap.
 # Health given back to her by the build: a soft light at her middle.
-func report_heal(by: Hero) -> void:
+func report_heal(by: Hero, gained: int = 0) -> void:
+	if gained <= 0:
+		return
 	_effect(&"heal", by.global_position + BODY_MIDDLE * 0.5, Vector2.RIGHT, 0.7)
+	popups.show_number("+%d" % gained, number_spot(by), HEAL_NUMBER, HEAL_OUTLINE)
 
 
 func _effect(kind: StringName, at: Vector2, direction: Vector2, size: float) -> void:

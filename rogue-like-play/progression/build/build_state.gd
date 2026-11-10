@@ -211,5 +211,4 @@ func _fire(trigger: TriggerBoon, level: int, foe: Foe) -> void:
 		TriggerBoon.Action.CHAIN:
 			area.chain(center, foe, trigger.jump_count(level), trigger.radius, power, trigger.inflicts)
 		TriggerBoon.Action.HEAL:
-			if hero.health.heal(trigger.heal_amount(level)) > 0:
-				area.report_heal(hero)
+			area.report_heal(hero, hero.health.heal(trigger.heal_amount(level)))

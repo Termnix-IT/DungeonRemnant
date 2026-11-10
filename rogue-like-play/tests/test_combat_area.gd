@@ -208,6 +208,12 @@ func numbers_apart() -> void:
 	for extra in DamagePopups.LANES.size() + 2:
 		field.popups.show_number("5", spot, DamagePopups.DEALT, DamagePopups.DEALT_OUTLINE)
 	check(field.popups.get_child_count() == together.size() + 1 + DamagePopups.LANES.size() + 2, "With every lane taken the numbers still show")
+	# Health given back shows as a number of its own, in green.
+	var shown := field.popups.get_child_count()
+	field.report_heal(field.hero, 5)
+	var healed := field.popups.get_child(field.popups.get_child_count() - 1) as Label
+	field.report_heal(field.hero, 0)
+	check(field.popups.get_child_count() == shown + 1 and healed.text == "+5" and healed.get_theme_color(&"font_color") == CombatArea.HEAL_NUMBER, "A heal shows how much it gave; none shows nothing")
 	var brute_data: FoeData = load("res://data/foes/raging_charger.tres")
 	var brute := field.spawn_foe(brute_data, field.hero.global_position + Vector2(300, 0))
 	var bar_top := brute.global_position.y - brute.view.height - 12.0
@@ -291,7 +297,7 @@ func special_move() -> void:
 	var lost := hero.receive(DamageInfo.make(10.0, Vector2.RIGHT))
 	check(lost > 0 and is_equal_approx(hero.special_charge - before, lost * hero.tuning.special_per_hurt * 1.5), "So does a wound")
 	await process_frame
-	check(hud.slots[&"special"].visible and hud.slots[&"special"].key_label.text == "%d%%" % floori(hero.special_share() * 100.0), "The HUD shows how full the gauge is")
+	check(hud.slots[&"special"].visible and hud.slots[&"special"].note_label.text == "%d%%" % floori(hero.special_share() * 100.0) and hud.slots[&"special"].key_label.text == "R", "The HUD shows how full the gauge is over the slot, its key still under it")
 	await drive(hero, key, FRAME * 2)
 	check(hero.motor.combo_index != HeroMotor.SPECIAL, "Not full, R does nothing")
 	await drive(hero, HeroInput.new(), hero.tuning.hurt_mercy + 0.1)
@@ -299,7 +305,7 @@ func special_move() -> void:
 	# The HUD reads it in the frame after.
 	await process_frame
 	await process_frame
-	check(hud.slots[&"special"].key_label.text == "R", "Full, the slot shows its key")
+	check(hud.slots[&"special"].key_label.text == "R" and hud.slots[&"special"].note_label.text.is_empty(), "Full, the slot shows its key alone")
 	var near: Array[Foe] = []
 	for offset: Vector2 in [Vector2(90, 0), Vector2(-120, 40), Vector2(0, -150)]:
 		near.append(field.spawn_foe(sentinel, hero.global_position + offset))

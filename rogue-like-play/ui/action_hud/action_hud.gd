@@ -8,14 +8,15 @@ extends CanvasLayer
 #   has come); the boss's gauge takes its place once the boss is in;
 # - at the top left, the boons taken as their emblems with their ranks;
 # - at the top right, the echo earned in the run (gold, the larger) over the
-#   foes felled (left out while the area's goal itself counts the foes, so
+#   foes felled in the whole run (left out while the area's goal itself counts the foes, so
 #   one count is not shown twice);
 # - at the bottom left, her health in a painted frame with a heart crest,
 #   the boss gauge's counterpart (a trail shows what a blow took);
 # - at the bottom right, her actions as round slots (attack, dash, skills,
 #   special move) with their keys, a sweep while they come back, pips for
-#   the dashes, a ring while she charges, and the special's gauge as its
-#   sweep (it pulses gold once full);
+#   the dashes, a ring while she charges, the seconds a skill has left over
+#   its emblem, and the special's gauge as its sweep and a percentage over
+#   its emblem (it pulses gold once full);
 # - the rest of the controls along the bottom as the key guide the other
 #   screens use (keys named on a keyboard, painted caps on a gamepad), at
 #   the centre, and moved left as far as it takes to keep clear of the
@@ -247,7 +248,7 @@ func _build_top(root: Control) -> void:
 	root.add_child(tally)
 	echo_row = _tally_row(tally, "残響")
 	echo_label = _label(echo_row, &"HudGoldValue")
-	kills_row = _tally_row(tally, "撃破")
+	kills_row = _tally_row(tally, "総撃破")
 	kills_label = _label(kills_row, &"HudTallyValue")
 	trial_label = _label(tally, &"HudSmall")
 	trial_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -411,7 +412,7 @@ func _goal_progress(data: AreaData) -> float:
 		return -1.0
 	var waves: WaveRunner = area.get(&"waves")
 	if waves != null:
-		return 1.0 if waves.done() else clampf(float(maxi(waves.wave, 0)) / maxf(1.0, data.waves.size()), 0.0, 1.0)
+		return waves.progress()
 	if data.kill_target > 0:
 		return clampf(float(area.kills) / data.kill_target, 0.0, 1.0)
 	if data.survive_time > 0.0:
@@ -465,8 +466,7 @@ func _show_actions() -> void:
 		var cooldown := motor.skill_cooldowns[index]
 		var left := motor.skill_cooldowns_left[index]
 		skill.show_state(1.0 if cooldown <= 0.0 else 1.0 - left / cooldown)
-		if left > 0.0:
-			skill.key_label.text = "%d秒" % ceili(left)
+		skill.note_label.text = "%d" % ceili(left) if left > 0.0 else ""
 
 
 # The special move: its emblem, its gauge as the sweep, a pulse and a chime
@@ -493,7 +493,7 @@ func _show_special(delta: float) -> void:
 		slot.scale = Vector2.ONE * (1.0 + SPECIAL_SWELL * (0.5 + 0.5 * sin(_special_time * TAU * SPECIAL_PULSE)))
 	else:
 		slot.scale = Vector2.ONE
-		slot.key_label.text = "%d%%" % floori(hero.special_share() * 100.0)
+	slot.note_label.text = "" if full else "%d%%" % floori(hero.special_share() * 100.0)
 
 
 # The key guide at the bottom centre, as wide as its hints; moved left when

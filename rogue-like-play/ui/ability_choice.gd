@@ -105,7 +105,7 @@ func _open(candidates: Array[BoonData], levels: Array[int], level: int, pending:
 	var keys: Array[String] = []
 	for index in offers.size():
 		keys.append(str(index + 1))
-	$Panel/Margin/Stack/Hint.text = "あと%d回選べます" % pending
+	$Panel/Margin/Stack/Hint.text = "このあと、もう%d回選べます" % (pending - 1)
 	$Panel/Margin/Stack/Hint.visible = pending > 1
 	pick_hint.set_meta(&"keys", "・".join(keys))
 	key_guide.refresh()

@@ -323,7 +323,7 @@ func _build_bottom(hud: Control) -> void:
 	vitals.add_child(_hp_gauge)
 	_guide = KeyGuide.new()
 	hud.add_child(_guide)
-	_guide.add_hint("←→↑↓", "十字", "エリアを選ぶ")
+	_guide.add_hint("←→↑↓・1〜3", "十字", "エリアを選ぶ")
 	_guide.add_hint("Enter", "A", "進む")
 	_guide.add_hint("ホイール", "右スティック", "地図を見渡す")
 	_guide.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)

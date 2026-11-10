@@ -139,7 +139,7 @@ func _ready() -> void:
 	add_child(air)
 	GameMusic.cue(self, &"boss" if data != null and data.boss != null else &"battle")
 	if data != null:
-		hud.show_message("%s\n%s" % [data.display_name, objective_text()])
+		hud.show_message(data.display_name)
 		_banner_left = BANNER_TIME
 		GameAudio.play(self, &"floor", -18.0)
 
@@ -377,7 +377,7 @@ func _on_chosen(id: StringName) -> void:
 	run.choose(id)
 	var heal := run.rule(&"level_heal")
 	if heal > 0.0:
-		hero.health.heal(roundi(hero.health.max_hp * heal))
+		report_heal(hero, hero.health.heal(roundi(hero.health.max_hp * heal)))
 	if run.progression.pending_choices > 0:
 		_offer()
 	if not choosing():
