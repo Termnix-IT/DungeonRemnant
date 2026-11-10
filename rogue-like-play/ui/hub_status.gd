@@ -602,9 +602,14 @@ func stat_rows() -> Array:
 	var rules := meta.lasting()
 	var rows := []
 	rows.append(["最大HP", str(tuned.max_hp), _added(tuned.max_hp - _base.max_hp, ""), _breakdown(&"max_hp", str(_base.max_hp), ""), true])
-	rows.append(["受けるダメージ", "-%d" % tuned.defense if tuned.defense > 0 else "0", "", _breakdown(&"defense", "0", ""), true])
+	# What a blow loses to her guard, as an amount: "0" under "damage taken"
+	# read as taking none.
+	rows.append(["ダメージの軽減", str(tuned.defense), "", _breakdown(&"defense", "0", ""), true])
 	rows.append(["攻撃力", _number(tuned.power), "", "基礎 %s" % _number(_base.power), true])
-	rows.append(["移動速度", str(roundi(tuned.max_speed)), _added(roundi(tuned.max_speed - _base.max_speed), ""), _breakdown(&"move_speed", str(roundi(_base.max_speed)), "%", 100.0), true])
+	# Her pace against the pace she starts with: pixels a second are not
+	# words of the world.
+	var pace := roundi(tuned.max_speed / _base.max_speed * 100.0)
+	rows.append(["移動速度", "%d%%" % pace, _added(pace - 100, "%"), _breakdown(&"move_speed", "100%", "%", 100.0), true])
 	rows.append(["ダッシュ", "%d回 / %s秒" % [tuned.dash_charges, _number(tuned.dash_cooldown)], "", "基礎 %d回 / %s秒%s%s" % [_base.dash_charges, _number(_base.dash_cooldown), _parts(&"dash_charges", "回", 1.0), _parts(&"dash_cooldown", "秒", 1.0)], true])
 	rows.append(["被弾後の無敵", "%s秒" % _number(tuned.hurt_mercy), "", _breakdown(&"hurt_mercy", "%s秒" % _number(_base.hurt_mercy), "秒"), false])
 	rows.append(["宝石を吸い寄せる範囲", _cells(GemField.PULL_RADIUS + rules[&"gem_pull"]), "", _breakdown(&"gem_pull", _cells(GemField.PULL_RADIUS), "マス", 1.0 / AreaGround.CELL, CELL_SNAP), false])
