@@ -31,6 +31,9 @@ const HEAVY_KNOCKBACK := 400.0
 # How high on a body its effects and numbers show.
 const BODY_MIDDLE := Vector2(0, -26)
 const NUMBER_HEIGHT := Vector2(0, -58)
+# An elite's numbers start this far above the top of its picture: past its
+# health bar, with room for the digits.
+const ELITE_NUMBER_RISE := 28.0
 # Hit, death and pickup sounds closer together than this (ms) are one sound,
 # so a crowd struck at once does not use up every voice.
 const HIT_SOUND_GAP := 45
@@ -235,7 +238,7 @@ func deal(foe: Foe, info: DamageInfo) -> int:
 		if hero != null:
 			hero.charge_special(hero.tuning.special_per_hit)
 	elif lost > 0:
-		popups.show_number(str(lost), foe.global_position + NUMBER_HEIGHT, BURN_NUMBER, BURN_OUTLINE, DamagePopups.FONT_SIZE - 6)
+		popups.show_number(str(lost), number_spot(foe), BURN_NUMBER, BURN_OUTLINE, DamagePopups.FONT_SIZE - 6)
 	return lost
 
 
@@ -400,9 +403,19 @@ func report_charge_ready(_by: Hero) -> void:
 	GameAudio.play(self, &"charge", -22.0)
 
 
+# Where a struck body's number starts: over its head, and for an elite over
+# its health bar (FoeView draws it above the head), which the number would
+# otherwise climb through.
+func number_spot(target: Node2D) -> Vector2:
+	var foe := target as Foe
+	if foe != null and foe.data != null and foe.data.elite and foe.view != null:
+		return target.global_position + Vector2(0, minf(NUMBER_HEIGHT.y, -foe.view.height - ELITE_NUMBER_RISE))
+	return target.global_position + NUMBER_HEIGHT
+
+
 func report_hit(target: Node2D, lost: int, info: DamageInfo) -> void:
 	if lost > 0:
-		popups.dealt(lost, target.global_position + NUMBER_HEIGHT)
+		popups.dealt(lost, number_spot(target))
 	_effect(&"hit", target.global_position + BODY_MIDDLE, info.direction, 1.3)
 	var now := Time.get_ticks_msec()
 	if now - _last_hit_sound >= HIT_SOUND_GAP:

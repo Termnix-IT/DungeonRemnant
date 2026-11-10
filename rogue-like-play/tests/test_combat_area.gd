@@ -165,6 +165,9 @@ func run_tests() -> void:
 	# Another weapon in her hand.
 	await other_weapon()
 
+	# The numbers off struck bodies.
+	await numbers_apart()
+
 	# The sandbox starts up and its director keeps the foes coming.
 	var sandbox: CombatArea = load("res://world/areas/sandbox.tscn").instantiate()
 	sandbox.seed_value = 5
@@ -182,6 +185,36 @@ func run_tests() -> void:
 
 	print("Combat area tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
+
+
+# Blows landing together on one body show as numbers standing apart, the
+# first on the body's own spot; an elite's start over its health bar.
+func numbers_apart() -> void:
+	var field := make_area()
+	await drive_frames(2)
+	var spot := Vector2(300, 300)
+	var together: Array[Label] = []
+	for amount: int in [9, 8, 12, 104, 7]:
+		together.append(field.popups.show_number(str(amount), spot, DamagePopups.DEALT, DamagePopups.DEALT_OUTLINE))
+	var apart := true
+	for first in together.size():
+		for second in range(first + 1, together.size()):
+			apart = apart and not DamagePopups.track_of(together[first]).intersects(DamagePopups.track_of(together[second]))
+	check(apart, "Numbers shown together on one spot cross none of the others on their way up")
+	check(absf(DamagePopups.track_of(together[0]).get_center().x - spot.x) < 0.5 and absf(together[0].position.y + together[0].size.y * 0.5 - spot.y) < 0.5, "The first number stands on its body's spot")
+	var elsewhere := field.popups.show_number("9", spot + Vector2(400, 0), DamagePopups.DEALT, DamagePopups.DEALT_OUTLINE)
+	check(absf(DamagePopups.track_of(elsewhere).get_center().x - (spot.x + 400.0)) < 0.5, "A number over another body keeps to that body's spot")
+	# More at once than there are lanes still all show.
+	for extra in DamagePopups.LANES.size() + 2:
+		field.popups.show_number("5", spot, DamagePopups.DEALT, DamagePopups.DEALT_OUTLINE)
+	check(field.popups.get_child_count() == together.size() + 1 + DamagePopups.LANES.size() + 2, "With every lane taken the numbers still show")
+	var brute_data: FoeData = load("res://data/foes/raging_charger.tres")
+	var brute := field.spawn_foe(brute_data, field.hero.global_position + Vector2(300, 0))
+	var bar_top := brute.global_position.y - brute.view.height - 12.0
+	check(field.number_spot(brute).y + DamagePopups.FONT_SIZE * 0.5 < bar_top, "An elite's numbers start over its health bar")
+	check(field.number_spot(field.hero) == field.hero.global_position + CombatArea.NUMBER_HEIGHT, "Other bodies' numbers start over their heads")
+	field.free()
+	await process_frame
 
 
 func _on_hurt(lost: int) -> void:
