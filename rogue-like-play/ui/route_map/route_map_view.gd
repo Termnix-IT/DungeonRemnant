@@ -13,9 +13,10 @@ extends CanvasLayer
 #   sight.
 # - The ways already walked and the ways open now are roads, painted in the
 #   chapter's own ground (ROADS); the open ones glow gold and draw out from
-#   her as the map opens. The ways further on are dotted, plain while still
-#   within her reach and faint once her picks have cut them off, so crossing
-#   paths stay readable.
+#   her as the map opens. The ways further on are the same road, narrower
+#   and see-through: plainer while still within her reach, fainter once her
+#   picks have cut them off (drawn under the others, so crossings stay
+#   readable).
 # - She herself stands on the road where she is, small, idling; a pick she
 #   goes ahead with walks her along the road to it.
 # - The run so far sits in the corners as the fight's HUD has it: the
@@ -31,6 +32,9 @@ extends CanvasLayer
 # at once. A pick asks first, then she walks there and it is entered.
 
 signal chosen(waypoint: RouteMap.Waypoint)
+
+# What a way between two areas is to her now.
+enum Way { WALKED, OPEN, AHEAD, SHUT }
 
 const FOCUS_DELAY := 0.25
 # The map's ground: each chapter's battle floor (AreaGround's atlases), laid
@@ -50,11 +54,11 @@ const ROAD_WIDTH := 36.0
 const ROAD_PLAIN := Color(0.84, 0.72, 0.48, 0.9)
 const GLOW_WIDTH := 76.0
 const PATH_GLOW := Color(1.0, 0.82, 0.48, 0.42)
-# The dotted ways on: one dot every DOT_GAP px.
-const PATH_AHEAD := Color(0.9, 0.88, 0.82, 0.6)
-const PATH_FAINT := Color(0.75, 0.74, 0.7, 0.22)
-const DOT_GAP := 15.0
-const DOT_RADIUS := 2.6
+# The ways not walked are the same road, narrower and see-through: plainer
+# while still within her reach, fainter once her picks have cut them off.
+const FAINT_WIDTH := 28.0
+const AHEAD_ALPHA := 0.36
+const SHUT_ALPHA := 0.13
 # Points along each path's curve.
 const CURVE_STEPS := 24
 # Where things stand: her start, the gap between layers (room for a card
@@ -122,7 +126,6 @@ var _run: RunState
 var _frame: Control
 var _world: Control
 var _ground: Control
-var _dots: Control
 var _roads: Node2D
 var _hero_holder: Node2D
 var _title: Label
@@ -189,10 +192,6 @@ func _ready() -> void:
 	_ground.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_ground.draw.connect(_draw_ground)
 	_world.add_child(_ground)
-	_dots = Control.new()
-	_dots.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_dots.draw.connect(_draw_dots)
-	_world.add_child(_dots)
 	_roads = Node2D.new()
 	_world.add_child(_roads)
 	var hud := Control.new()
@@ -444,7 +443,6 @@ func _lay_nodes() -> void:
 	var screen := _frame.size
 	_world.size = Vector2(START_X + COLUMN_GAP * route.size() + END_MARGIN, screen.y)
 	_ground.size = _world.size
-	_dots.size = _world.size
 	scroll = scroll
 	var previous: RouteMap.Waypoint = _run.taken[route_layer - 1] if route_layer > 0 and route_layer - 1 < _run.taken.size() else null
 	current = route.open_after(previous)
@@ -489,7 +487,6 @@ func _lay_nodes() -> void:
 		buttons[row].focus_neighbor_left = back
 	_lay_roads()
 	_ground.queue_redraw()
-	_dots.queue_redraw()
 	# She stands, small, on the road where she is.
 	_hero_holder = Node2D.new()
 	_world.add_child(_hero_holder)
@@ -502,19 +499,36 @@ func _lay_nodes() -> void:
 	hero.position = hero_spot()
 
 
-# The roads walked and the roads open now, as Line2Ds in the chapter's road.
+# Every way between the areas, as Line2Ds in the chapter's road: first the
+# ways cut off, then those still within her reach (so the plainer lies over
+# the fainter where they cross), then the ways walked, then the open ones.
 func _lay_roads() -> void:
 	var walked := mini(route_layer, _run.taken.size())
+	var ahead: Array = []
+	for index in route.size() - 1:
+		var taken_here: RouteMap.Waypoint = _run.taken[index] if index < walked else null
+		var next: RouteMap.Waypoint = _run.taken[index + 1] if index + 1 < walked else null
+		for from: RouteMap.Waypoint in route.nodes(index):
+			for to: RouteMap.Waypoint in from.next:
+				if from == taken_here and (to == next or index + 1 == route_layer):
+					continue
+				if index >= route_layer and reachable.has(from):
+					ahead.append([from, to])
+				else:
+					_road(_center(from), _center(to), Way.SHUT)
+	for pair: Array in ahead:
+		_road(_center(pair[0]), _center(pair[1]), Way.AHEAD)
 	if walked > 0:
-		_road(_start(), _center(_run.taken[0]), false)
+		_road(_start(), _center(_run.taken[0]), Way.WALKED)
 	for index in walked - 1:
-		_road(_center(_run.taken[index]), _center(_run.taken[index + 1]), false)
+		_road(_center(_run.taken[index]), _center(_run.taken[index + 1]), Way.WALKED)
 	for to: RouteMap.Waypoint in current:
-		_road(anchor(), _center(to), true)
+		_road(anchor(), _center(to), Way.OPEN)
 
 
-func _road(from: Vector2, to: Vector2, open: bool) -> void:
+func _road(from: Vector2, to: Vector2, way: Way) -> void:
 	var texture := road_texture()
+	var open := way == Way.OPEN
 	var glow: Line2D = null
 	if open:
 		glow = Line2D.new()
@@ -526,7 +540,9 @@ func _road(from: Vector2, to: Vector2, open: bool) -> void:
 		glow.end_cap_mode = Line2D.LINE_CAP_ROUND
 		_roads.add_child(glow)
 	var line := Line2D.new()
-	line.width = ROAD_WIDTH
+	line.width = FAINT_WIDTH if way == Way.AHEAD or way == Way.SHUT else ROAD_WIDTH
+	line.modulate.a = {Way.AHEAD: AHEAD_ALPHA, Way.SHUT: SHUT_ALPHA}.get(way, 1.0)
+	line.set_meta(&"way", way)
 	line.joint_mode = Line2D.LINE_JOINT_ROUND
 	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	line.end_cap_mode = Line2D.LINE_CAP_ROUND
@@ -599,38 +615,6 @@ func _draw_ground() -> void:
 			var index := AreaGround.FLOOR_START + posmod(y, AreaGround.FLOOR_PERIOD) * AreaGround.FLOOR_PERIOD + posmod(x, AreaGround.FLOOR_PERIOD)
 			var source := Rect2(Vector2(index % AreaGround.COLUMNS, index / AreaGround.COLUMNS) * cell, Vector2.ONE * cell)
 			_ground.draw_texture_rect_region(atlas, Rect2(Vector2(x, y) * cell, Vector2.ONE * cell), source, GROUND_TINT)
-
-
-# The ways further on, dotted: plain while within her reach, faint once cut off.
-func _draw_dots() -> void:
-	if route == null:
-		return
-	for index in range(maxi(route_layer, 0), route.size() - 1):
-		for from: RouteMap.Waypoint in route.nodes(index):
-			for to: RouteMap.Waypoint in from.next:
-				_dotted(_center(from), _center(to), PATH_AHEAD if reachable.has(from) else PATH_FAINT)
-	# The ways the layer before forwent, faint behind her.
-	for index in range(0, mini(route_layer, route.size() - 1)):
-		var taken_here: RouteMap.Waypoint = _run.taken[index] if index < _run.taken.size() else null
-		var next: RouteMap.Waypoint = _run.taken[index + 1] if index + 1 < _run.taken.size() else null
-		for from: RouteMap.Waypoint in route.nodes(index):
-			for to: RouteMap.Waypoint in from.next:
-				if from == taken_here and (to == next or index + 1 == route_layer):
-					continue
-				_dotted(_center(from), _center(to), PATH_FAINT)
-
-
-func _dotted(from: Vector2, to: Vector2, color: Color) -> void:
-	var points := curve(from, to)
-	var left := DOT_GAP * 0.5
-	for step in points.size() - 1:
-		var a := points[step]
-		var b := points[step + 1]
-		var length := a.distance_to(b)
-		while left <= length:
-			_dots.draw_circle(a.lerp(b, left / length), DOT_RADIUS, color, true, -1.0, true)
-			left += DOT_GAP
-		left -= length
 
 
 # Where a layer's row sits on the map.

@@ -164,7 +164,14 @@ func run_tests() -> void:
 	check(is_equal_approx(column_gap, RouteMapView.COLUMN_GAP), "The layers stand in columns along the map")
 	var road := view.road_texture()
 	var lines := view._roads.get_children()
-	check(lines.size() == director.run.route.nodes(0).size() * 2 and lines.filter(func(line: Line2D): return line.width == RouteMapView.ROAD_WIDTH).all(func(line: Line2D): return line.texture == road), "The open ways are roads in the chapter's ground, each over its glow")
+	var ways := func(way: int) -> Array: return lines.filter(func(line: Line2D): return line.get_meta(&"way", -1) == way)
+	var paths := 0
+	for index in director.run.route.size() - 1:
+		for point: RouteMap.Waypoint in director.run.route.nodes(index):
+			paths += point.next.size()
+	check(ways.call(RouteMapView.Way.OPEN).size() == director.run.route.nodes(0).size() and lines.filter(func(line: Line2D): return line.width == RouteMapView.ROAD_WIDTH).all(func(line: Line2D): return line.texture == road), "The open ways are roads in the chapter's ground, each over its glow")
+	var faint: Array = ways.call(RouteMapView.Way.AHEAD)
+	check(faint.size() == paths and faint.all(func(line: Line2D): return line.texture == road and line.width == RouteMapView.FAINT_WIDTH and is_equal_approx(line.modulate.a, RouteMapView.AHEAD_ALPHA)), "The ways further on are the same road, narrower and see-through")
 	check(view.selected == director.run.route.nodes(0)[0] and view.buttons[0].has_focus() and view._card.visible and view._detail_name.text == view.selected.area.display_name and not view._detail_state.visible, "The first open node is focused and its card shows")
 	var first_rect: Rect2 = view.nodes_by_point[view.selected].get_global_rect()
 	check(view._card.get_global_rect().end.x <= first_rect.position.x or view._card.get_global_rect().position.x >= first_rect.end.x, "The card stands beside its node, not over it")
@@ -230,6 +237,11 @@ func run_tests() -> void:
 	var carried := director.run.hp
 	var after_first: RouteMap.Waypoint = director.run.taken[0]
 	check(director.map_view.current == after_first.next and director.map_view.buttons.size() == after_first.next.size() and after_first.next.size() <= after_first.area.branches.y, "Past the first layer, only the paths from the area taken are open")
+	var after_lines := director.map_view._roads.get_children()
+	check(after_lines.any(func(line: Line2D): return line.get_meta(&"way", -1) == RouteMapView.Way.WALKED) and after_lines.any(func(line: Line2D): return line.get_meta(&"way", -1) == RouteMapView.Way.SHUT and is_equal_approx(line.modulate.a, RouteMapView.SHUT_ALPHA)), "The way walked is a road, the ways forgone fainter still")
+	var first_shut := after_lines.find_custom(func(line: Line2D): return line.get_meta(&"way", -1) == RouteMapView.Way.SHUT)
+	var first_ahead := after_lines.find_custom(func(line: Line2D): return line.get_meta(&"way", -1) == RouteMapView.Way.AHEAD)
+	check(first_ahead < 0 or first_shut < first_ahead, "The ways cut off lie under the ways still in reach")
 	var shut := director.run.route.nodes(1).filter(func(point: RouteMap.Waypoint): return not after_first.next.has(point))
 	check(shut.all(func(point: RouteMap.Waypoint): return director.map_view.nodes_by_point[point].mark == RouteNode.Mark.PASSED and director.map_view.nodes_by_point[point].disabled), "The rest of that layer is shut, dimmed")
 	director.map_view._choose(director.map_view.current[0])
