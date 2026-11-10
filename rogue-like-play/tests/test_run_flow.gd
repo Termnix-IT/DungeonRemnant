@@ -540,7 +540,7 @@ func run_tests() -> void:
 	director.choice._select(0)
 	await process_frame
 	check(director.run.build.owned().size() == owned + 1 and stop.visible and director.run.layer == 0, "The boon is hers, and the merchant is still there")
-	check(stop.buttons[0].disabled and stop.buttons[1].disabled and stop.buttons[1].tooltip_text.contains("足りない"), "A ware bought or too dear is offered but off, saying why")
+	check(stop.buttons[0].disabled and stop.buttons[1].disabled and stop.reasons[1] != null and stop.reasons[1].text.contains("足りない") and stop.buttons[1].get_global_rect().encloses(stop.reasons[1].get_global_rect()), "A ware bought or too dear is offered but off, its row saying why")
 	director.run.echo += RunDirector.MERCHANT_HEAL_PRICE
 	director._show_event()
 	stop.buttons[1].pressed.emit()
@@ -642,7 +642,7 @@ func run_tests() -> void:
 	director.run.take_curse(&"sluggish")
 	director.run.echo = 10
 	await stop_at(director, "res://data/areas/event_spring.tres")
-	check(stop.buttons[0].disabled and stop.buttons[0].tooltip_text.contains("足りない"), "A curse costs more echo than she has: offered, but off")
+	check(stop.buttons[0].disabled and stop.reasons[0].text.contains("足りない"), "A curse costs more echo than she has: offered, but off, its row saying why")
 	stop.buttons[1].pressed.emit()
 	await process_frame
 	check(director.run.hp == 20 + roundi(director.max_hp() * RunDirector.SPRING_HEAL_SHARE) and director.run.curses == [&"sluggish"] and not stop.visible, "The drink heals instead, and ends the stop")

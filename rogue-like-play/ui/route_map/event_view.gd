@@ -2,11 +2,13 @@ class_name EventView
 extends CanvasLayer
 
 # A stop without a fight, told as games tell an event: over the dimmed map,
-# a quiet window with its emblem, what kind of stop it is and its name, what
-# happens there, what she has to pay with (echo, health, the curses she
-# carries), and its choices as rows, each saying what it costs, offered but
-# off (with the reason as a tooltip) when it cannot be taken. Leaving is the
-# last row, and Esc (B). It only tells; RunDirector plays the choice.
+# a quiet window with its emblem and its name, what kind of place it is
+# (muted), what happens there, what she has to pay with (echo, health, the
+# curses she carries), and its choices as rows, each saying what it costs,
+# offered but off when it cannot be taken, the reason written at the row's
+# right end, so it reads the same with a mouse, the keys or a gamepad.
+# Leaving is the last row, and Esc (B); the keys stand under the rows, as in
+# the other windows. It only tells; RunDirector plays the choice.
 
 signal chosen(id: StringName)
 
@@ -14,12 +16,18 @@ const LEAVE := &"leave"
 const SHADE := Color(0.01, 0.015, 0.025, 0.66)
 const WIDTH := 640.0
 const EMBLEM_SIZE := 96.0
+# A row's reason stands this far in from its right end.
+const REASON_INSET := 16.0
 
 var panel: PanelContainer
 var title_label: Label
+var flavor_label: Label
 var body_label: Label
 var state_label: Label
 var buttons: Array[Button] = []
+# Each row's reason for being off (null for a row that can be taken).
+var reasons: Array[Label] = []
+var key_guide: KeyGuide
 var ids: Array[StringName] = []
 var _emblem: TextureRect
 var _rows: VBoxContainer
@@ -55,13 +63,20 @@ func _ready() -> void:
 	_emblem.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	stack.add_child(_emblem)
 	title_label = _centered(stack, &"TitleLabel")
+	flavor_label = _centered(stack, &"MutedLabel")
 	body_label = _centered(stack, &"BodyLabel")
 	body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	state_label = _centered(stack, &"MutedLabel")
+	state_label = _centered(stack, &"BodyLabel")
 	HubUI.rule(stack)
 	_rows = VBoxContainer.new()
 	_rows.theme_type_variation = &"DetailStack"
 	stack.add_child(_rows)
+	key_guide = KeyGuide.new()
+	key_guide.alignment = BoxContainer.ALIGNMENT_CENTER
+	stack.add_child(key_guide)
+	key_guide.add_hint("↑ / ↓", "▲ / ▼", "選ぶ")
+	key_guide.add_hint("Enter", "A", "決定")
+	key_guide.add_hint("Esc", "B", "立ち去る", func(): chosen.emit(LEAVE))
 	hide()
 
 
@@ -77,15 +92,15 @@ func _centered(parent: Node, role: StringName) -> Label:
 func present(area: AreaData, state: String, options: Array, terms: String = "") -> void:
 	_emblem.texture = EmblemIcons.texture(area.emblem)
 	title_label.text = area.display_name
-	body_label.text = "%s\n%s" % [area.foe_summary, area.condition]
-	if not terms.is_empty():
-		body_label.text += "\n" + terms
+	flavor_label.text = area.foe_summary
+	body_label.text = area.condition if terms.is_empty() else "%s\n%s" % [area.condition, terms]
 	state_label.text = state
 	# Its rows are made anew; the one pressed may still be sending its signal.
 	for button in buttons:
 		_rows.remove_child(button)
 		button.queue_free()
 	buttons.clear()
+	reasons.clear()
 	ids.clear()
 	for option: Dictionary in options:
 		_row(option.id, option.text, option.get("enabled", true), option.get("reason", ""))
@@ -109,7 +124,17 @@ func _row(id: StringName, text: String, enabled: bool, reason: String) -> void:
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.disabled = not enabled
-	button.tooltip_text = reason if not enabled else ""
+	# Why it is off, at the row's right end (a tooltip would show to the
+	# mouse alone).
+	var why: Label = null
+	if not enabled and not reason.is_empty():
+		why = HubUI.label(button, reason, &"NegativeLabel")
+		why.autowrap_mode = TextServer.AUTOWRAP_OFF
+		why.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		why.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		why.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		why.offset_right = -REASON_INSET
+	reasons.append(why)
 	buttons.append(button)
 	ids.append(id)
 
