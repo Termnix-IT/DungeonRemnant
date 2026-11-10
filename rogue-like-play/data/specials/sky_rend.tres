@@ -8,4 +8,4 @@ display_name = "天裂き"
 description = "雷をまとった剣の一閃で、前方を遠くまで一直線に断ち切り、感電させる"
 emblem = "sky_rend"
 attack = ExtResource("2")
-charge = 120.0
+charge = 240.0

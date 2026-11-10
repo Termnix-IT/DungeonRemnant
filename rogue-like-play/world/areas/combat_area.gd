@@ -71,6 +71,9 @@ var marks: Node2D
 var actors: Node2D
 var effects: Node2D
 var popups: DamagePopups
+# How many special moves this area has staged (the first gets the cut-in in
+# full).
+var specials_shown := 0
 var gems: GemField
 var events: CombatEvents
 var hit_stop: HitStop
@@ -363,11 +366,14 @@ func report_swing(by: Hero, attack: AttackData, facing: Vector2) -> void:
 # A special move let loose: the world nearly stops while its cut-in plays,
 # a burst of light rises from her and its chord rings.
 func report_special(by: Hero, move: SpecialData) -> void:
-	hit_stop.hold(SpecialCutIn.total_time(), SPECIAL_SLOW)
+	# In full the first time in this area, quickly after that.
+	var quick := specials_shown > 0
+	specials_shown += 1
+	hit_stop.hold(SpecialCutIn.total_time(quick), SPECIAL_SLOW)
 	var cut_in := SpecialCutIn.new()
 	cut_in.name = "SpecialCutIn"
 	add_child(cut_in)
-	cut_in.present(move)
+	cut_in.present(move, quick)
 	_effect(&"level_up", by.global_position + BODY_MIDDLE * 0.5, Vector2.RIGHT, 1.2)
 	GameAudio.play(self, &"special", -12.0)
 

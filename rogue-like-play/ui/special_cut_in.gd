@@ -6,7 +6,10 @@ extends CanvasLayer
 # the middle of the screen with light racing through it, her portrait slides
 # in from the left and the move's name from the right under a gold "必殺技",
 # and the band closes again. It never takes input, runs on the real clock,
-# and frees itself when done.
+# and frees itself when done. Shown `quick`, it plays in QUICK of its time:
+# the area stages the first special move of a fight in full and the ones
+# after it quickly, so a move let loose again and again does not keep
+# stopping the fight for as long.
 
 const PORTRAIT := preload("res://art/characters/mio_lobby.png")
 # The part of the lobby illustration shown: her face and shoulders.
@@ -22,6 +25,8 @@ const OPEN_TIME := 0.1
 const SLIDE_TIME := 0.2
 const HOLD_TIME := 0.34
 const CLOSE_TIME := 0.16
+# The share of its time a quick showing takes.
+const QUICK := 0.42
 # The light racing through the band: how many streaks and how fast (px a second).
 const STREAKS := 16
 const STREAK_SPEED := 2600.0
@@ -33,11 +38,12 @@ var name_label: Label
 var _started := 0
 
 
-static func total_time() -> float:
-	return OPEN_TIME + SLIDE_TIME + HOLD_TIME + CLOSE_TIME
+static func total_time(quick: bool = false) -> float:
+	return (OPEN_TIME + SLIDE_TIME + HOLD_TIME + CLOSE_TIME) * (QUICK if quick else 1.0)
 
 
-func present(move: SpecialData) -> void:
+func present(move: SpecialData, quick: bool = false) -> void:
+	var pace := QUICK if quick else 1.0
 	layer = 6
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_started = Time.get_ticks_msec()
@@ -83,13 +89,13 @@ func present(move: SpecialData) -> void:
 	caption.position = Vector2(screen.x, top)
 	name_label.position = Vector2(screen.x + 60.0, top + caption_size.y)
 	var stage := create_tween().set_ignore_time_scale(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	stage.tween_property(band, "scale:y", 1.0, OPEN_TIME)
-	stage.tween_property(portrait, "position:x", screen.x * PORTRAIT_PLACE, SLIDE_TIME)
-	stage.parallel().tween_property(caption, "position:x", screen.x * NAME_PLACE, SLIDE_TIME)
-	stage.parallel().tween_property(name_label, "position:x", screen.x * NAME_PLACE, SLIDE_TIME)
-	stage.tween_interval(HOLD_TIME)
-	stage.tween_property(band, "scale:y", 0.0, CLOSE_TIME).set_ease(Tween.EASE_IN)
-	stage.parallel().tween_property(band, "modulate:a", 0.0, CLOSE_TIME)
+	stage.tween_property(band, "scale:y", 1.0, OPEN_TIME * pace)
+	stage.tween_property(portrait, "position:x", screen.x * PORTRAIT_PLACE, SLIDE_TIME * pace)
+	stage.parallel().tween_property(caption, "position:x", screen.x * NAME_PLACE, SLIDE_TIME * pace)
+	stage.parallel().tween_property(name_label, "position:x", screen.x * NAME_PLACE, SLIDE_TIME * pace)
+	stage.tween_interval(HOLD_TIME * pace)
+	stage.tween_property(band, "scale:y", 0.0, CLOSE_TIME * pace).set_ease(Tween.EASE_IN)
+	stage.parallel().tween_property(band, "modulate:a", 0.0, CLOSE_TIME * pace)
 	stage.tween_callback(queue_free)
 
 

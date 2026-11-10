@@ -322,6 +322,14 @@ func special_move() -> void:
 	check(near.all(func(foe: Foe): return foe.dying), "Its blow fells every foe in reach")
 	check(not far.dying and far.health.hp == far.health.max_hp, "One out of reach is untouched")
 	check(hero.special_charge == 0.0, "Its own blows do not fill the gauge")
+	# Let loose again in the same area, its cut-in is staged quickly.
+	await drive(hero, HeroInput.new(), 0.6)
+	hero.special_charge = move.charge
+	await process_frame
+	await drive(hero, key, FRAME)
+	check(field.specials_shown == 2 and field.has_node("SpecialCutIn"), "A second special move stages its cut-in too")
+	await create_timer(SpecialCutIn.total_time(true) + 0.1, true, false, true).timeout
+	check(not field.has_node("SpecialCutIn") and is_equal_approx(Engine.time_scale, 1.0) and SpecialCutIn.total_time(true) < SpecialCutIn.total_time() * 0.5, "In less than half the time of the first")
 	field.hit_stop.release()
 	await process_frame
 	field.free()

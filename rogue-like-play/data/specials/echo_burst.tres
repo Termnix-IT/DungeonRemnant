@@ -8,4 +8,4 @@ display_name = "残響解放"
 description = "身に宿した残響を一気に解き放ち、周りの敵すべてを大きく吹き飛ばす"
 emblem = "echo_burst"
 attack = ExtResource("2")
-charge = 100.0
+charge = 200.0
