@@ -111,17 +111,14 @@ func run_tests() -> void:
 	Input.parse_input_event(pad(JOY_BUTTON_A, false))
 	Input.parse_input_event(stick(JOY_AXIS_LEFT_X, 0.05))
 	# The menu on Start, and back with B.
-	Input.parse_input_event(pad(JOY_BUTTON_START))
 	root.push_input(pad(JOY_BUTTON_START))
+	root.push_input(pad(JOY_BUTTON_START, false))
 	await process_frame
-	Input.parse_input_event(pad(JOY_BUTTON_START, false))
 	check(run.area.menu.visible and paused, "Start opens the menu and stops the fight")
 	root.push_input(pad(JOY_BUTTON_B))
 	root.push_input(pad(JOY_BUTTON_B, false))
 	await process_frame
-	run.area.menu.back()
-	await process_frame
-	check(not run.area.menu.visible and not paused, "Backing out of the menu resumes the fight")
+	check(not run.area.menu.visible and not paused, "B backs out of the menu and resumes the fight")
 	# With the player away the fight waits: the window left, or the gamepad
 	# she plays with pulled out, opens the menu.
 	run.area.notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)

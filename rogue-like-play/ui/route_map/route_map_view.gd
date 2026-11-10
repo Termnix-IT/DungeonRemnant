@@ -32,6 +32,8 @@ extends CanvasLayer
 # at once. A pick asks first, then she walks there and it is entered.
 
 signal chosen(waypoint: RouteMap.Waypoint)
+# The run's menu was asked for (Esc, Start).
+signal menu_requested
 
 # What a way between two areas is to her now.
 enum Way { WALKED, OPEN, AHEAD, SHUT }
@@ -147,6 +149,8 @@ var selected: RouteMap.Waypoint
 # them without one).
 var meta: MetaProgress
 var _run: RunState
+# The run's menu lies over the map (cover()).
+var covered := false
 var _frame: Control
 var _world: Control
 var _ground: Control
@@ -326,6 +330,7 @@ func _build_bottom(hud: Control) -> void:
 	_guide.add_hint("←→↑↓・1〜3", "十字", "エリアを選ぶ")
 	_guide.add_hint("Enter", "A", "進む")
 	_guide.add_hint("ホイール", "右スティック", "地図を見渡す")
+	_guide.add_hint("Esc", "START", "メニュー")
 	_guide.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	_guide.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_guide.grow_vertical = Control.GROW_DIRECTION_BEGIN
@@ -529,6 +534,16 @@ func _end_pan() -> void:
 	_focus_first()
 
 
+# The run's menu lies over the map (or is lifted off it): nothing is picked
+# or looked over meanwhile, and lifted, the focus comes back to a stage.
+func cover(on: bool) -> void:
+	covered = on
+	if on:
+		_card.hide()
+	else:
+		_focus_first()
+
+
 func _show_boons(run: RunState) -> void:
 	for child in _boons.get_children():
 		child.free()
@@ -540,6 +555,13 @@ func _show_boons(run: RunState) -> void:
 		icon.custom_minimum_size = Vector2(EMBLEM_SIZE, EMBLEM_SIZE)
 		icon.tooltip_text = boon.display_name if boon.max_level == 1 else "%s %d" % [boon.display_name, run.build.rank(boon.id)]
 		_boons.add_child(icon)
+		if boon.max_level > 1:
+			# Its rank at the emblem's lower right, as the fight's HUD shows it.
+			var rank := _label(icon, &"HudCaption")
+			rank.text = str(run.build.rank(boon.id))
+			rank.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+			rank.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+			rank.grow_vertical = Control.GROW_DIRECTION_BEGIN
 
 
 # Every layer's nodes, placed in columns along the map, the roads and dots
@@ -1017,7 +1039,7 @@ func _process(delta: float) -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if not visible or traveling or (prompt != null and prompt.visible):
+	if not visible or traveling or covered or (prompt != null and prompt.visible):
 		return
 	if event is InputEventMouseButton and event.pressed:
 		var notch: float = {MOUSE_BUTTON_WHEEL_UP: -1.0, MOUSE_BUTTON_WHEEL_LEFT: -1.0, MOUSE_BUTTON_WHEEL_DOWN: 1.0, MOUSE_BUTTON_WHEEL_RIGHT: 1.0}.get(event.button_index, 0.0)
@@ -1033,7 +1055,7 @@ func _focus_first() -> void:
 
 # A pick from the player: first the question whether to go there.
 func pick(waypoint: RouteMap.Waypoint) -> void:
-	if not visible or traveling or waypoint == null or not current.has(waypoint) or (prompt != null and prompt.visible):
+	if not visible or traveling or covered or waypoint == null or not current.has(waypoint) or (prompt != null and prompt.visible):
 		return
 	_end_pan()
 	if prompt == null:
@@ -1126,11 +1148,16 @@ func _choose(waypoint: RouteMap.Waypoint) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not visible or traveling or (prompt != null and prompt.visible):
+	if not visible or traveling or covered or (prompt != null and prompt.visible):
 		return
 	if panning and (event is InputEventKey or event is InputEventJoypadButton) and event.is_pressed():
 		_end_pan()
 		get_viewport().set_input_as_handled()
+		return
+	# The run's menu (Esc, Start): the map is where a run is rested or left.
+	if event.is_action_pressed(&"pause"):
+		get_viewport().set_input_as_handled()
+		menu_requested.emit()
 		return
 	if not (event is InputEventKey and event.pressed and not event.echo):
 		return

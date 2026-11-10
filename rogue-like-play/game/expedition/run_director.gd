@@ -57,6 +57,10 @@ var map_view: RouteMapView
 var choice: CanvasLayer
 var end_view: RunEndView
 var event_view: EventView
+# The run's menu over the map (a fight has its own), and the question it
+# asks before the run is left from there.
+var map_menu: DungeonMenu
+var map_prompt: ChoicePrompt
 var result: Dictionary = {}
 var waypoint: RouteMap.Waypoint
 # The kind of foe whose blow felled her, when one did (null for a burn).
@@ -114,6 +118,19 @@ func _ready() -> void:
 	event_view = EventView.new()
 	add_child(event_view)
 	event_view.chosen.connect(_on_event_choice)
+	map_menu = DungeonMenu.new()
+	map_menu.resume_caption = "地図に戻る"
+	map_menu.settings = settings if settings != null else GameSettings.new()
+	map_menu.run = run
+	add_child(map_menu)
+	map_menu.resumed.connect(func(): map_view.cover(false))
+	map_menu.settings_changed.connect(func(): settings_changed.emit())
+	map_menu.abort_requested.connect(_ask_abandon)
+	map_prompt = ChoicePrompt.new()
+	add_child(map_prompt)
+	map_prompt.confirmed.connect(_on_abandoned_at_map)
+	map_prompt.canceled.connect(func(): map_menu.open())
+	map_view.menu_requested.connect(open_map_menu)
 	_blessing_due = meta != null and meta.starts_with_boon()
 	show_map()
 
@@ -133,6 +150,28 @@ func _bless(next: RouteMap.Waypoint) -> bool:
 	_blessed_entry = next
 	choice.present_boons(offer, run.build, run.progression.level, 1, "旅立ちの加護　強化を1つ選ぶ")
 	return true
+
+
+# The run's menu over the map: her build and where the run stands, the
+# controls, the settings, and the way out. Not over a card or an event.
+func open_map_menu() -> void:
+	if area != null or not result.is_empty() or _blessing or _rewarding or choice.visible or event_view.visible or map_menu.visible or map_prompt.visible:
+		return
+	map_view.cover(true)
+	map_menu.open()
+
+
+func _ask_abandon() -> void:
+	map_menu.hide()
+	map_prompt.ask("探索の中断", "探索を中断しますか？", "この探索で得た残響は持ち帰れます。レベルと強化は残りません。", "中断する", "戻る", true)
+
+
+# Left from the map's menu: the run ends where it stands, its echo kept.
+func _on_abandoned_at_map() -> void:
+	if area != null or not result.is_empty():
+		return
+	map_view.cover(false)
+	finish(false, true)
 
 
 func show_map(note: String = "") -> void:

@@ -1,10 +1,12 @@
 class_name DungeonMenu
 extends CanvasLayer
 
-# The fight's menu (Esc, or Start on a gamepad): one window holding, as
-# survivor-likes' pause screens commonly do, the run's build on the left and
-# the menu (back to the fight, the settings, or leaving the run) on the
-# right. The build is a grid of the boons taken, each its emblem in a round
+# The run's menu (Esc, or Start on a gamepad), opened from a fight and from
+# the route map alike: one window holding, as survivor-likes' pause screens
+# commonly do, the run's build on the left and the menu (back, the controls,
+# the settings, or leaving the run) on the right, and under the menu where
+# the run stands: its chapter and layer, its difficulty step, and each curse
+# she carries with what it does. Esc (B, Start) steps back. The build is a grid of the boons taken, each its emblem in a round
 # socket with its rank at the lower right as the HUD shows it, so it fits
 # however many are taken; under the grid, the pointed (or focused) boon's
 # name, rank and what it does. Left and right move between the grid and the
@@ -51,7 +53,15 @@ var _build_cells: Array[EquipSocket] = []
 var _build_rule: Control
 var _column_rule: Control
 var resume_button: JustifiedButton
+var controls_button: JustifiedButton
 var settings_button: JustifiedButton
+# What the first button says: back to the fight, or to the map.
+var resume_caption := "戦いに戻る"
+# Where the run stands, under the buttons: its lines are made anew on opening.
+var state_box: VBoxContainer
+# The help was opened straight from the menu's controls button, so the way
+# back from it leads to the menu and not to the settings.
+var _help_direct := false
 var abort_button: JustifiedButton
 var settings_view: Control
 var settings_page: HubSettings
@@ -104,16 +114,25 @@ func _build_menu() -> void:
 	title.autowrap_mode = TextServer.AUTOWRAP_OFF
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	HubUI.rule(column)
-	resume_button = _menu_button(column, "戦いに戻る", resume, &"PrimaryButton")
+	resume_button = _menu_button(column, resume_caption, resume, &"PrimaryButton")
+	controls_button = _menu_button(column, "操作", open_controls, &"SecondaryButton")
 	settings_button = _menu_button(column, "設定", open_settings, &"SecondaryButton")
 	abort_button = _menu_button(column, "探索を中断する", func(): abort_requested.emit(), &"SecondaryButton")
-	var buttons: Array[Button] = [resume_button, settings_button, abort_button]
+	var buttons: Array[Button] = [resume_button, controls_button, settings_button, abort_button]
 	# The three words spread to the longest one's width, so they read as one
 	# even block down the column's centre.
 	JustifiedButton.align_spans(buttons)
 	for index in buttons.size():
 		buttons[index].focus_neighbor_top = buttons[(index + buttons.size() - 1) % buttons.size()].get_path()
 		buttons[index].focus_neighbor_bottom = buttons[(index + 1) % buttons.size()].get_path()
+		# Nothing lies to their right: the focus never strays to what the
+		# menu covers (the map's stages).
+		buttons[index].focus_neighbor_right = buttons[index].get_path()
+	# Where the run stands, under a rule of its own.
+	HubUI.rule(column)
+	state_box = VBoxContainer.new()
+	state_box.theme_type_variation = &"CompactStack"
+	column.add_child(state_box)
 	# The keys stand at the column's foot, level with the boon's account.
 	HubUI.space(column)
 	var guide := KeyGuide.new()
@@ -171,12 +190,35 @@ func _build_build(parent: Control) -> void:
 	build_note.custom_minimum_size.y = NOTE_LINES * font.get_height(font_size)
 
 
+# Where the run stands: the chapter and the layer, the difficulty step, and
+# every curse carried with what it does (the map names them only).
+func _show_state() -> void:
+	for child in state_box.get_children():
+		child.free()
+	if run == null or run.route == null:
+		return
+	var place := run.route.chapter.display_name
+	place += "　ボス" if run.layer >= run.route.size() - 1 else "　第%d層" % (run.layer + 1)
+	_state_line(place, &"BodyLabel")
+	if run.step > 0:
+		_state_line("段階%d" % run.step, &"MutedLabel")
+	for id in run.curses:
+		_state_line("呪い「%s」" % RunState.CURSES[id][0], &"NegativeLabel")
+		_state_line(RunState.CURSES[id][1], &"MutedLabel")
+
+
+func _state_line(words: String, role: StringName) -> void:
+	var line := HubUI.label(state_box, words, role)
+	line.autowrap_mode = TextServer.AUTOWRAP_OFF
+	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+
 func _show_build() -> void:
 	build_panel.visible = run != null
 	_column_rule.visible = run != null
 	_build_cells.clear()
-	for button: Button in [resume_button, settings_button, abort_button]:
-		button.focus_neighbor_left = NodePath()
+	for button: Button in [resume_button, controls_button, settings_button, abort_button]:
+		button.focus_neighbor_left = button.get_path()
 	if run == null:
 		return
 	for child in build_grid.get_children():
@@ -231,7 +273,7 @@ func _tell(boon: BoonData, rank: int, cell: EquipSocket) -> void:
 	build_name.text = boon.display_name
 	build_rank.text = "" if boon.max_level == 1 else "Lv %d / %d" % [rank, boon.max_level]
 	build_note.text = boon.effect_description(rank)
-	for button: Button in [resume_button, settings_button, abort_button]:
+	for button: Button in [resume_button, controls_button, settings_button, abort_button]:
 		button.focus_neighbor_left = cell.get_path()
 
 
@@ -262,7 +304,9 @@ func _build_settings() -> void:
 func open() -> void:
 	_shade.color = SHADE
 	settings_view.hide()
+	_help_direct = false
 	_show_build()
+	_show_state()
 	menu.show()
 	show()
 	resume_button.grab_focus()
@@ -275,7 +319,16 @@ func resume() -> void:
 	resumed.emit()
 
 
+# The controls: the help's own page of them, straight from the menu.
+func open_controls() -> void:
+	open_settings()
+	_help_direct = true
+	settings_page.open_help(HubSettings.TOPIC_CONTROLS)
+	_settings_hints()
+
+
 func open_settings() -> void:
+	_help_direct = false
 	_shade.color = SETTINGS_SHADE
 	menu.hide()
 	settings_view.show()
@@ -297,13 +350,26 @@ func back() -> void:
 		if settings_page.help_shown:
 			settings_page.close_help()
 			_settings_hints()
-			return
+			if not _help_direct:
+				return
 		settings_view.hide()
 		_shade.color = SHADE
 		menu.show()
-		settings_button.grab_focus()
+		(controls_button if _help_direct else settings_button).grab_focus()
+		_help_direct = false
 		return
 	resume()
+
+
+# Esc (B) and the menu's own key (Esc, Start) step back a level, as the keys
+# under the menu say. A question open over the menu (leaving the game)
+# answers first.
+func _unhandled_input(event: InputEvent) -> void:
+	if not visible:
+		return
+	if event.is_action_pressed(&"ui_cancel") or event.is_action_pressed(&"pause"):
+		get_viewport().set_input_as_handled()
+		back()
 
 
 # The hub's settings keys, behind the way back.

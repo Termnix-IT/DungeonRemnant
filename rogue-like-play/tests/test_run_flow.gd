@@ -710,5 +710,44 @@ func run_tests() -> void:
 	check(director.run.hp == 20 + roundi(director.max_hp() * RunDirector.SPRING_HEAL_SHARE) and director.run.curses == [&"sluggish"] and not stop.visible, "The drink heals instead, and ends the stop")
 	director.free()
 	await process_frame
+
+	# The run's menu over the map: the build, where the run stands with the
+	# curses told, the controls, and the way out with the echo kept.
+	director = RunDirector.new()
+	director.seed_value = 29
+	root.add_child(director)
+	ended.clear()
+	director.finished.connect(func(result: Dictionary): ended.append(result))
+	await wait(RouteMapView.PAN_TIME + RouteMapView.DRAW_TIME + RouteMapView.FOCUS_DELAY + 0.6)
+	director.run.build.take(director.run.build.find(&"blade_speed"))
+	director.run.take_curse(&"frailty")
+	director.run.echo = 40
+	director.map_view._unhandled_input(_key(KEY_ESCAPE))
+	await process_frame
+	var map_menu := director.map_menu
+	check(map_menu.visible and director.map_view.covered and map_menu.resume_button.caption == "地図に戻る" and map_menu.resume_button.has_focus(), "Esc on the map opens the run's menu")
+	var state_lines: Array = map_menu.state_box.get_children().map(func(line: Label) -> String: return line.text)
+	check(state_lines.size() == 3 and (state_lines[0] as String).contains(director.chapter.display_name) and (state_lines[0] as String).contains("第1層") and (state_lines[1] as String).contains("脆さ") and state_lines[2] == RunState.CURSES[&"frailty"][1], "It tells the chapter, the layer and each curse with what it does")
+	check(map_menu.build_grid.get_child_count() == 1 and map_menu.build_name.text == "剣速", "And the build, as the fight's menu does")
+	director.map_view.pick(director.map_view.current[0])
+	check(director.map_view.prompt == null or not director.map_view.prompt.visible, "Nothing is picked on the map under the menu")
+	map_menu.controls_button.pressed.emit()
+	await process_frame
+	check(map_menu.showing_settings() and map_menu.settings_page.help_shown and map_menu.settings_page.selected_topic == HubSettings.TOPIC_CONTROLS, "The controls open straight from the menu")
+	map_menu._unhandled_input(_key(KEY_ESCAPE))
+	await process_frame
+	check(map_menu.visible and not map_menu.showing_settings() and map_menu.controls_button.has_focus(), "Back from them leads to the menu")
+	map_menu._unhandled_input(_key(KEY_ESCAPE))
+	await process_frame
+	check(not map_menu.visible and not director.map_view.covered, "Esc again lifts the menu off the map")
+	director.open_map_menu()
+	map_menu.abort_button.pressed.emit()
+	await process_frame
+	check(director.map_prompt.visible and not map_menu.visible, "Leaving the run from the map is asked first")
+	director.map_prompt.confirmed.emit()
+	await process_frame
+	check(ended.size() == 1 and ended[0].abandoned and not ended[0].cleared and ended[0].echo == 40 and director.end_view.visible, "Left from the map, the run ends with its echo kept")
+	director.free()
+	await process_frame
 	print("Run flow tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
