@@ -12,7 +12,11 @@ const GameAudio := preload("res://audio/game_audio.gd")
 # guide comes up and the first card takes the focus). Until then no click,
 # number key or confirm picks one, so the swings mashed when the level came
 # cannot take a card unseen; a mouse button still held when they arm must
-# be let go first. On a gamepad the D-pad or the left stick moves between
+# be let go first. The fight's own keys and buttons (attack, dash, skills,
+# special move) double as the confirm (Space, A) and the reroll (R, Y), so
+# they pick nothing and reroll nothing until all of them have rested for
+# REST: a dash still being mashed when the cards arm takes no card. The
+# number keys, Enter and the directions are free at once. On a gamepad the D-pad or the left stick moves between
 # the cards (round from the last to the first) and A takes the focused one;
 # with no card focused, a direction focuses one. Three cards, or four with
 # the lasting upgrade; with rerolls left, R (Y) asks for the cards to be
@@ -28,6 +32,10 @@ const DEAL_RISE := 90.0
 # How dim a card waits before the hand is armed.
 const UNARMED_TINT := Color(0.62, 0.62, 0.62, 1.0)
 const PICK_KEYS: Array[Key] = [KEY_1, KEY_2, KEY_3, KEY_4]
+# The fight's actions, and how long (seconds, real time) they must all have
+# been let be before one of them counts as a pick or a reroll.
+const FIGHT_ACTIONS: Array[StringName] = [&"strike", &"dash", &"skill_1", &"skill_2", &"special"]
+const REST := 0.3
 
 var offers: Array[BoonData] = []
 var _levels: Array[int] = []
@@ -43,6 +51,9 @@ var rerolls := 0
 # a button held through the deal to be let go.
 var armed := false
 var _mouse_held := false
+# Above zero: the fight's actions have not rested yet (resting()).
+var _rest_left := 0.0
+var _rest_clock := 0
 @onready var panel: PanelContainer = $Panel
 @onready var shade: ColorRect = $Shade
 @onready var buttons: Array[Button] = [$Panel/Margin/Stack/Choices/First, $Panel/Margin/Stack/Choices/Second, $Panel/Margin/Stack/Choices/Third, $Panel/Margin/Stack/Choices/Fourth]
@@ -126,6 +137,8 @@ static func arm_time(count: int) -> float:
 func _deal() -> void:
 	armed = false
 	_mouse_held = false
+	_rest_left = REST
+	_rest_clock = Time.get_ticks_msec()
 	for button in buttons:
 		button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		button.release_focus()
@@ -164,7 +177,34 @@ func _open_to_mouse() -> void:
 		buttons[index].mouse_filter = Control.MOUSE_FILTER_STOP if index < offers.size() else Control.MOUSE_FILTER_IGNORE
 
 
+# Whether the fight's actions are still being pressed, or were a moment ago.
+func resting() -> bool:
+	return _rest_left > 0.0
+
+
+# The rest runs down in real time while none of the fight's actions is held,
+# from the deal on, so a hand left alone while it is dealt is free the
+# moment it arms.
+func _process(_delta: float) -> void:
+	if not visible or _rest_left <= 0.0:
+		return
+	var now := Time.get_ticks_msec()
+	var passed := (now - _rest_clock) / 1000.0
+	_rest_clock = now
+	if FIGHT_ACTIONS.any(func(action: StringName) -> bool: return Input.is_action_pressed(action)):
+		_rest_left = REST
+	else:
+		_rest_left -= passed
+
+
 func _input(event: InputEvent) -> void:
+	# A press of the fight's while they rest is spent: it starts the rest
+	# over and reaches no card.
+	if visible and _rest_left > 0.0 and event.is_pressed() and not event.is_echo() and FIGHT_ACTIONS.any(func(action: StringName) -> bool: return event.is_action(action)):
+		_rest_left = REST
+		_rest_clock = Time.get_ticks_msec()
+		get_viewport().set_input_as_handled()
+		return
 	if _mouse_held and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
 		_mouse_held = false
 		if visible and armed:

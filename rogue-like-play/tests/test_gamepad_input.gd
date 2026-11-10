@@ -122,10 +122,35 @@ func run_tests() -> void:
 	run.area.menu.back()
 	await process_frame
 	check(not run.area.menu.visible and not paused, "Backing out of the menu resumes the fight")
-	# The level-up cards: a direction focuses one, A takes it.
+	# With the player away the fight waits: the window left, or the gamepad
+	# she plays with pulled out, opens the menu.
+	run.area.notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
+	check(run.area.menu.visible and paused, "Leaving the window opens the menu and stops the fight")
+	run.area.menu.back()
+	await process_frame
+	run.area._on_joy_connection(0, false)
+	check(run.area.hero.using_pad() and run.area.menu.visible and paused, "Pulling the gamepad out opens the menu too")
+	run.area.menu.back()
+	await process_frame
+	run.area.hero.controlled = false
+	run.area.notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
+	check(not run.area.menu.visible and not paused, "A hero not under the player's control is never stopped")
+	run.area.hero.controlled = true
+	# The level-up cards: a direction focuses one, A takes it. A is also the
+	# dash: held (or mashed) as the cards arm, it takes none.
+	var choice_script := preload("res://ui/ability_choice.gd")
+	Input.parse_input_event(pad(JOY_BUTTON_A))
 	run.area._on_gems(run.run.progression.required_exp())
 	# The lead-in, then the hand dealt and armed.
-	await create_timer(BattleArea.LEAD_TIME + preload("res://ui/ability_choice.gd").arm_time(3) + 0.15, true, false, true).timeout
+	await create_timer(BattleArea.LEAD_TIME + choice_script.arm_time(3) + 0.15, true, false, true).timeout
+	root.push_input(pad(JOY_BUTTON_A, false))
+	root.push_input(pad(JOY_BUTTON_A))
+	await process_frame
+	check(run.area.choice.armed and run.area.choice.resting() and run.area.choice.visible and run.run.build.owned().is_empty(), "A dash still mashed when the cards arm takes no card")
+	Input.parse_input_event(pad(JOY_BUTTON_A, false))
+	root.push_input(pad(JOY_BUTTON_A, false))
+	await create_timer(choice_script.REST + 0.15, true, false, true).timeout
+	check(not run.area.choice.resting(), "Once the fight's buttons have rested, they pick again")
 	root.push_input(pad(JOY_BUTTON_A))
 	root.push_input(pad(JOY_BUTTON_A, false))
 	await process_frame

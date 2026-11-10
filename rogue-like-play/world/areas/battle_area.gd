@@ -133,6 +133,7 @@ func _ready() -> void:
 	prompt.confirmed.connect(_on_abandon_confirmed)
 	prompt.canceled.connect(func(): menu.open())
 	hero_fell.connect(_on_hero_down)
+	Input.joy_connection_changed.connect(_on_joy_connection)
 	var air := BattleAmbience.new()
 	air.name = "Ambience"
 	add_child(air)
@@ -428,6 +429,24 @@ func open_menu() -> void:
 	get_tree().paused = true
 	GameMusic.muffle(self, true)
 	menu.open()
+
+
+# With the player away the fight waits: the window left for another, or the
+# gamepad she is played with pulled out, opens the menu. Only a hero under
+# the player's control, so a test or a capture is never stopped.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_hold_for_player()
+
+
+func _on_joy_connection(_device: int, connected: bool) -> void:
+	if not connected and hero != null and hero.using_pad():
+		_hold_for_player()
+
+
+func _hold_for_player() -> void:
+	if hero != null and hero.controlled and is_inside_tree():
+		open_menu()
 
 
 func _on_resumed() -> void:
