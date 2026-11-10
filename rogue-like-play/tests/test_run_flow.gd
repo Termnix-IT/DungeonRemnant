@@ -141,6 +141,39 @@ func run_tests() -> void:
 	lifted.free()
 	await process_frame
 
+	# The boss's layer: the view goes to it, it comes out of the dark with its
+	# name, and the view comes back to her; once a run, and a key cuts it short.
+	for cut_short in [false, true]:
+		var boss_run := RunDirector.new()
+		boss_run.seed_value = 12
+		root.add_child(boss_run)
+		await create_timer(0.3).timeout
+		var boss_route: RouteMap = boss_run.run.route
+		var walked: RouteMap.Waypoint = boss_route.nodes(0)[0]
+		for index in boss_route.size() - 1:
+			boss_run.run.taken.append(walked)
+			walked = walked.next[0]
+		boss_run.run.layer = boss_route.size() - 1
+		boss_run.show_map()
+		var boss_view := boss_run.map_view
+		var boss: RouteNode = boss_view.nodes_by_point[boss_route.nodes(boss_route.size() - 1)[0]]
+		check(boss_view.waiting_boss() == boss and boss.veiled and boss_view.panning and boss_view._revealed_route == boss_route, "The boss's layer open, its coming out begins")
+		if cut_short:
+			await create_timer(RouteMapView.DRAW_TIME + RouteMapView.REVEAL_PAN + RouteMapView.COMING_OUT * 0.3).timeout
+			boss_view._end_pan()
+			check(not boss.veiled and boss.figure.modulate == Color.WHITE and not boss_view._boss_title.visible and boss_view._world.position.y == 0.0 and is_equal_approx(boss_view.scroll, boss_view.follow_scroll()), "A key cuts it short: the boss out, the view back on her")
+		else:
+			await create_timer(RouteMapView.DRAW_TIME + RouteMapView.REVEAL_PAN + RouteMapView.COMING_OUT + 0.1).timeout
+			var boss_middle: float = boss_view._center(boss.waypoint).x - boss_view._frame.size.x * 0.5
+			check(not boss.veiled and boss.figure.modulate.is_equal_approx(Color.WHITE) and boss_view._boss_title.visible and boss_view._boss_name.text == boss.waypoint.area.boss.display_name and boss_view._boss_epithet.text == boss.waypoint.area.boss.epithet and is_equal_approx(boss_view.scroll, clampf(boss_middle, 0.0, boss_view.scroll_limit())), "The view on the boss, it comes out and its name rises")
+			await create_timer(RouteMapView.REVEAL_HOLD + RouteMapView.REVEAL_FADE + RouteMapView.REVEAL_PAN + 0.2).timeout
+			check(not boss_view.panning and not boss_view._boss_title.visible and is_equal_approx(boss_view.scroll, boss_view.follow_scroll()) and boss_view._card.visible, "Then the view comes back to her")
+			var boss_point: RouteMap.Waypoint = boss.waypoint
+			boss_run.show_map()
+			check(boss_view.waiting_boss() == null and not boss_view.panning and not (boss_view.nodes_by_point[boss_point] as RouteNode).veiled, "Opened again, the boss stands in the open")
+		boss_run.queue_free()
+		await process_frame
+
 	# The director: the map, an area entered, cleared, rewarded, the next layer.
 	var director := RunDirector.new()
 	director.seed_value = 12
@@ -176,6 +209,34 @@ func run_tests() -> void:
 	var first_rect: Rect2 = view.nodes_by_point[view.selected].get_global_rect()
 	check(view._card.get_global_rect().end.x <= first_rect.position.x or view._card.get_global_rect().position.x >= first_rect.end.x, "The card stands beside its node, not over it")
 	check(view._detail_foe_row.get_child_count() == Chapters.area_foes(view.selected.area).size() and view._detail_foe_row.get_child_count() > 0, "The card shows the area's foes as pictures")
+	# Each node is a stage of the chapter's ground: the foes on it braced and
+	# facing her, an event's object, the boss's a size up and in the dark.
+	var stage := RouteNode.plate_for(director.run.route.chapter.id)
+	check(stage != null and view.nodes_by_point.values().all(func(node: RouteNode): return node.plate == stage), "Every node stands on the chapter's stage")
+	var fights: Array = view.nodes_by_point.values().filter(func(node: RouteNode): return not node.waypoint.area.is_event())
+	var rigs_ready := fights.all(func(node: RouteNode):
+		var rigs := node.figure.find_children("*", "CharacterRig", true, false)
+		return not rigs.is_empty() and rigs.all(func(rig: CharacterRig): return rig.braced and rig.get_parent().scale.x < 0.0))
+	check(rigs_ready, "Its foes stand on it braced, facing her")
+	var events: Array = view.nodes_by_point.values().filter(func(node: RouteNode): return node.waypoint.area.is_event())
+	check(not events.is_empty() and events.all(func(node: RouteNode):
+		var props := node.figure.get_children().filter(func(child: Node): return child is Sprite2D)
+		return props.size() == 1 and props[0].texture == RouteNode.prop_for(node.waypoint.area.event)), "An event's stage holds its object instead")
+	check(view._start_stage != null and view._start_stage.find_children("*", "Sprite2D", true, false).any(func(sprite: Sprite2D): return sprite.texture == RouteNode.prop_for(&"sign")), "The start is a smaller stage with a signpost")
+	var field: AreaData = fights.map(func(node: RouteNode): return node.waypoint.area).filter(func(area: AreaData): return area.spawn_table != null)[0]
+	var heaviest: SpawnEntry = field.spawn_table.entries[0]
+	for entry: SpawnEntry in field.spawn_table.entries:
+		if entry.weight > heaviest.weight:
+			heaviest = entry
+	check(RouteNode.leader(field) == heaviest.foe and RouteNode.company(field) != null and RouteNode.company(field) != heaviest.foe, "A field is shown by the kind met most, another behind it")
+	var boss_point: RouteMap.Waypoint = director.run.route.nodes(director.run.route.size() - 1)[0]
+	var boss_node: RouteNode = view.nodes_by_point[boss_point]
+	var plain_node: RouteNode = view.nodes_by_point[director.run.route.nodes(0)[0]]
+	check(is_equal_approx(boss_node.size.x, plain_node.size.x * RouteNode.BOSS_SCALE), "The boss's stage is a size up")
+	check(boss_node.veiled and boss_node.figure.modulate.is_equal_approx(RouteNode.VEIL), "The boss waits in the dark")
+	view._point_at(boss_point)
+	check(view._detail_name.text == RouteMapView.VEILED_NAME and view._detail_goal.text == RouteMapView.VEILED_NOTE and not view._detail_reward.visible and not view._detail_foe_row.visible, "Its card names nothing, only that something waits")
+	view._point_at(null)
 	var later: RouteMap.Waypoint = director.run.route.nodes(1)[0]
 	view._point_at(later)
 	check(view.told == later and view._detail_name.text == later.area.display_name and view._detail_state.text == RouteMapView.AHEAD_NOTE and view.nodes_by_point[later].disabled, "A later node can be read, not entered")
@@ -244,6 +305,7 @@ func run_tests() -> void:
 	check(first_ahead < 0 or first_shut < first_ahead, "The ways cut off lie under the ways still in reach")
 	var shut := director.run.route.nodes(1).filter(func(point: RouteMap.Waypoint): return not after_first.next.has(point))
 	check(shut.all(func(point: RouteMap.Waypoint): return director.map_view.nodes_by_point[point].mark == RouteNode.Mark.PASSED and director.map_view.nodes_by_point[point].disabled), "The rest of that layer is shut, dimmed")
+	check(director.map_view.nodes_by_point[after_first].figure.get_child_count() == 0, "The stage she cleared stands empty")
 	director.map_view._choose(director.map_view.current[0])
 	await process_frame
 	check(director.area.hero.health.hp == carried, "Her health is carried into the next area")

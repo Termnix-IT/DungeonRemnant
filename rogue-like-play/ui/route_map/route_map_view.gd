@@ -63,12 +63,17 @@ const SHUT_ALPHA := 0.13
 const CURVE_STEPS := 24
 # Where things stand: her start, the gap between layers (room for a card
 # between her and the next layer), the room past the boss, the gap between a
-# layer's nodes, and how far the rows' middle sits above the screen's.
-const START_X := 170.0
-const COLUMN_GAP := 430.0
-const END_MARGIN := 280.0
-const NODE_GAP := 196.0
-const MAP_RISE := 6.0
+# layer's stages, and how far the rows' middle (the stages' ground) sits
+# above the screen's (below it when negative: the figures stand above).
+const START_X := 190.0
+const COLUMN_GAP := 600.0
+const END_MARGIN := 300.0
+const NODE_GAP := 226.0
+const MAP_RISE := -24.0
+# The start's stage is this share of an area's, its signpost right of her.
+const START_SCALE := 0.8
+const SIGN_HEIGHT := 112.0
+const SIGN_PLACE := Vector2(34.0, 4.0)
 # The view keeps her this share of the width in from the left. At a
 # chapter's start it rests on the boss (PAN_HOLD), then pans to her.
 const FOLLOW_SHARE := 0.28
@@ -88,12 +93,27 @@ const FOE_SIZE := 44.0
 const AHEAD_NOTE := "この先にある"
 const SHUT_NOTE := "この道からは行けない"
 const PASSED_NOTE := "通り過ぎた"
+# What the card says of the boss before her way reaches it.
+const VEILED_NAME := "？？？"
+const VEILED_NOTE := "この章の最奥で、何かが待ち構えている"
 # Her figure: the fight's rig, small; where she stands from a node's middle
 # (on the road coming in, left of it).
 const MIO_RIG := preload("res://art/characters/mio_rig/mio_rig.tscn")
-const HERO_HEIGHT := 74.0
-const HERO_OFFSET := Vector2(-60.0, 14.0)
+const HERO_HEIGHT := 100.0
+const HERO_OFFSET := Vector2(-44.0, 2.0)
 const IDLE_FACING := Vector2i(1, 1)
+# The boss coming out once her way reaches it: the view's move to it and
+# back, its lightening, the hold on it, the title's fade, the flush, the
+# shake, and how far above the bottom the title stands.
+const REVEAL_PAN := 0.7
+const COMING_OUT := 0.9
+const REVEAL_HOLD := 1.0
+const REVEAL_FADE := 0.3
+const FLUSH := Color(0.7, 0.05, 0.03, 0.26)
+const SHAKE := 7.0
+const SHAKE_STEPS := 8
+const SHAKE_TIME := 0.45
+const BOSS_TITLE_RISE := 150.0
 # Opening, the open roads draw out from her (DRAW_TIME); a pick she goes
 # ahead with walks her there (TRAVEL_TIME) before it is entered.
 const DRAW_TIME := 0.45
@@ -127,6 +147,7 @@ var _frame: Control
 var _world: Control
 var _ground: Control
 var _roads: Node2D
+var _start_stage: Control
 var _hero_holder: Node2D
 var _title: Label
 var _boons: HFlowContainer
@@ -164,6 +185,13 @@ var scroll := 0.0:
 		if _world != null:
 			_world.position.x = _world_left() - roundf(scroll)
 var panning := false
+# The route whose boss has come out of the dark.
+var _revealed_route: RouteMap
+# The boss's coming out: the red flush over the map and its title.
+var _flush: ColorRect
+var _boss_title: VBoxContainer
+var _boss_epithet: Label
+var _boss_name: Label
 var _panned_route: RouteMap
 var _camera: Tween
 var _opening: Tween
@@ -202,6 +230,7 @@ func _ready() -> void:
 	_build_top(hud)
 	_build_bottom(hud)
 	_build_card(hud)
+	_build_boss_title(hud)
 	hide()
 
 
@@ -295,6 +324,30 @@ func _build_bottom(hud: Control) -> void:
 	_guide.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_guide.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_guide.offset_bottom = -EDGE + 6.0
+
+
+# The boss's coming out: a red flush over the whole map, and its epithet and
+# name in the lower third, as the fight's boss entrance sets them.
+func _build_boss_title(hud: Control) -> void:
+	_flush = ColorRect.new()
+	_flush.color = Color(FLUSH, 0.0)
+	_flush.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_flush.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hud.add_child(_flush)
+	hud.move_child(_flush, 0)
+	_boss_title = VBoxContainer.new()
+	_boss_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_title.alignment = BoxContainer.ALIGNMENT_CENTER
+	_boss_title.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_boss_title.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_boss_title.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_boss_title.offset_bottom = -BOSS_TITLE_RISE
+	hud.add_child(_boss_title)
+	_boss_epithet = _label(_boss_title, &"BossEpithet")
+	_boss_name = _label(_boss_title, &"BossName")
+	for label: Label in [_boss_epithet, _boss_name]:
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boss_title.hide()
 
 
 # The card a node shows when pointed at or focused.
@@ -397,17 +450,73 @@ func _open() -> void:
 		_panned_route = route
 		scroll = follow_scroll()
 	_opening.tween_method(_draw_out, 0.0, 1.0, DRAW_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	var boss := waiting_boss()
+	if boss != null:
+		_reveal_boss(boss)
 	_opening.tween_interval(FOCUS_DELAY)
 	_opening.tween_callback(_focus_first)
 
 
-# A key, the wheel or the stick during the opening pan cuts it short.
+# The boss's stage, while it is open now and still veiled.
+func waiting_boss() -> RouteNode:
+	for point: RouteMap.Waypoint in current:
+		var node: RouteNode = nodes_by_point.get(point)
+		if node != null and node.veiled:
+			return node
+	return null
+
+
+# Her way reaches the boss: the view goes to it, it comes out of the dark
+# with a red flush, a shake and a low toll, its epithet and name rise over
+# it, and after a hold the view comes back to her. Once a run.
+func _reveal_boss(boss: RouteNode) -> void:
+	_revealed_route = route
+	panning = true
+	var middle := _center(boss.waypoint).x - _frame.size.x * 0.5
+	_opening.tween_property(self, "scroll", clampf(middle, 0.0, scroll_limit()), REVEAL_PAN).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_opening.tween_callback(func():
+		boss.reveal(COMING_OUT)
+		GameAudio.play(self, &"boss", -10.0)
+		_boss_epithet.text = boss.waypoint.area.boss.epithet
+		_boss_name.text = boss.waypoint.area.boss.display_name
+		_boss_title.modulate.a = 0.0
+		_boss_title.show()
+		var show := create_tween().set_parallel()
+		show.tween_property(_boss_title, "modulate:a", 1.0, COMING_OUT)
+		show.tween_property(_flush, "color:a", FLUSH.a, COMING_OUT * 0.4)
+		show.chain().tween_property(_flush, "color:a", 0.0, COMING_OUT)
+		_shake())
+	_opening.tween_interval(COMING_OUT + REVEAL_HOLD)
+	_opening.tween_property(_boss_title, "modulate:a", 0.0, REVEAL_FADE)
+	_opening.tween_property(self, "scroll", follow_scroll(), REVEAL_PAN).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_opening.tween_callback(func():
+		panning = false
+		_boss_title.hide()
+		_tell(told))
+
+
+func _shake() -> void:
+	var shake := create_tween()
+	for step in SHAKE_STEPS:
+		var reach := SHAKE * (1.0 - float(step) / SHAKE_STEPS)
+		shake.tween_property(_world, "position:y", reach if step % 2 == 0 else -reach, SHAKE_TIME / SHAKE_STEPS)
+	shake.tween_property(_world, "position:y", 0.0, SHAKE_TIME / SHAKE_STEPS)
+
+
+# A key, the wheel or the stick during the opening pan, or the boss's
+# coming out, cuts it short.
 func _end_pan() -> void:
 	if not panning:
 		return
 	panning = false
 	if _opening != null:
 		_opening.kill()
+	for node: RouteNode in nodes_by_point.values():
+		if node.waypoint.area.boss != null and current.has(node.waypoint):
+			node.unveil()
+	_boss_title.hide()
+	_flush.color.a = 0.0
+	_world.position.y = 0.0
 	scroll = follow_scroll()
 	_draw_out(1.0)
 	_tell(told)
@@ -444,6 +553,7 @@ func _lay_nodes() -> void:
 	_world.size = Vector2(START_X + COLUMN_GAP * route.size() + END_MARGIN, screen.y)
 	_ground.size = _world.size
 	scroll = scroll
+	_lay_start()
 	var previous: RouteMap.Waypoint = _run.taken[route_layer - 1] if route_layer > 0 and route_layer - 1 < _run.taken.size() else null
 	current = route.open_after(previous)
 	reachable.clear()
@@ -466,8 +576,8 @@ func _lay_nodes() -> void:
 				mark = RouteNode.Mark.TAKEN if point == taken_here else RouteNode.Mark.PASSED
 			var node := RouteNode.new()
 			_world.add_child(node)
-			node.setup(point, mark)
-			node.position = _spot(index, row, points.size()) - node.size * 0.5
+			node.setup(point, mark, RouteNode.plate_for(route.chapter.id), point.area.boss != null and (not current.has(point) or _revealed_route != route))
+			node.position = _spot(index, row, points.size()) - node.ground()
 			nodes_by_point[point] = node
 			node.mouse_entered.connect(_point_at.bind(point))
 			node.mouse_exited.connect(_point_at.bind(null))
@@ -633,7 +743,34 @@ func _start() -> Vector2:
 
 func _center(point: RouteMap.Waypoint) -> Vector2:
 	var node: RouteNode = nodes_by_point[point]
-	return node.position + node.size * 0.5
+	return node.position + node.ground()
+
+
+# Where the run set out from: a smaller stage of the chapter's ground with a
+# signpost, where she stands before the first pick.
+func _lay_start() -> void:
+	if _start_stage != null:
+		_start_stage.free()
+	_start_stage = Control.new()
+	_start_stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_world.add_child(_start_stage)
+	var width := RouteNode.PLATE_WIDTH * START_SCALE
+	var plate := RouteNode.plate_for(route.chapter.id)
+	var high := RouteNode.plate_height(plate, width)
+	_start_stage.position = _start() - Vector2(width * 0.5, high * RouteNode.PLATE_TOP)
+	_start_stage.size = Vector2(width, high)
+	_start_stage.draw.connect(func():
+		if plate != null:
+			_start_stage.draw_texture_rect(plate, Rect2(Vector2.ZERO, _start_stage.size), false))
+	var sign := RouteNode.prop_for(&"sign")
+	if sign != null:
+		var post := Sprite2D.new()
+		post.texture = sign
+		post.centered = false
+		post.scale = Vector2.ONE * SIGN_HEIGHT / sign.get_height()
+		post.offset = Vector2(-sign.get_width() * 0.5, -sign.get_height())
+		post.position = Vector2(width * 0.5, high * RouteNode.PLATE_TOP) + SIGN_PLACE
+		_start_stage.add_child(post)
 
 
 # Where the open roads leave from: the area last taken, or the start.
@@ -686,8 +823,8 @@ func _reveal(point: RouteMap.Waypoint) -> void:
 	if panning or not nodes_by_point.has(point):
 		return
 	var x := _center(point).x - scroll
-	var left := CARD_WIDTH + CARD_GAP + RouteNode.BOSS_SIZE
-	var right := _frame.size.x - RouteNode.BOSS_SIZE
+	var left := CARD_WIDTH + CARD_GAP + RouteNode.PLATE_WIDTH
+	var right := _frame.size.x - RouteNode.PLATE_WIDTH
 	if x < left:
 		_move_view(scroll - (left - x), REVEAL_TIME)
 	elif x > right:
@@ -719,10 +856,18 @@ func _tell(point: RouteMap.Waypoint) -> void:
 		_card.hide()
 		return
 	var area := point.area
+	var node: RouteNode = nodes_by_point.get(point)
 	_detail_name.text = area.display_name
 	for child in _detail_foe_row.get_children():
 		child.free()
-	if area.is_event():
+	if node != null and node.veiled:
+		# The boss still in the dark: only that something waits there.
+		_detail_name.text = VEILED_NAME
+		_detail_kind.text = area.kind_name()
+		_detail_reward.text = ""
+		_detail_goal.text = VEILED_NOTE
+		_detail_foes.text = ""
+	elif area.is_event():
 		_detail_kind.text = "イベント　戦闘なし"
 		_detail_reward.text = area.condition
 		_detail_goal.text = area.foe_summary
@@ -741,9 +886,9 @@ func _tell(point: RouteMap.Waypoint) -> void:
 			picture.custom_minimum_size = Vector2.ONE * FOE_SIZE
 			picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			_detail_foe_row.add_child(picture)
+	_detail_reward.visible = not _detail_reward.text.is_empty()
 	_detail_foes.visible = not _detail_foes.text.is_empty()
 	_detail_foe_row.visible = _detail_foe_row.get_child_count() > 0
-	var node: RouteNode = nodes_by_point.get(point)
 	var state := ""
 	if node != null and node.mark != RouteNode.Mark.OPEN:
 		state = {RouteNode.Mark.AHEAD: AHEAD_NOTE, RouteNode.Mark.TAKEN: PASSED_NOTE}.get(node.mark, SHUT_NOTE if point.layer >= route_layer else PASSED_NOTE)
