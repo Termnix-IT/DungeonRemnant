@@ -23,6 +23,8 @@ const CURSES := {
 const CURSE_ECHO := 0.5
 # The share of an area's echo that clearing it always gives (clear_echo).
 const CLEAR_ECHO_SHARE := 0.3
+# The further share a three-way trial on the last layer gives (trial_echo).
+const LAST_TRIAL_SHARE := 0.5
 const FRAILTY := 2
 # Thirst: every healing reaches her at this share (mending()).
 const THIRST := 0.5
@@ -186,6 +188,14 @@ func echo_reward(amount: int) -> int:
 # and what an echo reward adds on top, the two making the area's whole echo.
 func clear_echo(area: AreaData) -> int:
 	return echo_reward(roundi(area.echo * CLEAR_ECHO_SHARE))
+
+
+# What a trial that opens three ways gives instead when it stands on the
+# last layer, where every way leads to the boss and there is nothing to open.
+func trial_echo(area: AreaData, route_layer: int) -> int:
+	if route == null or route_layer != route.size() - 2 or area.branches.x < 3:
+		return 0
+	return echo_reward(roundi(area.echo * LAST_TRIAL_SHARE))
 
 
 func bonus_echo(area: AreaData) -> int:

@@ -251,6 +251,11 @@ func clear() -> void:
 	finished = true
 	if director != null:
 		director.running = false
+	# An elite still standing leaves the share of its gems already cut out of
+	# it, so the last blows before the time runs out are not wasted.
+	for foe in foes:
+		if foe.data.elite and not foe.dying and foe.health.hp < foe.health.max_hp:
+			gems.drop(foe.global_position, roundi(foe.data.exp_reward * (1.0 - float(foe.health.hp) / foe.health.max_hp)))
 	dismiss_foes()
 	gems.pull_radius = INF
 	hud.show_message("制圧完了")

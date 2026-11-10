@@ -956,9 +956,9 @@ func _tell(point: RouteMap.Waypoint) -> void:
 		# What clearing it brings: its reward, and the echo every clearing
 		# gives (an echo reward's amount holds both).
 		if point.reward == AreaData.Reward.ECHO:
-			_detail_reward.text = "報酬：残響 %s" % UIFormat.amount(_run.echo_reward(area.echo))
+			_detail_reward.text = "報酬：残響 %s" % UIFormat.amount(_run.echo_reward(area.echo) + _run.trial_echo(area, point.layer))
 		else:
-			_detail_reward.text = "報酬：%s　残響 +%s" % [AreaData.reward_name(point.reward), UIFormat.amount(_run.clear_echo(area))]
+			_detail_reward.text = "報酬：%s　残響 +%s" % [AreaData.reward_name(point.reward), UIFormat.amount(_run.clear_echo(area) + _run.trial_echo(area, point.layer))]
 		_detail_goal.text = area.condition
 		_detail_foes.text = area.foe_summary
 		for foe in Chapters.area_foes(area):

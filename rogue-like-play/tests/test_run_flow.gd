@@ -102,6 +102,23 @@ func run_tests() -> void:
 	check(placed_well, "Wave foes appear on open ground, away from her")
 	check(said_second, "The goal follows the waves")
 	check(bar_steady and bar_within and is_equal_approx(arena.waves.progress(), 1.0), "The goal's bar fills as the foes of each wave fall, not only when a wave ends")
+	# An elite still standing when an area is cleared leaves the gems already
+	# cut out of it.
+	var timed := BattleArea.new()
+	timed.setup(load("res://data/areas/moss_plain.tres"), RunState.new(5), 5)
+	root.add_child(timed)
+	await process_frame
+	timed.hero.controlled = false
+	timed.director.running = false
+	var charger_data: FoeData = load("res://data/foes/raging_charger.tres")
+	var standing := timed.spawn_foe(charger_data, timed.hero.global_position + Vector2(400, 0))
+	standing.health.hp = standing.health.max_hp / 2
+	var gems_before := timed.gems.total()
+	timed.clear()
+	check(timed.gems.total() == gems_before + roundi(charger_data.exp_reward * 0.5), "An elite half felled when the area is cleared leaves half its gems")
+	timed.hit_stop.release()
+	timed.free()
+	await process_frame
 	arena.hit_stop.release()
 	await process_frame
 	arena.free()
@@ -328,6 +345,11 @@ func run_tests() -> void:
 		AreaData.Reward.ECHO:
 			check(director.run.echo == echo_before + first.area.echo, "An echo reward makes the area's echo whole")
 	check(director.run.layer == 1 and director.map_view.visible and director.run.areas_cleared == 1, "The route moves on a layer")
+	# A three-way trial on the last layer has no ways to open: it gives echo instead.
+	var trial: AreaData = load("res://data/areas/sanctum_trial.tres")
+	var arena_plain: AreaData = load("res://data/areas/pillar_arena.tres")
+	var last_layer := director.run.route.size() - 2
+	check(director.run.trial_echo(trial, last_layer) == roundi(trial.echo * RunState.LAST_TRIAL_SHARE) and director.run.trial_echo(trial, last_layer - 1) == 0 and director.run.trial_echo(arena_plain, last_layer) == 0, "A three-way trial on the last layer gives echo in place of ways")
 	var carried := director.run.hp
 	var after_first: RouteMap.Waypoint = director.run.taken[0]
 	check(director.map_view.current == after_first.next and director.map_view.buttons.size() == after_first.next.size() and after_first.next.size() <= after_first.area.branches.y, "Past the first layer, only the paths from the area taken are open")

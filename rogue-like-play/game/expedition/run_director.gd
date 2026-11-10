@@ -166,7 +166,7 @@ func _on_cleared() -> void:
 	_leave_area()
 	run.areas_cleared += 1
 	# Clearing an area always gives a share of its echo; its reward follows.
-	_cleared_echo = run.clear_echo(waypoint.area)
+	_cleared_echo = run.clear_echo(waypoint.area) + run.trial_echo(waypoint.area, waypoint.layer)
 	run.echo += _cleared_echo
 	grant(waypoint.reward)
 
