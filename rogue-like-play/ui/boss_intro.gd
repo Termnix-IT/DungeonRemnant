@@ -31,6 +31,13 @@ const OUT_TIME := 0.35
 # The name sits this share of the way down the screen.
 const NAME_PLACE := 0.74
 
+# Whether the entrance may be ended early (set by the area before present()),
+# and from how long after it began.
+const SKIP_AFTER := 0.6
+var skippable := false
+var _stage: Tween
+var _began := 0
+
 var _area: BattleArea
 var _boss: Foe
 var _root: Control
@@ -48,9 +55,31 @@ static func total_time() -> float:
 	return ROAR_AT + NAME_TIME + HOLD_TIME + RETURN_TIME + OUT_TIME
 
 
+# A key, a button or a click ends it early, once the boss has been in sight
+# for SKIP_AFTER: only an entrance that may be skipped (a boss met on a run
+# before; the first sight of one always plays whole).
+func _input(event: InputEvent) -> void:
+	if not skippable or _stage == null or not _stage.is_valid() or Time.get_ticks_msec() - _began < SKIP_AFTER * 1000.0:
+		return
+	if (event is InputEventKey or event is InputEventJoypadButton or event is InputEventMouseButton) and event.is_pressed() and not event.is_echo():
+		get_viewport().set_input_as_handled()
+		skip()
+
+
+func skip() -> void:
+	if _stage != null:
+		_stage.kill()
+	_stage = null
+	_boss.scale = Vector2.ONE
+	_boss.modulate = Color.WHITE
+	_area.camera.global_position = _area.hero.global_position + CombatArea.CAMERA_LEAD
+	_end()
+
+
 func present(boss: Foe, area: BattleArea, theme: Theme) -> void:
 	_area = area
 	_boss = boss
+	_began = Time.get_ticks_msec()
 	layer = 6
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_root = Control.new()
@@ -81,6 +110,7 @@ func present(boss: Foe, area: BattleArea, theme: Theme) -> void:
 	var camera := area.camera
 	camera.position_smoothing_enabled = false
 	var stage := create_tween().set_parallel().set_trans(Tween.TRANS_CUBIC)
+	_stage = stage
 	stage.tween_property(_top, "position:y", 0.0, BAR_TIME).set_ease(Tween.EASE_OUT)
 	stage.tween_property(_bottom, "position:y", screen.y - BAR_HEIGHT, BAR_TIME).set_ease(Tween.EASE_OUT)
 	stage.tween_property(camera, "global_position", boss.global_position + CombatArea.CAMERA_LEAD, PAN_TIME).set_ease(Tween.EASE_IN_OUT)

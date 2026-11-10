@@ -101,6 +101,8 @@ func _ready() -> void:
 		run.skills = meta.equipped_skills()
 		run.special = meta.equipped_special()
 		run.moveset = meta.equipped_weapon()
+		for id: Variant in meta.met:
+			run.known[StringName(str(id))] = true
 	run.use_step(step)
 	run.route = RouteMap.generate(chapter, run.rng)
 	map_view = RouteMapView.new()

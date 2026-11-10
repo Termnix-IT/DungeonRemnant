@@ -307,6 +307,8 @@ func _on_marked_spawn(foe: Foe) -> void:
 	intro.name = "BossIntro"
 	add_child(intro)
 	intro.finished.connect(_after_entrance)
+	# A boss met on a run before may have its entrance cut short.
+	intro.skippable = run.known.has(foe.data.id)
 	intro.present(foe, self, HubTheme.create())
 
 

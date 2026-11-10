@@ -59,11 +59,19 @@ func run_tests() -> void:
 	var intro: BossIntro = area.get_node_or_null("BossIntro")
 	check(intro != null and intro._name.text == "遺跡王" and intro._epithet.text == king.epithet and not king.epithet.is_empty(), "It names itself as it arrives, its epithet over its name")
 	check(paused and area.staging and area.choosing() and area.camera_held, "Its entrance stops the world and holds the camera")
+	# A boss never met before plays its entrance whole: no key cuts it short.
+	var early := InputEventKey.new()
+	early.keycode = KEY_ENTER
+	early.physical_keycode = KEY_ENTER
+	early.pressed = true
+	await create_timer(BossIntro.SKIP_AFTER + 0.05).timeout
+	intro._input(early)
+	check(not intro.skippable and area.get_node_or_null("BossIntro") == intro and area.staging, "The first sight of a boss cannot be skipped")
 	var boss_spot := boss.global_position
 	var hero_spot := area.hero.global_position
 	area.open_menu()
 	check(not area.menu.visible, "No menu opens during it")
-	await create_timer(BossIntro.PAN_TIME + 0.1).timeout
+	await create_timer(BossIntro.PAN_TIME + 0.1 - BossIntro.SKIP_AFTER - 0.05).timeout
 	check(area.camera.global_position.distance_to(boss_spot + CombatArea.CAMERA_LEAD) < 2.0 and boss.global_position == boss_spot and area.hero.global_position == hero_spot, "The camera settles on the boss, and neither it nor she moves")
 	await process_frame
 	check(area.hud.boss_gauge.visible and area.hud.boss_gauge.bar.value == king.max_hp, "Its health shows across the top")
@@ -119,6 +127,28 @@ func run_tests() -> void:
 	check(not area.hud.boss_gauge.visible, "Its gauge goes")
 	area.hit_stop.release()
 	await process_frame
+	area.free()
+	await process_frame
+
+	# A boss met on a run before: its entrance may be cut short, once it has
+	# been in sight a moment.
+	var again := RunState.new(9)
+	again.known[king.id] = true
+	area = BattleArea.new()
+	area.setup(hall, again, 9)
+	root.add_child(area)
+	await process_frame
+	area.hero.controlled = false
+	await wait(BattleArea.BOSS_DELAY + BattleArea.BOSS_MARK_TIME + 0.2)
+	intro = area.get_node_or_null("BossIntro")
+	check(intro != null and intro.skippable and area.staging, "A boss met before may have its entrance skipped")
+	intro._input(early)
+	check(area.staging and is_instance_valid(intro) and not intro.is_queued_for_deletion(), "Not in its first moment")
+	await create_timer(BossIntro.SKIP_AFTER + 0.05).timeout
+	intro._input(early)
+	await process_frame
+	check(not area.staging and not paused and not area.camera_held and area.boss_foe.scale == Vector2.ONE and area.camera.global_position.distance_to(area.hero.global_position + CombatArea.CAMERA_LEAD) < 4.0, "A key then ends it: the camera is back on her and the fight goes on")
+	area.hit_stop.release()
 	area.free()
 	await process_frame
 	print("Boss fight tests: %d checks, %d failures" % [checks, failures])
