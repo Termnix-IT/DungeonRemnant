@@ -4,6 +4,9 @@ signal selected(id: StringName)
 # The cards on offer are to be drawn again (the owner spends a reroll and
 # presents the new ones).
 signal reroll_requested
+# The cards were looked at and left untaken (only a hand shown as one that
+# may be declined: an event's, seen before its price is paid).
+signal declined
 
 const GameAudio := preload("res://audio/game_audio.gd")
 # The cards are dealt before they can be taken, as card games deal a hand:
@@ -47,6 +50,9 @@ var key_guide: KeyGuide
 var pick_hint: Button
 var reroll_hint: Button
 var rerolls := 0
+# Whether this hand may be left untaken (Esc, B), and the hint that says so.
+var declinable := false
+var decline_hint: Button
 # Whether the hand on offer can be taken yet, and whether the mouse waits for
 # a button held through the deal to be let go.
 var armed := false
@@ -70,6 +76,8 @@ func _ready() -> void:
 	pick_hint = key_guide.add_hint("1・2・3", "A", "選ぶ")
 	reroll_hint = key_guide.add_hint("R", "Y", "", _reroll)
 	reroll_hint.hide()
+	decline_hint = key_guide.add_hint("Esc", "B", "やめる", _decline)
+	decline_hint.hide()
 	for index in buttons.size():
 		var card := AbilityCard.new()
 		buttons[index].add_child(card)
@@ -85,7 +93,9 @@ func _ready() -> void:
 
 # A level-up's boons, at the ranks the build holds. `title` replaces the
 # level-up title (an area's reward); `rerolls_left` above 0 offers a reroll.
-func present_boons(candidates: Array[BoonData], build: BuildState, level: int, pending: int, title: String = "", rerolls_left: int = 0) -> void:
+func present_boons(candidates: Array[BoonData], build: BuildState, level: int, pending: int, title: String = "", rerolls_left: int = 0, may_decline: bool = false) -> void:
+	declinable = may_decline
+	decline_hint.visible = may_decline
 	var levels: Array[int] = []
 	for boon in candidates:
 		levels.append(build.rank(boon.id))
@@ -229,6 +239,12 @@ func _hover(index: int, value: bool) -> void:
 	UIMotion.of(cards[index]).lift(value)
 
 
+func _decline() -> void:
+	if visible and armed and declinable:
+		dismiss()
+		declined.emit()
+
+
 func _reroll() -> void:
 	if visible and armed and rerolls > 0:
 		reroll_requested.emit()
@@ -299,6 +315,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not armed:
 		if event is InputEventKey or event is InputEventJoypadButton or event is InputEventMouseButton:
 			get_viewport().set_input_as_handled()
+		return
+	if declinable and event.is_action_pressed(&"ui_cancel"):
+		get_viewport().set_input_as_handled()
+		_decline()
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var index: int = PICK_KEYS.find(event.physical_keycode)

@@ -73,9 +73,15 @@ var _event_bought := {}
 var _event_curse: StringName
 # The boons the shelf of memories offers to trade (ids), and the one given up.
 var _shelf_boons: Array[StringName] = []
-var _shelf_given: StringName
 var _event_card := false
 var _event_ends := false
+# The deal whose cards are open (the event choice's id); the cards each deal
+# of this stop shows, the same however often they are looked at; whether the
+# open deal's price has been paid; and the picks it still owes after this one.
+var _event_deal: StringName
+var _event_offers := {}
+var _event_paid := false
+var _event_picks_left := 0
 var _event_note := ""
 # The parting blessing is still to be chosen, and the area it waits to enter.
 var _blessing_due := false
@@ -101,6 +107,7 @@ func _ready() -> void:
 	choice.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(choice)
 	choice.selected.connect(_on_reward_chosen)
+	choice.declined.connect(_on_reward_declined)
 	end_view = RunEndView.new()
 	add_child(end_view)
 	end_view.again_requested.connect(_again)
@@ -194,14 +201,7 @@ func grant(reward: AreaData.Reward) -> void:
 
 func _on_reward_chosen(id: StringName) -> void:
 	if _event_card:
-		_event_card = false
-		var bought := run.build.find(id)
-		run.build.take(bought)
-		_event_note = "%s　「%s」を得た" % [_event.display_name, bought.display_name] if _event_note.is_empty() else _event_note + "、「%s」を得た" % bought.display_name
-		if _event_ends:
-			_leave_event()
-		else:
-			_show_event()
+		_settle_deal(id)
 		return
 	if _blessing:
 		_blessing = false
@@ -228,7 +228,10 @@ func _stop_at(next: RouteMap.Waypoint) -> void:
 	var left := run.curses_left()
 	_event_curse = left[run.rng.randi_range(0, left.size() - 1)] if not left.is_empty() else &""
 	_shelf_boons.clear()
-	_shelf_given = &""
+	_event_offers.clear()
+	_event_deal = &""
+	_event_paid = false
+	_event_picks_left = 0
 	if _event.event == &"shelf":
 		var held := run.build.owned()
 		while not held.is_empty() and _shelf_boons.size() < SHELF_CHOICES:
@@ -250,7 +253,7 @@ func _show_event() -> void:
 			options.append(_paid(&"heal", "傷の手当て（最大HPの%d%%回復）" % _heal_percent(MERCHANT_HEAL_SHARE), MERCHANT_HEAL_PRICE, _current_hp() >= max_hp()))
 		&"altar":
 			var cost := altar_cost()
-			options.append({"id": &"offer", "text": "HPを%d捧げて、強化を1つ選ぶ" % cost, "enabled": _current_hp() > cost, "reason": "HPが足りない"})
+			options.append({"id": &"offer", "text": "HPを%d捧げて、強化を1つ選ぶ" % cost, "enabled": _current_hp() > cost and run.build.can_offer(), "reason": "HPが足りない" if _current_hp() <= cost else "取れる強化が残っていない"})
 		&"curse":
 			var named: String = RunState.CURSES[_event_curse][0] if not _event_curse.is_empty() else ""
 			if not named.is_empty():
@@ -269,7 +272,7 @@ func _show_event() -> void:
 			for id in _shelf_boons:
 				var boon := run.build.find(id)
 				var named := boon.display_name if boon.max_level == 1 else "%s %d" % [boon.display_name, run.build.rank(id)]
-				options.append({"id": StringName("give:" + String(id)), "text": "「%s」を手放して、強化を1つ選ぶ" % named, "enabled": run.build.rank(id) > 0, "reason": "もう手放した"})
+				options.append({"id": StringName("give:" + String(id)), "text": "「%s」を手放して、強化を%dつ選ぶ" % [named, run.build.rank(id)], "enabled": run.build.rank(id) > 0, "reason": "もう手放した"})
 	var state := "所持 残響 %s　HP %d / %d" % [UIFormat.amount(run.echo), _current_hp(), max_hp()]
 	if not run.curses.is_empty():
 		state += "　呪い：%s" % run.curse_names()
@@ -301,86 +304,126 @@ func altar_cost() -> int:
 func _on_event_choice(id: StringName) -> void:
 	if _event == null or _event_card:
 		return
+	var place := _event.display_name
 	match id:
 		EventView.LEAVE:
 			_leave_event()
 		&"boon":
 			if run.echo < MERCHANT_BOON_PRICE or _event_bought.has(id):
 				return
-			if _event_choice(false):
-				run.echo -= MERCHANT_BOON_PRICE
-				_event_bought[id] = true
+			_open_deal(id, false, "%s　残響 %s で強化を1つ選ぶ" % [place, UIFormat.amount(MERCHANT_BOON_PRICE)])
 		&"heal":
 			if run.echo < MERCHANT_HEAL_PRICE or _event_bought.has(id):
 				return
 			run.echo -= MERCHANT_HEAL_PRICE
 			_event_bought[id] = true
 			var gained := run.heal(MERCHANT_HEAL_SHARE + run.rule(&"heal_share"), max_hp())
-			_event_note = "%s　HPが%d回復した" % [_event.display_name, gained]
+			_event_note = "%s　HPが%d回復した" % [place, gained]
 			_show_event()
 		&"offer":
 			var cost := altar_cost()
 			if _current_hp() <= cost:
 				return
-			run.hp = maxi(1, _current_hp() - cost)
-			_event_note = "%s　HPを%d捧げた" % [_event.display_name, cost]
-			if not _event_choice(true):
-				_leave_event()
+			_open_deal(id, true, "%s　HPを%d捧げて強化を1つ選ぶ" % [place, cost])
 		_ when String(id).begins_with("give:"):
-			_trade_boon(StringName(String(id).trim_prefix("give:")))
+			var given := StringName(String(id).trim_prefix("give:"))
+			if not _shelf_boons.has(given) or run.build.rank(given) == 0:
+				return
+			var held := run.build.find(given)
+			var named := held.display_name if held.max_level == 1 else "%s %d" % [held.display_name, run.build.rank(given)]
+			_open_deal(id, true, "%s　「%s」を手放して強化を選ぶ" % [place, named], [given])
 		_ when String(id).begins_with("cleanse:"):
 			var curse := StringName(String(id).trim_prefix("cleanse:"))
 			if run.echo < SPRING_PRICE or not run.remove_curse(curse):
 				return
 			run.echo -= SPRING_PRICE
-			_event_note = "%s　呪い「%s」が解けた" % [_event.display_name, RunState.CURSES[curse][0]]
+			_event_note = "%s　呪い「%s」が解けた" % [place, RunState.CURSES[curse][0]]
 			_leave_event()
 		&"drink":
 			if _current_hp() >= max_hp():
 				return
 			var healed := run.heal(SPRING_HEAL_SHARE + run.rule(&"heal_share"), max_hp())
-			_event_note = "%s　HPが%d回復した" % [_event.display_name, healed]
+			_event_note = "%s　HPが%d回復した" % [place, healed]
 			_leave_event()
 		&"curse":
 			if _event_curse.is_empty():
 				return
-			run.take_curse(_event_curse)
-			_event_note = "%s　呪い「%s」を受けた" % [_event.display_name, RunState.CURSES[_event_curse][0]]
-			if not _event_choice(true):
-				_leave_event()
+			_open_deal(id, true, "%s　呪い「%s」を受けて強化を1つ選ぶ" % [place, RunState.CURSES[_event_curse][0]])
 
 
-# The shelf of memories: the boon given up, then a card of others to take
-# in its place. When nothing else could be offered, the boon is given back.
-func _trade_boon(id: StringName) -> void:
-	if not _shelf_boons.has(id) or run.build.rank(id) == 0:
-		return
-	var boon := run.build.find(id)
-	var had := run.build.give_up(id)
-	_shelf_given = id
-	if not _event_choice(true):
-		run.build.restore(id, had)
-		_shelf_given = &""
+# A deal's cards, shown before its price is paid: they may be left untaken
+# (nothing is paid, and the event's window comes back), and looking again
+# shows the same cards. With no boon left to offer, the event says so.
+func _open_deal(deal: StringName, ends: bool, title: String, excluded: Array[StringName] = []) -> void:
+	if not _event_offers.has(deal):
+		_event_offers[deal] = run.build.offer(run.rng, run.card_count(), excluded)
+	var offer: Array[BoonData] = _event_offers[deal]
+	if offer.is_empty():
 		_event_note = "%s　ほかに選べる強化がなかった" % _event.display_name
 		_show_event()
 		return
-	_event_note = "%s　「%s」を手放した" % [_event.display_name, boon.display_name]
-
-
-# The event's boon card (never the boon just given up at the shelf); false
-# when no boon is left to offer.
-func _event_choice(ends: bool) -> bool:
-	var excluded: Array[StringName] = []
-	if not _shelf_given.is_empty():
-		excluded.append(_shelf_given)
-	var offer := run.build.offer(run.rng, run.card_count(), excluded)
-	if offer.is_empty():
-		return false
 	event_view.hide()
 	_event_card = true
+	_event_deal = deal
 	_event_ends = ends
-	choice.present_boons(offer, run.build, run.progression.level, 1, "%s　強化を1つ選ぶ" % _event.display_name)
-	return true
+	_event_paid = false
+	_event_picks_left = 0
+	choice.present_boons(offer, run.build, run.progression.level, 1, title, 0, true)
+
+
+# A card of the open deal taken: its price is paid as the first card is
+# (echo, health, a curse, or a boon held with all its ranks), and the boon is
+# hers. The shelf owes a pick for each rank given up; the stop ends, or its
+# window comes back, once none is owed.
+func _settle_deal(id: StringName) -> void:
+	var place := _event.display_name
+	if not _event_paid:
+		_event_paid = true
+		_event_offers.erase(_event_deal)
+		match _event_deal:
+			&"boon":
+				run.echo -= MERCHANT_BOON_PRICE
+				_event_bought[&"boon"] = true
+			&"offer":
+				var cost := altar_cost()
+				run.hp = maxi(1, _current_hp() - cost)
+				_event_note = "%s　HPを%d捧げた" % [place, cost]
+			&"curse":
+				run.take_curse(_event_curse)
+				_event_note = "%s　呪い「%s」を受けた" % [place, RunState.CURSES[_event_curse][0]]
+			_:
+				var given := StringName(String(_event_deal).trim_prefix("give:"))
+				_event_picks_left = maxi(0, run.build.give_up(given) - 1)
+				_event_note = "%s　「%s」を手放した" % [place, run.build.find(given).display_name]
+	else:
+		_event_picks_left -= 1
+	var bought := run.build.find(id)
+	run.build.take(bought)
+	_event_note = "%s　「%s」を得た" % [place, bought.display_name] if _event_note.is_empty() else _event_note + "、「%s」を得た" % bought.display_name
+	# The shelf's further picks: never the boon given up.
+	if _event_picks_left > 0:
+		var given := StringName(String(_event_deal).trim_prefix("give:"))
+		var more := run.build.offer(run.rng, run.card_count(), [given] as Array[StringName])
+		if not more.is_empty():
+			choice.present_boons(more, run.build, run.progression.level, 1, "%s　強化を選ぶ（残り%d）" % [place, _event_picks_left])
+			return
+	_event_card = false
+	_event_deal = &""
+	_event_picks_left = 0
+	if _event_ends:
+		_leave_event()
+	else:
+		_show_event()
+
+
+# The open deal's cards left untaken: nothing was paid, and the event's
+# window comes back.
+func _on_reward_declined() -> void:
+	if not _event_card:
+		return
+	_event_card = false
+	_event_deal = &""
+	_show_event()
 
 
 func _leave_event() -> void:

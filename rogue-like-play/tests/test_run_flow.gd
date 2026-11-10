@@ -558,10 +558,19 @@ func run_tests() -> void:
 	check(stop.ids == [&"boon", &"heal", EventView.LEAVE] and stop.buttons.all(func(button: Button): return not button.disabled), "The merchant offers a boon and a heal, and leaving")
 	stop.buttons[0].pressed.emit()
 	await process_frame
-	check(director.choice.visible and not stop.visible and director.run.echo == 100 - RunDirector.MERCHANT_BOON_PRICE, "A boon is bought for echo, from the cards")
+	check(director.choice.visible and director.choice.declinable and not stop.visible and director.run.echo == 100, "The merchant's cards are shown before the echo is paid")
+	var shown: Array[BoonData] = director.choice.offers.duplicate()
+	director.choice.armed = true
+	director.choice._decline()
+	await process_frame
+	check(not director.choice.visible and stop.visible and director.run.echo == 100 and not stop.buttons[0].disabled, "Left untaken, they cost nothing and the merchant is still there")
+	stop.buttons[0].pressed.emit()
+	await process_frame
+	check(director.choice.offers == shown, "Looked at again, the cards are the same")
 	var owned := director.run.build.owned().size()
 	director.choice._select(0)
 	await process_frame
+	check(director.run.echo == 100 - RunDirector.MERCHANT_BOON_PRICE, "A boon taken is paid for in echo")
 	check(director.run.build.owned().size() == owned + 1 and stop.visible and director.run.layer == 0, "The boon is hers, and the merchant is still there")
 	check(stop.buttons[0].disabled and stop.buttons[1].disabled and stop.reasons[1] != null and stop.reasons[1].text.contains("足りない") and stop.buttons[1].get_global_rect().encloses(stop.reasons[1].get_global_rect()), "A ware bought or too dear is offered but off, its row saying why")
 	director.run.echo += RunDirector.MERCHANT_HEAL_PRICE
@@ -585,9 +594,10 @@ func run_tests() -> void:
 	director._show_event()
 	stop.buttons[0].pressed.emit()
 	await process_frame
-	check(director.run.hp == director.max_hp() - director.altar_cost() and director.choice.visible, "Her health is given, and a boon is chosen")
+	check(director.run.hp == 0 and director.choice.visible and director.choice.declinable, "The altar shows its cards before her health is given")
 	director.choice._select(0)
 	await process_frame
+	check(director.run.hp == director.max_hp() - director.altar_cost(), "Her health is given as the boon is taken")
 	check(not stop.visible and director.run.layer == 2, "The altar's boon ends the stop")
 
 	# The cursed stone: a curse for a boon, and more echo from then on.
@@ -599,6 +609,7 @@ func run_tests() -> void:
 	check(stop.ids == [&"curse", EventView.LEAVE] and stop.buttons[0].text.contains(RunState.CURSES[curse][0]), "The stone names the curse it offers")
 	stop.buttons[0].pressed.emit()
 	await process_frame
+	check(director.run.curses.is_empty() and director.choice.visible and director.choice.declinable, "The stone shows its cards before the curse is laid")
 	director.choice._select(0)
 	await process_frame
 	check(director.run.curses == [curse] and not stop.visible and director.run.layer == 3, "The curse is taken with a boon, and the stop ends")
@@ -632,13 +643,19 @@ func run_tests() -> void:
 	director.run.build.take(director.run.build.find(&"brute_force"))
 	await stop_at(director, "res://data/areas/event_shelf.tres")
 	var trade := stop.ids.find(&"give:blade_speed")
-	check(stop.ids.size() == 3 and trade >= 0 and stop.buttons[trade].text.contains("剣速 2") and stop.ids.has(&"give:brute_force"), "The shelf offers to trade each boon held, with its rank")
+	check(stop.ids.size() == 3 and trade >= 0 and stop.buttons[trade].text.contains("剣速 2") and stop.buttons[trade].text.contains("2つ") and stop.ids.has(&"give:brute_force"), "The shelf offers to trade each boon held, with its rank and the picks it gives")
 	stop.buttons[trade].pressed.emit()
 	await process_frame
-	check(director.run.build.rank(&"blade_speed") == 0 and director.choice.visible and not director.choice.offers.has(blade) and director.choice.offers.size() == director.run.card_count(), "The boon is given up, and a card of others is dealt")
+	check(director.run.build.rank(&"blade_speed") == 2 and director.choice.visible and director.choice.declinable and not director.choice.offers.has(blade) and director.choice.offers.size() == director.run.card_count(), "A card of other boons is shown before the boon is given up")
 	director.choice._select(0)
 	await process_frame
-	check(not stop.visible and director.run.build.owned().size() == 2 and director.map_view._note.text.contains("剣速"), "Taking one ends the stop, and the map tells the trade")
+	check(director.run.build.rank(&"blade_speed") == 0 and director.choice.visible and not director.choice.declinable and not director.choice.offers.has(blade), "Given up with its two ranks, it owes a second pick")
+	director.choice._select(0)
+	await process_frame
+	var ranks_held := 0
+	for held: BoonData in director.run.build.owned():
+		ranks_held += director.run.build.rank(held.id)
+	check(not stop.visible and ranks_held == 3 and director.run.build.rank(&"blade_speed") == 0 and director.map_view._note.text.contains("剣速"), "A pick for each rank given up ends the stop, and the map tells the trade")
 	director.free()
 	await process_frame
 
