@@ -10,7 +10,8 @@ extends Control
 # line along one side: a new boon and a rank being raised tell themselves
 # apart by the words over the emblem ("新規", "Lv 1 → 2").
 # Ranks are bronze sockets, the owned ones holding an amber gem. It shows a
-# BoonData: its emblem, and its words for the rank on offer.
+# BoonData: its emblem, and its words for the rank on offer: what a new
+# boon does, and for a rank being raised, the numbers that grow.
 var ability: BoonData
 var level := 0
 var hovered := false:
@@ -90,7 +91,9 @@ func setup(data: BoonData, current_level: int, shortcut: int) -> void:
 	_show_status()
 	name_label.text = data.display_name
 	name_label.tooltip_text = data.display_name
-	TextWrap.set_text(effect_label, data.effect_description(level + 1))
+	# A rank being raised tells what grows; a new boon, what it does.
+	var gain := data.gain_text(level) if level > 0 else ""
+	TextWrap.set_text(effect_label, gain if not gain.is_empty() else data.effect_description(level + 1))
 	symbol.queue_redraw()
 
 

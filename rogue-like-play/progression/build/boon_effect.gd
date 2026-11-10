@@ -10,3 +10,9 @@ extends Resource
 # How much it adds to a stat at this rank.
 func stat(_name: StringName, _rank: int) -> float:
 	return 0.0
+
+
+# What raising its boon from `rank` to the next changes, as short parts
+# ("威力 135% → 155%"); empty when no number of its own changes.
+func gains(_rank: int) -> Array[String]:
+	return []

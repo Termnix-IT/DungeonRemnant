@@ -63,6 +63,10 @@ func run_tests() -> void:
 		check(not each.display_name.is_empty() and not each.families.is_empty() and not each.effects.is_empty(), "A boon has a name, families and effects: " + String(each.id))
 		check(EmblemIcons.texture(each.emblem_key()) != null, "A boon's emblem exists: " + String(each.id))
 		check(each.effect_description(1).length() <= 20 and each.families.size() <= 2, "A boon's words and families fit its card: " + String(each.id))
+		# Raising a rank tells what grows, in two lines at most.
+		for rank in range(1, each.max_level):
+			var gain := each.gain_text(rank)
+			check(not gain.is_empty() and gain.contains("→") and gain.split("\n").size() <= 2, "Raising %s from rank %d tells what grows" % [each.id, rank])
 	check(build.pool.size() == 32 and ids.size() == 32, "Thirty-two boons, each its own id")
 	check(build.find(&"discharge").requires == [&"thunder_blade"], "The discharge waits for the lightning blade")
 

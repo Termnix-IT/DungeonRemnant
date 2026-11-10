@@ -29,6 +29,16 @@ func effect_description(rank: int = 1) -> String:
 	return description.format({"rank": rank})
 
 
+# What raising it from `rank` to the next changes, a line for each number
+# that grows ("威力 80% → 110%", "3体 → 4体"), two at most; empty when none
+# does, and the card then tells what the boon does.
+func gain_text(rank: int) -> String:
+	var parts: Array[String] = []
+	for effect in effects:
+		parts.append_array(effect.gains(rank))
+	return "\n".join(parts.slice(0, 2))
+
+
 func families_text() -> String:
 	return "・".join(families)
 

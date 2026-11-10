@@ -62,3 +62,19 @@ func change(attack: AttackData, rank: int) -> void:
 		var wave: ProjectileData = projectile.duplicate()
 		wave.distance += distance_per_rank * (rank - 1)
 		attack.projectile = wave
+
+
+func gains(rank: int) -> Array[String]:
+	var parts: Array[String] = []
+	if not is_zero_approx(damage_per_rank):
+		parts.append("威力 %d%% → %d%%" % [roundi((damage_scale + damage_per_rank * (rank - 1)) * 100.0), roundi((damage_scale + damage_per_rank * rank) * 100.0)])
+	if not is_zero_approx(reach_per_rank):
+		parts.append("範囲 %d%% → %d%%" % [roundi((reach_scale + reach_per_rank * (rank - 1)) * 100.0), roundi((reach_scale + reach_per_rank * rank) * 100.0)])
+	if projectile != null and not is_zero_approx(distance_per_rank):
+		parts.append("飛距離 %s → %sマス" % [_cells(projectile.distance + distance_per_rank * (rank - 1)), _cells(projectile.distance + distance_per_rank * rank)])
+	return parts
+
+
+# A distance in floor cells, to a tenth (the screens tell reaches in cells).
+static func _cells(distance: float) -> String:
+	return String.num(snappedf(distance / AreaGround.CELL, 0.1), 1)

@@ -46,3 +46,16 @@ func jump_count(rank: int) -> int:
 
 func heal_amount(rank: int) -> int:
 	return heal + heal_per_rank * (rank - 1)
+
+
+func gains(rank: int) -> Array[String]:
+	var parts: Array[String] = []
+	if action == Action.HEAL:
+		if heal_per_rank != 0:
+			parts.append("回復 %d → %d" % [heal_amount(rank), heal_amount(rank + 1)])
+		return parts
+	if not is_zero_approx(damage_per_rank):
+		parts.append("威力 %d%% → %d%%" % [roundi(damage(rank) * 100.0), roundi(damage(rank + 1) * 100.0)])
+	if action == Action.CHAIN and jumps_per_rank != 0:
+		parts.append("%d体 → %d体" % [jump_count(rank), jump_count(rank + 1)])
+	return parts
