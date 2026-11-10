@@ -181,8 +181,9 @@ func grant(reward: AreaData.Reward) -> void:
 			_rewarding = true
 			choice.present_boons(offer, run.build, run.progression.level, 1, "報酬　強化を1つ選ぶ")
 		AreaData.Reward.HEAL:
-			# Thirst halves what a heal brings; a difficulty step may cut it too.
-			var share := (HEAL_SHARE + run.rule(&"heal_share")) * (0.5 if run.curses.has(&"thirst") else 1.0) * run.step_rules.heal
+			# A difficulty step may cut what a heal reward brings (thirst
+			# halves every healing in RunState.heal).
+			var share := (HEAL_SHARE + run.rule(&"heal_share")) * run.step_rules.heal
 			var gained := run.heal(share, max_hp())
 			advance(("報酬　HPが%d回復した" % gained if gained > 0 else "報酬　回復（HPはすでに満タン）") + _echo_note())
 		AreaData.Reward.ECHO:
@@ -246,7 +247,7 @@ func _show_event() -> void:
 	match _event.event:
 		&"merchant":
 			options.append(_paid(&"boon", "強化を1つ選ぶ", MERCHANT_BOON_PRICE, not run.build.can_offer()))
-			options.append(_paid(&"heal", "傷の手当て（最大HPの%d%%回復）" % roundi(MERCHANT_HEAL_SHARE * 100.0), MERCHANT_HEAL_PRICE, _current_hp() >= max_hp()))
+			options.append(_paid(&"heal", "傷の手当て（最大HPの%d%%回復）" % _heal_percent(MERCHANT_HEAL_SHARE), MERCHANT_HEAL_PRICE, _current_hp() >= max_hp()))
 		&"altar":
 			var cost := altar_cost()
 			options.append({"id": &"offer", "text": "HPを%d捧げて、強化を1つ選ぶ" % cost, "enabled": _current_hp() > cost, "reason": "HPが足りない"})
@@ -261,7 +262,7 @@ func _show_event() -> void:
 			for id in run.curses:
 				var short := "" if run.echo >= SPRING_PRICE else "残響が%s足りない" % UIFormat.amount(SPRING_PRICE - run.echo)
 				options.append({"id": StringName("cleanse:" + String(id)), "text": "呪い「%s」を解く　残響 %s" % [RunState.CURSES[id][0], UIFormat.amount(SPRING_PRICE)], "enabled": short.is_empty(), "reason": short})
-			options.append({"id": &"drink", "text": "泉の水を飲む（最大HPの%d%%回復）" % roundi(SPRING_HEAL_SHARE * 100.0), "enabled": _current_hp() < max_hp(), "reason": "今は必要ない"})
+			options.append({"id": &"drink", "text": "泉の水を飲む（最大HPの%d%%回復）" % _heal_percent(SPRING_HEAL_SHARE), "enabled": _current_hp() < max_hp(), "reason": "今は必要ない"})
 		&"shelf":
 			if _shelf_boons.is_empty():
 				options.append({"id": &"give", "text": "手放せる強化がない", "enabled": false, "reason": "強化をまだ持っていない"})
@@ -287,6 +288,12 @@ func _paid(id: StringName, text: String, price: int, useless: bool) -> Dictionar
 	return {"id": id, "text": "%s　残響 %s" % [text, UIFormat.amount(price)], "enabled": reason.is_empty(), "reason": reason}
 
 
+# What a paid healing of this share gives, as the row tells it: the lore of
+# healing adds to it, and thirst halves it.
+func _heal_percent(share: float) -> int:
+	return roundi((share + run.rule(&"heal_share")) * run.mending() * 100.0)
+
+
 func altar_cost() -> int:
 	return ceili(max_hp() * ALTAR_HP_SHARE)
 
@@ -308,7 +315,7 @@ func _on_event_choice(id: StringName) -> void:
 				return
 			run.echo -= MERCHANT_HEAL_PRICE
 			_event_bought[id] = true
-			var gained := run.heal(MERCHANT_HEAL_SHARE, max_hp())
+			var gained := run.heal(MERCHANT_HEAL_SHARE + run.rule(&"heal_share"), max_hp())
 			_event_note = "%s　HPが%d回復した" % [_event.display_name, gained]
 			_show_event()
 		&"offer":
@@ -331,7 +338,7 @@ func _on_event_choice(id: StringName) -> void:
 		&"drink":
 			if _current_hp() >= max_hp():
 				return
-			var healed := run.heal(SPRING_HEAL_SHARE, max_hp())
+			var healed := run.heal(SPRING_HEAL_SHARE + run.rule(&"heal_share"), max_hp())
 			_event_note = "%s　HPが%d回復した" % [_event.display_name, healed]
 			_leave_event()
 		&"curse":

@@ -27,6 +27,9 @@ var mercy_time := 0.0
 var last_stands := 0
 var stand_mercy := 1.0
 var _mercy_left := 0.0
+# Healing reaches it at this share (a curse's thirst halves it), never less
+# than 1 for a healing of 1 or more.
+var mending := 1.0
 
 
 func _init(health: int = 10, armor: int = 0, mercy: float = 0.0) -> void:
@@ -79,6 +82,6 @@ func shield(seconds: float) -> void:
 func heal(amount: int) -> int:
 	if not alive() or amount <= 0:
 		return 0
-	var gained := mini(max_hp - hp, amount)
+	var gained := mini(max_hp - hp, maxi(1, roundi(amount * mending)))
 	hp += gained
 	return gained

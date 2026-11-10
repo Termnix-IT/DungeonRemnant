@@ -110,6 +110,7 @@ func _ready() -> void:
 	hero.equip_special(run.special)
 	hero.special_charge = minf(run.special_charge, run.special.charge) if run.special != null else 0.0
 	hero.health.last_stands = run.last_stands
+	hero.health.mending = run.mending()
 	hero.health.stood.connect(_on_stood)
 	gems.pull_radius = GemField.PULL_RADIUS + run.rule(&"gem_pull")
 	gems.collected.connect(_on_gems)

@@ -92,7 +92,7 @@ func run_tests() -> void:
 	var rules := full.lasting()
 	check(is_equal_approx(rules[&"echo_rate"], 0.1) and rules[&"last_stand"] == 1.0 and is_equal_approx(rules[&"heal_share"], 0.1) and rules[&"gem_pull"] == 40.0, "The body's rules are the run's")
 	check(is_equal_approx(rules[&"exp_rate"], 0.2) and rules[&"reroll"] == 2.0 and rules[&"offer_count"] == 1.0, "So are growth's choices")
-	check(is_equal_approx(rules[&"level_heal"], 0.1) and rules[&"level_burst"] == 80.0 and rules[&"level_ward"] == 1.5 and is_equal_approx(rules[&"level_haste"], 0.15), "And its level-up moments")
+	check(is_equal_approx(rules[&"level_heal"], 0.04) and rules[&"level_burst"] == 80.0 and rules[&"level_ward"] == 1.5 and is_equal_approx(rules[&"level_haste"], 0.15), "And its level-up moments")
 
 	# A run with the rules: experience, echo, cards and rerolls.
 	var lasting_run := RunState.new(9)

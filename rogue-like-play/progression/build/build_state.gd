@@ -12,6 +12,9 @@ signal changed
 # Triggered blows in one physics frame, at most: a chain that kills shocked
 # foes can set off more chains, and this keeps a crowd from looping forever.
 const MAX_FIRES_PER_FRAME := 24
+# How long after a skill is used a blow landing counts as that skill's
+# (TriggerBoon.On.SKILL_HIT): long enough for its wave to reach a foe.
+const SKILL_HIT_TIME := 1.0
 const OFFER_COUNT := 3
 
 var pool: Array[BoonData] = []
@@ -29,6 +32,8 @@ var base_stats: Dictionary = {}
 # swing the AttackBoon.LAST boons shape); the sword's until a hero says.
 var combo_length := 3
 var _fire_frame := -1
+# Seconds left in which a blow landing answers the skill last used.
+var _skill_left := 0.0
 var _fired := 0
 
 
@@ -155,11 +160,17 @@ func bind(combat_area: CombatArea, owner_hero: Hero) -> void:
 	area = combat_area
 	hero = owner_hero
 	var events := area.events
-	events.attack_hit.connect(func(foe: Foe, _info: DamageInfo): _answer(TriggerBoon.On.HIT, foe))
+	events.attack_hit.connect(func(foe: Foe, _info: DamageInfo):
+		_answer(TriggerBoon.On.HIT, foe)
+		if _skill_left > 0.0:
+			_skill_left = 0.0
+			_answer(TriggerBoon.On.SKILL_HIT, foe))
 	events.enemy_killed.connect(func(foe: Foe): _answer(TriggerBoon.On.KILL, foe))
 	events.dash_started.connect(func(_direction: Vector2): _answer(TriggerBoon.On.DASH_START, null))
 	events.dash_ended.connect(func(_direction: Vector2): _answer(TriggerBoon.On.DASH_END, null))
-	events.skill_used.connect(func(_attack: AttackData): _answer(TriggerBoon.On.SKILL, null))
+	events.skill_used.connect(func(_attack: AttackData):
+		_skill_left = SKILL_HIT_TIME
+		_answer(TriggerBoon.On.SKILL, null))
 	events.damage_taken.connect(func(_lost: int): _answer(TriggerBoon.On.HURT, null))
 
 
@@ -172,6 +183,7 @@ func step(delta: float) -> void:
 	for boost: Array in _boosts:
 		boost[2] -= delta
 	_boosts = _boosts.filter(func(boost: Array): return boost[2] > 0.0)
+	_skill_left = maxf(0.0, _skill_left - delta)
 	for trigger: TriggerBoon in _resting.keys():
 		_resting[trigger] -= delta
 		if _resting[trigger] <= 0.0:

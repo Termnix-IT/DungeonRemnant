@@ -4,18 +4,18 @@
 [ext_resource type="Script" path="res://progression/build/trigger_boon.gd" id="3"]
 [sub_resource type="Resource" id="Effect0"]
 script = ExtResource("3")
-on = 4
-cooldown = 2.0
+on = 6
+cooldown = 5.0
 action = 2
 at = 1
-heal = 3
-heal_per_rank = 2
+heal = 2
+heal_per_rank = 1
 effect = &"heal"
 [resource]
 script = ExtResource("1")
 id = &"healing_form"
 display_name = "癒やしの型"
-description = "スキルを使うとHPが少し回復する"
+description = "スキルを敵に当てるとHPが少し回復する"
 families = Array[String](["スキル", "守り"])
 max_level = 3
 weight = 1.0

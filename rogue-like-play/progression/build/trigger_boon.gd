@@ -6,7 +6,9 @@ extends BoonEffect
 # It can ask that the foe carried a status, roll a chance, and rest between
 # firings.
 
-enum On { HIT, KILL, DASH_START, DASH_END, SKILL, HURT }
+# SKILL_HIT: the first blow to land on a foe within BuildState.SKILL_HIT_TIME
+# of a skill being used (the skill's own, as a rule), once for each use.
+enum On { HIT, KILL, DASH_START, DASH_END, SKILL, HURT, SKILL_HIT }
 enum Action { BLAST, CHAIN, HEAL }
 enum At { TARGET, HERO }
 

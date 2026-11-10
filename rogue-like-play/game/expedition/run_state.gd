@@ -18,12 +18,14 @@ const LEVELS := preload("res://data/progression/action_levels.tres")
 const CURSES := {
 	&"frailty": ["脆さ", "受けるダメージが2増える"],
 	&"sluggish": ["鈍足", "移動速度が12%落ちる"],
-	&"thirst": ["渇き", "回復の報酬が半分になる"],
+	&"thirst": ["渇き", "あらゆる回復が半分になる"],
 }
 const CURSE_ECHO := 0.5
 # The share of an area's echo that clearing it always gives (clear_echo).
 const CLEAR_ECHO_SHARE := 0.3
 const FRAILTY := 2
+# Thirst: every healing reaches her at this share (mending()).
+const THIRST := 0.5
 const SLUGGISH := 0.88
 const HERO := preload("res://data/hero/mio.tres")
 const BOONS: Array[BoonData] = [
@@ -231,10 +233,16 @@ func curse_names() -> String:
 	return "・".join(curses.map(func(id: StringName) -> String: return CURSES[id][0]))
 
 
-# Heals a share of `max_hp`, up to it.
+# The share of any healing that reaches her: thirst halves it, between the
+# areas (heal) and in a fight (her Combatant.mending).
+func mending() -> float:
+	return THIRST if curses.has(&"thirst") else 1.0
+
+
+# Heals a share of `max_hp`, up to it, as much of it as reaches her.
 func heal(share: float, max_hp: int) -> int:
 	var before := hp if hp > 0 else max_hp
-	hp = mini(max_hp, before + roundi(max_hp * share))
+	hp = mini(max_hp, before + roundi(max_hp * share * mending()))
 	return hp - before
 
 

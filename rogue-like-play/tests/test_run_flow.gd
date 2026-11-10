@@ -142,7 +142,7 @@ func run_tests() -> void:
 	check(lasting_run.rerolls_left == 1 and lifted.choice.visible and lifted.choice.offers.size() == 4 and lifted.choice.reroll_hint.text.contains("残り1"), "A reroll draws again and counts down")
 	lifted.choice._select(0)
 	await process_frame
-	check(not lifted.choosing() and lifted.hero.health.hp == 10 + roundi(lifted.hero.health.max_hp * 0.1), "The boon taken heals her")
+	check(not lifted.choosing() and lifted.hero.health.hp == 10 + roundi(lifted.hero.health.max_hp * lifted.run.rule(&"level_heal")) and lifted.run.rule(&"level_heal") > 0.0, "The boon taken heals her")
 	check(near_foe.health.hp < foe_hp, "The fight resumes with a burst around her")
 	check(lifted.hero.health.protected() and lasting_run.build._boosts.size() == 1, "A shield holds and her swings quicken")
 	lifted.hit_stop.release()
