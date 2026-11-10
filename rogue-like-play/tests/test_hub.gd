@@ -249,7 +249,11 @@ func run_tests() -> void:
 	var help_text := ""
 	for topic: Array in HubSettings.HELP:
 		help_text += topic[0] + "".join(topic[1])
-	check(HubSettings.HELP.size() == 4 and help_text.contains("残響") and help_text.contains("ダッシュ"), "The help tells the run, the echo and the controls")
+	check(HubSettings.HELP.size() == 6 and help_text.contains("残響") and help_text.contains("ダッシュ"), "The help tells the run, the echo and the controls")
+	# And of the rules as they are: every branch of the tree, what the
+	# statuses do, and each curse by the name the run gives it.
+	check(help_text.contains("必殺技の枝") and help_text.contains("武器") and not help_text.contains("まだ開いていません"), "The help names every branch of the upgrade tree")
+	check(help_text.contains(Status.NAMES[Status.SHOCK]) and help_text.contains(Status.NAMES[Status.BURN].left(1)) and RunState.CURSES.values().all(func(curse: Array) -> bool: return help_text.contains(curse[0])), "The help tells the statuses and the curses")
 	check(not help_text.contains("ターン") and not help_text.contains("倉庫") and not help_text.contains("Gold"), "The help no longer speaks of the turn-based game")
 	main.free()
 	await process_frame
