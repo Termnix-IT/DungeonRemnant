@@ -219,7 +219,12 @@ func run_tests() -> void:
 	await process_frame
 	check(hub.page == "home" and not hub.quit_prompt.visible, "Esc on a page goes back to the lobby and asks nothing")
 	var lobby_hints: Array = hub.key_guide.get_children().filter(func(hint: Node) -> bool: return hint is Button and (hint as Button).visible).map(func(hint: Button) -> String: return hint.text)
-	check(lobby_hints == ["決定", "選ぶ", "終了"], "The lobby's keys name the way out of the game")
+	var upper_hints: Array = hub.lobby_guide.get_children().filter(func(hint: Node) -> bool: return hint is Button).map(func(hint: Button) -> String: return hint.text)
+	check(lobby_hints == ["決定", "終了"] and hub.lobby_guide.visible and upper_hints == ["選ぶ"], "The lobby's keys name the way out of the game, in two rows")
+	var upper_row: Rect2 = hub.lobby_guide.get_global_rect()
+	var lower_row: Rect2 = hub.key_guide.get_global_rect()
+	var rail := HubLobby.MENU_WIDTH - 20.0
+	check(upper_row.end.x < rail and lower_row.end.x < rail and upper_row.position.x >= hub.EDGE_X - 1.0 and is_equal_approx(upper_row.position.x, lower_row.position.x) and upper_row.get_center().y < lower_row.position.y + 8.0, "Both rows end inside the lobby's rail, one over the other")
 	hub._unhandled_input(cancel)
 	await process_frame
 	check(hub.quit_prompt.visible and hub.quit_prompt.cancel_button.has_focus() and hub.quit_prompt.cancel_button.text == "戻る" and left[0] == 0, "Esc on the lobby asks before leaving, its way back focused")
@@ -232,7 +237,7 @@ func run_tests() -> void:
 	hub.show_page("settings")
 	await process_frame
 	hub.ask_quit()
-	check(not hub.quit_prompt.visible, "It is the lobby's question only")
+	check(not hub.quit_prompt.visible and not hub.lobby_guide.visible, "It is the lobby's question only, and the lobby's upper row of keys shows there alone")
 	settings_page.show_tab(2)
 	# Quitting's way back says so, beside the way out.
 	settings_page.ask_quit()

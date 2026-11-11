@@ -19,6 +19,8 @@ signal settings_changed
 const EDGE_X := 40.0
 const EDGE_TOP := 22.0
 const EDGE_BOTTOM := 16.0
+# The lobby's upper row of keys stands this far over the footer's.
+const LOBBY_ROW_RISE := 30.0
 # Page content for the 1600×900 base: 80px of hall either side, and the
 # whole block shrinks together on smaller screens.
 const CONTENT_SIZE := Vector2(1440, 810)
@@ -37,6 +39,9 @@ var back_button: Button
 # The lobby's way out of the game: Esc (B) there asks before quitting, with
 # the settings page's own words and action.
 var quit_prompt: ChoicePrompt
+# The lobby's keys stand in two rows, this one over the footer's: three hints
+# in one row would run out past the lobby's rail into the hall.
+var lobby_guide: KeyGuide
 var title_label: Label
 var home_page: HubLobby
 var decide_button: Button
@@ -181,6 +186,16 @@ func _ready() -> void:
 	key_guide.custom_minimum_size.y = 44
 	footer.add_child(key_guide)
 	back_button = key_guide.add_hint("Esc", "B", "戻る", go_back)
+	lobby_guide = KeyGuide.new()
+	lobby_guide.custom_minimum_size.y = 44
+	_frame.add_child(lobby_guide)
+	lobby_guide.anchor_top = 1.0
+	lobby_guide.anchor_bottom = 1.0
+	lobby_guide.offset_left = EDGE_X
+	lobby_guide.offset_bottom = -EDGE_BOTTOM - LOBBY_ROW_RISE
+	lobby_guide.offset_top = lobby_guide.offset_bottom - 44
+	lobby_guide.add_hint("↑ / ↓", "▲ / ▼", "選ぶ")
+	lobby_guide.hide()
 	quit_prompt = ChoicePrompt.new()
 	add_child(quit_prompt)
 	quit_prompt.layer = 20
@@ -292,6 +307,7 @@ func show_page(target: String) -> void:
 	key_guide.clear_hints()
 	# The lobby has nowhere to go back to; it shows how to choose and enter.
 	back_button.visible = page != "home"
+	lobby_guide.visible = page == "home"
 	# Echo stays where the eye looks for it; it is quiet where nothing costs.
 	purse.quiet = page not in ["home", "upgrade"]
 	for child in _title_block.get_children():
@@ -310,7 +326,6 @@ func show_page(target: String) -> void:
 			home_page.show()
 			home_page.focus_selected()
 			key_guide.add_hint("Enter", "A", "決定")
-			key_guide.add_hint("↑ / ↓", "▲ / ▼", "選ぶ")
 			key_guide.add_hint("Esc", "B", "終了", ask_quit)
 		"sortie":
 			title_label.text = "出撃"
