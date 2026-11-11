@@ -208,6 +208,32 @@ func run_tests() -> void:
 	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
 	check(settings_page.help_button.has_focus() and settings_page.note.text == HubSettings.NOTES[7], "Pointing at a row's control chooses it too")
 	check(settings_page.help_button.get_theme_stylebox(&"focus") is StyleBoxEmpty and settings_page.topic_buttons[0].get_theme_stylebox(&"focus") is StyleBoxEmpty, "Chosen settings and help rows draw no frame")
+	# From the lobby, Esc asks whether to leave the game; on a page it only goes back.
+	var left := [0]
+	var quit_before: Callable = settings_page.quit_action
+	settings_page.quit_action = func(): left[0] += 1
+	var cancel := InputEventAction.new()
+	cancel.action = &"ui_cancel"
+	cancel.pressed = true
+	hub._unhandled_input(cancel)
+	await process_frame
+	check(hub.page == "home" and not hub.quit_prompt.visible, "Esc on a page goes back to the lobby and asks nothing")
+	var lobby_hints: Array = hub.key_guide.get_children().filter(func(hint: Node) -> bool: return hint is Button and (hint as Button).visible).map(func(hint: Button) -> String: return hint.text)
+	check(lobby_hints == ["決定", "選ぶ", "終了"], "The lobby's keys name the way out of the game")
+	hub._unhandled_input(cancel)
+	await process_frame
+	check(hub.quit_prompt.visible and hub.quit_prompt.cancel_button.has_focus() and hub.quit_prompt.cancel_button.text == "戻る" and left[0] == 0, "Esc on the lobby asks before leaving, its way back focused")
+	hub.quit_prompt.canceled.emit()
+	check(not hub.quit_prompt.visible and hub.home_page.buttons[hub.home_page.selected].has_focus() and left[0] == 0, "The way back returns to the lobby's menu, and nothing is left")
+	hub.ask_quit()
+	hub.quit_prompt.confirmed.emit()
+	check(left[0] == 1 and not hub.quit_prompt.visible, "The way out leaves the game")
+	settings_page.quit_action = quit_before
+	hub.show_page("settings")
+	await process_frame
+	hub.ask_quit()
+	check(not hub.quit_prompt.visible, "It is the lobby's question only")
+	settings_page.show_tab(2)
 	# Quitting's way back says so, beside the way out.
 	settings_page.ask_quit()
 	check(settings_page.quit_prompt.visible and settings_page.quit_prompt.cancel_button.text == "戻る" and settings_page.quit_prompt.cancel_button.has_focus(), "Quitting asks first, its way back named and waiting")

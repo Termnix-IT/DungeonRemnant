@@ -259,6 +259,11 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible or done:
 		return
+	# Esc (B) is held to skip (read in _process); its press goes no further,
+	# to the base under the stills.
+	if event.is_action_pressed(&"ui_cancel"):
+		get_viewport().set_input_as_handled()
+		return
 	var press: bool = (event.is_action_pressed(&"ui_accept") and not event.is_echo()) or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT)
 	if press:
 		get_viewport().set_input_as_handled()

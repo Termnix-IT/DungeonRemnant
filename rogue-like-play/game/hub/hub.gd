@@ -34,6 +34,9 @@ var start_button: Button
 var upgrade_button: Button
 var save_label: Label
 var back_button: Button
+# The lobby's way out of the game: Esc (B) there asks before quitting, with
+# the settings page's own words and action.
+var quit_prompt: ChoicePrompt
 var title_label: Label
 var home_page: HubLobby
 var decide_button: Button
@@ -178,6 +181,16 @@ func _ready() -> void:
 	key_guide.custom_minimum_size.y = 44
 	footer.add_child(key_guide)
 	back_button = key_guide.add_hint("Esc", "B", "戻る", go_back)
+	quit_prompt = ChoicePrompt.new()
+	add_child(quit_prompt)
+	quit_prompt.layer = 20
+	quit_prompt.confirmed.connect(func():
+		quit_prompt.hide()
+		settings_page.quit_action.call())
+	quit_prompt.canceled.connect(func():
+		quit_prompt.hide()
+		if page == "home":
+			home_page.focus_selected())
 	feedback = HubUI.label(footer, "", &"GoldLabel")
 	feedback.custom_minimum_size.y = 44
 	feedback.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -298,6 +311,7 @@ func show_page(target: String) -> void:
 			home_page.focus_selected()
 			key_guide.add_hint("Enter", "A", "決定")
 			key_guide.add_hint("↑ / ↓", "▲ / ▼", "選ぶ")
+			key_guide.add_hint("Esc", "B", "終了", ask_quit)
 		"sortie":
 			title_label.text = "出撃"
 			sortie_page.show()
@@ -397,7 +411,19 @@ func _settings_hints() -> void:
 		key_guide.add_hint("Q / E", "LB / RB", "分類")
 
 
+# From the lobby there is nowhere back to but out of the game: the question
+# the settings ask (its way back focused first, so a stray press closes
+# nothing).
+func ask_quit() -> void:
+	if page != "home" or quit_prompt.visible:
+		return
+	quit_prompt.ask("", "ゲームを終了しますか？", HubSettings.QUIT_BODY, "終了する", "戻る", true)
+
+
 func go_back() -> void:
+	if page == "home":
+		ask_quit()
+		return
 	GameAudio.play(self, &"ui_back", -18.0)
 	if page == "settings" and settings_page.help_shown:
 		if help_return.is_empty():
