@@ -72,6 +72,9 @@ var rng := RandomNumberGenerator.new()
 var tuning: HeroTuning = HERO.duplicate()
 # Foes met in the run, by FoeData.id.
 var met: Dictionary = {}
+# The player's first run ever: its first area teaches the controls
+# (FirstLessons).
+var guided := false
 # Foes met on runs before this one, by FoeData.id (the base's record as the
 # run set out): a boss among them may have its entrance cut short.
 var known: Dictionary = {}

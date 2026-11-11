@@ -59,6 +59,8 @@ const MESSAGE_RISE := 190.0
 const EDGE := 32.0
 # The key guide keeps this far from the action slots and from the health.
 const GUIDE_GAP := 24.0
+# The lesson stands this far over the guide.
+const LESSON_RISE := 52.0
 # The health fill's length, inside the frame's channel.
 const BAR_WIDTH := 360.0
 # The health bar's frame (built by tools/build_gauges.py) and, measured by
@@ -111,6 +113,9 @@ var slots: Dictionary[StringName, ActionSlot] = {}
 # The skill slot's key (the seconds left while it comes back).
 var skill_label: Label
 var guide: KeyGuide
+# The control being taught in a first run's first area, over the guide: the
+# same key guide, larger, one hint at a time (show_lesson).
+var lesson: KeyGuide
 # The health (bottom left) and the action slots (bottom right), which the
 # guide stands between.
 var vitals: VBoxContainer
@@ -325,6 +330,13 @@ func _build_bottom(root: Control) -> void:
 	guide.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	guide.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	guide.offset_bottom = -EDGE + 6.0
+	lesson = KeyGuide.new()
+	root.add_child(lesson)
+	lesson.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	lesson.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	lesson.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	lesson.offset_bottom = -EDGE - LESSON_RISE
+	lesson.hide()
 	trial_keys = _label(root, &"HudCaption")
 	trial_keys.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	trial_keys.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -362,6 +374,26 @@ func watch(combat_area: CombatArea) -> void:
 	trial_keys.visible = area.has_method(&"trial_keys")
 	if trial_keys.visible:
 		trial_keys.text = area.trial_keys()
+
+
+# The control being taught ([id, keys, buttons, words], FirstLessons); empty
+# takes it away.
+func show_lesson(taught: Array) -> void:
+	lesson.clear_hints(0)
+	lesson.visible = not taught.is_empty()
+	if taught.is_empty():
+		return
+	var hint := lesson.add_hint(taught[1], taught[2], taught[3])
+	hint.theme_type_variation = &"LessonHint"
+	hint.set_meta(&"base_style", hint.get_theme_stylebox(&"normal"))
+	lesson.refresh()
+	# As large as its hint, its foot kept where it stands over the guide.
+	var extent := lesson.get_combined_minimum_size()
+	lesson.offset_left = -extent.x * 0.5
+	lesson.offset_right = extent.x * 0.5
+	lesson.offset_bottom = -EDGE - LESSON_RISE
+	lesson.offset_top = lesson.offset_bottom - extent.y
+	UIMotion.of(lesson).appear(0.0, UIMotion.WINDOW_TIME)
 
 
 # The banner in the middle; empty hides it.

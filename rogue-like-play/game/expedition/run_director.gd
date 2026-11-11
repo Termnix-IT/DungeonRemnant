@@ -101,6 +101,7 @@ func _ready() -> void:
 		run.skills = meta.equipped_skills()
 		run.special = meta.equipped_special()
 		run.moveset = meta.equipped_weapon()
+		run.guided = meta.runs == 0
 		for id: Variant in meta.met:
 			run.known[StringName(str(id))] = true
 	run.use_step(step)

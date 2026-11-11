@@ -59,6 +59,9 @@ const TREES := preload("res://art/tiles/painted/forest_trees.png")
 const TREE_ACROSS := 124.0
 
 @export var seed_value := 0
+# The controls being taught (the first area of a first run only; else null).
+var lessons: FirstLessons
+
 var data: AreaData
 var run: RunState
 # The player's settings (the hub's); none: the defaults.
@@ -138,6 +141,7 @@ func _ready() -> void:
 	prompt.canceled.connect(func(): menu.open())
 	hero_fell.connect(_on_hero_down)
 	foe_fell.connect(_on_foe_echo)
+	_begin_lessons()
 	Input.joy_connection_changed.connect(_on_joy_connection)
 	var air := BattleAmbience.new()
 	air.name = "Ambience"
@@ -205,6 +209,8 @@ func _physics_process(delta: float) -> void:
 	if data == null or finished:
 		return
 	elapsed += delta
+	if lessons != null:
+		lessons.step(delta, hero.motor.motion().length() > 30.0)
 	if waves != null:
 		waves.advance(delta)
 	if _boss_left >= 0.0:
@@ -249,6 +255,9 @@ func clear() -> void:
 	if finished:
 		return
 	finished = true
+	if lessons != null:
+		lessons = null
+		hud.show_lesson([])
 	if director != null:
 		director.running = false
 	# An elite still standing leaves the share of its gems already cut out of
@@ -341,6 +350,21 @@ func _on_foe_echo(foe: Foe) -> void:
 	var echo := run.echo_reward(foe.data.echo_reward)
 	run.echo += echo
 	popups.show_number("残響 +%d" % echo, number_spot(foe), ECHO_NUMBER, ECHO_OUTLINE)
+
+
+# The first area of a player's first run teaches the controls, a line at a
+# time on the HUD, each until she has done it.
+func _begin_lessons() -> void:
+	if run == null or not run.guided or run.areas_cleared > 0 or data == null or data.boss != null:
+		return
+	lessons = FirstLessons.new()
+	if hero.motor.skill_attacks[0] == null:
+		lessons.skip(&"skill")
+	lessons.changed.connect(func(): hud.show_lesson(lessons.current()))
+	events.swing_started.connect(func(_attack: AttackData): lessons.note(&"charge" if hero.motor.combo_index == HeroMotor.CHARGED else &"strike"))
+	events.dash_started.connect(func(_direction: Vector2): lessons.note(&"dash"))
+	events.skill_used.connect(func(_attack: AttackData): lessons.note(&"skill"))
+	hud.show_lesson(lessons.current())
 
 
 func choosing() -> bool:
