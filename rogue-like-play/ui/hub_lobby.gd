@@ -21,12 +21,14 @@ const ENTRIES := [
 	[&"codex", "図鑑", &"codex"],
 	[&"settings", "設定", &"settings"],
 ]
+# Translated in the context "lobby": the controls guide's "強化を選ぶ" is a
+# level-up boon, these the base's upgrades.
 const ACTIONS := {
-	&"departure": "出撃先を選ぶ",
-	&"upgrade": "強化を選ぶ",
-	&"status": "ステータスを開く",
-	&"codex": "図鑑を開く",
-	&"settings": "設定を開く",
+	&"departure": "出撃先を選ぶ", # context: lobby
+	&"upgrade": "強化を選ぶ", # context: lobby
+	&"status": "ステータスを開く", # context: lobby
+	&"codex": "図鑑を開く", # context: lobby
+	&"settings": "設定を開く", # context: lobby
 }
 const DESCRIPTIONS := {
 	&"upgrade": "探索で得た残響で、次の探索からずっと続く強化を手に入れる。",
@@ -484,7 +486,7 @@ func _show_entry() -> void:
 	title_icon.kind = ENTRIES[selected][2]
 	title_icon.queue_redraw()
 	decide_button.visible = ACTIONS.has(id)
-	decide_button.text = tr(ACTIONS.get(id, ""))
+	decide_button.text = tr(ACTIONS.get(id, ""), "lobby")
 	# Right from the menu reaches the panel's button.
 	for button in buttons:
 		button.focus_neighbor_right = decide_button.get_path()

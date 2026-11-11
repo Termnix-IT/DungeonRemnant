@@ -21,13 +21,24 @@ static func find(id: StringName) -> ChapterData:
 
 # The chapter's short name ("第1章").
 static func short_name(chapter: ChapterData) -> String:
-	return TranslationServer.translate(chapter.display_name).get_slice("　", 0)
+	return _name_parts(chapter)[0]
 
 
 # The chapter's name without its number ("灰の回廊").
 static func title(chapter: ChapterData) -> String:
-	var name := TranslationServer.translate(chapter.display_name).get_slice("　", 1)
-	return name if not name.is_empty() else TranslationServer.translate(chapter.display_name)
+	var parts := _name_parts(chapter)
+	return parts[parts.size() - 1]
+
+
+# The shown name split into its number and its title: the Japanese parts
+# them with a wide space ("第1章　灰の回廊"), the English with a colon
+# ("Chapter 1: The Ash Corridor").
+static func _name_parts(chapter: ChapterData) -> PackedStringArray:
+	var shown := TranslationServer.translate(chapter.display_name)
+	for mark in ["\u3000", ": "]:
+		if shown.contains(mark):
+			return shown.split(mark, true, 1)
+	return PackedStringArray([shown])
 
 
 # The chapter the base offers first: the first open one not cleared yet, or

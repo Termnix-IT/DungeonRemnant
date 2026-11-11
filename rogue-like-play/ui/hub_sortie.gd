@@ -105,7 +105,7 @@ func _ready() -> void:
 	pictures.theme_type_variation = &"CompactRow"
 	_info.add_child(pictures)
 	foe_row = _row(pictures, tr("現れる敵"))
-	gear_row = _row(pictures, tr("装備"))
+	gear_row = _row(pictures, tr("装備", "gear"))
 	_decide.theme_type_variation = &"DetailStack"
 	_build_step_row()
 	HubUI.space(_decide)

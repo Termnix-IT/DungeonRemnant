@@ -628,7 +628,7 @@ func stat_rows() -> Array:
 		rising.append(tr("無敵%s秒") % _number(rules[&"level_ward"]))
 	if rules[&"level_haste"] > 0.0:
 		rising.append(tr("振り+%d%%") % roundi(rules[&"level_haste"] * 100.0))
-	rows.append([tr("レベルアップの瞬間"), "、".join(rising) if not rising.is_empty() else tr("なし"), "", tr("光の癒やし・光の衝撃・光の加護・高揚で増える"), false])
+	rows.append([tr("レベルアップの瞬間"), tr("、").join(rising) if not rising.is_empty() else tr("なし"), "", tr("光の癒やし・光の衝撃・光の加護・高揚で増える"), false])
 	return rows
 
 

@@ -20,10 +20,13 @@ extends SceneTree
 #
 # Columns: the Japanese key, its ?context (tr()'s second argument, for one
 # Japanese that needs two English words), the English, and _where, the first
-# file it was found in (columns starting with "_" are not imported).
+# file it was found in (columns starting with "_" are not imported). A
+# constant translated in a context names it in its line's comment
+# ("# context: lobby"); a tr("…", "context") call carries its own.
 
 const TABLE := "res://locale/text.csv"
 const HEADER: Array[String] = ["keys", "?context", "en", "_where"]
+const CONTEXT_MARK := "# context: "
 const SCANNED: Array[String] = ["res://actors", "res://audio", "res://combat", "res://data", "res://game", "res://progression", "res://ui", "res://world"]
 
 static var _japanese: RegEx
@@ -32,7 +35,7 @@ static var _with_context: RegEx
 
 static func has_japanese(text: String) -> bool:
 	if _japanese == null:
-		_japanese = RegEx.create_from_string("[\\x{3040}-\\x{30ff}\\x{3400}-\\x{9fff}\\x{ff01}-\\x{ff5e}]")
+		_japanese = RegEx.create_from_string("[\\x{3001}\\x{3002}\\x{3040}-\\x{30ff}\\x{3400}-\\x{9fff}\\x{ff01}-\\x{ff5e}]")
 	return _japanese.search(text) != null
 
 
@@ -99,10 +102,13 @@ static func _script_texts(path: String) -> Array:
 			var text: String = (part[0] as String).c_unescape()
 			if not has_japanese(text):
 				continue
-			var context := ""
+			# A line's comment can name the context its constants are
+			# translated in ("# context: lobby").
+			var context := line.get_slice(CONTEXT_MARK, 1).strip_edges() if line.contains(CONTEXT_MARK) else ""
 			var after: String = line.substr(part[1])
 			var called := _with_context.search(after)
-			if called != null and line.substr(0, part[2]).ends_with("tr("):
+			var head := line.substr(0, part[2])
+			if called != null and (head.ends_with("tr(") or head.ends_with("translate(")):
 				context = called.get_string(1).c_unescape()
 			texts.append([text, context])
 	return texts

@@ -340,7 +340,7 @@ func show_page(target: String) -> void:
 			key_guide.add_hint("← / →", "◀ / ▶", tr("選ぶ"))
 			if _meta != null and _meta.steps_open() > 0:
 				key_guide.add_hint("Q / E", "LB / RB", tr("段階"))
-			key_guide.add_hint("Tab", "View", tr("装備"), _status_from_sortie)
+			key_guide.add_hint("Tab", "View", tr("装備", "gear"), _status_from_sortie)
 		"upgrade":
 			title_label.text = tr("強化")
 			upgrade_page.show()

@@ -14,7 +14,6 @@ enum Kind { FIELD, ARENA, BOSS, EVENT }
 enum Reward { BOON, HEAL, ECHO }
 
 const KIND_NAMES := {Kind.FIELD: "フィールド", Kind.ARENA: "アリーナ", Kind.BOSS: "ボス", Kind.EVENT: "イベント"}
-const REWARD_NAMES := {Reward.BOON: "強化", Reward.HEAL: "回復", Reward.ECHO: "残響"}
 
 @export var id: StringName
 @export var display_name := "エリア"
@@ -67,8 +66,15 @@ func kind_name() -> String:
 	return tr(KIND_NAMES[kind])
 
 
+# The reward's name. The boon is translated in a context of its own: the
+# same word names the base's lasting upgrades, which English tells apart.
 static func reward_name(reward: Reward) -> String:
-	return TranslationServer.translate(REWARD_NAMES[reward])
+	match reward:
+		Reward.BOON:
+			return TranslationServer.translate("強化", "reward")
+		Reward.HEAL:
+			return TranslationServer.translate("回復")
+	return TranslationServer.translate("残響")
 
 
 func is_event() -> bool:

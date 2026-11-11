@@ -1,8 +1,10 @@
 extends SceneTree
 
 # The English translation: the table (locale/text.csv) holds a row for every
-# Japanese text the game shows and none for text it no longer shows; its
-# imported translation is the table as written; the language is chosen in
+# Japanese text the game shows and none for text it no longer shows; every
+# row has English, which takes the same numbers in the same order as the
+# Japanese (the "%" format takes them by place); its imported translation is
+# the table as written; the language is chosen in
 # the settings, saved, and rebuilds the base in it; and every word on the
 # screens goes through tr(). The last is checked with pseudolocalization,
 # which marks every translated text ⟦like this⟧: Japanese outside the marks
@@ -120,19 +122,25 @@ func run_tests() -> void:
 			stale.append(table[id].key)
 	check(missing.is_empty(), "Every Japanese text has a row in the table (run tools/text_catalog.gd): %s" % [missing.slice(0, 5)])
 	check(stale.is_empty(), "No row is left for a text the game no longer shows: %s" % [stale.slice(0, 5)])
-	var english := 0
+	var without: Array[String] = []
+	var misformatted: Array[String] = []
 	var mismatched: Array[String] = []
+	var formats := RegEx.create_from_string("%(?:%|[+0-9.]*[sd])")
+	var specifiers := func(text: String) -> Array: return formats.search_all(text).map(func(found: RegExMatch) -> String: return found.get_string())
 	TranslationServer.set_locale("en")
 	for id: String in table:
 		var row: Dictionary = table[id]
 		if row.en == "":
+			without.append(row.key)
 			continue
-		english += 1
+		if specifiers.call(row.key) != specifiers.call(row.en):
+			misformatted.append(row.key)
 		if String(TranslationServer.translate(row.key, row.context)) != row.en:
 			mismatched.append(row.key)
 	TranslationServer.set_locale("ja")
+	check(without.is_empty(), "Every row has English (%d do not): %s" % [without.size(), without.slice(0, 5)])
+	check(misformatted.is_empty(), "The English takes the Japanese's numbers in the same order: %s" % [misformatted.slice(0, 5)])
 	check(mismatched.is_empty(), "The imported translation is the table as written (import again): %s" % [mismatched.slice(0, 5)])
-	print("  %d of %d rows have English" % [english, table.size()])
 	check(String(TranslationServer.translate(found[0].key)) == found[0].key, "In Japanese the text is shown as written")
 
 	# The language is a setting of its own, saved, and the machine's decides
