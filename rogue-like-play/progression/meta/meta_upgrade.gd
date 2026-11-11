@@ -59,12 +59,13 @@ func figure_value(rank: int) -> String:
 # ("+15", "-0.05秒", "+10%"). A figure that carries its own sign ("受けるダメージ
 # -%s") keeps that sign for the gain.
 func figure_gain() -> String:
-	var at := figure.find("%s")
+	var shown := tr(figure)
+	var at := shown.find("%s")
 	if at < 0:
 		return ""
 	var step := per_rank * figure_scale
-	var mark := figure[at - 1] if at > 0 and figure[at - 1] in ["+", "-"] else ("+" if step >= 0.0 else "-")
-	return mark + _number(absf(step)) + figure.substr(at + 2).replace("%%", "%")
+	var mark := shown[at - 1] if at > 0 and shown[at - 1] in ["+", "-"] else ("+" if step >= 0.0 else "-")
+	return mark + _number(absf(step)) + shown.substr(at + 2).replace("%%", "%")
 
 
 # The figure as the page tells it at `rank`, with what the next rank adds
@@ -75,12 +76,13 @@ func figure_gain() -> String:
 func figure_line(rank: int) -> String:
 	if figure.is_empty():
 		return ""
+	var shown := tr(figure)
 	if rank <= 0:
-		var first := "習得すると　" + figure % figure_value(1)
-		return first if is_zero_approx(figure_base * figure_scale) else "%s（%s）" % [first, figure_gain()]
+		var first := tr("習得すると　") + shown % figure_value(1)
+		return first if is_zero_approx(figure_base * figure_scale) else tr("%s（%s）") % [first, figure_gain()]
 	if rank >= max_rank():
-		return figure % figure_value(rank)
-	return "%s（%s）" % [figure % ("%s → %s" % [figure_value(rank), figure_value(rank + 1)]), figure_gain()]
+		return shown % figure_value(rank)
+	return tr("%s（%s）") % [shown % ("%s → %s" % [figure_value(rank), figure_value(rank + 1)]), figure_gain()]
 
 
 # Whether the description only says again what the figure line tells: it

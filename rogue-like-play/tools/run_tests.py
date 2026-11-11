@@ -54,7 +54,7 @@ def suite_names(wanted: list[str], skipped: list[str]) -> list[str]:
 def run_suite(godot: str, name: str, timeout: float) -> tuple[str, bool, float, str]:
 	log = LOGS / f"{name}.log"
 	started = time.monotonic()
-	command = [godot, "--headless", "--path", str(ROOT), "--log-file", str(log), "--script", f"res://tests/{name}.gd"]
+	command = [godot, "--headless", "--language", "ja", "--path", str(ROOT), "--log-file", str(log), "--script", f"res://tests/{name}.gd"]
 	try:
 		done = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout)
 		passed = done.returncode == 0

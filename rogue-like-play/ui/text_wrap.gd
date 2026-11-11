@@ -5,8 +5,10 @@ extends RefCounted
 # can strand one or two characters ("増加す／る"). For text that needs two
 # lines, this picks a break near the middle after a particle or punctuation
 # and inserts it explicitly. Longer text is left to the Label's autowrap.
-const BREAK_AFTER := "、。，．・がをにはでともへのや）」』"
-const NO_LINE_START := "、。，．・ゃゅょっゎぁぃぅぇぉャュョッヮァィゥェォー）」』！？"
+# Text without Japanese (the English) breaks only at a space, which the
+# break replaces, so no word is cut.
+const BREAK_AFTER := "、。，．・がをにはでともへのや）」』" # not translated
+const NO_LINE_START := "、。，．・ゃゅょっゎぁぃぅぇぉャュョッヮァィゥェォー）」』！？" # not translated
 const SOURCE := &"text_wrap_source"
 
 
@@ -37,6 +39,7 @@ static func balanced(text: String, font: Font, font_size: int, width: float) -> 
 	var total := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 	if total <= width:
 		return text
+	var spaced := not _has_japanese(text)
 	var best := -1
 	var best_score := INF
 	for index in range(1, text.length()):
@@ -45,9 +48,20 @@ static func balanced(text: String, font: Font, font_size: int, width: float) -> 
 			break
 		if total - head > width or NO_LINE_START.contains(text[index]):
 			continue
+		if spaced and text[index - 1] != " ":
+			continue
 		# Prefer natural break points; otherwise the split nearest the middle.
 		var score := absf(head - total / 2.0) + (0.0 if BREAK_AFTER.contains(text[index - 1]) else width * 0.3)
 		if score < best_score:
 			best_score = score
 			best = index
-	return text if best < 0 else text.substr(0, best) + "\n" + text.substr(best)
+	if best < 0:
+		return text
+	return (text.substr(0, best - 1) if spaced else text.substr(0, best)) + "\n" + text.substr(best)
+
+
+static func _has_japanese(text: String) -> bool:
+	for letter in text:
+		if letter.unicode_at(0) >= 0x3000:
+			return true
+	return false

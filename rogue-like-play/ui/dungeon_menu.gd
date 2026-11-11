@@ -56,7 +56,7 @@ var resume_button: JustifiedButton
 var controls_button: JustifiedButton
 var settings_button: JustifiedButton
 # What the first button says: back to the fight, or to the map.
-var resume_caption := "戦いに戻る"
+var resume_caption := tr("戦いに戻る")
 # Where the run stands, under the buttons: its lines are made anew on opening.
 var state_box: VBoxContainer
 # The help was opened straight from the menu's controls button, so the way
@@ -110,14 +110,14 @@ func _build_menu() -> void:
 	side_by_side.add_child(column)
 	# The column keeps one axis: the heading, the buttons and the keys all
 	# stand on its centre, as the rule's diamond does.
-	var title := HubUI.label(column, "メニュー", &"HeadingLabel")
+	var title := HubUI.label(column, tr("メニュー"), &"HeadingLabel")
 	title.autowrap_mode = TextServer.AUTOWRAP_OFF
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	HubUI.rule(column)
 	resume_button = _menu_button(column, resume_caption, resume, &"PrimaryButton")
-	controls_button = _menu_button(column, "操作", open_controls, &"SecondaryButton")
-	settings_button = _menu_button(column, "設定", open_settings, &"SecondaryButton")
-	abort_button = _menu_button(column, "探索を中断する", func(): abort_requested.emit(), &"SecondaryButton")
+	controls_button = _menu_button(column, tr("操作"), open_controls, &"SecondaryButton")
+	settings_button = _menu_button(column, tr("設定"), open_settings, &"SecondaryButton")
+	abort_button = _menu_button(column, tr("探索を中断する"), func(): abort_requested.emit(), &"SecondaryButton")
 	var buttons: Array[Button] = [resume_button, controls_button, settings_button, abort_button]
 	# The three words spread to the longest one's width, so they read as one
 	# even block down the column's centre.
@@ -138,8 +138,8 @@ func _build_menu() -> void:
 	var guide := KeyGuide.new()
 	guide.alignment = BoxContainer.ALIGNMENT_CENTER
 	column.add_child(guide)
-	guide.add_hint("Enter", "A", "決定")
-	guide.add_hint("Esc", "B", "戻る", back)
+	guide.add_hint("Enter", "A", tr("決定"))
+	guide.add_hint("Esc", "B", tr("戻る"), back)
 	UIMotion.bind_buttons(column)
 
 
@@ -163,7 +163,7 @@ func _build_build(parent: Control) -> void:
 	# The heading and the grid stand on the column's centre, as the menu's
 	# do; the boon's account under them, being running text, keeps to the
 	# left.
-	var title := HubUI.label(build_panel, "この探索の強化", &"HeadingLabel")
+	var title := HubUI.label(build_panel, tr("この探索の強化"), &"HeadingLabel")
 	title.autowrap_mode = TextServer.AUTOWRAP_OFF
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	HubUI.rule(build_panel)
@@ -197,14 +197,14 @@ func _show_state() -> void:
 		child.free()
 	if run == null or run.route == null:
 		return
-	var place := run.route.chapter.display_name
-	place += "　ボス" if run.layer >= run.route.size() - 1 else "　第%d層" % (run.layer + 1)
+	var place := tr(run.route.chapter.display_name)
+	place += tr("　ボス") if run.layer >= run.route.size() - 1 else tr("　第%d層") % (run.layer + 1)
 	_state_line(place, &"BodyLabel")
 	if run.step > 0:
-		_state_line("段階%d" % run.step, &"MutedLabel")
+		_state_line(tr("段階%d") % run.step, &"MutedLabel")
 	for id in run.curses:
-		_state_line("呪い「%s」" % RunState.CURSES[id][0], &"NegativeLabel")
-		_state_line(RunState.CURSES[id][1], &"MutedLabel")
+		_state_line(tr("呪い「%s」") % tr(RunState.CURSES[id][0]), &"NegativeLabel")
+		_state_line(tr(RunState.CURSES[id][1]), &"MutedLabel")
 
 
 func _state_line(words: String, role: StringName) -> void:
@@ -227,7 +227,7 @@ func _show_build() -> void:
 	build_grid.visible = not owned.is_empty()
 	_build_rule.visible = not owned.is_empty()
 	build_name.get_parent().visible = not owned.is_empty()
-	build_note.text = EMPTY_NOTE
+	build_note.text = tr(EMPTY_NOTE)
 	# The one line said while the build is empty stands under the heading;
 	# a boon's account, running text, keeps to the left.
 	build_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if owned.is_empty() else HORIZONTAL_ALIGNMENT_LEFT
@@ -235,7 +235,7 @@ func _show_build() -> void:
 		var rank := run.build.rank(boon.id)
 		var cell := EquipSocket.new(EMBLEM_SIZE, false, true)
 		cell.emblem = EmblemIcons.texture(boon.emblem)
-		cell.tooltip_text = boon.display_name
+		cell.tooltip_text = tr(boon.display_name)
 		build_grid.add_child(cell)
 		if boon.max_level > 1:
 			# The rank at the emblem's lower right, as the HUD's row shows it.
@@ -270,7 +270,7 @@ func _show_build() -> void:
 func _tell(boon: BoonData, rank: int, cell: EquipSocket) -> void:
 	for other in _build_cells:
 		other.lit = other == cell
-	build_name.text = boon.display_name
+	build_name.text = tr(boon.display_name)
 	build_rank.text = "" if boon.max_level == 1 else "Lv %d / %d" % [rank, boon.max_level]
 	build_note.text = boon.effect_description(rank)
 	for button: Button in [resume_button, controls_button, settings_button, abort_button]:
@@ -282,7 +282,7 @@ func _build_settings() -> void:
 	settings_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	settings_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(settings_view)
-	settings_title = HubUI.label(settings_view, "設定", &"TitleLabel")
+	settings_title = HubUI.label(settings_view, tr("設定"), &"TitleLabel")
 	settings_title.autowrap_mode = TextServer.AUTOWRAP_OFF
 	settings_title.position = EDGE
 	settings_page = HubSettings.new()
@@ -374,10 +374,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # The hub's settings keys, behind the way back.
 func _settings_hints() -> void:
-	settings_title.text = "ヘルプ" if settings_page.help_shown else "設定"
+	settings_title.text = tr("ヘルプ") if settings_page.help_shown else tr("設定")
 	settings_guide.clear_hints(0)
-	settings_guide.add_hint("Esc", "B", "戻る", back)
-	settings_guide.add_hint("↑ / ↓", "▲ / ▼", "項目")
+	settings_guide.add_hint("Esc", "B", tr("戻る"), back)
+	settings_guide.add_hint("↑ / ↓", "▲ / ▼", tr("項目"))
 	if not settings_page.help_shown:
-		settings_guide.add_hint("← / →", "◀ / ▶", "変更")
-		settings_guide.add_hint("Q / E", "LB / RB", "分類")
+		settings_guide.add_hint("← / →", "◀ / ▶", tr("変更"))
+		settings_guide.add_hint("Q / E", "LB / RB", tr("分類"))

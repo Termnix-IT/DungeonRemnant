@@ -139,7 +139,7 @@ func _show_rows() -> void:
 			continue
 		rows.append(foe)
 		cards.append(_card(foe, known))
-	count_label.text = "出会った敵  %d / %d" % [met, FoeCatalog.FOES.size()]
+	count_label.text = tr("出会った敵  %d / %d") % [met, FoeCatalog.FOES.size()]
 	UIMotion.bind_buttons(_list)
 	if not rows.is_empty():
 		_select(0, false)
@@ -148,7 +148,7 @@ func _show_rows() -> void:
 func _card(foe: FoeData, known: bool) -> EquipSocket:
 	var card := EquipSocket.new(TILE_DIAMETER, false, true)
 	card.inset = TILE_INSET
-	card.tooltip_text = foe.display_name if known else UNKNOWN_NOTE
+	card.tooltip_text = tr(foe.display_name) if known else tr(UNKNOWN_NOTE)
 	# The foe's picture; one not met, dimmed to a shade as the upgrade tree's
 	# nodes not open yet.
 	card.emblem = tile_picture(foe.visual_id, true, foe.tint)
@@ -213,13 +213,13 @@ func _select(place: int, animate: bool = true) -> void:
 	for child in stats.get_children():
 		child.free()
 	if _unknown:
-		name_label.text = UNKNOWN_NAME
-		description_label.text = UNKNOWN_NOTE
+		name_label.text = tr(UNKNOWN_NAME)
+		description_label.text = tr(UNKNOWN_NOTE)
 	else:
-		name_label.text = foe.display_name
-		for row: Array in [["HP", str(foe.max_hp)], ["ぶつかる力", str(foe.contact_damage)], ["速さ", str(roundi(foe.speed))]]:
+		name_label.text = tr(foe.display_name)
+		for row: Array in [["HP", str(foe.max_hp)], [tr("ぶつかる力"), str(foe.contact_damage)], [tr("速さ"), str(roundi(foe.speed))]]:
 			_stat_row(row[0], row[1])
-		description_label.text = foe.description
+		description_label.text = tr(foe.description)
 	if animate:
 		UIMotion.of(_info).slide_in()
 

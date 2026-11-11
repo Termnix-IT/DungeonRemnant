@@ -15,11 +15,11 @@ signal activated(id: StringName)
 
 # id, menu label, NavigationIcon kind
 const ENTRIES := [
-	[&"departure", "出撃", "出撃"],
-	[&"upgrade", "強化", "永久強化"],
-	[&"status", "ステータス", "装備"],
-	[&"codex", "図鑑", "図鑑"],
-	[&"settings", "設定", "設定"],
+	[&"departure", "出撃", &"departure"],
+	[&"upgrade", "強化", &"upgrade"],
+	[&"status", "ステータス", &"equip"],
+	[&"codex", "図鑑", &"codex"],
+	[&"settings", "設定", &"settings"],
 ]
 const ACTIONS := {
 	&"departure": "出撃先を選ぶ",
@@ -148,7 +148,7 @@ func _build_menu() -> void:
 		var entry: Array = ENTRIES[index]
 		var button := Button.new()
 		button.name = String(entry[0]).capitalize().replace(" ", "") + "Entry"
-		button.text = entry[1]
+		button.text = tr(entry[1])
 		button.theme_type_variation = &"LobbyMenuButton"
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		add_child(button)
@@ -242,29 +242,29 @@ func _build_panel() -> void:
 	description_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	var route: HBoxContainer = HubUI.fact_strip(stack, STRIP_HEIGHT)
 	_details[&"departure"] = route
-	route_value = HubUI.strip_fact(route, "道のり")
+	route_value = HubUI.strip_fact(route, tr("道のり"))
 	HubUI.strip_divider(route)
-	best_value = HubUI.strip_fact(route, "記録")
+	best_value = HubUI.strip_fact(route, tr("記録"))
 	var growth: HBoxContainer = HubUI.fact_strip(stack, STRIP_HEIGHT)
 	_details[&"upgrade"] = growth
-	upgrade_value = HubUI.strip_fact(growth, "習得した段階")
+	upgrade_value = HubUI.strip_fact(growth, tr("習得した段階"))
 	HubUI.strip_divider(growth)
-	upgrade_ready = HubUI.strip_fact(growth, "強化できる")
+	upgrade_ready = HubUI.strip_fact(growth, tr("強化できる"))
 	var loadout: HBoxContainer = HubUI.fact_strip(stack, STRIP_HEIGHT)
 	_details[&"status"] = loadout
-	status_skills = HubUI.strip_fact(loadout, "装備中のスキル")
+	status_skills = HubUI.strip_fact(loadout, tr("装備中のスキル"))
 	HubUI.strip_divider(loadout)
-	status_hp = HubUI.strip_fact(loadout, "最大HP")
+	status_hp = HubUI.strip_fact(loadout, tr("最大HP"))
 	var records: HBoxContainer = HubUI.fact_strip(stack, STRIP_HEIGHT)
 	_details[&"codex"] = records
-	codex_met = HubUI.strip_fact(records, "出会った敵")
+	codex_met = HubUI.strip_fact(records, tr("出会った敵"))
 	HubUI.strip_divider(records)
-	codex_runs = HubUI.strip_fact(records, "探索の回数")
+	codex_runs = HubUI.strip_fact(records, tr("探索の回数"))
 	var current: HBoxContainer = HubUI.fact_strip(stack, STRIP_HEIGHT)
 	_details[&"settings"] = current
-	volume_value = HubUI.strip_fact(current, "音量")
+	volume_value = HubUI.strip_fact(current, tr("音量"))
 	HubUI.strip_divider(current)
-	display_value = HubUI.strip_fact(current, "画面")
+	display_value = HubUI.strip_fact(current, tr("画面"))
 	decide_button = HubUI.primary_action(stack, "", func(): activated.emit(selected_id()))
 	# The lobby keeps its painted plate; the pages' actions are quiet.
 	decide_button.theme_type_variation = &"LobbyAction"
@@ -282,7 +282,7 @@ func _build_hero() -> void:
 	hero_button = InkTooltip.HintButton.new()
 	hero_button.name = "HeroButton"
 	hero_button.theme_type_variation = &"CharacterButton"
-	hero_button.tooltip_text = "話しかける"
+	hero_button.tooltip_text = tr("話しかける")
 	hero_button.focus_mode = Control.FOCUS_NONE
 	hero_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	hero_button.pressed.connect(talk)
@@ -322,7 +322,7 @@ func _build_hero() -> void:
 # A click on her: she reacts and says the next line, which fades after a while.
 func talk() -> void:
 	hero.react()
-	speech_label.text = _lines[_speech_index % _lines.size()]
+	speech_label.text = tr(_lines[_speech_index % _lines.size()])
 	_speech_index += 1
 	_fit_speech()
 	hero_speech.show()
@@ -379,7 +379,7 @@ func refresh(meta: MetaProgress, chapter: ChapterData) -> void:
 		_lines = lines
 		_speech_index = 0
 	if chapter != null:
-		route_value.text = "%d層とボス" % chapter.layers
+		route_value.text = tr("%d層とボス") % chapter.layers
 		best_value.text = Chapters.record(meta, chapter)
 	var ranks := 0
 	var ready := 0
@@ -387,15 +387,15 @@ func refresh(meta: MetaProgress, chapter: ChapterData) -> void:
 		ranks += meta.rank(upgrade.id)
 		if meta.can_buy(upgrade.id):
 			ready += 1
-	upgrade_value.text = "%d 段階" % ranks
-	upgrade_ready.text = "%d 件" % ready
+	upgrade_value.text = tr("%d 段階") % ranks
+	upgrade_ready.text = tr("%d 件") % ready
 	status_skills.text = "%d / %d" % [meta.loadout.filter(func(id: StringName): return not id.is_empty()).size(), MetaProgress.SKILL_SLOTS]
 	status_hp.text = str(meta.tuning(load("res://data/hero/mio.tres")).max_hp)
 	codex_met.text = "%d / %d" % [FoeCatalog.FOES.filter(func(foe: FoeData): return meta.has_met(foe.id)).size(), FoeCatalog.FOES.size()]
-	codex_runs.text = "%d 回" % meta.runs
+	codex_runs.text = tr("%d 回") % meta.runs
 	if settings != null:
 		volume_value.text = "%d%%" % settings.volume_percent()
-		display_value.text = GameSettings.DISPLAY_NAMES[1 if settings.fullscreen else 0]
+		display_value.text = tr(GameSettings.DISPLAY_NAMES[1 if settings.fullscreen else 0])
 	_show_entry()
 
 
@@ -470,12 +470,12 @@ func _show_entry() -> void:
 	# The departure tells the chapter it opens on; the choosing is its page's.
 	var departure := id == &"departure" and _chapter != null
 	if departure:
-		title_label.text = _chapter.display_name
-		description_label.text = _chapter.description
+		title_label.text = tr(_chapter.display_name)
+		description_label.text = tr(_chapter.description)
 		_art.texture = _chapter.illustration
 	else:
-		title_label.text = ENTRIES[selected][1]
-		description_label.text = DESCRIPTIONS.get(id, "")
+		title_label.text = tr(ENTRIES[selected][1])
+		description_label.text = tr(DESCRIPTIONS.get(id, ""))
 		_art.texture = ART.get(id)
 	# Only a line cut short needs its whole text on hover.
 	var line_font := description_label.get_theme_font(&"font")
@@ -484,7 +484,7 @@ func _show_entry() -> void:
 	title_icon.kind = ENTRIES[selected][2]
 	title_icon.queue_redraw()
 	decide_button.visible = ACTIONS.has(id)
-	decide_button.text = ACTIONS.get(id, "")
+	decide_button.text = tr(ACTIONS.get(id, ""))
 	# Right from the menu reaches the panel's button.
 	for button in buttons:
 		button.focus_neighbor_right = decide_button.get_path()

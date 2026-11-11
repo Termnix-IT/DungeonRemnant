@@ -16,6 +16,11 @@ const SHAKE_NAMES: Array[String] = ["標準", "弱め", "なし"]
 const SHAKE_SCALES: Array[float] = [1.0, 0.5, 0.0]
 # Whether the fight's HUD shows its line of controls (ActionHud).
 const CONTROLS_NAMES: Array[String] = ["ON", "OFF"]
+# The languages the game's words are shown in: written in Japanese, and
+# translated by locale/text.csv. Each language is named in its own words,
+# the same in every language.
+const LANGUAGES: Array[String] = ["ja", "en"]
+const LANGUAGE_NAMES: Array[String] = ["日本語", "English"] # not translated
 # The first settings stored five volume steps; read them as their level.
 const LEGACY_VOLUME_STEPS: Array[float] = [0.0, 0.25, 0.5, 0.75, 1.0]
 
@@ -29,6 +34,9 @@ var fullscreen := false
 # An index into SHAKE_NAMES.
 var shake_level := 0
 var show_controls := true
+# One of LANGUAGES, or "" while none was chosen: then the machine's own
+# language decides (machine_language).
+var language := ""
 
 
 func load_settings() -> void:
@@ -46,6 +54,8 @@ func load_settings() -> void:
 	fullscreen = bool(file.get_value("display", "fullscreen", fullscreen))
 	shake_level = clampi(int(file.get_value("display", "shake", shake_level)), 0, SHAKE_NAMES.size() - 1)
 	show_controls = bool(file.get_value("display", "controls", show_controls))
+	var chosen := String(file.get_value("display", "language", language))
+	language = chosen if LANGUAGES.has(chosen) else ""
 
 
 func save_settings() -> bool:
@@ -57,6 +67,8 @@ func save_settings() -> bool:
 	file.set_value("display", "fullscreen", fullscreen)
 	file.set_value("display", "shake", shake_level)
 	file.set_value("display", "controls", show_controls)
+	if language != "":
+		file.set_value("display", "language", language)
 	return file.save(path) == OK
 
 
@@ -75,6 +87,28 @@ func apply_volume() -> void:
 			continue
 		AudioServer.set_bus_volume_linear(bus, pair[1])
 		AudioServer.set_bus_mute(bus, pair[1] <= 0.0)
+
+
+# Japanese on a Japanese system; English on any other, the language the
+# game is translated into.
+static func machine_language() -> String:
+	return "ja" if OS.get_locale_language() == "ja" else "en"
+
+
+# The language shown now: the chosen one, else the machine's.
+func shown_language() -> String:
+	return language if language != "" else machine_language()
+
+
+# Shows the game's words in the shown language, and names the window in it
+# (the project's name, translated in its localized names).
+func apply_language() -> void:
+	var shown := shown_language()
+	TranslationServer.set_locale(shown)
+	if DisplayServer.get_name() == "headless":
+		return
+	var names: Dictionary = ProjectSettings.get_setting("application/config/name_localized", {})
+	DisplayServer.window_set_title(String(names.get(shown, ProjectSettings.get_setting("application/config/name"))))
 
 
 # Headless runs have no window to change.

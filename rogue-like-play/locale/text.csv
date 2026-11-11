@@ -1,0 +1,835 @@
+keys,?context,en,_where
+すべて,,,actors/foes/foe_catalog.gd
+群れ,,,actors/foes/foe_catalog.gd
+精鋭,,,actors/foes/foe_catalog.gd
+ボス,,,actors/foes/foe_catalog.gd
+敵,,,actors/foes/foe_data.gd
+剣,,,combat/action/moveset.gd
+感電,,,combat/action/status.gd
+燃焼,,,combat/action/status.gd
+紫晶の坑道,,,data/areas/amethyst_mine.tres
+敵を240体倒す,,,data/areas/amethyst_mine.tres
+霊火と疾風ネズミが多く、番人が早い,,,data/areas/amethyst_mine.tres
+鐘の広間,,,data/areas/bell_hall.tres
+3つのウェーブを全滅させる,,,data/areas/bell_hall.tres
+亡者と鐘。最後に深層の守護者,,,data/areas/bell_hall.tres
+骨の回廊,,,data/areas/bone_corridor.tres
+3分を生き延びる,,,data/areas/bone_corridor.tres
+骨の兵の群れ。霊火と砲台、番人も,,,data/areas/bone_corridor.tres
+残響の回廊,,,data/areas/echo_corridor.tres
+3分15秒を生き延びる,,,data/areas/echo_corridor.tres
+亡者と残響の番兵。鐘と守護者も,,,data/areas/echo_corridor.tres
+残響の玉座,,,data/areas/echo_throne.tres
+残響の主を倒す,,,data/areas/echo_throne.tres
+残響の主。倒されてきた王たちの技を使う,,,data/areas/echo_throne.tres
+灰の荒野,,,data/areas/ember_waste.tres
+敵を150体倒す,,,data/areas/ember_waste.tres
+ネズミが多く精鋭が早い。砲塔と巣も,,,data/areas/ember_waste.tres
+血の祭壇,,,data/areas/event_altar.tres
+HPを捧げて強化を得る,,,data/areas/event_altar.tres
+古い血の染みた祭壇。戦闘はない,,,data/areas/event_altar.tres
+呪いの石碑,,,data/areas/event_curse.tres
+呪いと引き換えに強化と残響を得る,,,data/areas/event_curse.tres
+鎖に巻かれた石碑。戦闘はない,,,data/areas/event_curse.tres
+行商人,,,data/areas/event_merchant.tres
+残響で強化や手当てを買える,,,data/areas/event_merchant.tres
+灰の回廊を渡り歩く商人。戦闘はない,,,data/areas/event_merchant.tres
+記憶の書架,,,data/areas/event_shelf.tres
+強化を手放して、別の強化を得る,,,data/areas/event_shelf.tres
+古い記憶を綴じた書架。戦闘はない,,,data/areas/event_shelf.tres
+浄めの泉,,,data/areas/event_spring.tres
+残響で呪いを解くか、傷を癒やす,,,data/areas/event_spring.tres
+深淵に湧く澄んだ泉。戦闘はない,,,data/areas/event_spring.tres
+崩れた天蓋,,,data/areas/fallen_canopy.tres
+敵を280体倒す,,,data/areas/fallen_canopy.tres
+亡者が多く、鐘と守護者が早い,,,data/areas/fallen_canopy.tres
+守護者の間,,,data/areas/guardian_hall.tres
+遺跡王を倒す,,,data/areas/guardian_hall.tres
+遺跡王と番兵の守り。怒ると鼠を呼ぶ,,,data/areas/guardian_hall.tres
+風鳴りの林,,,data/areas/howling_grove.tres
+2分45秒を生き延びる,,,data/areas/howling_grove.tres
+苔むす番兵と疾風ネズミ。膨れと胞子砲も,,,data/areas/howling_grove.tres
+苔むす平原,,,data/areas/moss_plain.tres
+2分30秒を生き延びる,,,data/areas/moss_plain.tres
+番兵とネズミの群れ。泥の膨れと巣も,,,data/areas/moss_plain.tres
+苔石の古道,,,data/areas/mossy_road.tres
+敵を200体倒す,,,data/areas/mossy_road.tres
+ネズミが多く番人が早い。胞子砲と巣も,,,data/areas/mossy_road.tres
+納骨堂,,,data/areas/ossuary.tres
+召喚の司祭を倒す,,,data/areas/ossuary.tres
+召喚の司祭。骨の兵を呼び続ける,,,data/areas/ossuary.tres
+石柱の闘技場,,,data/areas/pillar_arena.tres
+番兵とネズミ。最後に精鋭と砲塔,,,data/areas/pillar_arena.tres
+祈りの間,,,data/areas/prayer_hall.tres
+骨の兵と霊火。最後に番人と砲台,,,data/areas/prayer_hall.tres
+根の闘技場,,,data/areas/root_arena.tres
+番兵とネズミ。最後に番人と胞子砲,,,data/areas/root_arena.tres
+聖堂の試練,,,data/areas/sanctum_trial.tres
+ネズミが多い。巣と砲塔、精鋭が2回,,,data/areas/sanctum_trial.tres
+封印の礼拝堂,,,data/areas/sealed_chapel.tres
+霊火が多い。砲台と、番人が2回,,,data/areas/sealed_chapel.tres
+番人の祠,,,data/areas/warden_shrine.tres
+ネズミが多い。巣と胞子砲、番人が2回,,,data/areas/warden_shrine.tres
+門衛の試練,,,data/areas/warden_trial.tres
+守護者が2回と、結晶の大砲台,,,data/areas/warden_trial.tres
+風狼の寝床,,,data/areas/wolf_den.tres
+風狼王を倒す,,,data/areas/wolf_den.tres
+風狼王と番兵の守り。怒るとネズミを呼ぶ,,,data/areas/wolf_den.tres
+残影の構え,,,data/boons/afterimage.tres
+ダッシュ直後の攻撃が大振りになる,,,data/boons/afterimage.tres
+回避,,,data/boons/afterimage.tres
+範囲,,,data/boons/afterimage.tres
+余震,,,data/boons/aftershock.tres
+スキルを使うと周りに余震が走る,,,data/boons/aftershock.tres
+スキル,,,data/boons/aftershock.tres
+剣速,,,data/boons/blade_speed.tres
+攻撃の振りが12%速くなる,,,data/boons/blade_speed.tres
+連撃,,,data/boons/blade_speed.tres
+剛力,,,data/boons/brute_force.tres
+攻撃力が8%上がる,,,data/boons/brute_force.tres
+連鎖雷,,,data/boons/chain_lightning.tres
+感電した敵が倒れると雷が連鎖する,,,data/boons/chain_lightning.tres
+属性,,,data/boons/chain_lightning.tres
+状態異常,,,data/boons/chain_lightning.tres
+連撃の極み,,,data/boons/combo_mastery.tres
+締めの一撃の威力と範囲が上がる,,,data/boons/combo_mastery.tres
+円月,,,data/boons/crescent_cut.tres
+締めの一撃が周りを一周斬る,,,data/boons/crescent_cut.tres
+放電,,,data/boons/discharge.tres
+感電した敵に当てると放電する,,,data/boons/discharge.tres
+残響の刃,,,data/boons/echo_edge.tres
+当てると時々、金の残響が弾ける,,,data/boons/echo_edge.tres
+炎の技,,,data/boons/flame_art.tres
+スキルが敵を燃やし、威力が上がる,,,data/boons/flame_art.tres
+追い打ち,,,data/boons/follow_up.tres
+2段目の攻撃の威力が上がる,,,data/boons/follow_up.tres
+疾風の刃,,,data/boons/gale_blade.tres
+ダッシュ直後の攻撃が刃を飛ばす,,,data/boons/gale_blade.tres
+疾風,,,data/boons/gale_step.tres
+移動速度が8%上がる,,,data/boons/gale_step.tres
+大溜め,,,data/boons/great_charge.tres
+溜めが速くなり、範囲が広がる,,,data/boons/great_charge.tres
+癒やしの型,,,data/boons/healing_form.tres
+スキルを敵に当てるとHPが少し回復する,,,data/boons/healing_form.tres
+守り,,,data/boons/healing_form.tres
+業火,,,data/boons/hellfire.tres
+敵を燃やし、倒すと炎が燃え広がる,,,data/boons/hellfire.tres
+技の冴え,,,data/boons/keen_art.tres
+スキルの再使用時間が12%縮む,,,data/boons/keen_art.tres
+生命の糧,,,data/boons/life_feast.tres
+敵を倒すと時々HPが回復する,,,data/boons/life_feast.tres
+剣の伸び,,,data/boons/long_reach.tres
+攻撃の届く距離が伸びる,,,data/boons/long_reach.tres
+地裂き,,,data/boons/rending_charge.tres
+溜め攻撃が地を裂く波を飛ばす,,,data/boons/rending_charge.tres
+反撃の構え,,,data/boons/riposte.tres
+被弾すると周りを弾き飛ばす,,,data/boons/riposte.tres
+砕晶,,,data/boons/shatter_crystal.tres
+敵を倒すと時々、結晶が砕けて周りに当たる,,,data/boons/shatter_crystal.tres
+衝撃波,,,data/boons/shockwave.tres
+締めの一撃が斬撃の波を飛ばす,,,data/boons/shockwave.tres
+霊刃,,,data/boons/spirit_blade.tres
+1段目の攻撃が霊の刃を飛ばす,,,data/boons/spirit_blade.tres
+燃え移り,,,data/boons/spreading_flame.tres
+燃えている敵に当てると炎が近くへ移る,,,data/boons/spreading_flame.tres
+雷の技,,,data/boons/thunder_art.tres
+スキルが敵を感電させ、威力が上がる,,,data/boons/thunder_art.tres
+雷刃,,,data/boons/thunder_blade.tres
+攻撃が敵を感電させ、動きを鈍らせる,,,data/boons/thunder_blade.tres
+雷の溜め,,,data/boons/thunder_charge.tres
+溜め攻撃が敵を感電させ、威力が上がる,,,data/boons/thunder_charge.tres
+雷の反撃,,,data/boons/thunder_riposte.tres
+被弾すると周りの敵へ雷が走る,,,data/boons/thunder_riposte.tres
+迅雷の一歩,,,data/boons/thunder_step.tres
+ダッシュすると近くの敵へ雷が走る,,,data/boons/thunder_step.tres
+旋風斬,,,data/boons/whirlwind.tres
+ダッシュの終わりに周りを斬り払う,,,data/boons/whirlwind.tres
+霊火の足跡,,,data/boons/wisp_step.tres
+ダッシュの出だしに霊火が爆ぜ、敵を燃やす,,,data/boons/wisp_step.tres
+第4章　残響の深淵,,,data/chapters/abyss_of_echoes.tres
+ダンジョンで果てた者たちの残響が流れ込む最深部へ下り、その底に座す者を討つ。,,,data/chapters/abyss_of_echoes.tres
+第3章　紫晶の霊廟,,,data/chapters/amethyst_mausoleum.tres
+紫の結晶に侵された地下の霊廟を下り、最奥の納骨堂で祈り続ける者を討つ。,,,data/chapters/amethyst_mausoleum.tres
+第1章　灰の回廊,,,data/chapters/ash_corridor.tres
+灰に沈んだ回廊を抜け、その奥の守護者の間に待つ者を討つ。,,,data/chapters/ash_corridor.tres
+第2章　風哭きの樹海,,,data/chapters/gale_woods.tres
+風の吠える古い樹海を抜け、根の奥の寝床に潜む主を討つ。,,,data/chapters/gale_woods.tres
+血錆の鐘,,,data/foes/blood_bell.tres
+"血の色に錆びた嘆きの鐘。硬く、打つ力も強い。輪が満ちる前に離れるのは変わらない。
+難易度の段階7から、第4章のフィールドの群れに混ざる。",,,data/foes/blood_bell.tres
+血眼の疾風ネズミ,,,data/foes/blood_gale_rat.tres
+"目を赤く光らせた疾風ネズミ。体が硬く、遠くからの飛びかかりも重い。
+難易度の段階7から、第2章のフィールドの群れに混ざる。",,,data/foes/blood_gale_rat.tres
+血錆の苔番兵,,,data/foes/blood_moss_sentinel.tres
+"苔の下まで血のような錆が回った苔むす番兵。さらに硬く、ぶつかる力も強い。
+難易度の段階7から、第2章のフィールドの群れに混ざる。",,,data/foes/blood_moss_sentinel.tres
+血眼の疾走ネズミ,,,data/foes/blood_rat.tres
+"目を赤く光らせた疾走ネズミ。体が硬く、飛びかかりも重い。縮んだところを斬れば止められるのは変わらない。
+難易度の段階7から、第1章のフィールドの群れに混ざる。",,,data/foes/blood_rat.tres
+血錆の番兵,,,data/foes/blood_sentinel.tres
+"さまよう番兵の中でも、血のような錆に覆われたもの。硬く、強くぶつかってくる。
+難易度の段階7から、第1章のフィールドの群れに混ざる。",,,data/foes/blood_sentinel.tres
+血錆の骨の兵,,,data/foes/blood_skeleton.tres
+"骨まで血のような錆に染まった骨の兵。硬く、斬りも重い。振りかぶりを見て抜けるのは変わらない。
+難易度の段階7から、第3章のフィールドの群れに混ざる。",,,data/foes/blood_skeleton.tres
+血錆の亡者,,,data/foes/blood_wraith.tres
+"血の色に染まった残響の亡者。硬く、突っ込みも重い。帯から外れるのは変わらない。
+難易度の段階7から、第4章のフィールドの群れに混ざる。",,,data/foes/blood_wraith.tres
+孵卵の巣,,,data/foes/brood_nest.tres
+"動かない巣。近くにいると、6秒ごとに疾走ネズミを2匹孵す（4匹まで）。先に壊すと群れが減る。
+フィールドとアリーナに現れる。",,,data/foes/brood_nest.tres
+紅の霊火,,,data/foes/crimson_wisp.tres
+"血の色に燃える霊火。消えにくく、霊弾も重い。帯から外れて近づき叩くのは変わらない。
+難易度の段階7から、第3章のフィールドの群れに混ざる。",,,data/foes/crimson_wisp.tres
+結晶の大砲台,,,data/foes/crystal_cannon.tres
+"精鋭。紫の結晶を砲身にした大きな砲台。動かない。床に伸びる太い帯の先へ、重い光の弾を撃つ。帯から外れて近づき叩く。
+第4章のアリーナに現れる。",,,data/foes/crystal_cannon.tres
+紫晶の砲塔,,,data/foes/crystal_turret.tres
+"動かない砲台。床に伸びる赤い帯で狙いを定め、紫の弾を撃つ。弾は帯の向きにまっすぐ飛ぶので、横へ動くかダッシュで抜ける。
+フィールドとアリーナに現れる。",,,data/foes/crystal_turret.tres
+疾走ネズミ,,,data/foes/dashing_rat.tres
+"素早く駆け寄り、間合いに入ると身を縮めてからまっすぐ飛びかかる。縮んだところを斬れば止められる。
+フィールドとアリーナに現れる。",,,data/foes/dashing_rat.tres
+深層の守護者,,,data/foes/deep_guardian.tres
+"精鋭。深淵の門を守る冠の巨像。斬られてもひるまない。近くでは大きく薙ぎ払い、離れると床の帯に沿って突進してくる。
+第4章のフィールドに時々、アリーナの最後に現れる。",,,data/foes/deep_guardian.tres
+残響の疾風ネズミ,,,data/foes/echo_gale_rat.tres
+"第2章の疾風ネズミの残響。身を縮めてから遠くまで飛びかかる。縮んだところを斬れば止められる。
+第4章のフィールドとアリーナに現れる。",,,data/foes/echo_gale_rat.tres
+残響の番兵,,,data/foes/echo_sentinel.tres
+"第1章で倒した番兵の残響。深淵では硬く、強くぶつかってくる。
+第4章のフィールドとアリーナに現れる。",,,data/foes/echo_sentinel.tres
+残響の骨の兵,,,data/foes/echo_skeleton.tres
+"第3章の骨の兵の残響。振りかぶってから斬る。振りかぶりを見て抜ける。
+第4章のフィールドとアリーナに現れる。",,,data/foes/echo_skeleton.tres
+残響の亡者,,,data/foes/echo_wraith.tres
+"ダンジョンで果てた冒険者の残響。間合いの外で身を屈め、床に伸びる帯の向きへ一直線に突っ込んでくる。帯から外れてから叩く。
+第4章のフィールドとアリーナに現れ、残響の主にも呼ばれる。",,,data/foes/echo_wraith.tres
+疾風ネズミ,,,data/foes/gale_rat.tres
+"風に乗って駆けるネズミ。疾走ネズミより速く、遠くから飛びかかる。身を縮めたところを斬れば止められる。
+第2章と第3章のフィールドとアリーナに現れ、風狼王にも呼ばれる。",,,data/foes/gale_rat.tres
+風の番人,,,data/foes/gale_warden.tres
+"精鋭。斬られてもひるまない。近くでは大きく薙ぎ払い、離れると風の刃を飛ばす。床の赤い印を見て、刃は横へかわす。
+第2章のフィールドに時々、アリーナの最後に現れる。",,,data/foes/gale_warden.tres
+風狼王,,,data/foes/gale_wolf_king.tres
+樹海に吠える嵐の牙,,,data/foes/gale_wolf_king.tres
+"風狼の寝床の主。爪の薙ぎ払い、遠くまで届く飛びかかり、離れると風の刃を使い分ける。傷が深くなると怒り狂い、周りを吹き飛ばす遠吠えを放ち、疾風ネズミを呼び寄せる。
+第2章の最後に待つ。",,,data/foes/gale_wolf_king.tres
+残響の主,,,data/foes/master_of_echoes.tres
+深淵に残響を集める者,,,data/foes/master_of_echoes.tres
+"ダンジョンで果てた者たちの残響を集めてきた、深淵の主。倒されてきた王たちの技を使う。近くでは剣で薙ぎ払い、遺跡王の地震を起こし、離れると風狼王のように飛びかかり、召喚の司祭の霊弾を撃つ。傷が深くなると怒り狂い、大きな残響の波を放って、残響の亡者を呼び寄せる。
+第4章の最後に待つ。",,,data/foes/master_of_echoes.tres
+苔むす番兵,,,data/foes/moss_sentinel.tres
+"苔に覆われた古い番兵。さまよう番兵より硬く、強くぶつかってくる。群れで囲んでくるので、ダッシュで抜けて背後から斬る。
+第2章のフィールドとアリーナに現れる。",,,data/foes/moss_sentinel.tres
+嘆きの鐘,,,data/foes/mourning_bell.tres
+"死者を悼む鐘の残響。ゆっくり漂い、近づくと足元に輪を広げてから鳴り、周りを打つ。輪が満ちる前に離れるか、鳴り終わったところを叩く。
+第4章のフィールドとアリーナに現れる。",,,data/foes/mourning_bell.tres
+泥の膨れ,,,data/foes/mud_swell.tres
+"這い寄ってきて膨らみ、足元の赤い円が満ちると爆ぜて消える。膨らんでいる間に斬れば止められる。
+フィールドとアリーナに現れる。",,,data/foes/mud_swell.tres
+猛る突進獣,,,data/foes/raging_charger.tres
+"精鋭。斬られてもひるまない。近くでは足元を叩きつけ、離れると長い突進を仕掛ける。どちらも床の赤い印を見て避ける。
+フィールドに時々、アリーナの最後に現れる。",,,data/foes/raging_charger.tres
+遺跡王,,,data/foes/ruin_king.tres
+灰の回廊を統べる者,,,data/foes/ruin_king.tres
+"守護者の間の主。薙ぎ払い・突進・地震を使い分ける。傷が深くなると怒り狂い、より広い地震を放ち、ネズミを呼び寄せる。
+第1章の最後に待つ。",,,data/foes/ruin_king.tres
+骨の兵,,,data/foes/skeleton.tres
+"霊廟に眠っていた兵の骨。群れで迫り、間合いに入ると錆びた剣を振りかぶってから斬る。振りかぶりを見たら、下がるかダッシュで抜ける。
+第3章のフィールドとアリーナに現れ、召喚の司祭にも呼ばれる。",,,data/foes/skeleton.tres
+胞子砲,,,data/foes/spore_cannon.tres
+"根を張って動かない砲台。床に伸びる赤い帯の先へ、遅く大きな胞子の弾を撃つ。弾は遅いので、帯から外れて近づき叩く。
+第2章のフィールドとアリーナに現れる。",,,data/foes/spore_cannon.tres
+胞子の膨れ,,,data/foes/spore_swell.tres
+"胞子をため込んだ膨れ。泥の膨れより大きく爆ぜる。足元の赤い円が満ちる前に斬るか、円の外へ逃げる。
+第2章のフィールドとアリーナに現れる。",,,data/foes/spore_swell.tres
+石門の番人,,,data/foes/stone_gate_warden.tres
+"精鋭。霊廟の門を背負って動く石の巨像。斬られてもひるまない。近くでは長い予兆のあとに大きく叩きつけ、離れると門ごと突っ込んでくる。予兆の輪の外へ出てから叩く。
+第3章のフィールドに時々、アリーナの最後に現れる。",,,data/foes/stone_gate_warden.tres
+召喚の司祭,,,data/foes/summoning_priest.tres
+死者を呼び覚ます納骨堂の主,,,data/foes/summoning_priest.tres
+"納骨堂の主。遠くから霊弾を撃ち、近づくと足元に霊火の輪を広げる。骨の兵を呼び続け、傷が深くなると怒り狂い、直線の霊槍を加えて骨の兵を大勢呼ぶ。
+第3章の最後に待つ。",,,data/foes/summoning_priest.tres
+さまよう番兵,,,data/foes/wandering_sentinel.tres
+"群れで追いかけてきて、ぶつかって傷を負わせる。一体は弱いが、数で囲んでくる。
+フィールドとアリーナに現れる。",,,data/foes/wandering_sentinel.tres
+霊火,,,data/foes/wisp.tres
+"霊廟を漂う死者の火。近づいてきて、離れた所から床の帯に沿って遅い霊弾を撃つ。弾は遅いので、帯から外れて近づき叩く。
+第3章のフィールドとアリーナに現れる。",,,data/foes/wisp.tres
+素早い立ち直り,,,data/meta/dash_recovery.tres
+ダッシュの再使用時間が0.05秒縮む,,,data/meta/dash_recovery.tres
+ダッシュの再使用 %s秒,,,data/meta/dash_recovery.tres
+二段ダッシュ,,,data/meta/double_dash.tres
+ダッシュを2回続けて使える,,,data/meta/double_dash.tres
+続けて使えるダッシュ %s回,,,data/meta/double_dash.tres
+残響の灯,,,data/meta/echo_lantern.tres
+報酬で得る残響が10%増える,,,data/meta/echo_lantern.tres
+報酬の残響 +%s%%,,,data/meta/echo_lantern.tres
+堅い守り,,,data/meta/firm_guard.tres
+受けるダメージが1減る,,,data/meta/firm_guard.tres
+受けるダメージ -%s,,,data/meta/firm_guard.tres
+四枚目の札,,,data/meta/fourth_card.tres
+レベルアップのカードが4枚になる,,,data/meta/fourth_card.tres
+レベルアップのカード %s枚,,,data/meta/fourth_card.tres
+引き寄せ,,,data/meta/gem_magnet.tres
+宝石を吸い寄せる範囲が0.4マス広がる,,,data/meta/gem_magnet.tres
+宝石を吸い寄せる範囲 %sマス,,,data/meta/gem_magnet.tres
+治癒の心得,,,data/meta/healing_lore.tres
+回復の報酬・行商人の手当て・浄めの泉で戻るHPが最大HPの5%分増える,,,data/meta/healing_lore.tres
+回復の報酬 最大HPの%s%%,,,data/meta/healing_lore.tres
+不屈,,,data/meta/last_stand.tres
+探索ごとに1度、倒れるはずの攻撃をHP1で耐え、1秒無敵になる,,,data/meta/last_stand.tres
+烈火輪の習得,,,data/meta/learn_blaze_ring.tres
+スキル「烈火輪」を覚え、ステータスで枠に付けられる,,,data/meta/learn_blaze_ring.tres
+紅蓮の習得,,,data/meta/learn_crimson_lotus.tres
+必殺技「紅蓮」を覚え、ステータスで枠に付けられる,,,data/meta/learn_crimson_lotus.tres
+残響解放の習得,,,data/meta/learn_echo_burst.tres
+必殺技「残響解放」を覚え、必殺技の枠が開く。戦うと溜まるゲージが満ちたらR（LB）で放つ,,,data/meta/learn_echo_burst.tres
+大槌の習得,,,data/meta/learn_hammer.tres
+武器「大槌」を覚え、ステータスの攻撃の枠で持ち替えられる,,,data/meta/learn_hammer.tres
+天裂きの習得,,,data/meta/learn_sky_rend.tres
+必殺技「天裂き」を覚え、ステータスで枠に付けられる,,,data/meta/learn_sky_rend.tres
+槍の習得,,,data/meta/learn_spear.tres
+武器「槍」を覚え、ステータスの攻撃の枠で持ち替えられる,,,data/meta/learn_spear.tres
+飛燕の習得,,,data/meta/learn_swallow_cut.tres
+スキル「飛燕」を覚え、ステータスで枠に付けられる,,,data/meta/learn_swallow_cut.tres
+雷陣の習得,,,data/meta/learn_thunder_circle.tres
+スキル「雷陣」を覚え、ステータスで枠に付けられる,,,data/meta/learn_thunder_circle.tres
+雷閃の習得,,,data/meta/learn_thunder_flash.tres
+スキル「雷閃」を覚え、ステータスで枠に付けられる,,,data/meta/learn_thunder_flash.tres
+霊火の礫の習得,,,data/meta/learn_wisp_shot.tres
+スキル「霊火の礫」を覚え、ステータスで枠に付けられる,,,data/meta/learn_wisp_shot.tres
+軽い足取り,,,data/meta/light_step.tres
+移動速度が5%上がる,,,data/meta/light_step.tres
+移動速度 +%s%%,,,data/meta/light_step.tres
+旅立ちの加護,,,data/meta/parting_blessing.tres
+探索の始めに強化を3つから1つ選べる,,,data/meta/parting_blessing.tres
+学びの早さ,,,data/meta/quick_study.tres
+得る経験値が10%増える,,,data/meta/quick_study.tres
+得る経験値 +%s%%,,,data/meta/quick_study.tres
+引き直し,,,data/meta/reroll.tres
+レベルアップのカードを探索ごとに1回引き直せる,,,data/meta/reroll.tres
+引き直し 探索ごとに%s回,,,data/meta/reroll.tres
+光の衝撃,,,data/meta/rising_burst.tres
+強化を取って戦闘に戻る瞬間、周りの敵に攻撃力の2倍の衝撃を与えて押し返す,,,data/meta/rising_burst.tres
+衝撃の半径 %sマス,,,data/meta/rising_burst.tres
+高揚,,,data/meta/rising_haste.tres
+強化を取ってから10秒、攻撃の振りが15%速くなる,,,data/meta/rising_haste.tres
+光の癒やし,,,data/meta/rising_heal.tres
+レベルアップで強化を取るたびに、最大HPの5%を回復する,,,data/meta/rising_heal.tres
+レベルアップで回復 最大HPの%s%%,,,data/meta/rising_heal.tres
+光の加護,,,data/meta/rising_ward.tres
+強化を取って戦闘に戻ってから1.5秒、無敵になる,,,data/meta/rising_ward.tres
+技の鍛錬,,,data/meta/skill_drill.tres
+スキルの再使用時間が10%縮む,,,data/meta/skill_drill.tres
+スキルの再使用 -%s%%,,,data/meta/skill_drill.tres
+奥義の研鑽,,,data/meta/special_mastery.tres
+必殺技の威力が25%上がる,,,data/meta/special_mastery.tres
+必殺技の威力 +%s%%,,,data/meta/special_mastery.tres
+闘気の高まり,,,data/meta/special_surge.tres
+必殺技のゲージが20%早く溜まる,,,data/meta/special_surge.tres
+ゲージの溜まり +%s%%,,,data/meta/special_surge.tres
+立て直し,,,data/meta/steady_recovery.tres
+被弾後の無敵が0.2秒延びる,,,data/meta/steady_recovery.tres
+被弾後の無敵 %s秒,,,data/meta/steady_recovery.tres
+鍛えた体,,,data/meta/sturdy_body.tres
+最大HPが15増える,,,data/meta/sturdy_body.tres
+最大HP %s,,,data/meta/sturdy_body.tres
+三段ダッシュ,,,data/meta/triple_dash.tres
+ダッシュを3回続けて使える,,,data/meta/triple_dash.tres
+大槌,,,data/movesets/hammer.tres
+遅いが重い2段の振り下ろし。周りを広く叩き、大きく吹き飛ばす。溜めると地を割って周り一帯を打つ。,,,data/movesets/hammer.tres
+槍,,,data/movesets/spear.tres
+長い間合いの2段の突きと薙ぎ払いの3段。溜めると前へ大きく踏み込んで遠くまで貫く。囲まれる前に間合いの外から削る。,,,data/movesets/spear.tres
+3段の連撃と、長押しで溜め攻撃。速さと間合いの釣り合った、扱いやすい武器。,,,data/movesets/sword.tres
+烈火輪,,,data/skills/blaze_ring.tres
+炎をまとって周りを大きく薙ぎ払い、当たった敵を燃やす,,,data/skills/blaze_ring.tres
+叩きつけ,,,data/skills/slam.tres
+武器を頭上から地面へ叩きつけ、周りの敵をまとめて打って押し返す,,,data/skills/slam.tres
+飛燕,,,data/skills/swallow_cut.tres
+振り抜いた斬撃を、敵を貫く波にして遠くまで飛ばす,,,data/skills/swallow_cut.tres
+雷陣,,,data/skills/thunder_circle.tres
+周りに雷を落とし、当たった敵を感電させる,,,data/skills/thunder_circle.tres
+雷閃,,,data/skills/thunder_flash.tres
+前へ鋭く踏み込みながら斬り、一直線上の敵を感電させる,,,data/skills/thunder_flash.tres
+霊火の礫,,,data/skills/wisp_shot.tres
+霊火を前へ放ち、当たった敵を燃やす,,,data/skills/wisp_shot.tres
+紅蓮,,,data/specials/crimson_lotus.tres
+周り一帯を炎の渦で薙ぎ払い、敵をまとめて燃やす,,,data/specials/crimson_lotus.tres
+残響解放,,,data/specials/echo_burst.tres
+身に宿した残響を一気に解き放ち、周りの敵すべてを大きく吹き飛ばす,,,data/specials/echo_burst.tres
+天裂き,,,data/specials/sky_rend.tres
+雷をまとった剣の一閃で、前方を遠くまで一直線に断ち切り、感電させる,,,data/specials/sky_rend.tres
+群れが2割増える,,,data/steps/step_1.tres
+回復の報酬が25%減る,,,data/steps/step_2.tres
+精鋭が早く、多く出る,,,data/steps/step_3.tres
+強化の候補が1枚減る,,,data/steps/step_4.tres
+敵のHPが25%増える（ボスも）,,,data/steps/step_5.tres
+呪いを1つ持って出撃する,,,data/steps/step_6.tres
+群れに強敵版が混ざる,,,data/steps/step_7.tres
+ボスが早く怒り狂い、手下を多く呼ぶ,,,data/steps/step_8.tres
+このスキルは付けられません。,,,game/main.gd
+保存に失敗したため、付け替えを取り消しました。,,,game/main.gd
+武器を「%s」に持ち替えました。,,,game/main.gd
+必殺技に「%s」を付けました。,,,game/main.gd
+必殺技を外しました。,,,game/main.gd
+スキル%dに「%s」を付けました。,,,game/main.gd
+スキル%dを外しました。,,,game/main.gd
+強化できません。残響と強化の上限を確認してください。,,,game/main.gd
+保存に失敗したため、強化を取り消しました。,,,game/main.gd
+「%s」を強化しました。,,,game/main.gd
+難易度の段階が開いた,,,game/main.gd
+段階%dが開いた,,,game/main.gd
+テストモード：保存は無効です。,,,game/main.gd
+旅支度の間,,,game/main.gd
+難易度の段階が開いた。出撃の画面で選べる。,,,game/main.gd
+残響と強化は次の探索へ引き継がれます。,,,game/main.gd
+第1章,,,game/expedition/chapter_data.gd
+踏破 %d回,,,game/expedition/chapters.gd
+踏破 %d回・段階%d,,,game/expedition/chapters.gd
+なし,,,game/expedition/chapters.gd
+ボスまで,,,game/expedition/chapters.gd
+第%d層まで,,,game/expedition/chapters.gd
+段階%d　%s,,,game/expedition/difficulty_steps.gd
+残響 +%d%%,,,game/expedition/difficulty_steps.gd
+地図に戻る,,,game/expedition/run_director.gd
+旅立ちの加護　強化を1つ選ぶ,,,game/expedition/run_director.gd
+探索の中断,,,game/expedition/run_director.gd
+探索を中断しますか？,,,game/expedition/run_director.gd
+この探索で得た残響は持ち帰れます。レベルと強化は残りません。,,,game/expedition/run_director.gd
+中断する,,,game/expedition/run_director.gd
+戻る,,,game/expedition/run_director.gd
+　残響 +%s,,,game/expedition/run_director.gd
+報酬　強化を1つ選ぶ,,,game/expedition/run_director.gd
+報酬　HPが%d回復した,,,game/expedition/run_director.gd
+報酬　回復（HPはすでに満タン）,,,game/expedition/run_director.gd
+報酬　残響を%d得た,,,game/expedition/run_director.gd
+報酬　「%s」を得た,,,game/expedition/run_director.gd
+強化を1つ選ぶ,,,game/expedition/run_director.gd
+傷の手当て（最大HPの%d%%回復）,,,game/expedition/run_director.gd
+HPを%d捧げて、強化を1つ選ぶ,,,game/expedition/run_director.gd
+HPが足りない,,,game/expedition/run_director.gd
+取れる強化が残っていない,,,game/expedition/run_director.gd
+呪い「%s」：%s。以後の残響の報酬 +%d%%,,,game/expedition/run_director.gd
+呪い「%s」を受けて、強化を1つ選ぶ,,,game/expedition/run_director.gd
+これ以上の呪いは受けられない,,,game/expedition/run_director.gd
+解く呪いがない,,,game/expedition/run_director.gd
+呪いを受けていない,,,game/expedition/run_director.gd
+残響が%s足りない,,,game/expedition/run_director.gd
+呪い「%s」を解く　残響 %s,,,game/expedition/run_director.gd
+泉の水を飲む（最大HPの%d%%回復）,,,game/expedition/run_director.gd
+今は必要ない,,,game/expedition/run_director.gd
+手放せる強化がない,,,game/expedition/run_director.gd
+強化をまだ持っていない,,,game/expedition/run_director.gd
+「%s」を手放して、強化を%dつ選ぶ,,,game/expedition/run_director.gd
+もう手放した,,,game/expedition/run_director.gd
+所持 残響 %s　HP %d / %d,,,game/expedition/run_director.gd
+　呪い：%s,,,game/expedition/run_director.gd
+購入済み,,,game/expedition/run_director.gd
+%s　残響 %s,,,game/expedition/run_director.gd
+%s　残響 %s で強化を1つ選ぶ,,,game/expedition/run_director.gd
+%s　HPが%d回復した,,,game/expedition/run_director.gd
+%s　HPを%d捧げて強化を1つ選ぶ,,,game/expedition/run_director.gd
+%s　「%s」を手放して強化を選ぶ,,,game/expedition/run_director.gd
+%s　呪い「%s」が解けた,,,game/expedition/run_director.gd
+%s　呪い「%s」を受けて強化を1つ選ぶ,,,game/expedition/run_director.gd
+%s　ほかに選べる強化がなかった,,,game/expedition/run_director.gd
+%s　HPを%d捧げた,,,game/expedition/run_director.gd
+%s　呪い「%s」を受けた,,,game/expedition/run_director.gd
+%s　「%s」を手放した,,,game/expedition/run_director.gd
+%s　「%s」を得た,,,game/expedition/run_director.gd
+、「%s」を得た,,,game/expedition/run_director.gd
+%s　強化を選ぶ（残り%d）,,,game/expedition/run_director.gd
+脆さ,,,game/expedition/run_state.gd
+受けるダメージが2増える,,,game/expedition/run_state.gd
+鈍足,,,game/expedition/run_state.gd
+移動速度が12%落ちる,,,game/expedition/run_state.gd
+渇き,,,game/expedition/run_state.gd
+あらゆる回復が半分になる,,,game/expedition/run_state.gd
+・,,,game/expedition/run_state.gd
+残響：探索で得て、拠点の強化に使う,,,game/hub/hub.gd
+選ぶ,,,game/hub/hub.gd
+決定,,,game/hub/hub.gd
+終了,,,game/hub/hub.gd
+出撃,,,game/hub/hub.gd
+段階,,,game/hub/hub.gd
+装備,,,game/hub/hub.gd
+強化,,,game/hub/hub.gd
+矢印,,,game/hub/hub.gd
+十字,,,game/hub/hub.gd
+ドラッグ,,,game/hub/hub.gd
+R スティック,,,game/hub/hub.gd
+動かす,,,game/hub/hub.gd
+ホイール,,,game/hub/hub.gd
+拡大・縮小,,,game/hub/hub.gd
+中央へ,,,game/hub/hub.gd
+ステータスへ,,,game/hub/hub.gd
+ステータス,,,game/hub/hub.gd
+詳しく,,,game/hub/hub.gd
+強化へ,,,game/hub/hub.gd
+図鑑,,,game/hub/hub.gd
+分類,,,game/hub/hub.gd
+設定,,,game/hub/hub.gd
+  (残響 %+d),,,game/hub/hub.gd
+ヘルプ,,,game/hub/hub.gd
+項目,,,game/hub/hub.gd
+変更,,,game/hub/hub.gd
+ゲームを終了しますか？,,,game/hub/hub.gd
+終了する,,,game/hub/hub.gd
+ウィンドウ,,,game/save/game_settings.gd
+全画面,,,game/save/game_settings.gd
+標準,,,game/save/game_settings.gd
+弱め,,,game/save/game_settings.gd
+以前の冒険の記録を引き継ぎました。所持Goldと強化に使ったGoldを残響に換えています。,,,game/save/meta_store.gd
+保存データを読み込みました。,,,game/save/meta_store.gd
+前回のバックアップから復元しました。最新の進行とは異なる場合があります。,,,game/save/meta_store.gd
+保存データを読めません。元ファイルを保護し、保存を停止しています。,,,game/save/meta_store.gd
+新規開始。探索の途中の状態は保存されません。,,,game/save/meta_store.gd
+保存停止中：既存データを読み込めません。元ファイルは保持されています。,,,game/save/meta_store.gd
+保存失敗：進行データが保存形式に適合しません。,,,game/save/meta_store.gd
+以前の保存データを残せません,,,game/save/meta_store.gd
+一時ファイルを作成できません,,,game/save/meta_store.gd
+書き込みを検証できません,,,game/save/meta_store.gd
+バックアップを作成できません,,,game/save/meta_store.gd
+バックアップを確定できません,,,game/save/meta_store.gd
+読めない元データを退避できません,,,game/save/meta_store.gd
+保存ファイルを確定できません,,,game/save/meta_store.gd
+保存済み。探索の途中で終了すると、最後に保存した拠点の状態に戻ります。,,,game/save/meta_store.gd
+保存失敗：%s。直前の保存データは保持されています。,,,game/save/meta_store.gd
+威力 %d%% → %d%%,,,progression/build/attack_boon.gd
+範囲 %d%% → %d%%,,,progression/build/attack_boon.gd
+飛距離 %s → %sマス,,,progression/build/attack_boon.gd
+振りの速さ,,,progression/build/stat_boon.gd
+溜め時間,,,progression/build/stat_boon.gd
+攻撃力,,,progression/build/stat_boon.gd
+移動速度,,,progression/build/stat_boon.gd
+スキルの再使用,,,progression/build/stat_boon.gd
+回復 %d → %d,,,progression/build/trigger_boon.gd
+%d体 → %d体,,,progression/build/trigger_boon.gd
+習得すると　,,,progression/meta/meta_upgrade.gd
+%s（%s）,,,progression/meta/meta_upgrade.gd
+新規,,,ui/ability_card.gd
+カード,,,ui/ability_choice.gd
+1・2・3,,,ui/ability_choice.gd
+やめる,,,ui/ability_choice.gd
+引き直す（残り%d）,,,ui/ability_choice.gd
+Lv %d　強化を1つ選ぶ,,,ui/ability_choice.gd
+このあと、もう%d回選べます,,,ui/ability_choice.gd
+レベルアップで選んだ強化が、ここに並ぶ,,,ui/dungeon_menu.gd
+戦いに戻る,,,ui/dungeon_menu.gd
+メニュー,,,ui/dungeon_menu.gd
+操作,,,ui/dungeon_menu.gd
+探索を中断する,,,ui/dungeon_menu.gd
+この探索の強化,,,ui/dungeon_menu.gd
+　ボス,,,ui/dungeon_menu.gd
+　第%d層,,,ui/dungeon_menu.gd
+段階%d,,,ui/dungeon_menu.gd
+呪い「%s」,,,ui/dungeon_menu.gd
+残響の主が崩れると、深淵に溜まっていた声が、ひとつずつほどけていった。,,,ui/ending_view.gd
+"ダンジョンに縛られていた者たちの残響は、
+ようやく行き場を見つけて、静かに眠りについた。",,,ui/ending_view.gd
+ミオは地上へ戻り、朝の光の中で、一度だけ振り返った。,,,ui/ending_view.gd
+"このダンジョンで果てた者は、声だけを残す。
+残響と呼ばれるその声は、いまも深みへ流れ続けている。",,,ui/ending_view.gd
+"ミオには、その声が聞こえた。
+呼ばれるままに、灰に沈んだ回廊の入口に立つ。",,,ui/ending_view.gd
+"倒れても、拾った残響は手に残る。
+それを灯に変えて、もう一度、もう少し深くへ。",,,ui/ending_view.gd
+制作,,,ui/ending_view.gd
+音楽,,,ui/ending_view.gd
+Epic Boss Battle　Juhani Junkala（SubspaceAudio）,,,ui/ending_view.gd
+効果音,,,ui/ending_view.gd
+Impact Sounds・Music Jingles・Interface Sounds　Kenney,,,ui/ending_view.gd
+書体,,,ui/ending_view.gd
+しっぽり明朝　The Shippori Mincho Project Authors,,,ui/ending_view.gd
+BIZ UDPゴシック　The BIZ UDGothic Project Authors,,,ui/ending_view.gd
+ゲームエンジン,,,ui/ending_view.gd
+Godot Engine のロゴ　Andrea Calabró,,,ui/ending_view.gd
+ライセンスの全文は、ゲームに同梱の THIRD_PARTY_NOTICES.md にあります。,,,ui/ending_view.gd
+遊んでくれて、ありがとう。,,,ui/ending_view.gd
+Esc（B）を長押しで飛ばす,,,ui/ending_view.gd
+？？？,,,ui/hub_codex.gd
+まだ出会っていない敵。探索で戦場に現れると記録される。,,,ui/hub_codex.gd
+出会った敵  %d / %d,,,ui/hub_codex.gd
+ぶつかる力,,,ui/hub_codex.gd
+速さ,,,ui/hub_codex.gd
+出撃先を選ぶ,,,ui/hub_lobby.gd
+強化を選ぶ,,,ui/hub_lobby.gd
+ステータスを開く,,,ui/hub_lobby.gd
+図鑑を開く,,,ui/hub_lobby.gd
+設定を開く,,,ui/hub_lobby.gd
+探索で得た残響で、次の探索からずっと続く強化を手に入れる。,,,ui/hub_lobby.gd
+強化で育った数値を確かめ、スキルを付け替える。,,,ui/hub_lobby.gd
+これまでに戦場で出会った敵を見返す。,,,ui/hub_lobby.gd
+音量と画面モードを変え、遊び方を確認する。,,,ui/hub_lobby.gd
+準備ができたら、出発しよう。,,,ui/hub_lobby.gd
+残響が貯まったら、強化を忘れずに。,,,ui/hub_lobby.gd
+次は、どこまで行けるかな。,,,ui/hub_lobby.gd
+回廊の奥の、あの気配……今度こそ。,,,ui/hub_lobby.gd
+風の吠える樹海……狼の声が聞こえる。,,,ui/hub_lobby.gd
+強化の組み合わせ、もう少し試してみよう。,,,ui/hub_lobby.gd
+遺跡王の残響が、まだ手に残ってる。,,,ui/hub_lobby.gd
+地下の霊廟から、誰かが呼んでる。,,,ui/hub_lobby.gd
+骨の兵は、振りかぶりをよく見てから。,,,ui/hub_lobby.gd
+残響が、少しずつ重くなっていく。,,,ui/hub_lobby.gd
+残響が流れていく先……深淵へ。,,,ui/hub_lobby.gd
+倒してきた王たちの気配が、まだ残ってる。,,,ui/hub_lobby.gd
+ここまで来たら、最後まで行こう。,,,ui/hub_lobby.gd
+もう、あの声は聞こえない。,,,ui/hub_lobby.gd
+残響は、静かに眠ってる。,,,ui/hub_lobby.gd
+それでも、もう少し深く潜ってみようか。,,,ui/hub_lobby.gd
+段階を上げても、私は負けない。,,,ui/hub_lobby.gd
+道のり,,,ui/hub_lobby.gd
+記録,,,ui/hub_lobby.gd
+習得した段階,,,ui/hub_lobby.gd
+強化できる,,,ui/hub_lobby.gd
+装備中のスキル,,,ui/hub_lobby.gd
+最大HP,,,ui/hub_lobby.gd
+出会った敵,,,ui/hub_lobby.gd
+探索の回数,,,ui/hub_lobby.gd
+音量,,,ui/hub_lobby.gd
+画面,,,ui/hub_lobby.gd
+話しかける,,,ui/hub_lobby.gd
+%d層とボス,,,ui/hub_lobby.gd
+%d 段階,,,ui/hub_lobby.gd
+%d 件,,,ui/hub_lobby.gd
+%d 回,,,ui/hub_lobby.gd
+設定と拠点での強化は保存済みです。,,,ui/hub_settings.gd
+探索の途中で終了すると、この探索のレベル・強化・得た残響は残らず、最後に保存した拠点の状態に戻ります。,,,ui/hub_settings.gd
+サウンド,,,ui/hub_settings.gd
+グラフィック,,,ui/hub_settings.gd
+その他,,,ui/hub_settings.gd
+全体の音量,,,ui/hub_settings.gd
+環境音,,,ui/hub_settings.gd
+画面の揺れ,,,ui/hub_settings.gd
+画面モード,,,ui/hub_settings.gd
+操作の案内,,,ui/hub_settings.gd
+ゲームの終了,,,ui/hub_settings.gd
+言語,,,ui/hub_settings.gd
+すべての音の大きさ。0%で消音。,,,ui/hub_settings.gd
+拠点・戦場・ボスの曲の大きさ。,,,ui/hub_settings.gd
+攻撃・被弾・取得・決定などの効果音の大きさ。,,,ui/hub_settings.gd
+戦場の空気の音の大きさ。,,,ui/hub_settings.gd
+攻撃が当たったときや被弾したときの画面の揺れ。「なし」で揺らさない。,,,ui/hub_settings.gd
+ウィンドウか全画面。,,,ui/hub_settings.gd
+戦闘中、画面の下に操作の一覧を出す。,,,ui/hub_settings.gd
+探索の決まりごとと操作。,,,ui/hub_settings.gd
+ゲームを閉じる。確かめてから終了する。,,,ui/hub_settings.gd
+画面の文字の言語。,,,ui/hub_settings.gd
+探索の流れ,,,ui/hub_settings.gd
+探索はいつもLv 1から始まります。分岐マップで行き先を選び、章の最後のボスを倒すと踏破です。,,,ui/hub_settings.gd
+フィールドは決まった時間を生き延びるか、決まった数の敵を倒すと制圧です。目標は画面上に出ます。,,,ui/hub_settings.gd
+アリーナは、すべてのウェーブを倒すと制圧です。,,,ui/hub_settings.gd
+宝石を拾うとレベルが上がり、カード3枚（拠点の強化で4枚）から強化を1つ選びます。カードは光ってから選べます。,,,ui/hub_settings.gd
+エリアの報酬（強化・回復・残響）は、制圧すると受け取れます。どのエリアも、制圧すると報酬とは別に残響を少し得られます。,,,ui/hub_settings.gd
+HPは次のエリアへ持ち越します。レベルとレベルアップの強化は、探索が終わると消えます。,,,ui/hub_settings.gd
+最後の章を踏破すると「難易度の段階」が開きます。出撃画面で段階を上げるほど制約が重なり、持ち帰る残響が1段階ごとに1割増えます。,,,ui/hub_settings.gd
+開いている最高の段階で最後の章を踏破すると、次の段階が開きます。,,,ui/hub_settings.gd
+残響と強化,,,ui/hub_settings.gd
+残響は、エリアの制圧、残響の報酬、精鋭の撃破、ボスの撃破で手に入ります。踏破・敗北・中断のどれでも、すべて持ち帰れます。,,,ui/hub_settings.gd
+拠点の「強化」で残響を使うと、ずっと続く強化を習得できます。,,,ui/hub_settings.gd
+強化は「残響の灯」から枝分かれします。左は体、右はレベルアップ、上はスキル、右上は武器、下は必殺技の枝です。,,,ui/hub_settings.gd
+線でつながった手前の節を習得すると、次の節を買えます。,,,ui/hub_settings.gd
+覚えたスキル・武器・必殺技は、拠点の「ステータス」で付け替えます。,,,ui/hub_settings.gd
+習得した強化は自動で保存されます。,,,ui/hub_settings.gd
+攻撃はマウス（ゲームパッドは右スティック。倒していなければ移動の向き）の方向へ振ります。向きは足元の矢じりで分かります。続けて押すと連撃、長押しで溜め攻撃です。,,,ui/hub_settings.gd
+ダッシュ中は攻撃を受けません。,,,ui/hub_settings.gd
+敵の攻撃の前には床に赤い印が出ます。印が埋まる前に外へ出るか、ダッシュで抜けてください。,,,ui/hub_settings.gd
+必殺技は、攻撃を当てる・敵を倒す・傷を負うとゲージが溜まり、満ちると使えます。,,,ui/hub_settings.gd
+拠点では、矢印キー（ゲームパッドは十字キー）で選び、Enter（A）で決定、Esc（B）で戻ります。,,,ui/hub_settings.gd
+拠点の「図鑑」で、探索中に出会った敵を見返せます。,,,ui/hub_settings.gd
+出会っていない敵は、影と「？？？」で表示されます。,,,ui/hub_settings.gd
+Q・E（ゲームパッドはLB・RB）で種類を切り替えます。,,,ui/hub_settings.gd
+強化と状態異常,,,ui/hub_settings.gd
+レベルアップの強化は、連撃・範囲・回避・属性・状態異常・スキル・守りの系統に分かれ、自由に組み合わせられます。,,,ui/hub_settings.gd
+感電した敵は、4秒のあいだ歩く速さが3割落ちます。,,,ui/hub_settings.gd
+燃えている敵は、3秒のあいだ0.5秒ごとに、燃やした一撃の3割のダメージを受けます。,,,ui/hub_settings.gd
+連鎖雷と放電は雷刃を、燃え移りは業火・炎の技・霊火の足跡のどれかを持っていると、カードに出ます。,,,ui/hub_settings.gd
+「締めの一撃」は連撃の最後の段です。剣と槍は3段目、大槌は2段目です。,,,ui/hub_settings.gd
+取った強化は、探索中のメニュー（Esc、ゲームパッドはSTART）で見返せます。,,,ui/hub_settings.gd
+イベントと呪い,,,ui/hub_settings.gd
+分岐マップのイベントは、戦闘のない立ち寄り先です。残響やHPと引き換えに、強化や回復を得られます。,,,ui/hub_settings.gd
+呪いは探索の終わりまで残ります。1つ受けるごとに、以後のエリアで得る残響が5割増えます。,,,ui/hub_settings.gd
+脆さ：受けるダメージが2増えます。,,,ui/hub_settings.gd
+鈍足：移動速度が12%落ちます。,,,ui/hub_settings.gd
+渇き：あらゆる回復が半分になります。,,,ui/hub_settings.gd
+第4章の浄めの泉では、残響を払って呪いを解けます。,,,ui/hub_settings.gd
+移動,,,ui/hub_settings.gd
+矢印キー,,,ui/hub_settings.gd
+左スティック,,,ui/hub_settings.gd
+十字キー,,,ui/hub_settings.gd
+攻撃,,,ui/hub_settings.gd
+左クリック,,,ui/hub_settings.gd
+狙い,,,ui/hub_settings.gd
+マウス,,,ui/hub_settings.gd
+右スティック,,,ui/hub_settings.gd
+必殺技,,,ui/hub_settings.gd
+クリック,,,ui/hub_settings.gd
+開く,,,ui/hub_settings.gd
+キーボード,,,ui/hub_settings.gd
+ゲームパッド,,,ui/hub_settings.gd
+話題,,,ui/hub_settings.gd
+閉じる,,,ui/hub_settings.gd
+現れる敵,,,ui/hub_sortie.gd
+封印中,,,ui/hub_sortie.gd
+未踏,,,ui/hub_sortie.gd
+%sを踏破すると開く,,,ui/hub_sortie.gd
+前の章,,,ui/hub_sortie.gd
+封印されている。%s。,,,ui/hub_sortie.gd
+%sへ出撃する,,,ui/hub_sortie.gd
+%sは封印中,,,ui/hub_sortie.gd
+（段階%d）,,,ui/hub_sortie.gd
+制約なし,,,ui/hub_sortie.gd
+段階を上げる（E・RB）,,,ui/hub_sortie.gd
+段階%dで%sを踏破すると開く,,,ui/hub_sortie.gd
+最後の段階,,,ui/hub_sortie.gd
+段階を下げる（Q・LB）,,,ui/hub_sortie.gd
+強化ツリーのスキルの枝で習得できる,,,ui/hub_status.gd
+強化ツリーの必殺技の枝で習得できる,,,ui/hub_status.gd
+このスロットを空ける,,,ui/hub_status.gd
+未所持,,,ui/hub_status.gd
+スキル1,,,ui/hub_status.gd
+スキル2,,,ui/hub_status.gd
+強化ツリーの武器の枝で習得できる,,,ui/hub_status.gd
+強化ツリーの必殺技の枝で必殺技を覚えると付けられる,,,ui/hub_status.gd
+空き,,,ui/hub_status.gd
+封印,,,ui/hub_status.gd
+%s（%s）：%s,,,ui/hub_status.gd
+%d連撃,,,ui/hub_status.gd
+外す,,,ui/hub_status.gd
+ゲージ%s,,,ui/hub_status.gd
+%s秒,,,ui/hub_status.gd
+未開放の枝,,,ui/hub_status.gd
+スキル　再使用 %s秒,,,ui/hub_status.gd
+"威力 攻撃力の%d%%
+%s",,,ui/hub_status.gd
+装備中,,,ui/hub_status.gd
+入れ替える,,,ui/hub_status.gd
+装備する,,,ui/hub_status.gd
+武器,,,ui/hub_status.gd
+"連撃 %d段（攻撃力の%d%%まで）
+溜め 攻撃力の%d%%　%s",,,ui/hub_status.gd
+持ち替える,,,ui/hub_status.gd
+必殺技　ゲージ %s,,,ui/hub_status.gd
+射程 %s,,,ui/hub_status.gd
+範囲 長さ%s,,,ui/hub_status.gd
+範囲 半径%s,,,ui/hub_status.gd
+範囲 %s,,,ui/hub_status.gd
+マス,,,ui/hub_status.gd
+ダメージの軽減,,,ui/hub_status.gd
+基礎 %s,,,ui/hub_status.gd
+ダッシュ,,,ui/hub_status.gd
+%d回 / %s秒,,,ui/hub_status.gd
+基礎 %d回 / %s秒%s%s,,,ui/hub_status.gd
+回,,,ui/hub_status.gd
+秒,,,ui/hub_status.gd
+被弾後の無敵,,,ui/hub_status.gd
+宝石を吸い寄せる範囲,,,ui/hub_status.gd
+回復の報酬,,,ui/hub_status.gd
+最大HPの%d%%,,,ui/hub_status.gd
+報酬の残響,,,ui/hub_status.gd
+得る経験値,,,ui/hub_status.gd
+レベルアップのカード,,,ui/hub_status.gd
+%d枚,,,ui/hub_status.gd
+枚,,,ui/hub_status.gd
+探索ごとに%d回,,,ui/hub_status.gd
+0回,,,ui/hub_status.gd
+あり,,,ui/hub_status.gd
+回復%d%%,,,ui/hub_status.gd
+衝撃,,,ui/hub_status.gd
+無敵%s秒,,,ui/hub_status.gd
+振り+%d%%,,,ui/hub_status.gd
+レベルアップの瞬間,,,ui/hub_status.gd
+光の癒やし・光の衝撃・光の加護・高揚で増える,,,ui/hub_status.gd
+基礎 %s%s,,,ui/hub_status.gd
+　＋ %s %s%s%s,,,ui/hub_status.gd
+中央,,,ui/meta_upgrade_page.gd
+身体,,,ui/meta_upgrade_page.gd
+成長,,,ui/meta_upgrade_page.gd
+この枝はまだ開放されていない,,,ui/meta_upgrade_page.gd
+必要,,,ui/meta_upgrade_page.gd
+所持,,,ui/meta_upgrade_page.gd
+「%s」を習得すると解放,,,ui/meta_upgrade_page.gd
+習得済み,,,ui/meta_upgrade_page.gd
+残響があと%s足りない,,,ui/meta_upgrade_page.gd
+残響 %s で%s,,,ui/meta_upgrade_page.gd
+習得,,,ui/meta_upgrade_page.gd
+先に「%s」を習得する,,,ui/meta_upgrade_page.gd
+左クリック長押し,,,ui/action_hud/action_hud.gd
+X・RT長押し,,,ui/action_hud/action_hud.gd
+溜め攻撃,,,ui/action_hud/action_hud.gd
+残響,,,ui/action_hud/action_hud.gd
+総撃破,,,ui/action_hud/action_hud.gd
+敵 %d　%d FPS,,,ui/action_hud/action_hud.gd
+固定 %d体,,,ui/action_hud/action_hud.gd
+時間で増加（目標 %d体）,,,ui/action_hud/action_hud.gd
+立ち去る,,,ui/route_map/event_view.gd
+この先にある,,,ui/route_map/route_map_view.gd
+この道からは行けない,,,ui/route_map/route_map_view.gd
+通り過ぎた,,,ui/route_map/route_map_view.gd
+この章の最奥で、何かが待ち構えている,,,ui/route_map/route_map_view.gd
+←→↑↓・1〜3,,,ui/route_map/route_map_view.gd
+エリアを選ぶ,,,ui/route_map/route_map_view.gd
+進む,,,ui/route_map/route_map_view.gd
+地図を見渡す,,,ui/route_map/route_map_view.gd
+%s　段階%d,,,ui/route_map/route_map_view.gd
+呪い：%s,,,ui/route_map/route_map_view.gd
+イベント　戦闘なし,,,ui/route_map/route_map_view.gd
+%s　%s　目安 %d分%02d秒,,,ui/route_map/route_map_view.gd
+報酬：残響 %s,,,ui/route_map/route_map_view.gd
+報酬：%s　残響 +%s,,,ui/route_map/route_map_view.gd
+「%s」に立ち寄りますか？,,,ui/route_map/route_map_view.gd
+立ち寄る,,,ui/route_map/route_map_view.gd
+「%s」に進みますか？,,,ui/route_map/route_map_view.gd
+報酬：%s　%s,,,ui/route_map/route_map_view.gd
+この探索で取得した強化はない,,,ui/route_map/run_end_view.gd
+持ち帰った残響,,,ui/route_map/run_end_view.gd
+取得した強化,,,ui/route_map/run_end_view.gd
+新しい探索を始める,,,ui/route_map/run_end_view.gd
+踏破,,,ui/route_map/run_end_view.gd
+中断,,,ui/route_map/run_end_view.gd
+敗北,,,ui/route_map/run_end_view.gd
+%s（段階%d）,,,ui/route_map/run_end_view.gd
+ボスを撃破した,,,ui/route_map/run_end_view.gd
+第%d層で中断した,,,ui/route_map/run_end_view.gd
+第%d層で倒れた,,,ui/route_map/run_end_view.gd
+拠点へ戻る,,,ui/route_map/run_end_view.gd
+第%d層,,,ui/route_map/run_end_view.gd
+到達,,,ui/route_map/run_end_view.gd
+戦った時間,,,ui/route_map/run_end_view.gd
+撃破,,,ui/route_map/run_end_view.gd
+%d体,,,ui/route_map/run_end_view.gd
+レベル,,,ui/route_map/run_end_view.gd
+初めての踏破,,,ui/route_map/run_end_view.gd
+最深到達を更新,,,ui/route_map/run_end_view.gd
+所持 残響 %s,,,ui/route_map/run_end_view.gd
+%sに倒された,,,ui/route_map/run_journey.gd
+%sで倒れた,,,ui/route_map/run_journey.gd
+%sを倒した,,,ui/route_map/run_journey.gd
+最奥まで踏破した,,,ui/route_map/run_journey.gd
+%sで引き返した,,,ui/route_map/run_journey.gd
+出発点で引き返した,,,ui/route_map/run_journey.gd
+フィールド,,,world/areas/area_data.gd
+アリーナ,,,world/areas/area_data.gd
+イベント,,,world/areas/area_data.gd
+回復,,,world/areas/area_data.gd
+エリア,,,world/areas/area_data.gd
+制圧完了,,,world/areas/battle_area.gd
+%sを倒す,,,world/areas/battle_area.gd
+ウェーブ 1/%d,,,world/areas/battle_area.gd
+全ウェーブ撃破,,,world/areas/battle_area.gd
+ウェーブ %d/%d　残り %d体,,,world/areas/battle_area.gd
+撃破 %d/%d,,,world/areas/battle_area.gd
+生き延びる　残り %d:%02d,,,world/areas/battle_area.gd
+%sが怒り狂った,,,world/areas/battle_area.gd
+残響 +%d,,,world/areas/battle_area.gd
+倒れました,,,world/areas/battle_area.gd
+X・RT,,,world/areas/first_lessons.gd
+攻撃　続けて押すと連撃,,,world/areas/first_lessons.gd
+ダッシュ　赤い印は、これで抜ける,,,world/areas/first_lessons.gd
+溜め攻撃　溜まったら離す,,,world/areas/first_lessons.gd
+倒れました　Enterで再開,,,world/areas/sandbox.gd
+1〜5 敵の数を固定　0 時間で増加　／　L レベルアップ　G 必殺ゲージ　H 必殺技　J 武器の切り替え（試験用）,,,world/areas/sandbox.gd
+必殺技：%s,,,world/areas/sandbox.gd
+武器：%s,,,world/areas/sandbox.gd

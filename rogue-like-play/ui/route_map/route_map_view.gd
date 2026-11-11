@@ -296,7 +296,7 @@ func _build_top(hud: Control) -> void:
 	tally.offset_top = 26.0
 	hud.add_child(tally)
 	_level = _label(_tally_row(tally, "Lv"), &"HudValue")
-	_echo = _label(_tally_row(tally, "残響"), &"HudGoldValue")
+	_echo = _label(_tally_row(tally, tr("残響")), &"HudGoldValue")
 	_curses = _label(tally, &"CurseLabel")
 	_curses.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_curses.hide()
@@ -327,10 +327,10 @@ func _build_bottom(hud: Control) -> void:
 	vitals.add_child(_hp_gauge)
 	_guide = KeyGuide.new()
 	hud.add_child(_guide)
-	_guide.add_hint("←→↑↓・1〜3", "十字", "エリアを選ぶ")
-	_guide.add_hint("Enter", "A", "進む")
-	_guide.add_hint("ホイール", "右スティック", "地図を見渡す")
-	_guide.add_hint("Esc", "START", "メニュー")
+	_guide.add_hint(tr("←→↑↓・1〜3"), tr("十字"), tr("エリアを選ぶ"))
+	_guide.add_hint("Enter", "A", tr("進む"))
+	_guide.add_hint(tr("ホイール"), tr("右スティック"), tr("地図を見渡す"))
+	_guide.add_hint("Esc", "START", tr("メニュー"))
 	_guide.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	_guide.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_guide.grow_vertical = Control.GROW_DIRECTION_BEGIN
@@ -415,7 +415,7 @@ func present(route_map: RouteMap, at_layer: int, run: RunState, max_hp: int, not
 	route = route_map
 	route_layer = at_layer
 	_run = run
-	_title.text = route.chapter.display_name if run.step == 0 else "%s　段階%d" % [route.chapter.display_name, run.step]
+	_title.text = tr(route.chapter.display_name) if run.step == 0 else tr("%s　段階%d") % [tr(route.chapter.display_name), run.step]
 	var hp := run.hp if run.hp > 0 else max_hp
 	_hp.text = "%d / %d" % [hp, max_hp]
 	for bar: ProgressBar in [_hp_gauge.bar, _hp_gauge.trail]:
@@ -423,7 +423,7 @@ func present(route_map: RouteMap, at_layer: int, run: RunState, max_hp: int, not
 		bar.value = hp
 	_level.text = str(run.progression.level)
 	_echo.text = UIFormat.amount(run.echo)
-	_curses.text = "呪い：%s" % run.curse_names()
+	_curses.text = tr("呪い：%s") % run.curse_names()
 	_curses.visible = not run.curses.is_empty()
 	_show_boons(run)
 	_note.text = note
@@ -488,8 +488,8 @@ func _reveal_boss(boss: RouteNode) -> void:
 	_opening.tween_callback(func():
 		boss.reveal(COMING_OUT)
 		GameAudio.play(self, &"boss", -10.0)
-		_boss_epithet.text = boss.waypoint.area.boss.epithet
-		_boss_name.text = boss.waypoint.area.boss.display_name
+		_boss_epithet.text = tr(boss.waypoint.area.boss.epithet)
+		_boss_name.text = tr(boss.waypoint.area.boss.display_name)
 		_boss_title.modulate.a = 0.0
 		_boss_title.show()
 		var show := create_tween().set_parallel()
@@ -553,7 +553,7 @@ func _show_boons(run: RunState) -> void:
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.custom_minimum_size = Vector2(EMBLEM_SIZE, EMBLEM_SIZE)
-		icon.tooltip_text = boon.display_name if boon.max_level == 1 else "%s %d" % [boon.display_name, run.build.rank(boon.id)]
+		icon.tooltip_text = tr(boon.display_name) if boon.max_level == 1 else "%s %d" % [tr(boon.display_name), run.build.rank(boon.id)]
 		_boons.add_child(icon)
 		if boon.max_level > 1:
 			# Its rank at the emblem's lower right, as the fight's HUD shows it.
@@ -958,31 +958,31 @@ func _tell(point: RouteMap.Waypoint) -> void:
 		return
 	var area := point.area
 	var node: RouteNode = nodes_by_point.get(point)
-	_detail_name.text = area.display_name
+	_detail_name.text = tr(area.display_name)
 	for child in _detail_foe_row.get_children():
 		child.free()
 	if node != null and node.veiled:
 		# The boss still in the dark: only that something waits there.
-		_detail_name.text = VEILED_NAME
+		_detail_name.text = tr(VEILED_NAME)
 		_detail_kind.text = area.kind_name()
 		_detail_reward.text = ""
-		_detail_goal.text = VEILED_NOTE
+		_detail_goal.text = tr(VEILED_NOTE)
 		_detail_foes.text = ""
 	elif area.is_event():
-		_detail_kind.text = "イベント　戦闘なし"
-		_detail_reward.text = area.condition
-		_detail_goal.text = area.foe_summary
+		_detail_kind.text = tr("イベント　戦闘なし")
+		_detail_reward.text = tr(area.condition)
+		_detail_goal.text = tr(area.foe_summary)
 		_detail_foes.text = ""
 	else:
-		_detail_kind.text = "%s　%s　目安 %d分%02d秒" % [area.kind_name(), area.stars(), area.expected_time / 60, area.expected_time % 60]
+		_detail_kind.text = tr("%s　%s　目安 %d分%02d秒") % [area.kind_name(), area.stars(), area.expected_time / 60, area.expected_time % 60]
 		# What clearing it brings: its reward, and the echo every clearing
 		# gives (an echo reward's amount holds both).
 		if point.reward == AreaData.Reward.ECHO:
-			_detail_reward.text = "報酬：残響 %s" % UIFormat.amount(_run.echo_reward(area.echo) + _run.trial_echo(area, point.layer))
+			_detail_reward.text = tr("報酬：残響 %s") % UIFormat.amount(_run.echo_reward(area.echo) + _run.trial_echo(area, point.layer))
 		else:
-			_detail_reward.text = "報酬：%s　残響 +%s" % [AreaData.reward_name(point.reward), UIFormat.amount(_run.clear_echo(area) + _run.trial_echo(area, point.layer))]
-		_detail_goal.text = area.condition
-		_detail_foes.text = area.foe_summary
+			_detail_reward.text = tr("報酬：%s　残響 +%s") % [AreaData.reward_name(point.reward), UIFormat.amount(_run.clear_echo(area) + _run.trial_echo(area, point.layer))]
+		_detail_goal.text = tr(area.condition)
+		_detail_foes.text = tr(area.foe_summary)
 		for foe in Chapters.area_foes(area):
 			var met := meta == null or meta.has_met(foe.id)
 			var picture := TextureRect.new()
@@ -997,7 +997,7 @@ func _tell(point: RouteMap.Waypoint) -> void:
 	_detail_foe_row.visible = _detail_foe_row.get_child_count() > 0
 	var state := ""
 	if node != null and node.mark != RouteNode.Mark.OPEN:
-		state = {RouteNode.Mark.AHEAD: AHEAD_NOTE, RouteNode.Mark.TAKEN: PASSED_NOTE}.get(node.mark, SHUT_NOTE if point.layer >= route_layer else PASSED_NOTE)
+		state = tr({RouteNode.Mark.AHEAD: AHEAD_NOTE, RouteNode.Mark.TAKEN: PASSED_NOTE}.get(node.mark, SHUT_NOTE if point.layer >= route_layer else PASSED_NOTE))
 	_detail_state.text = state
 	_detail_state.visible = not state.is_empty()
 	_card.reset_size()
@@ -1069,9 +1069,9 @@ func pick(waypoint: RouteMap.Waypoint) -> void:
 	_card.hide()
 	var area := waypoint.area
 	if area.is_event():
-		prompt.ask(area.kind_name(), "「%s」に立ち寄りますか？" % area.display_name, area.condition, "立ち寄る", "やめる")
+		prompt.ask(area.kind_name(), tr("「%s」に立ち寄りますか？") % tr(area.display_name), tr(area.condition), tr("立ち寄る"), tr("やめる"))
 	else:
-		prompt.ask("%s　%s" % [area.kind_name(), area.stars()], "「%s」に進みますか？" % area.display_name, "報酬：%s　%s" % [AreaData.reward_name(waypoint.reward), area.condition], "進む", "やめる")
+		prompt.ask("%s　%s" % [area.kind_name(), area.stars()], tr("「%s」に進みますか？") % tr(area.display_name), tr("報酬：%s　%s") % [AreaData.reward_name(waypoint.reward), tr(area.condition)], tr("進む"), tr("やめる"))
 
 
 func _on_go() -> void:

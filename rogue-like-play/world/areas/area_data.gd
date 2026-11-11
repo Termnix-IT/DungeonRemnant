@@ -64,11 +64,11 @@ const REWARD_NAMES := {Reward.BOON: "強化", Reward.HEAL: "回復", Reward.ECHO
 
 
 func kind_name() -> String:
-	return KIND_NAMES[kind]
+	return tr(KIND_NAMES[kind])
 
 
 static func reward_name(reward: Reward) -> String:
-	return REWARD_NAMES[reward]
+	return TranslationServer.translate(REWARD_NAMES[reward])
 
 
 func is_event() -> bool:

@@ -24,14 +24,14 @@ func _ready() -> void:
 	super()
 	run.special = MetaProgress.SPECIALS[0]
 	hero.equip_special(run.special)
-	hero_fell.connect(func(): hud.show_message("倒れました　Enterで再開"))
+	hero_fell.connect(func(): hud.show_message(tr("倒れました　Enterで再開")))
 	abandoned.connect(func():
 		get_tree().paused = false
 		get_tree().reload_current_scene())
 
 
 func trial_keys() -> String:
-	return "1〜5 敵の数を固定　0 時間で増加　／　L レベルアップ　G 必殺ゲージ　H 必殺技　J 武器の切り替え（試験用）"
+	return tr("1〜5 敵の数を固定　0 時間で増加　／　L レベルアップ　G 必殺ゲージ　H 必殺技　J 武器の切り替え（試験用）")
 
 
 func _lay_out() -> void:
@@ -70,7 +70,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		var at := MetaProgress.SPECIALS.find(hero.special)
 		run.special = MetaProgress.SPECIALS[(at + 1) % MetaProgress.SPECIALS.size()]
 		hero.equip_special(run.special)
-		hud.show_message("必殺技：%s" % run.special.display_name)
+		hud.show_message(tr("必殺技：%s") % tr(run.special.display_name))
 		_banner_left = BANNER_TIME * 0.5
 	elif event.physical_keycode == KEY_J and hero.motor.state == HeroMotor.State.FREE:
 		var held := MetaProgress.WEAPONS.find(hero.motor.moveset)
@@ -79,5 +79,5 @@ func _unhandled_input(event: InputEvent) -> void:
 		run.build.combo_length = run.moveset.combo.size()
 		hero.motor.combo_index = -1
 		WeaponMount.hold(hero.view.rig, run.moveset)
-		hud.show_message("武器：%s" % run.moveset.display_name)
+		hud.show_message(tr("武器：%s") % tr(run.moveset.display_name))
 		_banner_left = BANNER_TIME * 0.5

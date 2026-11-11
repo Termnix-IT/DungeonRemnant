@@ -6,6 +6,7 @@ extends HBoxContainer
 # painted key (the theme's "cap" and "cap_active" styles) while a gamepad is
 # in use, showing its buttons (B, A); on a keyboard only the key's name is
 # written, without a frame. A hint with an action can also be clicked.
+# Its words and key names are given in Japanese and shown translated.
 
 # Each cap starts this far into its hint.
 const CAP_INSET := 4.0
@@ -25,9 +26,9 @@ func _init() -> void:
 func add_hint(keys: String, buttons: String, text: String, action: Callable = Callable()) -> Button:
 	var hint := Button.new()
 	hint.theme_type_variation = &"KeyGuideButton"
-	hint.text = text
-	hint.set_meta(&"keys", keys)
-	hint.set_meta(&"buttons", buttons)
+	hint.text = tr(text)
+	hint.set_meta(&"keys", tr(keys))
+	hint.set_meta(&"buttons", tr(buttons))
 	hint.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	if action.is_valid():
 		hint.pressed.connect(action)

@@ -69,8 +69,8 @@ func _ready() -> void:
 func play_departure(chapter: ChapterData) -> void:
 	art.texture = chapter.illustration
 	art.visible = art.texture != null
-	title.text = chapter.display_name
-	subtitle.text = "%d層とボス" % chapter.layers
+	title.text = tr(chapter.display_name)
+	subtitle.text = tr("%d層とボス") % chapter.layers
 	_play()
 
 

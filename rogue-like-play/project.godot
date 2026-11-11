@@ -16,6 +16,9 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="DungeonRemnant"
+config/name_localized={
+"ja": "残響の迷宮"
+}
 
 [display]
 
@@ -26,6 +29,11 @@ window/stretch/mode="canvas_items"
 [gui]
 
 theme/custom="res://ui/theme/dungeon_theme.tres"
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://locale/text.en.translation")
+locale/fallback="ja"
 
 [input]
 

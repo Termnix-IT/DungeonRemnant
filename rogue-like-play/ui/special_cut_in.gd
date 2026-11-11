@@ -75,8 +75,8 @@ func present(move: SpecialData, quick: bool = false) -> void:
 	portrait.position.x = -portrait.size.x
 	portrait.draw.connect(_fade_portrait)
 	band.add_child(portrait)
-	caption = _label(band, "必殺技", &"SpecialCaption")
-	name_label = _label(band, move.display_name, &"SpecialName")
+	caption = _label(band, tr("必殺技"), &"SpecialCaption")
+	name_label = _label(band, tr(move.display_name), &"SpecialName")
 	# The gold edges over everything in the band, her portrait too.
 	var edges := Control.new()
 	edges.mouse_filter = Control.MOUSE_FILTER_IGNORE

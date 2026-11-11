@@ -82,11 +82,11 @@ func _ready() -> void:
 	key_guide.alignment = BoxContainer.ALIGNMENT_CENTER
 	key_guide.custom_minimum_size.y = 40
 	$Panel/Margin/Stack.add_child(key_guide)
-	key_guide.add_hint("← / →", "◀ / ▶", "カード")
-	pick_hint = key_guide.add_hint("1・2・3", "A", "選ぶ")
+	key_guide.add_hint("← / →", "◀ / ▶", tr("カード"))
+	pick_hint = key_guide.add_hint(tr("1・2・3"), "A", tr("選ぶ"))
 	reroll_hint = key_guide.add_hint("R", "Y", "", _reroll)
 	reroll_hint.hide()
-	decline_hint = key_guide.add_hint("Esc", "B", "やめる", _decline)
+	decline_hint = key_guide.add_hint("Esc", "B", tr("やめる"), _decline)
 	decline_hint.hide()
 	status_row = HBoxContainer.new()
 	status_row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -154,7 +154,7 @@ func present_boons(candidates: Array[BoonData], build: BuildState, level: int, p
 	for boon in candidates:
 		levels.append(build.rank(boon.id))
 	rerolls = rerolls_left
-	reroll_hint.text = "引き直す（残り%d）" % rerolls
+	reroll_hint.text = tr("引き直す（残り%d）") % rerolls
 	reroll_hint.visible = rerolls > 0
 	_open(candidates, levels, level, pending)
 	if not title.is_empty():
@@ -165,13 +165,13 @@ func _open(candidates: Array[BoonData], levels: Array[int], level: int, pending:
 	clear_afterglow()
 	offers = candidates.duplicate()
 	_levels = levels
-	$Panel/Margin/Stack/Title.text = "Lv %d　強化を1つ選ぶ" % (level - pending + 1)
+	$Panel/Margin/Stack/Title.text = tr("Lv %d　強化を1つ選ぶ") % (level - pending + 1)
 	var keys: Array[String] = []
 	for index in offers.size():
 		keys.append(str(index + 1))
-	$Panel/Margin/Stack/Hint.text = "このあと、もう%d回選べます" % (pending - 1)
+	$Panel/Margin/Stack/Hint.text = tr("このあと、もう%d回選べます") % (pending - 1)
 	$Panel/Margin/Stack/Hint.visible = pending > 1
-	pick_hint.set_meta(&"keys", "・".join(keys))
+	pick_hint.set_meta(&"keys", tr("・").join(keys))
 	key_guide.refresh()
 	for index in buttons.size():
 		buttons[index].visible = index < offers.size()

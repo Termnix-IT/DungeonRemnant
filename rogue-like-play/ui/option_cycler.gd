@@ -12,6 +12,7 @@ var options: Array[String] = []
 var selected := 0
 var _back := false
 var _hovered := false
+var _translated := true
 
 
 func _init() -> void:
@@ -22,8 +23,11 @@ func _init() -> void:
 	pressed.connect(_on_pressed)
 
 
-func setup(names: Array[String], index: int = 0) -> void:
+# The options are given in Japanese and shown translated, unless `translated`
+# is false (the languages, each named in its own words).
+func setup(names: Array[String], index: int = 0, translated: bool = true) -> void:
 	options = names
+	_translated = translated
 	select(index)
 
 
@@ -32,7 +36,7 @@ func select(index: int) -> void:
 	if options.is_empty():
 		return
 	selected = posmod(index, options.size())
-	text = options[selected]
+	text = tr(options[selected]) if _translated else options[selected]
 	queue_redraw()
 
 

@@ -24,7 +24,7 @@ func setup(names: Array[String], with_caps := true) -> void:
 		_caps.append(_cap("Q"))
 	for index in names.size():
 		var tab := Button.new()
-		tab.text = names[index]
+		tab.text = tr(names[index])
 		tab.theme_type_variation = &"CategoryTab"
 		tab.toggle_mode = true
 		tab.button_group = _group

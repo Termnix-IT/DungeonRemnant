@@ -115,7 +115,7 @@ func _ready() -> void:
 	left.theme_type_variation = &"DetailStack"
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columns.add_child(left)
-	_centered(left, &"MutedLabel").text = "持ち帰った残響"
+	_centered(left, &"MutedLabel").text = tr("持ち帰った残響")
 	_echo = _centered(left, &"ResultEcho")
 	_sparks = Control.new()
 	_sparks.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -135,7 +135,7 @@ func _ready() -> void:
 	var right := VBoxContainer.new()
 	right.theme_type_variation = &"DetailStack"
 	columns.add_child(right)
-	_centered(right, &"HeadingLabel").text = "取得した強化"
+	_centered(right, &"HeadingLabel").text = tr("取得した強化")
 	_boons = GridContainer.new()
 	_boons.theme_type_variation = &"CodexGrid"
 	_boons.columns = BOON_COLUMNS
@@ -155,7 +155,7 @@ func _ready() -> void:
 	_boon_note.custom_minimum_size.y = NOTE_LINES * _boon_note.get_theme_font(&"font").get_height(_boon_note.get_theme_font_size(&"font_size"))
 	HubUI.space(stack)
 	# The way on, at the foot.
-	_button = HubUI.primary_action(stack, "新しい探索を始める", func(): again_requested.emit())
+	_button = HubUI.primary_action(stack, tr("新しい探索を始める"), func(): again_requested.emit())
 	seal = TextureRect.new()
 	seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -186,16 +186,16 @@ func present(result: Dictionary, home: bool = false, art: Texture2D = null) -> v
 	var won: bool = result.cleared
 	var left: bool = result.get("abandoned", false)
 	_art.texture = art
-	_title.text = "踏破" if won else ("中断" if left else "敗北")
+	_title.text = tr("踏破") if won else (tr("中断") if left else tr("敗北"))
 	_title.theme_type_variation = &"VictoryTitle" if won else &"DefeatTitle"
-	var place: String = result.chapter if int(result.get("step", 0)) == 0 else "%s（段階%d）" % [result.chapter, int(result.step)]
-	_ending.text = "%s　%s" % [place, "ボスを撃破した" if won else ("第%d層で中断した" if left else "第%d層で倒れた") % (int(result.layer) + 1)]
-	_button.text = "拠点へ戻る" if home else "新しい探索を始める"
+	var place: String = result.chapter if int(result.get("step", 0)) == 0 else tr("%s（段階%d）") % [result.chapter, int(result.step)]
+	_ending.text = "%s　%s" % [place, tr("ボスを撃破した") if won else (tr("第%d層で中断した") if left else tr("第%d層で倒れた")) % (int(result.layer) + 1)]
+	_button.text = tr("拠点へ戻る") if home else tr("新しい探索を始める")
 	for child in _tiles.get_children():
 		child.free()
-	var reached := "ボス" if won else "第%d層" % (int(result.layer) + 1)
-	for pair: Array in [["到達", reached], ["戦った時間", "%d:%02d" % [floori(float(result.time) / 60.0), floori(float(result.time)) % 60]],
-			["撃破", "%d体" % result.kills], ["レベル", "Lv %d" % result.level]]:
+	var reached := tr("ボス") if won else tr("第%d層") % (int(result.layer) + 1)
+	for pair: Array in [[tr("到達"), reached], [tr("戦った時間"), "%d:%02d" % [floori(float(result.time) / 60.0), floori(float(result.time)) % 60]],
+			[tr("撃破"), tr("%d体") % result.kills], [tr("レベル"), "Lv %d" % result.level]]:
 		_tile(pair[0], pair[1])
 	journey.show_run(result)
 	_show_build(result.get("build", []))
@@ -208,7 +208,7 @@ func present(result: Dictionary, home: bool = false, art: Texture2D = null) -> v
 	total_label.text = _total_text(0)
 	total_label.visible = _total_before >= 0
 	seal.texture = SEALS[&"clear" if won else (&"return" if left else &"defeat")]
-	record_label.text = "初めての踏破" if result.get("first_clear", false) else ("最深到達を更新" if result.get("record", false) else "")
+	record_label.text = tr("初めての踏破") if result.get("first_clear", false) else (tr("最深到達を更新") if result.get("record", false) else "")
 	record_label.hide()
 	show()
 	_button.grab_focus()
@@ -217,7 +217,7 @@ func present(result: Dictionary, home: bool = false, art: Texture2D = null) -> v
 
 
 func _total_text(counted_so_far: int) -> String:
-	return "所持 残響 %s" % UIFormat.amount(_total_before + counted_so_far)
+	return tr("所持 残響 %s") % UIFormat.amount(_total_before + counted_so_far)
 
 
 # The seal drops onto the panel's top corner, then the record, if any.
@@ -335,14 +335,14 @@ func _show_build(build: Array) -> void:
 	_button.focus_neighbor_top = NodePath()
 	_boons.visible = not build.is_empty()
 	_boon_name.get_parent().visible = not build.is_empty()
-	_boon_note.text = NO_BOONS
+	_boon_note.text = tr(NO_BOONS)
 	_boon_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if build.is_empty() else HORIZONTAL_ALIGNMENT_LEFT
 	for entry: Array in build:
 		var boon: BoonData = entry[0]
 		var rank: int = entry[1]
 		var cell := EquipSocket.new(EMBLEM_SIZE, false, true)
 		cell.emblem = EmblemIcons.texture(boon.emblem)
-		cell.tooltip_text = boon.display_name
+		cell.tooltip_text = tr(boon.display_name)
 		_boons.add_child(cell)
 		if boon.max_level > 1:
 			var digit := HubUI.label(cell, str(rank), &"HudCaption")
@@ -374,7 +374,7 @@ func _show_build(build: Array) -> void:
 func _tell_boon(boon: BoonData, rank: int, cell: EquipSocket) -> void:
 	for other in _boon_cells:
 		other.lit = other == cell
-	_boon_name.text = boon.display_name
+	_boon_name.text = tr(boon.display_name)
 	_boon_rank.text = "" if boon.max_level == 1 else "Lv %d / %d" % [rank, boon.max_level]
 	_boon_note.text = boon.effect_description(rank)
 	_button.focus_neighbor_top = cell.get_path()

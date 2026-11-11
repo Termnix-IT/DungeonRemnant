@@ -148,7 +148,7 @@ func _ready() -> void:
 	add_child(air)
 	GameMusic.cue(self, &"boss" if data != null and data.boss != null else &"battle")
 	if data != null:
-		hud.show_message(data.display_name)
+		hud.show_message(tr(data.display_name))
 		_banner_left = BANNER_TIME
 		GameAudio.play(self, &"floor", -18.0)
 
@@ -267,7 +267,7 @@ func clear() -> void:
 			gems.drop(foe.global_position, roundi(foe.data.exp_reward * (1.0 - float(foe.health.hp) / foe.health.max_hp)))
 	dismiss_foes()
 	gems.pull_radius = INF
-	hud.show_message("制圧完了")
+	hud.show_message(tr("制圧完了"))
 	GameAudio.play(self, &"victory", -16.0)
 	_banner_left = CLEAR_PAUSE
 	_clear_left = CLEAR_PAUSE
@@ -278,17 +278,17 @@ func objective_text() -> String:
 	if data == null:
 		return ""
 	if data.boss != null:
-		return "%sを倒す" % data.boss.display_name
+		return tr("%sを倒す") % tr(data.boss.display_name)
 	if waves != null:
 		if waves.wave < 0:
-			return "ウェーブ 1/%d" % data.waves.size()
+			return tr("ウェーブ 1/%d") % data.waves.size()
 		if waves.done():
-			return "全ウェーブ撃破"
-		return "ウェーブ %d/%d　残り %d体" % [waves.wave + 1, data.waves.size(), waves.remaining()]
+			return tr("全ウェーブ撃破")
+		return tr("ウェーブ %d/%d　残り %d体") % [waves.wave + 1, data.waves.size(), waves.remaining()]
 	if data.kill_target > 0:
-		return "撃破 %d/%d" % [mini(kills, data.kill_target), data.kill_target]
+		return tr("撃破 %d/%d") % [mini(kills, data.kill_target), data.kill_target]
 	var left := maxf(0.0, data.survive_time - elapsed)
-	return "生き延びる　残り %d:%02d" % [floori(left / 60.0), floori(left) % 60]
+	return tr("生き延びる　残り %d:%02d") % [floori(left / 60.0), floori(left) % 60]
 
 
 # The boss's mark, then the boss.
@@ -331,7 +331,7 @@ func _after_entrance() -> void:
 # The boss's second phase: its summons come in on marks around the hall.
 func _on_boss_phase(foe: Foe) -> void:
 	shake(HURT_SHAKE * 1.5)
-	hud.show_message("%sが怒り狂った" % foe.data.display_name)
+	hud.show_message(tr("%sが怒り狂った") % tr(foe.data.display_name))
 	GameAudio.play(self, &"warning", -16.0)
 	_banner_left = BANNER_TIME * 0.6
 	if foe.data.summon == null:
@@ -349,7 +349,7 @@ func _on_foe_echo(foe: Foe) -> void:
 		return
 	var echo := run.echo_reward(foe.data.echo_reward)
 	run.echo += echo
-	popups.show_number("残響 +%d" % echo, number_spot(foe), ECHO_NUMBER, ECHO_OUTLINE)
+	popups.show_number(tr("残響 +%d") % echo, number_spot(foe), ECHO_NUMBER, ECHO_OUTLINE)
 
 
 # The first area of a player's first run teaches the controls, a line at a
@@ -463,7 +463,7 @@ func _on_stood() -> void:
 
 func _on_hero_down() -> void:
 	run.hp = 0
-	hud.show_message("倒れました")
+	hud.show_message(tr("倒れました"))
 
 
 # The menu is open, or its leaving is being confirmed.
@@ -513,7 +513,7 @@ func _on_settings_changed() -> void:
 
 func _ask_abandon() -> void:
 	menu.hide()
-	prompt.ask("探索の中断", "探索を中断しますか？", "この探索で得た残響は持ち帰れます。レベルと強化は残りません。", "中断する", "戻る", true)
+	prompt.ask(tr("探索の中断"), tr("探索を中断しますか？"), tr("この探索で得た残響は持ち帰れます。レベルと強化は残りません。"), tr("中断する"), tr("戻る"), true)
 
 
 func _on_abandon_confirmed() -> void:

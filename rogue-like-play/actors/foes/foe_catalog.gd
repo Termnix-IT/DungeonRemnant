@@ -52,4 +52,4 @@ static func kind_of(foe: FoeData) -> int:
 
 
 static func kind_name(foe: FoeData) -> String:
-	return KINDS[kind_of(foe)]
+	return TranslationServer.translate(KINDS[kind_of(foe)])

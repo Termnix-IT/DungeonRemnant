@@ -270,9 +270,9 @@ func _build_top(root: Control) -> void:
 	tally.offset_right = -EDGE
 	tally.offset_top = 40
 	root.add_child(tally)
-	echo_row = _tally_row(tally, "残響")
+	echo_row = _tally_row(tally, tr("残響"))
 	echo_label = _label(echo_row, &"HudGoldValue")
-	kills_row = _tally_row(tally, "総撃破")
+	kills_row = _tally_row(tally, tr("総撃破"))
 	kills_label = _label(kills_row, &"HudTallyValue")
 	trial_label = _label(tally, &"HudSmall")
 	trial_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -429,7 +429,7 @@ func _process(delta: float) -> void:
 		_show_boons(run.build)
 	if boss_in:
 		if boss_gauge.bar == null or not boss_gauge.visible or boss_gauge.bar.value != boss.health.hp:
-			boss_gauge.present(boss.data.display_name, boss.health.hp, boss.health.max_hp)
+			boss_gauge.present(tr(boss.data.display_name), boss.health.hp, boss.health.max_hp)
 	elif boss_gauge.visible:
 		boss_gauge.present("", 0, 0)
 
@@ -505,7 +505,7 @@ func _show_goal(boss_in: bool) -> void:
 	goal.visible = data != null and not info.text.is_empty() and not boss_in
 	if not goal.visible:
 		return
-	area_label.text = data.display_name
+	area_label.text = tr(data.display_name)
 	var progress := _goal_progress(data)
 	goal_bar.visible = progress >= 0.0
 	goal_bar.value = progress * 100.0
@@ -538,9 +538,9 @@ func _show_tally() -> void:
 	trial_label.visible = area.has_method(&"trial_keys")
 	if trial_label.visible:
 		var director: EnemyDirector = area.get(&"director")
-		var line := "敵 %d　%d FPS" % [area.foes.size(), Engine.get_frames_per_second()]
+		var line := tr("敵 %d　%d FPS") % [area.foes.size(), Engine.get_frames_per_second()]
 		if director != null:
-			var sending := "固定 %d体" % director.fixed_alive if director.fixed_alive > 0 else "時間で増加（目標 %d体）" % director.target_alive()
+			var sending := tr("固定 %d体") % director.fixed_alive if director.fixed_alive > 0 else tr("時間で増加（目標 %d体）") % director.target_alive()
 			line = "%d:%02d　%s\n%s" % [floori(director.elapsed / 60.0), floori(director.elapsed) % 60, line, sending]
 		trial_label.text = line
 
@@ -551,7 +551,7 @@ func _show_actions() -> void:
 	var motor := hero.motor
 	var pad := hero.using_pad()
 	for entry: Array in SLOTS:
-		slots[entry[0]].key_label.text = entry[3] if pad else entry[2]
+		slots[entry[0]].key_label.text = tr(entry[3] if pad else entry[2])
 	# The attack's slot shows the weapon held.
 	var weapon := EmblemIcons.texture(motor.moveset.emblem)
 	if weapon != null and slots[&"strike"].icon != weapon:

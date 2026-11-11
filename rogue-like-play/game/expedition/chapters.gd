@@ -21,13 +21,13 @@ static func find(id: StringName) -> ChapterData:
 
 # The chapter's short name ("第1章").
 static func short_name(chapter: ChapterData) -> String:
-	return chapter.display_name.get_slice("　", 0)
+	return TranslationServer.translate(chapter.display_name).get_slice("　", 0)
 
 
 # The chapter's name without its number ("灰の回廊").
 static func title(chapter: ChapterData) -> String:
-	var name := chapter.display_name.get_slice("　", 1)
-	return name if not name.is_empty() else chapter.display_name
+	var name := TranslationServer.translate(chapter.display_name).get_slice("　", 1)
+	return name if not name.is_empty() else TranslationServer.translate(chapter.display_name)
 
 
 # The chapter the base offers first: the first open one not cleared yet, or
@@ -50,11 +50,11 @@ static func record(meta: MetaProgress, chapter: ChapterData) -> String:
 	var clears := meta.clears_of(chapter.id)
 	if clears > 0:
 		var step := meta.step_of(chapter.id)
-		return "踏破 %d回" % clears if step == 0 else "踏破 %d回・段階%d" % [clears, step]
+		return TranslationServer.translate("踏破 %d回") % clears if step == 0 else TranslationServer.translate("踏破 %d回・段階%d") % [clears, step]
 	var best := meta.best_of(chapter.id)
 	if best == 0:
-		return "なし"
-	return "ボスまで" if best > chapter.layers else "第%d層まで" % best
+		return TranslationServer.translate("なし")
+	return TranslationServer.translate("ボスまで") if best > chapter.layers else TranslationServer.translate("第%d層まで") % best
 
 
 # Every foe that can come in the chapter, in the encyclopedia's order: its

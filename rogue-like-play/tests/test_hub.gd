@@ -198,7 +198,7 @@ func run_tests() -> void:
 	check(settings_page.display_cycler.get_node(settings_page.display_cycler.focus_neighbor_bottom) == settings_page.display_cycler, "The focus stays within the tab")
 	settings_page.tabs.step(1)
 	await process_frame
-	check(shown_rows.call() == [6, 7, 8] and settings_page.controls_cycler.has_focus(), "The last tab holds the controls guide, the help and quitting")
+	check(shown_rows.call() == [6, 7, 8, 9] and settings_page.language_cycler.has_focus() and settings_page.note.text == HubSettings.NOTES[9], "The last tab holds the language (first), the controls guide, the help and quitting")
 	# As in the lobby, the pointer resting on a row (its caption or its
 	# control) chooses it; a chosen row draws no band or frame.
 	settings_page._rows[8].gui_input.emit(InputEventMouseMotion.new())

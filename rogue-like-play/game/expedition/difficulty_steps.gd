@@ -46,10 +46,10 @@ static func combined(level: int) -> DifficultyStep:
 static func constraints(level: int) -> String:
 	var lines: Array[String] = []
 	for index in clampi(level, 0, ALL.size()):
-		lines.append("段階%d　%s" % [index + 1, ALL[index].summary])
+		lines.append(TranslationServer.translate("段階%d　%s") % [index + 1, TranslationServer.translate(ALL[index].summary)])
 	return "\n".join(lines)
 
 
 # The echo a level adds, as the departure tells it ("残響 +30%").
 static func echo_text(level: int) -> String:
-	return "残響 +%d%%" % roundi(combined(level).echo * 100.0)
+	return TranslationServer.translate("残響 +%d%%") % roundi(combined(level).echo * 100.0)

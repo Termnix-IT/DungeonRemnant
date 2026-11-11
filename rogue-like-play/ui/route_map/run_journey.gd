@@ -94,9 +94,9 @@ func show_run(result: Dictionary) -> void:
 			foe = RouteNode.leader(last)
 		if foe != null:
 			figure = RouteNode.foe_figure(foe, FOE_TALLEST, 1.0, FOE_GROW)
-			caption.text = "%sに倒された" % foe.display_name
+			caption.text = tr("%sに倒された") % tr(foe.display_name)
 		else:
-			caption.text = "%sで倒れた" % last.display_name
+			caption.text = tr("%sで倒れた") % tr(last.display_name)
 	else:
 		figure = RouteMapView.MIO_RIG.instantiate()
 		figure.world_height = HERO_HEIGHT
@@ -105,9 +105,9 @@ func show_run(result: Dictionary) -> void:
 		if moveset != null and moveset.art != null:
 			WeaponMount.hold(figure, moveset)
 		if won:
-			caption.text = "%sを倒した" % last.boss.display_name if last != null and last.boss != null else "最奥まで踏破した"
+			caption.text = tr("%sを倒した") % tr(last.boss.display_name) if last != null and last.boss != null else tr("最奥まで踏破した")
 		else:
-			caption.text = "%sで引き返した" % last.display_name if last != null else "出発点で引き返した"
+			caption.text = tr("%sで引き返した") % tr(last.display_name) if last != null else tr("出発点で引き返した")
 	if figure != null:
 		figure.position = spots[ended_at] + (HERO_OFFSET if figure is DirectionalRig else Vector2.ZERO)
 		_scene.add_child(figure)

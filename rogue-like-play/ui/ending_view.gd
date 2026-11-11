@@ -139,11 +139,11 @@ func _ready() -> void:
 	_root.add_child(roll)
 	# Each entry is one line, so the roll is as wide as its longest.
 	for entry: Array in CREDITS:
-		var item := HubUI.label(roll, entry[1], entry[0] if not String(entry[0]).is_empty() else &"BodyLabel")
+		var item := HubUI.label(roll, tr(entry[1]), entry[0] if not String(entry[0]).is_empty() else &"BodyLabel")
 		item.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		item.autowrap_mode = TextServer.AUTOWRAP_OFF
 	roll.hide()
-	thanks = HubUI.label(_root, THANKS, &"TitleLabel")
+	thanks = HubUI.label(_root, tr(THANKS), &"TitleLabel")
 	thanks.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	thanks.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	thanks.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -167,7 +167,7 @@ func _ready() -> void:
 	_ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_ring.draw.connect(_draw_ring)
 	corner.add_child(_ring)
-	var hint := HubUI.label(corner, "Esc（B）を長押しで飛ばす", &"MutedLabel")
+	var hint := HubUI.label(corner, tr("Esc（B）を長押しで飛ばす"), &"MutedLabel")
 	hint.autowrap_mode = TextServer.AUTOWRAP_OFF
 	hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	hide()
@@ -189,7 +189,7 @@ func play() -> void:
 func _show_scene(index: int) -> void:
 	scene = index
 	art.texture = load(scenes[index][0]) if ResourceLoader.exists(scenes[index][0]) else null
-	line.text = scenes[index][1]
+	line.text = tr(scenes[index][1])
 	UIMotion.of(art).appear(0.0, STILL_TIME)
 	UIMotion.of(line).appear(LINE_DELAY, STILL_TIME)
 	_ready_at = _now() + LINE_DELAY + STILL_TIME * 0.5

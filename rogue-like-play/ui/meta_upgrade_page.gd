@@ -211,14 +211,14 @@ func _ready() -> void:
 	HubUI.space(_info)
 	var strip := HubUI.fact_strip(_info, STRIP_HEIGHT)
 	_cost_strip = strip.get_parent() as Control
-	price_value = HubUI.strip_fact(strip, "必要", &"UpgradeFactValue", &"UpgradeFactCaption")
+	price_value = HubUI.strip_fact(strip, tr("必要"), &"UpgradeFactValue", &"UpgradeFactCaption")
 	HubUI.strip_divider(strip)
-	held_value = HubUI.strip_fact(strip, "所持", &"UpgradeFactValue", &"UpgradeFactCaption")
+	held_value = HubUI.strip_fact(strip, tr("所持"), &"UpgradeFactValue", &"UpgradeFactCaption")
 	short_label = _centered(HubUI.label(_info, "", &"MutedLabel"))
 	# Buying is this screen's moment: the crest with the lobby's mark for it.
 	var button := CrestButton.new()
 	button.name = "Buy"
-	button.kind = "永久強化"
+	button.kind = &"upgrade"
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.pressed.connect(_buy)
 	_info.add_child(button)
@@ -309,11 +309,11 @@ func _tell() -> void:
 	_pips.queue_redraw()
 	var upgrade := MetaProgress.find(selected)
 	if upgrade == null:
-		name_label.text = BRANCH_NAMES.get(selected, "")
-		rank_label.text = "未開放の枝"
+		name_label.text = tr(BRANCH_NAMES.get(selected, ""))
+		rank_label.text = tr("未開放の枝")
 		rank_label.show()
 		figure_label.hide()
-		description_label.text = SEAL_NOTE
+		description_label.text = tr(SEAL_NOTE)
 		description_label.show()
 		requirement_label.hide()
 		_cost_strip.hide()
@@ -321,18 +321,18 @@ func _tell() -> void:
 		buy_button.hide()
 		return
 	var rank := meta.rank(upgrade.id)
-	name_label.text = upgrade.display_name
+	name_label.text = tr(upgrade.display_name)
 	# The ranks are told by the sockets under the name alone; the figure line
 	# carries what the next rank adds, so a description that only says it
 	# again is left off.
 	rank_label.hide()
 	figure_label.text = upgrade.figure_line(rank)
 	figure_label.visible = not figure_label.text.is_empty()
-	description_label.text = upgrade.description
+	description_label.text = tr(upgrade.description)
 	description_label.visible = not upgrade.description_restates_figure(rank)
 	var waiting := not meta.unlocked(upgrade.id)
 	var parent := MetaProgress.find(upgrade.parent)
-	requirement_label.text = "「%s」を習得すると解放" % parent.display_name if waiting else ""
+	requirement_label.text = tr("「%s」を習得すると解放") % tr(parent.display_name) if waiting else ""
 	requirement_label.visible = waiting
 	buy_button.show()
 	var price := upgrade.price(rank)
@@ -341,19 +341,19 @@ func _tell() -> void:
 	_cost_strip.visible = price >= 0
 	short_label.visible = price >= 0 and meta.echo < price
 	if price < 0:
-		buy_button.text = "習得済み"
+		buy_button.text = tr("習得済み")
 		buy_button.disabled = true
 		buy_button.tooltip_text = ""
 		return
 	price_value.text = UIFormat.amount(price)
 	held_value.text = UIFormat.amount(meta.echo)
-	short_label.text = "残響があと%s足りない" % UIFormat.amount(price - meta.echo)
-	buy_button.text = "残響 %s で%s" % [UIFormat.amount(price), "習得" if rank == 0 else "強化"]
+	short_label.text = tr("残響があと%s足りない") % UIFormat.amount(price - meta.echo)
+	buy_button.text = tr("残響 %s で%s") % [UIFormat.amount(price), tr("習得") if rank == 0 else tr("強化")]
 	buy_button.disabled = not meta.can_buy(upgrade.id)
 	if waiting:
-		buy_button.tooltip_text = "先に「%s」を習得する" % parent.display_name
+		buy_button.tooltip_text = tr("先に「%s」を習得する") % tr(parent.display_name)
 	elif meta.echo < price:
-		buy_button.tooltip_text = "残響が%s足りない" % UIFormat.amount(price - meta.echo)
+		buy_button.tooltip_text = tr("残響が%s足りない") % UIFormat.amount(price - meta.echo)
 	else:
 		buy_button.tooltip_text = ""
 

@@ -12,6 +12,7 @@ extends Node
 # Zero leaves every run random. Tests set it so a run lays out the same
 # route and offers the same boons each time.
 @export var run_seed := 0
+const HUB_SCENE := preload("res://game/hub/hub.tscn")
 var store := MetaStore.new()
 var meta := MetaProgress.new()
 var active_run: RunDirector
@@ -25,6 +26,7 @@ var ending_view: EndingView
 @export var show_prologue := true
 var prologue_view: EndingView
 var _prologue_played := false
+var _loaded := false
 
 
 func _ready() -> void:
@@ -32,18 +34,8 @@ func _ready() -> void:
 	# Script-only instances in rule tests have no hub.
 	if not has_node("Hub"):
 		return
-	if saving_enabled:
-		# Only the real save is brought over from the old folder; a test's
-		# store points elsewhere and must not touch the player's files.
-		if store.path == MetaStore.DEFAULT_PATH:
-			SaveFolderMove.carry_over(SaveFolderMove.old_folder(), OS.get_user_data_dir())
-		meta = store.load_progress()
-		$Hub.settings.load_settings()
 	$Hub.settings.apply_volume()
 	$Hub.settings.apply_display()
-	$Hub.settings_changed.connect(func():
-		if saving_enabled:
-			$Hub.settings.save_settings())
 	transition = SceneTransition.new()
 	add_child(transition)
 	var music := GameMusic.new()
@@ -51,11 +43,60 @@ func _ready() -> void:
 	add_child(music)
 	# The interface's small sounds: a focus moving anywhere on screen.
 	get_viewport().gui_focus_changed.connect(_on_focus_changed)
+	_hook_hub()
+	_update_save_status()
+
+
+# The saves are read, and the language set, before the hub writes its words
+# in its _ready, which runs before this node's.
+func _load_saves() -> void:
+	if _loaded or not has_node("Hub"):
+		return
+	_loaded = true
+	if saving_enabled:
+		# Only the real save is brought over from the old folder; a test's
+		# store points elsewhere and must not touch the player's files.
+		if store.path == MetaStore.DEFAULT_PATH:
+			SaveFolderMove.carry_over(SaveFolderMove.old_folder(), OS.get_user_data_dir())
+		meta = store.load_progress()
+		$Hub.settings.load_settings()
+		# Tests keep the language they were started in (run_tests.py: Japanese).
+		$Hub.settings.apply_language()
+
+
+func _hook_hub() -> void:
+	$Hub.settings_changed.connect(func():
+		if saving_enabled:
+			$Hub.settings.save_settings())
+	$Hub.language_changed.connect(_change_language, CONNECT_DEFERRED)
 	$Hub.start_requested.connect(start_run)
 	$Hub.upgrade_requested.connect(buy_upgrade)
 	$Hub.equip_requested.connect(equip_skill)
 	$Hub.refresh(meta)
+
+
+# The hub's pages write their words once, as they are built: another
+# language builds the hub anew, opened where the old one was, on the
+# language's row. Deferred, so the row that asked is not freed under its
+# own signal.
+func _change_language() -> void:
+	var old: Node = $Hub
+	var settings: GameSettings = old.settings
+	settings.apply_language()
+	if saving_enabled:
+		settings.save_settings()
+	var hub: Node = HUB_SCENE.instantiate()
+	hub.settings = settings
+	hub.chapter = old.chapter
+	hub.step = old.step
+	remove_child(old)
+	old.queue_free()
+	hub.name = "Hub"
+	add_child(hub)
+	move_child(hub, 0)
+	_hook_hub()
 	_update_save_status()
+	hub.open_language()
 
 
 # A skill set in a slot (or the slot cleared), kept only once it is saved.
@@ -66,28 +107,28 @@ func equip_skill(slot: int, id: StringName) -> bool:
 	var special := meta.special
 	var weapon := meta.weapon
 	if not meta.equip(slot, id):
-		$Hub.refresh(meta, "このスキルは付けられません。")
+		$Hub.refresh(meta, tr("このスキルは付けられません。"))
 		return false
 	if saving_enabled and not store.save_progress(meta):
 		meta.loadout = loadout
 		meta.special = special
 		meta.weapon = weapon
-		$Hub.refresh(meta, "保存に失敗したため、付け替えを取り消しました。")
+		$Hub.refresh(meta, tr("保存に失敗したため、付け替えを取り消しました。"))
 		_update_save_status()
 		return false
 	if slot == MetaProgress.WEAPON_SLOT:
-		$Hub.refresh(meta, "武器を「%s」に持ち替えました。" % MetaProgress.find_weapon(id).display_name)
+		$Hub.refresh(meta, tr("武器を「%s」に持ち替えました。") % tr(MetaProgress.find_weapon(id).display_name))
 		_update_save_status()
 		$Hub.present_equip()
 		return true
 	if slot == MetaProgress.SPECIAL_SLOT:
 		var move := MetaProgress.find_special(id)
-		$Hub.refresh(meta, "必殺技に「%s」を付けました。" % move.display_name if move != null else "必殺技を外しました。")
+		$Hub.refresh(meta, tr("必殺技に「%s」を付けました。") % tr(move.display_name) if move != null else tr("必殺技を外しました。"))
 		_update_save_status()
 		$Hub.present_equip()
 		return true
 	var skill := MetaProgress.find_skill(id)
-	$Hub.refresh(meta, "スキル%dに「%s」を付けました。" % [slot + 1, skill.display_name] if skill != null else "スキル%dを外しました。" % (slot + 1))
+	$Hub.refresh(meta, tr("スキル%dに「%s」を付けました。") % [slot + 1, tr(skill.display_name)] if skill != null else tr("スキル%dを外しました。") % (slot + 1))
 	_update_save_status()
 	$Hub.present_equip()
 	return true
@@ -111,15 +152,15 @@ func buy_upgrade(id: StringName) -> bool:
 	var echo := meta.echo
 	var ranks := meta.ranks.duplicate()
 	if not meta.buy(id):
-		$Hub.refresh(meta, "強化できません。残響と強化の上限を確認してください。")
+		$Hub.refresh(meta, tr("強化できません。残響と強化の上限を確認してください。"))
 		return false
 	if saving_enabled and not store.save_progress(meta):
 		meta.echo = echo
 		meta.ranks = ranks
-		$Hub.refresh(meta, "保存に失敗したため、強化を取り消しました。")
+		$Hub.refresh(meta, tr("保存に失敗したため、強化を取り消しました。"))
 		_update_save_status()
 		return false
-	$Hub.refresh(meta, "「%s」を強化しました。" % MetaProgress.find(id).display_name)
+	$Hub.refresh(meta, tr("「%s」を強化しました。") % tr(MetaProgress.find(id).display_name))
 	_update_save_status()
 	$Hub.present_action(id, meta.echo - echo)
 	return true
@@ -174,15 +215,15 @@ func _on_run_finished(result: Dictionary) -> void:
 	var open_before := meta.steps_open()
 	meta.record_run(result)
 	if not ending_before and meta.ending_seen():
-		active_run.end_view.tell_opened("難易度の段階が開いた")
+		active_run.end_view.tell_opened(tr("難易度の段階が開いた"))
 		ending_due = true
 	elif meta.steps_open() > open_before:
-		active_run.end_view.tell_opened("段階%dが開いた" % meta.steps_open())
+		active_run.end_view.tell_opened(tr("段階%dが開いた") % meta.steps_open())
 	if saving_enabled:
 		store.save_progress(meta)
 		active_run.end_view.show_save_status(store.message, store.alert)
 	else:
-		active_run.end_view.show_save_status("テストモード：保存は無効です。", false)
+		active_run.end_view.show_save_status(tr("テストモード：保存は無効です。"), false)
 
 
 func return_to_hub() -> void:
@@ -211,19 +252,23 @@ func _arrive_home(after_ending: bool) -> void:
 	$Hub.show_page("home")
 	_update_save_status()
 	if after_ending:
-		transition.play_return("旅支度の間", "難易度の段階が開いた。出撃の画面で選べる。")
+		transition.play_return(tr("旅支度の間"), tr("難易度の段階が開いた。出撃の画面で選べる。"))
 	else:
-		transition.play_return("旅支度の間", "残響と強化は次の探索へ引き継がれます。")
+		transition.play_return(tr("旅支度の間"), tr("残響と強化は次の探索へ引き継がれます。"))
 
 
 func _update_save_status() -> void:
 	if saving_enabled:
 		$Hub.show_save_status(store.message, store.alert)
 	else:
-		$Hub.show_save_status("テストモード：保存は無効です。", false)
+		$Hub.show_save_status(tr("テストモード：保存は無効です。"), false)
 
 
 func _enter_tree() -> void:
+	# Every word is translated where it is written (tr()), so the controls do
+	# not translate their text again by themselves.
+	get_tree().root.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_load_saves()
 	# Route controller UI navigation through the same native focus/press
 	# signals; the fight's own actions are in project.godot's InputMap.
 	var ui_buttons := {"ui_accept": JOY_BUTTON_A, "ui_cancel": JOY_BUTTON_B, "ui_up": JOY_BUTTON_DPAD_UP, "ui_down": JOY_BUTTON_DPAD_DOWN, "ui_left": JOY_BUTTON_DPAD_LEFT, "ui_right": JOY_BUTTON_DPAD_RIGHT}

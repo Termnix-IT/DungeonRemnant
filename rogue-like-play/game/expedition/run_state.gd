@@ -246,7 +246,7 @@ func curses_left() -> Array[StringName]:
 
 
 func curse_names() -> String:
-	return "・".join(curses.map(func(id: StringName) -> String: return CURSES[id][0]))
+	return tr("・").join(curses.map(func(id: StringName) -> String: return tr(CURSES[id][0])))
 
 
 # The share of any healing that reaches her: thirst halves it, between the

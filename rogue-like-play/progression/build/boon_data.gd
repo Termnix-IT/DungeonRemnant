@@ -26,7 +26,7 @@ extends Resource
 
 
 func effect_description(rank: int = 1) -> String:
-	return description.format({"rank": rank})
+	return tr(description).format({"rank": rank})
 
 
 # What raising it from `rank` to the next changes, a line for each number
@@ -39,8 +39,10 @@ func gain_text(rank: int) -> String:
 	return "\n".join(parts.slice(0, 2))
 
 
+# The families stay as written for the rules that compare them; their
+# names are translated only to be shown.
 func families_text() -> String:
-	return "・".join(families)
+	return tr("・").join(families.map(func(family: String) -> String: return tr(family)))
 
 
 func emblem_key() -> String:

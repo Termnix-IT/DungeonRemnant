@@ -23,6 +23,9 @@ signal help_opened
 # The help's close was clicked (its key hint, or the dimmed backdrop round
 # the window); whoever shows the page closes it as its own Esc would.
 signal help_close_requested
+# The language row chose another language (already set in the settings);
+# whoever shows the page rebuilds its words in it.
+signal language_changed
 
 const QUIT_BODY := "設定と拠点での強化は保存済みです。"
 # In a run nothing of it is kept (the base saves at a run's start and end).
@@ -39,9 +42,12 @@ const HELP_SHADE := Color(0.01, 0.015, 0.025, 0.7)
 const HELP_SIZE := Vector2(1280, 780)
 const HELP_TOPICS_WIDTH := 260.0
 # The settings' tabs: [name, the rows it shows].
-const TABS := [["サウンド", [0, 1, 2, 3]], ["グラフィック", [4, 5]], ["その他", [6, 7, 8]]]
-const CAPTIONS := ["全体の音量", "音楽", "効果音", "環境音", "画面の揺れ", "画面モード", "操作の案内", "ヘルプ", "ゲームの終了"]
-const NOTES := ["すべての音の大きさ。0%で消音。", "拠点・戦場・ボスの曲の大きさ。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "戦場の空気の音の大きさ。", "攻撃が当たったときや被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "戦闘中、画面の下に操作の一覧を出す。", "探索の決まりごとと操作。", "ゲームを閉じる。確かめてから終了する。"]
+# The language (row 9) leads the last tab, and is changed at the base only:
+# the dungeon's menu leaves it out (_tab_rows).
+const TABS := [["サウンド", [0, 1, 2, 3]], ["グラフィック", [4, 5]], ["その他", [9, 6, 7, 8]]]
+const LANGUAGE_ROW := 9
+const CAPTIONS := ["全体の音量", "音楽", "効果音", "環境音", "画面の揺れ", "画面モード", "操作の案内", "ヘルプ", "ゲームの終了", "言語"]
+const NOTES := ["すべての音の大きさ。0%で消音。", "拠点・戦場・ボスの曲の大きさ。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "戦場の空気の音の大きさ。", "攻撃が当たったときや被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "戦闘中、画面の下に操作の一覧を出す。", "探索の決まりごとと操作。", "ゲームを閉じる。確かめてから終了する。", "画面の文字の言語。"]
 # The help's topics, in order: [title, points], each point a line of its own
 # behind a gilt diamond, as action games' tips are told, in the polite form
 # the game's other messages use. HintMarks name the topics by index.
@@ -135,6 +141,7 @@ var ambience_value: Label
 var shake_cycler: OptionCycler
 var display_cycler: OptionCycler
 var controls_cycler: OptionCycler
+var language_cycler: OptionCycler
 var settings: GameSettings
 var rows: VBoxContainer
 var note: Label
@@ -192,66 +199,68 @@ func _ready() -> void:
 	rows = VBoxContainer.new()
 	rows.theme_type_variation = &"SettingsRows"
 	var longest := 0
-	for tab: Array in TABS:
-		longest = maxi(longest, (tab[1] as Array).size())
+	for index in TABS.size():
+		longest = maxi(longest, _tab_rows(index).size())
 	rows.custom_minimum_size.y = ROW_HEIGHT * longest
 	left.add_child(rows)
 	UIMotion.of(rows)
 	rows.draw.connect(_draw_rows)
+	# The rules follow the rows once the container has placed them.
+	rows.sort_children.connect(rows.queue_redraw)
 	# Four volumes, each a bar: everything, the music, the effects, the room tone.
-	var volume_parts := _volume_row("全体の音量", "VolumeSlider")
+	var volume_parts := _volume_row(tr("全体の音量"), "VolumeSlider")
 	volume_slider = volume_parts[0]
 	volume_value = volume_parts[1]
-	var music_parts := _volume_row("音楽", "MusicSlider")
+	var music_parts := _volume_row(tr("音楽"), "MusicSlider")
 	music_slider = music_parts[0]
 	music_value = music_parts[1]
-	var effects_parts := _volume_row("効果音", "EffectsSlider")
+	var effects_parts := _volume_row(tr("効果音"), "EffectsSlider")
 	effects_slider = effects_parts[0]
 	effects_value = effects_parts[1]
-	var ambience_parts := _volume_row("環境音", "AmbienceSlider")
+	var ambience_parts := _volume_row(tr("環境音"), "AmbienceSlider")
 	ambience_slider = ambience_parts[0]
 	ambience_value = ambience_parts[1]
-	var shake_row := _row("画面の揺れ")
+	var shake_row := _row(tr("画面の揺れ"))
 	shake_cycler = OptionCycler.new()
 	shake_cycler.name = "ShakeCycler"
 	shake_cycler.custom_minimum_size = Vector2(300, 52)
 	shake_cycler.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	shake_cycler.tooltip_text = "画面の揺れ"
+	shake_cycler.tooltip_text = tr("画面の揺れ")
 	shake_row.add_child(shake_cycler)
 	shake_cycler.setup(GameSettings.SHAKE_NAMES)
 	shake_cycler.item_selected.connect(func(index: int):
 		settings.shake_level = index
 		changed.emit())
-	var display_row := _row("画面モード")
+	var display_row := _row(tr("画面モード"))
 	display_cycler = OptionCycler.new()
 	display_cycler.name = "DisplayCycler"
 	display_cycler.custom_minimum_size = Vector2(300, 52)
 	display_cycler.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	display_cycler.tooltip_text = "画面モード"
+	display_cycler.tooltip_text = tr("画面モード")
 	display_row.add_child(display_cycler)
 	display_cycler.setup(GameSettings.DISPLAY_NAMES)
 	display_cycler.item_selected.connect(func(index: int):
 		settings.fullscreen = index == 1
 		settings.apply_display()
 		changed.emit())
-	var controls_row := _row("操作の案内")
+	var controls_row := _row(tr("操作の案内"))
 	controls_cycler = OptionCycler.new()
 	controls_cycler.name = "ControlsCycler"
 	controls_cycler.custom_minimum_size = Vector2(300, 52)
 	controls_cycler.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	controls_cycler.tooltip_text = "操作の案内"
+	controls_cycler.tooltip_text = tr("操作の案内")
 	controls_row.add_child(controls_cycler)
 	controls_cycler.setup(GameSettings.CONTROLS_NAMES)
 	controls_cycler.item_selected.connect(func(index: int):
 		settings.show_controls = index == 0
 		changed.emit())
-	var help_row := _row("ヘルプ")
-	help_button = HubUI.button(help_row, "開く", func():
+	var help_row := _row(tr("ヘルプ"))
+	help_button = HubUI.button(help_row, tr("開く"), func():
 		open_help(TOPIC_RUN)
 		help_opened.emit(), &"TextAction")
 	help_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var quit_row := _row("ゲームの終了")
-	quit_button = HubUI.button(quit_row, "終了する", ask_quit, &"TextAction")
+	var quit_row := _row(tr("ゲームの終了"))
+	quit_button = HubUI.button(quit_row, tr("終了する"), ask_quit, &"TextAction")
 	quit_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	quit_prompt = ChoicePrompt.new()
 	add_child(quit_prompt)
@@ -263,7 +272,20 @@ func _ready() -> void:
 	quit_prompt.canceled.connect(func():
 		quit_prompt.hide()
 		quit_button.grab_focus())
-	controls = [volume_slider, music_slider, effects_slider, ambience_slider, shake_cycler, display_cycler, controls_cycler, help_button, quit_button]
+	var language_row := _row(tr("言語"))
+	# Shown at the head of its tab, over the controls guide.
+	rows.move_child(language_row, controls_row.get_index())
+	language_cycler = OptionCycler.new()
+	language_cycler.name = "LanguageCycler"
+	language_cycler.custom_minimum_size = Vector2(300, 52)
+	language_cycler.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	language_cycler.tooltip_text = tr("言語")
+	language_row.add_child(language_cycler)
+	language_cycler.setup(GameSettings.LANGUAGE_NAMES, 0, false)
+	language_cycler.item_selected.connect(func(index: int):
+		settings.language = GameSettings.LANGUAGES[index]
+		language_changed.emit())
+	controls = [volume_slider, music_slider, effects_slider, ambience_slider, shake_cycler, display_cycler, controls_cycler, help_button, quit_button, language_cycler]
 	for index in controls.size():
 		controls[index].focus_entered.connect(_focus_row.bind(index))
 		# As in the lobby and the help, resting the pointer on a row chooses
@@ -280,7 +302,7 @@ func _ready() -> void:
 	var info := VBoxContainer.new()
 	left.add_child(info)
 	info_column = info
-	note = HubUI.label(info, NOTES[0], &"DescriptionLabel")
+	note = HubUI.label(info, tr(NOTES[0]), &"DescriptionLabel")
 	_build_help()
 	show_tab(0)
 
@@ -322,7 +344,7 @@ func _build_help() -> void:
 	var stack := VBoxContainer.new()
 	stack.theme_type_variation = &"DetailStack"
 	margin.add_child(stack)
-	var heading := HubUI.label(stack, "ヘルプ", &"TitleLabel")
+	var heading := HubUI.label(stack, tr("ヘルプ"), &"TitleLabel")
 	heading.autowrap_mode = TextServer.AUTOWRAP_OFF
 	var body := HBoxContainer.new()
 	body.theme_type_variation = &"HelpBody"
@@ -337,7 +359,7 @@ func _build_help() -> void:
 	topics.add_child(topic_rows)
 	topic_rows.draw.connect(_draw_topic_glow)
 	for index in HELP.size():
-		var row := HubUI.button(topic_rows, HELP[index][0], select_topic.bind(index), &"HelpTopic")
+		var row := HubUI.button(topic_rows, tr(HELP[index][0]), select_topic.bind(index), &"HelpTopic")
 		row.toggle_mode = true
 		row.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		row.custom_minimum_size.y = 56
@@ -370,10 +392,10 @@ func _build_help() -> void:
 	help_keys.theme_type_variation = &"HelpKeys"
 	help_keys.columns = 3
 	words.add_child(help_keys)
-	for title: String in ["", "キーボード", "ゲームパッド"]:
+	for title: String in ["", tr("キーボード"), tr("ゲームパッド")]:
 		HubUI.label(help_keys, title, &"MutedLabel").autowrap_mode = TextServer.AUTOWRAP_OFF
 	for entry: Array in HELP_KEYS:
-		var action := HubUI.label(help_keys, entry[0], &"BodyLabel")
+		var action := HubUI.label(help_keys, tr(entry[0]), &"BodyLabel")
 		action.autowrap_mode = TextServer.AUTOWRAP_OFF
 		action.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		for keys: Array in [entry[1], entry[2]]:
@@ -385,7 +407,7 @@ func _build_help() -> void:
 				cap.theme_type_variation = &"HelpKeyCap"
 				cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 				caps.add_child(cap)
-				var name := HubUI.label(cap, key, &"HelpKeyName")
+				var name := HubUI.label(cap, tr(key), &"HelpKeyName")
 				name.autowrap_mode = TextServer.AUTOWRAP_OFF
 				name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var gap := Control.new()
@@ -397,8 +419,8 @@ func _build_help() -> void:
 	var guide := KeyGuide.new()
 	guide.alignment = BoxContainer.ALIGNMENT_CENTER
 	stack.add_child(guide)
-	guide.add_hint("↑ / ↓", "▲ / ▼", "話題")
-	help_close_hint = guide.add_hint("Esc", "B", "閉じる", func(): help_close_requested.emit())
+	guide.add_hint("↑ / ↓", "▲ / ▼", tr("話題"))
+	help_close_hint = guide.add_hint("Esc", "B", tr("閉じる"), func(): help_close_requested.emit())
 	# A page hidden behind another takes its help window with it.
 	visibility_changed.connect(func():
 		if not is_visible_in_tree():
@@ -408,7 +430,7 @@ func _build_help() -> void:
 # Asks before ending the game; Esc or the cancel button keeps playing. The
 # focus waits on the cancel button, so a second Enter never ends the game.
 func ask_quit() -> void:
-	quit_prompt.ask("", "ゲームを終了しますか？", QUIT_BODY_IN_RUN if in_run else QUIT_BODY, "終了する", "戻る", true)
+	quit_prompt.ask("", tr("ゲームを終了しますか？"), tr(QUIT_BODY_IN_RUN if in_run else QUIT_BODY), tr("終了する"), tr("戻る"), true)
 	quit_prompt.cancel_button.grab_focus()
 
 
@@ -434,12 +456,12 @@ func select_topic(index: int) -> void:
 	if index == _shown_topic:
 		return
 	_shown_topic = index
-	help_title.text = HELP[index][0]
+	help_title.text = tr(HELP[index][0])
 	help_keys.visible = index == TOPIC_CONTROLS
 	for child in help_points.get_children():
 		child.free()
 	for point: String in HELP[index][1]:
-		_help_point(point)
+		_help_point(tr(point))
 	UIMotion.of(help_words).slide_in()
 
 
@@ -529,7 +551,7 @@ func _volume_row(caption: String, slider_name: String) -> Array:
 func _draw_rows() -> void:
 	var rail := rows.get_theme_color(&"rail", &"HubLobby")
 	var shown: Array[int] = []
-	shown.assign(TABS[tabs.selected][1])
+	shown.assign(_tab_rows(tabs.selected))
 	for place in shown.size() - 1:
 		var index := shown[place]
 		var y := _rows[index].position.y + _rows[index].size.y
@@ -541,7 +563,7 @@ func _focus_row(index: int) -> void:
 	if index == _shown_note:
 		return
 	_shown_note = index
-	note.text = NOTES[index]
+	note.text = tr(NOTES[index])
 	UIMotion.of(info_column).slide_in()
 
 
@@ -554,12 +576,13 @@ func refresh(value: GameSettings) -> void:
 	shake_cycler.select(settings.shake_level)
 	display_cycler.select(1 if settings.fullscreen else 0)
 	controls_cycler.select(0 if settings.show_controls else 1)
+	language_cycler.select(GameSettings.LANGUAGES.find(settings.shown_language()))
 
 
 func focus_first() -> void:
 	if help_shown:
 		close_help()
-	var first: int = TABS[tabs.selected][1][0]
+	var first: int = _tab_rows(tabs.selected)[0]
 	controls[first].grab_focus()
 	_focus_row(first)
 
@@ -569,8 +592,7 @@ func focus_first() -> void:
 func show_tab(index: int, take_focus: bool = false) -> void:
 	if tabs.selected != index:
 		tabs.select(index)
-	var shown: Array[int] = []
-	shown.assign(TABS[index][1])
+	var shown := _tab_rows(index)
 	for row in _rows.size():
 		_rows[row].visible = shown.has(row)
 	for place in shown.size():
@@ -581,6 +603,23 @@ func show_tab(index: int, take_focus: bool = false) -> void:
 	if take_focus:
 		controls[shown[0]].grab_focus()
 	_focus_row(shown[0])
+
+
+# A tab's rows in order; in a run, without the language, whose change
+# rebuilds the base's words.
+func _tab_rows(index: int) -> Array[int]:
+	var shown: Array[int] = []
+	shown.assign(TABS[index][1])
+	if in_run:
+		shown.erase(LANGUAGE_ROW)
+	return shown
+
+
+# Puts the focus on the language's row, on its tab.
+func focus_language() -> void:
+	show_tab(TABS.size() - 1)
+	language_cycler.grab_focus()
+	_focus_row(LANGUAGE_ROW)
 
 
 # Q / E (LB / RB) step through the tabs while the page is shown and the help

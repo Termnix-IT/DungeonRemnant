@@ -96,16 +96,16 @@ func _ready() -> void:
 	_info.theme_type_variation = &"DetailStack"
 	description_label = HubUI.label(_info, "", &"DescriptionLabel")
 	var facts := HubUI.fact_strip(_info, STRIP_HEIGHT)
-	route_value = HubUI.strip_fact(facts, "道のり", &"SortieFactValue", &"SortieFactCaption")
+	route_value = HubUI.strip_fact(facts, tr("道のり"), &"SortieFactValue", &"SortieFactCaption")
 	HubUI.strip_divider(facts)
-	record_value = HubUI.strip_fact(facts, "記録", &"SortieFactValue", &"SortieFactCaption")
+	record_value = HubUI.strip_fact(facts, tr("記録"), &"SortieFactValue", &"SortieFactCaption")
 	HubUI.strip_divider(facts)
-	boss_value = HubUI.strip_fact(facts, "ボス", &"SortieFactValue", &"SortieFactCaption")
+	boss_value = HubUI.strip_fact(facts, tr("ボス"), &"SortieFactValue", &"SortieFactCaption")
 	var pictures := HBoxContainer.new()
 	pictures.theme_type_variation = &"CompactRow"
 	_info.add_child(pictures)
-	foe_row = _row(pictures, "現れる敵")
-	gear_row = _row(pictures, "装備")
+	foe_row = _row(pictures, tr("現れる敵"))
+	gear_row = _row(pictures, tr("装備"))
 	_decide.theme_type_variation = &"DetailStack"
 	_build_step_row()
 	HubUI.space(_decide)
@@ -207,7 +207,7 @@ func _build_step_row() -> void:
 	var line := HBoxContainer.new()
 	line.theme_type_variation = &"CompactRow"
 	step_row.add_child(line)
-	var kicker := HubUI.label(line, "段階", &"MutedLabel")
+	var kicker := HubUI.label(line, tr("段階"), &"MutedLabel")
 	kicker.autowrap_mode = TextServer.AUTOWRAP_OFF
 	kicker.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	step_down = HubUI.button(line, "◀", func(): choose_step(step - 1))
@@ -266,7 +266,7 @@ func refresh(current: MetaProgress, chapter: ChapterData, at_step: int = 0) -> v
 		var each := Chapters.ALL[index]
 		var open := meta.chapter_open(each)
 		var record := Chapters.record(meta, each)
-		cards[index].state_label.text = "封印中" if not open else ("未踏" if record == "なし" else record)
+		cards[index].state_label.text = tr("封印中") if not open else (tr("未踏") if record == tr("なし") else record)
 		cards[index].sealed = not open
 	selected = maxi(0, Chapters.ALL.find(chapter))
 	_shown = null
@@ -326,33 +326,33 @@ func _tell() -> void:
 	_band_art.texture = chapter.illustration
 	_band_art.modulate = get_theme_color(&"art_tint" if open else &"art_locked", &"HubLobby")
 	var key := Chapters.find(chapter.unlocked_by)
-	var opener := "%sを踏破すると開く" % (Chapters.short_name(key) if key != null else "前の章")
-	TextWrap.set_text(description_label, chapter.description if open else "封印されている。%s。" % opener)
-	route_value.text = "%d層とボス" % chapter.layers
+	var opener := tr("%sを踏破すると開く") % (Chapters.short_name(key) if key != null else tr("前の章"))
+	TextWrap.set_text(description_label, tr(chapter.description) if open else tr("封印されている。%s。") % opener)
+	route_value.text = tr("%d層とボス") % chapter.layers
 	record_value.text = Chapters.record(meta, chapter)
 	var boss := chapter.boss.boss if chapter.boss != null else null
-	boss_value.text = boss.display_name if boss != null and meta.has_met(boss.id) else UNKNOWN_NAME
+	boss_value.text = tr(boss.display_name) if boss != null and meta.has_met(boss.id) else tr(UNKNOWN_NAME)
 	for child in foe_row.get_children():
 		child.free()
 	for foe in Chapters.foes(chapter):
 		var met := meta.has_met(foe.id)
-		_picture(foe_row, HubCodex.tile_picture(foe.visual_id, met, foe.tint), FOE_SIZE, foe.display_name if met else UNKNOWN_NAME)
+		_picture(foe_row, HubCodex.tile_picture(foe.visual_id, met, foe.tint), FOE_SIZE, tr(foe.display_name) if met else tr(UNKNOWN_NAME))
 	for child in gear_row.get_children():
 		child.free()
 	var weapon := MetaProgress.find_weapon(meta.weapon)
 	if weapon != null:
-		_picture(gear_row, EmblemIcons.texture(weapon.emblem), EMBLEM_SIZE, weapon.display_name)
+		_picture(gear_row, EmblemIcons.texture(weapon.emblem), EMBLEM_SIZE, tr(weapon.display_name))
 	for id in meta.loadout:
 		var skill := MetaProgress.find_skill(id)
 		if skill != null:
-			_picture(gear_row, EmblemIcons.texture(skill.emblem), EMBLEM_SIZE, skill.display_name)
+			_picture(gear_row, EmblemIcons.texture(skill.emblem), EMBLEM_SIZE, tr(skill.display_name))
 	var move := MetaProgress.find_special(meta.special)
 	if move != null:
-		_picture(gear_row, EmblemIcons.texture(move.emblem), EMBLEM_SIZE, move.display_name)
+		_picture(gear_row, EmblemIcons.texture(move.emblem), EMBLEM_SIZE, tr(move.display_name))
 	action_button.disabled = not open
-	action_button.text = "%sへ出撃する" % Chapters.short_name(chapter) if open else "%sは封印中" % Chapters.short_name(chapter)
+	action_button.text = tr("%sへ出撃する") % Chapters.short_name(chapter) if open else tr("%sは封印中") % Chapters.short_name(chapter)
 	if open and step > 0:
-		action_button.text += "（段階%d）" % step
+		action_button.text += tr("（段階%d）") % step
 	action_button.tooltip_text = "" if open else opener
 	_show_step()
 
@@ -365,18 +365,18 @@ func _show_step() -> void:
 	if open == 0:
 		return
 	step_value.text = str(step)
-	step_note.text = "制約なし" if step == 0 else "%s　%s" % [DifficultySteps.ALL[step - 1].summary, DifficultySteps.echo_text(step)]
+	step_note.text = tr("制約なし") if step == 0 else "%s　%s" % [tr(DifficultySteps.ALL[step - 1].summary), DifficultySteps.echo_text(step)]
 	step_note.tooltip_text = "" if step == 0 else DifficultySteps.constraints(step)
 	step_down.disabled = step <= 0
 	step_up.disabled = step >= open
 	var final := Chapters.short_name(Chapters.ALL.back())
 	if step < open:
-		step_up.tooltip_text = "段階を上げる（E・RB）"
+		step_up.tooltip_text = tr("段階を上げる（E・RB）")
 	elif open < DifficultySteps.MAX:
-		step_up.tooltip_text = "段階%dで%sを踏破すると開く" % [open, final]
+		step_up.tooltip_text = tr("段階%dで%sを踏破すると開く") % [open, final]
 	else:
-		step_up.tooltip_text = "最後の段階"
-	step_down.tooltip_text = "段階を下げる（Q・LB）"
+		step_up.tooltip_text = tr("最後の段階")
+	step_down.tooltip_text = tr("段階を下げる（Q・LB）")
 
 
 # A difficulty step chosen (Q / E, LB / RB or the arrows), kept within those open.

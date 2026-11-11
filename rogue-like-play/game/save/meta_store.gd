@@ -49,68 +49,68 @@ func load_progress() -> MetaProgress:
 	migrated = false
 	var meta := _progress(path) if FileAccess.file_exists(path) else null
 	if meta != null:
-		message = "以前の冒険の記録を引き継ぎました。所持Goldと強化に使ったGoldを残響に換えています。" if migrated else "保存データを読み込みました。"
+		message = tr("以前の冒険の記録を引き継ぎました。所持Goldと強化に使ったGoldを残響に換えています。") if migrated else tr("保存データを読み込みました。")
 		alert = migrated
 		return meta
 	migrated = false
 	meta = _progress(path + ".bak") if FileAccess.file_exists(path + ".bak") else null
 	if meta != null:
-		message = "前回のバックアップから復元しました。最新の進行とは異なる場合があります。"
+		message = tr("前回のバックアップから復元しました。最新の進行とは異なる場合があります。")
 		alert = true
 		return meta
 	migrated = false
 	blocked = FileAccess.file_exists(path) or FileAccess.file_exists(path + ".bak")
-	message = "保存データを読めません。元ファイルを保護し、保存を停止しています。" if blocked else "新規開始。探索の途中の状態は保存されません。"
+	message = tr("保存データを読めません。元ファイルを保護し、保存を停止しています。") if blocked else tr("新規開始。探索の途中の状態は保存されません。")
 	alert = blocked
 	return MetaProgress.started()
 
 
 func save_progress(meta: MetaProgress) -> bool:
 	if blocked:
-		message = "保存停止中：既存データを読み込めません。元ファイルは保持されています。"
+		message = tr("保存停止中：既存データを読み込めません。元ファイルは保持されています。")
 		alert = true
 		return false
 	var data := MetaCodec.encode(meta)
 	if MetaCodec.decode(data) == null:
-		message = "保存失敗：進行データが保存形式に適合しません。"
+		message = tr("保存失敗：進行データが保存形式に適合しません。")
 		alert = true
 		return false
 	# The turn-based game's save is kept as it was, once.
 	if migrated and FileAccess.file_exists(path) and not FileAccess.file_exists(path + ".v4"):
 		if DirAccess.copy_absolute(path, path + ".v4") != OK:
-			return _failed("以前の保存データを残せません")
+			return _failed(tr("以前の保存データを残せません"))
 	var temporary := path + ".tmp"
 	var file := FileAccess.open(temporary, FileAccess.WRITE)
 	if file == null:
-		return _failed("一時ファイルを作成できません")
+		return _failed(tr("一時ファイルを作成できません"))
 	file.store_string(JSON.stringify(data, "\t"))
 	file.flush()
 	var error := file.get_error()
 	file.close()
 	if error != OK or MetaCodec.decode(_read(temporary)) == null:
-		return _failed("書き込みを検証できません")
+		return _failed(tr("書き込みを検証できません"))
 	if FileAccess.file_exists(path):
 		if _progress(path) != null:
 			if DirAccess.copy_absolute(path, path + ".bak.tmp") != OK or _progress(path + ".bak.tmp") == null:
-				return _failed("バックアップを作成できません")
+				return _failed(tr("バックアップを作成できません"))
 			if DirAccess.rename_absolute(path + ".bak.tmp", path + ".bak") != OK:
-				return _failed("バックアップを確定できません")
+				return _failed(tr("バックアップを確定できません"))
 		else:
 			# Preserve unreadable data before replacement, including unknown versions.
 			var archive := path + ".unreadable-" + str(Time.get_ticks_usec())
 			while FileAccess.file_exists(archive):
 				archive += "-copy"
 			if DirAccess.copy_absolute(path, archive) != OK:
-				return _failed("読めない元データを退避できません")
+				return _failed(tr("読めない元データを退避できません"))
 	if DirAccess.rename_absolute(temporary, path) != OK:
-		return _failed("保存ファイルを確定できません")
+		return _failed(tr("保存ファイルを確定できません"))
 	migrated = false
-	message = "保存済み。探索の途中で終了すると、最後に保存した拠点の状態に戻ります。"
+	message = tr("保存済み。探索の途中で終了すると、最後に保存した拠点の状態に戻ります。")
 	alert = false
 	return true
 
 
 func _failed(reason: String) -> bool:
-	message = "保存失敗：%s。直前の保存データは保持されています。" % reason
+	message = tr("保存失敗：%s。直前の保存データは保持されています。") % reason
 	alert = true
 	return false

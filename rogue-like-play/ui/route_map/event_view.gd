@@ -74,9 +74,9 @@ func _ready() -> void:
 	key_guide = KeyGuide.new()
 	key_guide.alignment = BoxContainer.ALIGNMENT_CENTER
 	stack.add_child(key_guide)
-	key_guide.add_hint("↑ / ↓", "▲ / ▼", "選ぶ")
-	key_guide.add_hint("Enter", "A", "決定")
-	key_guide.add_hint("Esc", "B", "立ち去る", func(): chosen.emit(LEAVE))
+	key_guide.add_hint("↑ / ↓", "▲ / ▼", tr("選ぶ"))
+	key_guide.add_hint("Enter", "A", tr("決定"))
+	key_guide.add_hint("Esc", "B", tr("立ち去る"), func(): chosen.emit(LEAVE))
 	hide()
 
 
@@ -91,9 +91,9 @@ func _centered(parent: Node, role: StringName) -> Label:
 # what this stop's bargain holds, under what it does.
 func present(area: AreaData, state: String, options: Array, terms: String = "") -> void:
 	_emblem.texture = EmblemIcons.texture(area.emblem)
-	title_label.text = area.display_name
-	flavor_label.text = area.foe_summary
-	body_label.text = area.condition if terms.is_empty() else "%s\n%s" % [area.condition, terms]
+	title_label.text = tr(area.display_name)
+	flavor_label.text = tr(area.foe_summary)
+	body_label.text = tr(area.condition) if terms.is_empty() else "%s\n%s" % [tr(area.condition), terms]
 	state_label.text = state
 	# Its rows are made anew; the one pressed may still be sending its signal.
 	for button in buttons:
@@ -104,7 +104,7 @@ func present(area: AreaData, state: String, options: Array, terms: String = "") 
 	ids.clear()
 	for option: Dictionary in options:
 		_row(option.id, option.text, option.get("enabled", true), option.get("reason", ""))
-	_row(LEAVE, "立ち去る", true, "")
+	_row(LEAVE, tr("立ち去る"), true, "")
 	for index in buttons.size():
 		buttons[index].focus_neighbor_top = buttons[posmod(index - 1, buttons.size())].get_path()
 		buttons[index].focus_neighbor_bottom = buttons[posmod(index + 1, buttons.size())].get_path()

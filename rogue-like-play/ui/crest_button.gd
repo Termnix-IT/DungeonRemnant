@@ -39,7 +39,7 @@ var stand := 0.0:
 		if _back != null:
 			_back.queue_redraw()
 # The lobby's menu mark drawn in the crest (NavigationIcon.kind).
-var kind := "出撃":
+var kind := &"departure":
 	set(value):
 		kind = value
 		if _icon != null:

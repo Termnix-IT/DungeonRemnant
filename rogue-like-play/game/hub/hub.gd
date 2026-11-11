@@ -14,6 +14,8 @@ signal start_requested
 signal upgrade_requested(id: StringName)
 signal equip_requested(slot: int, id: StringName)
 signal settings_changed
+# The settings chose another language; Main rebuilds the hub in it.
+signal language_changed
 
 # How close the header and the footer come to the screen's edges.
 const EDGE_X := 40.0
@@ -126,11 +128,11 @@ func _ready() -> void:
 	var heading := VBoxContainer.new()
 	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_title_block.add_child(heading)
-	title_label = HubUI.label(heading, "旅支度の間", &"TitleLabel")
+	title_label = HubUI.label(heading, tr("旅支度の間"), &"TitleLabel")
 	purse = GoldPurse.new()
 	purse.custom_minimum_size.x = 220
 	purse.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	purse.tooltip_text = "残響：探索で得て、拠点の強化に使う"
+	purse.tooltip_text = tr("残響：探索で得て、拠点の強化に使う")
 	header.add_child(purse)
 	echo_label = purse.value_label
 	_page_host = Control.new()
@@ -166,6 +168,7 @@ func _ready() -> void:
 	settings_page.changed.connect(func(): settings_changed.emit())
 	settings_page.help_opened.connect(_settings_hints)
 	settings_page.help_close_requested.connect(go_back)
+	settings_page.language_changed.connect(func(): language_changed.emit())
 	# Footer: the key guide at the bottom left, the same on every screen.
 	var footer_room := Control.new()
 	footer_room.custom_minimum_size.y = 44
@@ -185,7 +188,7 @@ func _ready() -> void:
 	key_guide = KeyGuide.new()
 	key_guide.custom_minimum_size.y = 44
 	footer.add_child(key_guide)
-	back_button = key_guide.add_hint("Esc", "B", "戻る", go_back)
+	back_button = key_guide.add_hint("Esc", "B", tr("戻る"), go_back)
 	lobby_guide = KeyGuide.new()
 	lobby_guide.custom_minimum_size.y = 44
 	_frame.add_child(lobby_guide)
@@ -194,7 +197,7 @@ func _ready() -> void:
 	lobby_guide.offset_left = EDGE_X
 	lobby_guide.offset_bottom = -EDGE_BOTTOM - LOBBY_ROW_RISE
 	lobby_guide.offset_top = lobby_guide.offset_bottom - 44
-	lobby_guide.add_hint("↑ / ↓", "▲ / ▼", "選ぶ")
+	lobby_guide.add_hint("↑ / ↓", "▲ / ▼", tr("選ぶ"))
 	lobby_guide.hide()
 	quit_prompt = ChoicePrompt.new()
 	add_child(quit_prompt)
@@ -320,54 +323,54 @@ func show_page(target: String) -> void:
 		GameAudio.play(self, &"ui_open", -20.0)
 	match page:
 		"home":
-			title_label.text = "旅支度の間"
+			title_label.text = tr("旅支度の間")
 			if _meta != null:
 				home_page.refresh(_meta, chapter)
 			home_page.show()
 			home_page.focus_selected()
-			key_guide.add_hint("Enter", "A", "決定")
-			key_guide.add_hint("Esc", "B", "終了", ask_quit)
+			key_guide.add_hint("Enter", "A", tr("決定"))
+			key_guide.add_hint("Esc", "B", tr("終了"), ask_quit)
 		"sortie":
-			title_label.text = "出撃"
+			title_label.text = tr("出撃")
 			sortie_page.show()
 			if _meta != null:
 				sortie_page.refresh(_meta, chapter, step)
 			sortie_page.focus_selected()
-			key_guide.add_hint("Enter", "A", "出撃", sortie_page.set_out)
-			key_guide.add_hint("← / →", "◀ / ▶", "選ぶ")
+			key_guide.add_hint("Enter", "A", tr("出撃"), sortie_page.set_out)
+			key_guide.add_hint("← / →", "◀ / ▶", tr("選ぶ"))
 			if _meta != null and _meta.steps_open() > 0:
-				key_guide.add_hint("Q / E", "LB / RB", "段階")
-			key_guide.add_hint("Tab", "View", "装備", _status_from_sortie)
+				key_guide.add_hint("Q / E", "LB / RB", tr("段階"))
+			key_guide.add_hint("Tab", "View", tr("装備"), _status_from_sortie)
 		"upgrade":
-			title_label.text = "強化"
+			title_label.text = tr("強化")
 			upgrade_page.show()
 			upgrade_page.focus_first()
-			key_guide.add_hint("Enter", "A", "強化")
-			key_guide.add_hint("矢印", "十字", "選ぶ")
-			key_guide.add_hint("ドラッグ", "R スティック", "動かす")
-			key_guide.add_hint("ホイール", "LT / RT", "拡大・縮小")
-			key_guide.add_hint("C", "Y", "中央へ", upgrade_page.center_view)
-			key_guide.add_hint("Tab", "View", "ステータスへ", func(): show_page("status"))
+			key_guide.add_hint("Enter", "A", tr("強化"))
+			key_guide.add_hint(tr("矢印"), tr("十字"), tr("選ぶ"))
+			key_guide.add_hint(tr("ドラッグ"), tr("R スティック"), tr("動かす"))
+			key_guide.add_hint(tr("ホイール"), "LT / RT", tr("拡大・縮小"))
+			key_guide.add_hint("C", "Y", tr("中央へ"), upgrade_page.center_view)
+			key_guide.add_hint("Tab", "View", tr("ステータスへ"), func(): show_page("status"))
 		"status":
-			title_label.text = "ステータス"
+			title_label.text = tr("ステータス")
 			status_page.show()
 			if _meta != null:
 				status_page.refresh(_meta)
 			status_page.focus_first()
-			key_guide.add_hint("Enter", "A", "装備")
-			key_guide.add_hint("矢印", "十字", "選ぶ")
-			key_guide.add_hint("R", "Y", "詳しく", status_page.toggle_details)
-			key_guide.add_hint("Tab", "View", "強化へ", func(): show_page("upgrade"))
+			key_guide.add_hint("Enter", "A", tr("装備"))
+			key_guide.add_hint(tr("矢印"), tr("十字"), tr("選ぶ"))
+			key_guide.add_hint("R", "Y", tr("詳しく"), status_page.toggle_details)
+			key_guide.add_hint("Tab", "View", tr("強化へ"), func(): show_page("upgrade"))
 		"codex":
-			title_label.text = "図鑑"
+			title_label.text = tr("図鑑")
 			codex_page.show()
 			if _meta != null:
 				codex_page.refresh(_meta)
 			codex_page.focus_first()
-			key_guide.add_hint("矢印", "十字", "選ぶ")
-			key_guide.add_hint("Q / E", "LB / RB", "分類")
+			key_guide.add_hint(tr("矢印"), tr("十字"), tr("選ぶ"))
+			key_guide.add_hint("Q / E", "LB / RB", tr("分類"))
 		"settings":
-			title_label.text = "設定"
+			title_label.text = tr("設定")
 			settings_page.show()
 			settings_page.refresh(settings)
 			settings_page.focus_first()
@@ -394,7 +397,7 @@ func show_save_status(text: String, alert: bool) -> void:
 func present_action(id: StringName, echo_delta: int) -> void:
 	preload("res://audio/game_audio.gd").play(self, &"level_up", -22.0)
 	if echo_delta != 0:
-		feedback.text += "  (残響 %+d)" % echo_delta
+		feedback.text += tr("  (残響 %+d)") % echo_delta
 		UIMotion.of(echo_label).pulse(1.08, UIMotion.GOLD_TIME)
 	UIMotion.of(feedback).reveal()
 	upgrade_page.present_purchase(id)
@@ -418,12 +421,12 @@ func open_help(topic: int) -> void:
 
 
 func _settings_hints() -> void:
-	title_label.text = "ヘルプ" if settings_page.help_shown else "設定"
+	title_label.text = tr("ヘルプ") if settings_page.help_shown else tr("設定")
 	key_guide.clear_hints()
-	key_guide.add_hint("↑ / ↓", "▲ / ▼", "項目")
+	key_guide.add_hint("↑ / ↓", "▲ / ▼", tr("項目"))
 	if not settings_page.help_shown:
-		key_guide.add_hint("← / →", "◀ / ▶", "変更")
-		key_guide.add_hint("Q / E", "LB / RB", "分類")
+		key_guide.add_hint("← / →", "◀ / ▶", tr("変更"))
+		key_guide.add_hint("Q / E", "LB / RB", tr("分類"))
 
 
 # From the lobby there is nowhere back to but out of the game: the question
@@ -432,7 +435,14 @@ func _settings_hints() -> void:
 func ask_quit() -> void:
 	if page != "home" or quit_prompt.visible:
 		return
-	quit_prompt.ask("", "ゲームを終了しますか？", HubSettings.QUIT_BODY, "終了する", "戻る", true)
+	quit_prompt.ask("", tr("ゲームを終了しますか？"), tr(HubSettings.QUIT_BODY), tr("終了する"), tr("戻る"), true)
+
+
+# Opens the settings on the language's row: where a new language's hub
+# starts (Main._change_language).
+func open_language() -> void:
+	show_page("settings")
+	settings_page.focus_language()
 
 
 func go_back() -> void:

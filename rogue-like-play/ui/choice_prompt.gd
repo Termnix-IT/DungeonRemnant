@@ -76,9 +76,9 @@ func _ready() -> void:
 	key_guide = KeyGuide.new()
 	key_guide.alignment = BoxContainer.ALIGNMENT_CENTER
 	column.add_child(key_guide)
-	key_guide.add_hint("← / →", "◀ / ▶", "選ぶ")
-	key_guide.add_hint("Enter", "A", "決定")
-	key_guide.add_hint("Esc", "B", "戻る")
+	key_guide.add_hint("← / →", "◀ / ▶", tr("選ぶ"))
+	key_guide.add_hint("Enter", "A", tr("決定"))
+	key_guide.add_hint("Esc", "B", tr("戻る"))
 	UIMotion.bind_buttons(actions)
 	hide()
 

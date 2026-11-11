@@ -176,7 +176,7 @@ func _ready() -> void:
 	# Setting a thing in a slot: the crest with the lobby's mark for the status.
 	action_button = CrestButton.new()
 	action_button.name = "Equip"
-	action_button.kind = "装備"
+	action_button.kind = &"equip"
 	action_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	action_button.pressed.connect(_act)
 	_info.add_child(action_button)
@@ -211,7 +211,7 @@ func _slot_content(index: int) -> StringName:
 
 
 func _slot_key(index: int) -> String:
-	return SLOTS[index][3] if _pad else SLOTS[index][2]
+	return tr(SLOTS[index][3] if _pad else SLOTS[index][2])
 
 
 func _show_slots() -> void:
@@ -224,26 +224,26 @@ func _show_slots() -> void:
 		var skill := MetaProgress.find_skill(held)
 		var move := MetaProgress.find_special(held)
 		var weapon := MetaProgress.find_weapon(held)
-		var content := "空き"
+		var content := tr("空き")
 		var emblem := ""
 		if held == &"special":
-			content = "封印"
+			content = tr("封印")
 			emblem = entry[4]
 		elif weapon != null:
-			content = weapon.display_name
+			content = tr(weapon.display_name)
 			emblem = weapon.emblem
 		elif skill != null:
-			content = skill.display_name
+			content = tr(skill.display_name)
 			emblem = skill.emblem
 		elif move != null:
-			content = move.display_name
+			content = tr(move.display_name)
 			emblem = move.emblem
 		button.emblem = EmblemIcons.texture(emblem)
 		button.empty = emblem.is_empty()
 		button.sealed = held == &"special"
 		button.key = _slot_key(index)
 		button.lit = index == slot
-		button.tooltip_text = "%s（%s）：%s" % [entry[1], _slot_key(index), content]
+		button.tooltip_text = tr("%s（%s）：%s") % [entry[1], _slot_key(index), content]
 		button.queue_redraw()
 
 
@@ -261,18 +261,18 @@ func _show_tiles() -> void:
 	match kind:
 		&"attack":
 			for weapon in MetaProgress.WEAPONS:
-				_add_tile(weapon.id, weapon.emblem, weapon.display_name, "%d連撃" % weapon.combo.size(), not meta.owns_weapon(weapon.id), UNKNOWN_WEAPON_NOTE)
+				_add_tile(weapon.id, weapon.emblem, tr(weapon.display_name), tr("%d連撃") % weapon.combo.size(), not meta.owns_weapon(weapon.id), UNKNOWN_WEAPON_NOTE)
 		&"special":
 			if not meta.owns_any_special():
-				_tile_note.text = SPECIAL_NOTE
+				_tile_note.text = tr(SPECIAL_NOTE)
 			else:
-				_add_tile(CLEAR_ID, "", "外す", "", false, "")
+				_add_tile(CLEAR_ID, "", tr("外す"), "", false, "")
 				for move in MetaProgress.SPECIALS:
-					_add_tile(move.id, move.emblem, move.display_name, "ゲージ%s" % _number(move.charge), not meta.owns_special(move.id), UNKNOWN_SPECIAL_NOTE)
+					_add_tile(move.id, move.emblem, tr(move.display_name), tr("ゲージ%s") % _number(move.charge), not meta.owns_special(move.id), UNKNOWN_SPECIAL_NOTE)
 		_:
-			_add_tile(CLEAR_ID, "", "外す", "", false, "")
+			_add_tile(CLEAR_ID, "", tr("外す"), "", false, "")
 			for skill in MetaProgress.SKILLS:
-				_add_tile(skill.id, skill.emblem, skill.display_name, "%s秒" % _number(skill.cooldown), not meta.owns_skill(skill.id), UNKNOWN_NOTE)
+				_add_tile(skill.id, skill.emblem, tr(skill.display_name), tr("%s秒") % _number(skill.cooldown), not meta.owns_skill(skill.id), UNKNOWN_NOTE)
 	_tile_note.visible = not _tile_note.text.is_empty()
 	_mark_tiles()
 	for index in tiles.size():
@@ -294,9 +294,9 @@ func _add_tile(id: StringName, emblem: String, title: String, figure: String, un
 	tile.emblem = EmblemIcons.texture(emblem) if not emblem.is_empty() else null
 	tile.clears = id == CLEAR_ID
 	tile.unknown = unknown
-	tile.caption = UNKNOWN_NAME if unknown else title
-	tile.note = UNOWNED if unknown else figure
-	tile.tooltip_text = unknown_note if unknown else (CLEAR_NOTE if id == CLEAR_ID else title)
+	tile.caption = tr(UNKNOWN_NAME) if unknown else title
+	tile.note = tr(UNOWNED) if unknown else figure
+	tile.tooltip_text = tr(unknown_note) if unknown else (tr(CLEAR_NOTE) if id == CLEAR_ID else title)
 	var index := tiles.size()
 	tile.focus_entered.connect(_choose_tile.bind(index))
 	tile.pressed.connect(_press_tile.bind(index))
@@ -479,18 +479,18 @@ func _tell(id: StringName) -> void:
 	match id:
 		&"special":
 			_emblem = "seal_special"
-			name_label.text = "必殺技"
-			kind_label.text = "未開放の枝"
+			name_label.text = tr("必殺技")
+			kind_label.text = tr("未開放の枝")
 			figure_label.hide()
-			description_label.text = SPECIAL_NOTE
+			description_label.text = tr(SPECIAL_NOTE)
 			action_button.hide()
 		CLEAR_ID, &"":
 			_emblem = ""
-			name_label.text = "空き" if id.is_empty() else "外す"
-			kind_label.text = SLOTS[slot][1]
+			name_label.text = tr("空き") if id.is_empty() else tr("外す")
+			kind_label.text = tr(SLOTS[slot][1])
 			figure_label.hide()
 			description_label.hide()
-			action_button.text = "外す"
+			action_button.text = tr("外す")
 			action_button.disabled = meta.loadout[slot_index].is_empty() if in_skill_slot else (meta.special.is_empty() if slot == SPECIAL_SLOT else true)
 			action_button.visible = id == CLEAR_ID
 		_:
@@ -503,20 +503,20 @@ func _tell(id: StringName) -> void:
 			if not meta.owns_skill(skill.id):
 				_unknown = true
 				_emblem = skill.emblem
-				name_label.text = UNKNOWN_NAME
-				kind_label.text = "スキル"
+				name_label.text = tr(UNKNOWN_NAME)
+				kind_label.text = tr("スキル")
 				figure_label.hide()
-				description_label.text = UNKNOWN_NOTE
+				description_label.text = tr(UNKNOWN_NOTE)
 				action_button.hide()
 			else:
 				_emblem = skill.emblem
-				name_label.text = skill.display_name
+				name_label.text = tr(skill.display_name)
 				var at := meta.slot_of(skill.id)
-				kind_label.text = "スキル　再使用 %s秒" % _number(skill.cooldown)
-				figure_label.text = "威力 攻撃力の%d%%\n%s" % [roundi(skill.attack.damage_scale * 100.0), _reach_text(skill.attack)]
-				description_label.text = skill.description
+				kind_label.text = tr("スキル　再使用 %s秒") % _number(skill.cooldown)
+				figure_label.text = tr("威力 攻撃力の%d%%\n%s") % [roundi(skill.attack.damage_scale * 100.0), _reach_text(skill.attack)]
+				description_label.text = tr(skill.description)
 				var here := in_skill_slot and at == slot_index
-				action_button.text = "装備中" if here else ("入れ替える" if at >= 0 else "装備する")
+				action_button.text = tr("装備中") if here else (tr("入れ替える") if at >= 0 else tr("装備する"))
 				action_button.disabled = here or not in_skill_slot
 				action_button.visible = in_skill_slot
 	picture.queue_redraw()
@@ -528,21 +528,21 @@ func _tell_weapon(weapon: Moveset) -> void:
 	_emblem = weapon.emblem
 	if not meta.owns_weapon(weapon.id):
 		_unknown = true
-		name_label.text = UNKNOWN_NAME
-		kind_label.text = "武器"
+		name_label.text = tr(UNKNOWN_NAME)
+		kind_label.text = tr("武器")
 		figure_label.hide()
-		description_label.text = UNKNOWN_WEAPON_NOTE
+		description_label.text = tr(UNKNOWN_WEAPON_NOTE)
 		action_button.hide()
 		return
 	var held := meta.weapon == weapon.id
-	name_label.text = weapon.display_name
-	kind_label.text = "武器"
+	name_label.text = tr(weapon.display_name)
+	kind_label.text = tr("武器")
 	var strongest := 0.0
 	for swing in weapon.combo:
 		strongest = maxf(strongest, swing.damage_scale)
-	figure_label.text = "連撃 %d段（攻撃力の%d%%まで）\n溜め 攻撃力の%d%%　%s" % [weapon.combo.size(), roundi(strongest * 100.0), roundi(weapon.charged.damage_scale * 100.0), _reach_text(weapon.charged)]
-	description_label.text = weapon.description
-	action_button.text = "装備中" if held else "持ち替える"
+	figure_label.text = tr("連撃 %d段（攻撃力の%d%%まで）\n溜め 攻撃力の%d%%　%s") % [weapon.combo.size(), roundi(strongest * 100.0), roundi(weapon.charged.damage_scale * 100.0), _reach_text(weapon.charged)]
+	description_label.text = tr(weapon.description)
+	action_button.text = tr("装備中") if held else tr("持ち替える")
 	action_button.disabled = held or slot != ATTACK_SLOT
 	action_button.visible = slot == ATTACK_SLOT
 
@@ -553,19 +553,19 @@ func _tell_special(move: SpecialData) -> void:
 	_emblem = move.emblem
 	if not meta.owns_special(move.id):
 		_unknown = true
-		name_label.text = UNKNOWN_NAME
-		kind_label.text = "必殺技"
+		name_label.text = tr(UNKNOWN_NAME)
+		kind_label.text = tr("必殺技")
 		figure_label.hide()
-		description_label.text = UNKNOWN_SPECIAL_NOTE
+		description_label.text = tr(UNKNOWN_SPECIAL_NOTE)
 		action_button.hide()
 		return
-	name_label.text = move.display_name
-	kind_label.text = "必殺技　ゲージ %s" % _number(move.charge)
+	name_label.text = tr(move.display_name)
+	kind_label.text = tr("必殺技　ゲージ %s") % _number(move.charge)
 	var power := 1.0 + meta.bonus(&"special_power")
-	figure_label.text = "威力 攻撃力の%d%%\n%s" % [roundi(move.attack.damage_scale * power * 100.0), _reach_text(move.attack)]
-	description_label.text = move.description
+	figure_label.text = tr("威力 攻撃力の%d%%\n%s") % [roundi(move.attack.damage_scale * power * 100.0), _reach_text(move.attack)]
+	description_label.text = tr(move.description)
 	var here := meta.special == move.id
-	action_button.text = "装備中" if here else "装備する"
+	action_button.text = tr("装備中") if here else tr("装備する")
 	action_button.disabled = here or slot != SPECIAL_SLOT
 	action_button.visible = slot == SPECIAL_SLOT
 
@@ -574,18 +574,18 @@ func _tell_special(move: SpecialData) -> void:
 # line's length, a circle's radius, an arc's reach.
 func _reach_text(attack: AttackData) -> String:
 	if attack.projectile != null:
-		return "射程 %s" % _cells(attack.projectile.distance)
+		return tr("射程 %s") % _cells(attack.projectile.distance)
 	match attack.shape:
 		AttackData.Shape.LINE:
-			return "範囲 長さ%s" % _cells(attack.reach)
+			return tr("範囲 長さ%s") % _cells(attack.reach)
 		AttackData.Shape.CIRCLE:
-			return "範囲 半径%s" % _cells(attack.reach)
-	return "範囲 %s" % _cells(attack.reach)
+			return tr("範囲 半径%s") % _cells(attack.reach)
+	return tr("範囲 %s") % _cells(attack.reach)
 
 
 # A distance in pixels as the floor's cells ("2.9マス").
 func _cells(pixels: float) -> String:
-	return _number(pixels / AreaGround.CELL, CELL_SNAP) + "マス"
+	return _number(pixels / AreaGround.CELL, CELL_SNAP) + tr("マス")
 
 
 func _draw_picture() -> void:
@@ -601,34 +601,34 @@ func stat_rows() -> Array:
 	var tuned := meta.tuning(_base)
 	var rules := meta.lasting()
 	var rows := []
-	rows.append(["最大HP", str(tuned.max_hp), _added(tuned.max_hp - _base.max_hp, ""), _breakdown(&"max_hp", str(_base.max_hp), ""), true])
+	rows.append([tr("最大HP"), str(tuned.max_hp), _added(tuned.max_hp - _base.max_hp, ""), _breakdown(&"max_hp", str(_base.max_hp), ""), true])
 	# What a blow loses to her guard, as an amount: "0" under "damage taken"
 	# read as taking none.
-	rows.append(["ダメージの軽減", str(tuned.defense), "", _breakdown(&"defense", "0", ""), true])
-	rows.append(["攻撃力", _number(tuned.power), "", "基礎 %s" % _number(_base.power), true])
+	rows.append([tr("ダメージの軽減"), str(tuned.defense), "", _breakdown(&"defense", "0", ""), true])
+	rows.append([tr("攻撃力"), _number(tuned.power), "", tr("基礎 %s") % _number(_base.power), true])
 	# Her pace against the pace she starts with: pixels a second are not
 	# words of the world.
 	var pace := roundi(tuned.max_speed / _base.max_speed * 100.0)
-	rows.append(["移動速度", "%d%%" % pace, _added(pace - 100, "%"), _breakdown(&"move_speed", "100%", "%", 100.0), true])
-	rows.append(["ダッシュ", "%d回 / %s秒" % [tuned.dash_charges, _number(tuned.dash_cooldown)], "", "基礎 %d回 / %s秒%s%s" % [_base.dash_charges, _number(_base.dash_cooldown), _parts(&"dash_charges", "回", 1.0), _parts(&"dash_cooldown", "秒", 1.0)], true])
-	rows.append(["被弾後の無敵", "%s秒" % _number(tuned.hurt_mercy), "", _breakdown(&"hurt_mercy", "%s秒" % _number(_base.hurt_mercy), "秒"), false])
-	rows.append(["宝石を吸い寄せる範囲", _cells(GemField.PULL_RADIUS + rules[&"gem_pull"]), "", _breakdown(&"gem_pull", _cells(GemField.PULL_RADIUS), "マス", 1.0 / AreaGround.CELL, CELL_SNAP), false])
-	rows.append(["回復の報酬", "最大HPの%d%%" % roundi((RunDirector.HEAL_SHARE + rules[&"heal_share"]) * 100.0), "", _breakdown(&"heal_share", "%d%%" % roundi(RunDirector.HEAL_SHARE * 100.0), "%", 100.0), false])
-	rows.append(["報酬の残響", "+%d%%" % roundi(rules[&"echo_rate"] * 100.0), "", _breakdown(&"echo_rate", "+0%", "%", 100.0), false])
-	rows.append(["得る経験値", "+%d%%" % roundi(rules[&"exp_rate"] * 100.0), "", _breakdown(&"exp_rate", "+0%", "%", 100.0), false])
-	rows.append(["レベルアップのカード", "%d枚" % (BuildState.OFFER_COUNT + roundi(rules[&"offer_count"])), "", _breakdown(&"offer_count", "%d枚" % BuildState.OFFER_COUNT, "枚"), false])
-	rows.append(["引き直し", "探索ごとに%d回" % roundi(rules[&"reroll"]), "", _breakdown(&"reroll", "0回", "回"), false])
-	rows.append(["不屈", "あり" if rules[&"last_stand"] > 0.0 else "なし", "", _breakdown(&"last_stand", "なし", ""), false])
+	rows.append([tr("移動速度"), "%d%%" % pace, _added(pace - 100, "%"), _breakdown(&"move_speed", "100%", "%", 100.0), true])
+	rows.append([tr("ダッシュ"), tr("%d回 / %s秒") % [tuned.dash_charges, _number(tuned.dash_cooldown)], "", tr("基礎 %d回 / %s秒%s%s") % [_base.dash_charges, _number(_base.dash_cooldown), _parts(&"dash_charges", tr("回"), 1.0), _parts(&"dash_cooldown", tr("秒"), 1.0)], true])
+	rows.append([tr("被弾後の無敵"), tr("%s秒") % _number(tuned.hurt_mercy), "", _breakdown(&"hurt_mercy", tr("%s秒") % _number(_base.hurt_mercy), tr("秒")), false])
+	rows.append([tr("宝石を吸い寄せる範囲"), _cells(GemField.PULL_RADIUS + rules[&"gem_pull"]), "", _breakdown(&"gem_pull", _cells(GemField.PULL_RADIUS), tr("マス"), 1.0 / AreaGround.CELL, CELL_SNAP), false])
+	rows.append([tr("回復の報酬"), tr("最大HPの%d%%") % roundi((RunDirector.HEAL_SHARE + rules[&"heal_share"]) * 100.0), "", _breakdown(&"heal_share", "%d%%" % roundi(RunDirector.HEAL_SHARE * 100.0), "%", 100.0), false])
+	rows.append([tr("報酬の残響"), "+%d%%" % roundi(rules[&"echo_rate"] * 100.0), "", _breakdown(&"echo_rate", "+0%", "%", 100.0), false])
+	rows.append([tr("得る経験値"), "+%d%%" % roundi(rules[&"exp_rate"] * 100.0), "", _breakdown(&"exp_rate", "+0%", "%", 100.0), false])
+	rows.append([tr("レベルアップのカード"), tr("%d枚") % (BuildState.OFFER_COUNT + roundi(rules[&"offer_count"])), "", _breakdown(&"offer_count", tr("%d枚") % BuildState.OFFER_COUNT, tr("枚")), false])
+	rows.append([tr("引き直し"), tr("探索ごとに%d回") % roundi(rules[&"reroll"]), "", _breakdown(&"reroll", tr("0回"), tr("回")), false])
+	rows.append([tr("不屈"), tr("あり") if rules[&"last_stand"] > 0.0 else tr("なし"), "", _breakdown(&"last_stand", tr("なし"), ""), false])
 	var rising: Array[String] = []
 	if rules[&"level_heal"] > 0.0:
-		rising.append("回復%d%%" % roundi(rules[&"level_heal"] * 100.0))
+		rising.append(tr("回復%d%%") % roundi(rules[&"level_heal"] * 100.0))
 	if rules[&"level_burst"] > 0.0:
-		rising.append("衝撃")
+		rising.append(tr("衝撃"))
 	if rules[&"level_ward"] > 0.0:
-		rising.append("無敵%s秒" % _number(rules[&"level_ward"]))
+		rising.append(tr("無敵%s秒") % _number(rules[&"level_ward"]))
 	if rules[&"level_haste"] > 0.0:
-		rising.append("振り+%d%%" % roundi(rules[&"level_haste"] * 100.0))
-	rows.append(["レベルアップの瞬間", "、".join(rising) if not rising.is_empty() else "なし", "", "光の癒やし・光の衝撃・光の加護・高揚で増える", false])
+		rising.append(tr("振り+%d%%") % roundi(rules[&"level_haste"] * 100.0))
+	rows.append([tr("レベルアップの瞬間"), "、".join(rising) if not rising.is_empty() else tr("なし"), "", tr("光の癒やし・光の衝撃・光の加護・高揚で増える"), false])
 	return rows
 
 
@@ -676,7 +676,7 @@ func _added(amount: int, unit: String) -> String:
 
 # "基礎 100 ＋ 鍛えた体 +45": the base and each upgrade held that adds to it.
 func _breakdown(effect: StringName, base: String, unit: String, scale: float = 1.0, snap: float = 0.01) -> String:
-	return "基礎 %s%s" % [base, _parts(effect, unit, scale, snap)]
+	return tr("基礎 %s%s") % [base, _parts(effect, unit, scale, snap)]
 
 
 func _parts(effect: StringName, unit: String, scale: float, snap: float = 0.01) -> String:
@@ -685,7 +685,7 @@ func _parts(effect: StringName, unit: String, scale: float, snap: float = 0.01) 
 		var rank := meta.rank(upgrade.id)
 		if upgrade.effect == effect and rank > 0:
 			var amount := upgrade.per_rank * rank * scale
-			text += "　＋ %s %s%s%s" % [upgrade.display_name, "+" if amount >= 0.0 else "", _number(amount, snap), unit]
+			text += tr("　＋ %s %s%s%s") % [tr(upgrade.display_name), "+" if amount >= 0.0 else "", _number(amount, snap), unit]
 	return text
 
 

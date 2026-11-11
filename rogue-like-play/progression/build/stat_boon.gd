@@ -21,4 +21,4 @@ func stat(name: StringName, rank: int) -> float:
 func gains(rank: int) -> Array[String]:
 	if is_zero_approx(per_rank) or not NAMES.has(stat_name):
 		return []
-	return ["%s %+d%% → %+d%%" % [NAMES[stat_name], roundi(per_rank * rank * 100.0), roundi(per_rank * (rank + 1) * 100.0)]]
+	return ["%s %+d%% → %+d%%" % [tr(NAMES[stat_name]), roundi(per_rank * rank * 100.0), roundi(per_rank * (rank + 1) * 100.0)]]

@@ -100,8 +100,8 @@ func present(boss: Foe, area: BattleArea, theme: Theme) -> void:
 	_rule.draw.connect(_draw_rule)
 	_root.add_child(_rule)
 	_rule.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_epithet = _label(boss.data.epithet, &"BossEpithet")
-	_name = _label(boss.data.display_name, &"BossName")
+	_epithet = _label(tr(boss.data.epithet), &"BossEpithet")
+	_name = _label(tr(boss.data.display_name), &"BossName")
 	var screen := _root.get_viewport_rect().size
 	_name.position.y = screen.y * NAME_PLACE - _name.get_combined_minimum_size().y * 0.5
 	_epithet.position.y = _name.position.y - _epithet.get_combined_minimum_size().y - 2.0

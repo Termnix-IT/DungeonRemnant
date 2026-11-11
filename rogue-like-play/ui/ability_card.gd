@@ -79,7 +79,7 @@ func _show_status() -> void:
 	if level > 0:
 		status_label.text = "Lv %d → %d" % [level, level + 1]
 	else:
-		status_label.text = ability.families_text() if hovered else "新規"
+		status_label.text = ability.families_text() if hovered else tr("新規")
 
 
 func setup(data: BoonData, current_level: int, shortcut: int) -> void:
@@ -89,8 +89,8 @@ func setup(data: BoonData, current_level: int, shortcut: int) -> void:
 	hovered = false
 	key_label.text = str(shortcut)
 	_show_status()
-	name_label.text = data.display_name
-	name_label.tooltip_text = data.display_name
+	name_label.text = tr(data.display_name)
+	name_label.tooltip_text = tr(data.display_name)
 	# A rank being raised tells what grows; a new boon, what it does.
 	var gain := data.gain_text(level) if level > 0 else ""
 	TextWrap.set_text(effect_label, gain if not gain.is_empty() else data.effect_description(level + 1))

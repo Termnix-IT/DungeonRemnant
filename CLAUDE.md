@@ -22,10 +22,11 @@ Godotを `godot` コマンドとして利用できる状態で、`rogue-like-pla
 
 - `godot --editor --path .`: エディターでプロジェクトを開き、ローカル開発とF5によるプレイテストを行う。ランだけを試すときは `game/expedition/run_director.tscn`、戦闘だけを試すときは `world/areas/sandbox.tscn` をF6で起動する。
 - `godot --headless --path . --editor --import --quit`: アセットをimportし、ScriptとSceneを検証する。
-- `python tools/run_tests.py`: `tests/test_*.gd` をすべて並列（既定は4件ずつ）で実行し、スイートごとの成否・所要時間・失敗した検査を表示する。`python tools/run_tests.py hub run_cycle` のように名前を渡すと対象を絞り、`--skip run_cycle` で除外できる。Godotは `--godot`、環境変数 `GODOT`、PATH上の `godot` の順に探す。ログは `.godot/test-logs/` に出し、終わらないスイートは `--timeout`（既定180秒）で失敗として打ち切る。
+- `python tools/run_tests.py`: `tests/test_*.gd` をすべて日本語（`--language ja`）で並列（既定は4件ずつ）で実行し、スイートごとの成否・所要時間・失敗した検査を表示する。`python tools/run_tests.py hub run_cycle` のように名前を渡すと対象を絞り、`--skip run_cycle` で除外できる。Godotは `--godot`、環境変数 `GODOT`、PATH上の `godot` の順に探す。ログは `.godot/test-logs/` に出し、終わらないスイートは `--timeout`（既定180秒）で失敗として打ち切る。
 - `godot --headless --path . --log-file .godot/hero-tests.log --script res://tests/test_hero_motor.gd`: 対象を絞ったテストスイートを1つ実行する。
 - `godot --headless --path . --log-file .godot/run-cycle-tests.log --script res://tests/test_run_cycle.gd`: 拠点から出撃し、踏破・敗北・中断のそれぞれで拠点へ戻るまでの流れ全体を検証する。
 - `godot --headless --path . --log-file .godot/smoke-test.log --quit-after 5`: 短時間の起動確認を行う。
+- `godot --headless --path . --script res://tools/text_catalog.gd`: 画面の日本語を変えた・足したときに、翻訳の表 `locale/text.csv` を作り直す。書いてある英訳は残り、使われなくなった行は消える（英訳があった行は表示する）。続けてimportし、`tests/test_translation.gd` で確かめる。
 
 ## 公開に向けた進め方
 
