@@ -147,13 +147,13 @@ HPを捧げて強化を得る,,Offer HP for a boon,data/areas/event_altar.tres
 霊火の足跡,,Wisp Step,data/boons/wisp_step.tres
 ダッシュの出だしに霊火が爆ぜ、敵を燃やす,,"A wisp bursts where a dash begins, setting foes on fire",data/boons/wisp_step.tres
 第4章　残響の深淵,,Chapter 4: The Abyss of Echoes,data/chapters/abyss_of_echoes.tres
-ダンジョンで果てた者たちの残響が流れ込む最深部へ下り、その底に座す者を討つ。,,"Descend to the deepest depths, where the echoes of all who perished in the dungeon flow, and defeat the one who sits at the bottom.",data/chapters/abyss_of_echoes.tres
+ダンジョンで果てた者たちの残響が流れ込む最深部へ下り、その底に座す者を討つ。,,Sink to where the echoes pool; slay what sits below.,data/chapters/abyss_of_echoes.tres
 第3章　紫晶の霊廟,,Chapter 3: The Amethyst Mausoleum,data/chapters/amethyst_mausoleum.tres
-紫の結晶に侵された地下の霊廟を下り、最奥の納骨堂で祈り続ける者を討つ。,,"Descend through an underground mausoleum overrun by purple crystal, and defeat the one who prays without end in the ossuary at its heart.",data/chapters/amethyst_mausoleum.tres
+紫の結晶に侵された地下の霊廟を下り、最奥の納骨堂で祈り続ける者を討つ。,,Descend the crystal tombs; slay the one who prays.,data/chapters/amethyst_mausoleum.tres
 第1章　灰の回廊,,Chapter 1: The Ash Corridor,data/chapters/ash_corridor.tres
-灰に沈んだ回廊を抜け、その奥の守護者の間に待つ者を討つ。,,"Pass through a corridor buried in ash, and defeat the one who waits in the Guardian's Hall beyond.",data/chapters/ash_corridor.tres
+灰に沈んだ回廊を抜け、その奥の守護者の間に待つ者を討つ。,,Cross the ash-buried corridor; slay what waits.,data/chapters/ash_corridor.tres
 第2章　風哭きの樹海,,Chapter 2: The Wailing Woods,data/chapters/gale_woods.tres
-風の吠える古い樹海を抜け、根の奥の寝床に潜む主を討つ。,,"Pass through an ancient forest where the wind howls, and defeat the master lurking in its den among the roots.",data/chapters/gale_woods.tres
+風の吠える古い樹海を抜け、根の奥の寝床に潜む主を討つ。,,Cross the howling woods; slay the den's master.,data/chapters/gale_woods.tres
 血錆の鐘,,Bloodrust Bell,data/foes/blood_bell.tres
 "血の色に錆びた嘆きの鐘。硬く、打つ力も強い。輪が満ちる前に離れるのは変わらない。
 難易度の段階7から、第4章のフィールドの群れに混ざる。",,"A Mourning Bell rusted the color of blood. Tough, and it strikes hard. As before, get away before the ring fills.
@@ -394,14 +394,14 @@ Appears in Chapter 3's fields and arenas.",data/foes/wisp.tres
 身に宿した残響を一気に解き放ち、周りの敵すべてを大きく吹き飛ばす,,"Release all the echoes within you at once, blasting every foe around you far away",data/specials/echo_burst.tres
 天裂き,,Sky Rend,data/specials/sky_rend.tres
 雷をまとった剣の一閃で、前方を遠くまで一直線に断ち切り、感電させる,,"A single lightning-clad stroke that cleaves far ahead in a straight line, shocking what it cuts",data/specials/sky_rend.tres
-群れが2割増える,,Swarms grow by 20%,data/steps/step_1.tres
+群れが2割増える,,Swarms +20%,data/steps/step_1.tres
 回復の報酬が25%減る,,Healing rewards -25%,data/steps/step_2.tres
-精鋭が早く、多く出る,,Elites come sooner and more often,data/steps/step_3.tres
-強化の候補が1枚減る,,One fewer boon card to choose from,data/steps/step_4.tres
+精鋭が早く、多く出る,,"More elites, sooner",data/steps/step_3.tres
+強化の候補が1枚減る,,One fewer boon card,data/steps/step_4.tres
 敵のHPが25%増える（ボスも）,,Foe HP +25% (bosses too),data/steps/step_5.tres
-呪いを1つ持って出撃する,,Set out with one curse,data/steps/step_6.tres
-群れに強敵版が混ざる,,Stronger variants join the swarms,data/steps/step_7.tres
-ボスが早く怒り狂い、手下を多く呼ぶ,,Bosses enrage sooner and call more minions,data/steps/step_8.tres
+呪いを1つ持って出撃する,,Start with a curse,data/steps/step_6.tres
+群れに強敵版が混ざる,,Stronger swarm foes,data/steps/step_7.tres
+ボスが早く怒り狂い、手下を多く呼ぶ,,"Bosses rage early, call more",data/steps/step_8.tres
 このスキルは付けられません。,,This skill can't be equipped.,game/main.gd
 保存に失敗したため、付け替えを取り消しました。,,"Saving failed, so the change was undone.",game/main.gd
 武器を「%s」に持ち替えました。,,Switched weapon to %s.,game/main.gd
@@ -483,7 +483,7 @@ HPが足りない,,Not enough HP,game/expedition/run_director.gd
 ・,,", ",game/expedition/run_state.gd
 残響：探索で得て、拠点の強化に使う,,"Echoes: earned on runs, spent on upgrades at the base",game/hub/hub.gd
 選ぶ,,Select,game/hub/hub.gd
-決定,,Confirm,game/hub/hub.gd
+決定,lobby,OK,game/hub/hub.gd
 終了,,Quit,game/hub/hub.gd
 出撃,,Set Out,game/hub/hub.gd
 段階,,Tier,game/hub/hub.gd
@@ -550,6 +550,7 @@ R スティック,,R Stick,game/hub/hub.gd
 引き直す（残り%d）,,Reroll (%d left),ui/ability_choice.gd
 Lv %d　強化を1つ選ぶ,,Lv %d: Choose a boon,ui/ability_choice.gd
 このあと、もう%d回選べます,,Picks left after this: %d,ui/ability_choice.gd
+決定,,Confirm,ui/choice_prompt.gd
 レベルアップで選んだ強化が、ここに並ぶ,,Boons chosen on level-up appear here,ui/dungeon_menu.gd
 戦いに戻る,,Resume,ui/dungeon_menu.gd
 メニュー,,Menu,ui/dungeon_menu.gd
@@ -727,7 +728,7 @@ Q・E（ゲームパッドはLB・RB）で種類を切り替えます。,,Switch
 強化ツリーのスキルの枝で習得できる,,Learned on the Upgrade Tree's skill branch,ui/hub_status.gd
 強化ツリーの必殺技の枝で習得できる,,Learned on the Upgrade Tree's Special branch,ui/hub_status.gd
 このスロットを空ける,,Empty this slot,ui/hub_status.gd
-未所持,,Not learned,ui/hub_status.gd
+未所持,,Locked,ui/hub_status.gd
 スキル1,,Skill 1,ui/hub_status.gd
 スキル2,,Skill 2,ui/hub_status.gd
 強化ツリーの武器の枝で習得できる,,Learned on the Upgrade Tree's weapon branch,ui/hub_status.gd
@@ -812,9 +813,9 @@ X・RT長押し,,Hold X / RT,ui/action_hud/action_hud.gd
 通り過ぎた,,Passed,ui/route_map/route_map_view.gd
 この章の最奥で、何かが待ち構えている,,Something lies in wait at the heart of this chapter,ui/route_map/route_map_view.gd
 ←→↑↓・1〜3,,←→↑↓ / 1–3,ui/route_map/route_map_view.gd
-エリアを選ぶ,,Choose an Area,ui/route_map/route_map_view.gd
+エリアを選ぶ,,Choose Area,ui/route_map/route_map_view.gd
 進む,,Go,ui/route_map/route_map_view.gd
-地図を見渡す,,Look Around the Map,ui/route_map/route_map_view.gd
+地図を見渡す,,Look Around,ui/route_map/route_map_view.gd
 %s　段階%d,,%s  Tier %d,ui/route_map/route_map_view.gd
 呪い：%s,,Curses: %s,ui/route_map/route_map_view.gd
 イベント　戦闘なし,,Event  No combat,ui/route_map/route_map_view.gd

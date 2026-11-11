@@ -10,7 +10,8 @@ extends Button
 # them at their natural spacing, and no gap grows past MAX_GAP_EMS letters,
 # so a short word ("設定") stays one word rather than letters apart; it then
 # stands centred, narrower than the span. align_spans() gives a set of
-# buttons the span of the longest.
+# buttons the span of the longest. Words without Japanese (the English) are
+# not spread, which would part a word's letters, and are drawn whole.
 
 # The widest gap between two letters, in letters (the font size).
 const MAX_GAP_EMS := 1.0
@@ -48,7 +49,7 @@ func natural_width() -> float:
 # The gap between letters: what reaches the span, at most MAX_GAP_EMS.
 func gap() -> float:
 	var natural := natural_width()
-	if caption.length() < 2 or span <= natural:
+	if caption.length() < 2 or span <= natural or not TextWrap.has_japanese(caption):
 		return 0.0
 	return minf((span - natural) / (caption.length() - 1), MAX_GAP_EMS * get_theme_font_size(&"font_size"))
 
@@ -70,6 +71,13 @@ func _draw() -> void:
 	var colour := _colour()
 	var outline := get_theme_constant(&"outline_size")
 	var outline_colour := get_theme_color(&"font_outline_color")
+	if spacing == 0.0:
+		# Drawn whole, keeping the font's own spacing between letters.
+		var at := Vector2((size.x - font.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x) * 0.5, baseline)
+		if outline > 0 and outline_colour.a > 0.0:
+			draw_string_outline(font, at, caption, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, outline, outline_colour)
+		draw_string(font, at, caption, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, colour)
+		return
 	for letter in caption:
 		var at := Vector2(x, baseline)
 		if outline > 0 and outline_colour.a > 0.0:

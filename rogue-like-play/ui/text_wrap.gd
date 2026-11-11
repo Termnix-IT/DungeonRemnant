@@ -39,7 +39,7 @@ static func balanced(text: String, font: Font, font_size: int, width: float) -> 
 	var total := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 	if total <= width:
 		return text
-	var spaced := not _has_japanese(text)
+	var spaced := not has_japanese(text)
 	var best := -1
 	var best_score := INF
 	for index in range(1, text.length()):
@@ -60,7 +60,8 @@ static func balanced(text: String, font: Font, font_size: int, width: float) -> 
 	return (text.substr(0, best - 1) if spaced else text.substr(0, best)) + "\n" + text.substr(best)
 
 
-static func _has_japanese(text: String) -> bool:
+# Whether the text holds Japanese (any letter from the CJK punctuation on).
+static func has_japanese(text: String) -> bool:
 	for letter in text:
 		if letter.unicode_at(0) >= 0x3000:
 			return true

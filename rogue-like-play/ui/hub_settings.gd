@@ -46,6 +46,8 @@ const HELP_TOPICS_WIDTH := 260.0
 # the dungeon's menu leaves it out (_tab_rows).
 const TABS := [["サウンド", [0, 1, 2, 3]], ["グラフィック", [4, 5]], ["その他", [9, 6, 7, 8]]]
 const LANGUAGE_ROW := 9
+# The rows' captions are at least this wide.
+const CAPTION_WIDTH := 150.0
 const CAPTIONS := ["全体の音量", "音楽", "効果音", "環境音", "画面の揺れ", "画面モード", "操作の案内", "ヘルプ", "ゲームの終了", "言語"]
 const NOTES := ["すべての音の大きさ。0%で消音。", "拠点・戦場・ボスの曲の大きさ。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "戦場の空気の音の大きさ。", "攻撃が当たったときや被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "戦闘中、画面の下に操作の一覧を出す。", "探索の決まりごとと操作。", "ゲームを閉じる。確かめてから終了する。", "画面の文字の言語。"]
 # The help's topics, in order: [title, points], each point a line of its own
@@ -297,6 +299,7 @@ func _ready() -> void:
 			watched.gui_input.connect(func(event: InputEvent):
 				if event is InputEventMouseMotion and _hover_row != index:
 					_hover_setting_row(index))
+	_align_captions()
 	# What the focused setting does, under the rows.
 	HubUI.rule(left)
 	var info := VBoxContainer.new()
@@ -520,9 +523,21 @@ func _row(caption: String) -> HBoxContainer:
 	_rows.append(row)
 	var label := HubUI.label(row, caption, &"ItemNameLabel")
 	label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	label.custom_minimum_size.x = 150
+	label.custom_minimum_size.x = CAPTION_WIDTH
 	label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	return row
+
+
+# Every row's caption as wide as the widest (at least CAPTION_WIDTH), so the
+# controls start at one line whatever the language's names.
+func _align_captions() -> void:
+	var widest := CAPTION_WIDTH
+	for row in _rows:
+		var label: Label = row.get_child(0)
+		var font := label.get_theme_font(&"font")
+		widest = maxf(widest, ceilf(font.get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, label.get_theme_font_size(&"font_size")).x))
+	for row in _rows:
+		(row.get_child(0) as Label).custom_minimum_size.x = widest
 
 
 # A volume as a bar from 0 to 100% in 5% steps, its value at the right.

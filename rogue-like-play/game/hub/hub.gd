@@ -328,7 +328,9 @@ func show_page(target: String) -> void:
 				home_page.refresh(_meta, chapter)
 			home_page.show()
 			home_page.focus_selected()
-			key_guide.add_hint("Enter", "A", tr("決定"))
+			# Said short in the lobby (its context), where the keys stand
+			# inside the rail.
+			key_guide.add_hint("Enter", "A", tr("決定", "lobby"))
 			key_guide.add_hint("Esc", "B", tr("終了"), ask_quit)
 		"sortie":
 			title_label.text = tr("出撃")
