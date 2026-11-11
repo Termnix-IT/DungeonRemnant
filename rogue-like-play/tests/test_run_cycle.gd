@@ -66,6 +66,7 @@ func run_tests() -> void:
 	var folder := "res://.godot/cycle-test-%d" % Time.get_ticks_usec()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 	var main: Node = load("res://game/main.tscn").instantiate()
+	main.show_prologue = false
 	main.store.path = folder + "/progress.json"
 	main.run_seed = 21
 	root.add_child(main)
@@ -158,5 +159,33 @@ func run_tests() -> void:
 	for name in DirAccess.get_files_at(folder):
 		DirAccess.remove_absolute(folder + "/" + name)
 	DirAccess.remove_absolute(folder)
+
+	# A player's first setting out plays the prologue first: three stills
+	# without a roll, then the run; never again once a run is on record.
+	var first: Node = load("res://game/main.tscn").instantiate()
+	first.saving_enabled = false
+	first.run_seed = 21
+	root.add_child(first)
+	await process_frame
+	var first_hub = first.get_node("Hub")
+	check(first.show_prologue and first.prologue_due(), "With no run on record, the prologue is due")
+	first.start_run()
+	var prologue: EndingView = first.prologue_view
+	check(first.active_run == null and prologue != null and prologue.visible and prologue.scenes == EndingView.PROLOGUE and not prologue.rolls and prologue.scene == 0 and first_hub.visible, "Setting out the first time plays the prologue before the run")
+	check(prologue.line.text == EndingView.PROLOGUE[0][1] and EndingView.PROLOGUE.size() == 3, "Its first still tells its line")
+	first.start_run()
+	check(first.active_run == null and prologue.scene == 0, "Nothing sets out while it plays")
+	for still in EndingView.PROLOGUE.size():
+		prologue._ready_at = 0.0
+		prologue.advance()
+	await process_frame
+	check(not prologue.visible and not prologue.rolling and first.active_run != null and not first_hub.visible, "After its last still the run sets out, with no staff roll")
+	check(first.active_run.run.guided, "And that first run teaches the controls")
+	check(not first.prologue_due(), "It is not played twice in a sitting")
+	first.meta.runs = 1
+	first._prologue_played = false
+	check(not first.prologue_due(), "Nor once a run is on record")
+	first.free()
+	await process_frame
 	print("Run cycle tests: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)

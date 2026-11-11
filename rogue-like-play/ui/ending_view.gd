@@ -8,6 +8,9 @@ extends CanvasLayer
 # and a last word of thanks. Holding Esc (B) fills a ring and, once full,
 # skips the rest, so a stray press never does. `finished` follows the end
 # or the skip, once; Main then brings the player home.
+# The prologue is the same stills without the roll (`scenes` set to PROLOGUE,
+# `rolls` off): played once, before the first run ever sets out, it tells
+# what the echoes are, why she goes down, and that a fall is not the end.
 
 signal finished
 
@@ -16,6 +19,14 @@ const SCENES := [
 	["res://art/hub/ending/ending_1.png", "残響の主が崩れると、深淵に溜まっていた声が、ひとつずつほどけていった。"],
 	["res://art/hub/ending/ending_2.png", "ダンジョンに縛られていた者たちの残響は、\nようやく行き場を見つけて、静かに眠りについた。"],
 	["res://art/hub/ending/ending_3.png", "ミオは地上へ戻り、朝の光の中で、一度だけ振り返った。"],
+]
+# The prologue's stills, the ending's counterpart: the dungeon's dead, her
+# at its door at dusk (the ending's last still is the same door at dawn),
+# and the lantern at the base.
+const PROLOGUE := [
+	["res://art/hub/prologue/prologue_1.png", "このダンジョンで果てた者は、声だけを残す。\n残響と呼ばれるその声は、いまも深みへ流れ続けている。"],
+	["res://art/hub/prologue/prologue_2.png", "ミオには、その声が聞こえた。\n呼ばれるままに、灰に沈んだ回廊の入口に立つ。"],
+	["res://art/hub/prologue/prologue_3.png", "倒れても、拾った残響は手に残る。\nそれを灯に変えて、もう一度、もう少し深くへ。"],
 ]
 # The staff roll: [role, text], role a Theme type variation; "" is a gap.
 const CREDITS := [
@@ -61,6 +72,10 @@ const THANKS_TIME := 3.5
 const HOLD_TIME := 1.0
 const RING_RADIUS := 18.0
 
+# The stills shown (SCENES, or PROLOGUE), and whether the staff roll and the
+# thanks follow them; set before play().
+var scenes: Array = SCENES
+var rolls := true
 var scene := -1
 var rolling := false
 var done := false
@@ -160,7 +175,12 @@ func _ready() -> void:
 
 func play() -> void:
 	done = false
+	rolling = false
 	_hold = 0.0
+	art.show()
+	line.show()
+	roll.hide()
+	thanks.hide()
 	show()
 	GameMusic.cue(self, &"hub")
 	_show_scene(0)
@@ -168,21 +188,24 @@ func play() -> void:
 
 func _show_scene(index: int) -> void:
 	scene = index
-	art.texture = load(SCENES[index][0]) if ResourceLoader.exists(SCENES[index][0]) else null
-	line.text = SCENES[index][1]
+	art.texture = load(scenes[index][0]) if ResourceLoader.exists(scenes[index][0]) else null
+	line.text = scenes[index][1]
 	UIMotion.of(art).appear(0.0, STILL_TIME)
 	UIMotion.of(line).appear(LINE_DELAY, STILL_TIME)
 	_ready_at = _now() + LINE_DELAY + STILL_TIME * 0.5
 
 
-# Enter (A) or a click: the next still, or from the last one the roll.
+# Enter (A) or a click: the next still, or from the last one the roll (the
+# end, for stills without one).
 func advance() -> void:
 	if done or rolling or _now() < _ready_at:
 		return
-	if scene < SCENES.size() - 1:
+	if scene < scenes.size() - 1:
 		_show_scene(scene + 1)
-	else:
+	elif rolls:
 		_start_roll()
+	else:
+		finish()
 
 
 func _start_roll() -> void:

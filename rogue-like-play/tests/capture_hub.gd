@@ -23,6 +23,7 @@ func capture() -> void:
 		quit(1)
 		return
 	var main: Node = load("res://game/main.tscn").instantiate()
+	main.show_prologue = false
 	main.saving_enabled = false
 	main.run_seed = 6
 	main.meta.echo = 240

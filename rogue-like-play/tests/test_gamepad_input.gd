@@ -43,6 +43,7 @@ func run_tests() -> void:
 		check(InputMap.action_has_event(binding[0], stick(binding[1], binding[2])), "%s is bound to its stick" % binding[0])
 
 	var main: Node = load("res://game/main.tscn").instantiate()
+	main.show_prologue = false
 	main.saving_enabled = false
 	main.run_seed = 3
 	root.add_child(main)

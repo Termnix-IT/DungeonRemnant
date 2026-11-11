@@ -38,6 +38,7 @@ func settle(seconds: float = 0.0) -> void:
 
 func run_tests() -> void:
 	var main: Node = load("res://game/main.tscn").instantiate()
+	main.show_prologue = false
 	main.saving_enabled = false
 	main.run_seed = 6
 	main.meta.echo = 500

@@ -32,6 +32,7 @@ func near_scale(control: Control, value: float) -> bool:
 
 func run_tests() -> void:
 	var main: Node = load("res://game/main.tscn").instantiate()
+	main.show_prologue = false
 	main.saving_enabled = false
 	main.meta.echo = 1000
 	root.add_child(main)

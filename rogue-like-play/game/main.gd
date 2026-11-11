@@ -20,6 +20,11 @@ var transition: SceneTransition
 # clear, so the way home plays it first (EndingView).
 var ending_due := false
 var ending_view: EndingView
+# The prologue: the stills played before the first run ever sets out (no run
+# recorded yet), once in a sitting. Tests that start runs turn it off.
+@export var show_prologue := true
+var prologue_view: EndingView
+var _prologue_played := false
 
 
 func _ready() -> void:
@@ -120,8 +125,24 @@ func buy_upgrade(id: StringName) -> bool:
 	return true
 
 
+# Whether the next setting out is the first ever, the prologue still unseen.
+func prologue_due() -> bool:
+	return show_prologue and not _prologue_played and meta.runs == 0
+
+
 func start_run() -> void:
 	if active_run != null or not has_node("Hub") or not $Hub.visible or not meta.chapter_open($Hub.chapter):
+		return
+	if prologue_view != null and prologue_view.visible:
+		return
+	if prologue_due():
+		_prologue_played = true
+		prologue_view = EndingView.new()
+		prologue_view.scenes = EndingView.PROLOGUE
+		prologue_view.rolls = false
+		add_child(prologue_view)
+		prologue_view.finished.connect(start_run)
+		prologue_view.play()
 		return
 	if saving_enabled and not store.save_progress(meta):
 		_update_save_status()

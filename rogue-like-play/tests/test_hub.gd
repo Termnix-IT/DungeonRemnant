@@ -26,6 +26,7 @@ func check(ok: bool, label: String) -> void:
 
 func make_main(echo: int, save_path: String = "") -> Node:
 	var main: Node = load("res://game/main.tscn").instantiate()
+	main.show_prologue = false
 	main.saving_enabled = not save_path.is_empty()
 	if not save_path.is_empty():
 		main.store.path = save_path
