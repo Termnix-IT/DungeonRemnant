@@ -60,4 +60,4 @@ SteamでWindows版を公開する予定です。公開までの進め方と課�
 
 ライセンスごとの適用範囲は各文書を確認してください。現在の`rogue-like-play/icon.svg`はGodot Engineの既定アイコンであり、CC BY 4.0の対象です。
 
-詳細な仕様は[ゲーム仕様](./docs/ゲーム仕様.md)、Windows版の書き出しは[Windows配布手順](./docs/Windows配布手順.md)を参照してください。MVPの受け入れの記録は[MVP受け入れ確認](./docs/履歴/MVP受け入れ確認.md)に残しています。
+詳細な仕様は[ゲーム仕様](./docs/ゲーム仕様.md)と[画面とUI](./docs/画面とUI.md)、Windows版の書き出しは[Windows配布手順](./docs/Windows配布手順.md)を参照してください。MVPの受け入れの記録は[MVP受け入れ確認](./docs/履歴/MVP受け入れ確認.md)に残しています。
