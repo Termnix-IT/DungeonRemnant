@@ -1,7 +1,7 @@
 """Build the dungeon HUD's painted parts from their generated pictures.
 
 The pictures in art/ui/source/ were made with Codex's image generation (see
-開発メモ.md): the key caps, the dialogs' plate and the talisman medallion, the
+docs/絵の制作記録/拠点とUIの絵.md): the key caps, the dialogs' plate and the talisman medallion, the
 minimap's frame and markers, the message log's marks, the notice band at
 the screen's top edge, the level-up cards and their rank pips, the result's
 seals and the floor's aim marks. All but the aim marks (light on black,
