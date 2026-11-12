@@ -240,6 +240,10 @@ func run_tests() -> void:
 	check(hub.quit_prompt.accept_button.has_focus() and left[0] == 0, "Moving the pointer onto an answer chooses it without answering")
 	hub.quit_prompt.canceled.emit()
 	check(not hub.quit_prompt.visible and hub.home_page.buttons[hub.home_page.selected].has_focus() and left[0] == 0, "The way back returns to the lobby's menu, and nothing is left")
+	# Answered, the band fades out a moment longer, taking no input meanwhile.
+	check(hub.quit_prompt._view.visible and hub.quit_prompt.accept_button.focus_mode == Control.FOCUS_NONE and hub.quit_prompt.shade.mouse_filter == Control.MOUSE_FILTER_IGNORE, "The answered question fades out without taking focus or clicks")
+	await create_timer(ChoicePrompt.CLOSE_TIME + 0.1).timeout
+	check(not hub.quit_prompt._view.visible, "Then it is gone")
 	hub.ask_quit()
 	hub.quit_prompt.confirmed.emit()
 	check(left[0] == 1 and not hub.quit_prompt.visible, "The way out leaves the game")

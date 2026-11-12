@@ -11,6 +11,10 @@ extends CanvasLayer
 # run) marks the way ahead in red and waits on the way back, so a second
 # Enter never confirms it; any other waits on the way ahead. Esc (B) goes
 # back. The words are the asker's (ask()); the look is this one's.
+#
+# Answered, it is hidden at once (the asker goes on with what follows, and
+# whatever waits on `visible` sees it gone), while what was seen fades out a
+# moment longer on a layer of its own (`_view`), taking no input as it goes.
 
 signal confirmed
 signal canceled
@@ -34,6 +38,8 @@ const BUTTON_HEIGHT := 50.0
 const ACTIONS_GAP := 4.0
 # The band draws its lines out and its words come up this long.
 const OPEN_TIME := 0.26
+# What was seen fades out this long once the question is answered.
+const CLOSE_TIME := 0.16
 
 var root: Control
 var shade: ColorRect
@@ -46,6 +52,9 @@ var cancel_button: BandButton
 var key_guide: KeyGuide
 var _contents: Control
 var _open_tween: Tween
+# The layer the band is drawn on: a child layer, so it can stay to fade out
+# after the question itself is hidden.
+var _view: CanvasLayer
 
 
 func _ready() -> void:
@@ -53,7 +62,11 @@ func _ready() -> void:
 	root = Control.new()
 	root.theme = preload("res://ui/theme/dungeon_theme.tres")
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(root)
+	_view = CanvasLayer.new()
+	_view.layer = layer
+	_view.hide()
+	add_child(_view)
+	_view.add_child(root)
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	shade = ColorRect.new()
 	shade.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -108,6 +121,9 @@ func _ready() -> void:
 	key_guide.add_hint("Enter", "A", tr("決定"))
 	key_guide.add_hint("Esc", "B", tr("戻る"))
 	hide()
+	visibility_changed.connect(func():
+		if not visible:
+			_close())
 
 
 func _centered(parent: Node, role: StringName) -> Label:
@@ -141,6 +157,10 @@ func ask(caption: String, title: String, body: String, accept_text: String, canc
 	accept_button.text = accept_text
 	cancel_button.text = cancel_text
 	accept_button.theme_type_variation = &"BandDangerButton" if danger else &"BandButton"
+	# The asker may have set this question's layer after it was made.
+	_view.layer = layer
+	_view.show()
+	_take_input(true)
 	show()
 	var focused := cancel_button if danger else accept_button
 	# The answer waiting for Enter is lit at once; the other is not.
@@ -171,6 +191,34 @@ func _open() -> void:
 	_open_tween.tween_property(band, "reveal", 1.0, OPEN_TIME)
 	_open_tween.tween_property(_contents, "modulate:a", 1.0, UIMotion.WINDOW_TIME).set_delay(0.06)
 	_open_tween.tween_property(key_guide, "modulate:a", 1.0, UIMotion.WINDOW_TIME).set_delay(0.1)
+
+
+# What was seen fades out: the shade lightens and clears, the band and its
+# words go. The answers take no focus or clicks meanwhile, so a second Enter
+# or click lands on what follows, not on a fading answer.
+func _close() -> void:
+	if _view == null or not _view.visible:
+		return
+	_take_input(false)
+	if _open_tween != null:
+		_open_tween.kill()
+	var material := shade.material as ShaderMaterial
+	var blur: float = material.get_shader_parameter(&"blur")
+	_open_tween = create_tween().set_parallel().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	_open_tween.tween_property(shade, "modulate:a", 0.0, CLOSE_TIME)
+	_open_tween.tween_method(func(value: float): material.set_shader_parameter(&"blur", value), blur, 0.0, CLOSE_TIME)
+	for part: Control in [band, _contents, key_guide]:
+		_open_tween.tween_property(part, "modulate:a", 0.0, CLOSE_TIME)
+	_open_tween.chain().tween_callback(_view.hide)
+
+
+func _take_input(live: bool) -> void:
+	shade.mouse_filter = Control.MOUSE_FILTER_STOP if live else Control.MOUSE_FILTER_IGNORE
+	for button: BandButton in [cancel_button, accept_button]:
+		if not live:
+			button.release_focus()
+		button.focus_mode = Control.FOCUS_ALL if live else Control.FOCUS_NONE
+		button.mouse_filter = Control.MOUSE_FILTER_STOP if live else Control.MOUSE_FILTER_IGNORE
 
 
 func _input(event: InputEvent) -> void:
