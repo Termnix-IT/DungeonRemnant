@@ -1,44 +1,48 @@
 class_name HubCodex
 extends Control
 
-# The encyclopedia of foes (FoeCatalog): on the slab from the left edge, the
-# kind tabs (all, the crowd, elites, bosses), how many have been met, and,
-# as bestiaries commonly lay them out, a close grid of small round sockets
-# (EquipSocket, as the status page's shelf), each the foe's picture without
-# its name (dimmed to a shade for one not met, so the foes met stand out),
-# scrolling once there are more rows than the slab holds; in the column on
-# the right, inside the ornate frame of the upgrade and status pages, the
-# focused foe's picture, large, its name, kind, figures and how it fights. A
-# foe counts as met once it has come into an area in a run
-# (MetaProgress.met); the others show as shades named "？？？", their kind
-# alone told. Nothing here changes the progress.
+# The encyclopedia of foes (FoeCatalog), laid out as many games' bestiaries
+# are: on the left, the kind tabs (all, the crowd, elites, bosses), how many
+# have been met, and a list to scroll, a row for each foe with its round
+# face icon and its name (FoeRow, FoeIcon); on the right, the foe chosen,
+# its account in a column (name, kind, how it fights, its figures) beside a
+# stage where the foe itself stands large, its rig braced and breathing,
+# facing the account. A foe counts as met once it has come into an area in
+# a run (MetaProgress.met); the others show as shades named "？？？", their
+# kind alone told. Nothing here changes the progress.
 
-const PORTRAIT_SIZE := 240.0
-const TILE_DIAMETER := 80.0
-# A standing figure's square inside the round disc.
-const TILE_INSET := 0.9
-const COLUMNS := 8
-const STAT_MARKER := 14.0
 const UNKNOWN_NAME := "？？？"
 const UNKNOWN_NOTE := "まだ出会っていない敵。探索で戦場に現れると記録される。"
 const SHADOW := Color(0.0, 0.0, 0.0, 0.85)
+const ROW_HEIGHT := 68.0
+const STAT_MARKER := 14.0
+const STAT_ROW_HEIGHT := 44.0
+# How tall a foe stands on the stage, as a share of its height, by kind (the
+# crowd, elites, bosses): a boss looms over a rat, as in the fight.
+const FIGURE_SHARE: Array[float] = [0.7, 0.62, 0.74, 0.86]
+# No figure is wider than this share of the stage.
+const FIGURE_WIDTH := 0.9
+# The ground the figure stands on, this far above the stage's foot.
+const FLOOR_INSET := 56.0
 
 var meta: MetaProgress
 var kind_tabs: CategoryTabs
 var count_label: Label
-var cards: Array[EquipSocket] = []
+var cards: Array[FoeRow] = []
 var rows: Array[FoeData] = []
-var picture: Control
+var stage: Control
 var name_label: Label
 var kind_label: Label
 # The met foe's figures, a row each (empty for one not met).
-var stats: GridContainer
+var stats: VBoxContainer
 var description_label: Label
 var selected := 0
-var _list: GridContainer
+var _list: VBoxContainer
+var _scroll: ScrollContainer
 var _catalog: VBoxContainer
 var _info: VBoxContainer
-var _picture := {}
+var _stats_heading: Control
+var _figure: Node2D
 var _unknown := false
 # The foe the column tells now: choosing it again (a click lands as a focus
 # and a press) neither redraws nor slides the column.
@@ -52,70 +56,79 @@ func _ready() -> void:
 	columns.theme_type_variation = &"ShopColumns"
 	add_child(columns)
 	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# The right column stands in its own ornate frame, so no hairline parts
-	# the two columns (SlabSolidOpen).
-	_catalog = HubUI.open_column(columns, 2.1, &"SlabSolidOpen")
+	_catalog = HubUI.open_column(columns, 1.0, &"SlabSolid")
 	kind_tabs = CategoryTabs.new()
 	_catalog.add_child(kind_tabs)
 	kind_tabs.setup(FoeCatalog.KINDS)
 	kind_tabs.changed.connect(func(_index: int):
 		_show_rows()
+		UIMotion.of(_list).appear(0.0, UIMotion.WINDOW_TIME)
 		focus_first())
 	count_label = HubUI.label(_catalog, "", &"NoteLabel")
-	# More rows than the slab holds scroll within it, and the tile the focus
+	# More rows than the column holds scroll within it, and the row the focus
 	# lands on is drawn into view.
-	var scroll := ScrollContainer.new()
-	scroll.name = "Tiles"
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.follow_focus = true
-	_catalog.add_child(scroll)
-	# Room inside the scroll for the focused socket's glow.
-	var room := MarginContainer.new()
-	room.theme_type_variation = &"CodexGridMargin"
-	room.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(room)
-	_list = GridContainer.new()
-	_list.theme_type_variation = &"CodexGrid"
-	_list.columns = COLUMNS
-	_list.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	room.add_child(_list)
-	_info = HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
-	# The account stands inside the ornate frame laid over the column, as on
-	# the upgrade and status pages, and slides in from the right edge, kept
-	# inside its column.
-	var info_panel := _info.get_parent() as Control
-	info_panel.clip_contents = true
-	var info_margin := MarginContainer.new()
-	info_margin.theme_type_variation = &"CodexInfoMargin"
-	info_panel.remove_child(_info)
-	info_panel.add_child(info_margin)
-	info_margin.add_child(_info)
-	_info.theme_type_variation = &"DetailStack"
-	picture = Control.new()
-	picture.custom_minimum_size = Vector2.ONE * PORTRAIT_SIZE
-	picture.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	picture.draw.connect(_draw_picture)
-	_info.add_child(picture)
-	name_label = HubUI.label(_info, "", &"HeadingLabel")
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	kind_label = HubUI.label(_info, "", &"MutedLabel")
-	kind_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_scroll = ScrollContainer.new()
+	_scroll.name = "Rows"
+	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scroll.follow_focus = true
+	_catalog.add_child(_scroll)
+	_list = VBoxContainer.new()
+	_list.theme_type_variation = &"CodexList"
+	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scroll.add_child(_list)
+	# The right column: the account beside the stage.
+	var right := HubUI.open_column(columns, 2.1, &"SlabSolidEnd")
+	var right_panel := right.get_parent() as Control
+	right_panel.clip_contents = true
+	var margin := MarginContainer.new()
+	margin.theme_type_variation = &"CodexInfoMargin"
+	margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	right.add_child(margin)
+	var split := HBoxContainer.new()
+	split.theme_type_variation = &"CodexSplit"
+	margin.add_child(split)
+	_info = VBoxContainer.new()
+	_info.theme_type_variation = &"CodexAccount"
+	_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_info.size_flags_stretch_ratio = 1.0
+	split.add_child(_info)
+	name_label = HubUI.label(_info, "", &"CodexName")
+	name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	var kind_row := HBoxContainer.new()
+	kind_row.theme_type_variation = &"CodexLine"
+	_info.add_child(kind_row)
+	_marker(kind_row)
+	_line_label(kind_row, tr("分類"), &"NoteLabel")
+	kind_label = _line_label(kind_row, "", &"BodyLabel")
 	HubUI.rule(_info)
-	stats = GridContainer.new()
-	stats.theme_type_variation = &"CodexStats"
-	stats.columns = 3
-	stats.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_info.add_child(stats)
-	# A breath between the figures and the account.
-	var breath := Control.new()
-	breath.custom_minimum_size.y = 6
-	_info.add_child(breath)
 	description_label = HubUI.label(_info, "", &"DescriptionLabel")
+	# A breath between the account and its figures.
+	var breath := Control.new()
+	breath.custom_minimum_size.y = 10
+	breath.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_info.add_child(breath)
+	var heading := HBoxContainer.new()
+	heading.theme_type_variation = &"CodexLine"
+	_info.add_child(heading)
+	_marker(heading)
+	_line_label(heading, tr("基本情報"), &"CodexSection")
+	_stats_heading = heading
+	stats = VBoxContainer.new()
+	stats.theme_type_variation = &"CodexStats"
+	_info.add_child(stats)
 	HubUI.space(_info)
-	HubUI.ornate_frame(info_panel)
+	stage = Control.new()
+	stage.name = "Stage"
+	stage.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stage.size_flags_stretch_ratio = 1.15
+	stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stage.clip_contents = true
+	stage.draw.connect(_draw_stage)
+	stage.resized.connect(_place_figure)
+	split.add_child(stage)
+	visibility_changed.connect(_still_when_hidden)
 
 
 func refresh(current: MetaProgress) -> void:
@@ -130,6 +143,7 @@ func _show_rows() -> void:
 		card.free()
 	cards.clear()
 	rows.clear()
+	_shown = null
 	var met := 0
 	for foe in FoeCatalog.FOES:
 		var known := meta.has_met(foe.id)
@@ -140,22 +154,23 @@ func _show_rows() -> void:
 		rows.append(foe)
 		cards.append(_card(foe, known))
 	count_label.text = tr("出会った敵  %d / %d") % [met, FoeCatalog.FOES.size()]
-	UIMotion.bind_buttons(_list)
+	_scroll.scroll_vertical = 0
 	if not rows.is_empty():
 		_select(0, false)
 
 
-func _card(foe: FoeData, known: bool) -> EquipSocket:
-	var card := EquipSocket.new(TILE_DIAMETER, false, true)
-	card.inset = TILE_INSET
-	card.tooltip_text = tr(foe.display_name) if known else tr(UNKNOWN_NOTE)
-	# The foe's picture; one not met, dimmed to a shade as the upgrade tree's
-	# nodes not open yet.
-	card.emblem = tile_picture(foe.visual_id, true, foe.tint)
+func _card(foe: FoeData, known: bool) -> FoeRow:
+	var card := FoeRow.new()
+	card.custom_minimum_size.y = ROW_HEIGHT
+	card.text = tr(foe.display_name) if known else tr(UNKNOWN_NAME)
 	card.unknown = not known
+	card.icon_texture = FoeIcon.of(foe.visual_id, known, foe.tint)
 	var index := cards.size()
 	card.pressed.connect(_select.bind(index))
 	card.focus_entered.connect(_select.bind(index))
+	# Left and right lead nowhere from the list.
+	card.focus_neighbor_left = card.get_path_to(card)
+	card.focus_neighbor_right = card.get_path_to(card)
 	_list.add_child(card)
 	return card
 
@@ -164,7 +179,7 @@ func _card(foe: FoeData, known: bool) -> EquipSocket:
 # the figure fills, standing on its bottom edge, so every tile lays its picture
 # and its name out alike whatever the figure's shape. A foe drawn in a tint
 # of its own (a kin sharing another's rig) is shown in it. The departure's
-# foes are drawn with it too.
+# foes and the route map's are drawn with it.
 static func tile_picture(visual_id: String, known: bool, tint: Color = Color.WHITE) -> Texture2D:
 	var key := "%s:%s:%s" % [visual_id, known, tint.to_html()]
 	if _tiles.has(key):
@@ -202,16 +217,17 @@ func _select(place: int, animate: bool = true) -> void:
 	if place < 0 or place >= rows.size():
 		return
 	selected = place
+	for index in cards.size():
+		cards[index].chosen = index == place
 	var foe := rows[place]
 	if animate and foe == _shown:
 		return
 	_shown = foe
 	_unknown = not meta.has_met(foe.id)
-	_picture = EnemySprites.portrait(foe.visual_id)
-	picture.queue_redraw()
 	kind_label.text = FoeCatalog.kind_name(foe)
 	for child in stats.get_children():
 		child.free()
+	_stats_heading.visible = not _unknown
 	if _unknown:
 		name_label.text = tr(UNKNOWN_NAME)
 		description_label.text = tr(UNKNOWN_NOTE)
@@ -220,45 +236,152 @@ func _select(place: int, animate: bool = true) -> void:
 		for row: Array in [["HP", str(foe.max_hp)], [tr("ぶつかる力"), str(foe.contact_damage)], [tr("速さ"), str(roundi(foe.speed))]]:
 			_stat_row(row[0], row[1])
 		description_label.text = tr(foe.description)
+	_stand(foe)
 	if animate:
 		UIMotion.of(_info).slide_in()
+		UIMotion.of(stage).appear(0.0, UIMotion.WINDOW_TIME)
 
 
-# One of the foe's figures: a small gilt diamond, its name, its value.
+# One of the foe's figures: a gilt diamond, its name, its value at the right,
+# and a hairline under it.
 func _stat_row(title: String, value: String) -> void:
+	var row := HBoxContainer.new()
+	row.theme_type_variation = &"CodexLine"
+	row.custom_minimum_size.y = STAT_ROW_HEIGHT
+	row.draw.connect(func():
+		var line := row.get_theme_color(&"separator", &"CodexRow")
+		row.draw_line(Vector2(0, row.size.y - 0.5), Vector2(row.size.x, row.size.y - 0.5), line, -1.0))
+	stats.add_child(row)
+	_marker(row)
+	var name := HubUI.label(row, title, &"BodyLabel")
+	name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var figure := HubUI.label(row, value, &"ValueLabel")
+	figure.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	for label: Label in [name, figure]:
+		label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+
+# A short label in a line of its own: it keeps to one line.
+func _line_label(parent: Node, text: String, role: StringName) -> Label:
+	var label := HubUI.label(parent, text, role)
+	label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	return label
+
+
+func _marker(parent: Node) -> void:
 	var marker := Control.new()
 	marker.custom_minimum_size = Vector2(STAT_MARKER, STAT_MARKER)
 	marker.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	marker.draw.connect(func(): HubUI.diamond(marker, marker.size * 0.5, 4.0, marker.get_theme_color(&"rail", &"HubLobby")))
-	stats.add_child(marker)
-	var name := HubUI.label(stats, title, &"BodyLabel")
-	var figure := HubUI.label(stats, value, &"BodyLabel")
-	figure.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	for label: Label in [name, figure]:
-		label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	parent.add_child(marker)
 
 
-func _draw_picture() -> void:
-	if _picture.is_empty():
+# The foe on the stage: its rig braced and facing the account, as tall as
+# its kind stands (FIGURE_SHARE) and no wider than the stage; a shade for one
+# not met. Its picture where it has no rig.
+func _stand(foe: FoeData) -> void:
+	if _figure != null:
+		_figure.free()
+		_figure = null
+	_figure = Node2D.new()
+	_figure.name = "Figure"
+	_figure.scale = Vector2(-1.0, 1.0)
+	stage.add_child(_figure)
+	var path := EnemySprites.rig_path(foe.visual_id)
+	if ResourceLoader.exists(path):
+		var rig: CharacterRig = (load(path) as PackedScene).instantiate()
+		rig.modulate = foe.tint
+		_figure.add_child(rig)
+		if rig.is_node_ready():
+			rig.braced = true
+		else:
+			rig.ready.connect(func(): rig.braced = true, CONNECT_ONE_SHOT)
+	else:
+		var picture := HubCodex.tile_picture(foe.visual_id, true, foe.tint)
+		if picture != null:
+			var sprite := Sprite2D.new()
+			sprite.texture = picture
+			sprite.centered = false
+			sprite.offset = Vector2(-picture.get_width() * 0.5, -picture.get_height())
+			_figure.add_child(sprite)
+	_figure.modulate = SHADOW if _unknown else Color.WHITE
+	_still_when_hidden()
+	_place_figure()
+
+
+func _place_figure() -> void:
+	if _figure == null or _shown == null or stage.size.y <= 0.0:
 		return
-	var region: Rect2 = _picture.region
-	var extent := minf(picture.size.x, picture.size.y)
-	var fit := extent / maxf(region.size.x, region.size.y)
-	var drawn := region.size * fit
-	var area := Rect2(Vector2((picture.size.x - drawn.x) * 0.5, picture.size.y - drawn.y), drawn)
-	picture.draw_texture_rect_region(_picture.texture, area, region, SHADOW if _unknown else _shown.tint)
+	var tall := (stage.size.y - FLOOR_INSET) * FIGURE_SHARE[FoeCatalog.kind_of(_shown)]
+	var shown := EnemySprites.illustration(_shown.visual_id)
+	if not shown.is_empty():
+		var region: Rect2 = shown.region
+		var aspect := region.size.x / maxf(1.0, region.size.y)
+		tall = minf(tall, stage.size.x * FIGURE_WIDTH / maxf(0.01, aspect))
+	_figure.position = Vector2(stage.size.x * 0.5, stage.size.y - FLOOR_INSET)
+	var rig := _figure.get_child(0) if _figure.get_child_count() > 0 else null
+	if rig is CharacterRig:
+		(rig as CharacterRig).world_height = tall
+	elif rig is Sprite2D:
+		var sprite := rig as Sprite2D
+		sprite.scale = Vector2.ONE * tall / maxf(1.0, sprite.texture.get_height())
+	stage.queue_redraw()
+
+
+# The stage: a soft warm light behind where the foe stands, and its shadow
+# on the ground.
+func _draw_stage() -> void:
+	var ground := Vector2(stage.size.x * 0.5, stage.size.y - FLOOR_INSET)
+	var reach := minf(stage.size.x, stage.size.y) * 0.55
+	var light := _soft_disc(stage.get_theme_color(&"glow", &"CodexStage"))
+	stage.draw_texture_rect(light, Rect2(ground - Vector2(reach, reach * 1.85), Vector2(reach, reach) * 2.0), false)
+	var shade := _soft_disc(stage.get_theme_color(&"floor", &"CodexStage"))
+	var floor_size := Vector2(reach * 1.3, reach * 0.26)
+	stage.draw_texture_rect(shade, Rect2(ground - floor_size * 0.5, floor_size), false)
+
+
+# A disc of `color` fading smoothly to nothing at its rim, made once per
+# colour.
+static var _discs: Dictionary = {}
+
+
+static func _soft_disc(color: Color) -> Texture2D:
+	var key := color.to_html()
+	if not _discs.has(key):
+		var gradient := Gradient.new()
+		gradient.set_color(0, color)
+		gradient.set_color(1, Color(color, 0.0))
+		gradient.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CUBIC
+		var disc := GradientTexture2D.new()
+		disc.gradient = gradient
+		disc.fill = GradientTexture2D.FILL_RADIAL
+		disc.fill_from = Vector2(0.5, 0.5)
+		disc.fill_to = Vector2(1.0, 0.5)
+		disc.width = 256
+		disc.height = 256
+		_discs[key] = disc
+	return _discs[key]
+
+
+# The foe on the stage stands still while the page is hidden.
+func _still_when_hidden() -> void:
+	if _figure != null:
+		_figure.process_mode = Node.PROCESS_MODE_INHERIT if is_visible_in_tree() else Node.PROCESS_MODE_DISABLED
 
 
 func focus_first() -> void:
 	if not cards.is_empty():
-		cards[0].grab_focus()
+		cards[clampi(selected, 0, cards.size() - 1)].grab_focus()
 
 
 # Opening the page: the list first, the column a beat later.
 func play_entrance() -> void:
 	UIMotion.of(_catalog).appear(0.0, UIMotion.WINDOW_TIME)
 	UIMotion.of(_info).appear(UIMotion.STAGGER_TIME)
+	UIMotion.of(stage).appear(UIMotion.STAGGER_TIME * 2.0)
 
 
 func _unhandled_input(event: InputEvent) -> void:

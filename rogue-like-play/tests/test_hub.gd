@@ -163,22 +163,25 @@ func run_tests() -> void:
 	var codex: HubCodex = hub.codex_page
 	check(codex.cards.size() == FoeCatalog.FOES.size() and codex.count_label.text.contains("1 / %d" % FoeCatalog.FOES.size()), "Every foe has a card, and the count is of those met")
 	var rat_index := FoeCatalog.FOES.find(load("res://data/foes/dashing_rat.tres"))
-	check(codex.cards[rat_index].tooltip_text == "疾走ネズミ" and codex.cards[0].tooltip_text == HubCodex.UNKNOWN_NOTE, "A met foe is named, an unmet one is not")
-	check(codex.cards[rat_index].emblem != null and not codex.cards[rat_index].unknown and codex.cards[0].emblem != null and codex.cards[0].unknown, "Each tile shows its foe: the picture when met, a shade when not")
-	var shadow := HubCodex.tile_picture(FoeCatalog.FOES[0].visual_id, false).get_image()
+	check(codex.cards[rat_index].text == "疾走ネズミ" and codex.cards[0].text == HubCodex.UNKNOWN_NAME, "A met foe is named in the list, an unmet one is not")
+	check(codex.cards[rat_index].icon_texture != null and not codex.cards[rat_index].unknown and codex.cards[0].icon_texture != null and codex.cards[0].unknown, "Each row shows its foe's icon: its face when met, a shade when not")
+	var shadow := FoeIcon.of(FoeCatalog.FOES[0].visual_id, false).get_image()
 	var dark := true
 	for y in range(0, shadow.get_height(), 8):
 		for x in range(0, shadow.get_width(), 8):
 			var pixel := shadow.get_pixel(x, y)
 			if pixel.a > 0.1 and pixel.v > 0.05:
 				dark = false
-	check(dark, "A foe not met is a dark silhouette where it is shown whole")
-	var square := codex.cards.all(func(card: EquipSocket): return card.emblem.get_width() == card.emblem.get_height())
-	check(square, "Every tile's picture is a square, so every figure stands alike in its socket")
+	check(dark, "A foe not met is a dark silhouette in its icon")
+	check(codex.cards.all(func(card: FoeRow): return card.icon_texture.get_width() == FoeIcon.SIZE and card.icon_texture.get_height() == FoeIcon.SIZE), "Every icon is the same round size")
+	check(FoeIcon.of(FoeCatalog.FOES[0].visual_id, true) == FoeIcon.of(FoeCatalog.FOES[0].visual_id, true), "An icon is made once and kept")
 	codex._select(rat_index, false)
-	check(codex.name_label.text == "疾走ネズミ" and codex.description_label.text.contains("飛びかかる") and codex.stats.get_child_count() == 9, "A met foe's account is told, its figures a row each")
+	check(codex.name_label.text == "疾走ネズミ" and codex.description_label.text.contains("飛びかかる") and codex.stats.get_child_count() == 3, "A met foe's account is told, its figures a row each")
+	check(codex.cards[rat_index].chosen and codex.cards.filter(func(card: FoeRow): return card.chosen).size() == 1, "Only the row shown is lit")
+	check(codex.stage.get_node_or_null(^"Figure") != null and codex.stage.get_node(^"Figure").modulate == Color.WHITE, "The foe chosen stands on the stage")
 	codex._select(0, false)
-	check(codex.name_label.text == HubCodex.UNKNOWN_NAME and codex.stats.get_child_count() == 0, "An unmet foe's figures stay hidden")
+	check(codex.name_label.text == HubCodex.UNKNOWN_NAME and codex.stats.get_child_count() == 0 and codex.description_label.text == HubCodex.UNKNOWN_NOTE, "An unmet foe's figures and account stay hidden")
+	check(codex.stage.get_node(^"Figure").modulate == HubCodex.SHADOW, "An unmet foe stands on the stage as a shade")
 	codex.kind_tabs.step(1)
 	check(codex.rows.all(func(foe: FoeData): return FoeCatalog.kind_of(foe) == 1), "The kind tabs filter the list")
 	hub.show_page("home")

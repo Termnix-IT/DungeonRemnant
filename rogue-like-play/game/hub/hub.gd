@@ -369,7 +369,7 @@ func show_page(target: String) -> void:
 			if _meta != null:
 				codex_page.refresh(_meta)
 			codex_page.focus_first()
-			key_guide.add_hint(tr("矢印"), tr("十字"), tr("選ぶ"))
+			key_guide.add_hint("↑ / ↓", "▲ / ▼", tr("選ぶ"))
 			key_guide.add_hint("Q / E", "LB / RB", tr("分類"))
 		"settings":
 			title_label.text = tr("設定")

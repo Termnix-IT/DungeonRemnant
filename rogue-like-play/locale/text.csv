@@ -591,6 +591,7 @@ Godot Engine のロゴ　Andrea Calabró,,Godot Engine logo　Andrea Calabró,ui
 Esc（B）を長押しで飛ばす,,Hold Esc (B) to skip,ui/ending_view.gd
 ？？？,,???,ui/hub_codex.gd
 まだ出会っていない敵。探索で戦場に現れると記録される。,,A foe you haven't met yet. It is recorded once it appears on a run.,ui/hub_codex.gd
+基本情報,,Stats,ui/hub_codex.gd
 出会った敵  %d / %d,,Foes met  %d / %d,ui/hub_codex.gd
 ぶつかる力,,Contact Damage,ui/hub_codex.gd
 速さ,,Speed,ui/hub_codex.gd

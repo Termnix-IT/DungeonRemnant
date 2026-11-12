@@ -8,6 +8,7 @@ extends RefCounted
 const RIG_DIRECTORY := "res://art/enemies/rig/"
 
 static var _portraits: Dictionary = {}
+static var _illustrations: Dictionary = {}
 
 
 static func rig_path(id: String) -> String:
@@ -15,9 +16,8 @@ static func rig_path(id: String) -> String:
 
 
 # The foe's whole picture: {"texture", "region"}. A foe baked into frames
-# shows its first idle frame; a rig drawn as one mesh, the rectangle of its
-# body in the atlas; a rig drawn in parts, <id>_portrait.png beside it.
-# Empty without any of them.
+# shows its first idle frame; otherwise its illustration (below). Empty
+# without any of them.
 static func portrait(id: String) -> Dictionary:
 	if _portraits.has(id):
 		return _portraits[id]
@@ -26,7 +26,21 @@ static func portrait(id: String) -> Dictionary:
 	if not baked.is_empty():
 		var first: AtlasTexture = (baked.frames as SpriteFrames).get_frame_texture(&"idle", 0)
 		found = {"texture": first.atlas, "region": first.region}
-	if found.is_empty() and ResourceLoader.exists(rig_path(id)):
+	if found.is_empty():
+		found = illustration(id)
+	_portraits[id] = found
+	return found
+
+
+# The foe drawn at its rig's own size (320 px tall), sharper than the frames
+# baked for the crowd: a rig drawn as one mesh, the rectangle of its body in
+# the atlas; a rig drawn in parts, <id>_portrait.png beside it. Empty
+# without either.
+static func illustration(id: String) -> Dictionary:
+	if _illustrations.has(id):
+		return _illustrations[id]
+	var found := {}
+	if ResourceLoader.exists(rig_path(id)):
 		var rig: Node = (load(rig_path(id)) as PackedScene).instantiate()
 		var body := rig.get_node_or_null(^"Parts/Body") as Polygon2D
 		if body != null and body.texture != null:
@@ -39,5 +53,5 @@ static func portrait(id: String) -> Dictionary:
 	if found.is_empty() and ResourceLoader.exists(own):
 		var picture: Texture2D = load(own)
 		found = {"texture": picture, "region": Rect2(Vector2.ZERO, picture.get_size())}
-	_portraits[id] = found
+	_illustrations[id] = found
 	return found
