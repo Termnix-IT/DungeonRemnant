@@ -124,10 +124,12 @@ func run_tests() -> void:
 	check(rest != null and rest.border_width_left + rest.border_width_top + rest.border_width_right + rest.border_width_bottom == 0 and rest.bg_color.a == 0.0, "A secondary action has no frame at rest")
 	check(marked != null and marked.border_width_left > 0 and marked.border_width_top == 0, "A focused secondary action is marked by a bar, not a box")
 	check(theme.get_color(&"font_color", &"SecondaryButton") != theme.get_color(&"font_disabled_color", &"SecondaryButton"), "A secondary action looks different when it cannot be pressed")
-	# A dialog's way back stands beside its way ahead, not in a list: lit, not
-	# barred, when focused.
-	var prompt_focus := theme.get_stylebox(&"focus", &"PromptButton") as StyleBoxFlat
-	check(prompt_focus != null and prompt_focus.border_width_left + prompt_focus.border_width_top + prompt_focus.border_width_right + prompt_focus.border_width_bottom == 0 and prompt_focus.bg_color.a > 0.0, "A dialog's quiet button is lit when focused, with no bar")
+	# A question's answers are plates of their own: only the chosen one lights
+	# (its edge gold, its glow), drawn by the button, not by a focus overlay.
+	check(theme.get_stylebox(&"focus", &"BandButton") is StyleBoxEmpty and theme.get_color(&"glow", &"BandButton").a > 0.0, "A question's answer lights by its own glow, not by a focus box")
+	check(theme.get_color(&"lit_edge", &"BandButton") != theme.get_color(&"edge", &"BandButton"), "The chosen answer's edge turns gold")
+	check(theme.get_type_variation_base(&"BandDangerButton") == &"BandButton" and theme.get_color(&"lit_edge", &"BandDangerButton").r > theme.get_color(&"lit_edge", &"BandDangerButton").g + 0.2, "An answer that cannot be undone is drawn in red")
+	check(theme.get_color(&"fill", &"PromptBand").a > 0.5 and theme.get_color(&"line", &"PromptBand").a > 0.5, "A question's band has a dark face and gold lines")
 	# The settings' help and quit are their words alone: no underline when
 	# pointed at.
 	check(theme.get_stylebox(&"hover", &"TextAction") is StyleBoxEmpty, "A text action draws no underline when pointed at")
@@ -143,7 +145,6 @@ func run_tests() -> void:
 	check(primary != null and primary.border_width_top == 1 and primary.bg_color.a > 0.0, "The primary action is a quiet gold-tinted plate with a hairline")
 	check((theme.get_stylebox(&"focus", &"PrimaryButton") as StyleBoxFlat).border_width_top > primary.border_width_top, "A focused primary action draws a stronger edge")
 	check(theme.get_stylebox(&"normal", &"LobbyAction") is StyleBoxTexture, "The lobby keeps its painted plate")
-	check((theme.get_stylebox(&"normal", &"DangerButton") as StyleBoxFlat).border_width_top > 0, "An answer that cannot be undone keeps a frame")
 	check(theme.get_stylebox(&"panel", &"QuietWindow") is QuietWindowStyle, "Popup windows are the quiet surface")
 	# The hub pages' main panel is the same quiet surface, its two columns one
 	# panel; every item card shares one face.

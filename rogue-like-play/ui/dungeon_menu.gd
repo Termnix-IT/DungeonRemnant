@@ -31,6 +31,12 @@ const BUILD_COLUMNS := 6
 # window does not change height as the focus moves.
 const NOTE_LINES := 2
 const EMPTY_NOTE := "レベルアップで選んだ強化が、ここに並ぶ"
+# The question leaving asks, the same from a fight and from the map: what is
+# kept (the echo) and what is not (the run's levels and boons).
+const ABANDON_TITLE := "探索を中断しますか？"
+const ABANDON_BODY := "この探索で得た残響は持ち帰れます。\nこの探索中のレベルと強化は失われます。"
+const ABANDON_ACCEPT := "探索を中断する"
+const ABANDON_CANCEL := "探索を続ける"
 const SHADE := Color(0.01, 0.02, 0.03, 0.82)
 # The settings read as a page of their own, as dark as the inventory's shade.
 const SETTINGS_SHADE := Color(0.01, 0.02, 0.03, 0.94)

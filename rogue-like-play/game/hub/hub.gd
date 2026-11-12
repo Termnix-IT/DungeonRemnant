@@ -437,7 +437,7 @@ func _settings_hints() -> void:
 func ask_quit() -> void:
 	if page != "home" or quit_prompt.visible:
 		return
-	quit_prompt.ask("", tr("ゲームを終了しますか？"), tr(HubSettings.QUIT_BODY), tr("終了する"), tr("戻る"), true)
+	quit_prompt.ask("", tr("ゲームを終了しますか？"), tr(HubSettings.QUIT_BODY), tr("ゲームを終了する"), tr("戻る"), true)
 
 
 # Opens the settings on the language's row: where a new language's hub

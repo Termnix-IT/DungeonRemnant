@@ -433,7 +433,7 @@ func _build_help() -> void:
 # Asks before ending the game; Esc or the cancel button keeps playing. The
 # focus waits on the cancel button, so a second Enter never ends the game.
 func ask_quit() -> void:
-	quit_prompt.ask("", tr("ゲームを終了しますか？"), tr(QUIT_BODY_IN_RUN if in_run else QUIT_BODY), tr("終了する"), tr("戻る"), true)
+	quit_prompt.ask("", tr("ゲームを終了しますか？"), tr(QUIT_BODY_IN_RUN if in_run else QUIT_BODY), tr("ゲームを終了する"), tr("戻る"), true)
 	quit_prompt.cancel_button.grab_focus()
 
 

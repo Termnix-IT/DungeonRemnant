@@ -167,7 +167,7 @@ func open_map_menu() -> void:
 
 func _ask_abandon() -> void:
 	map_menu.hide()
-	map_prompt.ask(tr("探索の中断"), tr("探索を中断しますか？"), tr("この探索で得た残響は持ち帰れます。レベルと強化は残りません。"), tr("中断する"), tr("戻る"), true)
+	map_prompt.ask("", tr(DungeonMenu.ABANDON_TITLE), tr(DungeonMenu.ABANDON_BODY), tr(DungeonMenu.ABANDON_ACCEPT), tr(DungeonMenu.ABANDON_CANCEL), true)
 
 
 # Left from the map's menu: the run ends where it stands, its echo kept.

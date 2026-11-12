@@ -2,7 +2,7 @@ extends SceneTree
 
 # The base drawn for real at 1600x900, 1280x720 and 1920x1080: the lobby on
 # its departure, where to set out, the lasting upgrades, the status, the
-# encyclopedia and the settings; then, at 1600x900, a sealed chapter chosen
+# encyclopedia, the settings and the lobby's quit question; then, at 1600x900, a sealed chapter chosen
 # where to set out, the settings' last tab, the help (its run and controls topics) and the quit's question, a run's result
 # offering the way home, the fight's menu and its leaving question. Images go to .godot/hub_<page>_<width>.png. Look at them: the
 # hierarchy, the selected state, the main actions and any cut text. Needs a
@@ -46,6 +46,13 @@ func capture() -> void:
 			hub.show_page(page)
 			await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
 			await _grab("hub_%s_%d" % [page, size.x])
+		# The lobby's quit question: the band across the screen at each size.
+		hub.show_page("home")
+		await create_timer(0.3).timeout
+		hub.ask_quit()
+		await create_timer(0.5).timeout
+		await _grab("hub_lobby_quit_%d" % size.x)
+		hub.quit_prompt.hide()
 	DisplayServer.window_set_size(SIZES[0])
 	root.size = SIZES[0]
 	# Where to set out, on the sealed chapter.

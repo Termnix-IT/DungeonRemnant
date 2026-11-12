@@ -1143,17 +1143,6 @@ corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 
-[sub_resource type="StyleBoxFlat" id="PromptButtonFocus"]
-resource_name = "PromptButtonFocus"
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(1, 0.86, 0.6, 0.1)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
 
 [sub_resource type="StyleBoxFlat" id="QuietButtonPressed"]
 resource_name = "QuietButtonPressed"
@@ -1167,39 +1156,7 @@ corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 
-[sub_resource type="StyleBoxFlat" id="DangerButtonRest"]
-resource_name = "DangerButtonRest"
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(0.86, 0.52, 0.48, 0.06)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.86, 0.52, 0.48, 0.7)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
 
-[sub_resource type="StyleBoxFlat" id="DangerButtonActive"]
-resource_name = "DangerButtonActive"
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(0.86, 0.52, 0.48, 0.16)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.96, 0.62, 0.56, 1)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
 
 [sub_resource type="StyleBoxFlat" id="CardRest"]
 resource_name = "CardRest"
@@ -1377,6 +1334,18 @@ content_margin_left = 24.0
 content_margin_top = 20.0
 content_margin_right = 24.0
 content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxEmpty" id="PromptBandRoom"]
+resource_name = "PromptBandRoom"
+content_margin_top = 40.0
+content_margin_bottom = 30.0
+
+[sub_resource type="StyleBoxEmpty" id="BandAnswerRoom"]
+resource_name = "BandAnswerRoom"
+content_margin_left = 18.0
+content_margin_top = 8.0
+content_margin_right = 18.0
+content_margin_bottom = 8.0
 
 [resource]
 DetailStack/base_type = &"VBoxContainer"
@@ -1579,20 +1548,6 @@ TabActive/base_type = &"Button"
 TabActive/colors/font_color = Color(0.91, 0.81, 0.6, 1)
 TabActive/styles/normal = SubResource("ButtonPressed")
 TabActive/styles/hover = SubResource("GoldHover")
-DangerButton/base_type = &"SecondaryButton"
-DangerButton/colors/font_color = Color(0.86, 0.52, 0.48, 1)
-DangerButton/colors/font_hover_color = Color(0.96, 0.62, 0.56, 1)
-DangerButton/colors/font_focus_color = Color(0.96, 0.62, 0.56, 1)
-DangerButton/colors/font_pressed_color = Color(0.96, 0.62, 0.56, 1)
-DangerButton/colors/font_hover_pressed_color = Color(0.96, 0.62, 0.56, 1)
-DangerButton/font_sizes/font_size = 18
-DangerButton/fonts/font = ExtResource("BodyBold")
-DangerButton/styles/normal = SubResource("DangerButtonRest")
-DangerButton/styles/hover = SubResource("DangerButtonActive")
-DangerButton/styles/focus = SubResource("DangerButtonActive")
-DangerButton/styles/pressed = SubResource("DangerButtonActive")
-DangerButton/styles/hover_pressed = SubResource("DangerButtonActive")
-DangerButton/styles/disabled = SubResource("DangerButtonRest")
 SecondaryButton/base_type = &"Button"
 SecondaryButton/colors/font_color = Color(0.86, 0.84, 0.79, 1)
 SecondaryButton/colors/font_hover_color = Color(0.97, 0.9, 0.72, 1)
@@ -2305,8 +2260,6 @@ CodexStats/base_type = &"GridContainer"
 CodexStats/constants/h_separation = 16
 CodexStats/constants/v_separation = 4
 EquipSocket/colors/rim = Color(0.56, 0.478, 0.322, 0.28)
-PromptButton/base_type = &"SecondaryButton"
-PromptButton/styles/focus = SubResource("PromptButtonFocus")
 HelpPage/base_type = &"PanelContainer"
 HelpPage/styles/panel = SubResource("HelpPageWell")
 HelpBody/base_type = &"HBoxContainer"
@@ -2334,3 +2287,47 @@ HudTallyValue/base_type = &"HudValue"
 HudTallyValue/font_sizes/font_size = 18
 HudTallyRow/base_type = &"HBoxContainer"
 HudTallyRow/constants/separation = 8
+PromptStack/base_type = &"VBoxContainer"
+PromptStack/constants/separation = 20
+PromptColumn/base_type = &"VBoxContainer"
+PromptColumn/constants/separation = 14
+PromptActions/base_type = &"HBoxContainer"
+PromptActions/constants/separation = 40
+PromptBand/base_type = &"PanelContainer"
+PromptBand/colors/fill = Color(0.03, 0.032, 0.036, 0.8)
+PromptBand/colors/line = Color(0.86, 0.72, 0.46, 0.85)
+PromptBand/colors/ornament = Color(0.96, 0.85, 0.62, 1)
+PromptBand/colors/glow = Color(0.96, 0.74, 0.4, 0.07)
+PromptBand/styles/panel = SubResource("PromptBandRoom")
+BandButton/base_type = &"Button"
+BandButton/colors/font_color = Color(0.8, 0.78, 0.73, 1)
+BandButton/colors/font_hover_color = Color(0.86, 0.84, 0.79, 1)
+BandButton/colors/font_focus_color = Color(0.98, 0.91, 0.74, 1)
+BandButton/colors/font_pressed_color = Color(0.98, 0.91, 0.74, 1)
+BandButton/colors/font_hover_pressed_color = Color(0.98, 0.91, 0.74, 1)
+BandButton/colors/font_disabled_color = Color(0.45, 0.44, 0.41, 1)
+BandButton/colors/face = Color(0.05, 0.05, 0.052, 0.55)
+BandButton/colors/lit_face_top = Color(0.2, 0.16, 0.095, 0.82)
+BandButton/colors/lit_face_bottom = Color(0.36, 0.28, 0.15, 0.9)
+BandButton/colors/edge = Color(0.62, 0.6, 0.55, 0.55)
+BandButton/colors/lit_edge = Color(0.93, 0.8, 0.54, 1)
+BandButton/colors/glow = Color(0.96, 0.74, 0.38, 0.06)
+BandButton/font_sizes/font_size = 20
+BandButton/fonts/font = SubResource("DisplayBoldKana")
+BandButton/styles/normal = SubResource("BandAnswerRoom")
+BandButton/styles/hover = SubResource("BandAnswerRoom")
+BandButton/styles/pressed = SubResource("BandAnswerRoom")
+BandButton/styles/hover_pressed = SubResource("BandAnswerRoom")
+BandButton/styles/disabled = SubResource("BandAnswerRoom")
+BandButton/styles/focus = SubResource("Invisible")
+BandDangerButton/base_type = &"BandButton"
+BandDangerButton/colors/font_color = Color(0.84, 0.56, 0.52, 1)
+BandDangerButton/colors/font_hover_color = Color(0.9, 0.62, 0.58, 1)
+BandDangerButton/colors/font_focus_color = Color(1, 0.76, 0.7, 1)
+BandDangerButton/colors/font_pressed_color = Color(1, 0.76, 0.7, 1)
+BandDangerButton/colors/font_hover_pressed_color = Color(1, 0.76, 0.7, 1)
+BandDangerButton/colors/edge = Color(0.78, 0.46, 0.42, 0.6)
+BandDangerButton/colors/lit_edge = Color(0.98, 0.6, 0.52, 1)
+BandDangerButton/colors/lit_face_top = Color(0.2, 0.08, 0.07, 0.82)
+BandDangerButton/colors/lit_face_bottom = Color(0.38, 0.14, 0.11, 0.9)
+BandDangerButton/colors/glow = Color(0.96, 0.42, 0.32, 0.06)

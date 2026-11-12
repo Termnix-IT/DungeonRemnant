@@ -428,11 +428,6 @@ Appears in Chapter 3's fields and arenas.",data/foes/wisp.tres
 残響 +%d%%,,Echoes +%d%%,game/expedition/difficulty_steps.gd
 地図に戻る,,Back to Map,game/expedition/run_director.gd
 旅立ちの加護　強化を1つ選ぶ,,Parting Blessing: Choose a boon,game/expedition/run_director.gd
-探索の中断,,Abandon Run,game/expedition/run_director.gd
-探索を中断しますか？,,Abandon this run?,game/expedition/run_director.gd
-この探索で得た残響は持ち帰れます。レベルと強化は残りません。,,You keep the Echoes from this run. Levels and boons are lost.,game/expedition/run_director.gd
-中断する,,Abandon,game/expedition/run_director.gd
-戻る,,Back,game/expedition/run_director.gd
 　残響 +%s,,  Echoes +%s,game/expedition/run_director.gd
 報酬　強化を1つ選ぶ,,Reward: Choose a boon,game/expedition/run_director.gd
 報酬　HPが%d回復した,,Reward: Recovered %d HP,game/expedition/run_director.gd
@@ -482,6 +477,7 @@ HPが足りない,,Not enough HP,game/expedition/run_director.gd
 あらゆる回復が半分になる,,All healing is halved,game/expedition/run_state.gd
 ・,,", ",game/expedition/run_state.gd
 残響：探索で得て、拠点の強化に使う,,"Echoes: earned on runs, spent on upgrades at the base",game/hub/hub.gd
+戻る,,Back,game/hub/hub.gd
 選ぶ,,Select,game/hub/hub.gd
 決定,lobby,OK,game/hub/hub.gd
 終了,,Quit,game/hub/hub.gd
@@ -510,7 +506,7 @@ R スティック,,R Stick,game/hub/hub.gd
 項目,,Item,game/hub/hub.gd
 変更,,Change,game/hub/hub.gd
 ゲームを終了しますか？,,Quit the game?,game/hub/hub.gd
-終了する,,Quit,game/hub/hub.gd
+ゲームを終了する,,Quit Game,game/hub/hub.gd
 ウィンドウ,,Windowed,game/save/game_settings.gd
 全画面,,Fullscreen,game/save/game_settings.gd
 標準,,Normal,game/save/game_settings.gd
@@ -552,10 +548,15 @@ Lv %d　強化を1つ選ぶ,,Lv %d: Choose a boon,ui/ability_choice.gd
 このあと、もう%d回選べます,,Picks left after this: %d,ui/ability_choice.gd
 決定,,Confirm,ui/choice_prompt.gd
 レベルアップで選んだ強化が、ここに並ぶ,,Boons chosen on level-up appear here,ui/dungeon_menu.gd
+探索を中断しますか？,,Abandon this run?,ui/dungeon_menu.gd
+"この探索で得た残響は持ち帰れます。
+この探索中のレベルと強化は失われます。",,"You keep the Echoes from this run.
+This run's levels and boons are lost.",ui/dungeon_menu.gd
+探索を中断する,,Abandon Run,ui/dungeon_menu.gd
+探索を続ける,,Continue Run,ui/dungeon_menu.gd
 戦いに戻る,,Resume,ui/dungeon_menu.gd
 メニュー,,Menu,ui/dungeon_menu.gd
 操作,,Controls,ui/dungeon_menu.gd
-探索を中断する,,Abandon Run,ui/dungeon_menu.gd
 この探索の強化,,Boons This Run,ui/dungeon_menu.gd
 　ボス,,  Boss,ui/dungeon_menu.gd
 　第%d層,,  Floor %d,ui/dungeon_menu.gd
@@ -707,6 +708,7 @@ Q・E（ゲームパッドはLB・RB）で種類を切り替えます。,,Switch
 強化を選ぶ,,Choose a Boon,ui/hub_settings.gd
 クリック,,Click,ui/hub_settings.gd
 開く,,Open,ui/hub_settings.gd
+終了する,,Quit,ui/hub_settings.gd
 キーボード,,Keyboard,ui/hub_settings.gd
 ゲームパッド,,Gamepad,ui/hub_settings.gd
 話題,,Topic,ui/hub_settings.gd

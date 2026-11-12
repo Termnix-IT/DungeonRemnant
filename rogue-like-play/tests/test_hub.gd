@@ -228,6 +228,16 @@ func run_tests() -> void:
 	hub._unhandled_input(cancel)
 	await process_frame
 	check(hub.quit_prompt.visible and hub.quit_prompt.cancel_button.has_focus() and hub.quit_prompt.cancel_button.text == "戻る" and left[0] == 0, "Esc on the lobby asks before leaving, its way back focused")
+	check(hub.quit_prompt.cancel_button.stand == 1.0 and hub.quit_prompt.accept_button.stand == 0.0 and hub.quit_prompt.accept_button.theme_type_variation == &"BandDangerButton", "Only the waiting answer is lit, and the way out is red")
+	# The pointer moving over the way out chooses it, so only one answer is lit.
+	var resting := InputEventMouseMotion.new()
+	resting.relative = Vector2.ZERO
+	hub.quit_prompt.accept_button.gui_input.emit(resting)
+	check(hub.quit_prompt.cancel_button.has_focus(), "A pointer only resting on an answer chooses nothing")
+	var onto_answer := InputEventMouseMotion.new()
+	onto_answer.relative = Vector2(3, 0)
+	hub.quit_prompt.accept_button.gui_input.emit(onto_answer)
+	check(hub.quit_prompt.accept_button.has_focus() and left[0] == 0, "Moving the pointer onto an answer chooses it without answering")
 	hub.quit_prompt.canceled.emit()
 	check(not hub.quit_prompt.visible and hub.home_page.buttons[hub.home_page.selected].has_focus() and left[0] == 0, "The way back returns to the lobby's menu, and nothing is left")
 	hub.ask_quit()
