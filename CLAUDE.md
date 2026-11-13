@@ -81,6 +81,7 @@ Nodeの `@export` 変数に、Script定数と同じ `.tres` をpreloadした既�
 
 - UI変更時は `tests/test_ui_theme.gd`、`tests/test_ui_layout.gd`、`tests/test_ui_motion.gd` を実行し、変更対象に応じて `tests/test_hub.gd`、`tests/test_gamepad_input.gd`、`tests/test_run_cycle.gd` などを加える。以下のパス・コマンドはGodotプロジェクトルートを基準とする。
 - 拠点の画面とラン中のメニュー・結果画面の実描画・配置は `godot --path . --rendering-method gl_compatibility --log-file .godot/hub-capture.log --script res://tests/capture_hub.gd` で確認する。1600×900・1280×720・1920×1080の画像を実際に見て、情報階層・選択状態・主要操作・文字切れを確認する。Headlessでの成功だけを見た目の検証としない。
+- ステータス画面の状態ごとの見た目（開いた直後、入れ替えの候補、未所持、外す、付けた瞬間、武器、封印、空き、ステータスの全体）は `godot --path . --rendering-method gl_compatibility --log-file .godot/status-capture.log --script res://tests/capture_status.gd` で確認する。
 - 戦闘・ラン・ボスの見た目を変更した場合は `tests/capture_run_flow.gd`、`tests/capture_boss.gd`、`tests/capture_action_sandbox.gd` を、敵の描画や数を変えた場合は `tests/capture_crowd_perf.gd` でフレーム時間を描画可能な環境で確認する。実行できない検証は未確認として報告する。テストの操作手順をUIの変更に合わせる際も、保存・記録・状態復元などの検証を弱めない。
 - 群れの敵のリグを直したときは、描画できる環境で `godot --path . --script res://tools/bake_foe_frames.gd` を実行して連番画像を焼き直し、続けてimportする。
 

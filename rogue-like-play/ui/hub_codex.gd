@@ -374,9 +374,9 @@ func _place_figure() -> void:
 func _draw_stage() -> void:
 	var ground := Vector2(stage.size.x * 0.5, stage.size.y - FLOOR_INSET)
 	var reach := minf(stage.size.x, stage.size.y) * 0.55
-	var light := _soft_disc(stage.get_theme_color(&"glow", &"CodexStage"))
+	var light := soft_disc(stage.get_theme_color(&"glow", &"CodexStage"))
 	stage.draw_texture_rect(light, Rect2(ground - Vector2(reach, reach * 1.85), Vector2(reach, reach) * 2.0), false)
-	var shade := _soft_disc(stage.get_theme_color(&"floor", &"CodexStage"))
+	var shade := soft_disc(stage.get_theme_color(&"floor", &"CodexStage"))
 	var floor_size := Vector2(reach * 1.3, reach * 0.26)
 	stage.draw_texture_rect(shade, Rect2(ground - floor_size * 0.5, floor_size), false)
 
@@ -386,7 +386,7 @@ func _draw_stage() -> void:
 static var _discs: Dictionary = {}
 
 
-static func _soft_disc(color: Color) -> Texture2D:
+static func soft_disc(color: Color) -> Texture2D:
 	var key := color.to_html()
 	if not _discs.has(key):
 		var gradient := Gradient.new()

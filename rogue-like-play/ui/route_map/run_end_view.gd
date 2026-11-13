@@ -340,7 +340,7 @@ func _show_build(build: Array) -> void:
 	for entry: Array in build:
 		var boon: BoonData = entry[0]
 		var rank: int = entry[1]
-		var cell := EquipSocket.new(EMBLEM_SIZE, false, true)
+		var cell := EquipSocket.new(EMBLEM_SIZE)
 		cell.emblem = EmblemIcons.texture(boon.emblem)
 		cell.tooltip_text = tr(boon.display_name)
 		_boons.add_child(cell)

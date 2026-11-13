@@ -239,7 +239,7 @@ func _show_build() -> void:
 	build_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if owned.is_empty() else HORIZONTAL_ALIGNMENT_LEFT
 	for boon in owned:
 		var rank := run.build.rank(boon.id)
-		var cell := EquipSocket.new(EMBLEM_SIZE, false, true)
+		var cell := EquipSocket.new(EMBLEM_SIZE)
 		cell.emblem = EmblemIcons.texture(boon.emblem)
 		cell.tooltip_text = tr(boon.display_name)
 		build_grid.add_child(cell)

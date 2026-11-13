@@ -151,6 +151,9 @@ func _ready() -> void:
 	status_page.offset_left = bleed
 	status_page.offset_right = -bleed
 	status_page.equip_requested.connect(func(slot: int, id: StringName): equip_requested.emit(slot, id))
+	status_page.view_changed.connect(func():
+		if page == "status":
+			_status_hints())
 	codex_page = _page(HubCodex.new()) as HubCodex
 	codex_page.offset_left = bleed
 	codex_page.offset_right = -bleed
@@ -359,10 +362,7 @@ func show_page(target: String) -> void:
 			if _meta != null:
 				status_page.refresh(_meta)
 			status_page.focus_first()
-			key_guide.add_hint("Enter", "A", tr("装備"))
-			key_guide.add_hint(tr("矢印"), tr("十字"), tr("選ぶ"))
-			key_guide.add_hint("R", "Y", tr("詳しく"), status_page.toggle_details)
-			key_guide.add_hint("Tab", "View", tr("強化へ"), func(): show_page("upgrade"))
+			_status_hints()
 		"codex":
 			title_label.text = tr("図鑑")
 			codex_page.show()
@@ -420,6 +420,19 @@ func open_help(topic: int) -> void:
 	help_return = from if from != "settings" else ""
 	settings_page.open_help(topic)
 	_settings_hints()
+
+
+# The status's keys: those of the build, or, turned to her figures in full,
+# the way back to it.
+func _status_hints() -> void:
+	key_guide.clear_hints()
+	if status_page.details_open:
+		key_guide.add_hint("R", "Y", tr("装備に戻る"), status_page.toggle_details)
+	else:
+		key_guide.add_hint("Enter", "A", tr("装備"))
+		key_guide.add_hint(tr("矢印"), tr("十字"), tr("選ぶ"))
+		key_guide.add_hint("R", "Y", tr("能力"), status_page.toggle_details)
+	key_guide.add_hint("Tab", "View", tr("強化へ"), func(): show_page("upgrade"))
 
 
 func _settings_hints() -> void:
