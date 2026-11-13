@@ -423,6 +423,8 @@ func run_tests() -> void:
 	check(hp_row[1] == "115" and hp_row[2] == "(+15)" and hp_row[3].contains("鍛えた体 +15"), "Her health shows what the upgrades add, and its breakdown")
 	var always := status.shown_rows
 	check(always == 5 and status.strip.is_visible_in_tree(), "The strip shows her five main figures")
+	var strip_words := status.strip.find_children("*", "Label", true, false).map(func(label: Label): return label.text)
+	check(strip_words.has("115") and strip_words.has("(+15)"), "The strip tells what the upgrades add beside the value")
 	root.push_input(key(KEY_R))
 	await process_frame
 	check(status.details_open and status.shown_rows == status.stat_rows().size() and status.shown_rows > always and not status.slot_buttons[1].is_visible_in_tree(), "R turns the page to all her figures")

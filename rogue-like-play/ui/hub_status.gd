@@ -920,8 +920,17 @@ func _strip_fact(row: Array) -> void:
 	_strip_row.add_child(cell)
 	var caption := HubUI.label(cell, row[0], &"NoteLabel")
 	caption.autowrap_mode = TextServer.AUTOWRAP_OFF
-	var value := HubUI.label(cell, row[1], &"ItemNameLabel")
+	# What the upgrades add stands faint beside the value ("115 (+15)").
+	var line := HBoxContainer.new()
+	line.theme_type_variation = &"CodexLine"
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cell.add_child(line)
+	var value := HubUI.label(line, row[1], &"ItemNameLabel")
 	value.autowrap_mode = TextServer.AUTOWRAP_OFF
+	if not (row[2] as String).is_empty():
+		var added := HubUI.label(line, row[2], &"MutedLabel")
+		added.autowrap_mode = TextServer.AUTOWRAP_OFF
+		added.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 
 # One figure on the full page: its name, its value and what the upgrades
