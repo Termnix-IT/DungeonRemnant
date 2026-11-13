@@ -6,6 +6,7 @@ extends RefCounted
 # writes beside it), and a picture of the foe for screens that name it.
 
 const RIG_DIRECTORY := "res://art/enemies/rig/"
+const CODEX_DIRECTORY := "res://art/enemies/codex/"
 
 static var _portraits: Dictionary = {}
 static var _illustrations: Dictionary = {}
@@ -13,6 +14,14 @@ static var _illustrations: Dictionary = {}
 
 static func rig_path(id: String) -> String:
 	return RIG_DIRECTORY + id + "_rig.tscn"
+
+
+# The foe's standing portrait for the bestiary (art/enemies/codex/<id>.png,
+# cut by tools/build_codex_portraits.py): the whole foe painted large,
+# turned three-quarters toward the left. Null where none is painted.
+static func codex_portrait(id: String) -> Texture2D:
+	var path := CODEX_DIRECTORY + id + ".png"
+	return load(path) as Texture2D if ResourceLoader.exists(path) else null
 
 
 # The foe's whole picture: {"texture", "region"}. A foe baked into frames

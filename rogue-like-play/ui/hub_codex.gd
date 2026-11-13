@@ -6,8 +6,8 @@ extends Control
 # have been met, and a list to scroll, a row for each foe with its round
 # face icon and its name (FoeRow, FoeIcon); on the right, the foe chosen,
 # its account in a column (name, kind, how it fights, its figures) beside a
-# stage where the foe itself stands large, its rig braced and breathing,
-# facing the account. A foe counts as met once it has come into an area in
+# stage where the foe itself stands large, its painted portrait breathing
+# (its rig braced where none is painted), facing the account. A foe counts as met once it has come into an area in
 # a run (MetaProgress.met); the others show as shades named "？？？", their
 # kind alone told. Nothing here changes the progress.
 
@@ -24,6 +24,10 @@ const FIGURE_SHARE: Array[float] = [0.7, 0.62, 0.74, 0.86]
 const FIGURE_WIDTH := 0.9
 # The ground the figure stands on, this far above the stage's foot.
 const FLOOR_INSET := 56.0
+# A painted portrait breathes: at the top of a breath it is this much
+# narrower and taller (from its feet), a breath lasting BREATH_TIME seconds.
+const BREATH := Vector2(0.996, 1.012)
+const BREATH_TIME := 3.2
 
 var meta: MetaProgress
 var kind_tabs: CategoryTabs
@@ -43,6 +47,7 @@ var _catalog: VBoxContainer
 var _info: VBoxContainer
 var _stats_heading: Control
 var _figure: Node2D
+var _breath: Tween
 var _unknown := false
 # The foe the column tells now: choosing it again (a click lands as a focus
 # and a press) neither redraws nor slides the column.
@@ -291,7 +296,20 @@ func _stand(foe: FoeData) -> void:
 	_figure.scale = Vector2(-1.0, 1.0)
 	stage.add_child(_figure)
 	var path := EnemySprites.rig_path(foe.visual_id)
-	if ResourceLoader.exists(path):
+	var portrait := EnemySprites.codex_portrait(foe.visual_id)
+	if portrait != null:
+		# Painted already facing the account; it breathes, rising a little
+		# from its feet.
+		_figure.scale = Vector2.ONE
+		var sprite := Sprite2D.new()
+		sprite.name = "Portrait"
+		sprite.texture = portrait
+		sprite.centered = false
+		sprite.offset = Vector2(-portrait.get_width() * 0.5, -portrait.get_height())
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		sprite.modulate = foe.tint
+		_figure.add_child(sprite)
+	elif ResourceLoader.exists(path):
 		var rig: CharacterRig = (load(path) as PackedScene).instantiate()
 		rig.modulate = foe.tint
 		_figure.add_child(rig)
@@ -316,9 +334,14 @@ func _place_figure() -> void:
 	if _figure == null or _shown == null or stage.size.y <= 0.0:
 		return
 	var tall := (stage.size.y - FLOOR_INSET) * FIGURE_SHARE[FoeCatalog.kind_of(_shown)]
+	var portrait := EnemySprites.codex_portrait(_shown.visual_id)
 	var shown := EnemySprites.illustration(_shown.visual_id)
-	if not shown.is_empty():
-		var region: Rect2 = shown.region
+	var region := Rect2()
+	if portrait != null:
+		region = Rect2(Vector2.ZERO, portrait.get_size())
+	elif not shown.is_empty():
+		region = shown.region
+	if region.has_area():
 		var aspect := region.size.x / maxf(1.0, region.size.y)
 		tall = minf(tall, stage.size.x * FIGURE_WIDTH / maxf(0.01, aspect))
 	_figure.position = Vector2(stage.size.x * 0.5, stage.size.y - FLOOR_INSET)
@@ -367,9 +390,23 @@ static func _soft_disc(color: Color) -> Texture2D:
 
 
 # The foe on the stage stands still while the page is hidden.
+# A portrait's breath ends there and starts again when the page is shown.
+# The breath is the page's tween, not the figure's: a tween bound to a node
+# that cannot process is never cleared, even once killed.
 func _still_when_hidden() -> void:
-	if _figure != null:
-		_figure.process_mode = Node.PROCESS_MODE_INHERIT if is_visible_in_tree() else Node.PROCESS_MODE_DISABLED
+	if _breath != null:
+		_breath.kill()
+		_breath = null
+	if _figure == null:
+		return
+	var shown := is_visible_in_tree()
+	_figure.process_mode = Node.PROCESS_MODE_INHERIT if shown else Node.PROCESS_MODE_DISABLED
+	if _figure.has_node(^"Portrait"):
+		_figure.scale = Vector2.ONE
+		if shown:
+			_breath = create_tween().set_loops().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			_breath.tween_property(_figure, ^"scale", BREATH, BREATH_TIME * 0.5)
+			_breath.tween_property(_figure, ^"scale", Vector2.ONE, BREATH_TIME * 0.5)
 
 
 func focus_first() -> void:

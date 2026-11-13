@@ -179,6 +179,8 @@ func run_tests() -> void:
 	check(codex.name_label.text == "疾走ネズミ" and codex.description_label.text.contains("飛びかかる") and codex.stats.get_child_count() == 3, "A met foe's account is told, its figures a row each")
 	check(codex.cards[rat_index].chosen and codex.cards.filter(func(card: FoeRow): return card.chosen).size() == 1, "Only the row shown is lit")
 	check(codex.stage.get_node_or_null(^"Figure") != null and codex.stage.get_node(^"Figure").modulate == Color.WHITE, "The foe chosen stands on the stage")
+	var portrait := codex.stage.get_node_or_null(^"Figure/Portrait") as Sprite2D
+	check(portrait != null and portrait.texture == EnemySprites.codex_portrait(codex.rows[rat_index].visual_id), "The foe chosen stands as its painted portrait")
 	codex._select(0, false)
 	check(codex.name_label.text == HubCodex.UNKNOWN_NAME and codex.stats.get_child_count() == 0 and codex.description_label.text == HubCodex.UNKNOWN_NOTE, "An unmet foe's figures and account stay hidden")
 	check(codex.stage.get_node(^"Figure").modulate == HubCodex.SHADOW, "An unmet foe stands on the stage as a shade")
