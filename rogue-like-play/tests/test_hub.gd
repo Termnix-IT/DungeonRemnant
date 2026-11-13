@@ -177,6 +177,18 @@ func run_tests() -> void:
 	check(FoeIcon.of(FoeCatalog.FOES[0].visual_id, true) == FoeIcon.of(FoeCatalog.FOES[0].visual_id, true), "An icon is made once and kept")
 	codex._select(rat_index, false)
 	check(codex.name_label.text == "疾走ネズミ" and codex.description_label.text.contains("飛びかかる") and codex.stats.get_child_count() == 3, "A met foe's account is told, its figures a row each")
+	check(codex.stats.get_children().all(func(row: Node): return (row.get_node_or_null(^"Icon") as TextureRect) != null and row.get_node(^"Icon").texture != null), "Every figure has its icon")
+	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.1).timeout
+	var stats_at := codex.stats.get_global_rect()
+	var rat_account := codex.description_label.text.length()
+	var king_met := codex.meta.met.has(ruin_king.id)
+	codex.meta.met[ruin_king.id] = true
+	codex._select(FoeCatalog.FOES.find(ruin_king), false)
+	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.1).timeout
+	if not king_met:
+		codex.meta.met.erase(ruin_king.id)
+	check(codex.description_label.text.length() > rat_account and codex.stats.get_global_rect().is_equal_approx(stats_at), "The figures keep their place from foe to foe, however long the account")
+	codex._select(rat_index, false)
 	check(codex.cards[rat_index].chosen and codex.cards.filter(func(card: FoeRow): return card.chosen).size() == 1, "Only the row shown is lit")
 	check(codex.stage.get_node_or_null(^"Figure") != null and codex.stage.get_node(^"Figure").modulate == Color.WHITE, "The foe chosen stands on the stage")
 	var portrait := codex.stage.get_node_or_null(^"Figure/Portrait") as Sprite2D

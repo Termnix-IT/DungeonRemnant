@@ -17,6 +17,9 @@ const SHADOW := Color(0.0, 0.0, 0.0, 0.85)
 const ROW_HEIGHT := 68.0
 const STAT_MARKER := 14.0
 const STAT_ROW_HEIGHT := 44.0
+# The icon at the head of each figure's row, this many px square.
+const STAT_ICON := 26.0
+const STAT_ICON_PATH := "res://art/ui/stat_%s.png"
 # How tall a foe stands on the stage, as a share of its height, by kind (the
 # crowd, elites, bosses): a boss looms over a rat, as in the fight.
 const FIGURE_SHARE: Array[float] = [0.7, 0.62, 0.74, 0.86]
@@ -109,11 +112,10 @@ func _ready() -> void:
 	kind_label = _line_label(kind_row, "", &"BodyLabel")
 	HubUI.rule(_info)
 	description_label = HubUI.label(_info, "", &"DescriptionLabel")
-	# A breath between the account and its figures.
-	var breath := Control.new()
-	breath.custom_minimum_size.y = 10
-	breath.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_info.add_child(breath)
+	# The figures stand at the column's foot whatever the account's length, so
+	# they keep their place from foe to foe; their last line runs level with
+	# the ground the foe stands on.
+	HubUI.space(_info)
 	var heading := HBoxContainer.new()
 	heading.theme_type_variation = &"CodexLine"
 	_info.add_child(heading)
@@ -123,7 +125,10 @@ func _ready() -> void:
 	stats = VBoxContainer.new()
 	stats.theme_type_variation = &"CodexStats"
 	_info.add_child(stats)
-	HubUI.space(_info)
+	var foot := Control.new()
+	foot.custom_minimum_size.y = maxf(0.0, FLOOR_INSET - _info.get_theme_constant(&"separation"))
+	foot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_info.add_child(foot)
 	stage = Control.new()
 	stage.name = "Stage"
 	stage.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -238,8 +243,8 @@ func _select(place: int, animate: bool = true) -> void:
 		description_label.text = tr(UNKNOWN_NOTE)
 	else:
 		name_label.text = tr(foe.display_name)
-		for row: Array in [["HP", str(foe.max_hp)], [tr("ぶつかる力"), str(foe.contact_damage)], [tr("速さ"), str(roundi(foe.speed))]]:
-			_stat_row(row[0], row[1])
+		for row: Array in [["hp", "HP", str(foe.max_hp)], ["contact", tr("ぶつかる力"), str(foe.contact_damage)], ["speed", tr("速さ"), str(roundi(foe.speed))]]:
+			_stat_row(row[0], row[1], row[2])
 		description_label.text = tr(foe.description)
 	_stand(foe)
 	if animate:
@@ -247,9 +252,10 @@ func _select(place: int, animate: bool = true) -> void:
 		UIMotion.of(stage).appear(0.0, UIMotion.WINDOW_TIME)
 
 
-# One of the foe's figures: a gilt diamond, its name, its value at the right,
-# and a hairline under it.
-func _stat_row(title: String, value: String) -> void:
+# One of the foe's figures: its icon (art/ui/stat_<icon>.png, cut by
+# tools/build_stat_icons.py), its name, its value at the right, and a
+# hairline under it.
+func _stat_row(icon: String, title: String, value: String) -> void:
 	var row := HBoxContainer.new()
 	row.theme_type_variation = &"CodexLine"
 	row.custom_minimum_size.y = STAT_ROW_HEIGHT
@@ -257,7 +263,16 @@ func _stat_row(title: String, value: String) -> void:
 		var line := row.get_theme_color(&"separator", &"CodexRow")
 		row.draw_line(Vector2(0, row.size.y - 0.5), Vector2(row.size.x, row.size.y - 0.5), line, -1.0))
 	stats.add_child(row)
-	_marker(row)
+	var mark := TextureRect.new()
+	mark.name = "Icon"
+	mark.texture = load(STAT_ICON_PATH % icon)
+	mark.custom_minimum_size = Vector2(STAT_ICON, STAT_ICON)
+	mark.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	mark.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	mark.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(mark)
 	var name := HubUI.label(row, title, &"BodyLabel")
 	name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var figure := HubUI.label(row, value, &"ValueLabel")
