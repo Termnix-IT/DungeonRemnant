@@ -29,6 +29,9 @@ signal view_changed
 enum State { FREE, HERE, ELSEWHERE, UNKNOWN }
 
 const BOOK := preload("res://ui/grimoire/grimoire_book.gdshader")
+# The painted grain of the paper and the leather (tools/build_grimoire_art.py).
+const PAPER_GRAIN := preload("res://art/ui/grimoire/paper.png")
+const LEATHER_GRAIN := preload("res://art/ui/grimoire/leather.png")
 const DESIGN := Vector2(1520.0, 686.0)
 const LEFT := 116.0
 const RIGHT := 784.0
@@ -120,6 +123,8 @@ func _ready() -> void:
 	_book.show_behind_parent = true
 	var paper := ShaderMaterial.new()
 	paper.shader = BOOK
+	paper.set_shader_parameter(&"paper_grain", PAPER_GRAIN)
+	paper.set_shader_parameter(&"leather_grain", LEATHER_GRAIN)
 	_book.material = paper
 	add_child(_book)
 	resized.connect(_fit)
