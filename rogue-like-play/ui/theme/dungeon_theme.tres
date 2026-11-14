@@ -917,6 +917,8 @@ content_margin_top = 10.0
 content_margin_right = 8.0
 content_margin_bottom = 8.0
 script = ExtResource("QuietWindowStyleScript")
+fill = Color(0.05, 0.048, 0.05, 0.94)
+edge = Color(0.32, 0.32, 0.32, 0.6)
 
 [sub_resource type="StyleBoxFlat" id="QuietButtonRest"]
 resource_name = "QuietButtonRest"
@@ -1074,6 +1076,8 @@ content_margin_top = 24.0
 content_margin_right = 28.0
 content_margin_bottom = 24.0
 script = ExtResource("QuietWindowStyleScript")
+fill = Color(0.05, 0.048, 0.05, 0.94)
+edge = Color(0.32, 0.32, 0.32, 0.6)
 
 [sub_resource type="StyleBox" id="SlabSolidEndSurface"]
 resource_local_to_scene = false
@@ -1083,6 +1087,8 @@ content_margin_top = 24.0
 content_margin_right = 28.0
 content_margin_bottom = 24.0
 script = ExtResource("QuietWindowStyleScript")
+fill = Color(0.05, 0.048, 0.05, 0.94)
+edge = Color(0.32, 0.32, 0.32, 0.6)
 sides = 14
 
 [sub_resource type="StyleBox" id="SlabSolidOpenSurface"]
@@ -1093,6 +1099,8 @@ content_margin_top = 24.0
 content_margin_right = 28.0
 content_margin_bottom = 24.0
 script = ExtResource("QuietWindowStyleScript")
+fill = Color(0.05, 0.048, 0.05, 0.94)
+edge = Color(0.32, 0.32, 0.32, 0.6)
 sides = 11
 
 [sub_resource type="Gradient" id="VeilFade"]

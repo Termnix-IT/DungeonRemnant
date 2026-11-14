@@ -8,9 +8,10 @@ extends RefCounted
 # runs it on dungeon_theme.tres; test_ui_theme.gd checks that nothing is out
 # of step.
 #
-# A place is named as in ThemeBindings. Properties of a resource that still
-# hold their class's default are not places, and a resource the theme uses
-# twice is named once, by the first place it is met (types in name order).
+# A place is named as in ThemeBindings. Properties of a built-in resource
+# that still hold their class's default are not places, and a resource the
+# theme uses twice is named once, by the first place it is met (types in
+# name order).
 
 const DATA_KINDS := {
 	"colors": Theme.DATA_TYPE_COLOR,
@@ -54,7 +55,9 @@ static func _walk(resource: Resource, place: String, found: Dictionary, seen: Di
 	seen[resource.get_instance_id()] = true
 	if not resource.resource_path.is_empty() and not resource.resource_path.contains("::"):
 		return
-	var fresh: Object = resource.get_script().new() if resource.get_script() != null else ClassDB.instantiate(resource.get_class())
+	# A built-in class's default is unset; a scripted style's (QuietWindowStyle)
+	# is its look, so every one of its colours is a place.
+	var fresh: Object = null if resource.get_script() != null else ClassDB.instantiate(resource.get_class())
 	for property in resource.get_property_list():
 		if not (property.usage & PROPERTY_USAGE_STORAGE) or property.name == "script":
 			continue
