@@ -82,6 +82,9 @@ colors = Dictionary[StringName, Color]({
 &"parchment.7": Color(0.93, 0.85, 0.68, 1),
 &"parchment.8": Color(0.9, 0.86, 0.82, 1),
 &"parchment.9": Color(0.95, 0.9, 0.8, 1),
+&"ribbon.1": Color(0.26, 0.36, 0.22, 1),
+&"tray.1": Color(0.14, 0.094, 0.067, 1),
+&"tray.2": Color(0.35, 0.25, 0.19, 1),
 &"umber.1": Color(0.1, 0.075, 0.04, 1),
 &"umber.2": Color(0.2, 0.16, 0.095, 1),
 &"umber.3": Color(0.36, 0.28, 0.15, 1),
@@ -123,6 +126,8 @@ families = Dictionary[StringName, Vector3]({
 &"note": Vector3(0, 1, 1),
 &"page": Vector3(0, 1, 1),
 &"parchment": Vector3(0, 1, 1),
+&"ribbon": Vector3(0, 1, 1),
+&"tray": Vector3(0, 1, 1),
 &"umber": Vector3(0, 1, 1),
 &"wax": Vector3(0, 1, 1)
 })

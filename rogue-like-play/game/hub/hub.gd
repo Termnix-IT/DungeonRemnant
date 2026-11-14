@@ -374,8 +374,9 @@ func show_page(target: String) -> void:
 			if _meta != null:
 				codex_page.refresh(_meta)
 			codex_page.focus_first()
-			key_guide.add_hint("↑ / ↓", "▲ / ▼", tr("選ぶ"))
+			key_guide.add_hint("← / →", "◀ / ▶", tr("めくる"))
 			key_guide.add_hint("Q / E", "LB / RB", tr("分類"))
+			key_guide.add_hint("R", "Y", tr("並び"), codex_page.cycle_sort)
 		"settings":
 			title_label.text = tr("設定")
 			settings_page.show()

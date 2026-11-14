@@ -156,15 +156,14 @@ func run_tests() -> void:
 		hub.go_back()
 		check(hub.page == "home", "Back returns to the lobby")
 
-	# The encyclopedia: met foes named, unmet ones dark.
+	# The bestiary: a folio of plates. A foe met is drawn and named with its
+	# notes; one not met is a flat shade with nothing told.
 	main.meta.met[&"dashing_rat"] = true
 	hub.refresh(main.meta)
 	hub.show_page("codex")
 	var codex: HubCodex = hub.codex_page
-	check(codex.cards.size() == FoeCatalog.FOES.size() and codex.count_label.text.contains("1 / %d" % FoeCatalog.FOES.size()), "Every foe has a card, and the count is of those met")
+	check(codex.has_focus() and codex.listed.size() == FoeCatalog.FOES.size() and codex.tally(0) == [1, FoeCatalog.FOES.size()], "The tray holds every foe, and the tally is of those met")
 	var rat_index := FoeCatalog.FOES.find(load("res://data/foes/dashing_rat.tres"))
-	check(codex.cards[rat_index].text == "疾走ネズミ" and codex.cards[0].text == HubCodex.UNKNOWN_NAME, "A met foe is named in the list, an unmet one is not")
-	check(codex.cards[rat_index].icon_texture != null and not codex.cards[rat_index].unknown and codex.cards[0].icon_texture != null and codex.cards[0].unknown, "Each row shows its foe's icon: its face when met, a shade when not")
 	var shadow := FoeIcon.of(FoeCatalog.FOES[0].visual_id, false).get_image()
 	var dark := true
 	for y in range(0, shadow.get_height(), 8):
@@ -173,31 +172,48 @@ func run_tests() -> void:
 			if pixel.a > 0.1 and pixel.v > 0.05:
 				dark = false
 	check(dark, "A foe not met is a dark silhouette in its icon")
-	check(codex.cards.all(func(card: FoeRow): return card.icon_texture.get_width() == FoeIcon.SIZE and card.icon_texture.get_height() == FoeIcon.SIZE), "Every icon is the same round size")
-	check(FoeIcon.of(FoeCatalog.FOES[0].visual_id, true) == FoeIcon.of(FoeCatalog.FOES[0].visual_id, true), "An icon is made once and kept")
-	codex._select(rat_index, false)
-	check(codex.name_label.text == "疾走ネズミ" and codex.description_label.text.contains("飛びかかる") and codex.stats.get_child_count() == 3, "A met foe's account is told, its figures a row each")
-	check(codex.stats.get_children().all(func(row: Node): return (row.get_node_or_null(^"Icon") as TextureRect) != null and row.get_node(^"Icon").texture != null), "Every figure has its icon")
-	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.1).timeout
-	var stats_at := codex.stats.get_global_rect()
-	var rat_account := codex.description_label.text.length()
+	check(FoeIcon.of(FoeCatalog.FOES[0].visual_id, true).get_width() == FoeIcon.SIZE and FoeIcon.of(FoeCatalog.FOES[0].visual_id, true) == FoeIcon.of(FoeCatalog.FOES[0].visual_id, true), "An icon is one round size, made once and kept")
+	codex.go_to(rat_index)
+	check(codex.told.known and codex.told.name == "疾走ネズミ" and (codex.told.account[0] as String).contains("飛びかかる") and not (codex.told.account[1] as String).is_empty(), "A met foe's plate names it and tells how it behaves and where it is found")
+	check(codex.told.stats.size() == 3 and codex.told.stats[0] == ["hp", "HP", 14] and codex.told.stats[2][0] == "speed", "Its figures are its notes: HP, the force of its blow, its pace")
+	var portrait := codex.get_node_or_null(^"Figure/Portrait") as Sprite2D
+	check(portrait != null and portrait.texture == EnemySprites.codex_portrait(codex.listed[rat_index].visual_id) and portrait.material == null, "The foe stands on the plate as its painted portrait")
 	var king_met := codex.meta.met.has(ruin_king.id)
 	codex.meta.met[ruin_king.id] = true
-	codex._select(FoeCatalog.FOES.find(ruin_king), false)
-	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.1).timeout
+	codex.refresh(codex.meta)
+	codex.go_to(FoeCatalog.FOES.find(ruin_king))
+	check(codex.told.name == "遺跡王" and codex.told.epithet == "灰の回廊を統べる者" and codex.told.kind == "ボス", "A boss met carries its epithet and its kind")
 	if not king_met:
 		codex.meta.met.erase(ruin_king.id)
-	check(codex.description_label.text.length() > rat_account and codex.stats.get_global_rect().is_equal_approx(stats_at), "The figures keep their place from foe to foe, however long the account")
-	codex._select(rat_index, false)
-	check(codex.cards[rat_index].chosen and codex.cards.filter(func(card: FoeRow): return card.chosen).size() == 1, "Only the row shown is lit")
-	check(codex.stage.get_node_or_null(^"Figure") != null and codex.stage.get_node(^"Figure").modulate == Color.WHITE, "The foe chosen stands on the stage")
-	var portrait := codex.stage.get_node_or_null(^"Figure/Portrait") as Sprite2D
-	check(portrait != null and portrait.texture == EnemySprites.codex_portrait(codex.rows[rat_index].visual_id), "The foe chosen stands as its painted portrait")
-	codex._select(0, false)
-	check(codex.name_label.text == HubCodex.UNKNOWN_NAME and codex.stats.get_child_count() == 0 and codex.description_label.text == HubCodex.UNKNOWN_NOTE, "An unmet foe's figures and account stay hidden")
-	check(codex.stage.get_node(^"Figure").modulate == HubCodex.SHADOW, "An unmet foe stands on the stage as a shade")
-	codex.kind_tabs.step(1)
-	check(codex.rows.all(func(foe: FoeData): return FoeCatalog.kind_of(foe) == 1), "The kind tabs filter the list")
+	codex.refresh(codex.meta)
+	codex.go_to(0)
+	check(not codex.told.known and codex.told.name == HubCodex.UNKNOWN_NAME and codex.told.stats.is_empty() and codex.told.epithet.is_empty() and codex.told.account == [HubCodex.UNKNOWN_NOTE, ""], "An unmet foe's name, figures, epithet and account stay hidden")
+	check(portrait.material is ShaderMaterial and ((portrait.material as ShaderMaterial).shader as Shader).resource_path.ends_with("flat_shape.gdshader"), "An unmet foe stands on the plate as a flat shade, none of its painting showing")
+	codex.go_to(FoeCatalog.FOES.find(ruin_king))
+	check(not codex.told.known and codex.told.epithet.is_empty() and codex.told.kind == "ボス", "An unmet boss gives away its kind and nothing else")
+	codex.go_to(0)
+	# Its keys: left and right turn the plates, Q/E change the kind, R the order.
+	root.push_input(key(KEY_RIGHT))
+	await process_frame
+	check(codex.place == 1 and codex.told.name == "疾走ネズミ", "Right turns to the next plate")
+	root.push_input(key(KEY_LEFT))
+	await process_frame
+	check(codex.place == 0, "Left turns back")
+	root.push_input(key(KEY_E))
+	await process_frame
+	check(codex.kind == 1 and codex.place == 0 and codex.listed.all(func(foe: FoeData): return FoeCatalog.kind_of(foe) == 1), "E turns to the next kind, whose tray holds only that kind")
+	root.push_input(key(KEY_R))
+	await process_frame
+	check(codex.sort == 1 and codex.listed[0].id == &"dashing_rat" and codex.listed.slice(1).all(func(foe: FoeData): return not codex.known(foe)), "R orders the tray by a figure: the foes met first, those not met after them all")
+	check(codex.listed[codex.place].id == &"wandering_sentinel", "The plate open stays open when the order changes")
+	codex._press([&"ribbon", 3])
+	codex._press([&"specimen", 1])
+	check(codex.kind == 3 and codex.place == 1 and FoeCatalog.kind_of(codex.listed[1]) == 3, "The pointer opens a kind by its ribbon and a plate by its specimen")
+	codex._press([&"sort", 0])
+	codex._press([&"sort", 0])
+	codex._press([&"sort", 0])
+	codex._press([&"ribbon", 0])
+	check(codex.sort == 0 and codex.kind == 0, "The order comes round to the catalog's own")
 	hub.show_page("home")
 
 	# The settings: three tabs, one group of rows at a time, the focused one

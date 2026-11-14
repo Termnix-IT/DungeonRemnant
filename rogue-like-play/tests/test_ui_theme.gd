@@ -279,6 +279,12 @@ func check_book(theme: Theme) -> void:
 	check(contrast(theme.get_color(&"seal_light", &"Grimoire"), theme.get_color(&"seal", &"Grimoire")) >= 4.5, "The letter pressed in the wax reads on it")
 	for item in theme.get_font_size_list(&"Grimoire"):
 		check(theme.get_font_size(item, &"Grimoire") >= 14, "The book's %s stays at 14px or more" % item)
+	# The bestiary's folio is the same paper and ink; the words on its ribbons
+	# and its tray read on them.
+	check(theme.get_type_variation_base(&"Bestiary") == &"Grimoire", "The bestiary's folio is a Grimoire")
+	var pale := theme.get_color(&"seal_light", &"Grimoire")
+	for item: StringName in [&"ribbon_0", &"ribbon_1", &"ribbon_2", &"ribbon_3", &"tray"]:
+		check(contrast(pale, theme.get_color(item, &"Bestiary")) >= 4.5, "The folio's words read on its %s (%.1f)" % [item, contrast(pale, theme.get_color(item, &"Bestiary"))])
 
 
 func theme_color(theme: Theme, item: StringName, type: StringName) -> Color:

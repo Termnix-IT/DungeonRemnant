@@ -142,40 +142,39 @@ func run_tests() -> void:
 	await settle(UIMotion.WINDOW_TIME + 0.2)
 	for shown: Control in [hub.home_page, hub.sortie_page, hub.upgrade_page, hub.codex_page, hub.settings_page]:
 		check(is_equal_approx(shown.modulate.a, 1.0) and near_scale(shown, 1.0), "Rapid navigation restores %s's alpha and scale" % shown.name)
-	# A new account comes into the detail column from the right and settles
-	# where the column lays it out, even when asked again mid-way.
+	# A plate turned to in the bestiary comes in from the side it was turned
+	# from, faint, and settles in place, even when asked again mid-way.
 	hub.show_page("codex")
-	await settle(UIMotion.WINDOW_TIME + 0.2)
-	var column: Control = hub.codex_page._info
-	var rest := column.position
-	hub.codex_page._select(1)
+	await settle(HubCodex.TURN_TIME + 0.2)
+	var folio: HubCodex = hub.codex_page
+	var figure: Node2D = folio.get_node(^"Figure")
+	var rest := figure.position.x
+	folio.go_to(1)
 	await process_frame
 	await process_frame
-	check(column.position.x > rest.x + 1.0 and column.modulate.a < 1.0, "A new account starts to the right, faint")
-	hub.codex_page._select(0)
-	await settle(UIMotion.DETAIL_SLIDE_TIME + 0.15)
-	check(column.position.is_equal_approx(rest) and is_equal_approx(column.modulate.a, 1.0), "It settles in place, whole")
-	# A click lands as a focus and a press: the second asks for the same foe
-	# and must not start the slide over.
-	hub.codex_page._select(1)
+	check(figure.position.x > rest + 1.0 and figure.modulate.a < 1.0, "A plate turned to starts to the side, faint")
+	folio.go_to(0)
+	await settle(HubCodex.TURN_TIME + 0.15)
+	check(is_equal_approx(figure.position.x, rest) and is_equal_approx(figure.modulate.a, 1.0), "It settles in place, whole")
+	# Asking for the plate already open must not start the turn over.
+	folio.go_to(1)
 	await process_frame
 	await process_frame
 	await process_frame
-	var under_way := column.position.x
-	hub.codex_page._select(1)
+	var under_way := figure.position.x
+	folio.go_to(1)
 	await process_frame
-	check(column.position.x <= under_way + 0.01, "Choosing the same foe again does not restart the slide")
-	await settle(UIMotion.DETAIL_SLIDE_TIME + 0.15)
-	hub.codex_page._select(1)
+	check(figure.position.x <= under_way + 0.01, "Choosing the same plate again does not restart the turn")
+	await settle(HubCodex.TURN_TIME + 0.15)
+	folio.go_to(1)
 	await process_frame
 	await process_frame
-	check(column.position.is_equal_approx(rest) and is_equal_approx(column.modulate.a, 1.0), "Choosing the foe already told shows no slide at all")
-	# Two new accounts asked for in one frame slide once and still settle in
-	# place, not at the first slide's offset.
-	hub.codex_page._select(2)
-	hub.codex_page._select(3)
-	await settle(UIMotion.DETAIL_SLIDE_TIME + 0.15)
-	check(column.position.is_equal_approx(rest), "Two slides asked in one frame settle in place")
+	check(is_equal_approx(figure.position.x, rest) and is_equal_approx(figure.modulate.a, 1.0), "Choosing the plate already open shows no turn at all")
+	# Two plates asked for in one frame turn once and still settle in place.
+	folio.go_to(2)
+	folio.go_to(3)
+	await settle(HubCodex.TURN_TIME + 0.15)
+	check(is_equal_approx(figure.position.x, rest), "Two turns asked in one frame settle in place")
 	hub.show_page("home")
 	await settle(UIMotion.WINDOW_TIME + 0.2)
 	check(not motion.is_processing(), "The helper has no idle per-frame polling")

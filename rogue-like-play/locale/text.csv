@@ -496,7 +496,9 @@ R スティック,,R Stick,game/hub/hub.gd
 ステータスへ,,To Status,game/hub/hub.gd
 ステータス,,Status,game/hub/hub.gd
 図鑑,,Bestiary,game/hub/hub.gd
+めくる,,Turn,game/hub/hub.gd
 分類,,Category,game/hub/hub.gd
+並び,,Order,game/hub/hub.gd
 設定,,Settings,game/hub/hub.gd
   (残響 %+d),,  (Echoes %+d),game/hub/hub.gd
 装備に戻る,,Back to Gear,game/hub/hub.gd
@@ -594,10 +596,21 @@ Godot Engine のロゴ　Andrea Calabró,,Godot Engine logo　Andrea Calabró,ui
 Esc（B）を長押しで飛ばす,,Hold Esc (B) to skip,ui/ending_view.gd
 ？？？,,???,ui/hub_codex.gd
 まだ出会っていない敵。探索で戦場に現れると記録される。,,A foe you haven't met yet. It is recorded once it appears on a run.,ui/hub_codex.gd
-基本情報,,Stats,ui/hub_codex.gd
-出会った敵  %d / %d,,Foes met  %d / %d,ui/hub_codex.gd
+番号順,,By number,ui/hub_codex.gd
+HPの高い順,,Highest HP first,ui/hub_codex.gd
+ぶつかる力の高い順,,Highest contact damage first,ui/hub_codex.gd
+速さの高い順,,Fastest first,ui/hub_codex.gd
 ぶつかる力,,Contact Damage,ui/hub_codex.gd
 速さ,,Speed,ui/hub_codex.gd
+図版　第 %02d,,Plate %02d,ui/hub_codex.gd
+%sの類,,Class: %s,ui/hub_codex.gd
+記,notes,Notes,ui/hub_codex.gd
+いまだ観察されず,,Not yet observed,ui/hub_codex.gd
+観察記,,Observations,ui/hub_codex.gd
+覚え書き,,Memorandum,ui/hub_codex.gd
+棲息,,Habitat,ui/hub_codex.gd
+%d / %d を観察,,%d / %d observed,ui/hub_codex.gd
+並び：%s,,Order: %s,ui/hub_codex.gd
 出撃先を選ぶ,lobby,Choose a Destination,ui/hub_lobby.gd
 強化を選ぶ,lobby,Choose Upgrades,ui/hub_lobby.gd
 ステータスを開く,lobby,Open Status,ui/hub_lobby.gd
