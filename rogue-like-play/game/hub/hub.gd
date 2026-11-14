@@ -143,21 +143,21 @@ func _ready() -> void:
 	# The pages' slabs run off the screen's edges, their contents lined up
 	# with the title and the echo above them.
 	var bleed := EDGE_X - (get_viewport().get_visible_rect().size.x - CONTENT_SIZE.x) * 0.5
-	upgrade_page = _page(MetaUpgradePage.new()) as MetaUpgradePage
+	upgrade_page = _page(MetaUpgradePage.new(), &"upgrade") as MetaUpgradePage
 	upgrade_page.offset_left = bleed
 	upgrade_page.offset_right = -bleed
 	upgrade_page.buy_requested.connect(func(id: StringName): upgrade_requested.emit(id))
-	status_page = _page(HubStatus.new()) as HubStatus
+	status_page = _page(HubStatus.new(), &"status") as HubStatus
 	status_page.offset_left = bleed
 	status_page.offset_right = -bleed
 	status_page.equip_requested.connect(func(slot: int, id: StringName): equip_requested.emit(slot, id))
 	status_page.view_changed.connect(func():
 		if page == "status":
 			_status_hints())
-	codex_page = _page(HubCodex.new()) as HubCodex
+	codex_page = _page(HubCodex.new(), &"codex") as HubCodex
 	codex_page.offset_left = bleed
 	codex_page.offset_right = -bleed
-	sortie_page = _page(HubSortie.new()) as HubSortie
+	sortie_page = _page(HubSortie.new(), &"sortie") as HubSortie
 	sortie_page.offset_left = bleed
 	sortie_page.offset_right = -bleed
 	sortie_page.chapter_chosen.connect(func(chosen: ChapterData): chapter = chosen)
@@ -165,7 +165,7 @@ func _ready() -> void:
 	sortie_page.departure_requested.connect(func(chosen: ChapterData):
 		chapter = chosen
 		start_requested.emit())
-	settings_page = _page(HubSettings.new()) as HubSettings
+	settings_page = _page(HubSettings.new(), &"settings") as HubSettings
 	settings_page.offset_left = bleed
 	settings_page.offset_right = -bleed
 	settings_page.changed.connect(func(): settings_changed.emit())
@@ -223,7 +223,12 @@ func _ready() -> void:
 	UIMotion.bind_buttons(home_page)
 
 
-func _page(control: Control) -> Control:
+# A page in the content area; one with a mood of its own (ThemeMood, in
+# ui/theme/moods/<mood>.tres) wears it.
+func _page(control: Control, mood: StringName) -> Control:
+	var worn := ThemeMood.theme_of(mood, _content.theme)
+	if worn != null:
+		control.theme = worn
 	_page_host.add_child(control)
 	control.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	control.mouse_filter = Control.MOUSE_FILTER_IGNORE

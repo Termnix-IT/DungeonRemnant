@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ThemeMood" format=3]
+
+[ext_resource type="Script" path="res://ui/theme/theme_mood.gd" id="1_mood"]
+
+[resource]
+script = ExtResource("1_mood")
+families = Dictionary[StringName, Vector3]({
+&"gold": Vector3(6, 0.78, 0.95),
+&"umber": Vector3(4, 0.85, 1)
+})
+colors = Dictionary[StringName, Color]({
+&"neutral.4": Color(0.062, 0.054, 0.046, 1),
+&"neutral.10": Color(0.38, 0.34, 0.27, 1)
+})

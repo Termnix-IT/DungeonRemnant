@@ -64,6 +64,27 @@ func check_tokens(theme: Theme) -> void:
 	check(not (ThemeBuild.read(copy, gold_place) as Color).is_equal_approx(ThemeBuild.read(theme, gold_place)), "A turned gold differs from the shipped one")
 
 
+# Each screen's mood (ui/theme/moods/) turns only tokens there are, is the
+# one theme with those tokens written and nothing else, and keeps its words
+# readable.
+func check_moods(theme: Theme) -> void:
+	var tokens := ThemeTokens.current()
+	var bindings := ThemeBindings.current()
+	for file in DirAccess.get_files_at(ThemeMood.FOLDER):
+		if not file.ends_with(".tres"):
+			continue
+		var page := StringName(file.get_basename())
+		var mood := ThemeMood.of(page)
+		for family: StringName in mood.families:
+			check(tokens.families.has(family), "The %s mood turns a family there is (%s)" % [page, family])
+		for token: StringName in mood.colors:
+			check(tokens.colors.has(token), "The %s mood recolours a token there is (%s)" % [page, token])
+		var built := mood.build(theme, tokens, bindings)
+		var problems := ThemeBuild.problems(built, mood.turn(tokens), bindings)
+		check(problems.is_empty(), "The %s mood is the one theme in its tokens: %s" % [page, "; ".join(problems.slice(0, 3))])
+		check_contrast(built, "The %s mood" % page)
+
+
 func run_tests() -> void:
 	var theme := preload("res://ui/theme/dungeon_theme.tres")
 	# The bundled gothic for the body, buttons and figures; titles keep the
@@ -71,6 +92,7 @@ func run_tests() -> void:
 	check(theme.default_font != null and theme.default_font.resource_path.ends_with("BIZUDPGothic-Regular.ttf"), "The body text uses the bundled BIZ UDPGothic")
 	check(FileAccess.file_exists("res://art/third_party/biz_udp_gothic/OFL.txt") and FileAccess.file_exists("res://art/third_party/biz_udp_gothic/SOURCE.txt"), "The font's licence and source are bundled beside it")
 	check_tokens(theme)
+	check_moods(theme)
 	var main: Node = load("res://game/main.tscn").instantiate()
 	main.show_prologue = false
 	main.saving_enabled = false
@@ -83,6 +105,12 @@ func run_tests() -> void:
 		for frame in 3:
 			await process_frame
 	inspect_styles(hub.get_node("Content"))
+	# The status page wears its mood; the header above it keeps the one theme.
+	var mood_theme := ThemeMood.theme_of(&"status", theme)
+	if mood_theme != null:
+		check(hub.status_page.theme == mood_theme, "The status page wears its mood")
+		check(hub.status_page.get_theme_color(&"lit_ring", &"LoadoutSlot") == mood_theme.get_color(&"lit_ring", &"LoadoutSlot"), "What is drawn on the status page takes the mood's colours")
+		check(hub.echo_label.get_theme_color(&"font_color") == theme.get_color(&"font_color", &"GoldLabel"), "The header above it keeps the one theme's")
 	hub.show_page("upgrade")
 	for frame in 3:
 		await process_frame
@@ -221,17 +249,17 @@ const DIM_ROLES := [[&"font_disabled_color", &"SecondaryButton"]]
 const DARKEST_BACKGROUND := Color(0.008, 0.012, 0.02)
 
 
-func check_contrast(theme: Theme) -> void:
+func check_contrast(theme: Theme, label := "The theme") -> void:
 	var slab := theme.get_stylebox(&"panel", &"SlabSolid") as QuietWindowStyle
 	var page := DARKEST_BACKGROUND.lerp(Color(slab.fill, 1.0), slab.fill.a)
 	var card_face := theme_style(theme, "normal", &"CardButton") as StyleBoxFlat
 	var card := page.lerp(Color(card_face.bg_color, 1.0), card_face.bg_color.a)
 	for role: Array in READABLE_ROLES:
 		var colour := theme_color(theme, role[0], role[1])
-		check(contrast(colour, page) >= 4.5 and contrast(colour, card) >= 4.5, "%s %s reads at 4.5:1 or more (%.1f on a page)" % [role[1], role[0], contrast(colour, page)])
+		check(contrast(colour, page) >= 4.5 and contrast(colour, card) >= 4.5, "%s: %s %s reads at 4.5:1 or more (%.1f on a page)" % [label, role[1], role[0], contrast(colour, page)])
 	for role: Array in DIM_ROLES:
 		var colour := theme_color(theme, role[0], role[1])
-		check(contrast(colour, page) >= 3.0, "%s %s stays legible at 3:1 or more (%.1f)" % [role[1], role[0], contrast(colour, page)])
+		check(contrast(colour, page) >= 3.0, "%s: %s %s stays legible at 3:1 or more (%.1f)" % [label, role[1], role[0], contrast(colour, page)])
 
 
 func theme_color(theme: Theme, item: StringName, type: StringName) -> Color:
