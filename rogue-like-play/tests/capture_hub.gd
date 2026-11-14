@@ -88,13 +88,11 @@ func capture() -> void:
 	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.3).timeout
 	await _grab("hub_upgrade_buy_1600")
 	UIMotion.of(hub.upgrade_page.buy_button).stand(false)
-	# The status's list, the focus in it on a skill not learned yet (its
-	# shadow), its slot still marked; then all her figures. The page's other
-	# states are capture_status.gd's.
+	# The status's book, the cursor on a skill not learned yet (its shadow);
+	# then all her figures. The page's other states are capture_status.gd's.
 	hub.show_page("status")
-	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
-	hub.status_page.slot_buttons[1].grab_focus()
-	hub.status_page.choices[2].grab_focus()
+	await create_timer(UIMotion.WINDOW_TIME + 0.5).timeout
+	hub.status_page.move_cursor(2)
 	await create_timer(0.4).timeout
 	await _grab("hub_status_list_1600")
 	hub.status_page.toggle_details()

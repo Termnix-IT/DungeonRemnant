@@ -9,7 +9,7 @@ extends ColorRect
 # so a screen holds as many as it likes at the cost of one shader each.
 #
 # A component lays its ornaments between what it draws itself and what it
-# draws over them (see LoadoutSlot): an ornament is a child, so it is drawn
+# draws over them: an ornament is a child, so it is drawn
 # after its parent's own _draw and before the children that follow it.
 #
 # Colours go to the shader as Vector4, never as Color: under the Forward+

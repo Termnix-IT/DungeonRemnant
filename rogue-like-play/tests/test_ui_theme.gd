@@ -70,6 +70,8 @@ func check_tokens(theme: Theme) -> void:
 func check_moods(theme: Theme) -> void:
 	var tokens := ThemeTokens.current()
 	var bindings := ThemeBindings.current()
+	if not DirAccess.dir_exists_absolute(ThemeMood.FOLDER):
+		return
 	for file in DirAccess.get_files_at(ThemeMood.FOLDER):
 		if not file.ends_with(".tres"):
 			continue
@@ -105,12 +107,14 @@ func run_tests() -> void:
 		for frame in 3:
 			await process_frame
 	inspect_styles(hub.get_node("Content"))
-	# The status page wears its mood; the header above it keeps the one theme.
-	var mood_theme := ThemeMood.theme_of(&"status", theme)
-	if mood_theme != null:
-		check(hub.status_page.theme == mood_theme, "The status page wears its mood")
-		check(hub.status_page.get_theme_color(&"lit_ring", &"LoadoutSlot") == mood_theme.get_color(&"lit_ring", &"LoadoutSlot"), "What is drawn on the status page takes the mood's colours")
-		check(hub.echo_label.get_theme_color(&"font_color") == theme.get_color(&"font_color", &"GoldLabel"), "The header above it keeps the one theme's")
+	# A page with a mood of its own wears it; the header above keeps the one theme.
+	for page: String in ["sortie", "upgrade", "status", "codex", "settings"]:
+		var mood_theme := ThemeMood.theme_of(StringName(page), theme)
+		if mood_theme != null:
+			check(hub.get(page + "_page").theme == mood_theme, "The %s page wears its mood" % page)
+	check(hub.echo_label.get_theme_color(&"font_color") == theme.get_color(&"font_color", &"GoldLabel"), "The header keeps the one theme's colours")
+	# The status page draws itself in the Grimoire type's colours and faces.
+	check(hub.status_page.theme_type_variation == &"Grimoire" and hub.status_page.get_theme_color(&"ink") == theme.get_color(&"ink", &"Grimoire") and hub.status_page.get_theme_font(&"title_font") == theme.get_font(&"title_font", &"Grimoire"), "The status page's book takes its ink and faces from the theme")
 	hub.show_page("upgrade")
 	for frame in 3:
 		await process_frame
@@ -156,6 +160,7 @@ func run_tests() -> void:
 	check_steady_buttons(theme)
 	check_readable_floor(theme)
 	check_contrast(theme)
+	check_book(theme)
 	# A secondary action that can be pressed must never look like one that
 	# cannot.
 	for state in [&"normal", &"hover", &"focus", &"pressed", &"hover_pressed", &"disabled"]:
@@ -260,6 +265,20 @@ func check_contrast(theme: Theme, label := "The theme") -> void:
 	for role: Array in DIM_ROLES:
 		var colour := theme_color(theme, role[0], role[1])
 		check(contrast(colour, page) >= 3.0, "%s: %s %s stays legible at 3:1 or more (%.1f)" % [label, role[1], role[0], contrast(colour, page)])
+
+
+# The status page's book is ink on parchment: its words keep 4.5:1 against
+# the darkest the paper gets, its faded words (things not learned) 3:1, and
+# no text is smaller than the base's floor.
+func check_book(theme: Theme) -> void:
+	var paper := theme.get_color(&"page_dark", &"Grimoire")
+	for item: StringName in [&"ink", &"sepia", &"seal", &"note"]:
+		var colour := theme.get_color(item, &"Grimoire")
+		check(contrast(colour, paper) >= 4.5, "The book's %s reads on its paper at 4.5:1 or more (%.1f)" % [item, contrast(colour, paper)])
+	check(contrast(theme.get_color(&"faint", &"Grimoire"), paper) >= 3.0, "The book's faded words stay legible at 3:1 or more (%.1f)" % contrast(theme.get_color(&"faint", &"Grimoire"), paper))
+	check(contrast(theme.get_color(&"seal_light", &"Grimoire"), theme.get_color(&"seal", &"Grimoire")) >= 4.5, "The letter pressed in the wax reads on it")
+	for item in theme.get_font_size_list(&"Grimoire"):
+		check(theme.get_font_size(item, &"Grimoire") >= 14, "The book's %s stays at 14px or more" % item)
 
 
 func theme_color(theme: Theme, item: StringName, type: StringName) -> Color:

@@ -406,103 +406,83 @@ func run_tests() -> void:
 	root.push_input(key(KEY_C))
 	await process_frame
 	check(page.zoom == 1.0 and page.selected == MetaProgress.ROOT, "C brings the root back at the first size")
-	# The status page: Tab from the upgrades, her slots and the chosen one's
-	# list, a skill moved to the other slot (saved), back from the list, her
-	# figures in full.
+	# The status page, a book: Tab from the upgrades opens it at the first
+	# skill's chapter; its index, her figures and back, a skill moved to the
+	# other chapter (saved), a weapon taken up, the special's chapter sealed
+	# and then opened.
 	root.push_input(key(KEY_TAB))
 	await process_frame
 	var status: HubStatus = hub.status_page
-	check(hub.page == "status" and status.slot_buttons[1].has_focus() and status.name_label.text == "叩きつけ", "Tab goes to the status page, on the first skill slot")
-	check(status.slot_buttons.size() == 4 and status.slot_buttons[0].tooltip_text.contains("剣") and status.slot_buttons[2].tooltip_text.contains("空き") and status.slot_buttons[3].tooltip_text.contains("封印"), "The slots tell the sword, the empty slot and the sealed special")
-	check(status.slot_buttons[0].emblem != null and status.slot_buttons[2].empty and status.slot_buttons[3].sealed, "The slots show the sword's emblem, a dashed ring for the empty slot and the dimmed seal")
-	check(status.slot_buttons.map(func(row: LoadoutSlot): return row.key) == ["左クリック", "Q", "E", "R"] and status.slot_buttons[1].chosen and not status.slot_buttons[2].chosen, "Each slot carries its key as the fight's HUD does, the chosen one marked")
-	check(status.slot_buttons[1].title == "スキル1" and status.slot_buttons[1].content == "叩きつけ" and status.slot_buttons[1].note == "再使用 6秒" and status.slot_buttons[2].content == "空き", "Each slot's row names the slot, what it holds and its short figure")
-	check(status.shown_figures.size() == 3 and status.shown_figures[0] == ["再使用", "6秒"] and status.shown_figures[1][0] == "威力", "The stage tells the skill's figures a row each")
-	check(not status.action_button.visible and status.outcome_label.text.is_empty(), "On a slot the stage only tells: the action waits for a choice")
+	check(hub.page == "status" and status.has_focus() and status.slot == 1 and not status.details_open, "Tab goes to the status page, at the first skill's chapter")
+	check(status.entry_ids() == [HubStatus.CLEAR_ID, &"slam", &"thunder_flash", &"swallow_cut", &"blaze_ring", &"wisp_shot", &"thunder_circle"], "The chapter's index lists what the slot can hold, the way to empty it first")
+	check(status.entries[status.row].id == &"slam" and status.entries[status.row].state == HubStatus.State.HERE and status.told.name == "叩きつけ", "The cursor opens on what the slot holds, and the right page tells it")
+	check(status.entries[1].note == "再使用 6秒" and status.entries[2].state == HubStatus.State.UNKNOWN and status.entries[2].name == HubStatus.UNKNOWN_NAME and status.entries[2].note == HubStatus.UNOWNED, "Each entry carries its short figure; one not learned is unknown and unowned")
+	check(status.told.figures.size() == 3 and status.told.figures[0] == ["再使用", "6秒"] and status.told.figures[1][0] == "威力", "The right page tells the skill's figures a row each")
+	check(not status.told.can and status.told.outcome.is_empty(), "What the slot already holds offers no seal")
 	var hp_row: Array = status.stat_rows()[0]
 	check(hp_row[1] == "115" and hp_row[2] == "(+15)" and hp_row[3].contains("鍛えた体 +15"), "Her health shows what the upgrades add, and its breakdown")
-	var always := status.shown_rows
-	check(always == 5 and status.strip.is_visible_in_tree(), "The strip shows her five main figures")
-	var strip_words := status.strip.find_children("*", "Label", true, false).map(func(label: Label): return label.text)
-	check(strip_words.has("115") and strip_words.has("(+15)"), "The strip tells what the upgrades add beside the value")
 	root.push_input(key(KEY_R))
 	await process_frame
-	check(status.details_open and status.shown_rows == status.stat_rows().size() and status.shown_rows > always and not status.slot_buttons[1].is_visible_in_tree(), "R turns the page to all her figures")
+	check(status.details_open and status.chapter() == HubStatus.FIGURES and status.shown_rows == status.stat_rows().size() and status.shown_rows >= 14, "R turns the book to all her figures")
 	root.push_input(key(KEY_ESCAPE))
 	await process_frame
-	check(hub.page == "status" and not status.details_open and status.slot_buttons[1].has_focus() and status.shown_rows == always, "Back from her figures returns to the build")
+	check(hub.page == "status" and not status.details_open and status.slot == 1 and status.has_focus(), "Back from her figures returns to the chapter left")
+	root.push_input(key(KEY_ENTER))
+	root.push_input(key(KEY_ENTER, false))
+	await process_frame
+	check(main.meta.loadout == [&"slam", &""], "Enter on what the slot already holds changes nothing")
+	root.push_input(key(KEY_E))
+	await process_frame
+	check(status.slot == 2 and status.entries[status.row].id == &"slam" and status.entries[1].state == HubStatus.State.ELSEWHERE and status.entries[1].other == 1, "E turns to the second skill's chapter, where the skill is marked as set in the first")
+	check(status.told.can and status.told.action == "入れ替える" and status.told.outcome == "Q から移す", "A skill set in the other slot offers to move, and says what that does")
+	root.push_input(key(KEY_X))
+	await process_frame
+	check(main.meta.loadout == [&"slam", &""], "X on an empty slot changes nothing")
+	root.push_input(key(KEY_ENTER))
+	root.push_input(key(KEY_ENTER, false))
+	await process_frame
+	check(main.meta.loadout == [&"", &"slam"] and hub.feedback.text.contains("スキル2"), "Enter presses the seal: the skill moves to this slot")
+	check(status.entries[status.row].id == &"slam" and status.entries[status.row].state == HubStatus.State.HERE and not status.told.can, "What the slot now holds is marked as held, the cursor on it")
+	root.push_input(key(KEY_UP))
+	await process_frame
+	check(status.shown_id == HubStatus.CLEAR_ID and status.told.can and status.told.outcome == "「叩きつけ」を外す", "Up reaches the entry that empties the slot, which says what it would remove")
 	root.push_input(key(KEY_DOWN))
 	await process_frame
-	check(status.slot == 2 and status.choice_ids == [HubStatus.CLEAR_ID, &"slam", &"thunder_flash", &"swallow_cut", &"blaze_ring", &"wisp_shot", &"thunder_circle"] and status.choices[2].state == LoadoutChoice.State.UNKNOWN and status.choices[2].tooltip_text == HubStatus.UNKNOWN_NOTE, "Choosing the second slot lists what it can hold, one not learned as its shadow")
-	check(status.choices[0].clears and status.choices[0].idle and status.choices[1].state == LoadoutChoice.State.ELSEWHERE and status.choices[1].key == "Q" and status.choices[1].tag == HubStatus.HELD, "A choice tells the slot its skill is set in by that slot's key; clearing an empty slot is idle")
-	check(status.choices[1].title == "叩きつけ" and status.choices[1].note == "再使用 6秒" and status.choices[2].title == HubStatus.UNKNOWN_NAME and status.choices[2].tag == HubStatus.UNOWNED, "Each choice is named with its short figure, one not learned as unknown and unowned")
-	check(status.count_label.text == "習得  1 / 6", "The list counts the skills learned")
-	root.push_input(key(KEY_ENTER))
-	root.push_input(key(KEY_ENTER, false))
-	await process_frame
-	check(status.choices[0].has_focus(), "Enter on a slot goes into its list")
-	root.push_input(key(KEY_DOWN))
-	await process_frame
-	check(status.action_button.visible and status.action_button.text == "入れ替える" and not status.action_button.disabled and status.outcome_label.text == "Q から移す", "A skill set in the other slot offers to change places, and says what that does")
-	check(status.slot_buttons[2].preview == "叩きつけ" and status.slot_buttons[1].preview == "空き", "Both slots tell what they would hold afterwards")
-	root.push_input(key(KEY_ENTER))
-	root.push_input(key(KEY_ENTER, false))
-	await process_frame
-	check(main.meta.loadout == [&"", &"slam"] and status.slot_buttons[2].has_focus() and hub.feedback.text.contains("スキル2"), "Enter on a choice sets it, and the focus returns to the slot")
-	check(status.choices[1].state == LoadoutChoice.State.HELD and status.choices[1].key.is_empty() and status.slot_buttons[1].empty and status.slot_buttons[2].preview.is_empty() and status.slot_buttons[2].content == "叩きつけ", "What the slot now holds is marked as held, and the slot it left is empty")
-	root.push_input(key(KEY_RIGHT))
-	await process_frame
-	check(status.choices[1].has_focus() and status.action_button.disabled and status.action_button.text == HubStatus.HELD, "Right from a slot goes into its list too, on what the slot holds")
-	root.push_input(key(KEY_ENTER))
-	root.push_input(key(KEY_ENTER, false))
-	await process_frame
-	check(main.meta.loadout == [&"", &"slam"] and status.choices[1].has_focus(), "Enter on what the slot already holds changes nothing")
-	root.push_input(key(KEY_LEFT))
-	await process_frame
-	check(status.slot_buttons[2].has_focus(), "Left from the list returns to its slot")
-	root.push_input(key(KEY_ENTER))
-	root.push_input(key(KEY_ENTER, false))
-	await process_frame
-	root.push_input(key(KEY_ESCAPE))
-	await process_frame
-	check(hub.page == "status" and status.slot_buttons[2].has_focus(), "Back from the list returns to its slot")
-	# The attack slot: the sword held, the others unknown until learned;
+	# The attack's chapter: the sword held, the others unknown until learned;
 	# learned, one is taken up there.
-	root.push_input(key(KEY_UP))
-	root.push_input(key(KEY_UP))
+	root.push_input(key(KEY_Q))
+	root.push_input(key(KEY_Q))
 	await process_frame
-	check(status.slot == 0 and status.choice_ids == [&"sword", &"spear", &"hammer"] and status.choices[1].state == LoadoutChoice.State.UNKNOWN and status.choices[0].state == LoadoutChoice.State.HELD and status.slot_buttons[0].tooltip_text.contains("剣"), "The attack slot lists the sword, the other weapons unknown")
+	check(status.slot == 0 and status.entry_ids() == [&"sword", &"spear", &"hammer"] and status.entries[1].state == HubStatus.State.UNKNOWN and status.entries[0].state == HubStatus.State.HERE, "Q turns back to the attack's chapter: the sword held, the other weapons unknown")
 	main.meta.ranks["learn_spear"] = 1
 	hub.refresh(main.meta, "")
+	root.push_input(key(KEY_DOWN))
+	await process_frame
+	check(status.told.name == "槍" and status.told.action == "持ち替える" and status.told.figures[0] == ["連撃", "3段"] and status.told.outcome == "「剣」と替える", "The right page tells the spear and offers to take it up in the sword's place")
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))
 	await process_frame
-	root.push_input(key(KEY_DOWN))
+	check(main.meta.weapon == &"spear" and status.entries[status.row].id == &"spear" and hub.feedback.text.contains("持ち替え"), "Enter on it takes the spear up")
+	# The pointer: a tab turns to its chapter, a second click on the chosen row seals it.
+	status._press([&"tab", HubStatus.SPECIAL_SLOT])
 	await process_frame
-	check(status.name_label.text == "槍" and status.action_button.text == "持ち替える" and status.shown_figures[0] == ["連撃", "3段"] and status.outcome_label.text == "「剣」と替える", "The stage tells the spear and offers to take it up in the sword's place")
-	root.push_input(key(KEY_ENTER))
-	root.push_input(key(KEY_ENTER, false))
-	await process_frame
-	check(main.meta.weapon == &"spear" and status.slot_buttons[0].has_focus() and status.slot_buttons[0].tooltip_text.contains("槍") and hub.feedback.text.contains("持ち替え"), "Enter on it takes the spear up")
-	root.push_input(key(KEY_DOWN))
-	root.push_input(key(KEY_DOWN))
-	root.push_input(key(KEY_DOWN))
-	await process_frame
-	check(status.slot == 3 and status.choice_ids == [&"echo_burst", &"sky_rend", &"crimson_lotus"] and status.choices.all(func(row: LoadoutChoice): return row.state == LoadoutChoice.State.UNKNOWN) and status.name_label.text == "必殺技", "The sealed special slot lists its moves as shadows")
-	# The special slot opens once a special move is learned.
+	check(status.slot == 3 and status.entry_ids() == [&"echo_burst", &"sky_rend", &"crimson_lotus"] and status.entries.all(func(entry: Dictionary): return entry.state == HubStatus.State.UNKNOWN) and not status.told.can, "The sealed special's chapter lists its moves as shadows, none to be sealed")
+	# The special's chapter opens once a special move is learned.
 	main.meta.ranks["learn_echo_burst"] = 1
 	hub.refresh(main.meta, "")
-	check(status.slot == 3 and status.choice_ids == [HubStatus.CLEAR_ID, &"echo_burst", &"sky_rend", &"crimson_lotus"] and status.choices[2].state == LoadoutChoice.State.UNKNOWN and status.slot_buttons[3].empty and status.slot_buttons[3].tooltip_text.contains("空き"), "Once a special move is learned, its slot opens with its choices")
-	root.push_input(key(KEY_ENTER))
-	root.push_input(key(KEY_ENTER, false))
+	check(status.slot == 3 and status.entry_ids() == [HubStatus.CLEAR_ID, &"echo_burst", &"sky_rend", &"crimson_lotus"] and status.entries[2].state == HubStatus.State.UNKNOWN, "Once a special move is learned, its chapter offers it and the way to empty the slot")
+	status._press([&"row", 1])
 	await process_frame
-	root.push_input(key(KEY_DOWN))
+	check(status.told.name == "残響解放" and status.told.action == "装備する" and status.told.outcome == "R に付ける", "A click chooses the special move, and the page offers to set it")
+	status._press([&"row", 1])
 	await process_frame
-	check(status.name_label.text == "残響解放" and status.action_button.text == "装備する" and status.outcome_label.text == "R に付ける", "The stage tells the special move and offers to set it")
-	root.push_input(key(KEY_ENTER))
-	root.push_input(key(KEY_ENTER, false))
+	check(main.meta.special == &"echo_burst" and status.entries[1].state == HubStatus.State.HERE and hub.feedback.text.contains("必殺技"), "A second click on it sets the special move")
+	status._press([&"tab", HubStatus.FIGURES])
 	await process_frame
-	check(main.meta.special == &"echo_burst" and status.slot_buttons[3].tooltip_text.contains("残響解放") and hub.feedback.text.contains("必殺技"), "Enter on it sets the special move")
+	check(status.details_open, "The last tab opens her figures")
+	root.push_input(key(KEY_R))
+	await process_frame
+	check(not status.details_open and status.slot == 3, "R returns to the chapter left")
 	root.push_input(key(KEY_TAB))
 	await process_frame
 	check(hub.page == "upgrade", "Tab goes back to the upgrades")

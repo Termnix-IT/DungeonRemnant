@@ -501,7 +501,9 @@ R スティック,,R Stick,game/hub/hub.gd
   (残響 %+d),,  (Echoes %+d),game/hub/hub.gd
 装備に戻る,,Back to Gear,game/hub/hub.gd
 装備,,Equip,game/hub/hub.gd
+外す,,Remove,game/hub/hub.gd
 能力,,Stats,game/hub/hub.gd
+章,,Chapter,game/hub/hub.gd
 強化へ,,To Upgrades,game/hub/hub.gd
 ヘルプ,,Help,game/hub/hub.gd
 項目,,Item,game/hub/hub.gd
@@ -737,19 +739,22 @@ Q・E（ゲームパッドはLB・RB）で種類を切り替えます。,,Switch
 未所持,,Locked,ui/hub_status.gd
 装備中,,Equipped,ui/hub_status.gd
 強化ツリーの必殺技の枝で必殺技を覚えると付けられる,,Opens once you learn a Special on the Upgrade Tree's Special branch,ui/hub_status.gd
-すべての能力を見る,,View all stats,ui/hub_status.gd
 スキル1,,Skill 1,ui/hub_status.gd
 スキル2,,Skill 2,ui/hub_status.gd
+第一章,,Chapter I,ui/hub_status.gd
+第二章,,Chapter II,ui/hub_status.gd
+第三章,,Chapter III,ui/hub_status.gd
+第四章,,Chapter IV,ui/hub_status.gd
+第五章,,Chapter V,ui/hub_status.gd
+%s で振るう武器,,The weapon swung with %s,ui/hub_status.gd
+%s で放つ技,,The skill loosed with %s,ui/hub_status.gd
+%s で解き放つ必殺技,,The special unleashed with %s,ui/hub_status.gd
 戦う力,,Combat,ui/hub_status.gd
 探索と成長,,Runs and Growth,ui/hub_status.gd
-空き,,Empty,ui/hub_status.gd
-封印,,Sealed,ui/hub_status.gd
 %d連撃,,%d-hit combo,ui/hub_status.gd
-再使用 %s秒,,Cooldown %ss,ui/hub_status.gd
 ゲージ%s,,Gauge %s,ui/hub_status.gd
-%s（%s）：%s,,%s (%s): %s,ui/hub_status.gd
-外す,,Remove,ui/hub_status.gd
-習得  %d / %d,,Learned  %d / %d,ui/hub_status.gd
+再使用 %s秒,,Cooldown %ss,ui/hub_status.gd
+空き,,Empty,ui/hub_status.gd
 武器,,Weapon,ui/hub_status.gd
 %d段,,%d hits,ui/hub_status.gd
 最も強い段,,Strongest Hit,ui/hub_status.gd
@@ -779,7 +784,7 @@ Q・E（ゲームパッドはLB・RB）で種類を切り替えます。,,Switch
 ダッシュ,,Dash,ui/hub_status.gd
 %d回 / %s秒,,%d / %ss,ui/hub_status.gd
 基礎 %d回 / %s秒%s%s,,Base %d / %ss%s%s,ui/hub_status.gd
-回,, ,ui/hub_status.gd
+回,,x,ui/hub_status.gd
 秒,,s,ui/hub_status.gd
 被弾後の無敵,,Invincibility After a Hit,ui/hub_status.gd
 宝石を吸い寄せる範囲,,Gem Pickup Range,ui/hub_status.gd
@@ -789,7 +794,7 @@ Q・E（ゲームパッドはLB・RB）で種類を切り替えます。,,Switch
 得る経験値,,EXP Gained,ui/hub_status.gd
 レベルアップのカード,,Level-up Cards,ui/hub_status.gd
 %d枚,,%d,ui/hub_status.gd
-枚,, ,ui/hub_status.gd
+枚,,x,ui/hub_status.gd
 探索ごとに%d回,,%d per run,ui/hub_status.gd
 0回,,0,ui/hub_status.gd
 あり,,Yes,ui/hub_status.gd
@@ -800,9 +805,25 @@ Q・E（ゲームパッドはLB・RB）で種類を切り替えます。,,Switch
 レベルアップの瞬間,,On Level-up,ui/hub_status.gd
 、,,", ",ui/hub_status.gd
 光の癒やし・光の衝撃・光の加護・高揚で増える,,"Raised by Healing Light, Burst of Light, Ward of Light and Elation",ui/hub_status.gd
-詳しく,,Details,ui/hub_status.gd
 基礎 %s%s,,Base %s%s,ui/hub_status.gd
 　＋ %s %s%s%s,,  + %s %s%s%s,ui/hub_status.gd
+攻,seal,A,ui/hub_status.gd
+いまの装備,,Equipped now,ui/hub_status.gd
+封印,,Sealed,ui/hub_status.gd
+空欄,,Blank,ui/hub_status.gd
+目録,,Index,ui/hub_status.gd
+習得  %d / %d,,Learned  %d / %d,ui/hub_status.gd
+%s に装備中,,Set on %s,ui/hub_status.gd
+この章に記されている,,Inscribed in this chapter,ui/hub_status.gd
+「%s」の章に記されている,,Inscribed in the %s chapter,ui/hub_status.gd
+まだ記されていない,,Not yet inscribed,ui/hub_status.gd
+候補,,Candidate,ui/hub_status.gd
+いまの「%s」,,Now: %s,ui/hub_status.gd
+%s で封を押す,,%s to press the seal,ui/hub_status.gd
+すでに封が押されている,,Its seal is already pressed,ui/hub_status.gd
+まだ封を押せない,,It cannot be sealed yet,ui/hub_status.gd
+外すものがない,,There is nothing to remove,ui/hub_status.gd
+ミオの記録,,Mio's Record,ui/hub_status.gd
 中央,,Center,ui/meta_upgrade_page.gd
 身体,,Body,ui/meta_upgrade_page.gd
 成長,,Growth,ui/meta_upgrade_page.gd

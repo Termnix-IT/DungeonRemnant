@@ -1,70 +1,52 @@
 class_name HubStatus
 extends Control
 
-# The status page: her build, read from the left to the right.
+# The status page: an open book, her record. Its chapters are her four slots
+# (the attack, the two skills, the special move) and, last, her figures; the
+# tabs at the book's right edge are the chapters, turned with Q/E (LB/RB),
+# left/right, or the pointer. The left page is the chapter: what the slot
+# holds now, under a seal of red wax, over an index of everything it can
+# hold (a slot that can be emptied lists "外す" first). The right page is the
+# entry under the cursor, read as a page: its picture, its account in prose,
+# and a ledger that sets its figures beside those of what the slot holds
+# now, so a change is compared before it is made. Enter (A) presses the seal
+# on the entry: the page asks for the equip (equip_requested) and, once Main
+# has saved it, shows the seal coming down (present_equip). X empties the
+# slot. R (Y) turns to her figures, written in full across both pages with
+# each one's breakdown, and back to the chapter left.
 #
-# On the left slab, her four slots as rows (LoadoutSlot), each the slot as
-# the fight's HUD shows it (its emblem, its key under it) beside its name,
-# what it holds and a short figure: the attack, fixed to a weapon (left
-# click / X); the two skills (Q / Y and E / B); the special move (R / LB),
-# sealed until one is learned. Beside the rows, the list of what the chosen
-# slot can hold (LoadoutChoice): the first row of a slot that can be emptied
-# clears it, what the slot holds is marked "装備中", a skill set in the other
-# skill slot carries that slot's key (choosing it changes the two places),
-# and a thing not learned yet is its emblem's shadow. A bead on the hairline
-# between the rows and the list stands level with the chosen slot. At the
-# slab's foot, a quiet strip of her five main figures.
-#
-# On the right, the stage: the thing under the focus, large — its kind, its
-# name, what it does and its emblem, its figures a row each, and at the foot
-# what the one action would do ("「叩きつけ」と替える") beside the action
-# itself as the crest button.
-#
-# Light follows the focus: while it is on the slots, the list rests dimmer;
-# once it is in the list, the other slots dim and the chosen one keeps its
-# gold bar, telling what it would hold afterwards ("→ 雷閃"; a swap tells
-# both slots). Enter (A) or right on a slot goes into its list, Enter on a
-# row there sets it (equip_requested; the hub saves, then calls
-# present_equip, which runs a gold ring round every slot that changed), and
-# back or left from the list returns to the slot. The pointer chooses by
-# resting or clicking, and acts with the button or a double click.
-#
-# R (Y), or a click on the strip, turns the page to her figures in full
-# (`details_open`): every figure a row with where it comes from, in two
-# groups over the same two slabs; R, or back, returns to the build.
+# The page is one focusable control that draws itself, ink on parchment, in
+# a design space of 1520x686 scaled to its rect: the book and its paper are
+# a shader (ui/grimoire/grimoire_book.gdshader), the rest is drawn in
+# _draw() with the colours, faces and sizes of the theme's Grimoire type.
+# The pointer acts through zones named while drawing: a click chooses a row
+# or a tab, a second click on the chosen row seals it.
 
 signal equip_requested(slot: int, id: StringName)
-# The page turned between the build and her figures.
+# The page turned to her figures or back: its keys have changed.
 signal view_changed
 
-const SLOT_WIDTH := 344.0
-const SLOT_HEIGHT := 112.0
-const CHOICE_HEIGHT := 62.0
-const LINK_WIDTH := 28.0
-const BEAD := 6.0
-const STRIP_HEIGHT := 68.0
-const STRIP_INSET := 14.0
-const PICTURE_ROOM := 250.0
-const PICTURE_SIZE := 200.0
-# The emblem stands a little over the stage's middle.
-const PICTURE_LEVEL := 0.42
-# The account starts this far down the stage, its figures this far under it.
-const ACCOUNT_INSET := 44.0
-const FIGURES_GAP := 18.0
-const PICTURE_RING := 122.0
-const FOOT_HEIGHT := 84.0
-const FIGURE_ROW_HEIGHT := 44.0
-const SHEET_ROW_HEIGHT := 64.0
-const ACTION_WIDTH := 320.0
-# How bright the list rests while the focus is on the slots, and the other
-# slots while it is in the list.
-const LIST_REST := 0.72
-const SLOT_REST := 0.45
-# The stage's light breathes: this share of its strength, a breath lasting
-# BREATH_TIME seconds.
-const BREATH := 0.18
-const BREATH_TIME := 3.2
-# Distances are told in the floor's cells (AreaGround.CELL), to a tenth.
+enum State { FREE, HERE, ELSEWHERE, UNKNOWN }
+
+const BOOK := preload("res://ui/grimoire/grimoire_book.gdshader")
+const DESIGN := Vector2(1520.0, 686.0)
+const LEFT := 116.0
+const RIGHT := 784.0
+const PAGE_WIDTH := 560.0
+const GUTTER := 730.0
+const PAGE_TOP := 14.0
+const PAGE_BOTTOM := 672.0
+const ROW := 44.0
+const LIST_TOP := 268.0
+# The index shows this many entries; a longer one scrolls with the cursor.
+const VISIBLE_ROWS := 9
+const TAB_LEFT := 1400.0
+const TAB_HEIGHT := 104.0
+const TAB_STEP := 114.0
+const TAB_TOP := 44.0
+const TURN_TIME := UIMotion.ENTER_TIME
+const SEAL_TIME := UIMotion.MOMENT_TIME + UIMotion.GOLD_TIME
+const REFUSE_TIME := 0.3
 const CELL_SNAP := 0.1
 const UNKNOWN_NAME := "？？？"
 const UNKNOWN_NOTE := "強化ツリーのスキルの枝で習得できる"
@@ -76,8 +58,7 @@ const EMPTY_NOTE := "まだ何も付けていない。"
 const UNOWNED := "未所持"
 const HELD := "装備中"
 const SPECIAL_NOTE := "強化ツリーの必殺技の枝で必殺技を覚えると付けられる"
-const STRIP_NOTE := "すべての能力を見る"
-# The slots: id, name, its keys (keyboard, gamepad), the emblem it shows.
+# [kind, name, key, pad button, emblem of an empty slot].
 const SLOTS := [
 	[&"attack", "攻撃", "左クリック", "X", "weapon_sword"],
 	[&"skill_1", "スキル1", "Q", "Y", ""],
@@ -87,247 +68,250 @@ const SLOTS := [
 const SKILL_SLOT_OFFSET := 1
 const ATTACK_SLOT := 0
 const SPECIAL_SLOT := 3
-# Her figures' two groups on the full page.
+# The chapter after the slots': her figures.
+const FIGURES := 4
+const ORDINALS := ["第一章", "第二章", "第三章", "第四章", "第五章"]
+const CHAPTER_LINES := ["%s で振るう武器", "%s で放つ技", "%s で放つ技", "%s で解き放つ必殺技"]
+const FIGURES_NAME := "能力"
+# Her figures' two groups, a page each.
 const GROUPS := ["戦う力", "探索と成長"]
 
 var meta: MetaProgress
-var slot_buttons: Array[LoadoutSlot] = []
-var choices: Array[LoadoutChoice] = []
-# What each choice holds: a skill's, special move's or weapon's id, or CLEAR_ID.
-var choice_ids: Array[StringName] = []
+# The chapter open (a slot), and whether the book is turned to her figures.
 var slot := 1
-var shown_id: StringName = &""
 var details_open := false
-# How many of her figures the page shows.
+# The cursor's row in the chapter's index, and the index itself:
+# {id, emblem, name, note, state, other} an entry (`other`: the slot that
+# holds it now, or -1).
+var row := 0
+var entries: Array = []
+# What the right page tells: the account of the entry under the cursor.
+var told := {}
+var shown_id: StringName = &""
+# How many of her figures the open pages show.
 var shown_rows := 0
-# The stage's figures as shown: [name, value] a row.
-var shown_figures: Array = []
-var picture: Control
-var name_label: Label
-var kind_label: Label
-var description_label: Label
-var outcome_label: Label
-var count_label: Label
-var action_button: CrestButton
-var strip: Button
-var _slab: VBoxContainer
-var _deck: HBoxContainer
-var _slot_column: VBoxContainer
-var _link: Control
-var _rail: Ornament
-# The stage's light behind its emblem, breathing in its shader.
-var _stage_light: Ornament
-var _choice_column: VBoxContainer
-var _scroll: ScrollContainer
-var _choices: VBoxContainer
-var _strip_row: HBoxContainer
-var _stage_room: MarginContainer
-var _stage: VBoxContainer
-var _figures: VBoxContainer
-var _sheets: Array[VBoxContainer] = []
-var _emblem := ""
-var _unknown := false
-var _shown_slot := -1
+var _base: HeroTuning
 var _pad := false
-var _hover_target: Control
-# The last press came from the pointer (it chooses, never acts).
-var _by_pointer := false
 # The slots an equip asked for would change, for the moment once it is saved.
 var _changing: Array[int] = []
-# The page is arranging itself: a row taking the focus makes no sound.
+var _sealed: Array[int] = []
+var _book: ColorRect
+var _clock := 0.0
+var _kicks := {}
+var _way := 1.0
+var _zones: Array = []
+var _hover: Variant = null
+var _origin := Vector2.ZERO
+var _zoom := 1.0
+var _fade := 1.0
+# The page is arranging itself: moving the cursor makes no sound.
 var _quiet := true
-var _base: HeroTuning
 
 
 func _ready() -> void:
 	_base = load("res://data/hero/mio.tres")
-	var columns := HBoxContainer.new()
-	columns.theme_type_variation = &"ShopColumns"
-	add_child(columns)
-	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_slab = HubUI.open_column(columns, 1.15, &"SlabSolid")
-	_slab.theme_type_variation = &"StatusSlab"
-	_build_deck()
-	_build_strip()
-	var right := HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
-	(right.get_parent() as Control).clip_contents = true
-	_build_stage(right)
-	# Her figures in full, a group on each slab, shown in place of the build.
-	for parent: VBoxContainer in [_slab, right]:
-		var sheet := VBoxContainer.new()
-		sheet.theme_type_variation = &"StatusSheet"
-		sheet.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		sheet.hide()
-		parent.add_child(sheet)
-		_sheets.append(sheet)
-	visibility_changed.connect(_light)
-	set_deferred(&"_quiet", false)
+	theme_type_variation = &"Grimoire"
+	focus_mode = Control.FOCUS_ALL
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	_book = ColorRect.new()
+	_book.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_book.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_book.show_behind_parent = true
+	var paper := ShaderMaterial.new()
+	paper.shader = BOOK
+	_book.material = paper
+	add_child(_book)
+	resized.connect(_fit)
+	theme_changed.connect(_fit)
+	_fit()
 
 
-# Her slots, the bead's hairline, and the chosen slot's list.
-func _build_deck() -> void:
-	_deck = HBoxContainer.new()
-	_deck.theme_type_variation = &"ShopColumns"
-	_deck.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_slab.add_child(_deck)
-	_slot_column = VBoxContainer.new()
-	_slot_column.theme_type_variation = &"CodexList"
-	_slot_column.custom_minimum_size.x = SLOT_WIDTH
-	_deck.add_child(_slot_column)
-	for index in SLOTS.size():
-		var row := LoadoutSlot.new()
-		row.custom_minimum_size.y = SLOT_HEIGHT
-		row.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		row.last = index == SLOTS.size() - 1
-		_slot_column.add_child(row)
-		row.pressed.connect(_enter_choices.bind(index))
-		row.focus_entered.connect(_choose_slot.bind(index))
-		row.mouse_entered.connect(_rest_on.bind(row))
-		slot_buttons.append(row)
-	for index in slot_buttons.size():
-		var row := slot_buttons[index]
-		row.focus_neighbor_top = slot_buttons[maxi(0, index - 1)].get_path()
-		row.focus_neighbor_bottom = slot_buttons[mini(slot_buttons.size() - 1, index + 1)].get_path()
-		row.focus_neighbor_left = row.get_path()
-	_link = Control.new()
-	_link.custom_minimum_size.x = LINK_WIDTH
-	_link.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_link.draw.connect(_draw_link)
-	_deck.add_child(_link)
-	_rail = Ornament.new(Ornament.Kind.RAIL)
-	_rail.show_behind_parent = true
-	_rail.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_link.add_child(_rail)
-	_slot_column.sort_children.connect(_link.queue_redraw)
-	_choice_column = VBoxContainer.new()
-	_choice_column.theme_type_variation = &"DetailStack"
-	_choice_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_deck.add_child(_choice_column)
-	count_label = HubUI.label(_choice_column, "", &"NoteLabel")
-	# More choices than the column holds scroll within it, the row the focus
-	# lands on drawn into view.
-	_scroll = ScrollContainer.new()
-	_scroll.name = "Choices"
-	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_scroll.follow_focus = true
-	_choice_column.add_child(_scroll)
-	_choices = VBoxContainer.new()
-	_choices.theme_type_variation = &"CodexList"
-	_choices.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_scroll.add_child(_choices)
-
-
-# Her five main figures at the slab's foot, the way to the rest.
-func _build_strip() -> void:
-	strip = Button.new()
-	strip.name = "Figures"
-	strip.theme_type_variation = &"StatusStrip"
-	strip.custom_minimum_size.y = STRIP_HEIGHT
-	strip.focus_mode = Control.FOCUS_NONE
-	strip.pressed.connect(toggle_details)
-	strip.draw.connect(func():
-		strip.draw_line(Vector2(0.0, 0.5), Vector2(strip.size.x, 0.5), strip.get_theme_color(&"separator", &"LoadoutSlot"), -1.0))
-	_slab.add_child(strip)
-	_strip_row = HBoxContainer.new()
-	_strip_row.theme_type_variation = &"StatusStripRow"
-	_strip_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	strip.add_child(_strip_row)
-	_strip_row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_strip_row.offset_left = STRIP_INSET
-	_strip_row.offset_right = -STRIP_INSET
-
-
-# A fixed gap in a stack.
-func _gap(parent: Node, height: float) -> void:
-	var gap := Control.new()
-	gap.custom_minimum_size.y = height
-	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	parent.add_child(gap)
-
-
-# The stage: the thing under the focus, and the one action.
-func _build_stage(column: VBoxContainer) -> void:
-	_stage_room = MarginContainer.new()
-	_stage_room.theme_type_variation = &"StatusStageMargin"
-	_stage_room.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	column.add_child(_stage_room)
-	_stage = VBoxContainer.new()
-	_stage.theme_type_variation = &"StatusStage"
-	_stage_room.add_child(_stage)
-	# The account at the left, its figures at its foot; the emblem beside it.
-	var body := HBoxContainer.new()
-	body.theme_type_variation = &"StatusHead"
-	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_stage.add_child(body)
-	var words := VBoxContainer.new()
-	words.theme_type_variation = &"DetailStack"
-	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	body.add_child(words)
-	_gap(words, ACCOUNT_INSET)
-	kind_label = HubUI.label(words, "", &"NoteLabel")
-	name_label = HubUI.label(words, "", &"CodexName")
-	name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	description_label = HubUI.label(words, "", &"DescriptionLabel")
-	_gap(words, FIGURES_GAP)
-	_figures = VBoxContainer.new()
-	_figures.theme_type_variation = &"CodexStats"
-	words.add_child(_figures)
-	picture = Control.new()
-	picture.name = "Emblem"
-	picture.custom_minimum_size.x = PICTURE_ROOM
-	picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	picture.draw.connect(_draw_picture)
-	body.add_child(picture)
-	_stage_light = Ornament.new(Ornament.Kind.GLOW)
-	_stage_light.show_behind_parent = true
-	_stage_light.visible = false
-	picture.add_child(_stage_light)
-	picture.resized.connect(_light_picture)
-	# The foot keeps its room while the action is out of sight.
-	var foot := HBoxContainer.new()
-	foot.theme_type_variation = &"StatusHead"
-	foot.custom_minimum_size.y = FOOT_HEIGHT
-	_stage.add_child(foot)
-	outcome_label = HubUI.label(foot, "", &"BodyLabel")
-	outcome_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	outcome_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	# Setting a thing in a slot: the crest with the lobby's mark for the
-	# status. The keys act on the rows; the pointer acts here.
-	action_button = CrestButton.new()
-	action_button.name = "Equip"
-	action_button.kind = &"equip"
-	action_button.custom_minimum_size.x = ACTION_WIDTH
-	action_button.focus_mode = Control.FOCUS_NONE
-	action_button.pressed.connect(_act)
-	foot.add_child(action_button)
-	UIMotion.bind_buttons(_stage)
+# Places the design space in the rect, and the book's shader with it.
+func _fit() -> void:
+	if _book == null or size.x <= 0.0 or size.y <= 0.0:
+		return
+	_zoom = minf(size.x / DESIGN.x, size.y / DESIGN.y)
+	_origin = ((size - DESIGN * _zoom) * 0.5).round()
+	var paper := _book.material as ShaderMaterial
+	paper.set_shader_parameter(&"extent", size)
+	paper.set_shader_parameter(&"origin", _origin)
+	paper.set_shader_parameter(&"zoom", _zoom)
+	for item: StringName in [&"page_dark", &"page_light", &"cover_dark", &"cover_light"]:
+		paper.set_shader_parameter(item, get_theme_color(item))
+	queue_redraw()
 
 
 func refresh(current: MetaProgress) -> void:
 	meta = current
-	# The row under the focus is made again: the focus stays on its place.
-	var focused := _focused_choice()
 	_quiet = true
-	_show_slots()
-	_show_choices()
-	_show_stats()
-	if focused >= 0 and focused < choices.size() and is_visible_in_tree():
-		choices[focused].grab_focus()
-	else:
-		_tell(shown_id if not shown_id.is_empty() and choice_ids.has(shown_id) else _slot_content(slot))
+	_list()
+	row = clampi(row, 0, maxi(0, entries.size() - 1))
+	_tell()
 	_quiet = false
+	queue_redraw()
 
 
-# --- The slots and their choices ---
+# --- The book's state ---
 
-# The place in the list of the choice under the focus, or -1.
-func _focused_choice() -> int:
-	var owner := get_viewport().gui_get_focus_owner() if is_inside_tree() else null
-	return choices.find(owner as LoadoutChoice) if owner is LoadoutChoice else -1
+func chapter() -> int:
+	return FIGURES if details_open else slot
 
+
+# The chapter's index: everything the slot can hold, in the game's order.
+func _list() -> void:
+	entries = []
+	if meta == null:
+		return
+	var things: Array = []
+	match SLOTS[slot][0]:
+		&"attack":
+			for weapon in MetaProgress.WEAPONS:
+				things.append([weapon.id, weapon.emblem, tr(weapon.display_name), tr("%d連撃") % weapon.combo.size(), meta.owns_weapon(weapon.id), ATTACK_SLOT if meta.equipped_weapon().id == weapon.id else -1])
+		&"special":
+			for move in MetaProgress.SPECIALS:
+				things.append([move.id, move.emblem, tr(move.display_name), tr("ゲージ%s") % _number(move.charge), meta.owns_special(move.id), SPECIAL_SLOT if meta.special == move.id else -1])
+			# Sealed, its moves still stand in the index as shadows.
+			if meta.owns_any_special():
+				entries.append({id = CLEAR_ID, emblem = "", name = tr("外す"), note = tr(CLEAR_NOTE), state = State.FREE, other = -1})
+		_:
+			entries.append({id = CLEAR_ID, emblem = "", name = tr("外す"), note = tr(CLEAR_NOTE), state = State.FREE, other = -1})
+			for skill in MetaProgress.SKILLS:
+				var at := meta.slot_of(skill.id)
+				things.append([skill.id, skill.emblem, tr(skill.display_name), tr("再使用 %s秒") % _number(skill.cooldown), meta.owns_skill(skill.id), at + SKILL_SLOT_OFFSET if at >= 0 else -1])
+	for thing: Array in things:
+		var state := State.FREE
+		var holder: int = thing[5]
+		if not thing[4]:
+			state = State.UNKNOWN
+			holder = -1
+		elif holder == slot:
+			state = State.HERE
+		elif holder >= 0:
+			state = State.ELSEWHERE
+		entries.append({id = thing[0], emblem = thing[1], name = thing[2] if thing[4] else tr(UNKNOWN_NAME), note = thing[3] if thing[4] else tr(UNOWNED), state = state, other = holder})
+
+
+func entry_ids() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for entry: Dictionary in entries:
+		ids.append(entry.id)
+	return ids
+
+
+# The row of what the slot holds, or the first thing it could hold.
+func _held_row() -> int:
+	var first := -1
+	for index in entries.size():
+		if entries[index].state == State.HERE:
+			return index
+		if first < 0 and entries[index].id != CLEAR_ID:
+			first = index
+	return maxi(0, first)
+
+
+func _tell() -> void:
+	if meta == null or entries.is_empty():
+		told = {}
+		return
+	var entry: Dictionary = entries[clampi(row, 0, entries.size() - 1)]
+	shown_id = entry.id
+	told = _account(entry.id)
+	shown_rows = stat_rows().size() if details_open else 0
+
+
+# Turns to a chapter (FIGURES for her figures), the cursor on what it holds.
+func turn_to(to: int) -> void:
+	to = clampi(to, 0, FIGURES)
+	if to == chapter():
+		return
+	_way = 1.0 if to > chapter() else -1.0
+	var was_open := details_open
+	details_open = to == FIGURES
+	if not details_open:
+		slot = to
+		_list()
+		row = _held_row()
+	_tell()
+	_kick(&"turn")
+	_sound(&"ui_open")
+	if was_open != details_open:
+		view_changed.emit()
+	queue_redraw()
+
+
+# R (Y): to her figures, and back to the chapter left.
+func toggle_details() -> void:
+	turn_to(slot if details_open else FIGURES)
+
+
+func move_cursor(to: int) -> void:
+	to = clampi(to, 0, maxi(0, entries.size() - 1))
+	if to == row:
+		return
+	row = to
+	_tell()
+	_kick(&"move")
+	_sound(&"ui_move")
+	queue_redraw()
+
+
+# Enter (A) on the entry under the cursor: asks for it to be set.
+func seal() -> void:
+	if details_open or entries.is_empty():
+		return
+	if not _equip(shown_id):
+		_refuse()
+
+
+# X: asks for the open slot to be emptied.
+func clear_slot() -> void:
+	if details_open or not _equip(CLEAR_ID):
+		_refuse()
+
+
+func _refuse() -> void:
+	_kick(&"refuse")
+	_sound(&"ui_deny")
+
+
+# Called once an equip has been saved: the seal comes down on the slots it
+# changed, and the cursor rests on what the open slot now holds.
+func present_equip() -> void:
+	_sealed = _changing
+	_changing = []
+	_quiet = true
+	row = _held_row() if not _slot_content(slot).is_empty() or slot == ATTACK_SLOT else 0
+	_tell()
+	_quiet = false
+	_kick(&"seal")
+	queue_redraw()
+
+
+func focus_first() -> void:
+	_quiet = true
+	if details_open:
+		details_open = false
+		view_changed.emit()
+	_list()
+	row = _held_row()
+	_tell()
+	grab_focus()
+	_quiet = false
+	queue_redraw()
+
+
+func play_entrance() -> void:
+	_way = 0.0
+	_kick(&"turn")
+
+
+func _sound(cue: StringName) -> void:
+	if not _quiet and is_visible_in_tree():
+		GameAudio.play(self, cue, -22.0)
+
+
+# --- What things are and do ---
 
 func _slot_content(index: int) -> StringName:
 	match SLOTS[index][0]:
@@ -354,202 +338,6 @@ func _name_of(id: StringName) -> String:
 		return tr(move.display_name)
 	var weapon := MetaProgress.find_weapon(id)
 	return tr(weapon.display_name) if weapon != null else tr("空き")
-
-
-func _show_slots() -> void:
-	if meta == null:
-		return
-	for index in SLOTS.size():
-		var entry: Array = SLOTS[index]
-		var row := slot_buttons[index]
-		var held := _slot_content(index)
-		var skill := MetaProgress.find_skill(held)
-		var move := MetaProgress.find_special(held)
-		var weapon := MetaProgress.find_weapon(held)
-		var emblem := ""
-		row.note = ""
-		if held == &"special":
-			row.content = tr("封印")
-			emblem = entry[4]
-		elif weapon != null:
-			emblem = weapon.emblem
-			row.note = tr("%d連撃") % weapon.combo.size()
-		elif skill != null:
-			emblem = skill.emblem
-			row.note = tr("再使用 %s秒") % _number(skill.cooldown)
-		elif move != null:
-			emblem = move.emblem
-			row.note = tr("ゲージ%s") % _number(move.charge)
-		if held != &"special":
-			row.content = _name_of(held)
-		row.title = tr(entry[1])
-		row.emblem = EmblemIcons.texture(emblem)
-		row.empty = emblem.is_empty()
-		row.sealed = held == &"special"
-		row.key = _slot_key(index)
-		row.chosen = index == slot
-		row.tooltip_text = tr("%s（%s）：%s") % [row.title, row.key, row.content]
-		row.queue_redraw()
-	_link.queue_redraw()
-
-
-func _show_choices() -> void:
-	if meta == null:
-		return
-	# The row pressed may still be sending its signal.
-	for row in choices:
-		_choices.remove_child(row)
-		row.queue_free()
-	choices.clear()
-	choice_ids.clear()
-	var kind: StringName = SLOTS[slot][0]
-	var held := 0
-	var total := 0
-	match kind:
-		&"attack":
-			for weapon in MetaProgress.WEAPONS:
-				total += 1
-				held += 1 if meta.owns_weapon(weapon.id) else 0
-				_add_choice(weapon.id, weapon.emblem, tr(weapon.display_name), tr("%d連撃") % weapon.combo.size(), not meta.owns_weapon(weapon.id), UNKNOWN_WEAPON_NOTE)
-		&"special":
-			for move in MetaProgress.SPECIALS:
-				total += 1
-				held += 1 if meta.owns_special(move.id) else 0
-			# Sealed, its moves still stand in the list as shadows.
-			if held > 0:
-				_add_choice(CLEAR_ID, "", tr("外す"), "", false, "")
-			for move in MetaProgress.SPECIALS:
-				_add_choice(move.id, move.emblem, tr(move.display_name), tr("ゲージ%s") % _number(move.charge), not meta.owns_special(move.id), UNKNOWN_SPECIAL_NOTE)
-		_:
-			_add_choice(CLEAR_ID, "", tr("外す"), "", false, "")
-			for skill in MetaProgress.SKILLS:
-				total += 1
-				held += 1 if meta.owns_skill(skill.id) else 0
-				_add_choice(skill.id, skill.emblem, tr(skill.display_name), tr("再使用 %s秒") % _number(skill.cooldown), not meta.owns_skill(skill.id), UNKNOWN_NOTE)
-	count_label.text = tr("習得  %d / %d") % [held, total]
-	for index in choices.size():
-		var row := choices[index]
-		row.focus_neighbor_left = slot_buttons[slot].get_path()
-		row.focus_neighbor_right = row.get_path()
-		if index == 0:
-			row.focus_neighbor_top = row.get_path()
-		if index == choices.size() - 1:
-			row.focus_neighbor_bottom = row.get_path()
-	for index in slot_buttons.size():
-		slot_buttons[index].focus_neighbor_right = slot_buttons[index].get_path()
-	_mark_choices()
-	_scroll.scroll_vertical = 0
-
-
-# A choice: its emblem, its name over a short figure ("再使用 6秒"); one not
-# learned yet, its emblem's shadow named "？？？".
-func _add_choice(id: StringName, emblem: String, title: String, figure: String, unknown: bool, unknown_note: String) -> void:
-	var row := LoadoutChoice.new()
-	row.custom_minimum_size.y = CHOICE_HEIGHT
-	_choices.add_child(row)
-	row.emblem = EmblemIcons.texture(emblem) if not emblem.is_empty() else null
-	row.clears = id == CLEAR_ID
-	row.title = tr(UNKNOWN_NAME) if unknown else title
-	row.note = "" if unknown else figure
-	row.state = LoadoutChoice.State.UNKNOWN if unknown else LoadoutChoice.State.FREE
-	row.tooltip_text = tr(unknown_note) if unknown else (tr(CLEAR_NOTE) if id == CLEAR_ID else title)
-	var index := choices.size()
-	row.focus_entered.connect(_choose_choice.bind(index))
-	row.pressed.connect(_press_choice.bind(index))
-	row.mouse_entered.connect(_rest_on.bind(row))
-	# A double click acts as the stage's button does, without the way there.
-	row.gui_input.connect(func(event: InputEvent):
-		if event is InputEventMouseButton and event.pressed and event.double_click and event.button_index == MOUSE_BUTTON_LEFT:
-			_equip(id))
-	choices.append(row)
-	choice_ids.append(id)
-
-
-# Where each choice stands: what the chosen slot holds is "装備中" under a
-# gold diamond; a skill set in the other skill slot carries that slot's key;
-# one not learned is "未所持"; a row that would change nothing is dimmed.
-func _mark_choices() -> void:
-	if meta == null:
-		return
-	var held := _slot_content(slot)
-	for index in choices.size():
-		var id := choice_ids[index]
-		var row := choices[index]
-		row.key = ""
-		if row.state == LoadoutChoice.State.UNKNOWN:
-			row.tag = tr(UNOWNED)
-			row.idle = true
-		elif id == CLEAR_ID:
-			row.tag = ""
-			row.idle = held.is_empty()
-		elif id == held:
-			row.state = LoadoutChoice.State.HELD
-			row.tag = tr(HELD)
-			row.idle = false
-		else:
-			row.state = LoadoutChoice.State.FREE
-			row.tag = ""
-			row.idle = false
-			if SLOTS[slot][0] in [&"skill_1", &"skill_2"]:
-				var at := meta.slot_of(id)
-				if at >= 0 and at != slot - SKILL_SLOT_OFFSET:
-					row.state = LoadoutChoice.State.ELSEWHERE
-					row.key = _slot_key(at + SKILL_SLOT_OFFSET)
-					row.tag = tr(HELD)
-		row.queue_redraw()
-	# Right from the slot leads to what it holds, else to the list's head.
-	if not choices.is_empty():
-		slot_buttons[slot].focus_neighbor_right = choices[maxi(0, choice_ids.find(held))].get_path()
-
-
-func _choose_slot(index: int) -> void:
-	var changed := index != slot
-	if changed:
-		slot = index
-		for at in slot_buttons.size():
-			slot_buttons[at].chosen = at == slot
-		_show_choices()
-		UIMotion.of(_choices).appear(0.0, UIMotion.WINDOW_TIME)
-		_link.queue_redraw()
-	_tick(changed)
-	_preview(&"")
-	_tell(_slot_content(index))
-	_light()
-
-
-func _choose_choice(index: int) -> void:
-	if index >= choice_ids.size():
-		return
-	_tick(choice_ids[index] != shown_id)
-	_tell(choice_ids[index])
-	_preview(choice_ids[index])
-	_light()
-
-
-# The quiet tick of the focus moving to another thing.
-func _tick(moved: bool) -> void:
-	if moved and not _quiet and is_visible_in_tree():
-		GameAudio.play(self, &"ui_move", -22.0)
-
-
-# Enter (A) on a slot: into its list, at the row it holds. A click only
-# chooses the slot.
-func _enter_choices(index: int) -> void:
-	_choose_slot(index)
-	if _by_pointer:
-		return
-	if choices.is_empty():
-		GameAudio.play(self, &"ui_deny", -18.0)
-		return
-	choices[maxi(0, choice_ids.find(_slot_content(index)))].grab_focus()
-
-
-# Enter (A) on a choice sets it; a click only chooses it, and the stage's
-# button acts.
-func _press_choice(index: int) -> void:
-	if index < choice_ids.size() and not _by_pointer:
-		if not _equip(choice_ids[index]):
-			GameAudio.play(self, &"ui_deny", -18.0)
 
 
 # Asks for the choice to be set in the chosen slot; false when that would
@@ -582,103 +370,6 @@ func _equip(id: StringName) -> bool:
 		_changing.append(other + SKILL_SLOT_OFFSET)
 	equip_requested.emit(index, target)
 	return true
-
-
-func _act() -> void:
-	_equip(shown_id)
-
-
-# After an equip was saved: the moment on every slot it changed, and the
-# focus back on the slot.
-func present_equip() -> void:
-	_quiet = true
-	_preview(&"")
-	slot_buttons[slot].grab_focus()
-	for index in _changing:
-		slot_buttons[index].celebrate()
-	_changing = []
-	_quiet = false
-
-
-# What the slots would hold once the choice is set: on the chosen slot, and
-# on the other skill slot when the two change places.
-func _preview(id: StringName) -> void:
-	for row in slot_buttons:
-		row.preview = ""
-	if meta == null or id.is_empty() or not _account(id).can:
-		return
-	slot_buttons[slot].preview = tr("空き") if id == CLEAR_ID else _name_of(id)
-	if SLOTS[slot][0] in [&"skill_1", &"skill_2"]:
-		var other := meta.slot_of(id)
-		if other >= 0:
-			slot_buttons[other + SKILL_SLOT_OFFSET].preview = _name_of(meta.loadout[slot - SKILL_SLOT_OFFSET])
-
-
-# Light follows the focus: on the slots, the list rests; in the list, the
-# slots it does not touch dim.
-func _light() -> void:
-	if not is_visible_in_tree() or slot_buttons.is_empty():
-		return
-	var listing := _focused_choice() >= 0
-	for index in slot_buttons.size():
-		var row := slot_buttons[index]
-		var bright := not listing or index == slot or not row.preview.is_empty()
-		UIMotion.of(row).fade_to(1.0 if bright else SLOT_REST, UIMotion.SELECT_TIME)
-	UIMotion.of(_choice_column).fade_to(1.0 if listing else LIST_REST, UIMotion.SELECT_TIME)
-
-
-# Resting the pointer on a slot or a choice a moment chooses it.
-func _rest_on(target: Control) -> void:
-	_hover_target = target
-	await get_tree().create_timer(HubLobby.HOVER_INTENT).timeout
-	if _hover_target == target and is_instance_valid(target) and target.is_visible_in_tree() and not target.has_focus():
-		target.grab_focus()
-
-
-# The hairline between the slots and the list, and on it the bead level with
-# the chosen slot, sliding there from the last one.
-func _draw_link() -> void:
-	if slot_buttons.is_empty() or slot >= slot_buttons.size():
-		return
-	_rail.set_value(&"tint", Color(_link.get_theme_color(&"rail", &"HubLobby"), 0.3))
-	var x := _link.size.x * 0.5
-	var row := slot_buttons[slot]
-	var level := _slot_column.position.y + row.position.y + row.size.y * 0.5 - _link.position.y
-	var mark := UIMotion.of(_link).follow_mark(Rect2(x, level, 0.0, 0.0)).position
-	HubUI.diamond(_link, mark, BEAD + 1.5, _link.get_theme_color(&"mark_edge", &"LoadoutSlot"))
-	HubUI.diamond(_link, mark, BEAD, _link.get_theme_color(&"lit_ring", &"LoadoutSlot"))
-
-
-# --- The stage ---
-
-func _tell(id: StringName) -> void:
-	if meta == null or name_label == null:
-		return
-	var moved := id != shown_id or slot != _shown_slot
-	shown_id = id
-	_shown_slot = slot
-	var told := _account(id)
-	_emblem = told.emblem
-	_unknown = told.unknown
-	kind_label.text = told.kind
-	name_label.text = told.name
-	description_label.text = told.description
-	description_label.visible = not told.description.is_empty()
-	for child in _figures.get_children():
-		child.free()
-	shown_figures = told.figures
-	for row: Array in shown_figures:
-		_figure_row(row[0], row[1])
-	# The action belongs to choosing: on a slot, the stage only tells.
-	var choosing := _focused_choice() >= 0
-	action_button.visible = told.acts and choosing
-	action_button.text = told.action
-	action_button.disabled = not told.can
-	outcome_label.text = told.outcome if choosing else ""
-	picture.queue_redraw()
-	_light_picture()
-	if moved and not _quiet:
-		UIMotion.of(_stage).slide_in()
 
 
 # What the stage tells of a thing: its emblem, kind, name, account and
@@ -802,59 +493,8 @@ func _cells(pixels: float) -> String:
 	return _number(pixels / AreaGround.CELL, CELL_SNAP) + tr("マス")
 
 
-# One of the thing's figures: its name, its value at the right, a hairline
-# under it.
-func _figure_row(title: String, value: String) -> void:
-	var row := HBoxContainer.new()
-	row.theme_type_variation = &"CodexLine"
-	row.custom_minimum_size.y = FIGURE_ROW_HEIGHT
-	row.draw.connect(func():
-		row.draw_line(Vector2(0.0, row.size.y - 0.5), Vector2(row.size.x, row.size.y - 0.5), row.get_theme_color(&"separator", &"LoadoutSlot"), -1.0))
-	_figures.add_child(row)
-	var name := HubUI.label(row, title, &"BodyLabel")
-	name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var figure := HubUI.label(row, value, &"ItemNameLabel")
-	figure.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	for label: Label in [name, figure]:
-		label.autowrap_mode = TextServer.AUTOWRAP_OFF
-		label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-
-
-# The soft warm light behind the stage's emblem, breathing; none behind a
-# thing not learned or an empty slot.
-func _light_picture() -> void:
-	if _stage_light == null or not picture.is_inside_tree():
-		return
-	_stage_light.visible = EmblemIcons.texture(_emblem) != null and not _unknown
-	_stage_light.round_on(Vector2(picture.size.x * 0.5, picture.size.y * PICTURE_LEVEL), PICTURE_SIZE * 0.92)
-	_stage_light.set_value(&"tint", picture.get_theme_color(&"glow", &"LoadoutSlot"))
-	_stage_light.set_value(&"breath", BREATH)
-	_stage_light.set_value(&"breath_time", BREATH_TIME)
-
-
-# The stage's emblem in a faint ring, over its light (_light_picture); a
-# thing not learned is its shadow, an empty slot a dashed ring.
-func _draw_picture() -> void:
-	var centre := Vector2(picture.size.x * 0.5, picture.size.y * PICTURE_LEVEL)
-	var rail := picture.get_theme_color(&"rail", &"HubLobby")
-	var emblem := EmblemIcons.texture(_emblem)
-	var half := PICTURE_SIZE * 0.5
-	picture.draw_arc(centre, PICTURE_RING, 0.0, TAU, 96, Color(rail, 0.16), 1.0, true)
-	if emblem != null:
-		picture.draw_texture_rect(emblem, Rect2(centre - Vector2.ONE * half, Vector2.ONE * PICTURE_SIZE), false, picture.get_theme_color(&"unknown_tint", &"LoadoutSlot") if _unknown else Color.WHITE)
-		return
-	var dash := picture.get_theme_color(&"empty_ring", &"LoadoutSlot")
-	var step := TAU / 40.0
-	for index in 40:
-		picture.draw_arc(centre, half - 8.0, index * step, index * step + step * 0.5, 6, Color(dash, dash.a * 0.7), 1.5, true)
-	if shown_id == CLEAR_ID:
-		picture.draw_line(centre + Vector2(-half, half) * 0.36, centre + Vector2(half, -half) * 0.36, Color(dash, dash.a * 0.7), 2.0, true)
-
-
-# --- Her figures ---
-
-# [name, value, what the upgrades add, the breakdown, shown on the strip, its
-# group on the full page].
+# Her figures: [name, value, what the upgrades add, the breakdown, one of
+# the main five, its group (0 戦う力, 1 探索と成長)] a row.
 func stat_rows() -> Array:
 	var tuned := meta.tuning(_base)
 	var rules := meta.lasting()
@@ -890,110 +530,6 @@ func stat_rows() -> Array:
 	return rows
 
 
-# The strip's five figures while the build is shown; turned to her figures,
-# every one a row with its breakdown, a group on each slab.
-func _show_stats() -> void:
-	if meta == null:
-		return
-	for child in _strip_row.get_children():
-		child.free()
-	for sheet in _sheets:
-		for child in sheet.get_children():
-			child.free()
-	var rows := stat_rows()
-	if not details_open:
-		var shown := rows.filter(func(row: Array): return row[4])
-		shown_rows = shown.size()
-		for row: Array in shown:
-			_strip_fact(row)
-			HubUI.space(_strip_row).size_flags_vertical = Control.SIZE_FILL
-		var more := HubUI.label(_strip_row, tr("詳しく"), &"NoteLabel")
-		more.autowrap_mode = TextServer.AUTOWRAP_OFF
-		more.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		strip.tooltip_text = tr(STRIP_NOTE)
-		return
-	shown_rows = rows.size()
-	for group in _sheets.size():
-		HubUI.label(_sheets[group], tr(GROUPS[group]), &"HeadingLabel")
-		for row: Array in rows:
-			if row[5] == group:
-				_sheet_row(_sheets[group], row)
-
-
-# One figure on the strip: its name small over its value.
-func _strip_fact(row: Array) -> void:
-	var cell := VBoxContainer.new()
-	cell.theme_type_variation = &"CompactStack"
-	cell.alignment = BoxContainer.ALIGNMENT_CENTER
-	cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_strip_row.add_child(cell)
-	var caption := HubUI.label(cell, row[0], &"NoteLabel")
-	caption.autowrap_mode = TextServer.AUTOWRAP_OFF
-	# What the upgrades add stands faint beside the value ("115 (+15)").
-	var line := HBoxContainer.new()
-	line.theme_type_variation = &"CodexLine"
-	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	cell.add_child(line)
-	var value := HubUI.label(line, row[1], &"ItemNameLabel")
-	value.autowrap_mode = TextServer.AUTOWRAP_OFF
-	if not (row[2] as String).is_empty():
-		var added := HubUI.label(line, row[2], &"MutedLabel")
-		added.autowrap_mode = TextServer.AUTOWRAP_OFF
-		added.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-
-
-# One figure on the full page: its name, its value and what the upgrades
-# add at the right, where it comes from under them, a hairline under it.
-func _sheet_row(sheet: VBoxContainer, row: Array) -> void:
-	var box := VBoxContainer.new()
-	box.theme_type_variation = &"CompactStack"
-	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	box.custom_minimum_size.y = SHEET_ROW_HEIGHT
-	box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	box.draw.connect(func():
-		box.draw_line(Vector2(0.0, box.size.y - 0.5), Vector2(box.size.x, box.size.y - 0.5), box.get_theme_color(&"separator", &"LoadoutSlot"), -1.0))
-	sheet.add_child(box)
-	var line := HBoxContainer.new()
-	line.theme_type_variation = &"CodexLine"
-	box.add_child(line)
-	var name := HubUI.label(line, row[0], &"BodyLabel")
-	name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var added := HubUI.label(line, row[2], &"MutedLabel")
-	var value := HubUI.label(line, row[1], &"ItemNameLabel")
-	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	for label: Label in [name, added, value]:
-		label.autowrap_mode = TextServer.AUTOWRAP_OFF
-		label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	added.visible = not added.text.is_empty()
-	HubUI.label(box, row[3], &"NoteLabel")
-
-
-# Turns the page between the build and her figures in full.
-func toggle_details() -> void:
-	details_open = not details_open
-	_show_view()
-	view_changed.emit()
-
-
-func _show_view() -> void:
-	_deck.visible = not details_open
-	strip.visible = not details_open
-	_stage_room.visible = not details_open
-	for sheet in _sheets:
-		sheet.visible = details_open
-	_show_stats()
-	if not is_visible_in_tree():
-		return
-	if details_open:
-		for index in _sheets.size():
-			UIMotion.of(_sheets[index]).appear(UIMotion.STAGGER_TIME * index, UIMotion.WINDOW_TIME)
-	else:
-		_quiet = true
-		slot_buttons[slot].grab_focus()
-		_quiet = false
-		play_entrance()
-
-
 func _added(amount: int, unit: String) -> String:
 	return "(+%d%s)" % [amount, unit] if amount > 0 else ""
 
@@ -1018,29 +554,30 @@ func _number(value: float, snap: float = 0.01) -> String:
 	return str(roundi(snapped)) if is_equal_approx(snapped, roundf(snapped)) else str(snapped)
 
 
-# --- Keys ---
+# --- Clock ---
 
-# Opening the page: the build, the focus on the chosen slot.
-func focus_first() -> void:
-	_quiet = true
-	if details_open:
-		details_open = false
-		_show_view()
-	slot_buttons[slot].grab_focus()
-	_quiet = false
+func _process(delta: float) -> void:
+	if is_visible_in_tree():
+		_clock += delta
+		queue_redraw()
 
 
-func play_entrance() -> void:
-	UIMotion.of(_slot_column).appear(0.0, UIMotion.WINDOW_TIME)
-	UIMotion.of(_choices).appear(UIMotion.STAGGER_TIME)
-	UIMotion.of(_stage).appear(UIMotion.STAGGER_TIME * 2.0)
+func _kick(what: StringName) -> void:
+	_kicks[what] = _clock
 
+
+func _since(what: StringName) -> float:
+	return _clock - float(_kicks.get(what, -1000.0))
+
+
+func _eased(what: StringName, time: float) -> float:
+	var share := clampf(_since(what) / time, 0.0, 1.0)
+	return 1.0 - pow(1.0 - share, 3.0)
+
+
+# --- Input ---
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed:
-		_by_pointer = true
-	elif event is InputEventKey or event is InputEventJoypadButton:
-		_by_pointer = false
 	var now_pad := _pad
 	if event is InputEventJoypadButton or (event is InputEventJoypadMotion and absf(event.axis_value) > 0.5):
 		now_pad = true
@@ -1048,30 +585,481 @@ func _input(event: InputEvent) -> void:
 		now_pad = false
 	if now_pad != _pad:
 		_pad = now_pad
-		_show_slots()
-		_mark_choices()
-		if not shown_id.is_empty():
-			outcome_label.text = _account(shown_id).outcome
+		_tell()
+		queue_redraw()
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not is_visible_in_tree():
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		_hover = _zone_at(event.position)
 		return
-	var key: bool = event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R
-	var pad: bool = event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_Y
-	if key or pad:
+	if event is InputEventMouseButton:
+		if not event.pressed:
+			return
+		match event.button_index:
+			MOUSE_BUTTON_LEFT:
+				grab_focus()
+				var id: Variant = _zone_at(event.position)
+				if id != null:
+					_press(id)
+				accept_event()
+			MOUSE_BUTTON_WHEEL_UP:
+				if not details_open:
+					move_cursor(row - 1)
+				accept_event()
+			MOUSE_BUTTON_WHEEL_DOWN:
+				if not details_open:
+					move_cursor(row + 1)
+				accept_event()
+		return
+	var handled := true
+	if event.is_action_pressed(&"ui_up", true):
+		if not details_open:
+			move_cursor(row - 1)
+	elif event.is_action_pressed(&"ui_down", true):
+		if not details_open:
+			move_cursor(row + 1)
+	elif event.is_action_pressed(&"ui_left", true) or _pressed(event, KEY_Q, JOY_BUTTON_LEFT_SHOULDER):
+		turn_to(chapter() - 1)
+	elif event.is_action_pressed(&"ui_right", true) or _pressed(event, KEY_E, JOY_BUTTON_RIGHT_SHOULDER):
+		turn_to(chapter() + 1)
+	elif event.is_action_pressed(&"ui_accept"):
+		seal()
+	elif _pressed(event, KEY_R, JOY_BUTTON_Y):
 		toggle_details()
-		get_viewport().set_input_as_handled()
+	elif _pressed(event, KEY_X, JOY_BUTTON_X) or _pressed(event, KEY_DELETE, -1):
+		clear_slot()
+	elif event.is_action_pressed(&"ui_cancel") and details_open:
+		# Back from her figures returns to the chapter; from a chapter the
+		# hub takes the back.
+		toggle_details()
+	else:
+		handled = false
+	if handled:
+		accept_event()
+
+
+func _pressed(event: InputEvent, key: Key, button: int) -> bool:
+	if event is InputEventKey:
+		return event.pressed and not event.echo and event.keycode == key
+	return event is InputEventJoypadButton and event.pressed and event.button_index == button
+
+
+func _press(id: Variant) -> void:
+	var what: Array = id
+	match what[0]:
+		&"tab":
+			turn_to(what[1])
+		&"row":
+			if row == what[1]:
+				seal()
+			else:
+				move_cursor(what[1])
+		&"seal":
+			seal()
+		&"clear":
+			clear_slot()
+
+
+func _zone(rect: Rect2, id: Variant) -> void:
+	_zones.append([rect, id])
+
+
+func _zone_at(point: Vector2) -> Variant:
+	var at := (point - _origin) / _zoom
+	for index in range(_zones.size() - 1, -1, -1):
+		if (_zones[index][0] as Rect2).has_point(at):
+			return _zones[index][1]
+	return null
+
+
+func _hovered(kind: StringName, index: int) -> bool:
+	if not _hover is Array:
+		return false
+	var what: Array = _hover
+	return what[0] == kind and what.size() > 1 and what[1] == index
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_MOUSE_EXIT:
+		_hover = null
+
+
+# --- Drawing ---
+
+func _colour(item: StringName, share := 1.0) -> Color:
+	var colour := get_theme_color(item)
+	return Color(colour, colour.a * share * _fade)
+
+
+func _face(item: StringName) -> Font:
+	return get_theme_font(item)
+
+
+func _size(item: StringName) -> int:
+	return get_theme_font_size(item)
+
+
+func _words(at: Vector2, words: String, face: StringName, size: StringName, colour: Color, align := HORIZONTAL_ALIGNMENT_LEFT, width := -1.0) -> void:
+	draw_string(_face(face), at, words, align, width, _size(size), colour)
+
+
+func _width(words: String, face: StringName, size: StringName) -> float:
+	return _face(face).get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, _size(size)).x
+
+
+func _draw() -> void:
+	_zones.clear()
+	if meta == null:
 		return
-	if not event.is_action_pressed(&"ui_cancel"):
-		return
-	# Back from her figures returns to the build, and from the list to its
-	# slot, before it leaves the page.
+	_fade = 1.0
+	draw_set_transform(_origin, 0.0, Vector2.ONE * _zoom)
+	_draw_tabs()
+	# A chapter turned to arrives from the side it was turned from.
+	var turning := _since(&"turn") < TURN_TIME
+	_fade = _eased(&"turn", TURN_TIME)
+	draw_set_transform(_origin + Vector2(16.0 * _way * (1.0 - _fade), 0.0) * _zoom, 0.0, Vector2.ONE * _zoom)
 	if details_open:
-		GameAudio.play(self, &"ui_back", -18.0)
-		toggle_details()
-		get_viewport().set_input_as_handled()
-	elif _focused_choice() >= 0:
-		GameAudio.play(self, &"ui_back", -18.0)
-		slot_buttons[slot].grab_focus()
-		get_viewport().set_input_as_handled()
+		_draw_figures()
+	else:
+		_draw_chapter()
+		_draw_entry()
+	_fade = 1.0
+	draw_set_transform(_origin, 0.0, Vector2.ONE * _zoom)
+	if turning and _way != 0.0:
+		# The leaf turning: a shadow sweeping across the spread.
+		var sweep := _since(&"turn") / TURN_TIME
+		var x := lerpf(1400.0, 60.0, sweep) if _way > 0.0 else lerpf(60.0, 1400.0, sweep)
+		var shadow := get_theme_color(&"ink")
+		_shade_across(Rect2(x - 110.0, PAGE_TOP, 110.0, PAGE_BOTTOM - PAGE_TOP), Color(shadow, 0.0), Color(shadow, 0.22 * (1.0 - sweep)))
+		draw_line(Vector2(x, PAGE_TOP), Vector2(x, PAGE_BOTTOM), Color(shadow, 0.35 * (1.0 - sweep)), 2.0)
+	draw_set_transform(Vector2.ZERO)
+
+
+func _shade_across(rect: Rect2, left: Color, right: Color) -> void:
+	draw_polygon(
+		PackedVector2Array([rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]),
+		PackedColorArray([left, right, right, left]))
+
+
+func _ring(centre: Vector2, radius: float, colour: Color, width := 1.5, from := 0.0, to := TAU) -> void:
+	draw_arc(centre, radius, from, to, maxi(24, int(radius * 0.9)), colour, width, true)
+
+
+# The picture inside a medallion, without its bronze rim, as a disc.
+func _picture(centre: Vector2, radius: float, key: String, tint: Color) -> void:
+	var picture := EmblemIcons.texture(key)
+	if picture == null:
+		return
+	var points := PackedVector2Array()
+	var uvs := PackedVector2Array()
+	for index in 56:
+		var way := Vector2.from_angle(TAU * index / 56.0)
+		points.append(centre + way * radius)
+		uvs.append(Vector2(0.5, 0.5) + way * 0.36)
+	draw_polygon(points, PackedColorArray([tint]), uvs, picture)
+
+
+# An emblem as a painted miniature: the picture in a double ring of ink; a
+# thing not learned as its faded shadow, nothing as a dashed ring.
+func _miniature(centre: Vector2, radius: float, key: String, known := true) -> void:
+	draw_circle(centre + Vector2(1.5, 2.5), radius + 3.0, _colour(&"ink", 0.22))
+	if key.is_empty():
+		draw_circle(centre, radius, _colour(&"page_dark", 0.8))
+		for step in 18:
+			_ring(centre, radius - 3.0, _colour(&"sepia", 0.8), 1.2, TAU * step / 18.0, TAU * (step + 0.5) / 18.0)
+	elif known:
+		_picture(centre, radius, key, Color(1.0, 1.0, 1.0, _fade))
+	else:
+		draw_circle(centre, radius, _colour(&"page_dark"))
+		_picture(centre, radius, key, _colour(&"shadow"))
+	_ring(centre, radius, _colour(&"ink"), 2.0)
+	_ring(centre, radius + 4.5, _colour(&"sepia", 0.8), 1.0)
+
+
+# A seal of red wax, the slot's key pressed into it.
+func _wax(centre: Vector2, radius: float, letter: String, press := 1.0, alpha := 1.0) -> void:
+	var points := PackedVector2Array()
+	var under := PackedVector2Array()
+	for index in 40:
+		var wobble := 1.0 + 0.045 * sin(index * 2.3 + radius) + 0.03 * sin(index * 5.1)
+		var point := centre + Vector2.from_angle(TAU * index / 40.0) * radius * press * wobble
+		points.append(point)
+		under.append(point + Vector2(1.5, 3.0))
+	draw_colored_polygon(under, _colour(&"ink", 0.3 * alpha))
+	draw_colored_polygon(points, _colour(&"seal", alpha))
+	_ring(centre, radius * press * 0.72, _colour(&"seal_dark", alpha), 2.0)
+	_ring(centre - Vector2(1.0, 1.5), radius * press * 0.9, _colour(&"seal_light", 0.3 * alpha), 1.5, PI * 1.1, PI * 1.7)
+	var size := int(radius * press * (0.72 if letter.length() < 2 else 0.5))
+	draw_string(_face(&"title_font"), Vector2(centre.x - radius, centre.y + size * 0.36), letter, HORIZONTAL_ALIGNMENT_CENTER, radius * 2.0, size, _colour(&"seal_light", 0.95 * alpha))
+
+
+# The letter a slot's seal carries: the key that uses the slot.
+func _seal_letter(index: int) -> String:
+	return tr("攻", "seal") if index == ATTACK_SLOT else _slot_key(index)
+
+
+func _rule(y: float, left: float, width: float) -> void:
+	var mid := left + width * 0.5
+	draw_line(Vector2(left, y), Vector2(mid - 12.0, y), _colour(&"sepia", 0.7), 1.0)
+	draw_line(Vector2(mid + 12.0, y), Vector2(left + width, y), _colour(&"sepia", 0.7), 1.0)
+	draw_colored_polygon(PackedVector2Array([Vector2(mid, y - 5.0), Vector2(mid + 5.0, y), Vector2(mid, y + 5.0), Vector2(mid - 5.0, y)]), _colour(&"sepia"))
+
+
+# A row of dots between a name and its figure.
+func _leader(from: float, to: float, y: float, colour: Color) -> void:
+	var x := from
+	while x < to:
+		draw_circle(Vector2(x, y), 1.0, colour)
+		x += 7.0
+
+
+# The chapters' tabs at the book's edge; the open one stands out in red.
+func _draw_tabs() -> void:
+	var upright := TranslationServer.get_locale().begins_with("ja")
+	for index in FIGURES + 1:
+		var here := index == chapter()
+		var rect := Rect2(TAB_LEFT, TAB_TOP + TAB_STEP * index, 64.0 if here else 48.0, TAB_HEIGHT)
+		draw_rect(Rect2(rect.position + Vector2(0.0, 4.0), rect.size), _colour(&"ink", 0.35))
+		draw_rect(rect, _colour(&"seal") if here else (_colour(&"tab_lit") if _hovered(&"tab", index) else _colour(&"tab")))
+		draw_rect(Rect2(rect.position, Vector2(6.0, rect.size.y)), _colour(&"ink", 0.16))
+		var label := tr(FIGURES_NAME) if index == FIGURES else tr(SLOTS[index][1])
+		var colour := _colour(&"seal_light") if here else _colour(&"ink")
+		var size := _size(&"tab_size")
+		if upright:
+			var y := rect.position.y + (TAB_HEIGHT - label.length() * (size + 4.0)) * 0.5 + size
+			for letter in label.length():
+				draw_string(_face(&"title_font"), Vector2(rect.position.x + 6.0, y), label[letter], HORIZONTAL_ALIGNMENT_CENTER, rect.size.x - 6.0, size, colour)
+				y += size + 4.0
+		else:
+			# Words in a script written across run down the tab, turned.
+			var small := size - 3
+			var wide := _face(&"title_font").get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, small).x
+			draw_set_transform(_origin + Vector2(rect.position.x + rect.size.x * 0.5 - small * 0.36 + 3.0, rect.position.y + (TAB_HEIGHT - wide) * 0.5) * _zoom, PI * 0.5, Vector2.ONE * _zoom)
+			draw_string(_face(&"title_font"), Vector2.ZERO, label, HORIZONTAL_ALIGNMENT_LEFT, -1, small, colour)
+			draw_set_transform(_origin, 0.0, Vector2.ONE * _zoom)
+		_zone(rect, [&"tab", index])
+
+
+# The left page: the chapter's head, what the slot holds, and its index.
+func _draw_chapter() -> void:
+	_words(Vector2(LEFT, 54.0), tr(ORDINALS[slot]), &"font", &"label_size", _colour(&"sepia"), HORIZONTAL_ALIGNMENT_CENTER, PAGE_WIDTH)
+	_words(Vector2(LEFT, 98.0), tr(SLOTS[slot][1]), &"title_font", &"title_size", _colour(&"ink"), HORIZONTAL_ALIGNMENT_CENTER, PAGE_WIDTH)
+	_words(Vector2(LEFT, 124.0), tr(CHAPTER_LINES[slot]) % _slot_key(slot), &"font", &"label_size", _colour(&"sepia"), HORIZONTAL_ALIGNMENT_CENTER, PAGE_WIDTH)
+	_rule(142.0, LEFT, PAGE_WIDTH)
+	# What the chapter holds now, under its seal.
+	var held := _slot_content(slot)
+	var sealed_special := held == &"special"
+	if sealed_special:
+		held = &""
+	var centre := Vector2(LEFT + 42.0, 186.0)
+	_words(Vector2(LEFT + 96.0, 172.0), tr("いまの装備"), &"font", &"mark_size", _colour(&"sepia"))
+	_miniature(centre, 34.0, "seal_special" if sealed_special else _emblem_of(held), not sealed_special)
+	if held.is_empty():
+		_words(Vector2(LEFT + 96.0, 208.0), tr("封印") if sealed_special else tr("空欄"), &"title_font", &"held_size", _colour(&"faint"))
+	else:
+		_words(Vector2(LEFT + 96.0, 208.0), _name_of(held), &"title_font", &"held_size", _colour(&"ink"))
+		_draw_seal(Vector2(LEFT + PAGE_WIDTH - 40.0, 186.0), 28.0, slot)
+	# The index.
+	var known := 0
+	var total := 0
+	for entry: Dictionary in entries:
+		if entry.id != CLEAR_ID:
+			total += 1
+			known += 0 if entry.state == State.UNKNOWN else 1
+	_words(Vector2(LEFT, 252.0), tr("目録"), &"title_font", &"body_size", _colour(&"ink"))
+	_words(Vector2(LEFT, 252.0), tr("習得  %d / %d") % [known, total], &"font", &"mark_size", _colour(&"sepia"), HORIZONTAL_ALIGNMENT_RIGHT, PAGE_WIDTH)
+	draw_line(Vector2(LEFT, 260.0), Vector2(LEFT + PAGE_WIDTH, 260.0), _colour(&"ink", 0.8), 1.5)
+	var top := clampi(row - VISIBLE_ROWS / 2, 0, maxi(0, entries.size() - VISIBLE_ROWS))
+	for index in range(top, mini(entries.size(), top + VISIBLE_ROWS)):
+		_draw_row(index, index - top)
+	if top > 0:
+		_words(Vector2(LEFT, LIST_TOP + 2.0), "▲", &"font", &"small_size", _colour(&"sepia"), HORIZONTAL_ALIGNMENT_RIGHT, PAGE_WIDTH + 14.0)
+	if top + VISIBLE_ROWS < entries.size():
+		_words(Vector2(LEFT, LIST_TOP + ROW * VISIBLE_ROWS), "▼", &"font", &"small_size", _colour(&"sepia"), HORIZONTAL_ALIGNMENT_RIGHT, PAGE_WIDTH + 14.0)
+
+
+# A slot's seal: at rest, or coming down just after an equip was saved.
+func _draw_seal(centre: Vector2, radius: float, index: int) -> void:
+	var press := 1.0
+	var alpha := 1.0
+	var since := _since(&"seal")
+	if _sealed.has(index) and since < SEAL_TIME:
+		var share := clampf(since / 0.2, 0.0, 1.0)
+		press = lerpf(2.4, 1.0, 1.0 - pow(1.0 - share, 3.0))
+		alpha = share
+		if since > 0.18:
+			var spread := clampf((since - 0.18) / (SEAL_TIME - 0.18), 0.0, 1.0)
+			_ring(centre, radius + 8.0 + 44.0 * spread, _colour(&"seal", 0.55 * (1.0 - spread)), 2.0)
+	_wax(centre, radius, _seal_letter(index), press, alpha)
+
+
+func _draw_row(index: int, place: int) -> void:
+	var entry: Dictionary = entries[index]
+	var top := LIST_TOP + ROW * place
+	var rect := Rect2(LEFT - 16.0, top, PAGE_WIDTH + 32.0, ROW)
+	var base := top + 29.0
+	var here := index == row
+	var unknown: bool = entry.state == State.UNKNOWN
+	_zone(rect, [&"row", index])
+	if here:
+		# The reader's place: a wash of ink and a red mark in the margin.
+		var slide := _eased(&"move", UIMotion.SELECT_TIME)
+		_shade_across(Rect2(rect.position.x, top + 3.0, rect.size.x * (0.6 + 0.4 * slide), ROW - 6.0), _colour(&"wash"), _colour(&"wash", 0.12))
+		draw_rect(Rect2(rect.position.x, top + 3.0, 4.0, ROW - 6.0), _colour(&"seal"))
+	elif _hovered(&"row", index):
+		draw_rect(Rect2(rect.position.x, top + 3.0, rect.size.x, ROW - 6.0), _colour(&"wash", 0.4))
+	var name_colour := _colour(&"faint") if unknown else _colour(&"ink")
+	if entry.id == CLEAR_ID:
+		_miniature(Vector2(LEFT + 18.0, top + ROW * 0.5), 13.0, "")
+		name_colour = _colour(&"sepia") if _can_clear() else _colour(&"faint")
+	else:
+		_miniature(Vector2(LEFT + 18.0, top + ROW * 0.5), 14.0, entry.emblem, not unknown)
+	_words(Vector2(LEFT + 46.0, base), entry.name, &"title_font" if here else &"font", &"row_size", name_colour)
+	var name_end := LEFT + 46.0 + _width(entry.name, &"title_font", &"row_size") + 12.0
+	var right := LEFT + PAGE_WIDTH
+	# Where it stands, in the margin at the right.
+	if entry.state == State.HERE:
+		_wax(Vector2(right - 13.0, top + ROW * 0.5), 12.0, _seal_letter(slot))
+		var mark := tr(HELD)
+		var mark_width := _width(mark, &"title_font", &"mark_size")
+		_words(Vector2(right - 32.0 - mark_width, base - 2.0), mark, &"title_font", &"mark_size", _colour(&"seal"))
+		right -= mark_width + 42.0
+	elif entry.state == State.ELSEWHERE:
+		var mark := tr("%s に装備中") % _slot_key(entry.other)
+		var mark_width := _width(mark, &"font", &"mark_size")
+		_words(Vector2(right - mark_width, base - 2.0), mark, &"font", &"mark_size", _colour(&"note"))
+		right -= mark_width + 12.0
+	var note: String = entry.note
+	var note_width := _width(note, &"font", &"label_size")
+	_words(Vector2(right - note_width, base - 2.0), note, &"font", &"label_size", _colour(&"faint") if unknown else _colour(&"sepia"))
+	_leader(name_end, right - note_width - 10.0, base - 6.0, _colour(&"faint" if unknown else &"sepia", 0.7))
+
+
+func _can_clear() -> bool:
+	var held := _slot_content(slot)
+	return slot != ATTACK_SLOT and not held.is_empty() and held != &"special"
+
+
+func _emblem_of(id: StringName) -> String:
+	var weapon := MetaProgress.find_weapon(id)
+	if weapon != null:
+		return weapon.emblem
+	var move := MetaProgress.find_special(id)
+	if move != null:
+		return move.emblem
+	var skill := MetaProgress.find_skill(id)
+	return skill.emblem if skill != null else ""
+
+
+# The right page: the entry under the cursor, read as a page.
+func _draw_entry() -> void:
+	if told.is_empty():
+		return
+	var entry: Dictionary = entries[clampi(row, 0, entries.size() - 1)]
+	var unknown: bool = told.unknown
+	var centre := Vector2(RIGHT + 88.0, 112.0)
+	# Rays round the picture, as an illuminated initial has; they reach out
+	# for a moment when its seal comes down.
+	if not unknown and not entry.emblem.is_empty():
+		var burst := 0.0
+		if entry.state == State.HERE and _sealed.has(slot) and _since(&"seal") < SEAL_TIME:
+			burst = sin(PI * clampf(_since(&"seal") / SEAL_TIME, 0.0, 1.0))
+		for ray in 28:
+			var way := Vector2.from_angle(TAU * ray / 28.0)
+			var reach := (92.0 if ray % 2 == 0 else 98.0) + 14.0 * burst
+			draw_line(centre + way * 86.0, centre + way * reach, _colour(&"seal" if burst > 0.0 else &"sepia", 0.6 + 0.4 * burst), 1.0 + burst, true)
+	_miniature(centre, 78.0, entry.emblem, not unknown)
+	var text_left := RIGHT + 200.0
+	var text_width := PAGE_WIDTH - 200.0
+	_words(Vector2(text_left, 76.0), told.kind, &"font", &"label_size", _colour(&"sepia"))
+	_words(Vector2(text_left, 130.0), told.name, &"title_font", &"name_size", _colour(&"faint") if unknown else _colour(&"ink"), HORIZONTAL_ALIGNMENT_LEFT, text_width)
+	var where := ""
+	var where_colour := &"sepia"
+	match entry.state:
+		State.HERE:
+			where = tr("この章に記されている")
+			where_colour = &"seal"
+		State.ELSEWHERE:
+			where = tr("「%s」の章に記されている") % tr(SLOTS[entry.other][1])
+			where_colour = &"note"
+		State.UNKNOWN:
+			where = tr("まだ記されていない")
+			where_colour = &"faint"
+	_words(Vector2(text_left, 162.0), where, &"font", &"label_size", _colour(where_colour))
+	_rule(216.0, RIGHT, PAGE_WIDTH)
+	var y := 258.0
+	var body := _face(&"font")
+	var body_size := _size(&"body_size")
+	var description: String = told.description
+	# Japanese breaks between any two letters; a script with spaces, at them.
+	var breaks := TextServer.BREAK_MANDATORY | (TextServer.BREAK_GRAPHEME_BOUND if TranslationServer.get_locale().begins_with("ja") else TextServer.BREAK_WORD_BOUND)
+	draw_multiline_string(body, Vector2(RIGHT, y), description, HORIZONTAL_ALIGNMENT_LEFT, PAGE_WIDTH, body_size, 3, _colour(&"ink"), breaks)
+	y += body.get_multiline_string_size(description, HORIZONTAL_ALIGNMENT_LEFT, PAGE_WIDTH, body_size, 3, breaks).y + 22.0
+	# The ledger: this entry's figures beside those of what the chapter holds.
+	var held := _slot_content(slot)
+	var compare: bool = not unknown and not held.is_empty() and held != &"special" and held != entry.id and entry.id != CLEAR_ID
+	var figures: Array = told.figures
+	if not figures.is_empty():
+		var now: Array = _account(held).figures if compare else []
+		var mine := RIGHT + PAGE_WIDTH - (190.0 if compare else 0.0)
+		_words(Vector2(RIGHT, y), tr("記録"), &"title_font", &"label_size", _colour(&"ink"))
+		if compare:
+			_words(Vector2(mine - 170.0, y), tr("候補"), &"title_font", &"mark_size", _colour(&"ink"), HORIZONTAL_ALIGNMENT_RIGHT, 170.0)
+			_words(Vector2(RIGHT + PAGE_WIDTH - 180.0, y), tr("いまの「%s」") % _name_of(held), &"font", &"mark_size", _colour(&"sepia"), HORIZONTAL_ALIGNMENT_RIGHT, 180.0)
+		draw_line(Vector2(RIGHT, y + 10.0), Vector2(RIGHT + PAGE_WIDTH, y + 10.0), _colour(&"ink", 0.8), 1.5)
+		y += 40.0
+		for index in figures.size():
+			var figure: Array = figures[index]
+			var value_width := _width(figure[1], &"title_font", &"value_size")
+			_words(Vector2(RIGHT, y), figure[0], &"font", &"body_size", _colour(&"sepia"))
+			_words(Vector2(mine - value_width, y), figure[1], &"title_font", &"value_size", _colour(&"ink"))
+			_leader(RIGHT + _width(figure[0], &"font", &"body_size") + 10.0, mine - value_width - 10.0, y - 6.0, _colour(&"sepia", 0.6))
+			if compare and index < now.size():
+				var other: Array = now[index]
+				var words: String = other[1] if other[0] == figure[0] else "%s %s" % [other[0], other[1]]
+				_words(Vector2(RIGHT + PAGE_WIDTH - 180.0, y), words, &"font", &"label_size", _colour(&"sepia"), HORIZONTAL_ALIGNMENT_RIGHT, 180.0)
+			y += 36.0
+	# The foot of the page: what pressing the seal would do.
+	var foot := 632.0
+	draw_line(Vector2(RIGHT, foot - 42.0), Vector2(RIGHT + PAGE_WIDTH, foot - 42.0), _colour(&"sepia", 0.5), 1.0)
+	if told.can:
+		_wax(Vector2(RIGHT + 28.0, foot - 4.0), 22.0, _seal_letter(slot), 1.0 + 0.04 * sin(_clock * 3.0))
+		_words(Vector2(RIGHT + 66.0, foot - 8.0), tr("%s で封を押す") % ("A" if _pad else "Enter"), &"title_font", &"body_size", _colour(&"ink"))
+		_words(Vector2(RIGHT + 66.0, foot + 16.0), told.outcome, &"font", &"label_size", _colour(&"seal"), HORIZONTAL_ALIGNMENT_LEFT, PAGE_WIDTH - 66.0)
+		_zone(Rect2(RIGHT, foot - 38.0, PAGE_WIDTH, 64.0), [&"seal"])
+	elif entry.state == State.HERE:
+		_words(Vector2(RIGHT, foot), tr("すでに封が押されている"), &"font", &"label_size", _colour(&"sepia"))
+	elif unknown:
+		_words(Vector2(RIGHT, foot), tr("まだ封を押せない"), &"font", &"label_size", _colour(&"faint"))
+	else:
+		_words(Vector2(RIGHT, foot), tr("外すものがない"), &"font", &"label_size", _colour(&"faint"))
+	if _since(&"refuse") < REFUSE_TIME:
+		draw_line(Vector2(RIGHT, foot + 26.0), Vector2(RIGHT + PAGE_WIDTH * (1.0 - _since(&"refuse") / REFUSE_TIME), foot + 26.0), _colour(&"seal", 0.8), 2.0)
+
+
+# The last chapter: her figures in full, a group on each page, each with
+# what the upgrades add and where it comes from.
+func _draw_figures() -> void:
+	var rows := stat_rows()
+	for group in 2:
+		var left := LEFT if group == 0 else RIGHT
+		_words(Vector2(left, 54.0), tr(ORDINALS[FIGURES]) if group == 0 else tr("ミオの記録"), &"font", &"label_size", _colour(&"sepia"), HORIZONTAL_ALIGNMENT_CENTER, PAGE_WIDTH)
+		_words(Vector2(left, 98.0), tr(GROUPS[group]), &"title_font", &"title_size", _colour(&"ink"), HORIZONTAL_ALIGNMENT_CENTER, PAGE_WIDTH)
+		_rule(122.0, left, PAGE_WIDTH)
+		var y := 176.0
+		for entry: Array in rows:
+			if entry[5] != group:
+				continue
+			var right := left + PAGE_WIDTH
+			var added: String = entry[2]
+			if not added.is_empty():
+				var added_width := _width(added, &"font", &"label_size")
+				_words(Vector2(right - added_width, y), added, &"font", &"label_size", _colour(&"seal"))
+				right -= added_width + 8.0
+			var value_width := _width(entry[1], &"title_font", &"row_size")
+			_words(Vector2(left, y), entry[0], &"font", &"value_size", _colour(&"ink"))
+			_words(Vector2(right - value_width, y), entry[1], &"title_font", &"row_size", _colour(&"ink"))
+			_leader(left + _width(entry[0], &"font", &"value_size") + 10.0, right - value_width - 10.0, y - 6.0, _colour(&"sepia", 0.6))
+			_words(Vector2(left + 16.0, y + 23.0), entry[3], &"font", &"small_size", _colour(&"note"), HORIZONTAL_ALIGNMENT_LEFT, PAGE_WIDTH - 16.0)
+			y += 72.0

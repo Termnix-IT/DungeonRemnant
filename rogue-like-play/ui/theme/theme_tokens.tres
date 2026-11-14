@@ -35,6 +35,13 @@ colors = Dictionary[StringName, Color]({
 &"gold.7": Color(0.86, 0.66, 0.32, 1),
 &"gold.8": Color(0.89, 0.7, 0.4, 1),
 &"gold.9": Color(0.8392157, 0.7176471, 0.48235294, 1),
+&"ink.1": Color(0.16470589, 0.1254902, 0.09411765, 1),
+&"ink.2": Color(0.36, 0.28, 0.2, 1),
+&"ink.3": Color(0.37254903, 0.27450982, 0.1882353, 1),
+&"ink.4": Color(0.45, 0.3, 0.12, 1),
+&"ink.5": Color(0.47843137, 0.4, 0.2784314, 1),
+&"leather.1": Color(0.2, 0.07, 0.06, 1),
+&"leather.2": Color(0.3, 0.11, 0.08, 1),
 &"moss.1": Color(0.57, 0.76, 0.64, 1),
 &"neutral.1": Color(0, 0, 0, 1),
 &"neutral.10": Color(0.32, 0.32, 0.32, 1),
@@ -56,6 +63,12 @@ colors = Dictionary[StringName, Color]({
 &"neutral.7": Color(0.23, 0.23, 0.23, 1),
 &"neutral.8": Color(0.26, 0.26, 0.3, 1),
 &"neutral.9": Color(0.32, 0.3, 0.34, 1),
+&"note.1": Color(0.17254902, 0.29803923, 0.4392157, 1),
+&"page.1": Color(0.72, 0.66, 0.54, 1),
+&"page.2": Color(0.83, 0.77, 0.64, 1),
+&"page.3": Color(0.84, 0.77, 0.62, 1),
+&"page.4": Color(0.94, 0.89, 0.78, 1),
+&"page.5": Color(0.94509804, 0.9019608, 0.8, 1),
 &"parchment.1": Color(0.6, 0.52, 0.4, 1),
 &"parchment.10": Color(0.98, 0.91, 0.74, 1),
 &"parchment.11": Color(0.96, 0.92, 0.83, 1),
@@ -74,7 +87,9 @@ colors = Dictionary[StringName, Color]({
 &"umber.3": Color(0.36, 0.28, 0.15, 1),
 &"umber.4": Color(0.42, 0.36, 0.26, 1),
 &"umber.5": Color(0.45, 0.42, 0.36, 1),
-&"umber.6": Color(0.56, 0.478, 0.322, 1)
+&"umber.6": Color(0.56, 0.478, 0.322, 1),
+&"wax.1": Color(0.42745098, 0.09019608, 0.06666667, 1),
+&"wax.2": Color(0.553, 0.133, 0.094, 1)
 })
 font_sizes = Dictionary[StringName, int]({
 &"size.1": 13,
@@ -101,8 +116,13 @@ families = Dictionary[StringName, Vector3]({
 &"ember": Vector3(0, 1, 1),
 &"frost": Vector3(0, 1, 1),
 &"gold": Vector3(0, 1, 1),
+&"ink": Vector3(0, 1, 1),
+&"leather": Vector3(0, 1, 1),
 &"moss": Vector3(0, 1, 1),
 &"neutral": Vector3(0, 1, 1),
+&"note": Vector3(0, 1, 1),
+&"page": Vector3(0, 1, 1),
 &"parchment": Vector3(0, 1, 1),
-&"umber": Vector3(0, 1, 1)
+&"umber": Vector3(0, 1, 1),
+&"wax": Vector3(0, 1, 1)
 })

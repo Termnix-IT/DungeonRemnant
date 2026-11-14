@@ -427,16 +427,18 @@ func open_help(topic: int) -> void:
 	_settings_hints()
 
 
-# The status's keys: those of the build, or, turned to her figures in full,
+# The status's keys: those of a slot's chapter, or, turned to her figures,
 # the way back to it.
 func _status_hints() -> void:
 	key_guide.clear_hints()
 	if status_page.details_open:
 		key_guide.add_hint("R", "Y", tr("装備に戻る"), status_page.toggle_details)
 	else:
-		key_guide.add_hint("Enter", "A", tr("装備"))
-		key_guide.add_hint(tr("矢印"), tr("十字"), tr("選ぶ"))
+		key_guide.add_hint("Enter", "A", tr("装備"), status_page.seal)
+		key_guide.add_hint("↑ / ↓", "▲ / ▼", tr("選ぶ"))
+		key_guide.add_hint("X", "X", tr("外す"), status_page.clear_slot)
 		key_guide.add_hint("R", "Y", tr("能力"), status_page.toggle_details)
+	key_guide.add_hint("Q / E", "LB / RB", tr("章"))
 	key_guide.add_hint("Tab", "View", tr("強化へ"), func(): show_page("upgrade"))
 
 
