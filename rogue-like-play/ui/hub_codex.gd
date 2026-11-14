@@ -38,6 +38,9 @@ var count_label: Label
 var cards: Array[FoeRow] = []
 var rows: Array[FoeData] = []
 var stage: Control
+# The stage's soft warm light, and the foe's shadow on the ground.
+var _light: Ornament
+var _shade: Ornament
 var name_label: Label
 var kind_label: Label
 # The met foe's figures, a row each (empty for one not met).
@@ -135,9 +138,13 @@ func _ready() -> void:
 	stage.size_flags_stretch_ratio = 1.15
 	stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	stage.clip_contents = true
-	stage.draw.connect(_draw_stage)
 	stage.resized.connect(_place_figure)
+	stage.resized.connect(_light_stage)
 	split.add_child(stage)
+	_light = Ornament.new(Ornament.Kind.GLOW)
+	_shade = Ornament.new(Ornament.Kind.GLOW)
+	stage.add_child(_light)
+	stage.add_child(_shade)
 	visibility_changed.connect(_still_when_hidden)
 
 
@@ -366,42 +373,23 @@ func _place_figure() -> void:
 	elif rig is Sprite2D:
 		var sprite := rig as Sprite2D
 		sprite.scale = Vector2.ONE * tall / maxf(1.0, sprite.texture.get_height())
-	stage.queue_redraw()
 
 
 # The stage: a soft warm light behind where the foe stands, and its shadow
-# on the ground.
-func _draw_stage() -> void:
+# on the ground (an ellipse: the same light in a flat rect). Both lie under
+# the foe, who is added to the stage after them.
+func _light_stage() -> void:
+	if not stage.is_inside_tree():
+		return
 	var ground := Vector2(stage.size.x * 0.5, stage.size.y - FLOOR_INSET)
 	var reach := minf(stage.size.x, stage.size.y) * 0.55
-	var light := soft_disc(stage.get_theme_color(&"glow", &"CodexStage"))
-	stage.draw_texture_rect(light, Rect2(ground - Vector2(reach, reach * 1.85), Vector2(reach, reach) * 2.0), false)
-	var shade := soft_disc(stage.get_theme_color(&"floor", &"CodexStage"))
+	_light.position = ground - Vector2(reach, reach * 1.85)
+	_light.size = Vector2(reach, reach) * 2.0
+	_light.set_value(&"tint", stage.get_theme_color(&"glow", &"CodexStage"))
 	var floor_size := Vector2(reach * 1.3, reach * 0.26)
-	stage.draw_texture_rect(shade, Rect2(ground - floor_size * 0.5, floor_size), false)
-
-
-# A disc of `color` fading smoothly to nothing at its rim, made once per
-# colour.
-static var _discs: Dictionary = {}
-
-
-static func soft_disc(color: Color) -> Texture2D:
-	var key := color.to_html()
-	if not _discs.has(key):
-		var gradient := Gradient.new()
-		gradient.set_color(0, color)
-		gradient.set_color(1, Color(color, 0.0))
-		gradient.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CUBIC
-		var disc := GradientTexture2D.new()
-		disc.gradient = gradient
-		disc.fill = GradientTexture2D.FILL_RADIAL
-		disc.fill_from = Vector2(0.5, 0.5)
-		disc.fill_to = Vector2(1.0, 0.5)
-		disc.width = 256
-		disc.height = 256
-		_discs[key] = disc
-	return _discs[key]
+	_shade.position = ground - floor_size * 0.5
+	_shade.size = floor_size
+	_shade.set_value(&"tint", stage.get_theme_color(&"floor", &"CodexStage"))
 
 
 # The foe on the stage stands still while the page is hidden.
