@@ -1,11 +1,14 @@
 extends SceneTree
 
 # The one theme (ui/theme/dungeon_theme.tres) and the base's screens built on
-# it: no screen styles itself, the upgrades page's actions fit and say when
-# they cannot be pressed, one theme edit reaches every gold, buttons keep
-# their margins in every state, the smallest text stays readable, panels
-# tile their grain, wells sit darker than cards, scroll bars are bronze
-# rails, and dialogs stand on the warm stone plate.
+# it, held to what any look must keep: the theme is what its tokens make, no
+# screen styles itself, the upgrades page's actions fit and say when they
+# cannot be pressed, every state of an action is told apart (focus, chosen,
+# disabled), buttons keep their margins in every state, text is large enough
+# and reads against its page, and words over the fight stand on an opaque
+# plate. How things look beyond that (frames, plates, surfaces) is a choice
+# described in docs/画面とUI.md and judged on the captures
+# (tools/compare_captures.py), not checked here.
 
 var failures := 0
 var checks := 0
@@ -66,8 +69,6 @@ func run_tests() -> void:
 	# The bundled gothic for the body, buttons and figures; titles keep the
 	# display face.
 	check(theme.default_font != null and theme.default_font.resource_path.ends_with("BIZUDPGothic-Regular.ttf"), "The body text uses the bundled BIZ UDPGothic")
-	check(theme.get_font(&"font", &"ValueLabel").resource_path.ends_with("BIZUDPGothic-Bold.ttf") and theme.get_font(&"font", &"HudValue").resource_path.ends_with("BIZUDPGothic-Bold.ttf"), "Figures use its bold weight")
-	check((theme.get_font(&"font", &"TitleLabel") as FontVariation).base_font.resource_path.ends_with("ShipporiMincho-Bold.ttf"), "Titles keep the display face")
 	check(FileAccess.file_exists("res://art/third_party/biz_udp_gothic/OFL.txt") and FileAccess.file_exists("res://art/third_party/biz_udp_gothic/SOURCE.txt"), "The font's licence and source are bundled beside it")
 	check_tokens(theme)
 	var main: Node = load("res://game/main.tscn").instantiate()
@@ -105,9 +106,8 @@ func run_tests() -> void:
 	(upgrades.nodes[MetaProgress.ROOT] as Button).grab_focus()
 	check(upgrades.get_global_rect().grow(1).encloses(cheap.get_global_rect()), "%s fits the page" % cheap.text)
 	# The upgrade's buy button is a crest, drawing its own states; its styles
-	# only make room for the crest. The other screens' primary action keeps a
-	# style for each state.
-	check(cheap is CrestButton and cheap.theme_type_variation == &"CrestAction", "Buying is the crest button")
+	# only make room for the crest, the same in every state so it never moves.
+	# The other screens' primary action keeps a style for each state.
 	for state in ["hover", "pressed", "disabled", "focus"]:
 		check(theme_style(theme, state, &"CrestAction") == theme_style(theme, "normal", &"CrestAction"), "The crest keeps one room for its words when " + state)
 	var normal := theme_style(theme, "normal", &"PrimaryAction")
@@ -125,78 +125,37 @@ func run_tests() -> void:
 	main.free()
 	var frame := theme.get_stylebox("panel", "MainPanel") as StyleBoxTexture
 	check(frame != null and frame.axis_stretch_horizontal == StyleBoxTexture.AXIS_STRETCH_MODE_TILE_FIT and frame.axis_stretch_vertical == StyleBoxTexture.AXIS_STRETCH_MODE_TILE_FIT, "Panel grain tiles at one scale instead of stretching")
-	var raised := theme.get_stylebox("card", "ItemCardList") as StyleBoxTexture
-	var sunk := theme.get_stylebox("panel", "InsetPanel") as StyleBoxTexture
-	check(raised != null and sunk != null and raised != sunk, "Cards are raised and detail wells are sunk")
-	if raised != null and sunk != null:
-		check(centre_tone(sunk.texture) < centre_tone(raised.texture), "Sunk wells sit darker than raised cards")
-	check(theme.get_stylebox("pressed", "Button") is StyleBoxFlat and theme.get_stylebox("normal", "TabActive") is StyleBoxFlat, "Pressed buttons and the active tab stay flat against raised surfaces")
 	check_steady_buttons(theme)
 	check_readable_floor(theme)
-	# Scroll bars are drawn in the hall's bronze, not the engine's grey bar.
-	for bar in [&"VScrollBar", &"HScrollBar"]:
-		for part in [&"scroll", &"grabber", &"grabber_highlight", &"grabber_pressed"]:
-			check(theme.get_stylebox(part, bar) is ScrollRailStyle, "%s %s is a bronze rail" % [bar, part])
+	check_contrast(theme)
 	# A secondary action that can be pressed must never look like one that
 	# cannot.
 	for state in [&"normal", &"hover", &"focus", &"pressed", &"hover_pressed", &"disabled"]:
 		check(theme.has_stylebox(state, &"SecondaryButton"), "SecondaryButton has its own %s look" % state)
-	# Frames only where needed: a secondary action is its words, a faint band
-	# when pointed at and a gold bar when focused; the primary action keeps its
-	# plate, and an answer that cannot be undone a thin red frame.
-	var rest := theme.get_stylebox(&"normal", &"SecondaryButton") as StyleBoxFlat
-	var marked := theme.get_stylebox(&"focus", &"SecondaryButton") as StyleBoxFlat
-	check(rest != null and rest.border_width_left + rest.border_width_top + rest.border_width_right + rest.border_width_bottom == 0 and rest.bg_color.a == 0.0, "A secondary action has no frame at rest")
-	check(marked != null and marked.border_width_left > 0 and marked.border_width_top == 0, "A focused secondary action is marked by a bar, not a box")
 	check(theme.get_color(&"font_color", &"SecondaryButton") != theme.get_color(&"font_disabled_color", &"SecondaryButton"), "A secondary action looks different when it cannot be pressed")
-	# A question's answers are plates of their own: only the chosen one lights
-	# (its edge gold, its glow), drawn by the button, not by a focus overlay.
-	check(theme.get_stylebox(&"focus", &"BandButton") is StyleBoxEmpty and theme.get_color(&"glow", &"BandButton").a > 0.0, "A question's answer lights by its own glow, not by a focus box")
+	# A question's chosen answer is told apart from the others, and one that
+	# cannot be undone is drawn in red.
 	check(theme.get_color(&"lit_edge", &"BandButton") != theme.get_color(&"edge", &"BandButton"), "The chosen answer's edge turns gold")
 	check(theme.get_type_variation_base(&"BandDangerButton") == &"BandButton" and theme.get_color(&"lit_edge", &"BandDangerButton").r > theme.get_color(&"lit_edge", &"BandDangerButton").g + 0.2, "An answer that cannot be undone is drawn in red")
-	check(theme.get_color(&"fill", &"PromptBand").a > 0.5 and theme.get_color(&"line", &"PromptBand").a > 0.5, "A question's band has a dark face and gold lines")
-	# The settings' help and quit are their words alone: no underline when
-	# pointed at.
-	check(theme.get_stylebox(&"hover", &"TextAction") is StyleBoxEmpty, "A text action draws no underline when pointed at")
-	# A selector's value stands on nothing: its arrows alone light up.
-	for state: StringName in [&"normal", &"hover", &"focus", &"pressed"]:
-		check(theme.get_stylebox(state, &"OptionCycler") is StyleBoxEmpty, "A selector draws no underline (%s)" % state)
-	# The help's topics show the chosen one by its glowing words, not a band.
-	check(theme.get_stylebox(&"hover", &"HelpTopic") is StyleBoxEmpty and theme.get_color(&"glow", &"HelpTopic").a > 0.0 and theme.get_color(&"font_pressed_color", &"HelpTopic") != theme.get_color(&"font_color", &"HelpTopic"), "A help topic is chosen by its lit words")
-	# The help's page stands in a frame of its own inside the window.
-	var page_frame := theme.get_stylebox(&"panel", &"HelpPage") as StyleBoxFlat
-	check(page_frame != null and page_frame.border_width_top > 0 and page_frame.content_margin_left > 0.0, "The help's page is framed")
+	# The help's chosen topic is told apart from the others.
+	check(theme.get_color(&"font_pressed_color", &"HelpTopic") != theme.get_color(&"font_color", &"HelpTopic"), "A help topic is chosen by its lit words")
 	var primary := theme.get_stylebox(&"normal", &"PrimaryButton") as StyleBoxFlat
-	check(primary != null and primary.border_width_top == 1 and primary.bg_color.a > 0.0, "The primary action is a quiet gold-tinted plate with a hairline")
 	check((theme.get_stylebox(&"focus", &"PrimaryButton") as StyleBoxFlat).border_width_top > primary.border_width_top, "A focused primary action draws a stronger edge")
 	check(theme.get_stylebox(&"normal", &"LobbyAction") is StyleBoxTexture, "The lobby keeps its painted plate")
-	check(theme.get_stylebox(&"panel", &"QuietWindow") is QuietWindowStyle, "Popup windows are the quiet surface")
-	# The hub pages' main panel is the same quiet surface, its two columns one
-	# panel; every item card shares one face.
-	check(theme.get_stylebox(&"panel", &"SlabSolid") is QuietWindowStyle and theme.get_stylebox(&"panel", &"SlabSolidEnd") is QuietWindowStyle, "A page's main panel is the quiet surface")
-	check(not ((theme.get_stylebox(&"panel", &"SlabSolidEnd") as QuietWindowStyle).sides & QuietWindowStyle.SIDE_LEFT), "A page's two columns share one hairline between them")
-	check(not ((theme.get_stylebox(&"panel", &"SlabSolidOpen") as QuietWindowStyle).sides & QuietWindowStyle.SIDE_RIGHT), "Beside a framed right column, no hairline parts the two columns")
-	var card_rest := theme.get_stylebox(&"normal", &"CardButton") as StyleBoxFlat
+	# A chosen or focused item card is told apart by its frame.
 	var card_chosen := theme.get_stylebox(&"pressed", &"CardButton") as StyleBoxFlat
-	check(card_rest.border_width_top == 0 and card_rest.bg_color.a > 0.0 and theme.get_stylebox(&"panel", &"CardSurface") == card_rest, "An item card is a faint face without a frame at rest, the same for buttons and panels")
 	check(card_chosen.border_width_top > 0 and (theme.get_stylebox(&"focus", &"CardButton") as StyleBoxFlat).border_width_top > 0, "A chosen or focused card gets its frame")
-	# A level-up card is the card face alone: no coloured line along one side.
-	var face := theme.get_stylebox(&"face", &"AbilityCard") as StyleBoxFlat
-	check(face.bg_color == card_rest.bg_color and face.border_width_top + face.border_width_left + face.border_width_right + face.border_width_bottom == 0, "Level-up cards share the card face, with no coloured band")
-	# The hand floats with no window behind it: each card stands on a plate of
-	# the windows' dark stone, edged and shadowed.
+	# A level-up card floats over the fight, so its words need a plate that
+	# hides the floor behind them.
 	var plate := theme.get_stylebox(&"plate", &"AbilityCard") as StyleBoxFlat
-	check(plate != null and plate.bg_color.a > 0.9 and plate.border_width_left > 0 and plate.shadow_size > 0, "A level-up card stands on an opaque plate of its own")
-	check(theme.get_stylebox(&"panel", &"FloatingHand") is StyleBoxEmpty, "The level-up hand has no window")
+	check(plate != null and plate.bg_color.a > 0.9, "A level-up card stands on an opaque plate of its own")
 	# The fight's HUD reads on any floor: its edges are shaded and its words outlined.
 	check(theme.get_color(&"shade", &"HudEdge").a > 0.3 and theme.get_constant(&"outline_size", &"HpCaption") > 0, "The HUD's edges are shaded and its health caption outlined")
 	check(theme.get_color(&"font_color", &"SecondaryButton").get_luminance() - theme.get_color(&"font_disabled_color", &"SecondaryButton").get_luminance() > 0.3, "Its words dim when it cannot be pressed")
-	# The fight's dialogs (level-up, the route, prompts, menu, result) stand on
-	# warm stone in the bronze frame.
+	# The fight's dialogs hide the floor behind their words.
 	var dialog := theme.get_stylebox(&"panel", &"MainPanel") as StyleBoxTexture
-	check(dialog != null and dialog.texture.resource_path.ends_with("dialog_plate.png"), "Dialogs stand on the stone plate")
 	var middle := dialog.texture.get_image().get_pixel(dialog.texture.get_width() / 2, dialog.texture.get_height() / 2)
-	check(middle.r > middle.b + 0.02 and middle.a > 0.9, "The plate's stone is warm and nearly opaque")
+	check(middle.a > 0.9, "The dialogs' plate is nearly opaque")
 	print("UI theme: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
 
@@ -246,6 +205,50 @@ func theme_style(theme: Theme, state: String, type: StringName) -> StyleBox:
 	return null
 
 
-func centre_tone(texture: Texture2D) -> float:
-	var image := texture.get_image()
-	return image.get_pixel(image.get_width() / 2, image.get_height() / 2).v
+# Words read against the page they stand on: the base's text roles keep the
+# 4.5:1 of WCAG 2.2 AA (SC 1.4.3) against a page's panel laid over the darkest
+# background, and on an item card's face over it; words that cannot be pressed
+# stay at 3:1, dim but legible. The colours are measured, not the pixels, so a
+# role's colour changed in the tokens is checked here.
+const READABLE_ROLES := [
+	[&"font_color", &"BodyLabel"], [&"font_color", &"DescriptionLabel"], [&"font_color", &"ItemNameLabel"],
+	[&"font_color", &"ValueLabel"], [&"font_color", &"MutedLabel"], [&"font_color", &"NoteLabel"],
+	[&"font_color", &"GoldLabel"], [&"font_color", &"StatUp"], [&"font_color", &"StatDown"],
+	[&"font_color", &"TitleLabel"], [&"font_color", &"HeadingLabel"], [&"font_color", &"PrimaryButton"],
+	[&"font_color", &"SecondaryButton"], [&"font_color", &"KeyGuideButton"],
+]
+const DIM_ROLES := [[&"font_disabled_color", &"SecondaryButton"]]
+const DARKEST_BACKGROUND := Color(0.008, 0.012, 0.02)
+
+
+func check_contrast(theme: Theme) -> void:
+	var slab := theme.get_stylebox(&"panel", &"SlabSolid") as QuietWindowStyle
+	var page := DARKEST_BACKGROUND.lerp(Color(slab.fill, 1.0), slab.fill.a)
+	var card_face := theme_style(theme, "normal", &"CardButton") as StyleBoxFlat
+	var card := page.lerp(Color(card_face.bg_color, 1.0), card_face.bg_color.a)
+	for role: Array in READABLE_ROLES:
+		var colour := theme_color(theme, role[0], role[1])
+		check(contrast(colour, page) >= 4.5 and contrast(colour, card) >= 4.5, "%s %s reads at 4.5:1 or more (%.1f on a page)" % [role[1], role[0], contrast(colour, page)])
+	for role: Array in DIM_ROLES:
+		var colour := theme_color(theme, role[0], role[1])
+		check(contrast(colour, page) >= 3.0, "%s %s stays legible at 3:1 or more (%.1f)" % [role[1], role[0], contrast(colour, page)])
+
+
+func theme_color(theme: Theme, item: StringName, type: StringName) -> Color:
+	var at := type
+	while at != &"":
+		if theme.has_color(item, at):
+			return theme.get_color(item, at)
+		at = theme.get_type_variation_base(at)
+	return theme.get_color(item, &"Label")
+
+
+static func contrast(a: Color, b: Color) -> float:
+	var x := relative_luminance(a)
+	var y := relative_luminance(b)
+	return (maxf(x, y) + 0.05) / (minf(x, y) + 0.05)
+
+
+static func relative_luminance(colour: Color) -> float:
+	var linear := colour.srgb_to_linear()
+	return 0.2126 * linear.r + 0.7152 * linear.g + 0.0722 * linear.b
