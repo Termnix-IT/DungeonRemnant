@@ -114,6 +114,9 @@ var _slab: VBoxContainer
 var _deck: HBoxContainer
 var _slot_column: VBoxContainer
 var _link: Control
+var _rail: Ornament
+# The stage's light behind its emblem, breathing in its shader.
+var _stage_light: Ornament
 var _choice_column: VBoxContainer
 var _scroll: ScrollContainer
 var _choices: VBoxContainer
@@ -191,6 +194,10 @@ func _build_deck() -> void:
 	_link.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_link.draw.connect(_draw_link)
 	_deck.add_child(_link)
+	_rail = Ornament.new(Ornament.Kind.RAIL)
+	_rail.show_behind_parent = true
+	_rail.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_link.add_child(_rail)
 	_slot_column.sort_children.connect(_link.queue_redraw)
 	_choice_column = VBoxContainer.new()
 	_choice_column.theme_type_variation = &"DetailStack"
@@ -274,6 +281,11 @@ func _build_stage(column: VBoxContainer) -> void:
 	picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	picture.draw.connect(_draw_picture)
 	body.add_child(picture)
+	_stage_light = Ornament.new(Ornament.Kind.GLOW)
+	_stage_light.show_behind_parent = true
+	_stage_light.visible = false
+	picture.add_child(_stage_light)
+	picture.resized.connect(_light_picture)
 	# The foot keeps its room while the action is out of sight.
 	var foot := HBoxContainer.new()
 	foot.theme_type_variation = &"StatusHead"
@@ -628,12 +640,8 @@ func _rest_on(target: Control) -> void:
 func _draw_link() -> void:
 	if slot_buttons.is_empty() or slot >= slot_buttons.size():
 		return
-	var rail := _link.get_theme_color(&"rail", &"HubLobby")
+	_rail.set_value(&"tint", Color(_link.get_theme_color(&"rail", &"HubLobby"), 0.3))
 	var x := _link.size.x * 0.5
-	var h := _link.size.y
-	_link.draw_polyline_colors(
-		PackedVector2Array([Vector2(x, 0.0), Vector2(x, h * 0.1), Vector2(x, h * 0.9), Vector2(x, h)]),
-		PackedColorArray([Color(rail, 0.0), Color(rail, 0.3), Color(rail, 0.3), Color(rail, 0.0)]), 1.0, true)
 	var row := slot_buttons[slot]
 	var level := _slot_column.position.y + row.position.y + row.size.y * 0.5 - _link.position.y
 	var mark := UIMotion.of(_link).follow_mark(Rect2(x, level, 0.0, 0.0)).position
@@ -668,6 +676,7 @@ func _tell(id: StringName) -> void:
 	action_button.disabled = not told.can
 	outcome_label.text = told.outcome if choosing else ""
 	picture.queue_redraw()
+	_light_picture()
 	if moved and not _quiet:
 		UIMotion.of(_stage).slide_in()
 
@@ -811,20 +820,25 @@ func _figure_row(title: String, value: String) -> void:
 		label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 
-# The stage's emblem in a faint ring, on a soft warm light that breathes; a
+# The soft warm light behind the stage's emblem, breathing; none behind a
+# thing not learned or an empty slot.
+func _light_picture() -> void:
+	if _stage_light == null or not picture.is_inside_tree():
+		return
+	_stage_light.visible = EmblemIcons.texture(_emblem) != null and not _unknown
+	_stage_light.round_on(Vector2(picture.size.x * 0.5, picture.size.y * PICTURE_LEVEL), PICTURE_SIZE * 0.92)
+	_stage_light.set_value(&"tint", picture.get_theme_color(&"glow", &"LoadoutSlot"))
+	_stage_light.set_value(&"breath", BREATH)
+	_stage_light.set_value(&"breath_time", BREATH_TIME)
+
+
+# The stage's emblem in a faint ring, over its light (_light_picture); a
 # thing not learned is its shadow, an empty slot a dashed ring.
 func _draw_picture() -> void:
 	var centre := Vector2(picture.size.x * 0.5, picture.size.y * PICTURE_LEVEL)
-	var breath := 1.0 + BREATH * sin(Time.get_ticks_msec() * 0.001 * TAU / BREATH_TIME)
-	var light := picture.get_theme_color(&"glow", &"LoadoutSlot")
 	var rail := picture.get_theme_color(&"rail", &"HubLobby")
-	var reach := PICTURE_SIZE * 0.92
 	var emblem := EmblemIcons.texture(_emblem)
 	var half := PICTURE_SIZE * 0.5
-	if emblem != null and not _unknown:
-		# One disc at the light's full strength, drawn fainter as it breathes.
-		var full := Color(light, light.a * (1.0 + BREATH))
-		picture.draw_texture_rect(HubCodex.soft_disc(full), Rect2(centre - Vector2.ONE * reach, Vector2.ONE * reach * 2.0), false, Color(1.0, 1.0, 1.0, breath / (1.0 + BREATH)))
 	picture.draw_arc(centre, PICTURE_RING, 0.0, TAU, 96, Color(rail, 0.16), 1.0, true)
 	if emblem != null:
 		picture.draw_texture_rect(emblem, Rect2(centre - Vector2.ONE * half, Vector2.ONE * PICTURE_SIZE), false, picture.get_theme_color(&"unknown_tint", &"LoadoutSlot") if _unknown else Color.WHITE)
@@ -835,11 +849,6 @@ func _draw_picture() -> void:
 		picture.draw_arc(centre, half - 8.0, index * step, index * step + step * 0.5, 6, Color(dash, dash.a * 0.7), 1.5, true)
 	if shown_id == CLEAR_ID:
 		picture.draw_line(centre + Vector2(-half, half) * 0.36, centre + Vector2(half, -half) * 0.36, Color(dash, dash.a * 0.7), 2.0, true)
-
-
-func _process(_delta: float) -> void:
-	if picture != null and picture.is_visible_in_tree():
-		picture.queue_redraw()
 
 
 # --- Her figures ---

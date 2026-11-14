@@ -10,9 +10,10 @@ extends Button
 # first row of a slot that can be emptied clears it (`clears`: a dashed ring
 # with a slash). A row whose Enter would change nothing is dimmed (`idle`).
 #
-# The row under the focus is lit as the slots' rows are (`stand`); it draws
-# with LoadoutSlot's face, medallion and key plate, and takes its colours
-# from the same theme type (LoadoutChoice is a LoadoutSlot).
+# The row under the focus is lit as the slots' rows are (`stand`), its emblem
+# ringed in gold by an Ornament; it draws with LoadoutSlot's face, medallion
+# and key plate, and takes its colours from the same theme type
+# (LoadoutChoice is a LoadoutSlot).
 
 enum State { FREE, HELD, ELSEWHERE, UNKNOWN }
 
@@ -38,6 +39,9 @@ var stand := 0.0:
 	set(value):
 		stand = value
 		queue_redraw()
+		_light_ring()
+
+var _ring: Ornament
 
 
 func _init() -> void:
@@ -46,6 +50,25 @@ func _init() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	focus_entered.connect(func(): UIMotion.of(self).stand(true))
 	focus_exited.connect(func(): UIMotion.of(self).stand(false))
+	_ring = Ornament.new(Ornament.Kind.RING)
+	_ring.visible = false
+	add_child(_ring)
+	resized.connect(_light_ring)
+
+
+# The gold ring round the emblem of the row under the focus.
+func _light_ring() -> void:
+	if _ring == null or not is_inside_tree():
+		return
+	var lit := clampf(stand, 0.0, 1.0)
+	_ring.visible = lit > 0.0 and not clears
+	if not _ring.visible:
+		return
+	var radius := DIAMETER * 0.5
+	_ring.round_on(Vector2(INSET + radius, size.y * 0.5), radius + 6.0)
+	_ring.set_value(&"radius", radius + 3.0)
+	_ring.set_value(&"width", 1.5)
+	_ring.set_value(&"tint", Color(get_theme_color(&"lit_ring"), lit))
 
 
 func _draw() -> void:
@@ -58,9 +81,6 @@ func _draw() -> void:
 	var centre := Vector2(INSET + radius, size.y * 0.5)
 	var tint := get_theme_color(&"unknown_tint") if unknown else Color(1.0, 1.0, 1.0, fade)
 	LoadoutSlot.paint_medallion(self, centre, radius, emblem, tint, clears, clears)
-	if lit > 0.0 and not clears:
-		var ring := get_theme_color(&"lit_ring")
-		draw_arc(centre, radius + 3.0, 0.0, TAU, 48, Color(ring, lit), 1.5, true)
 	var font := get_theme_font(&"font")
 	var name_font := get_theme_font(&"name_font")
 	var small := get_theme_font_size(&"font_size")
