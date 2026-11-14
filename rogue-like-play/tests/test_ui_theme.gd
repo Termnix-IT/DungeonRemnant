@@ -37,6 +37,30 @@ func inspect_styles(node: Node) -> void:
 		inspect_styles(child)
 
 
+# Every colour and font size in the theme is bound to a token and is what the
+# token makes (tools/build_theme.gd was run after the last change), and
+# turning a family moves its colours everywhere and nothing else.
+func check_tokens(theme: Theme) -> void:
+	var tokens := ThemeTokens.current()
+	var bindings := ThemeBindings.current()
+	var problems := ThemeBuild.problems(theme, tokens, bindings)
+	check(problems.is_empty(), "The theme is what its tokens make: %s" % "; ".join(problems.slice(0, 5)))
+	var gold_place := ""
+	var other_place := ""
+	for place: String in bindings.colors:
+		var family := ThemeTokens.family_of(ThemeBindings.parse_color(bindings.colors[place])[0])
+		if family == &"gold" and gold_place.is_empty():
+			gold_place = place
+		elif family == &"neutral" and other_place.is_empty():
+			other_place = place
+	var copy := theme.duplicate(true) as Theme
+	var turned := tokens.duplicate(true) as ThemeTokens
+	turned.families[&"gold"] = Vector3(-12.0, 0.8, 1.0)
+	var written := ThemeBuild.apply(copy, turned, bindings)
+	check(written.has(gold_place) and not written.has(other_place), "Turning the gold family rewrites the golds and leaves the others")
+	check(not (ThemeBuild.read(copy, gold_place) as Color).is_equal_approx(ThemeBuild.read(theme, gold_place)), "A turned gold differs from the shipped one")
+
+
 func run_tests() -> void:
 	var theme := preload("res://ui/theme/dungeon_theme.tres")
 	# The bundled gothic for the body, buttons and figures; titles keep the
@@ -45,6 +69,7 @@ func run_tests() -> void:
 	check(theme.get_font(&"font", &"ValueLabel").resource_path.ends_with("BIZUDPGothic-Bold.ttf") and theme.get_font(&"font", &"HudValue").resource_path.ends_with("BIZUDPGothic-Bold.ttf"), "Figures use its bold weight")
 	check((theme.get_font(&"font", &"TitleLabel") as FontVariation).base_font.resource_path.ends_with("ShipporiMincho-Bold.ttf"), "Titles keep the display face")
 	check(FileAccess.file_exists("res://art/third_party/biz_udp_gothic/OFL.txt") and FileAccess.file_exists("res://art/third_party/biz_udp_gothic/SOURCE.txt"), "The font's licence and source are bundled beside it")
+	check_tokens(theme)
 	var main: Node = load("res://game/main.tscn").instantiate()
 	main.show_prologue = false
 	main.saving_enabled = false

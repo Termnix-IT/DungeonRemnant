@@ -42,7 +42,8 @@ UIは `res://ui/theme/dungeon_theme.tres` をプロジェクト共通Themeとし
 - 操作は `PrimaryButton`（主要操作）、`SecondaryButton`（戻る・補助操作）、`DangerButton`（取り消せない操作）、`ItemButton`（選択）、`GoldButton`（購入・成長）を使い分ける。
 - 文字は画面名 `TitleLabel`（30px）、見出し `HeadingLabel`（24px）、項目名 `ItemNameLabel`（20px）、主要値 `ValueLabel`（26px）、本文 `BodyLabel`（18px）、説明 `DescriptionLabel`（18px）、補足 `MutedLabel`（16px）、価格 `GoldLabel`（21px）を使用する。ボタンは原則18px、補助操作は16px。画面ごとのフォントサイズ・色overrideは追加しない。
 - 拠点のヘッダー・ページ・フッター、各画面の列はContainerで配置する。ただしロビー（`HubLobby`）は、背景の一枚絵と一体に見せるため、1600×900の画面全体へ直接配置する。`HubUI` はパネルとMargin・VBox/HBoxの構造だけを共通化する。基準内容幅1440px・高さ810px（1600×900の画面で左右に80pxずつ背景を残す）、画面端は最低20px相当を確保して縮小する。通常のパネル内余白24px、列間20px、縦間隔12px、密な詳細は8px。
-- 外観の調整はTheme内の名前付きStyleBox（`MainSurface`、`SurfaceHover`、`FocusOutline`など）を編集する。同一のStyleBoxを共有するControlへ一括反映されるため、画面側で複製しない。Theme内の色項目とStyleBoxの色はGodot上では別プロパティであり、自動連動するパレットではない。
+- 外観の調整はTheme内の名前付きStyleBox（`MainSurface`、`SurfaceHover`、`FocusOutline`など）を編集する。同一のStyleBoxを共有するControlへ一括反映されるため、画面側で複製しない。
+- Themeの色と文字サイズは、すべてトークン（`ui/theme/theme_tokens.tres`）から書き出す。GodotのThemeには値を参照する仕組みがなく、同じ金色が何十か所にも直接書かれていて全体の調子を一度に変えられなかったためである。色は系統（`gold`・`parchment`・`umber`・`neutral`・`ember`・`moss`・`frost`）ごとに暗い順の番号で名前を付け（`gold.1` が最も暗い金）、透明度は使う場所ごとに持つ。文字サイズは小さい順に `size.1` からの段にする。Themeのどの場所がどのトークンを使うかは `ui/theme/theme_bindings.tres` に `tools/build_theme.gd` が記録する。トークンを変えたとき、またはThemeに色や文字サイズを手で足したときは `tools/build_theme.gd` を実行する。トークンと同じ値は自動でそのトークンに結び付き、どのトークンとも違う値はエラーとして示されるので、トークンを足すか既存のトークンに合わせる。系統全体の色味は、トークンの `families` に色相の回転・彩度と明度の倍率を書くと、その系統のすべての色に反映される。`tests/test_ui_theme.gd` が、Themeの値がトークンどおりであることを検査する。
 
 色の役割は背景 `#020305`、主面 `#252525`、浮いた面 `#2B2B2B`、一覧の内側 `#1C1C1C`、Hover `#363636`、選択面 `#26241A`、通常境界 `#525252`、選択境界 `#B89759`、金 `#D6B77B`、本文 `#EEE9DF`、説明 `#C9C9BF`、補足 `#B2B3AA`、減少 `#DB857A`、増加 `#91C2A3` とする。拠点背景の画像は暖かい光を残し、上に重ねる中立色の暗幕を薄くして石造りの奥行きを見せる。主パネルは青みを含まない不透明な石墨色で背景と分離する。
 

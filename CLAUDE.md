@@ -29,6 +29,7 @@ Godotを `godot` コマンドとして利用できる状態で、`rogue-like-pla
 - `godot --headless --path . --log-file .godot/run-cycle-tests.log --script res://tests/test_run_cycle.gd`: 拠点から出撃し、踏破・敗北・中断のそれぞれで拠点へ戻るまでの流れ全体を検証する。
 - `godot --headless --path . --log-file .godot/smoke-test.log --quit-after 5`: 短時間の起動確認を行う。
 - `godot --headless --path . --script res://tools/text_catalog.gd`: 画面の日本語を変えた・足したときに、翻訳の表 `locale/text.csv` を作り直す。書いてある英訳は残り、使われなくなった行は消える（英訳があった行は表示する）。続けてimportし、`tests/test_translation.gd` で確かめる。
+- `godot --headless --path . --script res://tools/build_theme.gd`: トークン（`ui/theme/theme_tokens.tres`）を変えたとき、またはThemeに色・文字サイズを手で足したときに、`ui/theme/dungeon_theme.tres` の色と文字サイズを書き出し直す。末尾に `-- --check` を付けると、書き出さずに食い違いだけを調べる。
 
 ## 公開に向けた進め方
 
@@ -47,7 +48,7 @@ Nodeの `@export` 変数に、Script定数と同じ `.tres` をpreloadした既�
 - UIの仕様・デザイン値・操作要件は `docs/画面とUI.md` を参照する。拠点の個別画面（出撃・強化・ステータス・図鑑・設定）を変更・追加するときは、同書の「個別画面のUI文法」に従う。このファイルには作業上の判断基準を置き、色・文字サイズ・余白の数値を二重管理しない。
 - 画面の配置は独自に考えず、多くのゲームで使われている定番の形式に合わせる（同書の「画面の型は定番に合わせる」）。他のゲームの絵・枠・アイコンはまねず、色・書体・枠は共通Themeのものを使う。
 - 情報は「常時表示／開いた時だけ／別画面」に分け、枠線は主要操作・選択とFocus・取り消せない操作の確認に絞る（同書の該当節）。表示から外した情報にも導線を残し、機能は消さない。
-- 外観は `rogue-like-play/ui/theme/dungeon_theme.tres` のTheme Type Variation・StyleBox・定数で管理する。画面ごとの色・フォントサイズ・StyleBox・定数のoverrideや別Themeの追加を避ける（`tests/test_ui_theme.gd` が検査する）。
+- 外観は `rogue-like-play/ui/theme/dungeon_theme.tres` のTheme Type Variation・StyleBox・定数で管理する。色と文字サイズはThemeに直接書かず、トークン（`ui/theme/theme_tokens.tres`）を直して `tools/build_theme.gd` で書き出す（`docs/画面とUI.md` の2.1）。画面ごとの色・フォントサイズ・StyleBox・定数のoverrideや別Themeの追加を避ける（`tests/test_ui_theme.gd` が検査する）。
 - 拠点背景の明るさは `rogue-like-play/game/hub/hub.gd` の背景上の暗幕で、メインコンテンツパネルとポップアップの面は `ui/quiet_window_style.gd`（Themeの `QuietWindowSurface`・`SlabSolidSurface`・`SlabSolidEndSurface`）で、項目カードの面はThemeの `Card*` のStyleBoxで調整する。背景の暖かい光と、青みのない石墨色のパネルを分け、選択の金枠と本文の視認性を保つ。
 - 拠点のロビー（最初の待機画面、`HubLobby`）は、ほかの画面の外観を整えるときも今の見た目のまま残す。数字の明朝体（`LobbyFactValue`）と、出撃ボタンの装飾板（`LobbyAction`）を保ち、共有のTheme Typeを変えるとロビーまで変わる場合は、ロビーを専用のTypeに分ける。ロビーの見た目を変える、または項目を足すときは、事前にユーザーへ確認する。
 - パネル構造には `HubUI`、タブには `CategoryTabs`、操作ガイドには `KeyGuide`、通貨の表示には `GoldPurse` を優先して再利用する。

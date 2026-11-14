@@ -1,80 +1,71 @@
 [gd_resource type="Theme" format=3]
 
-[ext_resource type="Script" path="res://ui/slab_style.gd" id="SlabStyleScript"]
-[ext_resource type="Script" path="res://ui/quiet_window_style.gd" id="QuietWindowStyleScript"]
-[ext_resource type="Script" path="res://ui/scroll_rail_style.gd" id="ScrollRailScript"]
-[ext_resource type="Texture2D" path="res://art/ui/cell_frame.png" id="CellFrameTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/slot_frame.png" id="SlotFrameTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/popup_frame.png" id="PopupFrameTexture"]
-[ext_resource type="FontFile" path="res://ui/fonts/ShipporiMincho-Bold.ttf" id="DisplayBold"]
-[ext_resource type="FontFile" path="res://ui/fonts/ShipporiMincho-Medium.ttf" id="DisplayMedium"]
-[ext_resource type="FontFile" path="res://art/third_party/biz_udp_gothic/BIZUDPGothic-Regular.ttf" id="BodyRegular"]
 [ext_resource type="FontFile" path="res://art/third_party/biz_udp_gothic/BIZUDPGothic-Bold.ttf" id="BodyBold"]
-[ext_resource type="Texture2D" path="res://art/ui/frame_panel.png" id="FramePanelTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/frame_card.png" id="FrameCardTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/frame_card_active.png" id="FrameCardActiveTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/button_gold.png" id="ButtonGoldTexture"]
+[ext_resource type="FontFile" path="res://art/third_party/biz_udp_gothic/BIZUDPGothic-Regular.ttf" id="BodyRegular"]
 [ext_resource type="Texture2D" path="res://art/ui/button_gold_hover.png" id="ButtonGoldHoverTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/button_gold_pressed.png" id="ButtonGoldPressedTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/vital_frame.png" id="VitalFrameTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/surface_raised.png" id="SurfaceRaisedTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/button_gold.png" id="ButtonGoldTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/cell_frame.png" id="CellFrameTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/dialog_plate.png" id="DialogPlateTexture"]
+[ext_resource type="FontFile" path="res://ui/fonts/ShipporiMincho-Bold.ttf" id="DisplayBold"]
+[ext_resource type="FontFile" path="res://ui/fonts/ShipporiMincho-Medium.ttf" id="DisplayMedium"]
+[ext_resource type="Texture2D" path="res://art/ui/frame_card_active.png" id="FrameCardActiveTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/frame_card.png" id="FrameCardTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/frame_panel.png" id="FramePanelTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/key_cap_active.png" id="HudKeyCapActiveTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/key_cap.png" id="HudKeyCapTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/log_floor.png" id="HudLogFloorTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/log_harm.png" id="HudLogHarmTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/log_news.png" id="HudLogNewsTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/log_supply.png" id="HudLogSupplyTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/log_victory.png" id="HudLogVictoryTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/map_enemy.png" id="HudMapEnemyTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/map_frame.png" id="HudMapFrameTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/map_item.png" id="HudMapItemTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/map_player.png" id="HudMapPlayerTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/map_stairs.png" id="HudMapStairsTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/medallion.png" id="HudMedallionTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/ink_plate.png" id="InkPlateTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/notice_band.png" id="NoticeBandTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/notice_band_warning.png" id="NoticeBandWarningTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/passage_exit.png" id="PassageExitTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/passage_guardian.png" id="PassageGuardianTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/passage_stairs.png" id="PassageStairsTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/pip_empty.png" id="PipEmptyTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/pip_full.png" id="PipFullTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/popup_frame.png" id="PopupFrameTexture"]
+[ext_resource type="Script" path="res://ui/quiet_window_style.gd" id="QuietWindowStyleScript"]
+[ext_resource type="Script" path="res://ui/scroll_rail_style.gd" id="ScrollRailScript"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/seal_clear.png" id="SealClearTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/seal_defeat.png" id="SealDefeatTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/hud/seal_return.png" id="SealReturnTexture"]
+[ext_resource type="Script" path="res://ui/slab_style.gd" id="SlabStyleScript"]
+[ext_resource type="Texture2D" path="res://art/ui/slot_frame.png" id="SlotFrameTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/speech_bubble.png" id="SpeechBubbleTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/surface_hover.png" id="SurfaceHoverTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/surface_raised.png" id="SurfaceRaisedTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/surface_selected.png" id="SurfaceSelectedTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/surface_sunk.png" id="SurfaceSunkTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/vital_experience.png" id="VitalExperienceTexture"]
+[ext_resource type="Texture2D" path="res://art/ui/vital_frame.png" id="VitalFrameTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/vital_frame_thin.png" id="VitalFrameThinTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/vital_health.png" id="VitalHealthTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/vital_health_trail.png" id="VitalHealthTrailTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/vital_mana.png" id="VitalManaTexture"]
 [ext_resource type="Texture2D" path="res://art/ui/vital_mana_trail.png" id="VitalManaTrailTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/vital_experience.png" id="VitalExperienceTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/speech_bubble.png" id="SpeechBubbleTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/ink_plate.png" id="InkPlateTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/slab_stone.png" id="SlabStoneTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/key_cap.png" id="HudKeyCapTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/key_cap_active.png" id="HudKeyCapActiveTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/dialog_plate.png" id="DialogPlateTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/medallion.png" id="HudMedallionTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/map_frame.png" id="HudMapFrameTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/map_stairs.png" id="HudMapStairsTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/map_enemy.png" id="HudMapEnemyTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/map_item.png" id="HudMapItemTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/map_player.png" id="HudMapPlayerTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/log_victory.png" id="HudLogVictoryTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/log_harm.png" id="HudLogHarmTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/log_floor.png" id="HudLogFloorTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/log_supply.png" id="HudLogSupplyTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/log_news.png" id="HudLogNewsTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/notice_band.png" id="NoticeBandTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/notice_band_warning.png" id="NoticeBandWarningTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/passage_stairs.png" id="PassageStairsTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/passage_guardian.png" id="PassageGuardianTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/passage_exit.png" id="PassageExitTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/card_new.png" id="CardNewTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/card_raise.png" id="CardRaiseTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/card_chosen.png" id="CardChosenTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/pip_empty.png" id="PipEmptyTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/pip_full.png" id="PipFullTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/seal_clear.png" id="SealClearTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/seal_return.png" id="SealReturnTexture"]
-[ext_resource type="Texture2D" path="res://art/ui/hud/seal_defeat.png" id="SealDefeatTexture"]
 
-[sub_resource type="StyleBoxTexture" id="DialogPlate"]
-resource_name = "DialogPlate"
-axis_stretch_horizontal = 2
-axis_stretch_vertical = 2
-texture = ExtResource("DialogPlateTexture")
-texture_margin_left = 38.0
-texture_margin_top = 38.0
-texture_margin_right = 38.0
-texture_margin_bottom = 38.0
-expand_margin_left = 14.0
-expand_margin_top = 14.0
-expand_margin_right = 14.0
-expand_margin_bottom = 14.0
-content_margin_left = 8.0
-content_margin_top = 8.0
-content_margin_right = 8.0
-content_margin_bottom = 8.0
+[sub_resource type="StyleBoxFlat" id="AbilityCardChosen"]
+resource_name = "AbilityCardChosen"
+bg_color = Color(0.96, 0.85, 0.6, 0.07)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="AbilityCardFace"]
 resource_name = "AbilityCardFace"
@@ -86,12 +77,12 @@ corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="AbilityCardPlate"]
 resource_name = "AbilityCardPlate"
-bg_color = Color(0.045, 0.05, 0.058, 0.97)
+bg_color = Color(0.05, 0.048, 0.05, 0.97)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.32, 0.31, 0.29, 0.6)
+border_color = Color(0.32, 0.32, 0.32, 0.6)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
@@ -100,60 +91,70 @@ shadow_color = Color(0, 0, 0, 0.4)
 shadow_size = 10
 shadow_offset = Vector2(0, 4)
 
-[sub_resource type="StyleBoxFlat" id="AbilityCardChosen"]
-resource_name = "AbilityCardChosen"
-bg_color = Color(1, 0.86, 0.6, 0.07)
-border_width_left = 2
+[sub_resource type="StyleBoxEmpty" id="Invisible"]
+resource_name = "Invisible"
+
+[sub_resource type="FontVariation" id="DisplayBoldKana"]
+base_font = ExtResource("DisplayBold")
+opentype_features = {
+1885432948: 1
+}
+
+[sub_resource type="StyleBoxEmpty" id="BandAnswerRoom"]
+resource_name = "BandAnswerRoom"
+content_margin_left = 18.0
+content_margin_top = 8.0
+content_margin_right = 18.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxTexture" id="BannerBand"]
+resource_name = "BannerBand"
+content_margin_left = 48.0
+content_margin_top = 5.0
+content_margin_right = 48.0
+content_margin_bottom = 5.0
+texture = ExtResource("NoticeBandTexture")
+texture_margin_left = 55.0
+texture_margin_top = 27.0
+texture_margin_right = 55.0
+texture_margin_bottom = 27.0
+expand_margin_left = 36.0
+expand_margin_top = 18.0
+expand_margin_right = 36.0
+expand_margin_bottom = 16.0
+
+[sub_resource type="StyleBoxTexture" id="BannerBandWarning"]
+resource_name = "BannerBandWarning"
+content_margin_left = 48.0
+content_margin_top = 5.0
+content_margin_right = 48.0
+content_margin_bottom = 5.0
+texture = ExtResource("NoticeBandWarningTexture")
+texture_margin_left = 65.0
+texture_margin_top = 27.0
+texture_margin_right = 65.0
+texture_margin_bottom = 27.0
+expand_margin_left = 40.0
+expand_margin_top = 18.0
+expand_margin_right = 40.0
+expand_margin_bottom = 16.0
+
+[sub_resource type="StyleBoxFlat" id="BossBand"]
+resource_name = "BossBand"
+bg_color = Color(0.03, 0.028, 0.03, 0.86)
 border_width_top = 2
-border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.84, 0.72, 0.48, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+border_color = Color(0.68, 0.32, 0.19, 0.95)
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 12
 
-[sub_resource type="StyleBoxTexture" id="FramePanel"]
-resource_name = "FramePanel"
-axis_stretch_horizontal = 2
-axis_stretch_vertical = 2
-texture = ExtResource("FramePanelTexture")
-texture_margin_left = 42.0
-texture_margin_top = 42.0
-texture_margin_right = 42.0
-texture_margin_bottom = 42.0
-content_margin_left = 0.0
-content_margin_top = 0.0
-content_margin_right = 0.0
-content_margin_bottom = 0.0
+[sub_resource type="StyleBoxEmpty" id="VitalEmpty"]
 
-[sub_resource type="StyleBoxTexture" id="FrameCard"]
-resource_name = "FrameCard"
-axis_stretch_horizontal = 2
-axis_stretch_vertical = 2
-texture = ExtResource("FrameCardTexture")
-texture_margin_left = 42.0
-texture_margin_top = 42.0
-texture_margin_right = 42.0
-texture_margin_bottom = 42.0
-content_margin_left = 12.0
-content_margin_top = 12.0
-content_margin_right = 12.0
-content_margin_bottom = 12.0
+[sub_resource type="StyleBoxTexture" id="VitalHealth"]
+texture = ExtResource("VitalHealthTexture")
 
-[sub_resource type="StyleBoxTexture" id="FrameCardActive"]
-resource_name = "FrameCardActive"
-axis_stretch_horizontal = 2
-axis_stretch_vertical = 2
-texture = ExtResource("FrameCardActiveTexture")
-texture_margin_left = 42.0
-texture_margin_top = 42.0
-texture_margin_right = 42.0
-texture_margin_bottom = 42.0
-content_margin_left = 12.0
-content_margin_top = 12.0
-content_margin_right = 12.0
-content_margin_bottom = 12.0
+[sub_resource type="StyleBoxTexture" id="VitalHealthTrail"]
+texture = ExtResource("VitalHealthTrailTexture")
 
 [sub_resource type="StyleBoxFlat" id="ButtonDisabled"]
 resource_name = "ButtonDisabled"
@@ -163,19 +164,6 @@ content_margin_right = 12.0
 content_margin_bottom = 6.0
 bg_color = Color(0.13, 0.13, 0.13, 1)
 border_color = Color(0.32, 0.32, 0.32, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxFlat" id="ListFocus"]
-resource_name = "ListFocus"
-draw_center = false
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.93333334, 0.9137255, 0.8745098, 0.35)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
@@ -211,11 +199,6 @@ texture_margin_top = 6.0
 texture_margin_right = 6.0
 texture_margin_bottom = 6.0
 
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-
 [sub_resource type="StyleBoxFlat" id="ButtonPressed"]
 resource_name = "ButtonPressed"
 content_margin_left = 12.0
@@ -223,16 +206,15 @@ content_margin_top = 6.0
 content_margin_right = 12.0
 content_margin_bottom = 6.0
 bg_color = Color(0.15, 0.14, 0.102, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
 border_color = Color(0.72, 0.59, 0.35, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
-
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
 
 [sub_resource type="StyleBoxTexture" id="Surface"]
 resource_name = "Surface"
@@ -246,105 +228,314 @@ texture_margin_top = 6.0
 texture_margin_right = 6.0
 texture_margin_bottom = 6.0
 
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-
-[sub_resource type="StyleBoxEmpty" id="Invisible"]
-resource_name = "Invisible"
-
-[sub_resource type="StyleBoxEmpty" id="CrestPlateRoom"]
-resource_name = "CrestPlateRoom"
-content_margin_left = 84.0
-content_margin_right = 20.0
-
-[sub_resource type="StyleBoxFlat" id="PlateDisabled"]
-resource_name = "PlateDisabled"
-content_margin_left = 24.0
-content_margin_top = 6.0
-content_margin_right = 24.0
-content_margin_bottom = 6.0
-bg_color = Color(0.13, 0.13, 0.13, 1)
-border_color = Color(0.32, 0.32, 0.32, 1)
+[sub_resource type="StyleBoxFlat" id="CardRest"]
+resource_name = "CardRest"
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0.045)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
-[sub_resource type="StyleBoxTexture" id="PlateGoldDisabled"]
-resource_name = "PlateGoldDisabled"
-texture = ExtResource("ButtonGoldTexture")
-texture_margin_left = 19.0
-texture_margin_top = 21.0
-texture_margin_right = 19.0
-texture_margin_bottom = 21.0
-content_margin_left = 24.0
-content_margin_top = 6.0
-content_margin_right = 24.0
-content_margin_bottom = 6.0
-modulate_color = Color(0.42, 0.42, 0.44, 0.85)
+[sub_resource type="StyleBoxFlat" id="CardFocus"]
+resource_name = "CardFocus"
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96, 0.85, 0.6, 0.08)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.96, 0.92, 0.83, 0.85)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
-[sub_resource type="StyleBoxTexture" id="PlateGold"]
-resource_name = "PlateGold"
-texture = ExtResource("ButtonGoldTexture")
-texture_margin_left = 19.0
-texture_margin_top = 21.0
-texture_margin_right = 19.0
-texture_margin_bottom = 21.0
-content_margin_left = 24.0
-content_margin_top = 6.0
-content_margin_right = 24.0
-content_margin_bottom = 6.0
+[sub_resource type="StyleBoxFlat" id="CardHover"]
+resource_name = "CardHover"
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0.08)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
-[sub_resource type="StyleBoxTexture" id="PlateGoldHover"]
-resource_name = "PlateGoldHover"
-texture = ExtResource("ButtonGoldHoverTexture")
-texture_margin_left = 19.0
-texture_margin_top = 21.0
-texture_margin_right = 19.0
-texture_margin_bottom = 21.0
-content_margin_left = 24.0
-content_margin_top = 6.0
-content_margin_right = 24.0
-content_margin_bottom = 6.0
-
-[sub_resource type="StyleBoxTexture" id="PlateGoldPressed"]
-resource_name = "PlateGoldPressed"
-texture = ExtResource("ButtonGoldPressedTexture")
-texture_margin_left = 19.0
-texture_margin_top = 21.0
-texture_margin_right = 19.0
-texture_margin_bottom = 21.0
-content_margin_left = 24.0
-content_margin_top = 6.0
-content_margin_right = 24.0
-content_margin_bottom = 6.0
-
-[sub_resource type="StyleBoxFlat" id="GoldHover"]
-resource_name = "GoldHover"
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-bg_color = Color(0.25, 0.205, 0.12, 1)
+[sub_resource type="StyleBoxFlat" id="CardSelected"]
+resource_name = "CardSelected"
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.96, 0.85, 0.6, 0.1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
 border_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
+[sub_resource type="StyleBoxEmpty" id="TabRest"]
+resource_name = "TabRest"
+content_margin_left = 6.0
+content_margin_top = 8.0
+content_margin_right = 6.0
+content_margin_bottom = 8.0
 
+[sub_resource type="StyleBoxFlat" id="TabHover"]
+resource_name = "TabHover"
+content_margin_left = 6.0
+content_margin_top = 8.0
+content_margin_right = 6.0
+content_margin_bottom = 8.0
+bg_color = Color(0, 0, 0, 0)
+border_width_bottom = 1
+border_color = Color(0.62, 0.59, 0.52, 0.6)
+
+[sub_resource type="StyleBoxEmpty" id="TabChosen"]
+resource_name = "TabChosen"
+content_margin_left = 6.0
+content_margin_top = 8.0
+content_margin_right = 6.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxEmpty" id="CodexRowRoom"]
+resource_name = "CodexRowRoom"
+content_margin_left = 84.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="MenuSurface"]
+resource_name = "MenuSurface"
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+bg_color = Color(0.03, 0.028, 0.03, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.62, 0.48, 0.27, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_size = 10
+
+[sub_resource type="StyleBoxEmpty" id="CrestPlateRoom"]
+resource_name = "CrestPlateRoom"
+content_margin_left = 84.0
+content_margin_right = 20.0
+
+[sub_resource type="StyleBoxTexture" id="FramePanel"]
+resource_name = "FramePanel"
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+texture = ExtResource("FramePanelTexture")
+texture_margin_left = 42.0
+texture_margin_top = 42.0
+texture_margin_right = 42.0
+texture_margin_bottom = 42.0
+axis_stretch_horizontal = 2
+axis_stretch_vertical = 2
+
+[sub_resource type="StyleBoxTexture" id="VitalTrackThin"]
+texture = ExtResource("VitalFrameThinTexture")
+texture_margin_left = 4.0
+texture_margin_top = 3.0
+texture_margin_right = 4.0
+texture_margin_bottom = 3.0
+expand_margin_left = 3.0
+expand_margin_top = 3.0
+expand_margin_right = 3.0
+expand_margin_bottom = 3.0
+
+[sub_resource type="StyleBoxTexture" id="ExperienceFill"]
+texture = ExtResource("VitalExperienceTexture")
+
+[sub_resource type="Gradient" id="ClearGradient"]
+colors = PackedColorArray(0, 0, 0, 0, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="SliderGrabber"]
+gradient = SubResource("ClearGradient")
+width = 24
+height = 24
+
+[sub_resource type="StyleBoxEmpty" id="SliderTrack"]
+resource_name = "SliderTrack"
+content_margin_top = 13.0
+content_margin_bottom = 13.0
+
+[sub_resource type="StyleBoxTexture" id="PlateGoldDisabled"]
+resource_name = "PlateGoldDisabled"
+content_margin_left = 24.0
+content_margin_top = 6.0
+content_margin_right = 24.0
+content_margin_bottom = 6.0
+texture = ExtResource("ButtonGoldTexture")
+texture_margin_left = 19.0
+texture_margin_top = 21.0
+texture_margin_right = 19.0
+texture_margin_bottom = 21.0
+modulate_color = Color(0.45, 0.44, 0.41, 0.85)
+
+[sub_resource type="StyleBoxTexture" id="PlateGoldHover"]
+resource_name = "PlateGoldHover"
+content_margin_left = 24.0
+content_margin_top = 6.0
+content_margin_right = 24.0
+content_margin_bottom = 6.0
+texture = ExtResource("ButtonGoldHoverTexture")
+texture_margin_left = 19.0
+texture_margin_top = 21.0
+texture_margin_right = 19.0
+texture_margin_bottom = 21.0
+
+[sub_resource type="StyleBoxTexture" id="PlateGoldPressed"]
+resource_name = "PlateGoldPressed"
+content_margin_left = 24.0
+content_margin_top = 6.0
+content_margin_right = 24.0
+content_margin_bottom = 6.0
+texture = ExtResource("ButtonGoldPressedTexture")
+texture_margin_left = 19.0
+texture_margin_top = 21.0
+texture_margin_right = 19.0
+texture_margin_bottom = 21.0
+
+[sub_resource type="StyleBoxTexture" id="PlateGold"]
+resource_name = "PlateGold"
+content_margin_left = 24.0
+content_margin_top = 6.0
+content_margin_right = 24.0
+content_margin_bottom = 6.0
+texture = ExtResource("ButtonGoldTexture")
+texture_margin_left = 19.0
+texture_margin_top = 21.0
+texture_margin_right = 19.0
+texture_margin_bottom = 21.0
+
+[sub_resource type="StyleBox" id="ScrollGrabber"]
+resource_local_to_scene = false
+resource_name = "ScrollGrabber"
+content_margin_left = 5.0
+content_margin_top = 6.0
+content_margin_right = 5.0
+content_margin_bottom = 6.0
+script = ExtResource("ScrollRailScript")
+grabber = true
+edge = Color(0.72, 0.58, 0.36, 0.85)
+body = Color(0.36, 0.28, 0.15, 1)
+thickness = 6.0
+
+[sub_resource type="StyleBox" id="ScrollHover"]
+resource_local_to_scene = false
+resource_name = "ScrollHover"
+content_margin_left = 5.0
+content_margin_top = 6.0
+content_margin_right = 5.0
+content_margin_bottom = 6.0
+script = ExtResource("ScrollRailScript")
+grabber = true
+edge = Color(0.94, 0.784, 0.47, 1)
+body = Color(0.45, 0.34, 0.18, 1)
+thickness = 6.0
+
+[sub_resource type="StyleBox" id="ScrollPressed"]
+resource_local_to_scene = false
+resource_name = "ScrollPressed"
+content_margin_left = 5.0
+content_margin_top = 6.0
+content_margin_right = 5.0
+content_margin_bottom = 6.0
+script = ExtResource("ScrollRailScript")
+grabber = true
+edge = Color(0.96, 0.85, 0.6, 1)
+body = Color(0.58, 0.44, 0.22, 1)
+thickness = 6.0
+
+[sub_resource type="StyleBox" id="ScrollTrack"]
+resource_local_to_scene = false
+resource_name = "ScrollTrack"
+content_margin_left = 5.0
+content_margin_top = 6.0
+content_margin_right = 5.0
+content_margin_bottom = 6.0
+script = ExtResource("ScrollRailScript")
+edge = Color(0.72, 0.58, 0.36, 0.4)
+body = Color(0.02, 0.018, 0.02, 0.55)
+
+[sub_resource type="StyleBoxTexture" id="HelpKeyCapPlate"]
+resource_name = "HelpKeyCapPlate"
+content_margin_left = 10.0
+content_margin_top = 2.0
+content_margin_right = 10.0
+content_margin_bottom = 2.0
+texture = ExtResource("HudKeyCapTexture")
+texture_margin_left = 7.0
+texture_margin_top = 7.0
+texture_margin_right = 7.0
+texture_margin_bottom = 7.0
+
+[sub_resource type="StyleBoxFlat" id="HelpPageWell"]
+resource_name = "HelpPageWell"
+content_margin_left = 32.0
+content_margin_top = 22.0
+content_margin_right = 32.0
+content_margin_bottom = 24.0
+bg_color = Color(0.02, 0.018, 0.02, 0.85)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-shadow_color = Color(0.72, 0.52, 0.20, 0.12)
-shadow_size = 4
+border_color = Color(0.72, 0.58, 0.36, 0.2)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxTexture" id="FrameCard"]
+resource_name = "FrameCard"
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+texture = ExtResource("FrameCardTexture")
+texture_margin_left = 42.0
+texture_margin_top = 42.0
+texture_margin_right = 42.0
+texture_margin_bottom = 42.0
+axis_stretch_horizontal = 2
+axis_stretch_vertical = 2
+
+[sub_resource type="StyleBoxTexture" id="FrameCardActive"]
+resource_name = "FrameCardActive"
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+texture = ExtResource("FrameCardActiveTexture")
+texture_margin_left = 42.0
+texture_margin_top = 42.0
+texture_margin_right = 42.0
+texture_margin_bottom = 42.0
+axis_stretch_horizontal = 2
+axis_stretch_vertical = 2
 
 [sub_resource type="StyleBoxFlat" id="HudAimTagSurface"]
 resource_name = "HudAimTagSurface"
@@ -352,79 +543,57 @@ content_margin_left = 12.0
 content_margin_top = 3.0
 content_margin_right = 12.0
 content_margin_bottom = 4.0
-bg_color = Color(0.17, 0.14, 0.09, 0.92)
+bg_color = Color(0.2, 0.16, 0.095, 0.92)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
 
-[sub_resource type="StyleBox" id="ScrollGrabber"]
-resource_name = "ScrollGrabber"
-script = ExtResource("ScrollRailScript")
-grabber = true
-edge = Color(0.72, 0.58, 0.36, 0.85)
-body = Color(0.33, 0.25, 0.14, 1)
-thickness = 6.0
-content_margin_left = 5.0
-content_margin_top = 6.0
-content_margin_right = 5.0
-content_margin_bottom = 6.0
+[sub_resource type="StyleBoxEmpty" id="HudLogInsets"]
 
-[sub_resource type="StyleBox" id="ScrollHover"]
-resource_name = "ScrollHover"
-script = ExtResource("ScrollRailScript")
-grabber = true
-edge = Color(0.92, 0.78, 0.5, 1)
-body = Color(0.45, 0.34, 0.18, 1)
-thickness = 6.0
-content_margin_left = 5.0
-content_margin_top = 6.0
-content_margin_right = 5.0
-content_margin_bottom = 6.0
+[sub_resource type="StyleBoxTexture" id="HudMapFrame"]
+resource_name = "HudMapFrame"
+texture = ExtResource("HudMapFrameTexture")
+texture_margin_left = 46.0
+texture_margin_top = 46.0
+texture_margin_right = 62.0
+texture_margin_bottom = 68.0
+expand_margin_left = 12.0
+expand_margin_top = 12.0
+expand_margin_right = 12.0
+expand_margin_bottom = 12.0
 
-[sub_resource type="StyleBox" id="ScrollPressed"]
-resource_name = "ScrollPressed"
-script = ExtResource("ScrollRailScript")
-grabber = true
-edge = Color(1, 0.88, 0.6, 1)
-body = Color(0.58, 0.44, 0.22, 1)
-thickness = 6.0
-content_margin_left = 5.0
-content_margin_top = 6.0
-content_margin_right = 5.0
-content_margin_bottom = 6.0
+[sub_resource type="StyleBoxFlat" id="HudMapSurface"]
+resource_name = "HudMapSurface"
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.05, 0.048, 0.05, 0.82)
 
-[sub_resource type="StyleBox" id="ScrollTrack"]
-resource_name = "ScrollTrack"
-script = ExtResource("ScrollRailScript")
-grabber = false
-edge = Color(0.72, 0.58, 0.36, 0.4)
-body = Color(0.02, 0.018, 0.016, 0.55)
-thickness = 4.0
-content_margin_left = 5.0
-content_margin_top = 6.0
-content_margin_right = 5.0
-content_margin_bottom = 6.0
-
-[sub_resource type="StyleBoxTexture" id="ItemSelected"]
-resource_name = "ItemSelected"
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-texture = ExtResource("SurfaceSelectedTexture")
-texture_margin_left = 6.0
-texture_margin_top = 6.0
-texture_margin_right = 6.0
-texture_margin_bottom = 6.0
-
+[sub_resource type="StyleBoxFlat" id="HudPortraitFrame"]
+resource_name = "HudPortraitFrame"
+bg_color = Color(0.05, 0.048, 0.05, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-shadow_color = Color(0.72, 0.52, 0.20, 0.12)
-shadow_size = 4
+border_color = Color(0.58, 0.44, 0.22, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxTexture" id="InkPlate"]
+resource_name = "InkPlate"
+content_margin_left = 36.0
+content_margin_top = 0.0
+content_margin_right = 36.0
+content_margin_bottom = 0.0
+texture = ExtResource("InkPlateTexture")
+texture_margin_left = 56.0
+texture_margin_right = 56.0
 
 [sub_resource type="StyleBoxTexture" id="InsetSurface"]
 resource_name = "InsetSurface"
@@ -432,30 +601,6 @@ content_margin_left = 16.0
 content_margin_top = 12.0
 content_margin_right = 16.0
 content_margin_bottom = 12.0
-texture = ExtResource("SurfaceSunkTexture")
-texture_margin_left = 6.0
-texture_margin_top = 6.0
-texture_margin_right = 6.0
-texture_margin_bottom = 6.0
-
-[sub_resource type="StyleBoxTexture" id="FieldSurface"]
-resource_name = "FieldSurface"
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-texture = ExtResource("SurfaceSunkTexture")
-texture_margin_left = 6.0
-texture_margin_top = 6.0
-texture_margin_right = 6.0
-texture_margin_bottom = 6.0
-
-[sub_resource type="StyleBoxTexture" id="ListBackground"]
-resource_name = "ListBackground"
-content_margin_left = 8.0
-content_margin_top = 6.0
-content_margin_right = 8.0
-content_margin_bottom = 6.0
 texture = ExtResource("SurfaceSunkTexture")
 texture_margin_left = 6.0
 texture_margin_top = 6.0
@@ -474,112 +619,45 @@ texture_margin_top = 6.0
 texture_margin_right = 6.0
 texture_margin_bottom = 6.0
 
+[sub_resource type="StyleBoxTexture" id="ItemSelected"]
+resource_name = "ItemSelected"
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+texture = ExtResource("SurfaceSelectedTexture")
+texture_margin_left = 6.0
+texture_margin_top = 6.0
+texture_margin_right = 6.0
+texture_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxFlat" id="ListFocus"]
+resource_name = "ListFocus"
+draw_center = false
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-
-[sub_resource type="StyleBoxFlat" id="MainSurface"]
-resource_name = "MainSurface"
-content_margin_left = 0.0
-content_margin_top = 0.0
-content_margin_right = 0.0
-content_margin_bottom = 0.0
-bg_color = Color(0.145, 0.145, 0.145, 1)
-border_color = Color(0.32, 0.32, 0.32, 1)
+border_color = Color(0.93333334, 0.9137255, 0.8745098, 0.35)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
-shadow_color = Color(0, 0, 0, 0.3)
-shadow_size = 6
 
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
+[sub_resource type="StyleBoxTexture" id="ItemCellRest"]
+resource_name = "ItemCellRest"
+texture = ExtResource("CellFrameTexture")
+modulate_color = Color(0.79, 0.79, 0.75, 1)
 
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-shadow_color = Color(0.72, 0.52, 0.20, 0.12)
-shadow_size = 4
+[sub_resource type="StyleBoxTexture" id="ItemCellHover"]
+resource_name = "ItemCellHover"
+texture = ExtResource("CellFrameTexture")
+modulate_color = Color(1.2, 1.12, 1, 1)
 
-[sub_resource type="StyleBoxTexture" id="SecondaryNormal"]
-resource_name = "SecondaryNormal"
-texture = ExtResource("HudKeyCapTexture")
-texture_margin_left = 7.0
-texture_margin_top = 7.0
-texture_margin_right = 7.0
-texture_margin_bottom = 7.0
-content_margin_left = 14.0
-content_margin_top = 6.0
-content_margin_right = 14.0
-content_margin_bottom = 6.0
-
-[sub_resource type="StyleBoxTexture" id="SecondaryHover"]
-resource_name = "SecondaryHover"
-texture = ExtResource("HudKeyCapActiveTexture")
-texture_margin_left = 7.0
-texture_margin_top = 7.0
-texture_margin_right = 7.0
-texture_margin_bottom = 7.0
-content_margin_left = 14.0
-content_margin_top = 6.0
-content_margin_right = 14.0
-content_margin_bottom = 6.0
-
-[sub_resource type="StyleBoxTexture" id="SecondaryPressed"]
-resource_name = "SecondaryPressed"
-texture = ExtResource("HudKeyCapActiveTexture")
-texture_margin_left = 7.0
-texture_margin_top = 7.0
-texture_margin_right = 7.0
-texture_margin_bottom = 7.0
-content_margin_left = 14.0
-content_margin_top = 6.0
-content_margin_right = 14.0
-content_margin_bottom = 6.0
-modulate_color = Color(0.72, 0.68, 0.6, 1)
-
-[sub_resource type="StyleBoxFlat" id="SecondaryDisabled"]
-resource_name = "SecondaryDisabled"
-content_margin_left = 14.0
-content_margin_top = 6.0
-content_margin_right = 14.0
-content_margin_bottom = 6.0
-bg_color = Color(0.06, 0.058, 0.055, 0.55)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.2, 0.19, 0.17, 0.8)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-
-[sub_resource type="StyleBoxTexture" id="InkPlate"]
-resource_name = "InkPlate"
-texture = ExtResource("InkPlateTexture")
-texture_margin_left = 56.0
-texture_margin_right = 56.0
-content_margin_left = 36.0
-content_margin_right = 36.0
-content_margin_top = 0.0
-content_margin_bottom = 0.0
-
-[sub_resource type="StyleBoxTexture" id="SpeechSurface"]
-resource_name = "SpeechSurface"
-texture = ExtResource("SpeechBubbleTexture")
-texture_margin_left = 65.0
-texture_margin_right = 105.0
+[sub_resource type="StyleBoxTexture" id="ItemCellChosen"]
+resource_name = "ItemCellChosen"
+texture = ExtResource("CellFrameTexture")
+modulate_color = Color(1.55, 1.25, 0.75, 1)
 
 [sub_resource type="StyleBoxEmpty" id="DetailsInsets"]
 resource_name = "DetailsInsets"
@@ -588,397 +666,17 @@ content_margin_top = 6.0
 content_margin_right = 6.0
 content_margin_bottom = 6.0
 
-[sub_resource type="StyleBoxFlat" id="ProgressTrack"]
-bg_color = Color(0.018, 0.028, 0.035, 1)
-
-[sub_resource type="StyleBoxFlat" id="ProgressFill"]
-bg_color = Color(0.72, 0.59, 0.35, 1)
-
-[sub_resource type="StyleBoxEmpty" id="VitalEmpty"]
-
-[sub_resource type="StyleBoxTexture" id="VitalTrack"]
-texture = ExtResource("VitalFrameTexture")
-texture_margin_left = 5.0
-texture_margin_top = 4.0
-texture_margin_right = 5.0
-texture_margin_bottom = 4.0
-expand_margin_left = 4.0
-expand_margin_top = 4.0
-expand_margin_right = 4.0
-expand_margin_bottom = 4.0
-
-[sub_resource type="StyleBoxTexture" id="VitalTrackThin"]
-texture = ExtResource("VitalFrameThinTexture")
-texture_margin_left = 4.0
-texture_margin_top = 3.0
-texture_margin_right = 4.0
-texture_margin_bottom = 3.0
-expand_margin_left = 3.0
-expand_margin_top = 3.0
-expand_margin_right = 3.0
-expand_margin_bottom = 3.0
-
-[sub_resource type="StyleBoxTexture" id="VitalHealth"]
-texture = ExtResource("VitalHealthTexture")
-
-[sub_resource type="StyleBoxTexture" id="VitalMana"]
-texture = ExtResource("VitalManaTexture")
-
-[sub_resource type="StyleBoxTexture" id="VitalHealthTrail"]
-texture = ExtResource("VitalHealthTrailTexture")
-
-[sub_resource type="StyleBoxTexture" id="VitalManaTrail"]
-texture = ExtResource("VitalManaTrailTexture")
-
-[sub_resource type="StyleBoxFlat" id="HudMapSurface"]
-resource_name = "HudMapSurface"
-bg_color = Color(0.051, 0.047, 0.043, 0.82)
-content_margin_left = 14.0
-content_margin_top = 10.0
-content_margin_right = 14.0
-content_margin_bottom = 10.0
-
-[sub_resource type="StyleBoxTexture" id="HudMapFrame"]
-resource_name = "HudMapFrame"
-texture = ExtResource("HudMapFrameTexture")
-texture_margin_left = 46.0
-texture_margin_top = 46.0
-texture_margin_right = 62.0
-texture_margin_bottom = 68.0
-expand_margin_left = 12.0
-expand_margin_top = 12.0
-expand_margin_right = 12.0
-expand_margin_bottom = 12.0
-
-[sub_resource type="StyleBoxTexture" id="KeyCap"]
-resource_name = "KeyCap"
-texture = ExtResource("HudKeyCapTexture")
-texture_margin_left = 7.0
-texture_margin_top = 7.0
-texture_margin_right = 7.0
-texture_margin_bottom = 7.0
-
-[sub_resource type="StyleBoxTexture" id="HelpKeyCapPlate"]
-resource_name = "HelpKeyCapPlate"
-content_margin_left = 10.0
-content_margin_top = 2.0
-content_margin_right = 10.0
-content_margin_bottom = 2.0
-texture = ExtResource("HudKeyCapTexture")
-texture_margin_left = 7.0
-texture_margin_top = 7.0
-texture_margin_right = 7.0
-texture_margin_bottom = 7.0
-
-[sub_resource type="StyleBoxTexture" id="KeyCapActive"]
-resource_name = "KeyCapActive"
-texture = ExtResource("HudKeyCapActiveTexture")
-texture_margin_left = 7.0
-texture_margin_top = 7.0
-texture_margin_right = 7.0
-texture_margin_bottom = 7.0
-
-[sub_resource type="StyleBoxFlat" id="HudPortraitFrame"]
-resource_name = "HudPortraitFrame"
-bg_color = Color(0.06, 0.06, 0.06, 1)
-border_color = Color(0.55, 0.43, 0.26, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxTexture" id="BannerBand"]
-resource_name = "BannerBand"
-texture = ExtResource("NoticeBandTexture")
-texture_margin_left = 55.0
-texture_margin_top = 27.0
-texture_margin_right = 55.0
-texture_margin_bottom = 27.0
-expand_margin_left = 36.0
-expand_margin_top = 18.0
-expand_margin_right = 36.0
-expand_margin_bottom = 16.0
-content_margin_left = 48.0
-content_margin_top = 5.0
-content_margin_right = 48.0
-content_margin_bottom = 5.0
-
-[sub_resource type="StyleBoxTexture" id="BannerBandWarning"]
-resource_name = "BannerBandWarning"
-texture = ExtResource("NoticeBandWarningTexture")
-texture_margin_left = 65.0
-texture_margin_top = 27.0
-texture_margin_right = 65.0
-texture_margin_bottom = 27.0
-expand_margin_left = 40.0
-expand_margin_top = 18.0
-expand_margin_right = 40.0
-expand_margin_bottom = 16.0
-content_margin_left = 48.0
-content_margin_top = 5.0
-content_margin_right = 48.0
-content_margin_bottom = 5.0
-
-[sub_resource type="StyleBoxFlat" id="BossBand"]
-resource_name = "BossBand"
-bg_color = Color(0.05, 0.022, 0.018, 0.86)
-border_color = Color(0.68, 0.32, 0.19, 0.95)
-border_width_top = 2
-border_width_bottom = 2
-shadow_color = Color(0, 0, 0, 0.5)
-shadow_size = 12
-
-[sub_resource type="StyleBoxTexture" id="ExperienceFill"]
-texture = ExtResource("VitalExperienceTexture")
-
-[sub_resource type="StyleBoxEmpty" id="HudLogInsets"]
-
-[sub_resource type="FontVariation" id="DisplayBoldKana"]
-base_font = ExtResource("DisplayBold")
-opentype_features = {
-1885432948: 1
-}
-
-[sub_resource type="FontVariation" id="DisplayMediumKana"]
-base_font = ExtResource("DisplayMedium")
-opentype_features = {
-1885432948: 1
-}
-
-[sub_resource type="StyleBoxEmpty" id="LobbyMenuInsets"]
-resource_name = "LobbyMenuInsets"
-content_margin_left = 96.0
-content_margin_right = 12.0
-
-[sub_resource type="StyleBoxFlat" id="LobbyInfoSurface"]
-resource_name = "LobbyInfoSurface"
-bg_color = Color(0.05, 0.048, 0.05, 0.88)
-shadow_color = Color(0, 0, 0, 0.5)
-shadow_size = 16
-
-[sub_resource type="StyleBoxEmpty" id="SliderTrack"]
-resource_name = "SliderTrack"
-content_margin_top = 13.0
-content_margin_bottom = 13.0
-
-[sub_resource type="Gradient" id="ClearGradient"]
-colors = PackedColorArray(0, 0, 0, 0, 0, 0, 0, 0)
-
-[sub_resource type="GradientTexture2D" id="SliderGrabber"]
-gradient = SubResource("ClearGradient")
-width = 24
-height = 24
-
-[sub_resource type="StyleBoxEmpty" id="CyclerRest"]
-resource_name = "CyclerRest"
-content_margin_left = 48.0
-content_margin_top = 8.0
-content_margin_right = 52.0
-content_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxEmpty" id="KeyGuideHint"]
-resource_name = "KeyGuideHint"
-content_margin_left = 48.0
+[sub_resource type="StyleBoxTexture" id="ListBackground"]
+resource_name = "ListBackground"
+content_margin_left = 8.0
 content_margin_top = 6.0
-content_margin_right = 4.0
+content_margin_right = 8.0
 content_margin_bottom = 6.0
-
-[sub_resource type="StyleBoxEmpty" id="TabRest"]
-resource_name = "TabRest"
-content_margin_left = 6.0
-content_margin_top = 8.0
-content_margin_right = 6.0
-content_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxEmpty" id="TabChosen"]
-resource_name = "TabChosen"
-content_margin_left = 6.0
-content_margin_top = 8.0
-content_margin_right = 6.0
-content_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxFlat" id="TabHover"]
-resource_name = "TabHover"
-content_margin_left = 6.0
-content_margin_top = 8.0
-content_margin_right = 6.0
-content_margin_bottom = 8.0
-bg_color = Color(0, 0, 0, 0)
-border_width_bottom = 1
-border_color = Color(0.62, 0.59, 0.52, 0.6)
-
-[sub_resource type="StyleBoxFlat" id="HeroBand"]
-resource_name = "HeroBand"
-content_margin_left = 18.0
-content_margin_top = 12.0
-content_margin_right = 18.0
-content_margin_bottom = 12.0
-bg_color = Color(0.02, 0.018, 0.02, 0.62)
-border_width_top = 1
-border_color = Color(0.72, 0.58, 0.36, 0.45)
-
-[sub_resource type="Gradient" id="SlabFade"]
-offsets = PackedFloat32Array(0, 0.84, 1)
-colors = PackedColorArray(0.03, 0.028, 0.03, 0.88, 0.03, 0.028, 0.03, 0.82, 0.03, 0.028, 0.03, 0)
-
-[sub_resource type="Gradient" id="SlabFadeEnd"]
-offsets = PackedFloat32Array(0, 0.16, 1)
-colors = PackedColorArray(0.03, 0.028, 0.03, 0, 0.03, 0.028, 0.03, 0.82, 0.03, 0.028, 0.03, 0.88)
-
-[sub_resource type="StyleBox" id="SlabEndSurface"]
-resource_name = "SlabEndSurface"
-script = ExtResource("SlabStyleScript")
-horizontal = SubResource("SlabFadeEnd")
-content_margin_left = 34.0
-content_margin_top = 18.0
-content_margin_right = 22.0
-content_margin_bottom = 18.0
-
-[sub_resource type="StyleBox" id="SlabSurface"]
-resource_name = "SlabSurface"
-script = ExtResource("SlabStyleScript")
-horizontal = SubResource("SlabFade")
-content_margin_left = 22.0
-content_margin_top = 18.0
-content_margin_right = 34.0
-content_margin_bottom = 18.0
-[sub_resource type="Gradient" id="VeilFade"]
-offsets = PackedFloat32Array(0, 0.5, 1)
-colors = PackedColorArray(0.03, 0.028, 0.03, 0.88, 0.03, 0.028, 0.03, 0.62, 0.03, 0.028, 0.03, 0.88)
-
-[sub_resource type="StyleBox" id="SlabVeilSurface"]
-resource_name = "SlabVeilSurface"
-script = ExtResource("SlabStyleScript")
-horizontal = SubResource("VeilFade")
-content_margin_left = 34.0
-content_margin_top = 18.0
-content_margin_right = 34.0
-content_margin_bottom = 18.0
-[sub_resource type="Gradient" id="SlabFlatWide"]
-offsets = PackedFloat32Array(0, 1)
-colors = PackedColorArray(0.03, 0.028, 0.03, 0.7, 0.03, 0.028, 0.03, 0.7)
-
-[sub_resource type="StyleBox" id="SlabVeilWideSurface"]
-resource_name = "SlabVeilWideSurface"
-script = ExtResource("SlabStyleScript")
-horizontal = SubResource("SlabFlatWide")
-expand_left = 80.0
-content_margin_left = 0.0
-content_margin_top = 18.0
-content_margin_right = 24.0
-content_margin_bottom = 18.0
-[sub_resource type="StyleBox" id="SlabBandSurface"]
-resource_name = "SlabBandSurface"
-script = ExtResource("SlabStyleScript")
-horizontal = SubResource("SlabFade")
-expand_left = 80.0
-content_margin_left = 0.0
-content_margin_top = 18.0
-content_margin_right = 120.0
-content_margin_bottom = 18.0
-[sub_resource type="Gradient" id="SlabFlat"]
-offsets = PackedFloat32Array(0, 1)
-colors = PackedColorArray(0.03, 0.028, 0.03, 0.88, 0.03, 0.028, 0.03, 0.88)
-
-[sub_resource type="Gradient" id="SlabPlateFill"]
-offsets = PackedFloat32Array(0, 1)
-colors = PackedColorArray(0.075, 0.068, 0.062, 0.95, 0.075, 0.068, 0.062, 0.95)
-
-[sub_resource type="StyleBox" id="SlabSolidEndSurface"]
-resource_name = "SlabSolidEndSurface"
-script = ExtResource("QuietWindowStyleScript")
-sides = 14
-content_margin_left = 28.0
-content_margin_top = 24.0
-content_margin_right = 28.0
-content_margin_bottom = 24.0
-
-[sub_resource type="Gradient" id="ShadeFade"]
-offsets = PackedFloat32Array(0, 0.62, 1)
-colors = PackedColorArray(0.02, 0.018, 0.02, 0.66, 0.02, 0.018, 0.02, 0.5, 0.02, 0.018, 0.02, 0)
-
-[sub_resource type="GradientTexture2D" id="ShadeTexture"]
-gradient = SubResource("ShadeFade")
-fill = 1
-fill_from = Vector2(0.5, 0.5)
-fill_to = Vector2(1, 0.5)
-width = 128
-height = 128
-
-[sub_resource type="StyleBoxTexture" id="ShadeSurface"]
-resource_name = "ShadeSurface"
-texture = SubResource("ShadeTexture")
-expand_margin_left = 40.0
-expand_margin_top = 30.0
-expand_margin_right = 40.0
-expand_margin_bottom = 30.0
-content_margin_left = 18.0
-content_margin_top = 18.0
-content_margin_right = 18.0
-content_margin_bottom = 18.0
-
-[sub_resource type="Gradient" id="BandFade"]
-offsets = PackedFloat32Array(0, 0.25, 1)
-colors = PackedColorArray(0.02, 0.018, 0.02, 0, 0.02, 0.018, 0.02, 0.72, 0.02, 0.018, 0.02, 0.8)
-
-[sub_resource type="GradientTexture2D" id="BandTexture"]
-gradient = SubResource("BandFade")
-fill_from = Vector2(0, 0)
-fill_to = Vector2(0, 1)
-width = 4
-height = 64
-
-[sub_resource type="StyleBoxTexture" id="HeroBandFade"]
-resource_name = "HeroBandFade"
-texture = SubResource("BandTexture")
-content_margin_left = 20.0
-content_margin_top = 40.0
-content_margin_right = 20.0
-content_margin_bottom = 16.0
-
-[sub_resource type="Gradient" id="SlabSolidFill"]
-offsets = PackedFloat32Array(0, 1)
-colors = PackedColorArray(0.042, 0.039, 0.037, 0.9, 0.042, 0.039, 0.037, 0.9)
-
-[sub_resource type="StyleBox" id="SlabSolidSurface"]
-resource_name = "SlabSolidSurface"
-script = ExtResource("QuietWindowStyleScript")
-sides = 15
-content_margin_left = 28.0
-content_margin_top = 24.0
-content_margin_right = 28.0
-content_margin_bottom = 24.0
-
-[sub_resource type="StyleBox" id="SlabSolidOpenSurface"]
-resource_name = "SlabSolidOpenSurface"
-script = ExtResource("QuietWindowStyleScript")
-sides = 11
-content_margin_left = 28.0
-content_margin_top = 24.0
-content_margin_right = 28.0
-content_margin_bottom = 24.0
-
-[sub_resource type="StyleBoxEmpty" id="SelectorPlain"]
-resource_name = "SelectorPlain"
-content_margin_left = 4.0
-content_margin_top = 4.0
-content_margin_right = 4.0
-content_margin_bottom = 4.0
-
-[sub_resource type="StyleBoxFlat" id="SlotHover"]
-resource_name = "SlotHover"
-bg_color = Color(1, 1, 1, 0.04)
-
-[sub_resource type="StyleBoxEmpty" id="TextActionRest"]
-resource_name = "TextActionRest"
-content_margin_left = 2.0
-content_margin_top = 8.0
-content_margin_right = 2.0
-content_margin_bottom = 8.0
+texture = ExtResource("SurfaceSunkTexture")
+texture_margin_left = 6.0
+texture_margin_top = 6.0
+texture_margin_right = 6.0
+texture_margin_bottom = 6.0
 
 [sub_resource type="StyleBoxFlat" id="ItemRowRest"]
 resource_name = "ItemRowRest"
@@ -998,68 +696,69 @@ bg_color = Color(0.72, 0.58, 0.36, 0.14)
 border_width_bottom = 1
 border_color = Color(0.72, 0.58, 0.36, 0.6)
 
-[sub_resource type="StyleBoxTexture" id="ItemCellRest"]
-resource_name = "ItemCellRest"
-texture = ExtResource("CellFrameTexture")
-modulate_color = Color(0.82, 0.8, 0.78, 1)
+[sub_resource type="StyleBoxTexture" id="KeyCap"]
+resource_name = "KeyCap"
+texture = ExtResource("HudKeyCapTexture")
+texture_margin_left = 7.0
+texture_margin_top = 7.0
+texture_margin_right = 7.0
+texture_margin_bottom = 7.0
 
-[sub_resource type="StyleBoxTexture" id="ItemCellHover"]
-resource_name = "ItemCellHover"
-texture = ExtResource("CellFrameTexture")
-modulate_color = Color(1.2, 1.12, 1, 1)
+[sub_resource type="StyleBoxTexture" id="KeyCapActive"]
+resource_name = "KeyCapActive"
+texture = ExtResource("HudKeyCapActiveTexture")
+texture_margin_left = 7.0
+texture_margin_top = 7.0
+texture_margin_right = 7.0
+texture_margin_bottom = 7.0
 
-[sub_resource type="StyleBoxTexture" id="ItemCellChosen"]
-resource_name = "ItemCellChosen"
-texture = ExtResource("CellFrameTexture")
-modulate_color = Color(1.55, 1.25, 0.75, 1)
-
-[sub_resource type="StyleBoxTexture" id="SlotCellRest"]
-resource_name = "SlotCellRest"
-texture = ExtResource("SlotFrameTexture")
-modulate_color = Color(0.86, 0.84, 0.82, 1)
-
-[sub_resource type="StyleBoxTexture" id="SlotCellHover"]
-resource_name = "SlotCellHover"
-texture = ExtResource("SlotFrameTexture")
-modulate_color = Color(1.2, 1.12, 1, 1)
-
-[sub_resource type="StyleBoxTexture" id="SlotCellChosen"]
-resource_name = "SlotCellChosen"
-texture = ExtResource("SlotFrameTexture")
-modulate_color = Color(1.5, 1.25, 0.8, 1)
-
-[sub_resource type="Gradient" id="PlaqueFade"]
-offsets = PackedFloat32Array(0, 0.2, 0.8, 1)
-colors = PackedColorArray(0.03, 0.028, 0.03, 0, 0.03, 0.028, 0.03, 0.86, 0.03, 0.028, 0.03, 0.86, 0.03, 0.028, 0.03, 0)
-
-[sub_resource type="StyleBox" id="SlabPlaqueSurface"]
-resource_name = "SlabPlaqueSurface"
-script = ExtResource("SlabStyleScript")
-horizontal = SubResource("PlaqueFade")
-feather = 22.0
-content_margin_left = 70.0
-content_margin_top = 14.0
-content_margin_right = 70.0
-content_margin_bottom = 14.0
-
-[sub_resource type="StyleBoxFlat" id="MenuSurface"]
-resource_name = "MenuSurface"
-content_margin_left = 6.0
+[sub_resource type="StyleBoxEmpty" id="KeyGuideHint"]
+resource_name = "KeyGuideHint"
+content_margin_left = 48.0
 content_margin_top = 6.0
-content_margin_right = 6.0
+content_margin_right = 4.0
 content_margin_bottom = 6.0
-bg_color = Color(0.04, 0.035, 0.035, 0.97)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.62, 0.48, 0.27, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-shadow_color = Color(0, 0, 0, 0.6)
-shadow_size = 10
+
+[sub_resource type="StyleBoxTexture" id="FieldSurface"]
+resource_name = "FieldSurface"
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+texture = ExtResource("SurfaceSunkTexture")
+texture_margin_left = 6.0
+texture_margin_top = 6.0
+texture_margin_right = 6.0
+texture_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxFlat" id="LobbyInfoSurface"]
+resource_name = "LobbyInfoSurface"
+bg_color = Color(0.05, 0.048, 0.05, 0.88)
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 16
+
+[sub_resource type="StyleBoxEmpty" id="LobbyMenuInsets"]
+resource_name = "LobbyMenuInsets"
+content_margin_left = 96.0
+content_margin_right = 12.0
+
+[sub_resource type="StyleBoxTexture" id="DialogPlate"]
+resource_name = "DialogPlate"
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+texture = ExtResource("DialogPlateTexture")
+texture_margin_left = 38.0
+texture_margin_top = 38.0
+texture_margin_right = 38.0
+texture_margin_bottom = 38.0
+expand_margin_left = 14.0
+expand_margin_top = 14.0
+expand_margin_right = 14.0
+expand_margin_bottom = 14.0
+axis_stretch_horizontal = 2
+axis_stretch_vertical = 2
 
 [sub_resource type="StyleBoxFlat" id="MenuItemRest"]
 resource_name = "MenuItemRest"
@@ -1075,197 +774,37 @@ content_margin_left = 16.0
 content_margin_top = 9.0
 content_margin_right = 16.0
 content_margin_bottom = 9.0
-bg_color = Color(0.84, 0.72, 0.48, 0.16)
+bg_color = Color(0.8392157, 0.7176471, 0.48235294, 0.16)
 
-[sub_resource type="StyleBoxTexture" id="PopupFrame"]
-resource_name = "PopupFrame"
-texture = ExtResource("PopupFrameTexture")
-texture_margin_left = 96.0
-texture_margin_top = 96.0
-texture_margin_right = 96.0
-texture_margin_bottom = 96.0
-content_margin_left = 112.0
-content_margin_top = 100.0
-content_margin_right = 112.0
-content_margin_bottom = 96.0
+[sub_resource type="StyleBoxTexture" id="VitalMana"]
+texture = ExtResource("VitalManaTexture")
 
-[sub_resource type="StyleBox" id="QuietWindowSurface"]
-resource_name = "QuietWindowSurface"
-script = ExtResource("QuietWindowStyleScript")
-content_margin_left = 8.0
-content_margin_top = 10.0
-content_margin_right = 8.0
-content_margin_bottom = 8.0
+[sub_resource type="StyleBoxTexture" id="VitalTrack"]
+texture = ExtResource("VitalFrameTexture")
+texture_margin_left = 5.0
+texture_margin_top = 4.0
+texture_margin_right = 5.0
+texture_margin_bottom = 4.0
+expand_margin_left = 4.0
+expand_margin_top = 4.0
+expand_margin_right = 4.0
+expand_margin_bottom = 4.0
 
-[sub_resource type="StyleBoxFlat" id="QuietSectionSurface"]
-resource_name = "QuietSectionSurface"
-content_margin_left = 18.0
-content_margin_top = 14.0
-content_margin_right = 18.0
-content_margin_bottom = 14.0
-bg_color = Color(1, 1, 1, 0.035)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
+[sub_resource type="StyleBoxTexture" id="VitalManaTrail"]
+texture = ExtResource("VitalManaTrailTexture")
 
-[sub_resource type="StyleBoxFlat" id="QuietButtonRest"]
-resource_name = "QuietButtonRest"
-content_margin_left = 16.0
+[sub_resource type="StyleBoxEmpty" id="CyclerRest"]
+resource_name = "CyclerRest"
+content_margin_left = 48.0
 content_margin_top = 8.0
-content_margin_right = 16.0
+content_margin_right = 52.0
 content_margin_bottom = 8.0
-bg_color = Color(1, 1, 1, 0)
 
-[sub_resource type="StyleBoxFlat" id="QuietButtonHover"]
-resource_name = "QuietButtonHover"
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(1, 0.86, 0.6, 0.07)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
-
-[sub_resource type="StyleBoxFlat" id="QuietButtonFocus"]
-resource_name = "QuietButtonFocus"
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(1, 0.86, 0.6, 0.1)
-border_width_left = 3
-border_color = Color(0.84, 0.72, 0.48, 1)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
-
-
-[sub_resource type="StyleBoxFlat" id="QuietButtonPressed"]
-resource_name = "QuietButtonPressed"
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-bg_color = Color(1, 0.86, 0.6, 0.14)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
-
-
-
-[sub_resource type="StyleBoxFlat" id="CardRest"]
-resource_name = "CardRest"
-content_margin_left = 16.0
-content_margin_top = 12.0
-content_margin_right = 16.0
-content_margin_bottom = 12.0
-bg_color = Color(1, 1, 1, 0.045)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxFlat" id="CardHover"]
-resource_name = "CardHover"
-content_margin_left = 16.0
-content_margin_top = 12.0
-content_margin_right = 16.0
-content_margin_bottom = 12.0
-bg_color = Color(1, 1, 1, 0.08)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxFlat" id="CardFocus"]
-resource_name = "CardFocus"
-content_margin_left = 16.0
-content_margin_top = 12.0
-content_margin_right = 16.0
-content_margin_bottom = 12.0
-bg_color = Color(1, 0.86, 0.6, 0.08)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.94, 0.92, 0.86, 0.85)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxFlat" id="CardSelected"]
-resource_name = "CardSelected"
-content_margin_left = 16.0
-content_margin_top = 12.0
-content_margin_right = 16.0
-content_margin_bottom = 12.0
-bg_color = Color(1, 0.86, 0.6, 0.1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.84, 0.72, 0.48, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxFlat" id="QuietPrimaryRest"]
-resource_name = "QuietPrimaryRest"
-content_margin_left = 18.0
-content_margin_top = 8.0
-content_margin_right = 18.0
-content_margin_bottom = 8.0
-bg_color = Color(0.84, 0.72, 0.48, 0.14)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.84, 0.72, 0.48, 0.8)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxFlat" id="QuietPrimaryHover"]
-resource_name = "QuietPrimaryHover"
-content_margin_left = 18.0
-content_margin_top = 8.0
-content_margin_right = 18.0
-content_margin_bottom = 8.0
-bg_color = Color(0.84, 0.72, 0.48, 0.22)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.84, 0.72, 0.48, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxFlat" id="QuietPrimaryPressed"]
-resource_name = "QuietPrimaryPressed"
-content_margin_left = 18.0
-content_margin_top = 8.0
-content_margin_right = 18.0
-content_margin_bottom = 8.0
-bg_color = Color(0.84, 0.72, 0.48, 0.3)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.97, 0.9, 0.72, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+[sub_resource type="FontVariation" id="DisplayMediumKana"]
+base_font = ExtResource("DisplayMedium")
+opentype_features = {
+1885432948: 1
+}
 
 [sub_resource type="StyleBoxFlat" id="QuietPrimaryDisabled"]
 resource_name = "QuietPrimaryDisabled"
@@ -1284,26 +823,364 @@ corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
-[sub_resource type="StyleBoxFlat" id="HelpPageWell"]
-resource_name = "HelpPageWell"
-content_margin_left = 32.0
-content_margin_top = 22.0
-content_margin_right = 32.0
-content_margin_bottom = 24.0
-bg_color = Color(0.018, 0.017, 0.021, 0.85)
+[sub_resource type="StyleBoxFlat" id="QuietPrimaryHover"]
+resource_name = "QuietPrimaryHover"
+content_margin_left = 18.0
+content_margin_top = 8.0
+content_margin_right = 18.0
+content_margin_bottom = 8.0
+bg_color = Color(0.8392157, 0.7176471, 0.48235294, 0.22)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.72, 0.58, 0.36, 0.2)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="QuietPrimaryPressed"]
+resource_name = "QuietPrimaryPressed"
+content_margin_left = 18.0
+content_margin_top = 8.0
+content_margin_right = 18.0
+content_margin_bottom = 8.0
+bg_color = Color(0.8392157, 0.7176471, 0.48235294, 0.3)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.98, 0.91, 0.74, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="QuietPrimaryRest"]
+resource_name = "QuietPrimaryRest"
+content_margin_left = 18.0
+content_margin_top = 8.0
+content_margin_right = 18.0
+content_margin_bottom = 8.0
+bg_color = Color(0.8392157, 0.7176471, 0.48235294, 0.14)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.8392157, 0.7176471, 0.48235294, 0.8)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="ProgressTrack"]
+bg_color = Color(0.03, 0.028, 0.03, 1)
+
+[sub_resource type="StyleBoxFlat" id="ProgressFill"]
+bg_color = Color(0.72, 0.59, 0.35, 1)
+
+[sub_resource type="StyleBoxEmpty" id="PromptBandRoom"]
+resource_name = "PromptBandRoom"
+content_margin_top = 40.0
+content_margin_bottom = 30.0
+
+[sub_resource type="StyleBoxTexture" id="PopupFrame"]
+resource_name = "PopupFrame"
+content_margin_left = 112.0
+content_margin_top = 100.0
+content_margin_right = 112.0
+content_margin_bottom = 96.0
+texture = ExtResource("PopupFrameTexture")
+texture_margin_left = 96.0
+texture_margin_top = 96.0
+texture_margin_right = 96.0
+texture_margin_bottom = 96.0
+
+[sub_resource type="StyleBoxFlat" id="QuietSectionSurface"]
+resource_name = "QuietSectionSurface"
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(1, 1, 1, 0.035)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBox" id="QuietWindowSurface"]
+resource_local_to_scene = false
+resource_name = "QuietWindowSurface"
+content_margin_left = 8.0
+content_margin_top = 10.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+script = ExtResource("QuietWindowStyleScript")
+
+[sub_resource type="StyleBoxFlat" id="QuietButtonRest"]
+resource_name = "QuietButtonRest"
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="QuietButtonFocus"]
+resource_name = "QuietButtonFocus"
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.96, 0.85, 0.6, 0.1)
+border_width_left = 3
+border_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="QuietButtonHover"]
+resource_name = "QuietButtonHover"
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.96, 0.85, 0.6, 0.07)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="QuietButtonPressed"]
+resource_name = "QuietButtonPressed"
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.96, 0.85, 0.6, 0.14)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxEmpty" id="SelectorPlain"]
+resource_name = "SelectorPlain"
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+
+[sub_resource type="Gradient" id="ShadeFade"]
+offsets = PackedFloat32Array(0, 0.62, 1)
+colors = PackedColorArray(0.02, 0.018, 0.02, 0.66, 0.02, 0.018, 0.02, 0.5, 0.02, 0.018, 0.02, 0)
+
+[sub_resource type="GradientTexture2D" id="ShadeTexture"]
+gradient = SubResource("ShadeFade")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="StyleBoxTexture" id="ShadeSurface"]
+resource_name = "ShadeSurface"
+content_margin_left = 18.0
+content_margin_top = 18.0
+content_margin_right = 18.0
+content_margin_bottom = 18.0
+texture = SubResource("ShadeTexture")
+expand_margin_left = 40.0
+expand_margin_top = 30.0
+expand_margin_right = 40.0
+expand_margin_bottom = 30.0
+
+[sub_resource type="Gradient" id="BandFade"]
+offsets = PackedFloat32Array(0, 0.25, 1)
+colors = PackedColorArray(0.02, 0.018, 0.02, 0, 0.02, 0.018, 0.02, 0.72, 0.02, 0.018, 0.02, 0.8)
+
+[sub_resource type="GradientTexture2D" id="BandTexture"]
+gradient = SubResource("BandFade")
+width = 4
+fill_to = Vector2(0, 1)
+
+[sub_resource type="StyleBoxTexture" id="HeroBandFade"]
+resource_name = "HeroBandFade"
+content_margin_left = 20.0
+content_margin_top = 40.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
+texture = SubResource("BandTexture")
+
+[sub_resource type="Gradient" id="SlabFade"]
+offsets = PackedFloat32Array(0, 0.84, 1)
+colors = PackedColorArray(0.03, 0.028, 0.03, 0.88, 0.03, 0.028, 0.03, 0.82, 0.03, 0.028, 0.03, 0)
+
+[sub_resource type="StyleBox" id="SlabBandSurface"]
+resource_local_to_scene = false
+resource_name = "SlabBandSurface"
+content_margin_left = 0.0
+content_margin_top = 18.0
+content_margin_right = 120.0
+content_margin_bottom = 18.0
+script = ExtResource("SlabStyleScript")
+horizontal = SubResource("SlabFade")
+expand_left = 80.0
+
+[sub_resource type="StyleBox" id="SlabSurface"]
+resource_local_to_scene = false
+resource_name = "SlabSurface"
+content_margin_left = 22.0
+content_margin_top = 18.0
+content_margin_right = 34.0
+content_margin_bottom = 18.0
+script = ExtResource("SlabStyleScript")
+horizontal = SubResource("SlabFade")
+
+[sub_resource type="Gradient" id="SlabFadeEnd"]
+offsets = PackedFloat32Array(0, 0.16, 1)
+colors = PackedColorArray(0.03, 0.028, 0.03, 0, 0.03, 0.028, 0.03, 0.82, 0.03, 0.028, 0.03, 0.88)
+
+[sub_resource type="StyleBox" id="SlabEndSurface"]
+resource_local_to_scene = false
+resource_name = "SlabEndSurface"
+content_margin_left = 34.0
+content_margin_top = 18.0
+content_margin_right = 22.0
+content_margin_bottom = 18.0
+script = ExtResource("SlabStyleScript")
+horizontal = SubResource("SlabFadeEnd")
+
+[sub_resource type="Gradient" id="PlaqueFade"]
+offsets = PackedFloat32Array(0, 0.2, 0.8, 1)
+colors = PackedColorArray(0.03, 0.028, 0.03, 0, 0.03, 0.028, 0.03, 0.86, 0.03, 0.028, 0.03, 0.86, 0.03, 0.028, 0.03, 0)
+
+[sub_resource type="StyleBox" id="SlabPlaqueSurface"]
+resource_local_to_scene = false
+resource_name = "SlabPlaqueSurface"
+content_margin_left = 70.0
+content_margin_top = 14.0
+content_margin_right = 70.0
+content_margin_bottom = 14.0
+script = ExtResource("SlabStyleScript")
+horizontal = SubResource("PlaqueFade")
+feather = 22.0
+
+[sub_resource type="StyleBox" id="SlabSolidSurface"]
+resource_local_to_scene = false
+resource_name = "SlabSolidSurface"
+content_margin_left = 28.0
+content_margin_top = 24.0
+content_margin_right = 28.0
+content_margin_bottom = 24.0
+script = ExtResource("QuietWindowStyleScript")
+
+[sub_resource type="StyleBox" id="SlabSolidEndSurface"]
+resource_local_to_scene = false
+resource_name = "SlabSolidEndSurface"
+content_margin_left = 28.0
+content_margin_top = 24.0
+content_margin_right = 28.0
+content_margin_bottom = 24.0
+script = ExtResource("QuietWindowStyleScript")
+sides = 14
+
+[sub_resource type="StyleBox" id="SlabSolidOpenSurface"]
+resource_local_to_scene = false
+resource_name = "SlabSolidOpenSurface"
+content_margin_left = 28.0
+content_margin_top = 24.0
+content_margin_right = 28.0
+content_margin_bottom = 24.0
+script = ExtResource("QuietWindowStyleScript")
+sides = 11
+
+[sub_resource type="Gradient" id="VeilFade"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(0.03, 0.028, 0.03, 0.88, 0.03, 0.028, 0.03, 0.62, 0.03, 0.028, 0.03, 0.88)
+
+[sub_resource type="StyleBox" id="SlabVeilSurface"]
+resource_local_to_scene = false
+resource_name = "SlabVeilSurface"
+content_margin_left = 34.0
+content_margin_top = 18.0
+content_margin_right = 34.0
+content_margin_bottom = 18.0
+script = ExtResource("SlabStyleScript")
+horizontal = SubResource("VeilFade")
+
+[sub_resource type="Gradient" id="SlabFlatWide"]
+colors = PackedColorArray(0.03, 0.028, 0.03, 0.7, 0.03, 0.028, 0.03, 0.7)
+
+[sub_resource type="StyleBox" id="SlabVeilWideSurface"]
+resource_local_to_scene = false
+resource_name = "SlabVeilWideSurface"
+content_margin_left = 0.0
+content_margin_top = 18.0
+content_margin_right = 24.0
+content_margin_bottom = 18.0
+script = ExtResource("SlabStyleScript")
+horizontal = SubResource("SlabFlatWide")
+expand_left = 80.0
+
+[sub_resource type="StyleBoxTexture" id="SlotCellRest"]
+resource_name = "SlotCellRest"
+texture = ExtResource("SlotFrameTexture")
+modulate_color = Color(0.86, 0.84, 0.82, 1)
+
+[sub_resource type="StyleBoxTexture" id="SlotCellHover"]
+resource_name = "SlotCellHover"
+texture = ExtResource("SlotFrameTexture")
+modulate_color = Color(1.2, 1.12, 1, 1)
+
+[sub_resource type="StyleBoxTexture" id="SlotCellChosen"]
+resource_name = "SlotCellChosen"
+texture = ExtResource("SlotFrameTexture")
+modulate_color = Color(1.5, 1.25, 0.8, 1)
+
+[sub_resource type="StyleBoxFlat" id="SlotHover"]
+resource_name = "SlotHover"
+bg_color = Color(1, 1, 1, 0.04)
+
+[sub_resource type="StyleBoxTexture" id="SpeechSurface"]
+resource_name = "SpeechSurface"
+texture = ExtResource("SpeechBubbleTexture")
+texture_margin_left = 65.0
+texture_margin_right = 105.0
+
+[sub_resource type="StyleBoxFlat" id="StatusStripHover"]
+resource_name = "StatusStripHover"
+bg_color = Color(1, 0.9, 0.68, 0.045)
+
+[sub_resource type="StyleBoxFlat" id="GoldHover"]
+resource_name = "GoldHover"
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.2, 0.16, 0.095, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0.72, 0.52, 0.2, 0.12)
+shadow_size = 4
+
+[sub_resource type="StyleBoxEmpty" id="TextActionRest"]
+resource_name = "TextActionRest"
+content_margin_left = 2.0
+content_margin_top = 8.0
+content_margin_right = 2.0
+content_margin_bottom = 8.0
 
 [sub_resource type="StyleBoxFlat" id="TreeWellSurface"]
 resource_name = "TreeWellSurface"
-bg_color = Color(0.018, 0.017, 0.021, 1)
+bg_color = Color(0.02, 0.018, 0.02, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
@@ -1314,43 +1191,99 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxEmpty" id="PromptBandRoom"]
-resource_name = "PromptBandRoom"
-content_margin_top = 40.0
-content_margin_bottom = 30.0
-
-[sub_resource type="StyleBoxEmpty" id="BandAnswerRoom"]
-resource_name = "BandAnswerRoom"
-content_margin_left = 18.0
-content_margin_top = 8.0
-content_margin_right = 18.0
-content_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxEmpty" id="CodexRowRoom"]
-resource_name = "CodexRowRoom"
-content_margin_left = 84.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxFlat" id="StatusStripHover"]
-resource_name = "StatusStripHover"
-bg_color = Color(1, 0.9, 0.7, 0.045)
-
 [resource]
-DetailStack/base_type = &"VBoxContainer"
-DetailStack/constants/separation = 8
-CompactStack/base_type = &"VBoxContainer"
-CompactStack/constants/separation = 2
-UpgradeList/base_type = &"VBoxContainer"
-UpgradeList/constants/separation = 8
-SkillTreePanel/constants/action_width = 148
-SkillTreePanel/constants/action_height = 60
 default_font = ExtResource("BodyRegular")
 default_font_size = 16
+AbilityCard/icons/pip_empty = ExtResource("PipEmptyTexture")
+AbilityCard/icons/pip_full = ExtResource("PipFullTexture")
+AbilityCard/styles/chosen = SubResource("AbilityCardChosen")
+AbilityCard/styles/face = SubResource("AbilityCardFace")
+AbilityCard/styles/plate = SubResource("AbilityCardPlate")
+AbilityCardButton/base_type = &"Button"
+AbilityCardButton/styles/focus = SubResource("Invisible")
+AbilityCardMargin/base_type = &"MarginContainer"
+AbilityCardMargin/constants/margin_bottom = 22
+AbilityCardMargin/constants/margin_left = 22
+AbilityCardMargin/constants/margin_right = 22
+AbilityCardMargin/constants/margin_top = 22
+BandButton/base_type = &"Button"
+BandButton/colors/edge = Color(0.62, 0.59, 0.52, 0.55)
+BandButton/colors/face = Color(0.05, 0.048, 0.05, 0.55)
+BandButton/colors/font_color = Color(0.82, 0.8, 0.74, 1)
+BandButton/colors/font_disabled_color = Color(0.45, 0.44, 0.41, 1)
+BandButton/colors/font_focus_color = Color(0.98, 0.91, 0.74, 1)
+BandButton/colors/font_hover_color = Color(0.9, 0.86, 0.82, 1)
+BandButton/colors/font_hover_pressed_color = Color(0.98, 0.91, 0.74, 1)
+BandButton/colors/font_pressed_color = Color(0.98, 0.91, 0.74, 1)
+BandButton/colors/glow = Color(0.96, 0.74, 0.38, 0.06)
+BandButton/colors/lit_edge = Color(0.93, 0.8, 0.54, 1)
+BandButton/colors/lit_face_bottom = Color(0.36, 0.28, 0.15, 0.9)
+BandButton/colors/lit_face_top = Color(0.2, 0.16, 0.095, 0.82)
+BandButton/font_sizes/font_size = 20
+BandButton/fonts/font = SubResource("DisplayBoldKana")
+BandButton/styles/disabled = SubResource("BandAnswerRoom")
+BandButton/styles/focus = SubResource("Invisible")
+BandButton/styles/hover = SubResource("BandAnswerRoom")
+BandButton/styles/hover_pressed = SubResource("BandAnswerRoom")
+BandButton/styles/normal = SubResource("BandAnswerRoom")
+BandButton/styles/pressed = SubResource("BandAnswerRoom")
+BandDangerButton/base_type = &"BandButton"
+BandDangerButton/colors/edge = Color(0.78, 0.46, 0.42, 0.6)
+BandDangerButton/colors/font_color = Color(0.86, 0.52, 0.48, 1)
+BandDangerButton/colors/font_focus_color = Color(1, 0.76, 0.7, 1)
+BandDangerButton/colors/font_hover_color = Color(0.9, 0.62, 0.58, 1)
+BandDangerButton/colors/font_hover_pressed_color = Color(1, 0.76, 0.7, 1)
+BandDangerButton/colors/font_pressed_color = Color(1, 0.76, 0.7, 1)
+BandDangerButton/colors/glow = Color(0.96, 0.42, 0.32, 0.06)
+BandDangerButton/colors/lit_edge = Color(0.98, 0.6, 0.52, 1)
+BandDangerButton/colors/lit_face_bottom = Color(0.38, 0.14, 0.11, 0.9)
+BandDangerButton/colors/lit_face_top = Color(0.2, 0.08, 0.07, 0.82)
+BannerBand/base_type = &"PanelContainer"
+BannerBand/styles/panel = SubResource("BannerBand")
+BannerBandWarning/base_type = &"PanelContainer"
+BannerBandWarning/styles/panel = SubResource("BannerBandWarning")
 BodyLabel/base_type = &"Label"
 BodyLabel/constants/line_spacing = 6
 BodyLabel/font_sizes/font_size = 18
+BossBand/base_type = &"PanelContainer"
+BossBand/styles/panel = SubResource("BossBand")
+BossCutInTitle/base_type = &"Label"
+BossCutInTitle/colors/font_color = Color(0.94, 0.7, 0.46, 1)
+BossCutInTitle/colors/font_outline_color = Color(0.02, 0.018, 0.02, 1)
+BossCutInTitle/constants/outline_size = 6
+BossCutInTitle/font_sizes/font_size = 46
+BossCutInTitle/fonts/font = SubResource("DisplayBoldKana")
+BossEpithet/base_type = &"Label"
+BossEpithet/colors/font_color = Color(0.78, 0.75, 0.68, 1)
+BossEpithet/colors/font_outline_color = Color(0, 0, 0, 0.85)
+BossEpithet/constants/outline_size = 6
+BossEpithet/font_sizes/font_size = 22
+BossEpithet/fonts/font = SubResource("DisplayBoldKana")
+BossGaugeName/base_type = &"Label"
+BossGaugeName/colors/font_color = Color(0.94, 0.7, 0.46, 1)
+BossGaugeName/colors/font_outline_color = Color(0.02, 0.018, 0.02, 0.9)
+BossGaugeName/constants/outline_size = 5
+BossGaugeName/font_sizes/font_size = 24
+BossGaugeName/fonts/font = SubResource("DisplayBoldKana")
+BossGaugeValue/base_type = &"Label"
+BossGaugeValue/colors/font_color = Color(0.82, 0.8, 0.74, 1)
+BossGaugeValue/colors/font_outline_color = Color(0, 0, 0, 0.8)
+BossGaugeValue/constants/outline_size = 4
+BossGaugeValue/font_sizes/font_size = 16
+BossHp/base_type = &"ProgressBar"
+BossHp/styles/background = SubResource("VitalEmpty")
+BossHp/styles/fill = SubResource("VitalHealth")
+BossHpTrail/base_type = &"ProgressBar"
+BossHpTrail/styles/background = SubResource("VitalEmpty")
+BossHpTrail/styles/fill = SubResource("VitalHealthTrail")
+BossIntro/colors/bar = Color(0, 0, 0, 0.92)
+BossIntro/colors/rule = Color(0.74, 0.18, 0.14, 1)
+BossName/base_type = &"Label"
+BossName/colors/font_color = Color(0.96, 0.92, 0.83, 1)
+BossName/colors/font_outline_color = Color(0, 0, 0, 0.85)
+BossName/constants/outline_size = 8
+BossName/font_sizes/font_size = 64
+BossName/fonts/font = SubResource("DisplayBoldKana")
 Button/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
 Button/colors/font_disabled_color = Color(0.4509804, 0.48235294, 0.49019608, 1)
 Button/colors/font_focus_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
@@ -1364,96 +1297,154 @@ Button/styles/hover = SubResource("SurfaceHover")
 Button/styles/hover_pressed = SubResource("ButtonPressed")
 Button/styles/normal = SubResource("Surface")
 Button/styles/pressed = SubResource("ButtonPressed")
-CharacterButton/base_type = &"Button"
-CharacterButton/styles/disabled = SubResource("Invisible")
-CharacterButton/styles/hover_pressed = SubResource("Invisible")
-CharacterButton/styles/hover = SubResource("Invisible")
-CharacterButton/styles/normal = SubResource("Invisible")
-CharacterButton/styles/pressed = SubResource("Invisible")
-GoldButton/base_type = &"Button"
-GoldButton/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
-GoldButton/font_sizes/font_size = 18
-GoldButton/styles/hover = SubResource("PlateGoldHover")
-GoldButton/styles/normal = SubResource("PlateGold")
-GoldButton/styles/pressed = SubResource("PlateGoldPressed")
-GoldButton/styles/hover_pressed = SubResource("PlateGoldPressed")
-GoldButton/styles/disabled = SubResource("PlateGoldDisabled")
-GoldLabel/base_type = &"Label"
-GoldLabel/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
-GoldLabel/font_sizes/font_size = 21
-HBoxContainer/constants/separation = 20
-HScrollBar/styles/grabber = SubResource("ScrollGrabber")
-HScrollBar/styles/grabber_highlight = SubResource("ScrollHover")
-HScrollBar/styles/grabber_pressed = SubResource("ScrollPressed")
-HScrollBar/styles/scroll = SubResource("ScrollTrack")
-HeadingLabel/base_type = &"Label"
-HeadingLabel/font_sizes/font_size = 24
-ItemDetails/base_type = &"RichTextLabel"
-ItemDetails/colors/default_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-ItemDetails/colors/decrease_color = Color(0.86, 0.52, 0.48, 1)
-ItemDetails/constants/line_separation = 3
-ItemDetails/font_sizes/normal_font_size = 18
-ItemDetails/styles/focus = SubResource("FocusOutline")
-ItemDetails/styles/normal = SubResource("DetailsInsets")
-ItemButton/base_type = &"Button"
-ItemButton/font_sizes/font_size = 17
-ItemCardList/base_type = &"ItemList"
-ItemCardList/colors/font_color = Color(1, 1, 1, 0)
-ItemCardList/colors/font_selected_color = Color(1, 1, 1, 0)
-ItemCardList/colors/font_hovered_color = Color(1, 1, 1, 0)
-ItemCardList/colors/font_hovered_selected_color = Color(1, 1, 1, 0)
-ItemCardList/constants/v_separation = 56
-ItemCardList/constants/card_inset = 12
-ItemCardList/constants/card_gap = 10
-ItemCardList/constants/glyph_size = 48
-ItemCardList/constants/price_width = 124
-ItemList/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-ItemList/colors/font_selected_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-ItemList/colors/guide_color = Color(1, 1, 1, 0)
-ItemList/constants/v_separation = 16
-ItemList/constants/tooltip_width = 360
-ItemList/font_sizes/font_size = 18
-ItemList/styles/focus = SubResource("FocusOutline")
-ItemList/styles/hovered = SubResource("SurfaceHover")
-ItemList/styles/hovered_selected = SubResource("ItemSelected")
-ItemList/styles/hovered_selected_focus = SubResource("ItemSelected")
-ItemList/styles/panel = SubResource("ListBackground")
-ItemList/styles/selected = SubResource("ItemSelected")
-ItemList/styles/selected_focus = SubResource("ItemSelected")
-ItemPanel/base_type = &"PanelContainer"
-ItemPanel/styles/panel = SubResource("ItemSurface")
-Label/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-Label/constants/line_spacing = 3
-LineEdit/colors/caret_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
-LineEdit/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-LineEdit/colors/font_uneditable_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
-LineEdit/colors/selection_color = Color(0.23, 0.23, 0.23, 1)
-LineEdit/font_sizes/font_size = 18
-LineEdit/styles/focus = SubResource("FocusOutline")
-LineEdit/styles/normal = SubResource("FieldSurface")
-LineEdit/styles/read_only = SubResource("ButtonDisabled")
-MainPanel/base_type = &"PanelContainer"
-QuietWindow/base_type = &"PanelContainer"
-QuietWindow/styles/panel = SubResource("QuietWindowSurface")
+CardButton/base_type = &"SecondaryButton"
+CardButton/styles/disabled = SubResource("CardRest")
+CardButton/styles/focus = SubResource("CardFocus")
+CardButton/styles/hover = SubResource("CardHover")
+CardButton/styles/hover_pressed = SubResource("CardSelected")
+CardButton/styles/normal = SubResource("CardRest")
+CardButton/styles/pressed = SubResource("CardSelected")
 CardSurface/base_type = &"PanelContainer"
 CardSurface/styles/panel = SubResource("CardRest")
 CardSurfaceActive/base_type = &"PanelContainer"
 CardSurfaceActive/styles/panel = SubResource("CardFocus")
-CardButton/base_type = &"SecondaryButton"
-CardButton/styles/normal = SubResource("CardRest")
-CardButton/styles/hover = SubResource("CardHover")
-CardButton/styles/focus = SubResource("CardFocus")
-CardButton/styles/pressed = SubResource("CardSelected")
-CardButton/styles/hover_pressed = SubResource("CardSelected")
-CardButton/styles/disabled = SubResource("CardRest")
+CategoryCap/base_type = &"Label"
+CategoryCap/colors/font_color = Color(0.62, 0.59, 0.52, 1)
+CategoryCap/font_sizes/font_size = 16
+CategoryTab/base_type = &"Button"
+CategoryTab/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
+CategoryTab/colors/font_disabled_color = Color(0.32, 0.32, 0.32, 1)
+CategoryTab/colors/font_focus_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+CategoryTab/colors/font_hover_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+CategoryTab/colors/font_hover_pressed_color = Color(0.96, 0.85, 0.6, 1)
+CategoryTab/colors/font_pressed_color = Color(0.96, 0.85, 0.6, 1)
+CategoryTab/colors/underline = Color(0.8392157, 0.7176471, 0.48235294, 1)
+CategoryTab/constants/underline_width = 2
+CategoryTab/font_sizes/font_size = 17
+CategoryTab/styles/disabled = SubResource("TabRest")
+CategoryTab/styles/hover = SubResource("TabHover")
+CategoryTab/styles/hover_pressed = SubResource("TabChosen")
+CategoryTab/styles/normal = SubResource("TabRest")
+CategoryTab/styles/pressed = SubResource("TabChosen")
+CategoryTabs/base_type = &"HBoxContainer"
+CategoryTabs/constants/separation = 16
+CharacterButton/base_type = &"Button"
+CharacterButton/styles/disabled = SubResource("Invisible")
+CharacterButton/styles/hover = SubResource("Invisible")
+CharacterButton/styles/hover_pressed = SubResource("Invisible")
+CharacterButton/styles/normal = SubResource("Invisible")
+CharacterButton/styles/pressed = SubResource("Invisible")
+ChoicePrompt/icons/exit = ExtResource("PassageExitTexture")
+ChoicePrompt/icons/guardian = ExtResource("PassageGuardianTexture")
+ChoicePrompt/icons/stairs = ExtResource("PassageStairsTexture")
+CodexAccount/base_type = &"VBoxContainer"
+CodexAccount/constants/separation = 12
+CodexGrid/base_type = &"GridContainer"
+CodexGrid/constants/h_separation = 18
+CodexGrid/constants/v_separation = 10
+CodexInfoMargin/base_type = &"LobbyInfoMargin"
+CodexLine/base_type = &"HBoxContainer"
+CodexLine/constants/separation = 10
+CodexList/base_type = &"VBoxContainer"
+CodexList/constants/separation = 0
+CodexName/base_type = &"TitleLabel"
+CodexName/font_sizes/font_size = 40
+CodexRow/base_type = &"Button"
+CodexRow/colors/disc = Color(0.05, 0.048, 0.05, 1)
+CodexRow/colors/font_color = Color(0.78, 0.75, 0.68, 1)
+CodexRow/colors/font_disabled_color = Color(0.45, 0.44, 0.41, 1)
+CodexRow/colors/font_focus_color = Color(0.98, 0.91, 0.74, 1)
+CodexRow/colors/font_hover_color = Color(0.9, 0.86, 0.82, 1)
+CodexRow/colors/font_hover_pressed_color = Color(0.98, 0.91, 0.74, 1)
+CodexRow/colors/font_pressed_color = Color(0.98, 0.91, 0.74, 1)
+CodexRow/colors/hover_face = Color(1, 0.9, 0.68, 0.05)
+CodexRow/colors/lit_edge = Color(0.8392157, 0.7176471, 0.48235294, 0.85)
+CodexRow/colors/lit_face = Color(0.86, 0.66, 0.32, 0.2)
+CodexRow/colors/lit_ring = Color(0.93, 0.8, 0.54, 1)
+CodexRow/colors/ring = Color(0.56, 0.478, 0.322, 0.55)
+CodexRow/colors/separator = Color(1, 1, 1, 0.07)
+CodexRow/font_sizes/font_size = 20
+CodexRow/fonts/font = SubResource("DisplayBoldKana")
+CodexRow/styles/disabled = SubResource("CodexRowRoom")
+CodexRow/styles/focus = SubResource("Invisible")
+CodexRow/styles/hover = SubResource("CodexRowRoom")
+CodexRow/styles/hover_pressed = SubResource("CodexRowRoom")
+CodexRow/styles/normal = SubResource("CodexRowRoom")
+CodexRow/styles/pressed = SubResource("CodexRowRoom")
+CodexSection/base_type = &"Label"
+CodexSection/colors/font_color = Color(0.9, 0.82, 0.64, 1)
+CodexSection/font_sizes/font_size = 18
+CodexSection/fonts/font = SubResource("DisplayBoldKana")
+CodexSplit/base_type = &"HBoxContainer"
+CodexSplit/constants/separation = 24
+CodexStage/base_type = &"Control"
+CodexStage/colors/floor = Color(0, 0, 0, 0.6)
+CodexStage/colors/glow = Color(0.86, 0.66, 0.32, 0.16)
+CodexStats/base_type = &"VBoxContainer"
+CodexStats/constants/separation = 0
+CompactMargin/base_type = &"MarginContainer"
+CompactMargin/constants/margin_bottom = 10
+CompactMargin/constants/margin_left = 12
+CompactMargin/constants/margin_right = 12
+CompactMargin/constants/margin_top = 10
+CompactRow/base_type = &"HBoxContainer"
+CompactRow/constants/separation = 10
+CompactStack/base_type = &"VBoxContainer"
+CompactStack/constants/separation = 2
+ContextMenu/base_type = &"PanelContainer"
+ContextMenu/styles/panel = SubResource("MenuSurface")
+CrestAction/base_type = &"PrimaryAction"
+CrestAction/colors/chosen_edge = Color(0.8392157, 0.7176471, 0.48235294, 1)
+CrestAction/colors/crest_ground = Color(0.05, 0.048, 0.05, 1)
+CrestAction/colors/crest_lit = Color(0.15, 0.14, 0.102, 1)
+CrestAction/colors/crest_off = Color(0.05, 0.048, 0.05, 1)
+CrestAction/colors/edge = Color(0.56, 0.478, 0.322, 1)
+CrestAction/colors/emblem_off = Color(0.45, 0.44, 0.41, 1)
+CrestAction/colors/emblem_rest = Color(0.74, 0.74, 0.74, 1)
+CrestAction/colors/font_color = Color(0.82, 0.8, 0.74, 1)
+CrestAction/colors/font_disabled_color = Color(0.45, 0.44, 0.41, 1)
+CrestAction/colors/font_focus_color = Color(0.96, 0.92, 0.83, 1)
+CrestAction/colors/font_hover_color = Color(0.96, 0.92, 0.83, 1)
+CrestAction/colors/font_hover_pressed_color = Color(0.96, 0.92, 0.83, 1)
+CrestAction/colors/font_pressed_color = Color(0.96, 0.92, 0.83, 1)
+CrestAction/colors/glow = Color(0.86, 0.66, 0.32, 0.055)
+CrestAction/colors/plate_bottom = Color(0.15, 0.14, 0.102, 1)
+CrestAction/colors/plate_lit_bottom = Color(0.2, 0.16, 0.095, 1)
+CrestAction/colors/plate_lit_top = Color(0.36, 0.28, 0.15, 1)
+CrestAction/colors/plate_off = Color(0.13, 0.13, 0.13, 1)
+CrestAction/colors/plate_top = Color(0.2, 0.16, 0.095, 1)
+CrestAction/colors/ring = Color(0.94, 0.784, 0.47, 1)
+CrestAction/font_sizes/font_size = 22
+CrestAction/fonts/font = SubResource("DisplayBoldKana")
+CrestAction/styles/disabled = SubResource("CrestPlateRoom")
+CrestAction/styles/focus = SubResource("CrestPlateRoom")
+CrestAction/styles/hover = SubResource("CrestPlateRoom")
+CrestAction/styles/hover_pressed = SubResource("CrestPlateRoom")
+CrestAction/styles/normal = SubResource("CrestPlateRoom")
+CrestAction/styles/pressed = SubResource("CrestPlateRoom")
+CurseLabel/base_type = &"Label"
+CurseLabel/colors/font_color = Color(0.88, 0.45, 0.4, 1)
+CurseLabel/font_sizes/font_size = 18
+DefeatTitle/base_type = &"Label"
+DefeatTitle/colors/font_color = Color(0.86, 0.52, 0.48, 1)
+DefeatTitle/font_sizes/font_size = 34
+DefeatTitle/fonts/font = SubResource("DisplayBoldKana")
+DescriptionLabel/base_type = &"Label"
+DescriptionLabel/colors/font_color = Color(0.79, 0.79, 0.75, 1)
+DescriptionLabel/constants/line_spacing = 6
+DescriptionLabel/font_sizes/font_size = 18
+DetailPanel/base_type = &"PanelContainer"
+DetailPanel/styles/panel = SubResource("FramePanel")
+DetailStack/base_type = &"VBoxContainer"
+DetailStack/constants/separation = 8
 DoorButton/base_type = &"Button"
 DoorButton/colors/art_locked = Color(0.32, 0.3, 0.34, 1)
 DoorButton/colors/art_open = Color(1, 1, 1, 1)
-DoorButton/colors/chosen_edge = Color(0.839, 0.718, 0.482, 1)
+DoorButton/colors/chosen_edge = Color(0.8392157, 0.7176471, 0.48235294, 1)
 DoorButton/colors/edge = Color(0.72, 0.58, 0.36, 0.3)
-DoorButton/colors/focus_edge = Color(0.933, 0.914, 0.875, 0.85)
+DoorButton/colors/focus_edge = Color(0.93333334, 0.9137255, 0.8745098, 0.85)
 DoorButton/colors/glow = Color(0.86, 0.66, 0.32, 0.2)
-DoorButton/colors/plate = Color(0.075, 0.072, 0.07, 1)
+DoorButton/colors/plate = Color(0.05, 0.048, 0.05, 1)
 DoorButton/colors/shade = Color(0, 0, 0, 0.55)
 DoorButton/constants/rest_light = 52
 DoorButton/styles/disabled = SubResource("Invisible")
@@ -1464,50 +1455,434 @@ DoorButton/styles/normal = SubResource("Invisible")
 DoorButton/styles/pressed = SubResource("Invisible")
 DoorRow/base_type = &"HBoxContainer"
 DoorRow/constants/separation = 0
-CrestAction/base_type = &"PrimaryAction"
-CrestAction/colors/chosen_edge = Color(0.839, 0.718, 0.482, 1)
-CrestAction/colors/crest_ground = Color(0.078, 0.07, 0.063, 1)
-CrestAction/colors/crest_lit = Color(0.11, 0.094, 0.07, 1)
-CrestAction/colors/crest_off = Color(0.07, 0.068, 0.066, 1)
-CrestAction/colors/edge = Color(0.56, 0.478, 0.322, 1)
-CrestAction/colors/emblem_off = Color(0.42, 0.42, 0.44, 1)
-CrestAction/colors/emblem_rest = Color(0.74, 0.74, 0.74, 1)
-CrestAction/colors/font_color = Color(0.85, 0.82, 0.77, 1)
-CrestAction/colors/font_disabled_color = Color(0.45, 0.44, 0.41, 1)
-CrestAction/colors/font_focus_color = Color(0.95, 0.92, 0.84, 1)
-CrestAction/colors/font_hover_color = Color(0.95, 0.92, 0.84, 1)
-CrestAction/colors/font_hover_pressed_color = Color(0.95, 0.92, 0.84, 1)
-CrestAction/colors/font_pressed_color = Color(0.95, 0.92, 0.84, 1)
-CrestAction/colors/glow = Color(0.86, 0.66, 0.32, 0.055)
-CrestAction/colors/plate_bottom = Color(0.114, 0.09, 0.063, 1)
-CrestAction/colors/plate_lit_bottom = Color(0.165, 0.125, 0.078, 1)
-CrestAction/colors/plate_lit_top = Color(0.353, 0.275, 0.149, 1)
-CrestAction/colors/plate_off = Color(0.12, 0.115, 0.11, 1)
-CrestAction/colors/plate_top = Color(0.227, 0.184, 0.11, 1)
-CrestAction/colors/ring = Color(0.94, 0.784, 0.47, 1)
-CrestAction/font_sizes/font_size = 22
-CrestAction/fonts/font = SubResource("DisplayBoldKana")
-CrestAction/styles/disabled = SubResource("CrestPlateRoom")
-CrestAction/styles/focus = SubResource("CrestPlateRoom")
-CrestAction/styles/hover = SubResource("CrestPlateRoom")
-CrestAction/styles/hover_pressed = SubResource("CrestPlateRoom")
-CrestAction/styles/normal = SubResource("CrestPlateRoom")
-CrestAction/styles/pressed = SubResource("CrestPlateRoom")
-SortieBand/base_type = &"PanelContainer"
-SortieBand/styles/panel = SubResource("LobbyInfoSurface")
-SortieBandMargin/base_type = &"LobbyInfoMargin"
-SortieFactCaption/base_type = &"LobbyFactCaption"
-SortieFactValue/base_type = &"LobbyFactValue"
-QuietSection/base_type = &"PanelContainer"
-QuietSection/styles/panel = SubResource("QuietSectionSurface")
+DungeonMinimap/icons/enemy = ExtResource("HudMapEnemyTexture")
+DungeonMinimap/icons/item = ExtResource("HudMapItemTexture")
+DungeonMinimap/icons/player = ExtResource("HudMapPlayerTexture")
+DungeonMinimap/icons/stairs = ExtResource("HudMapStairsTexture")
+EquipSocket/base_type = &"UpgradeNode"
+EquipSocket/colors/disc = Color(0.05, 0.048, 0.05, 1)
+EquipSocket/colors/focus = Color(0.8392157, 0.7176471, 0.48235294, 1)
+EquipSocket/colors/glow = Color(0.89, 0.7, 0.4, 0.07)
+EquipSocket/colors/lit = Color(0.8392157, 0.7176471, 0.48235294, 0.45)
+EquipSocket/colors/pointed = Color(0.8392157, 0.7176471, 0.48235294, 0.3)
+EquipSocket/colors/rim = Color(0.56, 0.478, 0.322, 0.28)
+ExpBar/base_type = &"ProgressBar"
+ExpBar/styles/background = SubResource("VitalTrackThin")
+ExpBar/styles/fill = SubResource("ExperienceFill")
+FloatingHand/base_type = &"PanelContainer"
+FloatingHand/styles/panel = SubResource("Invisible")
+GameSlider/base_type = &"HSlider"
+GameSlider/colors/fill = Color(0.8392157, 0.7176471, 0.48235294, 1)
+GameSlider/colors/knob = Color(0.15, 0.14, 0.102, 1)
+GameSlider/colors/knob_core = Color(0.96, 0.85, 0.6, 1)
+GameSlider/colors/track = Color(0.45, 0.42, 0.36, 0.8)
+GameSlider/icons/grabber = SubResource("SliderGrabber")
+GameSlider/icons/grabber_disabled = SubResource("SliderGrabber")
+GameSlider/icons/grabber_highlight = SubResource("SliderGrabber")
+GameSlider/styles/focus = SubResource("Invisible")
+GameSlider/styles/grabber_area = SubResource("Invisible")
+GameSlider/styles/grabber_area_highlight = SubResource("Invisible")
+GameSlider/styles/slider = SubResource("SliderTrack")
+GearGrid/base_type = &"GridContainer"
+GearGrid/constants/h_separation = 4
+GearGrid/constants/v_separation = 4
+GoldButton/base_type = &"Button"
+GoldButton/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+GoldButton/font_sizes/font_size = 18
+GoldButton/styles/disabled = SubResource("PlateGoldDisabled")
+GoldButton/styles/hover = SubResource("PlateGoldHover")
+GoldButton/styles/hover_pressed = SubResource("PlateGoldPressed")
+GoldButton/styles/normal = SubResource("PlateGold")
+GoldButton/styles/pressed = SubResource("PlateGoldPressed")
+GoldLabel/base_type = &"Label"
+GoldLabel/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+GoldLabel/font_sizes/font_size = 21
+HBoxContainer/constants/separation = 20
+HScrollBar/styles/grabber = SubResource("ScrollGrabber")
+HScrollBar/styles/grabber_highlight = SubResource("ScrollHover")
+HScrollBar/styles/grabber_pressed = SubResource("ScrollPressed")
+HScrollBar/styles/scroll = SubResource("ScrollTrack")
+HeadingLabel/base_type = &"Label"
+HeadingLabel/font_sizes/font_size = 24
+HeadingLabel/fonts/font = SubResource("DisplayBoldKana")
+HelpBody/base_type = &"HBoxContainer"
+HelpBody/constants/separation = 40
+HelpKeyCap/base_type = &"PanelContainer"
+HelpKeyCap/styles/panel = SubResource("HelpKeyCapPlate")
+HelpKeyCaps/base_type = &"HBoxContainer"
+HelpKeyCaps/constants/separation = 6
+HelpKeyName/base_type = &"Label"
+HelpKeyName/colors/font_color = Color(0.9, 0.86, 0.82, 1)
+HelpKeyName/font_sizes/font_size = 16
+HelpKeys/base_type = &"GridContainer"
+HelpKeys/constants/h_separation = 32
+HelpKeys/constants/v_separation = 6
+HelpPage/base_type = &"PanelContainer"
+HelpPage/styles/panel = SubResource("HelpPageWell")
+HelpPoint/base_type = &"HBoxContainer"
+HelpPoint/constants/separation = 10
+HelpPoints/base_type = &"VBoxContainer"
+HelpPoints/constants/separation = 14
+HelpTopic/base_type = &"SlotRow"
+HelpTopic/colors/font_color = Color(0.72, 0.69, 0.63, 1)
+HelpTopic/colors/font_focus_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+HelpTopic/colors/font_hover_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+HelpTopic/colors/font_hover_pressed_color = Color(0.96, 0.85, 0.6, 1)
+HelpTopic/colors/font_pressed_color = Color(0.96, 0.85, 0.6, 1)
+HelpTopic/colors/glow = Color(0.96, 0.74, 0.38, 0.1)
+HelpTopic/font_sizes/font_size = 18
+HelpTopic/styles/focus = SubResource("Invisible")
+HelpTopic/styles/hover = SubResource("Invisible")
+HintMark/base_type = &"Button"
+HintMark/colors/font_color = Color(0.62, 0.59, 0.52, 1)
+HintMark/colors/font_hover_color = Color(0.96, 0.85, 0.6, 1)
+HintMark/font_sizes/font_size = 16
+HintMark/styles/disabled = SubResource("Invisible")
+HintMark/styles/focus = SubResource("Invisible")
+HintMark/styles/hover = SubResource("Invisible")
+HintMark/styles/hover_pressed = SubResource("Invisible")
+HintMark/styles/normal = SubResource("Invisible")
+HintMark/styles/pressed = SubResource("Invisible")
+HomeCard/base_type = &"Button"
+HomeCard/styles/disabled = SubResource("FrameCard")
+HomeCard/styles/hover = SubResource("FrameCardActive")
+HomeCard/styles/hover_pressed = SubResource("FrameCardActive")
+HomeCard/styles/normal = SubResource("FrameCard")
+HomeCard/styles/pressed = SubResource("FrameCardActive")
+HomeCardPrimary/base_type = &"HomeCard"
+HomeCardPrimary/styles/normal = SubResource("FrameCardActive")
+HomeMargin/base_type = &"MarginContainer"
+HomeMargin/constants/margin_bottom = 24
+HomeMargin/constants/margin_left = 0
+HomeMargin/constants/margin_right = 0
+HomeMargin/constants/margin_top = 42
+HpCaption/base_type = &"Label"
+HpCaption/colors/font_color = Color(0.92, 0.35, 0.3, 1)
+HpCaption/colors/font_outline_color = Color(0, 0, 0, 0.7)
+HpCaption/constants/outline_size = 4
+HpCaption/font_sizes/font_size = 16
+HpCurrent/base_type = &"ProgressBar"
+HpCurrent/styles/background = SubResource("VitalEmpty")
+HpCurrent/styles/fill = SubResource("VitalHealth")
+HpTrail/base_type = &"ProgressBar"
+HpTrail/styles/background = SubResource("VitalEmpty")
+HpTrail/styles/fill = SubResource("VitalHealthTrail")
+HubLobby/colors/art_locked = Color(0.32, 0.3, 0.34, 0.6)
+HubLobby/colors/art_tint = Color(1, 1, 1, 0.6)
+HubLobby/colors/band = Color(0.86, 0.66, 0.32, 0.11)
+HubLobby/colors/fact_band = Color(0.02, 0.018, 0.02, 0.62)
+HubLobby/colors/hero_tint = Color(0.9, 0.86, 0.82, 1)
+HubLobby/colors/icon_rest = Color(0.82, 0.8, 0.74, 0.7)
+HubLobby/colors/purse_shade = Color(0, 0, 0, 0.42)
+HubLobby/colors/rail = Color(0.72, 0.58, 0.36, 1)
+HubLobby/colors/shadow = Color(0, 0, 0, 0.72)
+HubLobby/colors/slab = Color(0.03, 0.028, 0.03, 0.9)
+HudAimTag/base_type = &"Label"
+HudAimTag/colors/font_color = Color(0.95, 0.9, 0.8, 1)
+HudAimTag/font_sizes/font_size = 14
+HudAimTag/styles/normal = SubResource("HudAimTagSurface")
+HudBanner/base_type = &"HudValue"
+HudBanner/font_sizes/font_size = 30
+HudBanner/fonts/font = SubResource("DisplayBoldKana")
+HudCaption/base_type = &"Label"
+HudCaption/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
+HudCaption/colors/font_outline_color = Color(0, 0, 0, 0.7)
+HudCaption/constants/outline_size = 4
+HudCaption/font_sizes/font_size = 16
+HudEdge/colors/shade = Color(0.02, 0.018, 0.02, 0.55)
+HudEffects/icons/token = ExtResource("HudMedallionTexture")
+HudEquipment/base_type = &"Control"
+HudEquipment/constants/caption_width = 64
+HudEquipment/constants/glyph_size = 32
+HudEquipment/constants/row_height = 38
+HudEquipment/font_sizes/font_size = 15
+HudGoldCaption/base_type = &"HudCaption"
+HudGoldCaption/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+HudGoldCaption/font_sizes/font_size = 20
+HudGoldValue/base_type = &"HudValue"
+HudGoldValue/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+HudLog/base_type = &"RichTextLabel"
+HudLog/colors/default_color = Color(0.79, 0.79, 0.75, 1)
+HudLog/colors/font_outline_color = Color(0, 0, 0, 0.8)
+HudLog/constants/outline_size = 4
+HudLog/font_sizes/normal_font_size = 15
+HudLog/icons/floor = ExtResource("HudLogFloorTexture")
+HudLog/icons/harm = ExtResource("HudLogHarmTexture")
+HudLog/icons/news = ExtResource("HudLogNewsTexture")
+HudLog/icons/supply = ExtResource("HudLogSupplyTexture")
+HudLog/icons/victory = ExtResource("HudLogVictoryTexture")
+HudLog/styles/normal = SubResource("HudLogInsets")
+HudMapFrame/base_type = &"Panel"
+HudMapFrame/styles/panel = SubResource("HudMapFrame")
+HudMapPanel/base_type = &"Panel"
+HudMapPanel/styles/panel = SubResource("HudMapSurface")
+HudObjective/base_type = &"HudValue"
+HudObjective/font_sizes/font_size = 26
+HudPortraitFrame/base_type = &"Panel"
+HudPortraitFrame/styles/panel = SubResource("HudPortraitFrame")
+HudSmall/base_type = &"Label"
+HudSmall/colors/font_color = Color(0.6, 0.6, 0.57, 1)
+HudSmall/font_sizes/font_size = 13
+HudTallyRow/base_type = &"HBoxContainer"
+HudTallyRow/constants/separation = 8
+HudTallyValue/base_type = &"HudValue"
+HudTallyValue/font_sizes/font_size = 18
+HudValue/base_type = &"Label"
+HudValue/colors/font_outline_color = Color(0, 0, 0, 0.7)
+HudValue/constants/outline_size = 4
+HudValue/font_sizes/font_size = 22
+HudValue/fonts/font = ExtResource("BodyBold")
+InkTooltip/base_type = &"PanelContainer"
+InkTooltip/styles/panel = SubResource("InkPlate")
+InkTooltipLabel/base_type = &"Label"
+InkTooltipLabel/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+InkTooltipLabel/font_sizes/font_size = 16
+InsetPanel/base_type = &"PanelContainer"
+InsetPanel/styles/panel = SubResource("InsetSurface")
+ItemButton/base_type = &"Button"
+ItemButton/font_sizes/font_size = 17
+ItemCardList/base_type = &"ItemList"
+ItemCardList/colors/font_color = Color(1, 1, 1, 0)
+ItemCardList/colors/font_hovered_color = Color(1, 1, 1, 0)
+ItemCardList/colors/font_hovered_selected_color = Color(1, 1, 1, 0)
+ItemCardList/colors/font_selected_color = Color(1, 1, 1, 0)
+ItemCardList/constants/card_gap = 10
+ItemCardList/constants/card_inset = 12
+ItemCardList/constants/glyph_size = 48
+ItemCardList/constants/price_width = 124
+ItemCardList/constants/quantity_width = 54
+ItemCardList/constants/row_gap = 6
+ItemCardList/constants/v_separation = 56
+ItemCardList/styles/card = SubResource("ItemSurface")
+ItemCardList/styles/card_hover = SubResource("SurfaceHover")
+ItemCardList/styles/card_selected = SubResource("ItemSelected")
+ItemCardList/styles/focus = SubResource("ListFocus")
+ItemCell/base_type = &"Button"
+ItemCell/styles/disabled = SubResource("ItemCellRest")
+ItemCell/styles/focus = SubResource("FocusOutline")
+ItemCell/styles/hover = SubResource("ItemCellHover")
+ItemCell/styles/hover_pressed = SubResource("ItemCellChosen")
+ItemCell/styles/normal = SubResource("ItemCellRest")
+ItemCell/styles/pressed = SubResource("ItemCellChosen")
+ItemDetails/base_type = &"RichTextLabel"
+ItemDetails/colors/decrease_color = Color(0.86, 0.52, 0.48, 1)
+ItemDetails/colors/default_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+ItemDetails/constants/line_separation = 3
+ItemDetails/font_sizes/normal_font_size = 18
+ItemDetails/styles/focus = SubResource("FocusOutline")
+ItemDetails/styles/normal = SubResource("DetailsInsets")
+ItemList/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+ItemList/colors/font_selected_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+ItemList/colors/guide_color = Color(1, 1, 1, 0)
+ItemList/constants/tooltip_width = 360
+ItemList/constants/v_separation = 16
+ItemList/font_sizes/font_size = 18
+ItemList/styles/focus = SubResource("FocusOutline")
+ItemList/styles/hovered = SubResource("SurfaceHover")
+ItemList/styles/hovered_selected = SubResource("ItemSelected")
+ItemList/styles/hovered_selected_focus = SubResource("ItemSelected")
+ItemList/styles/panel = SubResource("ListBackground")
+ItemList/styles/selected = SubResource("ItemSelected")
+ItemList/styles/selected_focus = SubResource("ItemSelected")
+ItemNameLabel/base_type = &"Label"
+ItemNameLabel/font_sizes/font_size = 20
+ItemNameLabel/fonts/font = ExtResource("BodyBold")
+ItemPanel/base_type = &"PanelContainer"
+ItemPanel/styles/panel = SubResource("ItemSurface")
+ItemRow/base_type = &"ItemCell"
+ItemRow/styles/disabled = SubResource("ItemRowRest")
+ItemRow/styles/hover = SubResource("ItemRowHover")
+ItemRow/styles/hover_pressed = SubResource("ItemRowChosen")
+ItemRow/styles/normal = SubResource("ItemRowRest")
+ItemRow/styles/pressed = SubResource("ItemRowChosen")
+ItemVisual/colors/glow = Color(0.86, 0.66, 0.32, 0.16)
+KeyGuide/base_type = &"HBoxContainer"
+KeyGuide/constants/separation = 28
+KeyGuideButton/base_type = &"Button"
+KeyGuideButton/colors/cap_rim = Color(0.62, 0.59, 0.52, 1)
+KeyGuideButton/colors/cap_rim_active = Color(0.93333334, 0.9137255, 0.8745098, 1)
+KeyGuideButton/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
+KeyGuideButton/colors/font_focus_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+KeyGuideButton/colors/font_hover_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+KeyGuideButton/colors/font_hover_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+KeyGuideButton/colors/font_outline_color = Color(0, 0, 0, 0.7)
+KeyGuideButton/colors/font_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+KeyGuideButton/constants/cap_gap = 9
+KeyGuideButton/constants/cap_padding = 7
+KeyGuideButton/constants/outline_size = 3
+KeyGuideButton/font_sizes/cap_font_size = 16
+KeyGuideButton/font_sizes/font_size = 16
+KeyGuideButton/styles/cap = SubResource("KeyCap")
+KeyGuideButton/styles/cap_active = SubResource("KeyCapActive")
+KeyGuideButton/styles/disabled = SubResource("KeyGuideHint")
+KeyGuideButton/styles/hover = SubResource("KeyGuideHint")
+KeyGuideButton/styles/hover_pressed = SubResource("KeyGuideHint")
+KeyGuideButton/styles/normal = SubResource("KeyGuideHint")
+KeyGuideButton/styles/pressed = SubResource("KeyGuideHint")
+Label/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+Label/constants/line_spacing = 3
+LessonHint/base_type = &"KeyGuideButton"
+LessonHint/colors/cap_rim = Color(0.8392157, 0.7176471, 0.48235294, 1)
+LessonHint/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+LessonHint/font_sizes/cap_font_size = 22
+LessonHint/font_sizes/font_size = 22
+LineEdit/colors/caret_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+LineEdit/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+LineEdit/colors/font_uneditable_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
+LineEdit/colors/selection_color = Color(0.23, 0.23, 0.23, 1)
+LineEdit/font_sizes/font_size = 18
+LineEdit/styles/focus = SubResource("FocusOutline")
+LineEdit/styles/normal = SubResource("FieldSurface")
+LineEdit/styles/read_only = SubResource("ButtonDisabled")
+ListRow/base_type = &"HBoxContainer"
+ListRow/constants/separation = 24
+LoadoutChoice/base_type = &"LoadoutSlot"
+LoadoutChoice/font_sizes/key_size = 15
+LoadoutChoice/font_sizes/name_size = 20
+LoadoutSlot/base_type = &"UpgradeNode"
+LoadoutSlot/colors/disc = Color(0.05, 0.048, 0.05, 1)
+LoadoutSlot/colors/empty_ring = Color(0.56, 0.478, 0.322, 0.85)
+LoadoutSlot/colors/glow = Color(0.86, 0.66, 0.32, 0.26)
+LoadoutSlot/colors/hover_face = Color(1, 0.9, 0.68, 0.05)
+LoadoutSlot/colors/key = Color(0.69803923, 0.7019608, 0.6666667, 1)
+LoadoutSlot/colors/key_lit = Color(0.8392157, 0.7176471, 0.48235294, 1)
+LoadoutSlot/colors/lit_edge = Color(0.8392157, 0.7176471, 0.48235294, 0.85)
+LoadoutSlot/colors/lit_face = Color(0.86, 0.66, 0.32, 0.2)
+LoadoutSlot/colors/lit_ring = Color(0.93, 0.8, 0.54, 1)
+LoadoutSlot/colors/mark_edge = Color(0.1, 0.075, 0.04, 1)
+LoadoutSlot/colors/name = Color(0.9, 0.86, 0.82, 1)
+LoadoutSlot/colors/name_lit = Color(0.98, 0.91, 0.74, 1)
+LoadoutSlot/colors/name_off = Color(0.4509804, 0.48235294, 0.49019608, 1)
+LoadoutSlot/colors/note = Color(0.69803923, 0.7019608, 0.6666667, 1)
+LoadoutSlot/colors/preview = Color(0.93, 0.8, 0.54, 1)
+LoadoutSlot/colors/sealed_tint = Color(0.4509804, 0.48235294, 0.49019608, 1)
+LoadoutSlot/colors/separator = Color(1, 1, 1, 0.07)
+LoadoutSlot/colors/sweep = Color(1, 0.9, 0.68, 1)
+LoadoutSlot/colors/title = Color(0.6, 0.6, 0.57, 1)
+LoadoutSlot/colors/unknown_tint = Color(0.23, 0.23, 0.23, 1)
+LoadoutSlot/font_sizes/font_size = 16
+LoadoutSlot/font_sizes/key_size = 16
+LoadoutSlot/font_sizes/name_size = 26
+LoadoutSlot/fonts/name_font = SubResource("DisplayBoldKana")
+LoadoutSlot/styles/key_plate = SubResource("KeyCap")
+LoadoutSlot/styles/key_plate_lit = SubResource("KeyCapActive")
+LobbyAction/base_type = &"PrimaryAction"
+LobbyAction/styles/disabled = SubResource("PlateGoldDisabled")
+LobbyAction/styles/focus = SubResource("FocusOutline")
+LobbyAction/styles/hover = SubResource("PlateGoldHover")
+LobbyAction/styles/hover_pressed = SubResource("PlateGoldPressed")
+LobbyAction/styles/normal = SubResource("PlateGold")
+LobbyAction/styles/pressed = SubResource("PlateGoldPressed")
+LobbyFact/base_type = &"VBoxContainer"
+LobbyFact/constants/separation = -4
+LobbyFactCaption/base_type = &"MutedLabel"
+LobbyFactCaption/font_sizes/font_size = 16
+LobbyFactRow/base_type = &"HBoxContainer"
+LobbyFactRow/constants/separation = 0
+LobbyFactValue/base_type = &"ValueLabel"
+LobbyFactValue/fonts/font = SubResource("DisplayBoldKana")
+LobbyInfoMargin/base_type = &"MarginContainer"
+LobbyInfoMargin/constants/margin_bottom = 20
+LobbyInfoMargin/constants/margin_left = 30
+LobbyInfoMargin/constants/margin_right = 30
+LobbyInfoMargin/constants/margin_top = 18
+LobbyInfoPanel/base_type = &"PanelContainer"
+LobbyInfoPanel/styles/panel = SubResource("LobbyInfoSurface")
+LobbyInfoStack/base_type = &"VBoxContainer"
+LobbyInfoStack/constants/separation = 6
+LobbyMenuButton/base_type = &"Button"
+LobbyMenuButton/colors/font_color = Color(0.78, 0.75, 0.68, 1)
+LobbyMenuButton/colors/font_focus_color = Color(0.78, 0.75, 0.68, 1)
+LobbyMenuButton/colors/font_hover_color = Color(0.96, 0.92, 0.83, 1)
+LobbyMenuButton/colors/font_hover_pressed_color = Color(0.96, 0.92, 0.83, 1)
+LobbyMenuButton/colors/font_outline_color = Color(0, 0, 0, 0.7)
+LobbyMenuButton/colors/font_pressed_color = Color(0.96, 0.92, 0.83, 1)
+LobbyMenuButton/constants/outline_size = 4
+LobbyMenuButton/font_sizes/font_size = 28
+LobbyMenuButton/fonts/font = SubResource("DisplayBoldKana")
+LobbyMenuButton/styles/disabled = SubResource("LobbyMenuInsets")
+LobbyMenuButton/styles/focus = SubResource("Invisible")
+LobbyMenuButton/styles/hover = SubResource("LobbyMenuInsets")
+LobbyMenuButton/styles/hover_pressed = SubResource("LobbyMenuInsets")
+LobbyMenuButton/styles/normal = SubResource("LobbyMenuInsets")
+LobbyMenuButton/styles/pressed = SubResource("LobbyMenuInsets")
+LobbyMenuButtonSelected/base_type = &"LobbyMenuButton"
+LobbyMenuButtonSelected/colors/font_color = Color(0.96, 0.85, 0.6, 1)
+LobbyMenuButtonSelected/colors/font_focus_color = Color(0.96, 0.85, 0.6, 1)
+LobbyMenuButtonSelected/colors/font_hover_color = Color(1, 0.9, 0.68, 1)
+LobbyMenuButtonSelected/colors/font_hover_pressed_color = Color(1, 0.9, 0.68, 1)
+LobbyMenuButtonSelected/colors/font_pressed_color = Color(1, 0.9, 0.68, 1)
+LobbyTitle/base_type = &"Label"
+LobbyTitle/colors/font_color = Color(0.95, 0.9, 0.8, 1)
+LobbyTitle/font_sizes/font_size = 34
+LobbyTitle/fonts/font = SubResource("DisplayBoldKana")
+LogoLabel/base_type = &"Label"
+LogoLabel/colors/font_color = Color(0.93, 0.85, 0.68, 1)
+LogoLabel/font_sizes/font_size = 32
+LogoLabel/fonts/font = SubResource("DisplayBoldKana")
+LossValueLabel/base_type = &"Label"
+LossValueLabel/colors/font_color = Color(0.86, 0.52, 0.48, 1)
+LossValueLabel/font_sizes/font_size = 26
+MainPanel/base_type = &"PanelContainer"
 MainPanel/styles/panel = SubResource("DialogPlate")
 MarginContainer/constants/margin_bottom = 24
 MarginContainer/constants/margin_left = 24
 MarginContainer/constants/margin_right = 24
 MarginContainer/constants/margin_top = 24
+MenuItem/base_type = &"Button"
+MenuItem/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+MenuItem/colors/font_disabled_color = Color(0.32, 0.32, 0.32, 1)
+MenuItem/colors/font_focus_color = Color(0.96, 0.85, 0.6, 1)
+MenuItem/colors/font_hover_color = Color(0.96, 0.85, 0.6, 1)
+MenuItem/colors/font_pressed_color = Color(0.96, 0.85, 0.6, 1)
+MenuItem/font_sizes/font_size = 20
+MenuItem/styles/disabled = SubResource("MenuItemRest")
+MenuItem/styles/focus = SubResource("MenuItemHover")
+MenuItem/styles/hover = SubResource("MenuItemHover")
+MenuItem/styles/hover_pressed = SubResource("MenuItemHover")
+MenuItem/styles/normal = SubResource("MenuItemRest")
+MenuItem/styles/pressed = SubResource("MenuItemHover")
+ModeTab/base_type = &"CategoryTab"
+ModeTab/colors/font_hover_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+ModeTab/colors/font_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+ModeTab/font_sizes/font_size = 30
+ModeTab/fonts/font = SubResource("DisplayBoldKana")
+ModeTabs/base_type = &"HBoxContainer"
+ModeTabs/constants/separation = 22
+MoneyValueLabel/base_type = &"GoldLabel"
+MoneyValueLabel/font_sizes/font_size = 26
+MoneyValueLabel/fonts/font = ExtResource("BodyBold")
+MpCaption/base_type = &"Label"
+MpCaption/colors/font_color = Color(0.67, 0.73, 1, 1)
+MpCaption/font_sizes/font_size = 16
+MpCurrent/base_type = &"ProgressBar"
+MpCurrent/styles/background = SubResource("VitalEmpty")
+MpCurrent/styles/fill = SubResource("VitalMana")
+MpTrail/base_type = &"ProgressBar"
+MpTrail/styles/background = SubResource("VitalTrack")
+MpTrail/styles/fill = SubResource("VitalManaTrail")
 MutedLabel/base_type = &"Label"
 MutedLabel/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
 MutedLabel/font_sizes/font_size = 16
+NegativeLabel/base_type = &"Label"
+NegativeLabel/colors/font_color = Color(0.86, 0.52, 0.48, 1)
+NegativeLabel/font_sizes/font_size = 18
+NoteLabel/base_type = &"MutedLabel"
+NoteLabel/colors/font_color = Color(0.6, 0.6, 0.57, 1)
+NoteLabel/font_sizes/font_size = 16
+OpenCardList/base_type = &"ItemCardList"
+OpenCardList/colors/open_hover = Color(1, 1, 1, 0.04)
+OpenCardList/constants/open_rows = 1
+OpenCardList/constants/row_gap = 0
+OpenCardList/styles/cursor = SubResource("Invisible")
+OpenCardList/styles/cursor_unfocused = SubResource("Invisible")
+OpenCardList/styles/focus = SubResource("Invisible")
+OpenCardList/styles/hovered = SubResource("Invisible")
+OpenCardList/styles/hovered_selected = SubResource("Invisible")
+OpenCardList/styles/hovered_selected_focus = SubResource("Invisible")
+OpenCardList/styles/panel = SubResource("Invisible")
+OpenCardList/styles/selected = SubResource("Invisible")
+OpenCardList/styles/selected_focus = SubResource("Invisible")
 OptionButton/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
 OptionButton/colors/font_disabled_color = Color(0.4509804, 0.48235294, 0.49019608, 1)
 OptionButton/colors/font_focus_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
@@ -1521,857 +1896,333 @@ OptionButton/styles/hover = SubResource("SurfaceHover")
 OptionButton/styles/hover_pressed = SubResource("ButtonPressed")
 OptionButton/styles/normal = SubResource("Surface")
 OptionButton/styles/pressed = SubResource("ButtonPressed")
-Panel/styles/panel = SubResource("FramePanel")
-PanelContainer/styles/panel = SubResource("FramePanel")
-PopupMenu/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-PopupMenu/colors/font_hover_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
-PopupMenu/constants/v_separation = 12
-PopupMenu/font_sizes/font_size = 18
-PopupMenu/styles/hover = SubResource("SurfaceHover")
-PopupMenu/styles/panel = SubResource("ItemSurface")
-PrimaryButton/base_type = &"Button"
-PrimaryButton/styles/normal = SubResource("QuietPrimaryRest")
-PrimaryButton/styles/pressed = SubResource("QuietPrimaryPressed")
-PrimaryButton/styles/hover_pressed = SubResource("QuietPrimaryPressed")
-PrimaryButton/styles/disabled = SubResource("QuietPrimaryDisabled")
-TabActive/base_type = &"Button"
-TabActive/colors/font_color = Color(0.91, 0.81, 0.6, 1)
-TabActive/styles/normal = SubResource("ButtonPressed")
-TabActive/styles/hover = SubResource("GoldHover")
-SecondaryButton/base_type = &"Button"
-SecondaryButton/colors/font_color = Color(0.86, 0.84, 0.79, 1)
-SecondaryButton/colors/font_hover_color = Color(0.97, 0.9, 0.72, 1)
-SecondaryButton/colors/font_focus_color = Color(0.97, 0.9, 0.72, 1)
-SecondaryButton/colors/font_pressed_color = Color(0.97, 0.9, 0.72, 1)
-SecondaryButton/colors/font_hover_pressed_color = Color(0.97, 0.9, 0.72, 1)
-SecondaryButton/colors/font_disabled_color = Color(0.45, 0.44, 0.41, 1)
-SecondaryButton/font_sizes/font_size = 16
-SecondaryButton/styles/normal = SubResource("QuietButtonRest")
-SecondaryButton/styles/hover = SubResource("QuietButtonHover")
-SecondaryButton/styles/focus = SubResource("QuietButtonFocus")
-SecondaryButton/styles/pressed = SubResource("QuietButtonPressed")
-SecondaryButton/styles/hover_pressed = SubResource("QuietButtonPressed")
-SecondaryButton/styles/disabled = SubResource("QuietButtonRest")
-SpeechPanel/base_type = &"Panel"
-SpeechPanel/styles/panel = SubResource("SpeechSurface")
-TitleLabel/base_type = &"Label"
-TitleLabel/font_sizes/font_size = 30
-TooltipLabel/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-TooltipPanel/styles/panel = SubResource("ItemSurface")
-VBoxContainer/constants/separation = 12
-VScrollBar/styles/grabber = SubResource("ScrollGrabber")
-VScrollBar/styles/grabber_highlight = SubResource("ScrollHover")
-VScrollBar/styles/grabber_pressed = SubResource("ScrollPressed")
-VScrollBar/styles/scroll = SubResource("ScrollTrack")
-
-DetailPanel/base_type = &"PanelContainer"
-DetailPanel/styles/panel = SubResource("FramePanel")
-InsetPanel/base_type = &"PanelContainer"
-InsetPanel/styles/panel = SubResource("InsetSurface")
-VisualPanel/base_type = &"PanelContainer"
-VisualPanel/styles/panel = SubResource("InsetSurface")
-ItemNameLabel/base_type = &"Label"
-ItemNameLabel/font_sizes/font_size = 20
-ItemNameLabel/fonts/font = ExtResource("BodyBold")
-PriceLabel/base_type = &"GoldLabel"
-PriceLabel/font_sizes/font_size = 30
-PriceLabel/fonts/font = ExtResource("BodyBold")
-PriceLabelLocked/base_type = &"PriceLabel"
-PriceLabelLocked/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
-ValueLabel/base_type = &"Label"
-ValueLabel/font_sizes/font_size = 26
-ValueLabel/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-MoneyValueLabel/base_type = &"GoldLabel"
-MoneyValueLabel/font_sizes/font_size = 26
-MoneyValueLabel/fonts/font = ExtResource("BodyBold")
-PositiveLabel/base_type = &"Label"
-PositiveLabel/colors/font_color = Color(0.57, 0.76, 0.64, 1)
-PositiveLabel/font_sizes/font_size = 18
-DescriptionLabel/base_type = &"Label"
-DescriptionLabel/constants/line_spacing = 6
-DescriptionLabel/colors/font_color = Color(0.79, 0.79, 0.75, 1)
-DescriptionLabel/font_sizes/font_size = 18
-ItemCardList/styles/card = SubResource("ItemSurface")
-ItemCardList/styles/card_selected = SubResource("ItemSelected")
-ItemCardList/styles/card_hover = SubResource("SurfaceHover")
-ItemCardList/constants/quantity_width = 54
-ItemCardList/constants/row_gap = 6
-ItemCardList/styles/focus = SubResource("ListFocus")
-CompactMargin/base_type = &"MarginContainer"
-CompactMargin/constants/margin_left = 12
-CompactMargin/constants/margin_right = 12
-CompactMargin/constants/margin_top = 10
-CompactMargin/constants/margin_bottom = 10
-CompactRow/base_type = &"HBoxContainer"
-CompactRow/constants/separation = 10
-PrimaryButton/styles/hover = SubResource("QuietPrimaryHover")
-PrimaryButton/colors/font_color = Color(0.91, 0.81, 0.60, 1)
-PrimaryButton/fonts/font = ExtResource("BodyBold")
-ProgressBar/styles/background = SubResource("ProgressTrack")
-ProgressBar/styles/fill = SubResource("ProgressFill")
-
-HomeMargin/base_type = &"MarginContainer"
-HomeMargin/constants/margin_left = 0
-HomeMargin/constants/margin_right = 0
-HomeMargin/constants/margin_top = 42
-HomeMargin/constants/margin_bottom = 24
-HpCurrent/base_type = &"ProgressBar"
-HpCurrent/styles/background = SubResource("VitalEmpty")
-HpCurrent/styles/fill = SubResource("VitalHealth")
-MpCurrent/base_type = &"ProgressBar"
-MpCurrent/styles/background = SubResource("VitalEmpty")
-MpCurrent/styles/fill = SubResource("VitalMana")
-HpTrail/base_type = &"ProgressBar"
-HpTrail/styles/background = SubResource("VitalEmpty")
-HpTrail/styles/fill = SubResource("VitalHealthTrail")
-MpTrail/base_type = &"ProgressBar"
-MpTrail/styles/background = SubResource("VitalTrack")
-MpTrail/styles/fill = SubResource("VitalManaTrail")
-
-HudMapPanel/base_type = &"Panel"
-HudMapPanel/styles/panel = SubResource("HudMapSurface")
-HudMapFrame/base_type = &"Panel"
-HudMapFrame/styles/panel = SubResource("HudMapFrame")
-HudEffects/icons/token = ExtResource("HudMedallionTexture")
-DungeonMinimap/icons/stairs = ExtResource("HudMapStairsTexture")
-DungeonMinimap/icons/enemy = ExtResource("HudMapEnemyTexture")
-DungeonMinimap/icons/item = ExtResource("HudMapItemTexture")
-DungeonMinimap/icons/player = ExtResource("HudMapPlayerTexture")
-HudPortraitFrame/base_type = &"Panel"
-HudPortraitFrame/styles/panel = SubResource("HudPortraitFrame")
-HudAimTag/base_type = &"Label"
-HudAimTag/colors/font_color = Color(0.95, 0.9, 0.77, 1)
-HudAimTag/font_sizes/font_size = 14
-HudAimTag/styles/normal = SubResource("HudAimTagSurface")
-HudCaption/base_type = &"Label"
-HudCaption/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
-HudCaption/font_sizes/font_size = 16
-HudCaption/colors/font_outline_color = Color(0, 0, 0, 0.7)
-HudCaption/constants/outline_size = 4
-HudValue/base_type = &"Label"
-HudValue/font_sizes/font_size = 22
-HudValue/colors/font_outline_color = Color(0, 0, 0, 0.7)
-HudValue/constants/outline_size = 4
-HudSmall/base_type = &"Label"
-HudSmall/colors/font_color = Color(0.6, 0.6, 0.57, 1)
-HudSmall/font_sizes/font_size = 13
-HudGoldCaption/base_type = &"HudCaption"
-HudGoldCaption/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
-HudGoldCaption/font_sizes/font_size = 20
-HpCaption/base_type = &"Label"
-HpCaption/colors/font_color = Color(0.92, 0.35, 0.3, 1)
-HpCaption/font_sizes/font_size = 16
-HpCaption/colors/font_outline_color = Color(0, 0, 0, 0.7)
-HpCaption/constants/outline_size = 4
-MpCaption/base_type = &"Label"
-MpCaption/colors/font_color = Color(0.67, 0.73, 1, 1)
-MpCaption/font_sizes/font_size = 16
-HudBanner/base_type = &"HudValue"
-HudBanner/font_sizes/font_size = 30
-HudBanner/fonts/font = SubResource("DisplayBoldKana")
-RouteNode/base_type = &"Button"
-RouteNode/styles/normal = SubResource("Invisible")
-RouteNode/styles/hover = SubResource("Invisible")
-RouteNode/styles/pressed = SubResource("Invisible")
-RouteNode/styles/hover_pressed = SubResource("Invisible")
-RouteNode/styles/disabled = SubResource("Invisible")
-RouteNode/styles/focus = SubResource("Invisible")
-HudObjective/base_type = &"HudValue"
-HudObjective/font_sizes/font_size = 26
-VitalCaption/base_type = &"HudCaption"
-VitalCaption/colors/font_color = Color(0.94, 0.92, 0.86, 1)
-VitalCaption/font_sizes/font_size = 16
-ExpBar/base_type = &"ProgressBar"
-ExpBar/styles/background = SubResource("VitalTrackThin")
-ExpBar/styles/fill = SubResource("ExperienceFill")
-HudLog/base_type = &"RichTextLabel"
-HudLog/colors/default_color = Color(0.79, 0.79, 0.75, 1)
-HudLog/font_sizes/normal_font_size = 15
-HudLog/colors/font_outline_color = Color(0, 0, 0, 0.8)
-HudLog/constants/outline_size = 4
-HudLog/icons/victory = ExtResource("HudLogVictoryTexture")
-HudLog/icons/harm = ExtResource("HudLogHarmTexture")
-HudLog/icons/floor = ExtResource("HudLogFloorTexture")
-HudLog/icons/supply = ExtResource("HudLogSupplyTexture")
-HudLog/icons/news = ExtResource("HudLogNewsTexture")
-HudLog/styles/normal = SubResource("HudLogInsets")
-HudEquipment/base_type = &"Control"
-HudEquipment/constants/row_height = 38
-HudEquipment/constants/glyph_size = 32
-HudEquipment/constants/caption_width = 64
-HudEquipment/font_sizes/font_size = 15
-BossHp/base_type = &"ProgressBar"
-BossHp/styles/background = SubResource("VitalEmpty")
-BossHp/styles/fill = SubResource("VitalHealth")
-BossHpTrail/base_type = &"ProgressBar"
-BossHpTrail/styles/background = SubResource("VitalEmpty")
-BossHpTrail/styles/fill = SubResource("VitalHealthTrail")
-BossGaugeName/base_type = &"Label"
-BossGaugeName/colors/font_color = Color(0.94, 0.7, 0.46, 1)
-BossGaugeName/colors/font_outline_color = Color(0.03, 0.015, 0.01, 0.9)
-BossGaugeName/constants/outline_size = 5
-BossGaugeName/font_sizes/font_size = 24
-BossGaugeName/fonts/font = SubResource("DisplayBoldKana")
-BossGaugeValue/base_type = &"Label"
-BossGaugeValue/colors/font_color = Color(0.86, 0.8, 0.72, 1)
-BossGaugeValue/colors/font_outline_color = Color(0, 0, 0, 0.8)
-BossGaugeValue/constants/outline_size = 4
-BossGaugeValue/font_sizes/font_size = 16
-BossBand/base_type = &"PanelContainer"
-BossBand/styles/panel = SubResource("BossBand")
-BossCutInTitle/base_type = &"Label"
-BossCutInTitle/colors/font_color = Color(0.94, 0.7, 0.46, 1)
-BossCutInTitle/colors/font_outline_color = Color(0.03, 0.015, 0.01, 1)
-BossCutInTitle/constants/outline_size = 6
-BossCutInTitle/font_sizes/font_size = 46
-BossCutInTitle/fonts/font = SubResource("DisplayBoldKana")
-BannerBand/base_type = &"PanelContainer"
-BannerBand/styles/panel = SubResource("BannerBand")
-BannerBandWarning/base_type = &"PanelContainer"
-BannerBandWarning/styles/panel = SubResource("BannerBandWarning")
-AbilityCard/styles/plate = SubResource("AbilityCardPlate")
-AbilityCard/styles/face = SubResource("AbilityCardFace")
-AbilityCard/styles/chosen = SubResource("AbilityCardChosen")
-AbilityCard/icons/pip_empty = ExtResource("PipEmptyTexture")
-AbilityCard/icons/pip_full = ExtResource("PipFullTexture")
-AbilityCardMargin/base_type = &"MarginContainer"
-AbilityCardMargin/constants/margin_left = 22
-AbilityCardMargin/constants/margin_top = 22
-AbilityCardMargin/constants/margin_right = 22
-AbilityCardMargin/constants/margin_bottom = 22
-RunResult/icons/clear = ExtResource("SealClearTexture")
-RunResult/icons/return = ExtResource("SealReturnTexture")
-RunResult/icons/defeat = ExtResource("SealDefeatTexture")
-ChoicePrompt/icons/stairs = ExtResource("PassageStairsTexture")
-ChoicePrompt/icons/guardian = ExtResource("PassageGuardianTexture")
-ChoicePrompt/icons/exit = ExtResource("PassageExitTexture")
-VictoryTitle/base_type = &"Label"
-VictoryTitle/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
-VictoryTitle/font_sizes/font_size = 34
-DefeatTitle/base_type = &"Label"
-DefeatTitle/colors/font_color = Color(0.86, 0.52, 0.48, 1)
-DefeatTitle/font_sizes/font_size = 34
-LossValueLabel/base_type = &"Label"
-LossValueLabel/colors/font_color = Color(0.86, 0.52, 0.48, 1)
-LossValueLabel/font_sizes/font_size = 26
-TitleLabel/fonts/font = SubResource("DisplayBoldKana")
-HeadingLabel/fonts/font = SubResource("DisplayBoldKana")
-ValueLabel/fonts/font = ExtResource("BodyBold")
-StatValue/base_type = &"Label"
-StatValue/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-StatValue/font_sizes/font_size = 22
-StatValue/fonts/font = ExtResource("BodyBold")
-StatUp/base_type = &"StatValue"
-StatUp/colors/font_color = Color(0.57, 0.76, 0.64, 1)
-StatDown/base_type = &"StatValue"
-StatDown/colors/font_color = Color(0.86, 0.52, 0.48, 1)
-StatSheet/base_type = &"GridContainer"
-StatSheet/constants/h_separation = 18
-StatSheet/constants/v_separation = 6
-VictoryTitle/fonts/font = SubResource("DisplayBoldKana")
-DefeatTitle/fonts/font = SubResource("DisplayBoldKana")
-HudValue/fonts/font = ExtResource("BodyBold")
-LogoLabel/base_type = &"Label"
-LogoLabel/colors/font_color = Color(0.93, 0.85, 0.68, 1)
-LogoLabel/fonts/font = SubResource("DisplayBoldKana")
-LogoLabel/font_sizes/font_size = 32
-HomeCard/base_type = &"Button"
-HomeCard/styles/normal = SubResource("FrameCard")
-HomeCard/styles/hover = SubResource("FrameCardActive")
-HomeCard/styles/pressed = SubResource("FrameCardActive")
-HomeCard/styles/hover_pressed = SubResource("FrameCardActive")
-HomeCard/styles/disabled = SubResource("FrameCard")
-HomeCardPrimary/base_type = &"HomeCard"
-HomeCardPrimary/styles/normal = SubResource("FrameCardActive")
-AbilityCardButton/base_type = &"Button"
-AbilityCardButton/styles/focus = SubResource("Invisible")
-LobbyMenuButton/base_type = &"Button"
-LobbyMenuButton/colors/font_color = Color(0.78, 0.75, 0.68, 1)
-LobbyMenuButton/colors/font_focus_color = Color(0.78, 0.75, 0.68, 1)
-LobbyMenuButton/colors/font_hover_color = Color(0.96, 0.92, 0.83, 1)
-LobbyMenuButton/colors/font_pressed_color = Color(0.96, 0.92, 0.83, 1)
-LobbyMenuButton/colors/font_hover_pressed_color = Color(0.96, 0.92, 0.83, 1)
-LobbyMenuButton/colors/font_outline_color = Color(0, 0, 0, 0.7)
-LobbyMenuButton/constants/outline_size = 4
-LobbyMenuButton/font_sizes/font_size = 28
-LobbyMenuButton/fonts/font = SubResource("DisplayBoldKana")
-LobbyMenuButton/styles/normal = SubResource("LobbyMenuInsets")
-LobbyMenuButton/styles/hover = SubResource("LobbyMenuInsets")
-LobbyMenuButton/styles/pressed = SubResource("LobbyMenuInsets")
-LobbyMenuButton/styles/hover_pressed = SubResource("LobbyMenuInsets")
-LobbyMenuButton/styles/focus = SubResource("Invisible")
-LobbyMenuButton/styles/disabled = SubResource("LobbyMenuInsets")
-LobbyMenuButtonSelected/base_type = &"LobbyMenuButton"
-LobbyMenuButtonSelected/colors/font_color = Color(0.96, 0.85, 0.6, 1)
-LobbyMenuButtonSelected/colors/font_focus_color = Color(0.96, 0.85, 0.6, 1)
-LobbyMenuButtonSelected/colors/font_hover_color = Color(1, 0.9, 0.68, 1)
-LobbyMenuButtonSelected/colors/font_pressed_color = Color(1, 0.9, 0.68, 1)
-LobbyMenuButtonSelected/colors/font_hover_pressed_color = Color(1, 0.9, 0.68, 1)
-LobbyInfoPanel/base_type = &"PanelContainer"
-LobbyInfoPanel/styles/panel = SubResource("LobbyInfoSurface")
-LobbyInfoMargin/base_type = &"MarginContainer"
-LobbyInfoMargin/constants/margin_left = 30
-LobbyInfoMargin/constants/margin_right = 30
-LobbyInfoMargin/constants/margin_top = 18
-LobbyInfoMargin/constants/margin_bottom = 20
-LobbyTitle/base_type = &"Label"
-LobbyTitle/colors/font_color = Color(0.95, 0.9, 0.8, 1)
-LobbyTitle/font_sizes/font_size = 34
-LobbyTitle/fonts/font = SubResource("DisplayBoldKana")
-HubLobby/colors/slab = Color(0.03, 0.028, 0.03, 0.9)
-HubLobby/colors/rail = Color(0.72, 0.58, 0.36, 1)
-HubLobby/colors/band = Color(0.86, 0.66, 0.32, 0.11)
-HubLobby/colors/purse_shade = Color(0, 0, 0, 0.42)
-HubLobby/colors/icon_rest = Color(0.82, 0.8, 0.74, 0.7)
-HubLobby/colors/shadow = Color(0, 0, 0, 0.72)
-HubLobby/colors/art_tint = Color(1, 1, 1, 0.6)
-HubLobby/colors/art_locked = Color(0.32, 0.3, 0.34, 0.6)
-HubLobby/colors/hero_tint = Color(0.9, 0.86, 0.82, 1)
-GameSlider/base_type = &"HSlider"
-GameSlider/colors/track = Color(0.45, 0.42, 0.36, 0.8)
-GameSlider/colors/fill = Color(0.86, 0.72, 0.46, 1)
-GameSlider/colors/knob = Color(0.16, 0.14, 0.11, 1)
-GameSlider/colors/knob_core = Color(0.96, 0.86, 0.62, 1)
-GameSlider/icons/grabber = SubResource("SliderGrabber")
-GameSlider/icons/grabber_highlight = SubResource("SliderGrabber")
-GameSlider/icons/grabber_disabled = SubResource("SliderGrabber")
-GameSlider/styles/slider = SubResource("SliderTrack")
-GameSlider/styles/grabber_area = SubResource("Invisible")
-GameSlider/styles/grabber_area_highlight = SubResource("Invisible")
-GameSlider/styles/focus = SubResource("Invisible")
 OptionCycler/base_type = &"Button"
 OptionCycler/colors/arrow = Color(0.62, 0.59, 0.52, 1)
 OptionCycler/colors/arrow_active = Color(0.96, 0.85, 0.6, 1)
 OptionCycler/constants/arrow_inset = 14
 OptionCycler/font_sizes/font_size = 20
 OptionCycler/fonts/font = ExtResource("BodyBold")
-OptionCycler/styles/normal = SubResource("CyclerRest")
-OptionCycler/styles/hover = SubResource("CyclerRest")
-OptionCycler/styles/pressed = SubResource("CyclerRest")
-OptionCycler/styles/hover_pressed = SubResource("CyclerRest")
-OptionCycler/styles/focus = SubResource("CyclerRest")
 OptionCycler/styles/disabled = SubResource("CyclerRest")
-SettingsRows/base_type = &"VBoxContainer"
-SettingsRows/constants/separation = 0
-SettingsRow/base_type = &"HBoxContainer"
-SettingsRow/constants/separation = 18
-SettingsValue/base_type = &"Label"
-SettingsValue/font_sizes/font_size = 22
-SettingsValue/fonts/font = ExtResource("BodyBold")
-PurseStack/base_type = &"VBoxContainer"
-PurseStack/constants/separation = 0
+OptionCycler/styles/focus = SubResource("CyclerRest")
+OptionCycler/styles/hover = SubResource("CyclerRest")
+OptionCycler/styles/hover_pressed = SubResource("CyclerRest")
+OptionCycler/styles/normal = SubResource("CyclerRest")
+OptionCycler/styles/pressed = SubResource("CyclerRest")
+Panel/styles/panel = SubResource("FramePanel")
+PanelContainer/styles/panel = SubResource("FramePanel")
+PlaqueNote/base_type = &"Label"
+PlaqueNote/colors/font_color = Color(0.86, 0.8, 0.68, 1)
+PlaqueNote/font_sizes/font_size = 18
+PlaqueNote/fonts/font = SubResource("DisplayMediumKana")
+PopupMenu/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+PopupMenu/colors/font_hover_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+PopupMenu/constants/v_separation = 12
+PopupMenu/font_sizes/font_size = 18
+PopupMenu/styles/hover = SubResource("SurfaceHover")
+PopupMenu/styles/panel = SubResource("ItemSurface")
+PositiveLabel/base_type = &"Label"
+PositiveLabel/colors/font_color = Color(0.57, 0.76, 0.64, 1)
+PositiveLabel/font_sizes/font_size = 18
+PriceLabel/base_type = &"GoldLabel"
+PriceLabel/font_sizes/font_size = 30
+PriceLabel/fonts/font = ExtResource("BodyBold")
+PriceLabelLocked/base_type = &"PriceLabel"
+PriceLabelLocked/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
+PrimaryAction/base_type = &"PrimaryButton"
+PrimaryAction/font_sizes/font_size = 20
+PrimaryAction/fonts/font = ExtResource("BodyBold")
+PrimaryButton/base_type = &"Button"
+PrimaryButton/colors/font_color = Color(0.96, 0.85, 0.6, 1)
+PrimaryButton/fonts/font = ExtResource("BodyBold")
+PrimaryButton/styles/disabled = SubResource("QuietPrimaryDisabled")
+PrimaryButton/styles/hover = SubResource("QuietPrimaryHover")
+PrimaryButton/styles/hover_pressed = SubResource("QuietPrimaryPressed")
+PrimaryButton/styles/normal = SubResource("QuietPrimaryRest")
+PrimaryButton/styles/pressed = SubResource("QuietPrimaryPressed")
+ProgressBar/styles/background = SubResource("ProgressTrack")
+ProgressBar/styles/fill = SubResource("ProgressFill")
+PromptActions/base_type = &"HBoxContainer"
+PromptActions/constants/separation = 40
+PromptArrow/base_type = &"GoldLabel"
+PromptArrow/font_sizes/font_size = 40
+PromptBand/base_type = &"PanelContainer"
+PromptBand/colors/fill = Color(0.03, 0.028, 0.03, 0.8)
+PromptBand/colors/glow = Color(0.96, 0.74, 0.38, 0.07)
+PromptBand/colors/line = Color(0.8392157, 0.7176471, 0.48235294, 0.85)
+PromptBand/colors/ornament = Color(0.96, 0.85, 0.6, 1)
+PromptBand/styles/panel = SubResource("PromptBandRoom")
+PromptColumn/base_type = &"VBoxContainer"
+PromptColumn/constants/separation = 14
+PromptPanel/base_type = &"PanelContainer"
+PromptPanel/styles/panel = SubResource("PopupFrame")
+PromptPictures/base_type = &"HBoxContainer"
+PromptPictures/constants/separation = 36
+PromptStack/base_type = &"VBoxContainer"
+PromptStack/constants/separation = 20
+PromptStat/base_type = &"HBoxContainer"
+PromptStat/constants/separation = 14
 PurseRow/base_type = &"HBoxContainer"
 PurseRow/constants/separation = 10
+PurseStack/base_type = &"VBoxContainer"
+PurseStack/constants/separation = 0
 PurseValue/base_type = &"GoldLabel"
 PurseValue/colors/font_outline_color = Color(0, 0, 0, 0.75)
 PurseValue/constants/outline_size = 4
 PurseValue/font_sizes/font_size = 32
 PurseValue/fonts/font = SubResource("DisplayBoldKana")
-LobbyInfoStack/base_type = &"VBoxContainer"
-LobbyInfoStack/constants/separation = 6
-LobbyAction/base_type = &"PrimaryAction"
-LobbyAction/styles/normal = SubResource("PlateGold")
-LobbyAction/styles/pressed = SubResource("PlateGoldPressed")
-LobbyAction/styles/hover_pressed = SubResource("PlateGoldPressed")
-LobbyAction/styles/disabled = SubResource("PlateGoldDisabled")
-LobbyAction/styles/hover = SubResource("PlateGoldHover")
-LobbyAction/styles/focus = SubResource("FocusOutline")
-PrimaryAction/base_type = &"PrimaryButton"
-PrimaryAction/font_sizes/font_size = 20
-PrimaryAction/fonts/font = ExtResource("BodyBold")
-HubLobby/colors/fact_band = Color(0.02, 0.018, 0.02, 0.62)
-LobbyFactRow/base_type = &"HBoxContainer"
-LobbyFactRow/constants/separation = 0
-LobbyFact/base_type = &"VBoxContainer"
-LobbyFact/constants/separation = -4
-LobbyFactValue/base_type = &"ValueLabel"
-LobbyFactValue/fonts/font = SubResource("DisplayBoldKana")
-LobbyFactCaption/base_type = &"MutedLabel"
-LobbyFactCaption/font_sizes/font_size = 16
-InkTooltip/base_type = &"PanelContainer"
-InkTooltip/styles/panel = SubResource("InkPlate")
-InkTooltipLabel/base_type = &"Label"
-InkTooltipLabel/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-InkTooltipLabel/font_sizes/font_size = 16
-KeyGuide/base_type = &"HBoxContainer"
-KeyGuide/constants/separation = 28
-KeyGuideButton/base_type = &"Button"
-KeyGuideButton/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
-KeyGuideButton/colors/font_focus_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-KeyGuideButton/colors/font_hover_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-KeyGuideButton/colors/font_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-KeyGuideButton/colors/font_hover_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-KeyGuideButton/colors/font_outline_color = Color(0, 0, 0, 0.7)
-KeyGuideButton/colors/cap_rim = Color(0.62, 0.59, 0.52, 1)
-KeyGuideButton/colors/cap_rim_active = Color(0.93333334, 0.9137255, 0.8745098, 1)
-KeyGuideButton/constants/outline_size = 3
-KeyGuideButton/constants/cap_padding = 7
-KeyGuideButton/constants/cap_gap = 9
-KeyGuideButton/font_sizes/font_size = 16
-KeyGuideButton/font_sizes/cap_font_size = 16
-KeyGuideButton/styles/normal = SubResource("KeyGuideHint")
-KeyGuideButton/styles/hover = SubResource("KeyGuideHint")
-KeyGuideButton/styles/pressed = SubResource("KeyGuideHint")
-KeyGuideButton/styles/hover_pressed = SubResource("KeyGuideHint")
-KeyGuideButton/styles/disabled = SubResource("KeyGuideHint")
-KeyGuideButton/styles/cap = SubResource("KeyCap")
-KeyGuideButton/styles/cap_active = SubResource("KeyCapActive")
-LessonHint/base_type = &"KeyGuideButton"
-LessonHint/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-LessonHint/colors/cap_rim = Color(0.8392157, 0.7176471, 0.48235294, 1)
-LessonHint/font_sizes/font_size = 22
-LessonHint/font_sizes/cap_font_size = 22
 PurseValueQuiet/base_type = &"PurseValue"
 PurseValueQuiet/font_sizes/font_size = 24
-ShopColumns/base_type = &"HBoxContainer"
-ShopColumns/constants/separation = 0
-ListRow/base_type = &"HBoxContainer"
-ListRow/constants/separation = 24
-RowList/base_type = &"VBoxContainer"
-RowList/constants/separation = 14
-CategoryTabs/base_type = &"HBoxContainer"
-CategoryTabs/constants/separation = 16
-CategoryTab/base_type = &"Button"
-CategoryTab/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
-CategoryTab/colors/font_hover_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-CategoryTab/colors/font_pressed_color = Color(0.96, 0.85, 0.6, 1)
-CategoryTab/colors/font_hover_pressed_color = Color(0.96, 0.85, 0.6, 1)
-CategoryTab/colors/font_focus_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-CategoryTab/colors/font_disabled_color = Color(0.36, 0.35, 0.33, 1)
-CategoryTab/colors/underline = Color(0.8392157, 0.7176471, 0.48235294, 1)
-CategoryTab/constants/underline_width = 2
-CategoryTab/font_sizes/font_size = 17
-CategoryTab/styles/normal = SubResource("TabRest")
-CategoryTab/styles/hover = SubResource("TabHover")
-CategoryTab/styles/pressed = SubResource("TabChosen")
-CategoryTab/styles/hover_pressed = SubResource("TabChosen")
-CategoryTab/styles/disabled = SubResource("TabRest")
-CategoryCap/base_type = &"Label"
-CategoryCap/colors/font_color = Color(0.62, 0.59, 0.52, 1)
-CategoryCap/font_sizes/font_size = 16
-ModeTabs/base_type = &"HBoxContainer"
-ModeTabs/constants/separation = 22
-ModeTab/base_type = &"CategoryTab"
-ModeTab/font_sizes/font_size = 30
-ModeTab/fonts/font = SubResource("DisplayBoldKana")
-ModeTab/colors/font_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-ModeTab/colors/font_hover_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-ShopHeroBand/base_type = &"PanelContainer"
-ShopHeroBand/styles/panel = SubResource("HeroBandFade")
-SlabColumn/base_type = &"PanelContainer"
-SlabColumn/styles/panel = SubResource("SlabSurface")
-SlabColumnEnd/base_type = &"PanelContainer"
-SlabColumnEnd/styles/panel = SubResource("SlabEndSurface")
-ShadeColumn/base_type = &"PanelContainer"
-ShadeColumn/styles/panel = SubResource("ShadeSurface")
-NoteLabel/base_type = &"MutedLabel"
-NoteLabel/font_sizes/font_size = 16
-NoteLabel/colors/font_color = Color(0.6, 0.6, 0.57, 1)
-SlabSolid/base_type = &"PanelContainer"
-SlabBand/base_type = &"PanelContainer"
-SlabBand/styles/panel = SubResource("SlabBandSurface")
-SlabSolidEnd/base_type = &"PanelContainer"
-SlabSolidEnd/styles/panel = SubResource("SlabSolidEndSurface")
-SlabVeilWide/base_type = &"PanelContainer"
-SlabVeilWide/styles/panel = SubResource("SlabVeilWideSurface")
-StageNode/base_type = &"Button"
-StageNode/colors/shadow = Color(0, 0, 0, 0.6)
-StageNode/colors/locked = Color(0.26, 0.26, 0.3, 1)
-StageNode/colors/resting = Color(0.78, 0.76, 0.74, 1)
-StageNode/colors/focus_ring = Color(0.93333334, 0.9137255, 0.8745098, 0.55)
-StageNode/font_sizes/font_size = 22
-StageNode/font_sizes/note_font_size = 16
-StageNode/fonts/font = SubResource("DisplayBoldKana")
-StageNode/styles/normal = SubResource("Invisible")
-StageNode/styles/hover = SubResource("Invisible")
-StageNode/styles/pressed = SubResource("Invisible")
-StageNode/styles/hover_pressed = SubResource("Invisible")
-StageNode/styles/disabled = SubResource("Invisible")
-StageNode/styles/focus = SubResource("Invisible")
-HintMark/base_type = &"Button"
-HintMark/colors/font_color = Color(0.62, 0.59, 0.52, 1)
-HintMark/colors/font_hover_color = Color(0.96, 0.85, 0.6, 1)
-HintMark/font_sizes/font_size = 16
-HintMark/styles/normal = SubResource("Invisible")
-HintMark/styles/hover = SubResource("Invisible")
-HintMark/styles/pressed = SubResource("Invisible")
-HintMark/styles/hover_pressed = SubResource("Invisible")
-HintMark/styles/disabled = SubResource("Invisible")
-HintMark/styles/focus = SubResource("Invisible")
-HelpTopic/base_type = &"SlotRow"
-HelpTopic/colors/font_color = Color(0.72, 0.69, 0.63, 1)
-HelpTopic/colors/font_hover_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-HelpTopic/colors/font_focus_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-HelpTopic/colors/font_pressed_color = Color(1, 0.88, 0.62, 1)
-HelpTopic/colors/font_hover_pressed_color = Color(1, 0.88, 0.62, 1)
-HelpTopic/colors/glow = Color(0.96, 0.72, 0.36, 0.1)
-HelpTopic/font_sizes/font_size = 18
-HelpTopic/styles/focus = SubResource("Invisible")
-HelpTopic/styles/hover = SubResource("Invisible")
-SkillNode/base_type = &"Button"
-SkillNode/colors/disc = Color(0.035, 0.032, 0.035, 0.96)
-SkillNode/colors/disc_hover = Color(0.1, 0.09, 0.085, 0.98)
-SkillNode/colors/focus_ring = Color(0.93333334, 0.9137255, 0.8745098, 0.9)
-SkillNode/styles/normal = SubResource("Invisible")
-SkillNode/styles/hover = SubResource("Invisible")
-SkillNode/styles/pressed = SubResource("Invisible")
-SkillNode/styles/hover_pressed = SubResource("Invisible")
-SkillNode/styles/disabled = SubResource("Invisible")
-SkillNode/styles/focus = SubResource("Invisible")
-SlabVeil/base_type = &"PanelContainer"
-SlabVeil/styles/panel = SubResource("SlabVeilSurface")
-SlabSolid/styles/panel = SubResource("SlabSolidSurface")
-OpenCardList/base_type = &"ItemCardList"
-OpenCardList/constants/open_rows = 1
-OpenCardList/constants/row_gap = 0
-OpenCardList/colors/open_hover = Color(1, 1, 1, 0.04)
-OpenCardList/styles/panel = SubResource("Invisible")
-OpenCardList/styles/focus = SubResource("Invisible")
-OpenCardList/styles/selected = SubResource("Invisible")
-OpenCardList/styles/selected_focus = SubResource("Invisible")
-OpenCardList/styles/hovered = SubResource("Invisible")
-OpenCardList/styles/hovered_selected = SubResource("Invisible")
-OpenCardList/styles/hovered_selected_focus = SubResource("Invisible")
-OpenCardList/styles/cursor = SubResource("Invisible")
-OpenCardList/styles/cursor_unfocused = SubResource("Invisible")
-ItemVisual/colors/glow = Color(0.86, 0.66, 0.32, 0.16)
-SelectorArrow/base_type = &"Button"
-SelectorArrow/colors/font_color = Color(0.62, 0.59, 0.52, 1)
-SelectorArrow/colors/font_hover_color = Color(0.96, 0.85, 0.6, 1)
-SelectorArrow/colors/font_focus_color = Color(0.96, 0.85, 0.6, 1)
-SelectorArrow/colors/font_pressed_color = Color(0.96, 0.85, 0.6, 1)
-SelectorArrow/colors/font_disabled_color = Color(0.3, 0.29, 0.27, 1)
-SelectorArrow/font_sizes/font_size = 22
-SelectorArrow/fonts/font = SubResource("DisplayMediumKana")
-SelectorArrow/styles/normal = SubResource("SelectorPlain")
-SelectorArrow/styles/hover = SubResource("SelectorPlain")
-SelectorArrow/styles/pressed = SubResource("SelectorPlain")
-SelectorArrow/styles/hover_pressed = SubResource("SelectorPlain")
-SelectorArrow/styles/disabled = SubResource("SelectorPlain")
-SelectorValue/base_type = &"LineEdit"
-SelectorValue/colors/font_uneditable_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-SelectorValue/font_sizes/font_size = 24
-SelectorValue/fonts/font = ExtResource("BodyBold")
-SelectorValue/styles/normal = SubResource("SelectorPlain")
-SelectorValue/styles/read_only = SubResource("SelectorPlain")
-SelectorValue/styles/focus = SubResource("Invisible")
-SlotRow/base_type = &"Button"
-SlotRow/styles/normal = SubResource("Invisible")
-SlotRow/styles/hover = SubResource("SlotHover")
-SlotRow/styles/pressed = SubResource("Invisible")
-SlotRow/styles/hover_pressed = SubResource("Invisible")
-SlotRow/styles/disabled = SubResource("Invisible")
-SlotRow/styles/focus = SubResource("ListFocus")
-TextActions/base_type = &"HBoxContainer"
-TextActions/constants/separation = 26
-TextAction/base_type = &"Button"
-TextAction/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
-TextAction/colors/font_hover_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-TextAction/colors/font_focus_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-TextAction/colors/font_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-TextAction/colors/font_hover_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-TextAction/colors/font_disabled_color = Color(0.36, 0.35, 0.33, 1)
-TextAction/font_sizes/font_size = 16
-TextAction/styles/normal = SubResource("TextActionRest")
-TextAction/styles/hover = SubResource("TextActionRest")
-TextAction/styles/pressed = SubResource("TextActionRest")
-TextAction/styles/hover_pressed = SubResource("TextActionRest")
-TextAction/styles/disabled = SubResource("TextActionRest")
-TextAction/styles/focus = SubResource("Invisible")
-SlotRows/base_type = &"VBoxContainer"
-SlotRows/constants/separation = 0
-ItemCell/base_type = &"Button"
-ItemCell/styles/normal = SubResource("ItemCellRest")
-ItemCell/styles/hover = SubResource("ItemCellHover")
-ItemCell/styles/pressed = SubResource("ItemCellChosen")
-ItemCell/styles/hover_pressed = SubResource("ItemCellChosen")
-ItemCell/styles/disabled = SubResource("ItemCellRest")
-ItemCell/styles/focus = SubResource("FocusOutline")
-ItemRow/base_type = &"ItemCell"
-ItemRow/styles/normal = SubResource("ItemRowRest")
-ItemRow/styles/hover = SubResource("ItemRowHover")
-ItemRow/styles/pressed = SubResource("ItemRowChosen")
-ItemRow/styles/hover_pressed = SubResource("ItemRowChosen")
-ItemRow/styles/disabled = SubResource("ItemRowRest")
-GearGrid/base_type = &"GridContainer"
-GearGrid/constants/h_separation = 4
-GearGrid/constants/v_separation = 4
-SlotCell/base_type = &"ItemCell"
-SlotCell/styles/normal = SubResource("SlotCellRest")
-SlotCell/styles/hover = SubResource("SlotCellHover")
-SlotCell/styles/pressed = SubResource("SlotCellChosen")
-SlotCell/styles/hover_pressed = SubResource("SlotCellChosen")
-SlotCell/styles/disabled = SubResource("SlotCellRest")
-PromptPictures/base_type = &"HBoxContainer"
-PromptPictures/constants/separation = 36
-PromptStat/base_type = &"HBoxContainer"
-PromptStat/constants/separation = 14
-PromptArrow/base_type = &"GoldLabel"
-PromptArrow/font_sizes/font_size = 40
-NegativeLabel/base_type = &"Label"
-NegativeLabel/colors/font_color = Color(0.86, 0.52, 0.48, 1)
-NegativeLabel/font_sizes/font_size = 18
-SlabPlaque/base_type = &"PanelContainer"
-SlabPlaque/styles/panel = SubResource("SlabPlaqueSurface")
-SectionLabel/base_type = &"Label"
-SectionLabel/colors/font_color = Color(0.82, 0.71, 0.5, 1)
-SectionLabel/font_sizes/font_size = 18
-SectionLabel/fonts/font = SubResource("DisplayMediumKana")
-PlaqueNote/base_type = &"Label"
-PlaqueNote/colors/font_color = Color(0.86, 0.8, 0.68, 1)
-PlaqueNote/font_sizes/font_size = 18
-PlaqueNote/fonts/font = SubResource("DisplayMediumKana")
-ContextMenu/base_type = &"PanelContainer"
-ContextMenu/styles/panel = SubResource("MenuSurface")
-MenuItem/base_type = &"Button"
-MenuItem/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-MenuItem/colors/font_hover_color = Color(0.96, 0.85, 0.6, 1)
-MenuItem/colors/font_focus_color = Color(0.96, 0.85, 0.6, 1)
-MenuItem/colors/font_pressed_color = Color(0.96, 0.85, 0.6, 1)
-MenuItem/colors/font_disabled_color = Color(0.36, 0.35, 0.33, 1)
-MenuItem/font_sizes/font_size = 20
-MenuItem/styles/normal = SubResource("MenuItemRest")
-MenuItem/styles/hover = SubResource("MenuItemHover")
-MenuItem/styles/pressed = SubResource("MenuItemHover")
-MenuItem/styles/hover_pressed = SubResource("MenuItemHover")
-MenuItem/styles/disabled = SubResource("MenuItemRest")
-MenuItem/styles/focus = SubResource("MenuItemHover")
-PromptPanel/base_type = &"PanelContainer"
-PromptPanel/styles/panel = SubResource("PopupFrame")
-UpgradeNode/base_type = &"Button"
-UpgradeNode/styles/normal = SubResource("Invisible")
-UpgradeNode/styles/hover = SubResource("Invisible")
-UpgradeNode/styles/pressed = SubResource("Invisible")
-UpgradeNode/styles/hover_pressed = SubResource("Invisible")
-UpgradeNode/styles/disabled = SubResource("Invisible")
-UpgradeNode/styles/focus = SubResource("Invisible")
-UpgradeTree/colors/line_closed = Color(0.82, 0.8, 0.74, 0.3)
-UpgradeTree/colors/line_open = Color(0.82, 0.8, 0.74, 0.55)
-UpgradeTree/colors/line_held = Color(0.93333334, 0.9137255, 0.8745098, 0.9)
-UpgradeTree/colors/disc = Color(0.05, 0.047, 0.05, 1)
-UpgradeTree/colors/closed_tint = Color(0.42, 0.41, 0.4, 0.75)
-UpgradeTree/colors/focus = Color(0.8392157, 0.7176471, 0.48235294, 1)
-UpgradeTree/colors/seal = Color(0.6, 0.58, 0.56, 0.5)
-UpgradeTree/colors/stone_face = Color(0.07, 0.064, 0.058, 1)
-UpgradeTree/colors/stone_core = Color(0.15, 0.135, 0.115, 1)
-UpgradeTree/colors/stone_rim = Color(0.2, 0.176, 0.137, 1)
-UpgradeTree/colors/groove = Color(0.02, 0.018, 0.016, 0.85)
-UpgradeTree/colors/groove_light = Color(0.6, 0.52, 0.4, 0.1)
-UpgradeTree/colors/stud = Color(0.42, 0.36, 0.26, 0.8)
-UpgradeTree/colors/lamp = Color(0.89, 0.7, 0.4, 0.035)
-UpgradeTree/colors/buyable = Color(0.94, 0.784, 0.47, 1)
-UpgradeTree/colors/buyable_edge = Color(0.1, 0.075, 0.04, 1)
-UpgradeTree/colors/flow = Color(1, 0.9, 0.66, 0.95)
-UpgradeTree/colors/flow_glow = Color(0.95, 0.72, 0.38, 0.55)
-UpgradeTree/colors/beckon = Color(0.94, 0.784, 0.47, 0.45)
-UpgradeFactCaption/base_type = &"LobbyFactCaption"
-UpgradeFactValue/base_type = &"LobbyFactValue"
-UpgradeInfoMargin/base_type = &"LobbyInfoMargin"
-TreeWell/base_type = &"PanelContainer"
-TreeWell/styles/panel = SubResource("TreeWellSurface")
-BossName/base_type = &"Label"
-BossName/colors/font_color = Color(0.95, 0.92, 0.86, 1)
-BossName/colors/font_outline_color = Color(0, 0, 0, 0.85)
-BossName/constants/outline_size = 8
-BossName/font_sizes/font_size = 64
-BossName/fonts/font = SubResource("DisplayBoldKana")
-BossEpithet/base_type = &"Label"
-BossEpithet/colors/font_color = Color(0.8, 0.74, 0.66, 1)
-BossEpithet/colors/font_outline_color = Color(0, 0, 0, 0.85)
-BossEpithet/constants/outline_size = 6
-BossEpithet/font_sizes/font_size = 22
-BossEpithet/fonts/font = SubResource("DisplayBoldKana")
-BossIntro/colors/bar = Color(0, 0, 0, 0.92)
-BossIntro/colors/rule = Color(0.74, 0.18, 0.14, 1)
+QuietSection/base_type = &"PanelContainer"
+QuietSection/styles/panel = SubResource("QuietSectionSurface")
+QuietWindow/base_type = &"PanelContainer"
+QuietWindow/styles/panel = SubResource("QuietWindowSurface")
 ResultEcho/base_type = &"GoldLabel"
 ResultEcho/colors/font_outline_color = Color(0, 0, 0, 0.75)
 ResultEcho/constants/outline_size = 6
 ResultEcho/font_sizes/font_size = 72
 ResultEcho/fonts/font = SubResource("DisplayBoldKana")
-CurseLabel/base_type = &"Label"
-CurseLabel/colors/font_color = Color(0.88, 0.45, 0.4, 1)
-CurseLabel/font_sizes/font_size = 18
-SpecialCutIn/colors/band = Color(0.02, 0.02, 0.035, 1)
-SpecialCutIn/colors/edge = Color(0.95, 0.78, 0.42, 1)
-SpecialCutIn/colors/streak = Color(1, 0.9, 0.7, 0.18)
-SpecialName/base_type = &"BossName"
-SpecialName/font_sizes/font_size = 72
-SpecialCaption/base_type = &"BossEpithet"
-SpecialCaption/colors/font_color = Color(1, 0.82, 0.48, 1)
-EquipSocket/base_type = &"UpgradeNode"
-EquipSocket/colors/disc = Color(0.05, 0.047, 0.05, 1)
-EquipSocket/colors/focus = Color(0.8392157, 0.7176471, 0.48235294, 1)
-EquipSocket/colors/glow = Color(0.89, 0.7, 0.4, 0.07)
-EquipSocket/colors/lit = Color(0.8392157, 0.7176471, 0.48235294, 0.45)
-EquipSocket/colors/pointed = Color(0.8392157, 0.7176471, 0.48235294, 0.3)
+RouteNode/base_type = &"Button"
+RouteNode/styles/disabled = SubResource("Invisible")
+RouteNode/styles/focus = SubResource("Invisible")
+RouteNode/styles/hover = SubResource("Invisible")
+RouteNode/styles/hover_pressed = SubResource("Invisible")
+RouteNode/styles/normal = SubResource("Invisible")
+RouteNode/styles/pressed = SubResource("Invisible")
+RowList/base_type = &"VBoxContainer"
+RowList/constants/separation = 14
+RunResult/icons/clear = ExtResource("SealClearTexture")
+RunResult/icons/defeat = ExtResource("SealDefeatTexture")
+RunResult/icons/return = ExtResource("SealReturnTexture")
+SecondaryButton/base_type = &"Button"
+SecondaryButton/colors/font_color = Color(0.9, 0.86, 0.82, 1)
+SecondaryButton/colors/font_disabled_color = Color(0.45, 0.44, 0.41, 1)
+SecondaryButton/colors/font_focus_color = Color(0.98, 0.91, 0.74, 1)
+SecondaryButton/colors/font_hover_color = Color(0.98, 0.91, 0.74, 1)
+SecondaryButton/colors/font_hover_pressed_color = Color(0.98, 0.91, 0.74, 1)
+SecondaryButton/colors/font_pressed_color = Color(0.98, 0.91, 0.74, 1)
+SecondaryButton/font_sizes/font_size = 16
+SecondaryButton/styles/disabled = SubResource("QuietButtonRest")
+SecondaryButton/styles/focus = SubResource("QuietButtonFocus")
+SecondaryButton/styles/hover = SubResource("QuietButtonHover")
+SecondaryButton/styles/hover_pressed = SubResource("QuietButtonPressed")
+SecondaryButton/styles/normal = SubResource("QuietButtonRest")
+SecondaryButton/styles/pressed = SubResource("QuietButtonPressed")
+SectionLabel/base_type = &"Label"
+SectionLabel/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+SectionLabel/font_sizes/font_size = 18
+SectionLabel/fonts/font = SubResource("DisplayMediumKana")
+SelectorArrow/base_type = &"Button"
+SelectorArrow/colors/font_color = Color(0.62, 0.59, 0.52, 1)
+SelectorArrow/colors/font_disabled_color = Color(0.32, 0.32, 0.32, 1)
+SelectorArrow/colors/font_focus_color = Color(0.96, 0.85, 0.6, 1)
+SelectorArrow/colors/font_hover_color = Color(0.96, 0.85, 0.6, 1)
+SelectorArrow/colors/font_pressed_color = Color(0.96, 0.85, 0.6, 1)
+SelectorArrow/font_sizes/font_size = 22
+SelectorArrow/fonts/font = SubResource("DisplayMediumKana")
+SelectorArrow/styles/disabled = SubResource("SelectorPlain")
+SelectorArrow/styles/hover = SubResource("SelectorPlain")
+SelectorArrow/styles/hover_pressed = SubResource("SelectorPlain")
+SelectorArrow/styles/normal = SubResource("SelectorPlain")
+SelectorArrow/styles/pressed = SubResource("SelectorPlain")
+SelectorValue/base_type = &"LineEdit"
+SelectorValue/colors/font_uneditable_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+SelectorValue/font_sizes/font_size = 24
+SelectorValue/fonts/font = ExtResource("BodyBold")
+SelectorValue/styles/focus = SubResource("Invisible")
+SelectorValue/styles/normal = SubResource("SelectorPlain")
+SelectorValue/styles/read_only = SubResource("SelectorPlain")
+SettingsRow/base_type = &"HBoxContainer"
+SettingsRow/constants/separation = 18
+SettingsRows/base_type = &"VBoxContainer"
+SettingsRows/constants/separation = 0
+SettingsValue/base_type = &"Label"
+SettingsValue/font_sizes/font_size = 22
+SettingsValue/fonts/font = ExtResource("BodyBold")
+ShadeColumn/base_type = &"PanelContainer"
+ShadeColumn/styles/panel = SubResource("ShadeSurface")
+ShopColumns/base_type = &"HBoxContainer"
+ShopColumns/constants/separation = 0
+ShopHeroBand/base_type = &"PanelContainer"
+ShopHeroBand/styles/panel = SubResource("HeroBandFade")
+SkillNode/base_type = &"Button"
+SkillNode/colors/disc = Color(0.03, 0.028, 0.03, 0.96)
+SkillNode/colors/disc_hover = Color(0.13, 0.13, 0.13, 0.98)
+SkillNode/colors/focus_ring = Color(0.93333334, 0.9137255, 0.8745098, 0.9)
+SkillNode/styles/disabled = SubResource("Invisible")
+SkillNode/styles/focus = SubResource("Invisible")
+SkillNode/styles/hover = SubResource("Invisible")
+SkillNode/styles/hover_pressed = SubResource("Invisible")
+SkillNode/styles/normal = SubResource("Invisible")
+SkillNode/styles/pressed = SubResource("Invisible")
+SkillTreePanel/constants/action_height = 60
+SkillTreePanel/constants/action_width = 148
+SlabBand/base_type = &"PanelContainer"
+SlabBand/styles/panel = SubResource("SlabBandSurface")
+SlabColumn/base_type = &"PanelContainer"
+SlabColumn/styles/panel = SubResource("SlabSurface")
+SlabColumnEnd/base_type = &"PanelContainer"
+SlabColumnEnd/styles/panel = SubResource("SlabEndSurface")
+SlabPlaque/base_type = &"PanelContainer"
+SlabPlaque/styles/panel = SubResource("SlabPlaqueSurface")
+SlabSolid/base_type = &"PanelContainer"
+SlabSolid/styles/panel = SubResource("SlabSolidSurface")
+SlabSolidEnd/base_type = &"PanelContainer"
+SlabSolidEnd/styles/panel = SubResource("SlabSolidEndSurface")
 SlabSolidOpen/base_type = &"SlabSolid"
 SlabSolidOpen/styles/panel = SubResource("SlabSolidOpenSurface")
-CodexGrid/base_type = &"GridContainer"
-CodexGrid/constants/h_separation = 18
-CodexGrid/constants/v_separation = 10
-CodexInfoMargin/base_type = &"LobbyInfoMargin"
-CodexStats/base_type = &"VBoxContainer"
-CodexStats/constants/separation = 0
-EquipSocket/colors/rim = Color(0.56, 0.478, 0.322, 0.28)
-HelpPage/base_type = &"PanelContainer"
-HelpPage/styles/panel = SubResource("HelpPageWell")
-HelpBody/base_type = &"HBoxContainer"
-HelpBody/constants/separation = 40
-HelpKeys/base_type = &"GridContainer"
-HelpKeys/constants/h_separation = 32
-HelpKeys/constants/v_separation = 6
-HelpKeyCaps/base_type = &"HBoxContainer"
-HelpKeyCaps/constants/separation = 6
-HelpKeyCap/base_type = &"PanelContainer"
-HelpKeyCap/styles/panel = SubResource("HelpKeyCapPlate")
-HelpKeyName/base_type = &"Label"
-HelpKeyName/colors/font_color = Color(0.86, 0.84, 0.79, 1)
-HelpKeyName/font_sizes/font_size = 16
-HelpPoints/base_type = &"VBoxContainer"
-HelpPoints/constants/separation = 14
-HelpPoint/base_type = &"HBoxContainer"
-HelpPoint/constants/separation = 10
-FloatingHand/base_type = &"PanelContainer"
-FloatingHand/styles/panel = SubResource("Invisible")
-HudEdge/colors/shade = Color(0.01, 0.012, 0.018, 0.55)
-HudGoldValue/base_type = &"HudValue"
-HudGoldValue/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
-HudTallyValue/base_type = &"HudValue"
-HudTallyValue/font_sizes/font_size = 18
-HudTallyRow/base_type = &"HBoxContainer"
-HudTallyRow/constants/separation = 8
-PromptStack/base_type = &"VBoxContainer"
-PromptStack/constants/separation = 20
-PromptColumn/base_type = &"VBoxContainer"
-PromptColumn/constants/separation = 14
-PromptActions/base_type = &"HBoxContainer"
-PromptActions/constants/separation = 40
-PromptBand/base_type = &"PanelContainer"
-PromptBand/colors/fill = Color(0.03, 0.032, 0.036, 0.8)
-PromptBand/colors/line = Color(0.86, 0.72, 0.46, 0.85)
-PromptBand/colors/ornament = Color(0.96, 0.85, 0.62, 1)
-PromptBand/colors/glow = Color(0.96, 0.74, 0.4, 0.07)
-PromptBand/styles/panel = SubResource("PromptBandRoom")
-BandButton/base_type = &"Button"
-BandButton/colors/font_color = Color(0.8, 0.78, 0.73, 1)
-BandButton/colors/font_hover_color = Color(0.86, 0.84, 0.79, 1)
-BandButton/colors/font_focus_color = Color(0.98, 0.91, 0.74, 1)
-BandButton/colors/font_pressed_color = Color(0.98, 0.91, 0.74, 1)
-BandButton/colors/font_hover_pressed_color = Color(0.98, 0.91, 0.74, 1)
-BandButton/colors/font_disabled_color = Color(0.45, 0.44, 0.41, 1)
-BandButton/colors/face = Color(0.05, 0.05, 0.052, 0.55)
-BandButton/colors/lit_face_top = Color(0.2, 0.16, 0.095, 0.82)
-BandButton/colors/lit_face_bottom = Color(0.36, 0.28, 0.15, 0.9)
-BandButton/colors/edge = Color(0.62, 0.6, 0.55, 0.55)
-BandButton/colors/lit_edge = Color(0.93, 0.8, 0.54, 1)
-BandButton/colors/glow = Color(0.96, 0.74, 0.38, 0.06)
-BandButton/font_sizes/font_size = 20
-BandButton/fonts/font = SubResource("DisplayBoldKana")
-BandButton/styles/normal = SubResource("BandAnswerRoom")
-BandButton/styles/hover = SubResource("BandAnswerRoom")
-BandButton/styles/pressed = SubResource("BandAnswerRoom")
-BandButton/styles/hover_pressed = SubResource("BandAnswerRoom")
-BandButton/styles/disabled = SubResource("BandAnswerRoom")
-BandButton/styles/focus = SubResource("Invisible")
-BandDangerButton/base_type = &"BandButton"
-BandDangerButton/colors/font_color = Color(0.84, 0.56, 0.52, 1)
-BandDangerButton/colors/font_hover_color = Color(0.9, 0.62, 0.58, 1)
-BandDangerButton/colors/font_focus_color = Color(1, 0.76, 0.7, 1)
-BandDangerButton/colors/font_pressed_color = Color(1, 0.76, 0.7, 1)
-BandDangerButton/colors/font_hover_pressed_color = Color(1, 0.76, 0.7, 1)
-BandDangerButton/colors/edge = Color(0.78, 0.46, 0.42, 0.6)
-BandDangerButton/colors/lit_edge = Color(0.98, 0.6, 0.52, 1)
-BandDangerButton/colors/lit_face_top = Color(0.2, 0.08, 0.07, 0.82)
-BandDangerButton/colors/lit_face_bottom = Color(0.38, 0.14, 0.11, 0.9)
-BandDangerButton/colors/glow = Color(0.96, 0.42, 0.32, 0.06)
-CodexList/base_type = &"VBoxContainer"
-CodexList/constants/separation = 0
-CodexSplit/base_type = &"HBoxContainer"
-CodexSplit/constants/separation = 24
-CodexAccount/base_type = &"VBoxContainer"
-CodexAccount/constants/separation = 12
-CodexLine/base_type = &"HBoxContainer"
-CodexLine/constants/separation = 10
-CodexName/base_type = &"TitleLabel"
-CodexName/font_sizes/font_size = 40
-CodexSection/base_type = &"Label"
-CodexSection/colors/font_color = Color(0.9, 0.82, 0.64, 1)
-CodexSection/font_sizes/font_size = 18
-CodexSection/fonts/font = SubResource("DisplayBoldKana")
-CodexRow/base_type = &"Button"
-CodexRow/colors/font_color = Color(0.76, 0.74, 0.7, 1)
-CodexRow/colors/font_hover_color = Color(0.9, 0.88, 0.83, 1)
-CodexRow/colors/font_focus_color = Color(0.98, 0.91, 0.74, 1)
-CodexRow/colors/font_pressed_color = Color(0.98, 0.91, 0.74, 1)
-CodexRow/colors/font_hover_pressed_color = Color(0.98, 0.91, 0.74, 1)
-CodexRow/colors/font_disabled_color = Color(0.45, 0.44, 0.41, 1)
-CodexRow/colors/lit_face = Color(0.84, 0.66, 0.36, 0.2)
-CodexRow/colors/hover_face = Color(1, 0.9, 0.7, 0.05)
-CodexRow/colors/lit_edge = Color(0.86, 0.72, 0.46, 0.85)
-CodexRow/colors/separator = Color(1, 1, 1, 0.07)
-CodexRow/colors/disc = Color(0.07, 0.065, 0.06, 1)
-CodexRow/colors/ring = Color(0.52, 0.46, 0.36, 0.55)
-CodexRow/colors/lit_ring = Color(0.93, 0.8, 0.54, 1)
-CodexRow/font_sizes/font_size = 20
-CodexRow/fonts/font = SubResource("DisplayBoldKana")
-CodexRow/styles/normal = SubResource("CodexRowRoom")
-CodexRow/styles/hover = SubResource("CodexRowRoom")
-CodexRow/styles/pressed = SubResource("CodexRowRoom")
-CodexRow/styles/hover_pressed = SubResource("CodexRowRoom")
-CodexRow/styles/disabled = SubResource("CodexRowRoom")
-CodexRow/styles/focus = SubResource("Invisible")
-CodexStage/base_type = &"Control"
-CodexStage/colors/glow = Color(0.86, 0.64, 0.34, 0.16)
-CodexStage/colors/floor = Color(0, 0, 0, 0.6)
-LoadoutSlot/base_type = &"UpgradeNode"
-LoadoutSlot/colors/lit_face = Color(0.84, 0.66, 0.36, 0.2)
-LoadoutSlot/colors/hover_face = Color(1, 0.9, 0.7, 0.05)
-LoadoutSlot/colors/lit_edge = Color(0.86, 0.72, 0.46, 0.85)
-LoadoutSlot/colors/separator = Color(1, 1, 1, 0.07)
-LoadoutSlot/colors/disc = Color(0.07, 0.065, 0.06, 1)
-LoadoutSlot/colors/lit_ring = Color(0.93, 0.8, 0.54, 1)
-LoadoutSlot/colors/sweep = Color(1, 0.9, 0.66, 1)
-LoadoutSlot/colors/mark_edge = Color(0.1, 0.075, 0.04, 1)
-LoadoutSlot/colors/empty_ring = Color(0.56, 0.478, 0.322, 0.85)
-LoadoutSlot/colors/unknown_tint = Color(0.22, 0.215, 0.21, 1)
-LoadoutSlot/colors/glow = Color(0.86, 0.64, 0.34, 0.26)
-LoadoutSlot/colors/sealed_tint = Color(0.5, 0.5, 0.5, 1)
-LoadoutSlot/colors/title = Color(0.6, 0.6, 0.57, 1)
-LoadoutSlot/colors/name = Color(0.88, 0.86, 0.81, 1)
-LoadoutSlot/colors/name_lit = Color(0.98, 0.91, 0.74, 1)
-LoadoutSlot/colors/name_off = Color(0.5, 0.49, 0.47, 1)
-LoadoutSlot/colors/note = Color(0.69803923, 0.7019608, 0.6666667, 1)
-LoadoutSlot/colors/preview = Color(0.93, 0.8, 0.54, 1)
-LoadoutSlot/colors/key = Color(0.69803923, 0.7019608, 0.6666667, 1)
-LoadoutSlot/colors/key_lit = Color(0.8392157, 0.7176471, 0.48235294, 1)
-LoadoutSlot/font_sizes/font_size = 16
-LoadoutSlot/font_sizes/key_size = 16
-LoadoutSlot/font_sizes/name_size = 26
-LoadoutSlot/fonts/name_font = SubResource("DisplayBoldKana")
-LoadoutSlot/styles/key_plate = SubResource("KeyCap")
-LoadoutSlot/styles/key_plate_lit = SubResource("KeyCapActive")
-LoadoutChoice/base_type = &"LoadoutSlot"
-LoadoutChoice/font_sizes/name_size = 20
-LoadoutChoice/font_sizes/key_size = 15
+SlabVeil/base_type = &"PanelContainer"
+SlabVeil/styles/panel = SubResource("SlabVeilSurface")
+SlabVeilWide/base_type = &"PanelContainer"
+SlabVeilWide/styles/panel = SubResource("SlabVeilWideSurface")
+SlotCell/base_type = &"ItemCell"
+SlotCell/styles/disabled = SubResource("SlotCellRest")
+SlotCell/styles/hover = SubResource("SlotCellHover")
+SlotCell/styles/hover_pressed = SubResource("SlotCellChosen")
+SlotCell/styles/normal = SubResource("SlotCellRest")
+SlotCell/styles/pressed = SubResource("SlotCellChosen")
+SlotRow/base_type = &"Button"
+SlotRow/styles/disabled = SubResource("Invisible")
+SlotRow/styles/focus = SubResource("ListFocus")
+SlotRow/styles/hover = SubResource("SlotHover")
+SlotRow/styles/hover_pressed = SubResource("Invisible")
+SlotRow/styles/normal = SubResource("Invisible")
+SlotRow/styles/pressed = SubResource("Invisible")
+SlotRows/base_type = &"VBoxContainer"
+SlotRows/constants/separation = 0
+SortieBand/base_type = &"PanelContainer"
+SortieBand/styles/panel = SubResource("LobbyInfoSurface")
+SortieBandMargin/base_type = &"LobbyInfoMargin"
+SortieFactCaption/base_type = &"LobbyFactCaption"
+SortieFactValue/base_type = &"LobbyFactValue"
+SpecialCaption/base_type = &"BossEpithet"
+SpecialCaption/colors/font_color = Color(1, 0.82, 0.48, 1)
+SpecialCutIn/colors/band = Color(0.03, 0.028, 0.03, 1)
+SpecialCutIn/colors/edge = Color(0.96, 0.74, 0.38, 1)
+SpecialCutIn/colors/streak = Color(1, 0.9, 0.68, 0.18)
+SpecialName/base_type = &"BossName"
+SpecialName/font_sizes/font_size = 72
+SpeechPanel/base_type = &"Panel"
+SpeechPanel/styles/panel = SubResource("SpeechSurface")
+StageNode/base_type = &"Button"
+StageNode/colors/focus_ring = Color(0.93333334, 0.9137255, 0.8745098, 0.55)
+StageNode/colors/locked = Color(0.26, 0.26, 0.3, 1)
+StageNode/colors/resting = Color(0.79, 0.79, 0.75, 1)
+StageNode/colors/shadow = Color(0, 0, 0, 0.6)
+StageNode/font_sizes/font_size = 22
+StageNode/font_sizes/note_font_size = 16
+StageNode/fonts/font = SubResource("DisplayBoldKana")
+StageNode/styles/disabled = SubResource("Invisible")
+StageNode/styles/focus = SubResource("Invisible")
+StageNode/styles/hover = SubResource("Invisible")
+StageNode/styles/hover_pressed = SubResource("Invisible")
+StageNode/styles/normal = SubResource("Invisible")
+StageNode/styles/pressed = SubResource("Invisible")
+StatDown/base_type = &"StatValue"
+StatDown/colors/font_color = Color(0.86, 0.52, 0.48, 1)
+StatSheet/base_type = &"GridContainer"
+StatSheet/constants/h_separation = 18
+StatSheet/constants/v_separation = 6
+StatUp/base_type = &"StatValue"
+StatUp/colors/font_color = Color(0.57, 0.76, 0.64, 1)
+StatValue/base_type = &"Label"
+StatValue/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+StatValue/font_sizes/font_size = 22
+StatValue/fonts/font = ExtResource("BodyBold")
+StatusHead/base_type = &"HBoxContainer"
+StatusHead/constants/separation = 20
+StatusSheet/base_type = &"VBoxContainer"
+StatusSheet/constants/separation = 0
 StatusSlab/base_type = &"VBoxContainer"
 StatusSlab/constants/separation = 12
 StatusStage/base_type = &"VBoxContainer"
 StatusStage/constants/separation = 18
 StatusStageMargin/base_type = &"MarginContainer"
+StatusStageMargin/constants/margin_bottom = 2
 StatusStageMargin/constants/margin_left = 22
 StatusStageMargin/constants/margin_right = 14
 StatusStageMargin/constants/margin_top = 6
-StatusStageMargin/constants/margin_bottom = 2
-StatusHead/base_type = &"HBoxContainer"
-StatusHead/constants/separation = 20
-StatusSheet/base_type = &"VBoxContainer"
-StatusSheet/constants/separation = 0
 StatusStrip/base_type = &"Button"
-StatusStrip/styles/normal = SubResource("Invisible")
-StatusStrip/styles/hover = SubResource("StatusStripHover")
-StatusStrip/styles/pressed = SubResource("StatusStripHover")
-StatusStrip/styles/hover_pressed = SubResource("StatusStripHover")
 StatusStrip/styles/disabled = SubResource("Invisible")
 StatusStrip/styles/focus = SubResource("Invisible")
+StatusStrip/styles/hover = SubResource("StatusStripHover")
+StatusStrip/styles/hover_pressed = SubResource("StatusStripHover")
+StatusStrip/styles/normal = SubResource("Invisible")
+StatusStrip/styles/pressed = SubResource("StatusStripHover")
 StatusStripRow/base_type = &"HBoxContainer"
 StatusStripRow/constants/separation = 16
+TabActive/base_type = &"Button"
+TabActive/colors/font_color = Color(0.96, 0.85, 0.6, 1)
+TabActive/styles/hover = SubResource("GoldHover")
+TabActive/styles/normal = SubResource("ButtonPressed")
+TextAction/base_type = &"Button"
+TextAction/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
+TextAction/colors/font_disabled_color = Color(0.32, 0.32, 0.32, 1)
+TextAction/colors/font_focus_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+TextAction/colors/font_hover_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+TextAction/colors/font_hover_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+TextAction/colors/font_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+TextAction/font_sizes/font_size = 16
+TextAction/styles/disabled = SubResource("TextActionRest")
+TextAction/styles/focus = SubResource("Invisible")
+TextAction/styles/hover = SubResource("TextActionRest")
+TextAction/styles/hover_pressed = SubResource("TextActionRest")
+TextAction/styles/normal = SubResource("TextActionRest")
+TextAction/styles/pressed = SubResource("TextActionRest")
+TextActions/base_type = &"HBoxContainer"
+TextActions/constants/separation = 26
+TitleLabel/base_type = &"Label"
+TitleLabel/font_sizes/font_size = 30
+TitleLabel/fonts/font = SubResource("DisplayBoldKana")
+TooltipLabel/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+TooltipPanel/styles/panel = SubResource("ItemSurface")
+TreeWell/base_type = &"PanelContainer"
+TreeWell/styles/panel = SubResource("TreeWellSurface")
+UpgradeFactCaption/base_type = &"LobbyFactCaption"
+UpgradeFactValue/base_type = &"LobbyFactValue"
+UpgradeInfoMargin/base_type = &"LobbyInfoMargin"
+UpgradeList/base_type = &"VBoxContainer"
+UpgradeList/constants/separation = 8
+UpgradeNode/base_type = &"Button"
+UpgradeNode/styles/disabled = SubResource("Invisible")
+UpgradeNode/styles/focus = SubResource("Invisible")
+UpgradeNode/styles/hover = SubResource("Invisible")
+UpgradeNode/styles/hover_pressed = SubResource("Invisible")
+UpgradeNode/styles/normal = SubResource("Invisible")
+UpgradeNode/styles/pressed = SubResource("Invisible")
+UpgradeTree/colors/beckon = Color(0.94, 0.784, 0.47, 0.45)
+UpgradeTree/colors/buyable = Color(0.94, 0.784, 0.47, 1)
+UpgradeTree/colors/buyable_edge = Color(0.1, 0.075, 0.04, 1)
+UpgradeTree/colors/closed_tint = Color(0.45, 0.44, 0.41, 0.75)
+UpgradeTree/colors/disc = Color(0.05, 0.048, 0.05, 1)
+UpgradeTree/colors/flow = Color(1, 0.9, 0.68, 0.95)
+UpgradeTree/colors/flow_glow = Color(0.96, 0.74, 0.38, 0.55)
+UpgradeTree/colors/focus = Color(0.8392157, 0.7176471, 0.48235294, 1)
+UpgradeTree/colors/groove = Color(0.02, 0.018, 0.02, 0.85)
+UpgradeTree/colors/groove_light = Color(0.6, 0.52, 0.4, 0.1)
+UpgradeTree/colors/lamp = Color(0.89, 0.7, 0.4, 0.035)
+UpgradeTree/colors/line_closed = Color(0.82, 0.8, 0.74, 0.3)
+UpgradeTree/colors/line_held = Color(0.93333334, 0.9137255, 0.8745098, 0.9)
+UpgradeTree/colors/line_open = Color(0.82, 0.8, 0.74, 0.55)
+UpgradeTree/colors/seal = Color(0.6, 0.6, 0.57, 0.5)
+UpgradeTree/colors/stone_core = Color(0.15, 0.14, 0.102, 1)
+UpgradeTree/colors/stone_face = Color(0.05, 0.048, 0.05, 1)
+UpgradeTree/colors/stone_rim = Color(0.2, 0.16, 0.095, 1)
+UpgradeTree/colors/stud = Color(0.42, 0.36, 0.26, 0.8)
+VBoxContainer/constants/separation = 12
+VScrollBar/styles/grabber = SubResource("ScrollGrabber")
+VScrollBar/styles/grabber_highlight = SubResource("ScrollHover")
+VScrollBar/styles/grabber_pressed = SubResource("ScrollPressed")
+VScrollBar/styles/scroll = SubResource("ScrollTrack")
+ValueLabel/base_type = &"Label"
+ValueLabel/colors/font_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
+ValueLabel/font_sizes/font_size = 26
+ValueLabel/fonts/font = ExtResource("BodyBold")
+VictoryTitle/base_type = &"Label"
+VictoryTitle/colors/font_color = Color(0.8392157, 0.7176471, 0.48235294, 1)
+VictoryTitle/font_sizes/font_size = 34
+VictoryTitle/fonts/font = SubResource("DisplayBoldKana")
+VisualPanel/base_type = &"PanelContainer"
+VisualPanel/styles/panel = SubResource("InsetSurface")
+VitalCaption/base_type = &"HudCaption"
+VitalCaption/colors/font_color = Color(0.96, 0.92, 0.83, 1)
+VitalCaption/font_sizes/font_size = 16
