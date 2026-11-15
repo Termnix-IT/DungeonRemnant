@@ -60,6 +60,14 @@ func run_tests() -> void:
 	check(music != null and music.track == &"hub" and not music.muffled, "The base plays its own music")
 	check(lobby.route_value.text == "3層とボス" and lobby.best_value.text == "なし", "The departure tells the chapter's way and the deepest reached")
 	check(lobby.upgrade_ready.text == "1 件" and lobby.codex_met.text == "0 / %d" % FoeCatalog.FOES.size(), "The entries tell what can be bought and what has been met")
+	var mark_room := Rect2(Vector2.ZERO, lobby.buttons[1].size)
+	check(lobby.upgrade_mark.visible and lobby.upgrade_mark.get_parent() == lobby.buttons[1] and mark_room.encloses(Rect2(lobby.upgrade_mark.position, lobby.upgrade_mark.size)) and lobby.selected != 1, "The upgrades' entry is marked while something can be bought, without being chosen")
+	var echo_held: int = main.meta.echo
+	main.meta.echo = 0
+	hub.refresh(main.meta)
+	check(not lobby.upgrade_mark.visible and lobby.upgrade_ready.text == "0 件", "The mark goes when the echo can buy nothing")
+	main.meta.echo = echo_held
+	hub.refresh(main.meta)
 	lobby.select(0)
 	check(lobby.title_label.text == hub.chapter.display_name and lobby.decide_button.text == "出撃先を選ぶ", "The departure names the chapter it opens on")
 

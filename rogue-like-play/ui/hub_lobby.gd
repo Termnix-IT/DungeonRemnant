@@ -9,6 +9,9 @@ extends Control
 # Choosing and entering are separate. Keyboard and gamepad focus chooses, and
 # confirming the focused entry enters it. A click chooses an entry; clicking
 # the chosen entry again, or the panel's button, enters it.
+#
+# The upgrades' entry carries a small mark beside its name while the echo
+# held can buy a rank of anything, so that shows without choosing the entry.
 
 signal selection_changed(id: StringName)
 signal activated(id: StringName)
@@ -88,10 +91,15 @@ const STRIP_HEIGHT := 60.0
 const HERO_HEIGHT := 0.8
 const HERO_CENTER_X := 0.835
 const HERO_FEET_Y := 0.965
+# The mark beside the upgrades' name: its room past the word, and its size.
+const MARK_GAP := 16.0
+const MARK_RADIUS := 6.0
 
 var buttons: Array[Button] = []
 var selected := 0
 var decide_button: Button
+# The mark on the upgrades' entry, shown while something can be bought.
+var upgrade_mark: Control
 var title_label: Label
 var description_label: Label
 var hero: LobbyHero
@@ -172,8 +180,29 @@ func _build_menu() -> void:
 			button.focus_neighbor_top = previous.get_path()
 		previous = button
 		buttons.append(button)
+		if entry[0] == &"upgrade":
+			_build_mark(button)
 	buttons[0].focus_neighbor_top = buttons[0].get_path()
 	buttons[-1].focus_neighbor_bottom = buttons[-1].get_path()
+
+
+# The mark stands past the entry's name, level with the top of its letters.
+func _build_mark(button: Button) -> void:
+	upgrade_mark = Control.new()
+	upgrade_mark.name = "Waiting"
+	upgrade_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(upgrade_mark)
+	var font := button.get_theme_font(&"font")
+	var font_size := button.get_theme_font_size(&"font_size")
+	var left := button.get_theme_stylebox(&"normal").get_margin(SIDE_LEFT)
+	var wide := font.get_string_size(button.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	upgrade_mark.size = Vector2.ONE * MARK_RADIUS * 2.0
+	upgrade_mark.position = Vector2(left + wide + MARK_GAP, (button.size.y - font.get_height(font_size)) * 0.5 + MARK_RADIUS)
+	upgrade_mark.draw.connect(func():
+		var colour := get_theme_color(&"waiting", &"HubLobby")
+		upgrade_mark.draw_circle(Vector2.ONE * MARK_RADIUS, MARK_RADIUS, colour)
+		upgrade_mark.draw_circle(Vector2.ONE * MARK_RADIUS, MARK_RADIUS * 0.4, get_theme_color(&"waiting_core", &"HubLobby")))
+	upgrade_mark.hide()
 
 
 func _row_rect(index: int) -> Rect2:
@@ -391,6 +420,7 @@ func refresh(meta: MetaProgress, chapter: ChapterData) -> void:
 			ready += 1
 	upgrade_value.text = tr("%d 段階") % ranks
 	upgrade_ready.text = tr("%d 件") % ready
+	upgrade_mark.visible = ready > 0
 	status_skills.text = "%d / %d" % [meta.loadout.filter(func(id: StringName): return not id.is_empty()).size(), MetaProgress.SKILL_SLOTS]
 	status_hp.text = str(meta.tuning(load("res://data/hero/mio.tres")).max_hp)
 	codex_met.text = "%d / %d" % [FoeCatalog.FOES.filter(func(foe: FoeData): return meta.has_met(foe.id)).size(), FoeCatalog.FOES.size()]

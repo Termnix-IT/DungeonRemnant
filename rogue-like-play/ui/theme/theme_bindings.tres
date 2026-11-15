@@ -162,6 +162,8 @@ colors = Dictionary[String, String]({
 "HubLobby/colors/rail": "gold.5",
 "HubLobby/colors/shadow": "neutral.1@0.72",
 "HubLobby/colors/slab": "neutral.3@0.9",
+"HubLobby/colors/waiting": "ember.7",
+"HubLobby/colors/waiting_core": "gold.17",
 "HudAimTag/colors/font_color": "parchment.9",
 "HudAimTag/styles/normal:bg_color": "umber.2@0.92",
 "HudAimTag/styles/normal:border_color": "gold.9",
