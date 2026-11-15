@@ -7,7 +7,9 @@ extends Control
 # upgrade is a star on the ring of its generation (how many steps it stands
 # from the lantern); the rings grow wider and squarer outward, so the last
 # one reaches toward the screen's corners. Each branch is a constellation in
-# its own part of the sky, named past its last stars with the ranks held in it.
+# its own part of the sky, named past its last stars with the ranks held in
+# it, and spaces its own rings so that its last generation stands on the
+# last ring: a branch of three generations fills its sky as one of four does.
 # A line joins a star to the one it grows from. A star held burns gold with
 # rays, one the echo held can light breathes blue, one that waits on another
 # is dark; its ranks are points of light under it. The stars of the
@@ -47,6 +49,10 @@ const STRETCH := 1.6
 const FIRST_RING := 92.0
 const LAST_RING := 292.0
 const SQUARE := 3.6
+# A constellation of fewer generations than this reaches only part of the
+# way out, so that a branch of two stars is not pulled across the sky.
+const FULL_REACH := 3
+const SHORT_REACH := 0.6
 # The sky runs this far past the screen's edges, to cover it as the page
 # slides in.
 const SKY_MARGIN := 240.0
@@ -165,6 +171,8 @@ func _at(angle: float, radius: float) -> Vector2:
 # each on its generation's ring.
 func _lay_out() -> void:
 	var deepest := 1
+	# Branch -> its last generation.
+	var depths := {}
 	for upgrade in MetaProgress.UPGRADES:
 		_grown[upgrade.id] = []
 	for upgrade in MetaProgress.UPGRADES:
@@ -178,6 +186,7 @@ func _lay_out() -> void:
 			at = MetaProgress.find(at.parent)
 		_depths[upgrade.id] = steps
 		deepest = maxi(deepest, steps)
+		depths[upgrade.branch] = maxi(depths.get(upgrade.branch, 1), steps)
 	var slot := TAU / maxf(1.0, _leaves(MetaProgress.ROOT))
 	var next := [-PI * 0.5 - slot * _leaves(first_of(ORDER[0])) * 0.5]
 	for branch in ORDER:
@@ -190,7 +199,11 @@ func _lay_out() -> void:
 	_angles[MetaProgress.ROOT] = 0.0
 	for id: StringName in _angles:
 		var steps: int = _depths[id]
-		var radius := 0.0 if steps == 0 else lerpf(FIRST_RING, LAST_RING, float(steps - 1) / maxf(1.0, deepest - 1.0))
+		var radius := 0.0
+		if steps > 0:
+			var most: int = depths.get(MetaProgress.find(id).branch, deepest)
+			var reach := 1.0 if most >= FULL_REACH else SHORT_REACH
+			radius = lerpf(FIRST_RING, LAST_RING, reach * float(steps - 1) / maxf(1.0, most - 1.0))
 		_rings[id] = radius
 		_places[id] = _at(_angles[id], radius)
 
@@ -596,12 +609,7 @@ func _draw() -> void:
 
 # The rings of the generations, the parts of the sky and their names.
 func _draw_instrument() -> void:
-	var rings := {}
-	for id: StringName in _places:
-		if _depths[id] > 0:
-			rings[_rings[id]] = true
-	for radius: float in rings:
-		_oval(radius, _colour(&"brass", 0.12))
+	_oval(FIRST_RING, _colour(&"brass", 0.12))
 	var chosen_part := MetaProgress.find(selected).branch
 	for branch in ORDER:
 		if not _parts.has(branch):
@@ -610,13 +618,17 @@ func _draw_instrument() -> void:
 		var from: float = part[0]
 		var to: float = part[1]
 		var here := chosen_part == branch
-		var last := _last_ring(branch)
 		draw_line(_at(from, FIRST_RING * 0.6), _at(from, LAST_RING), _colour(&"brass", 0.1), 1.0)
-		# The rings glow where they cross the cursor's constellation.
-		if here:
-			for radius: float in rings:
-				if radius <= last:
-					_oval(radius, _colour(&"gold", 0.42), 1.5, from + 0.03, to - 0.03)
+		# A constellation's own rings, which glow where the cursor is in it.
+		var rings := {}
+		for upgrade in MetaProgress.UPGRADES:
+			if upgrade.branch == branch and not upgrade.parent.is_empty():
+				rings[_rings[upgrade.id]] = true
+		for radius: float in rings:
+			if here:
+				_oval(radius, _colour(&"gold", 0.42), 1.5, from + 0.03, to - 0.03)
+			elif radius > FIRST_RING:
+				_oval(radius, _colour(&"brass", 0.12), 1.0, from, to)
 		var count := tally(branch)
 		var name := "%s　%d / %d" % [tr(BRANCH_NAMES[branch]), count[0], count[1]]
 		if not _spots.has(name):
@@ -646,7 +658,9 @@ func _part_spot(branch: StringName, wide: float) -> Rect2:
 	var mid: float = (part[0] + part[1]) * 0.5
 	var half: float = (part[1] - part[0]) * 0.5
 	var last := _last_ring(branch)
-	var field := Rect2(6.0, 4.0, CARD.position.x - 22.0, DESIGN.y - 8.0)
+	# The sky runs past the page, so a name may stand in the bands over and
+	# under it, between the hub's title and its keys.
+	var field := Rect2(6.0, -40.0, CARD.position.x - 22.0, DESIGN.y + 72.0)
 	for pulled: bool in [false, true]:
 		for index in 61:
 			var angle := mid + half * ceilf(index * 0.5) / 30.0 * (1.0 if index % 2 == 1 else -1.0)
@@ -665,7 +679,7 @@ func _part_spot(branch: StringName, wide: float) -> Rect2:
 func _part_room(angle: float, last: float, wide: float) -> Rect2:
 	var way := Vector2(cos(angle), sin(angle))
 	var lean := clampf(way.x * 2.0, -1.0, 1.0)
-	var centre := _at(angle, last + 26.0) + Vector2(lean * (wide * 0.5 + 14.0), way.y * 40.0)
+	var centre := _at(angle, last + 26.0) + Vector2(lean * (wide * 0.5 + 14.0), way.y * 44.0)
 	return Rect2(centre - Vector2(wide * 0.5, 13.0), Vector2(wide, 26.0))
 
 
