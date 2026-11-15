@@ -163,6 +163,7 @@ func run_tests() -> void:
 	check_contrast(theme)
 	check_book(theme)
 	check_chart(theme)
+	check_vista(theme)
 	# A secondary action that can be pressed must never look like one that
 	# cannot.
 	for state in [&"normal", &"hover", &"focus", &"pressed", &"hover_pressed", &"disabled"]:
@@ -302,6 +303,19 @@ func check_chart(theme: Theme) -> void:
 	check(contrast(theme.get_color(&"gold", &"StarChart"), theme.get_color(&"dark", &"StarChart")) >= 3.0, "A star held and one that waits differ in more than hue")
 	for item in theme.get_font_size_list(&"StarChart"):
 		check(theme.get_font_size(item, &"StarChart") >= 14, "The chart's %s stays at 14px or more" % item)
+
+
+# The departure's vista: its words stand on the dark falls laid over the
+# painting, so they are measured against the night those falls run to.
+func check_vista(theme: Theme) -> void:
+	var night := theme.get_color(&"night", &"Vista")
+	for item: StringName in [&"pale", &"dim", &"gold", &"warn"]:
+		var colour := theme.get_color(item, &"Vista")
+		check(contrast(colour, night) >= 4.5, "The vista's %s reads on its night at 4.5:1 or more (%.1f)" % [item, contrast(colour, night)])
+	check(theme.get_color(&"plate", &"Vista").a >= 0.6, "The step's plate hides the painting behind its words")
+	check(theme.get_color(&"art_locked", &"Vista").get_luminance() < 0.3, "A sealed chapter's painting is dark")
+	for item in theme.get_font_size_list(&"Vista"):
+		check(theme.get_font_size(item, &"Vista") >= 14, "The vista's %s stays at 14px or more" % item)
 
 
 func theme_color(theme: Theme, item: StringName, type: StringName) -> Color:

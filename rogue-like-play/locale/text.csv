@@ -726,20 +726,20 @@ Q・E（ゲームパッドはLB・RB）で種類を切り替えます。,,Switch
 ゲームパッド,,Gamepad,ui/hub_settings.gd
 話題,,Topic,ui/hub_settings.gd
 閉じる,,Close,ui/hub_settings.gd
-現れる敵,,Foes,ui/hub_sortie.gd
 封印中,,Sealed,ui/hub_sortie.gd
 未踏,,Unexplored,ui/hub_sortie.gd
 %sを踏破すると開く,,Opens when %s is cleared,ui/hub_sortie.gd
 前の章,,the previous chapter,ui/hub_sortie.gd
+段階%dで%sを踏破すると開く,,Opens when Tier %d of %s is cleared,ui/hub_sortie.gd
 封印されている。%s。,,Sealed. %s.,ui/hub_sortie.gd
+制約なし,,No restrictions,ui/hub_sortie.gd
 %sへ出撃する,,Set Out for %s,ui/hub_sortie.gd
 %sは封印中,,%s is sealed,ui/hub_sortie.gd
 （段階%d）,, (Tier %d),ui/hub_sortie.gd
-制約なし,,No restrictions,ui/hub_sortie.gd
-段階を上げる（E・RB）,,Raise tier (E / RB),ui/hub_sortie.gd
-段階%dで%sを踏破すると開く,,Opens when Tier %d of %s is cleared,ui/hub_sortie.gd
-最後の段階,,Highest tier,ui/hub_sortie.gd
+現れる敵,,Foes,ui/hub_sortie.gd
 段階を下げる（Q・LB）,,Lower tier (Q / LB),ui/hub_sortie.gd
+段階を上げる（E・RB）,,Raise tier (E / RB),ui/hub_sortie.gd
+最後の段階,,Highest tier,ui/hub_sortie.gd
 強化ツリーのスキルの枝で習得できる,,Learned on the Upgrade Tree's skill branch,ui/hub_status.gd
 強化ツリーの必殺技の枝で習得できる,,Learned on the Upgrade Tree's Special branch,ui/hub_status.gd
 強化ツリーの武器の枝で習得できる,,Learned on the Upgrade Tree's weapon branch,ui/hub_status.gd

@@ -73,7 +73,7 @@ func run_tests() -> void:
 	root.push_input(pad(JOY_BUTTON_A))
 	root.push_input(pad(JOY_BUTTON_A, false))
 	await process_frame
-	check(hub.page == "sortie" and hub.sortie_page.cards[0].has_focus(), "A on the departure opens where to set out, on its chapter")
+	check(hub.page == "sortie" and hub.sortie_page.has_focus() and hub.sortie_page.selected == 0, "A on the departure opens where to set out, on its chapter")
 	root.push_input(pad(JOY_BUTTON_A))
 	root.push_input(pad(JOY_BUTTON_A, false))
 	await process_frame

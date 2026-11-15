@@ -54,6 +54,15 @@ func run_tests() -> void:
 		await settle(UIMotion.WINDOW_TIME + 0.05)
 		var shown: Control = {"sortie": hub.sortie_page, "upgrade": hub.upgrade_page, "status": hub.status_page, "codex": hub.codex_page, "settings": hub.settings_page}[page]
 		check(screen.grow(1).encloses(shown.get_global_rect()), "The %s page stays on the screen" % page)
+	for drawn: Control in [hub.sortie_page, hub.upgrade_page, hub.status_page, hub.codex_page]:
+		check(drawn.mouse_filter == Control.MOUSE_FILTER_STOP, "%s, which draws itself, answers the pointer" % drawn.name)
+	hub.show_page("sortie")
+	await settle(UIMotion.WINDOW_TIME + 0.05)
+	var vista: HubSortie = hub.sortie_page
+	check(screen.encloses(vista.action_button.get_global_rect()), "The departure's action stays on the screen")
+	check((vista.get_node(^"Vista") as Control).get_global_rect().encloses(screen), "The departure's painting covers the whole screen")
+	var set_out := Rect2(vista.global_position + vista._origin + HubSortie.BUTTON.position * vista._zoom, HubSortie.BUTTON.size * vista._zoom)
+	check(set_out.grow(1).encloses(vista.action_button.get_global_rect()) and not HubSortie.BUTTON.intersects(HubSortie.STEP_PLATE), "Its action keeps its room, clear of the step")
 	hub.show_page("upgrade")
 	await settle(UIMotion.WINDOW_TIME + 0.05)
 	var chart: MetaUpgradePage = hub.upgrade_page

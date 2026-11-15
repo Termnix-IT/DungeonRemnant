@@ -63,37 +63,39 @@ func run_tests() -> void:
 	lobby.select(0)
 	check(lobby.title_label.text == hub.chapter.display_name and lobby.decide_button.text == "出撃先を選ぶ", "The departure names the chapter it opens on")
 
-	# Where to set out: the chapters as doors, the chosen one told beneath them.
+	# Where to set out: the chosen chapter's painting over the screen, told at its foot.
 	lobby.activated.emit(&"departure")
 	await process_frame
 	var sortie: HubSortie = hub.sortie_page
 	check(hub.page == "sortie" and sortie.visible and main.active_run == null, "The departure opens where to set out, without setting out")
-	check(sortie.cards.size() == Chapters.ALL.size() and sortie.chosen() == Chapters.ALL[0] and sortie.cards[0].button_pressed and not sortie.cards[1].button_pressed, "It opens on the first chapter, marked chosen")
-	check(sortie.cards[0].state_label.text == "未踏" and sortie.cards.slice(1).all(func(door: ChapterDoor): return door.state_label.text == "封印中" and door.sealed), "Each door tells how far its chapter has been taken")
-	check(sortie.route_value.text == "3層とボス" and sortie.record_value.text == "なし" and sortie.boss_value.text == HubSortie.UNKNOWN_NAME, "The band tells the way, the record, and a boss not met yet unnamed")
+	check(sortie.chosen() == Chapters.ALL[0] and sortie.selected == 0 and sortie.has_focus() and sortie.told.name == "灰の回廊" and sortie.told.number == "第1章", "It opens on the first chapter, the page holding the focus")
+	check(sortie.state_of(0) == "未踏" and sortie.told.state == "未踏" and range(1, Chapters.ALL.size()).all(func(index: int): return sortie.state_of(index) == "封印中"), "Each view tells how far its chapter has been taken")
+	check(sortie.told.route == "3層とボス" and sortie.told.record == "なし" and sortie.told.boss == HubSortie.UNKNOWN_NAME, "The foot tells the way, the record, and a boss not met yet unnamed")
 	var ruin_king: FoeData = load("res://data/foes/ruin_king.tres")
 	var first_foes := Chapters.foes(Chapters.ALL[0])
-	check(sortie.foe_row.get_child_count() == first_foes.size() and first_foes.has(ruin_king) and not first_foes.has(load("res://data/foes/gale_wolf_king.tres")), "The foes of the chapter are shown, its own boss among them")
-	check(sortie.foe_row.get_children().all(func(picture: TextureRect): return picture.tooltip_text == HubSortie.UNKNOWN_NAME), "Foes not met are not named")
-	check(sortie.gear_row.get_child_count() == 2 and sortie.gear_row.get_child(0).tooltip_text == "剣", "What she carries is shown: the sword and the first skill")
+	check(sortie.foes.size() == first_foes.size() and first_foes.has(ruin_king) and not first_foes.has(load("res://data/foes/gale_wolf_king.tres")), "The foes of the chapter are shown, its own boss among them")
+	check(sortie.foes.all(func(foe: Array): return foe[0] != null and foe[1] == HubSortie.UNKNOWN_NAME and not foe[2]), "Foes not met are pictured as shapes and not named")
+	check(sortie.gear.size() == 2 and sortie.gear[0][1] == "剣", "What she carries is shown: the sword and the first skill")
 	check(not sortie.action_button.disabled and sortie.action_button.text == "第1章へ出撃する", "An open chapter can be set out for")
-	# The button's crest kindles while the focus is on it, and settles again
-	# once the focus goes back up to the doors; neither sets out.
+	# The button is a crest for the pointer; the focus stays on the page,
+	# where Enter sets out, and up and down move nothing.
 	var crest := sortie.action_button as CrestButton
-	check(crest != null and is_zero_approx(crest.stand), "The set-out button is a crest, resting while the doors hold the focus")
+	check(crest != null and crest.focus_mode == Control.FOCUS_NONE and is_zero_approx(crest.stand), "The set-out button is a crest that leaves the focus on the page")
 	root.push_input(key(KEY_DOWN))
 	await process_frame
-	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.1).timeout
-	check(crest.has_focus() and is_equal_approx(crest.stand, 1.0) and main.active_run == null, "Down moves to the button and its crest kindles")
-	root.push_input(key(KEY_UP))
-	await process_frame
-	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.1).timeout
-	check(sortie.cards[0].has_focus() and is_zero_approx(crest.stand), "Up goes back to the chosen door and the crest settles")
+	check(sortie.has_focus() and sortie.selected == 0 and main.active_run == null, "Down neither leaves the page nor sets out")
 	# The sealed chapter: chosen to read what opens it, not set out for.
 	root.push_input(key(KEY_RIGHT))
 	await process_frame
-	check(sortie.chosen().id == &"gale_woods" and sortie.cards[1].sealed and sortie.cards[1].button_pressed and sortie.cards[1].has_focus(), "Right chooses the sealed chapter, shown sealed")
-	check(sortie.action_button.disabled and sortie.action_button.text == "第2章は封印中" and sortie.description_label.text.contains("第1章を踏破") and sortie.action_button.tooltip_text.contains("第1章を踏破"), "A sealed chapter says how it opens and cannot be set out for")
+	check(sortie.chosen().id == &"gale_woods" and not sortie.told.open and sortie.told.state == "封印中" and sortie.has_focus(), "Right turns to the sealed chapter, shown sealed")
+	check(sortie.action_button.disabled and sortie.action_button.text == "第2章は封印中" and (sortie.told.description as String).contains("第1章を踏破") and sortie.action_button.tooltip_text.contains("第1章を踏破"), "A sealed chapter says how it opens and cannot be set out for")
+	root.push_input(key(KEY_RIGHT))
+	root.push_input(key(KEY_RIGHT))
+	root.push_input(key(KEY_RIGHT))
+	await process_frame
+	check(sortie.selected == Chapters.ALL.size() - 1, "Right stops at the last chapter")
+	sortie._press([&"chapter", 1])
+	check(sortie.chosen().id == &"gale_woods", "The pointer turns to a chapter by its view")
 	check(hub.chapter.id == &"ash_corridor", "Choosing a sealed chapter leaves the next departure where it was")
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))
@@ -104,11 +106,11 @@ func run_tests() -> void:
 	main.meta.chapter_best[&"ash_corridor"] = 4
 	main.meta.met[ruin_king.id] = true
 	hub.refresh(main.meta)
-	check(hub.chapter.id == &"gale_woods" and sortie.chosen().id == &"gale_woods" and not sortie.cards[1].sealed, "A chapter that has just opened is the one offered next")
-	check(not sortie.action_button.disabled and sortie.action_button.text == "第2章へ出撃する" and sortie.cards[0].state_label.text == "踏破 1回", "Once the first chapter is cleared, the second opens")
+	check(hub.chapter.id == &"gale_woods" and sortie.chosen().id == &"gale_woods" and sortie.told.open, "A chapter that has just opened is the one offered next")
+	check(not sortie.action_button.disabled and sortie.action_button.text == "第2章へ出撃する" and sortie.state_of(0) == "踏破 1回", "Once the first chapter is cleared, the second opens")
 	root.push_input(key(KEY_LEFT))
 	await process_frame
-	check(hub.chapter.id == &"ash_corridor" and sortie.boss_value.text == ruin_king.display_name, "Choosing an open chapter makes it the next departure, and a boss met is named")
+	check(hub.chapter.id == &"ash_corridor" and sortie.told.boss == ruin_king.display_name, "Choosing an open chapter makes it the next departure, and a boss met is named")
 	# Tab (View) to change what she carries, and back again.
 	root.push_input(key(KEY_TAB))
 	await process_frame
@@ -132,23 +134,23 @@ func run_tests() -> void:
 	var final: ChapterData = Chapters.ALL.back()
 	hub.show_page("sortie")
 	await process_frame
-	check(not sortie.step_row.visible and not sortie.action_button.text.contains("段階"), "Before the ending the departure offers no step")
+	check(sortie.told.steps == 0 and not sortie.action_button.text.contains("段階"), "Before the ending the departure offers no step")
 	main.meta.chapter_clears[final.id] = 1
 	hub.refresh(main.meta)
-	check(sortie.step_row.visible and sortie.step_value.text == "0" and sortie.step_note.text == "制約なし" and sortie.step_down.disabled and not sortie.step_up.disabled, "The ending opens the step row, at the game as it is")
+	check(sortie.told.steps == 1 and sortie.step == 0 and sortie.told.step_note == "制約なし" and sortie.told.step_echo == "" and sortie.told.step_hint == "", "The ending opens the step row, at the game as it is")
 	root.push_input(key(KEY_E))
 	await process_frame
-	check(hub.step == 1 and sortie.step == 1 and sortie.step_note.text.begins_with(DifficultySteps.ALL[0].summary) and sortie.step_note.text.ends_with("残響 +10%"), "E raises the step and tells what it adds and brings back")
-	check(sortie.action_button.text.ends_with("（段階1）") and sortie.step_note.tooltip_text.contains(DifficultySteps.ALL[0].summary), "The button names the step, and pointing at the line lists what is in play")
+	check(hub.step == 1 and sortie.step == 1 and sortie.told.step_note == DifficultySteps.ALL[0].summary and sortie.told.step_echo == "残響 +10%", "E raises the step and tells what it adds and brings back")
+	check(sortie.action_button.text.ends_with("（段階1）") and (sortie.told.constraints as String).contains(DifficultySteps.ALL[0].summary), "The button names the step, and pointing at the line lists what is in play")
 	root.push_input(key(KEY_E))
 	await process_frame
-	check(hub.step == 1 and sortie.step_up.disabled and sortie.step_up.tooltip_text.contains("段階1で%sを踏破" % Chapters.short_name(final)), "No step past the highest open; its arrow says how the next opens")
+	check(hub.step == 1 and sortie.step == 1 and (sortie.told.step_hint as String).contains("段階1で%sを踏破" % Chapters.short_name(final)), "No step past the highest open; its arrow says how the next opens")
 	root.push_input(key(KEY_Q))
 	await process_frame
-	check(hub.step == 0 and sortie.step_note.text == "制約なし", "Q lowers it")
+	check(hub.step == 0 and sortie.told.step_note == "制約なし", "Q lowers it")
 	main.meta.chapter_clears.clear()
 	hub.refresh(main.meta)
-	check(not sortie.step_row.visible and hub.step == 0, "Without the ending the row is gone again")
+	check(sortie.told.steps == 0 and hub.step == 0, "Without the ending the row is gone again")
 	hub.show_page("home")
 	for pair: Array in [[&"upgrade", "upgrade"], [&"status", "status"], [&"codex", "codex"], [&"settings", "settings"]]:
 		lobby.activated.emit(pair[0])

@@ -231,7 +231,10 @@ func _page(control: Control, mood: StringName) -> Control:
 		control.theme = worn
 	_page_host.add_child(control)
 	control.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	control.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# A page laid out from parts lets the pointer through to them; one that
+	# draws itself (it takes the focus) answers the pointer itself.
+	if control.focus_mode == Control.FOCUS_NONE:
+		control.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	control.hide()
 	return control
 

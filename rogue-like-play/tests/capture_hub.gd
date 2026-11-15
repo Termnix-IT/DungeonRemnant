@@ -58,7 +58,7 @@ func capture() -> void:
 	# Where to set out, on the sealed chapter.
 	hub.show_page("sortie")
 	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
-	hub.sortie_page.cards[1].grab_focus()
+	hub.sortie_page.choose(1)
 	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.3).timeout
 	await _grab("hub_sortie_sealed_1600")
 	# After the ending: the step row, set at step 3 of the three open, and the
@@ -69,9 +69,10 @@ func capture() -> void:
 	hub.show_page("sortie")
 	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
 	hub.sortie_page.choose_step(3)
-	hub.sortie_page.action_button.grab_focus()
+	UIMotion.of(hub.sortie_page.action_button).stand(true)
 	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.3).timeout
 	await _grab("hub_sortie_steps_1600")
+	UIMotion.of(hub.sortie_page.action_button).stand(false)
 	hub.sortie_page.choose_step(0)
 	main.meta.chapter_clears.erase(Chapters.ALL.back().id)
 	main.meta.chapter_steps.clear()

@@ -225,7 +225,7 @@ func select_card() -> void:
 	selection_tween.tween_property(control, "selection_strength", 1.0, SELECT_TIME)
 
 
-# A choice that stands forward while chosen (the departure's doors): its
+# A choice that stands forward while chosen (a crest button under the pointer): its
 # `stand` eases from where it is to 1 (chosen) or 0 (not), in a detail's
 # time. Hidden, it takes its place at once.
 func stand(forward: bool) -> void:
