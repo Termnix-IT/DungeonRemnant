@@ -76,14 +76,15 @@ func capture() -> void:
 	main.meta.chapter_clears.erase(Chapters.ALL.back().id)
 	main.meta.chapter_steps.clear()
 	hub.refresh(main.meta)
-	# The upgrade tree followed out to a branch's end, the root's side out of sight.
+	# The upgrades' star chart: a star that waits on another, out at the rim;
+	# then one the echo held can light, its crest button kindled. The page's
+	# other states are capture_upgrade.gd's.
 	hub.show_page("upgrade")
-	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
-	(hub.upgrade_page.nodes[&"last_stand"] as Button).grab_focus()
-	await create_timer(MetaUpgradePage.FOLLOW_TIME + 0.3).timeout
+	await create_timer(UIMotion.WINDOW_TIME + 0.5).timeout
+	hub.upgrade_page.choose(&"last_stand")
+	await create_timer(0.5).timeout
 	await _grab("hub_upgrade_far_1600")
-	# A node the echo held can buy, its crest button kindled under the pointer.
-	(hub.upgrade_page.nodes[&"sturdy_body"] as Button).grab_focus()
+	hub.upgrade_page.choose(&"sturdy_body")
 	UIMotion.of(hub.upgrade_page.buy_button).stand(true)
 	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.3).timeout
 	await _grab("hub_upgrade_buy_1600")

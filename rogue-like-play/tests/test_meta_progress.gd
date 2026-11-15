@@ -39,7 +39,7 @@ func run_tests() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 
 	# The upgrade tree: one root, every other node grows from one in the tree,
-	# no two share a cell, and the seals keep their cells free.
+	# and no two share a cell.
 	check(MetaProgress.UPGRADES.size() == 32, "The root, ten body nodes, eight growth nodes, six skill nodes, five special nodes and two weapon nodes")
 	var cells := {}
 	var roots := 0
@@ -50,10 +50,8 @@ func run_tests() -> void:
 			roots += 1
 		else:
 			grown = grown and MetaProgress.find(upgrade.parent) != null and upgrade.branch in [&"body", &"growth", &"skill", &"special", &"weapon"]
-	for seal: Array in MetaUpgradePage.SEALS:
-		cells[seal[1]] = true
 	check(roots == 1 and MetaProgress.find(MetaProgress.ROOT).parent.is_empty() and grown, "One root, and every node grows from another in a branch")
-	check(cells.size() == MetaProgress.UPGRADES.size() + MetaUpgradePage.SEALS.size(), "No two nodes share a cell")
+	check(cells.size() == MetaProgress.UPGRADES.size(), "No two nodes share a cell")
 	var meta := MetaProgress.new()
 	var body := MetaProgress.find(&"sturdy_body")
 	check(not meta.can_buy(&"sturdy_body") and not meta.buy(&"sturdy_body"), "Nothing is bought without echo")

@@ -23,7 +23,9 @@ extends Resource
 # Where it grows in the tree: its branch (&"body", &"growth", &"skill",
 # &"special", &"weapon"), the upgrade
 # it grows from (empty for the root) and its cell, columns right and rows
-# down from the root.
+# down from the root. The upgrades page (MetaUpgradePage, a star chart) lays
+# its stars out from branch and parent alone; the cell is where the node
+# stood on the board that page used to be, and nothing reads it now.
 @export var branch: StringName
 @export var parent: StringName
 @export var cell := Vector2i.ZERO

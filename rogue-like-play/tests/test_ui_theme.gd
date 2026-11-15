@@ -120,22 +120,23 @@ func run_tests() -> void:
 		await process_frame
 	var upgrades: MetaUpgradePage = hub.upgrade_page
 	var cheap: Button = upgrades.buy_button
-	(upgrades.nodes[MetaProgress.ROOT] as Button).grab_focus()
+	upgrades.choose(MetaProgress.ROOT)
 	check(not cheap.disabled and cheap.tooltip_text.is_empty(), "An upgrade the echo pays for can be bought")
-	(upgrades.nodes[&"sturdy_body"] as Button).grab_focus()
+	upgrades.choose(&"sturdy_body")
 	check(cheap.disabled and cheap.tooltip_text.contains("残響の灯"), "One whose root is not held is off and says what it waits for")
 	main.meta.ranks[String(MetaProgress.ROOT)] = 1
 	hub.refresh(main.meta)
-	(upgrades.nodes[&"double_dash"] as Button).grab_focus()
+	upgrades.choose(&"double_dash")
 	check(cheap.disabled and cheap.tooltip_text.contains("鍛えた体"), "So does one further along")
-	(upgrades.nodes[&"sturdy_body"] as Button).grab_focus()
+	upgrades.choose(&"sturdy_body")
 	main.meta.echo = 10
 	hub.refresh(main.meta)
 	check(cheap.disabled and cheap.tooltip_text.contains("足りない"), "One the echo cannot pay for says how much is missing")
 	main.meta.echo = 100
 	main.meta.ranks.clear()
 	hub.refresh(main.meta)
-	(upgrades.nodes[MetaProgress.ROOT] as Button).grab_focus()
+	upgrades.choose(MetaProgress.ROOT)
+	check(upgrades.theme_type_variation == &"StarChart" and upgrades.get_theme_color(&"pale") == theme.get_color(&"pale", &"StarChart") and upgrades.get_theme_font(&"title_font") == theme.get_font(&"title_font", &"StarChart"), "The upgrades page draws itself in the StarChart type's colours and faces")
 	check(upgrades.get_global_rect().grow(1).encloses(cheap.get_global_rect()), "%s fits the page" % cheap.text)
 	# The upgrade's buy button is a crest, drawing its own states; its styles
 	# only make room for the crest, the same in every state so it never moves.
@@ -161,6 +162,7 @@ func run_tests() -> void:
 	check_readable_floor(theme)
 	check_contrast(theme)
 	check_book(theme)
+	check_chart(theme)
 	# A secondary action that can be pressed must never look like one that
 	# cannot.
 	for state in [&"normal", &"hover", &"focus", &"pressed", &"hover_pressed", &"disabled"]:
@@ -285,6 +287,21 @@ func check_book(theme: Theme) -> void:
 	var pale := theme.get_color(&"seal_light", &"Grimoire")
 	for item: StringName in [&"ribbon_0", &"ribbon_1", &"ribbon_2", &"ribbon_3", &"tray"]:
 		check(contrast(pale, theme.get_color(item, &"Bestiary")) >= 4.5, "The folio's words read on its %s (%.1f)" % [item, contrast(pale, theme.get_color(item, &"Bestiary"))])
+
+
+# The upgrades page's star chart: its words read on the night they are
+# written on (the card's panel, the plates behind the stars' names and the
+# sky itself), and none is smaller than 14px.
+func check_chart(theme: Theme) -> void:
+	for ground: StringName in [&"panel", &"void", &"sky_light"]:
+		var night := theme.get_color(ground, &"StarChart")
+		for item: StringName in [&"pale", &"dim", &"gold", &"blue", &"warn"]:
+			var colour := theme.get_color(item, &"StarChart")
+			check(contrast(colour, night) >= 4.5, "The chart's %s reads on its %s at 4.5:1 or more (%.1f)" % [item, ground, contrast(colour, night)])
+		check(contrast(theme.get_color(&"faint", &"StarChart"), night) >= 3.0, "The chart's faded names stay legible on its %s at 3:1 or more" % ground)
+	check(contrast(theme.get_color(&"gold", &"StarChart"), theme.get_color(&"dark", &"StarChart")) >= 3.0, "A star held and one that waits differ in more than hue")
+	for item in theme.get_font_size_list(&"StarChart"):
+		check(theme.get_font_size(item, &"StarChart") >= 14, "The chart's %s stays at 14px or more" % item)
 
 
 func theme_color(theme: Theme, item: StringName, type: StringName) -> Color:

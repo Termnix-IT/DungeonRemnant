@@ -351,77 +351,77 @@ func run_tests() -> void:
 	hub.show_page("upgrade")
 	var page: MetaUpgradePage = hub.upgrade_page
 	check(hub.title_label.text == "強化", "The page is titled as the lobby's menu names it")
-	check(page.selected == MetaProgress.ROOT and (page.nodes[MetaProgress.ROOT] as Button).has_focus(), "The tree opens on its root")
-	check(page.nodes.size() == MetaProgress.UPGRADES.size() + MetaUpgradePage.SEALS.size(), "Every upgrade and every sealed branch has its node")
+	check(page.selected == MetaProgress.ROOT and page.has_focus(), "The chart opens on its lantern, the focus on the chart")
+	var stars := 0
+	var apart := true
+	for one in MetaProgress.UPGRADES:
+		stars += 1 if page._places.has(one.id) else 0
+		for other in MetaProgress.UPGRADES:
+			if one != other and (page._places[one.id] as Vector2).distance_to(page._places[other.id]) < MetaUpgradePage.STAR * 2.0 + 6.0:
+				apart = false
+	check(stars == MetaProgress.UPGRADES.size() and apart, "Every upgrade has a star of its own, none standing on another")
+	var sky := Rect2(Vector2.ZERO, Vector2(MetaUpgradePage.CARD.position.x, MetaUpgradePage.DESIGN.y))
+	check(MetaProgress.UPGRADES.all(func(one: MetaUpgrade) -> bool: return sky.grow(-MetaUpgradePage.STAR).has_point(page._places[one.id])), "Every star is in sight at once, left of the card")
+	check(page.state_of(MetaProgress.ROOT) == MetaUpgradePage.State.BUY and page.state_of(&"sturdy_body") == MetaUpgradePage.State.LOCKED, "A star tells whether the echo can light it or it waits on another")
 	page.buy_button.pressed.emit()
-	check(main.meta.rank(MetaProgress.ROOT) == 1 and main.meta.echo == 150 and hub.echo_label.text == "150", "Pressing the column's button buys the chosen node")
-	check(page.buy_button.text == "習得済み" and page.buy_button.disabled and hub.feedback.text.contains("残響の灯"), "The column and the note show the purchase")
-	# Moving the focus: left from the root to the body's branch.
+	check(main.meta.rank(MetaProgress.ROOT) == 1 and main.meta.echo == 150 and hub.echo_label.text == "150", "Pressing the card's button buys the chosen star")
+	check(page.buy_button.text == "習得済み" and page.buy_button.disabled and hub.feedback.text.contains("残響の灯"), "The card and the note show the purchase")
+	check(page.told.state == MetaUpgradePage.State.FULL and page.told.price < 0, "A star with all its ranks held has no price")
+	check(page.moment(MetaProgress.ROOT) < 1.0 and page.moment(&"sturdy_body") == 1.0, "The star bought has its moment, and only it")
+	# Moving the cursor: left from the lantern to the body's constellation.
 	root.push_input(key(KEY_LEFT))
 	await process_frame
-	check(page.selected == &"sturdy_body" and page.name_label.text == "鍛えた体" and not page.rank_label.visible, "Left goes to the body's branch and the column tells it, its ranks by sockets alone")
-	check(page.buy_button is CrestButton and page.price_value.text == "80" and page.held_value.text == "150" and not page.short_label.visible, "The column sets the price beside the echo held, on a crest button")
-	check(page.figure_label.text == "習得すると　最大HP 115（+15）" and not page.description_label.visible, "The column tells what the first rank gives in one line, without the description saying it again")
+	check(page.selected == &"sturdy_body" and page.told.name == "鍛えた体" and page.told.part == "身体", "Left goes to the body's constellation and the card tells the star")
+	check(page.buy_button is CrestButton and page.told.price == 80 and page.told.held == 150 and page.told.missing == 0, "The card sets the price beside the echo held, over a crest button")
+	check(page.told.figure == "習得すると　最大HP 115（+15）" and page.told.note == "" and page.told.ranks == 3, "The card tells what the first rank gives in one line, without the description saying it again")
+	check(page.tally(&"body") == [0, 17], "A constellation counts the ranks held in it")
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))
 	await process_frame
-	check(main.meta.rank(&"sturdy_body") == 1 and main.meta.echo == 70 and page.figure_label.text == "最大HP 115 → 130（+15）", "Enter on a node buys it, and the figure tells the next rank")
-	root.push_input(key(KEY_DOWN))
+	check(main.meta.rank(&"sturdy_body") == 1 and main.meta.echo == 70 and page.told.figure == "最大HP 115 → 130（+15）", "Enter on the chart buys the star, and the figure tells the next rank")
+	check(page.tally(&"body") == [1, 17] and page.told.rank == 1, "The rank bought is counted")
+	root.push_input(key(KEY_UP))
 	await process_frame
-	check(page.selected == &"double_dash" and page.buy_button.disabled and page.buy_button.tooltip_text.contains("足りない"), "Down goes along the branch to one the echo cannot pay for")
-	check(page.short_label.visible and page.short_label.text.begins_with("残響があと") and page.held_value.text == "70", "The column says how much echo is missing")
+	check(page.selected == &"double_dash" and page.buy_button.disabled and page.buy_button.tooltip_text.contains("足りない"), "Up goes along the constellation to a star the echo cannot light")
+	check(page.told.state == MetaUpgradePage.State.SHORT and page.told.missing == 230 and page.told.held == 70, "The card says how much echo is missing")
 	root.push_input(key(KEY_ENTER))
 	root.push_input(key(KEY_ENTER, false))
 	await process_frame
 	check(main.meta.rank(&"double_dash") == 0 and main.meta.echo == 70, "One the echo cannot pay for is refused")
-	(page.nodes[&"learn_echo_burst"] as Button).grab_focus()
-	check(page.buy_button.visible and page.name_label.text == "残響解放の習得", "The special branch is open, its first node a special move to learn")
+	root.push_input(key(KEY_LEFT))
+	await process_frame
+	check(page.selected != &"double_dash" and MetaProgress.find(page.selected).parent == &"double_dash", "Left goes on to a star that grows from it")
+	check(page.told.state == MetaUpgradePage.State.LOCKED and page.told.waits.contains("二段ダッシュ") and page.buy_button.disabled and page.buy_button.tooltip_text.contains("二段ダッシュ"), "A star that waits on another says which")
+	page.choose(&"learn_echo_burst")
+	check(page.buy_button.visible and page.told.name == "残響解放の習得" and page.told.part == "必殺技", "The special constellation's first star is a special move to learn")
 	root.push_input(key(KEY_C))
 	await process_frame
-	check(page.selected == MetaProgress.ROOT, "C brings the root back")
-	# The pointer: resting on a node chooses it; a press that moves drags the board.
-	var motion := InputEventMouseMotion.new()
-	motion.position = page.canvas.position + page._centers[&"parting_blessing"]
-	page.board.gui_input.emit(motion)
-	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
-	check(page.selected == &"parting_blessing", "Resting the pointer on a node chooses it")
-	var before: Vector2 = page.canvas.position
-	var press := InputEventMouseButton.new()
-	press.button_index = MOUSE_BUTTON_LEFT
-	press.pressed = true
-	press.position = page.canvas.position + page._centers[MetaProgress.ROOT]
-	page.board.gui_input.emit(press)
-	var drag := InputEventMouseMotion.new()
-	drag.button_mask = MOUSE_BUTTON_MASK_LEFT
-	drag.position = press.position + Vector2(40, 0)
-	drag.relative = Vector2(40, 0)
-	page.board.gui_input.emit(drag)
-	var release := press.duplicate()
-	release.pressed = false
-	release.position = drag.position
-	page.board.gui_input.emit(release)
-	check(page.canvas.position.x > before.x and page.selected == &"parting_blessing", "A drag moves the board and chooses nothing")
-	# The wheel zooms around the pointer, within its bounds; C brings the first size back.
-	var anchor: Vector2 = page.canvas.position + page._centers[&"sturdy_body"] * page.zoom
+	check(page.selected == MetaProgress.ROOT, "C brings the lantern back")
+	# Q/E go round the constellations, clockwise from the top.
+	root.push_input(key(KEY_E))
+	await process_frame
+	check(page.selected == &"learn_thunder_flash", "E goes to the first constellation's first star")
+	root.push_input(key(KEY_E))
+	await process_frame
+	check(page.selected == &"learn_spear", "E again goes to the next constellation")
+	root.push_input(key(KEY_Q))
+	root.push_input(key(KEY_Q))
+	await process_frame
+	check(page.selected == &"sturdy_body", "Q goes back round, past the top to the last")
+	# The pointer chooses a star or a constellation and never buys by them;
+	# the wheel goes round the constellations.
+	var echo_before: int = main.meta.echo
+	page._press([&"star", &"parting_blessing"])
+	check(page.selected == &"parting_blessing" and main.meta.echo == echo_before, "A click on a star chooses it and buys nothing")
+	page._press([&"part", &"weapon"])
+	check(page.selected == &"learn_spear", "A click on a constellation's name goes to its first star")
 	var wheel := InputEventMouseButton.new()
-	wheel.button_index = MOUSE_BUTTON_WHEEL_UP
-	wheel.pressed = true
-	wheel.position = anchor
-	page.board.gui_input.emit(wheel)
-	check(is_equal_approx(page.zoom, MetaUpgradePage.ZOOM_STEP) and page.canvas.scale.is_equal_approx(Vector2.ONE * page.zoom), "The wheel zooms the board in")
-	check((page.canvas.position + page._centers[&"sturdy_body"] * page.zoom).distance_to(anchor) < 1.0, "The node under the pointer stays under it")
-	press.position = anchor
-	page.board.gui_input.emit(press)
-	release.position = anchor
-	page.board.gui_input.emit(release)
-	check(page.selected == &"sturdy_body", "A click still finds the node at the zoomed size")
 	wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
-	for notch in 12:
-		page.board.gui_input.emit(wheel)
-	check(is_equal_approx(page.zoom, MetaUpgradePage.ZOOM_MIN), "Zooming out stops at its bound")
-	root.push_input(key(KEY_C))
-	await process_frame
-	check(page.zoom == 1.0 and page.selected == MetaProgress.ROOT, "C brings the root back at the first size")
+	wheel.pressed = true
+	page._gui_input(wheel)
+	check(page.selected == &"parting_blessing", "The wheel goes to the next constellation")
+	page.return_to_root()
+	check(page.selected == MetaProgress.ROOT, "The lantern is chosen again")
 	# The status page, a book: Tab from the upgrades opens it at the first
 	# skill's chapter; its index, her figures and back, a skill moved to the
 	# other chapter (saved), a weapon taken up, the special's chapter sealed

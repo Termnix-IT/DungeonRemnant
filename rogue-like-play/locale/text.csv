@@ -487,12 +487,8 @@ HPが足りない,,Not enough HP,game/expedition/run_director.gd
 強化,,Upgrade,game/hub/hub.gd
 矢印,,Arrows,game/hub/hub.gd
 十字,,D-pad,game/hub/hub.gd
-ドラッグ,,Drag,game/hub/hub.gd
-R スティック,,R Stick,game/hub/hub.gd
-動かす,,Pan,game/hub/hub.gd
-ホイール,,Wheel,game/hub/hub.gd
-拡大・縮小,,Zoom,game/hub/hub.gd
-中央へ,,Center,game/hub/hub.gd
+星座,,Constellation,game/hub/hub.gd
+灯へ,,To Lantern,game/hub/hub.gd
 ステータスへ,,To Status,game/hub/hub.gd
 ステータス,,Status,game/hub/hub.gd
 図鑑,,Bestiary,game/hub/hub.gd
@@ -604,8 +600,8 @@ HPの高い順,,Highest HP first,ui/hub_codex.gd
 速さ,,Speed,ui/hub_codex.gd
 図版　第 %02d,,Plate %02d,ui/hub_codex.gd
 %sの類,,Class: %s,ui/hub_codex.gd
-記,notes,Notes,ui/hub_codex.gd
 いまだ観察されず,,Not yet observed,ui/hub_codex.gd
+記,notes,Notes,ui/hub_codex.gd
 観察記,,Observations,ui/hub_codex.gd
 覚え書き,,Memorandum,ui/hub_codex.gd
 棲息,,Habitat,ui/hub_codex.gd
@@ -840,15 +836,15 @@ Q・E（ゲームパッドはLB・RB）で種類を切り替えます。,,Switch
 中央,,Center,ui/meta_upgrade_page.gd
 身体,,Body,ui/meta_upgrade_page.gd
 成長,,Growth,ui/meta_upgrade_page.gd
-この枝はまだ開放されていない,,This branch isn't open yet,ui/meta_upgrade_page.gd
-必要,,Cost,ui/meta_upgrade_page.gd
-所持,,Held,ui/meta_upgrade_page.gd
 「%s」を習得すると解放,,Unlocked by learning %s,ui/meta_upgrade_page.gd
 習得済み,,Learned,ui/meta_upgrade_page.gd
-残響があと%s足りない,,%s more Echoes needed,ui/meta_upgrade_page.gd
 残響 %s で%s,,%s Echoes: %s,ui/meta_upgrade_page.gd
 習得,,Learn,ui/meta_upgrade_page.gd
 先に「%s」を習得する,,Learn %s first,ui/meta_upgrade_page.gd
+%sの星座,,%s constellation,ui/meta_upgrade_page.gd
+必要,,Cost,ui/meta_upgrade_page.gd
+所持,,Held,ui/meta_upgrade_page.gd
+残響があと%s足りない,,%s more Echoes needed,ui/meta_upgrade_page.gd
 左クリック長押し,,Hold left click,ui/action_hud/action_hud.gd
 X・RT長押し,,Hold X / RT,ui/action_hud/action_hud.gd
 残響,,Echoes,ui/action_hud/action_hud.gd
@@ -864,6 +860,7 @@ X・RT長押し,,Hold X / RT,ui/action_hud/action_hud.gd
 ←→↑↓・1〜3,,←→↑↓ / 1–3,ui/route_map/route_map_view.gd
 エリアを選ぶ,,Choose Area,ui/route_map/route_map_view.gd
 進む,,Go,ui/route_map/route_map_view.gd
+ホイール,,Wheel,ui/route_map/route_map_view.gd
 地図を見渡す,,Look Around,ui/route_map/route_map_view.gd
 %s　段階%d,,%s  Tier %d,ui/route_map/route_map_view.gd
 呪い：%s,,Curses: %s,ui/route_map/route_map_view.gd

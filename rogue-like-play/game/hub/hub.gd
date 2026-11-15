@@ -357,9 +357,8 @@ func show_page(target: String) -> void:
 			upgrade_page.focus_first()
 			key_guide.add_hint("Enter", "A", tr("強化"))
 			key_guide.add_hint(tr("矢印"), tr("十字"), tr("選ぶ"))
-			key_guide.add_hint(tr("ドラッグ"), tr("R スティック"), tr("動かす"))
-			key_guide.add_hint(tr("ホイール"), "LT / RT", tr("拡大・縮小"))
-			key_guide.add_hint("C", "Y", tr("中央へ"), upgrade_page.center_view)
+			key_guide.add_hint("Q / E", "LB / RB", tr("星座"))
+			key_guide.add_hint("C", "Y", tr("灯へ"), upgrade_page.return_to_root)
 			key_guide.add_hint("Tab", "View", tr("ステータスへ"), func(): show_page("status"))
 		"status":
 			title_label.text = tr("ステータス")

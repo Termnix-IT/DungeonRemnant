@@ -1,353 +1,264 @@
 class_name MetaUpgradePage
 extends Control
 
-# The lasting upgrades (MetaProgress.UPGRADES) as an upgrade tree, the
-# common form: on the slab, a board larger than its window, the root in the
-# middle and the branches growing out of it (the body's to the left, growth's
-# to the right; the skill and special-move branches above and below, and
-# the weapons' up to the right; a
-# branch still to come would stand sealed, SEALS). Each node is its emblem, with sockets under it when it has
-# ranks, and a small gold diamond over it while the echo held can buy its
-# next rank; a line joins it to the node it grows from, brighter once it can
-# be bought and brightest once held. The tree carries no words: what each
-# branch is for reads from its emblems, and its name is in the column.
+# The lasting upgrades (MetaProgress.UPGRADES) as a star chart, read like an
+# astrolabe: the whole tree on one round window of night sky, all of it in
+# sight at once, nothing dragged or zoomed. The lantern (the tree's root) is
+# the pole. Every upgrade is a star on the ring of its generation (how many
+# steps it stands from the lantern), and each branch is a constellation in
+# its own part of the sky, named outside the rim with the ranks held in it.
+# A line joins a star to the one it grows from. A star held burns gold with
+# rays, one the echo held can light breathes blue, one that waits on another
+# is dark; its ranks are points of light under it. The stars of the
+# constellation the cursor is in carry their names.
 #
-# The board is a carved stone altar (as Diablo IV sets its tree in a carved
-# arch): a round stone round the root, the echo's lamp, lighter toward it,
-# with rings and spokes cut shallow into it, a rim and studs, all drawn
-# dark enough to keep the lines and emblems as easy to read as on bare
-# black. It lies in an opaque well of its own inside the slab; it is dragged
-# with the pointer or moved with the right stick, zoomed with the wheel (LT /
-# RT), follows the focus, and C (Y) brings the root back at its first size.
+# The card on the right is the chosen star in full: its emblem, name and
+# ranks, its figure now and next with what the next rank adds, what it does
+# (unless that only says the figure again), what it waits for, the price
+# beside the echo held and how much is missing, and the one action, a crest
+# button (CrestButton) with the price, that asks to buy (buy_requested; the
+# hub saves, then calls present_purchase). Enter (A) asks the same.
 #
-# The column on the right, in the lobby's ornate frame: the chosen node's
-# emblem, name and its ranks as sockets alone, its figure now and next with
-# what the next rank adds, what it does (unless that only says the figure
-# again) and what it waits for; the lobby's strip of facts with the price and the echo
-# held (as Rogue Legacy 2 sets cost beside gold owned), and how much is
-# missing; and the one action, a crest button (CrestButton) with the price,
-# that asks to buy (buy_requested; the hub saves, then calls
-# present_purchase). Enter (A) on a node asks the same. The pointer chooses a
-# node by resting on it or clicking it, never buys by it, and a press that
-# moves is a drag.
+# Arrows go to the nearest star that way (one joined to this one first),
+# Q/E (LB/RB) and the wheel to the next constellation, C (Y) back to the
+# lantern. The pointer chooses a star by clicking it or a constellation by
+# its name, and buys only by the button.
+#
+# The page is one focusable control that draws itself in a design space of
+# 1520x686 scaled to its rect, in the colours and faces of the theme's
+# StarChart type. The sky is a shader (ui/star_chart/star_sky.gdshader); the
+# button is a node laid over the card. The pointer acts through zones named
+# while drawing.
 
 signal buy_requested(id: StringName)
 
-const CELL := Vector2(108, 92)
-const NODE_SIZE := 60.0
-const ROOT_SIZE := 84.0
-const PIP_SIZE := 9.0
-# The sockets in the column, where they alone tell the rank.
-const COLUMN_PIP := 15.0
-const DETAIL_EMBLEM := 150.0
-const LINE_WIDTH := 2.5
-const RING_WIDTH := 2.5
-# Room past the outermost nodes, as a share of the window, so the board
-# never drifts off into nothing.
-const BOARD_MARGIN := 0.5
-# The focus is kept this far inside the window; past it the board follows.
-const FOLLOW_MARGIN := 90.0
-const FOLLOW_TIME := 0.22
-# A press that moves this far is a drag, not a click.
-const DRAG_THRESHOLD := 8.0
-const PAN_SPEED := 900.0
-# How near and far the board zooms, a wheel notch's step, and how fast the
-# triggers zoom (per second, held fully).
-const ZOOM_MIN := 0.7
-const ZOOM_MAX := 1.8
-const ZOOM_STEP := 1.15
-const ZOOM_RATE := 2.2
-# A focus move goes to a node within this angle of the direction pressed:
-# one it is joined to first, then the nearest, then the upper.
-const AIM_CONE := PI / 3.0
-# The altar: how far its stone reaches past the outermost node, the steps of
-# its lightening toward the lamp, the rings cut a row apart, the spokes and
-# studs round it, and the rim's width.
-const ALTAR_MARGIN := 70.0
-const STONE_STEPS := 28
-const RING_STEP := 92.0
-const SPOKES := 24
-const STUDS := 16
-const RIM_WIDTH := 8.0
-const LAMP_STEPS := 8
-# The diamond over a node the echo held can buy.
-const BUY_MARK := 6.0
-const STRIP_HEIGHT := 60.0
-# The echo's light flowing out from the lamp along the held lines: how fast
-# it runs (px a second), how far apart its sparks follow, each spark's tail,
-# and how it fades where a line meets a node. The lines to nodes the echo
-# held can buy breathe, once a period.
-const FLOW_SPEED := 70.0
-const FLOW_SPACING := 150.0
-const FLOW_TAIL := 40.0
-const FLOW_FADE := 14.0
-const BECKON_PERIOD := 1.8
+enum State { FULL, BUY, SHORT, LOCKED }
+
+const SKY := preload("res://ui/star_chart/star_sky.gdshader")
+const DESIGN := Vector2(1520.0, 686.0)
+const POLE := Vector2(545.0, 343.0)
+# The chart is wider than it is tall: every distance across it is this much
+# longer than the same distance up it.
+const STRETCH := 1.32
+# The rings of the first and the last generation, and the rim past them.
+const FIRST_RING := 92.0
+const LAST_RING := 284.0
+const RIM := 308.0
+const STAR := 18.0
+const POLE_STAR := 27.0
+# The constellations, clockwise from the top.
+const ORDER: Array[StringName] = [&"skill", &"weapon", &"growth", &"special", &"body"]
 const BRANCH_NAMES := {&"": "中央", &"body": "身体", &"growth": "成長", &"skill": "スキル", &"special": "必殺技", &"weapon": "武器"}
-# Branches to come, sealed for now: the branch, its cell, its emblem (none
-# at present).
-const SEALS := []
-const SEAL_NOTE := "この枝はまだ開放されていない"
+# A move goes to a star within this angle of the direction pressed.
+const AIM_CONE := PI / 3.0
+const CARD := Rect2(1104.0, 14.0, 396.0, 658.0)
+# The button's room: a crest button is 84 tall, its plate in the middle.
+const BUTTON := Rect2(1132.0, 584.0, 340.0, 84.0)
+const MOMENT_TIME := UIMotion.MOMENT_TIME + UIMotion.GOLD_TIME
+const MOVE_TIME := UIMotion.SELECT_TIME
+const BREATH := 3.0
 
 var meta: MetaProgress
-# Node id (an upgrade's, or a seal's branch) -> its focusable Button.
-var nodes: Dictionary = {}
 var selected: StringName = MetaProgress.ROOT
+# What the card tells of the chosen star: {id, name, part, rank, ranks,
+# figure, note, waits, price, held, missing, state}.
+var told := {}
 var buy_button: Button
-var name_label: Label
-var rank_label: Label
-var figure_label: Label
-var description_label: Label
-var requirement_label: Label
-# The price and the echo held, side by side, and how much is missing.
-var price_value: Label
-var held_value: Label
-var short_label: Label
-var picture: Control
-var board: Control
-var canvas: Control
-var zoom := 1.0
-var _edges: Control
-var _tree_column: VBoxContainer
-var _info: VBoxContainer
-var _pips: Control
-var _cost_strip: Control
-# How far the altar's stone reaches from the root.
-var _altar_radius := 0.0
-var _flow: Control
-# Node id -> its centre on the canvas, and the id it grows from.
-var _centers: Dictionary = {}
-var _parents: Dictionary = {}
-var _placed := false
-var _board_size := Vector2.ZERO
-var _pan_tween: Tween
-var _press_at := Vector2.INF
-var _press_node: StringName = &""
-var _dragging := false
-var _hover_node: StringName = &""
-# A focus the pointer gave leaves the board where it is.
-var _pointer_focus := false
-var _shown: StringName = &""
-# The triggers' pull (LT, RT), read from their motion.
-var _triggers := Vector2.ZERO
+var _sky: ColorRect
+# Upgrade id -> where its star stands (design space), its angle from the
+# pole, its generation, and the upgrades that grow from it.
+var _places: Dictionary = {}
+var _angles: Dictionary = {}
+var _depths: Dictionary = {}
+var _grown: Dictionary = {}
+# Branch -> [first angle, last angle] of its part of the sky.
+var _parts: Dictionary = {}
+var _clock := 0.0
+var _kicks := {}
+var _zones: Array = []
+var _hover: Variant = null
+var _origin := Vector2.ZERO
+var _zoom := 1.0
+# Where the cursor's ring comes from as it moves, and the star last bought.
+var _from := POLE
+var _bought: StringName = &""
+var _quiet := true
 
 
 func _ready() -> void:
-	var columns := HBoxContainer.new()
-	columns.theme_type_variation = &"ShopColumns"
-	add_child(columns)
-	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# The right column stands in its own ornate frame, so no hairline parts
-	# the two columns (SlabSolidOpen).
-	_tree_column = HubUI.open_column(columns, 2.1, &"SlabSolidOpen")
-	# The tree's own opaque well, so the moving board never runs over the slab.
-	var well := PanelContainer.new()
-	well.theme_type_variation = &"TreeWell"
-	well.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_tree_column.add_child(well)
-	board = Control.new()
-	board.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	board.clip_contents = true
-	board.gui_input.connect(_board_input)
-	board.mouse_exited.connect(func(): _hover_node = &"")
-	board.resized.connect(_on_board_resized)
-	well.add_child(board)
-	# The canvas is the moving layer: no Container lays it out.
-	canvas = Control.new()
-	canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	canvas.draw.connect(_draw_lines)
-	board.add_child(canvas)
-	# The echo's light moving along the lines: over them, under the nodes.
-	_flow = Control.new()
-	_flow.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_flow.draw.connect(_draw_flow)
-	canvas.add_child(_flow)
-	for upgrade in MetaProgress.UPGRADES:
-		_add_node(upgrade.id, upgrade.cell, upgrade.parent, ROOT_SIZE if upgrade.parent.is_empty() else NODE_SIZE)
-	for seal: Array in SEALS:
-		_add_node(seal[0], seal[1], MetaProgress.ROOT, NODE_SIZE)
-	for id: StringName in nodes:
-		_altar_radius = maxf(_altar_radius, (_centers[id] as Vector2).distance_to(_centers[MetaProgress.ROOT]) + (nodes[id] as Button).size.x * 0.5)
-	_altar_radius += ALTAR_MARGIN
-	_link_focus()
-	_edges = Control.new()
-	_edges.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_edges.draw.connect(_draw_edges)
-	board.add_child(_edges)
-	_edges.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_info = HubUI.open_column(columns, 1.0, &"SlabSolidEnd")
-	# The account slides in from the right edge, kept inside its column.
-	var info_panel := _info.get_parent() as Control
-	info_panel.clip_contents = true
-	# The account stands inside the ornate frame laid over the column, as the
-	# lobby's panel keeps its words off its frame.
-	var info_margin := MarginContainer.new()
-	info_margin.theme_type_variation = &"UpgradeInfoMargin"
-	info_panel.remove_child(_info)
-	info_panel.add_child(info_margin)
-	info_margin.add_child(_info)
-	_info.theme_type_variation = &"DetailStack"
-	picture = Control.new()
-	picture.custom_minimum_size = Vector2.ONE * DETAIL_EMBLEM
-	picture.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	picture.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	picture.draw.connect(func(): EmblemIcons.paint(picture, Rect2(Vector2.ZERO, picture.size), _emblem(selected)))
-	_info.add_child(picture)
-	name_label = _centered(HubUI.label(_info, "", &"HeadingLabel"))
-	rank_label = _centered(HubUI.label(_info, "", &"MutedLabel"))
-	_pips = Control.new()
-	_pips.custom_minimum_size.y = COLUMN_PIP + 6
-	_pips.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_pips.draw.connect(func():
-		var upgrade := MetaProgress.find(selected)
-		if upgrade != null and meta != null:
-			_paint_pips(_pips, Vector2(_pips.size.x * 0.5, 0), upgrade, meta.rank(upgrade.id), true, COLUMN_PIP))
-	_info.add_child(_pips)
-	HubUI.rule(_info)
-	figure_label = _centered(HubUI.label(_info, "", &"ValueLabel"))
-	description_label = HubUI.label(_info, "", &"DescriptionLabel")
-	requirement_label = HubUI.label(_info, "", &"MutedLabel")
-	HubUI.space(_info)
-	var strip := HubUI.fact_strip(_info, STRIP_HEIGHT)
-	_cost_strip = strip.get_parent() as Control
-	price_value = HubUI.strip_fact(strip, tr("必要"), &"UpgradeFactValue", &"UpgradeFactCaption")
-	HubUI.strip_divider(strip)
-	held_value = HubUI.strip_fact(strip, tr("所持"), &"UpgradeFactValue", &"UpgradeFactCaption")
-	short_label = _centered(HubUI.label(_info, "", &"MutedLabel"))
+	theme_type_variation = &"StarChart"
+	focus_mode = Control.FOCUS_ALL
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	_sky = ColorRect.new()
+	_sky.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_sky.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_sky.show_behind_parent = true
+	var night := ShaderMaterial.new()
+	night.shader = SKY
+	_sky.material = night
+	add_child(_sky)
 	# Buying is this screen's moment: the crest with the lobby's mark for it.
+	# The focus stays on the chart, so Enter there and the button are one.
 	var button := CrestButton.new()
 	button.name = "Buy"
 	button.kind = &"upgrade"
-	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	button.pressed.connect(_buy)
-	_info.add_child(button)
+	button.focus_mode = Control.FOCUS_NONE
+	button.pressed.connect(request_buy)
+	add_child(button)
 	buy_button = button
-	HubUI.ornate_frame(info_panel)
-	UIMotion.bind_buttons(_info)
+	UIMotion.bind_buttons(self)
+	_lay_out()
+	resized.connect(_fit)
+	theme_changed.connect(_fit)
+	_fit()
 
 
-func _centered(label: Label) -> Label:
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	return label
+# Places the design space in the rect, and the sky and the button with it.
+func _fit() -> void:
+	if _sky == null or size.x <= 0.0 or size.y <= 0.0:
+		return
+	_zoom = minf(size.x / DESIGN.x, size.y / DESIGN.y)
+	_origin = ((size - DESIGN * _zoom) * 0.5).round()
+	var night := _sky.material as ShaderMaterial
+	night.set_shader_parameter(&"extent", size)
+	night.set_shader_parameter(&"origin", _origin)
+	night.set_shader_parameter(&"zoom", _zoom)
+	night.set_shader_parameter(&"pole", POLE)
+	night.set_shader_parameter(&"reach", Vector2(RIM * STRETCH, RIM))
+	for item: StringName in [&"sky_deep", &"sky_light", &"sky_haze", &"lamp", &"speck"]:
+		night.set_shader_parameter(item, get_theme_color(item))
+	buy_button.position = _origin + BUTTON.position * _zoom
+	buy_button.size = BUTTON.size * _zoom
+	queue_redraw()
 
 
-func _add_node(id: StringName, cell: Vector2i, parent: StringName, extent: float) -> void:
-	var node := Button.new()
-	node.theme_type_variation = &"UpgradeNode"
-	node.focus_mode = Control.FOCUS_ALL
-	# The board reads the pointer itself, to tell a click from a drag.
-	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	node.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	canvas.add_child(node)
-	node.size = Vector2.ONE * extent
-	var center := Vector2(cell) * CELL
-	node.position = center - node.size * 0.5
-	node.pivot_offset = node.size * 0.5
-	node.draw.connect(_draw_node.bind(node, id))
-	node.focus_entered.connect(_on_node_focused.bind(id))
-	node.focus_exited.connect(node.queue_redraw)
-	node.pressed.connect(_buy)
-	nodes[id] = node
-	_centers[id] = center
-	_parents[id] = parent
+# --- The chart ---
+
+# A point of the chart: `radius` from the pole at `angle`.
+func _at(angle: float, radius: float) -> Vector2:
+	return POLE + Vector2(cos(angle) * STRETCH, sin(angle)) * radius
 
 
-# Each direction from a node leads to the one _neighbor picks, or nowhere.
-func _link_focus() -> void:
-	var sides := [[SIDE_LEFT, Vector2.LEFT], [SIDE_RIGHT, Vector2.RIGHT], [SIDE_TOP, Vector2.UP], [SIDE_BOTTOM, Vector2.DOWN]]
-	for id: StringName in nodes:
-		var node: Button = nodes[id]
-		for side: Array in sides:
-			var target := _neighbor(id, side[1])
-			node.set_focus_neighbor(side[0], (nodes[target] as Button).get_path() if not target.is_empty() else node.get_path())
-
-
-func _neighbor(id: StringName, direction: Vector2) -> StringName:
-	var from: Vector2 = _centers[id]
-	var best: StringName = &""
-	var best_score := Vector3.INF
-	for other: StringName in nodes:
-		var offset: Vector2 = _centers[other] - from
-		if other == id or absf(offset.angle_to(direction)) > AIM_CONE + 0.001:
+# A leaf to a slot of sky, an upgrade at the middle of what grows from it,
+# each on its generation's ring.
+func _lay_out() -> void:
+	var deepest := 1
+	for upgrade in MetaProgress.UPGRADES:
+		_grown[upgrade.id] = []
+	for upgrade in MetaProgress.UPGRADES:
+		if not upgrade.parent.is_empty():
+			(_grown[upgrade.parent] as Array).append(upgrade.id)
+	for upgrade in MetaProgress.UPGRADES:
+		var steps := 0
+		var at := upgrade
+		while at != null and not at.parent.is_empty():
+			steps += 1
+			at = MetaProgress.find(at.parent)
+		_depths[upgrade.id] = steps
+		deepest = maxi(deepest, steps)
+	var slot := TAU / maxf(1.0, _leaves(MetaProgress.ROOT))
+	var next := [-PI * 0.5 - slot * _leaves(first_of(ORDER[0])) * 0.5]
+	for branch in ORDER:
+		var first := first_of(branch)
+		if first.is_empty():
 			continue
-		var joined: bool = _parents[other] == id or _parents[id] == other
-		var score := Vector3(0.0 if joined else 1.0, snappedf(offset.length(), 0.1), _centers[other].y)
-		if score < best_score:
-			best_score = score
-			best = other
-	return best
+		var from: float = next[0]
+		_place(first, slot, next)
+		_parts[branch] = [from, next[0]]
+	_angles[MetaProgress.ROOT] = 0.0
+	for id: StringName in _angles:
+		var steps: int = _depths[id]
+		var radius := 0.0 if steps == 0 else lerpf(FIRST_RING, LAST_RING, float(steps - 1) / maxf(1.0, deepest - 1.0))
+		_places[id] = _at(_angles[id], radius)
+
+
+func _leaves(id: StringName) -> int:
+	var grown: Array = _grown.get(id, [])
+	if grown.is_empty():
+		return 1
+	var count := 0
+	for child: StringName in grown:
+		count += _leaves(child)
+	return count
+
+
+func _place(id: StringName, slot: float, next: Array) -> float:
+	var grown: Array = _grown[id]
+	var angle := 0.0
+	if grown.is_empty():
+		angle = next[0] + slot * 0.5
+		next[0] += slot
+	else:
+		for child: StringName in grown:
+			angle += _place(child, slot, next)
+		angle /= grown.size()
+	_angles[id] = angle
+	return angle
+
+
+# The star a constellation grows from the lantern by, or none.
+func first_of(branch: StringName) -> StringName:
+	for id: StringName in _grown[MetaProgress.ROOT]:
+		if MetaProgress.find(id).branch == branch:
+			return id
+	return &""
+
+
+# Where a star stands in the page's own rect.
+func place_of(id: StringName) -> Vector2:
+	return _origin + (_places[id] as Vector2) * _zoom
+
+
+func state_of(id: StringName) -> State:
+	var upgrade := MetaProgress.find(id)
+	if meta == null or upgrade == null or not meta.unlocked(id):
+		return State.LOCKED
+	if upgrade.price(meta.rank(id)) < 0:
+		return State.FULL
+	return State.BUY if meta.can_buy(id) else State.SHORT
+
+
+# [ranks held, ranks in all] of a constellation.
+func tally(branch: StringName) -> Array[int]:
+	var held := 0
+	var all := 0
+	for upgrade in MetaProgress.UPGRADES:
+		if upgrade.branch == branch and not upgrade.parent.is_empty():
+			held += meta.rank(upgrade.id) if meta != null else 0
+			all += upgrade.max_rank()
+	return [held, all]
 
 
 func refresh(current: MetaProgress) -> void:
 	meta = current
 	_tell()
-	canvas.queue_redraw()
-	for node: Button in nodes.values():
-		node.queue_redraw()
+	queue_redraw()
 
 
-func _on_node_focused(id: StringName) -> void:
-	var animate := not _shown.is_empty() and id != _shown
-	selected = id
-	_shown = id
-	_tell()
-	for node: Button in nodes.values():
-		node.queue_redraw()
-	if animate:
-		UIMotion.of(_info).slide_in()
-	if not _pointer_focus:
-		_follow(id)
-	_pointer_focus = false
-
-
-# The right column for the chosen node.
+# The card and the button for the chosen star.
 func _tell() -> void:
-	if meta == null or name_label == null:
-		return
-	picture.queue_redraw()
-	_pips.queue_redraw()
 	var upgrade := MetaProgress.find(selected)
-	if upgrade == null:
-		name_label.text = tr(BRANCH_NAMES.get(selected, ""))
-		rank_label.text = tr("未開放の枝")
-		rank_label.show()
-		figure_label.hide()
-		description_label.text = tr(SEAL_NOTE)
-		description_label.show()
-		requirement_label.hide()
-		_cost_strip.hide()
-		short_label.hide()
-		buy_button.hide()
+	if meta == null or upgrade == null or buy_button == null:
 		return
 	var rank := meta.rank(upgrade.id)
-	name_label.text = tr(upgrade.display_name)
-	# The ranks are told by the sockets under the name alone; the figure line
-	# carries what the next rank adds, so a description that only says it
-	# again is left off.
-	rank_label.hide()
-	figure_label.text = upgrade.figure_line(rank)
-	figure_label.visible = not figure_label.text.is_empty()
-	description_label.text = tr(upgrade.description)
-	description_label.visible = not upgrade.description_restates_figure(rank)
+	var price := upgrade.price(rank)
 	var waiting := not meta.unlocked(upgrade.id)
 	var parent := MetaProgress.find(upgrade.parent)
-	requirement_label.text = tr("「%s」を習得すると解放") % tr(parent.display_name) if waiting else ""
-	requirement_label.visible = waiting
-	buy_button.show()
-	var price := upgrade.price(rank)
-	# The price beside the echo held; once all its ranks are held there is no
-	# price to set beside it.
-	_cost_strip.visible = price >= 0
-	short_label.visible = price >= 0 and meta.echo < price
+	told = {
+		id = upgrade.id, name = tr(upgrade.display_name), part = tr(BRANCH_NAMES.get(upgrade.branch, "")),
+		rank = rank, ranks = upgrade.max_rank(), figure = upgrade.figure_line(rank),
+		# A description that only says the figure again is left off.
+		note = "" if upgrade.description_restates_figure(rank) else tr(upgrade.description),
+		waits = tr("「%s」を習得すると解放") % tr(parent.display_name) if waiting else "",
+		price = price, held = meta.echo, missing = maxi(0, price - meta.echo) if price >= 0 else 0,
+		state = state_of(upgrade.id),
+	}
 	if price < 0:
 		buy_button.text = tr("習得済み")
 		buy_button.disabled = true
 		buy_button.tooltip_text = ""
 		return
-	price_value.text = UIFormat.amount(price)
-	held_value.text = UIFormat.amount(meta.echo)
-	short_label.text = tr("残響があと%s足りない") % UIFormat.amount(price - meta.echo)
 	buy_button.text = tr("残響 %s で%s") % [UIFormat.amount(price), tr("習得") if rank == 0 else tr("強化")]
 	buy_button.disabled = not meta.can_buy(upgrade.id)
 	if waiting:
@@ -358,396 +269,538 @@ func _tell() -> void:
 		buy_button.tooltip_text = ""
 
 
-func _buy() -> void:
+# Moves the cursor to a star.
+func choose(id: StringName) -> void:
+	if not _places.has(id) or id == selected:
+		return
+	_from = _cursor()
+	selected = id
+	_tell()
+	_kick(&"move")
+	_sound(&"ui_move")
+	queue_redraw()
+
+
+# The star a direction leads to: within the cone, one joined to this one
+# first, then the nearest. Distances are judged as the chart is drawn.
+func neighbour(direction: Vector2) -> StringName:
+	var from: Vector2 = _places[selected]
+	var here := MetaProgress.find(selected)
+	var best: StringName = &""
+	var best_score := Vector2.INF
+	for other in MetaProgress.UPGRADES:
+		var offset: Vector2 = _places[other.id] - from
+		if other.id == selected or absf(offset.angle_to(direction)) > AIM_CONE + 0.001:
+			continue
+		var joined := other.parent == selected or here.parent == other.id
+		var score := Vector2(0.0 if joined else 1.0, offset.length())
+		if score < best_score:
+			best_score = score
+			best = other.id
+	return best
+
+
+func step(direction: Vector2) -> void:
+	choose(neighbour(direction))
+
+
+# Goes to the next constellation's first star (the previous with -1).
+func turn(by: int) -> void:
+	var parts: Array[StringName] = []
+	for branch in ORDER:
+		if _parts.has(branch):
+			parts.append(branch)
+	if parts.is_empty():
+		return
+	var at := parts.find(MetaProgress.find(selected).branch)
+	var to := posmod(at + by, parts.size()) if at >= 0 else (0 if by > 0 else parts.size() - 1)
+	choose(first_of(parts[to]))
+
+
+# C (Y): back to the lantern.
+func return_to_root() -> void:
+	choose(MetaProgress.ROOT)
+
+
+# Enter (A) and the button: asks to buy the chosen star's next rank.
+func request_buy() -> void:
 	if meta != null and meta.can_buy(selected):
 		buy_requested.emit(selected)
 	else:
+		_kick(&"refuse")
 		GameAudio.play(self, &"ui_deny", -18.0)
 
 
-# After a purchase has been saved: the node's moment, and the nodes it opens.
+# After a purchase has been saved: the star's moment.
 func present_purchase(id: StringName) -> void:
-	if not nodes.has(id):
+	if not _places.has(id):
 		return
-	UIMotion.of(nodes[id]).pulse(1.03, UIMotion.GOLD_TIME)
-	UIMotion.of(_pips).reveal()
-	for other: StringName in nodes:
-		if _parents[other] == id and meta != null and meta.rank(other) == 0:
-			UIMotion.of(nodes[other]).reveal(UIMotion.ROW_TIME)
+	_bought = id
+	_kick(&"buy")
+	queue_redraw()
+
+
+# How far through its moment a star just bought is (0 to 1; 1 once over, and
+# for every other star).
+func moment(id: StringName) -> float:
+	if id != _bought:
+		return 1.0
+	return clampf(_since(&"buy") / MOMENT_TIME, 0.0, 1.0)
 
 
 func focus_first() -> void:
-	if nodes.has(selected):
-		(nodes[selected] as Button).grab_focus()
+	grab_focus()
 
 
-# The root chosen and the board brought back around it.
-func center_view() -> void:
-	_pointer_focus = true
-	(nodes[MetaProgress.ROOT] as Button).grab_focus()
-	_pointer_focus = false
-	_stop_pan()
-	_set_zoom(1.0, board.size * 0.5)
-	_pan_to(board.size * 0.5 - _centers[MetaProgress.ROOT])
-
-
-# Opening the page: the tree first, the column a beat later.
+# Opening the page: the stars come out ring by ring.
 func play_entrance() -> void:
-	UIMotion.of(_tree_column).appear(0.0, UIMotion.WINDOW_TIME)
-	UIMotion.of(_info).appear(UIMotion.STAGGER_TIME)
+	_kick(&"open")
 
 
-func _emblem(id: StringName) -> String:
-	var upgrade := MetaProgress.find(id)
-	if upgrade != null:
-		return upgrade.emblem
-	for seal: Array in SEALS:
-		if seal[0] == id:
-			return seal[2]
-	return ""
+func _sound(cue: StringName) -> void:
+	if not _quiet and is_visible_in_tree():
+		GameAudio.play(self, cue, -22.0)
 
 
-# --- The board's position ---
-
-func _on_board_resized() -> void:
-	if board.size.x <= 0.0:
-		return
-	# The point in the window's middle stays there as the window settles.
-	if not _placed:
-		_placed = true
-		_place(board.size * 0.5 - _centers[MetaProgress.ROOT] * zoom)
-	else:
-		_place(canvas.position + (board.size - _board_size) * 0.5)
-	_board_size = board.size
-
-
-func _place(at: Vector2) -> void:
-	canvas.position = _clamp(at)
-	_edges.queue_redraw()
-
-
-# The canvas kept where the window stays over the nodes and their margin.
-func _clamp(at: Vector2) -> Vector2:
-	var bounds := Rect2(_centers[MetaProgress.ROOT], Vector2.ZERO)
-	for id: StringName in nodes:
-		bounds = bounds.merge(Rect2(_centers[id], Vector2.ZERO).grow((nodes[id] as Button).size.x * 0.5 + PIP_SIZE * 2.0))
-	bounds = Rect2(bounds.position * zoom, bounds.size * zoom)
-	bounds = bounds.grow_individual(board.size.x * BOARD_MARGIN, board.size.y * BOARD_MARGIN, board.size.x * BOARD_MARGIN, board.size.y * BOARD_MARGIN)
-	var result := at
-	for axis in 2:
-		var low: float = board.size[axis] - bounds.end[axis]
-		var high: float = -bounds.position[axis]
-		result[axis] = (low + high) * 0.5 if low > high else clampf(at[axis], low, high)
-	return result
-
-
-# Brings a node inside the window's margin, if it is out of it.
-func _follow(id: StringName) -> void:
-	if board.size.x <= 0.0:
-		return
-	var center := _on_board(id)
-	var inner := Rect2(Vector2.ZERO, board.size).grow(-FOLLOW_MARGIN)
-	if inner.size.x <= 0.0 or inner.size.y <= 0.0 or inner.has_point(center):
-		return
-	var kept := Vector2(clampf(center.x, inner.position.x, inner.end.x), clampf(center.y, inner.position.y, inner.end.y))
-	_pan_to(canvas.position + kept - center)
-
-
-func _pan_to(at: Vector2) -> void:
-	_stop_pan()
-	if not is_visible_in_tree():
-		_place(at)
-		return
-	_pan_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	_pan_tween.tween_method(_place, canvas.position, _clamp(at), FOLLOW_TIME)
-
-
-func _stop_pan() -> void:
-	if _pan_tween != null:
-		_pan_tween.kill()
-		_pan_tween = null
-
+# --- Clock ---
 
 func _process(delta: float) -> void:
 	if not is_visible_in_tree():
 		return
-	_flow.queue_redraw()
-	var stick := Input.get_vector(&"aim_left", &"aim_right", &"aim_up", &"aim_down")
-	if stick != Vector2.ZERO:
-		_stop_pan()
-		_place(canvas.position - stick * PAN_SPEED * delta)
-	var pull := _triggers.y - _triggers.x
-	if absf(pull) > 0.1:
-		_stop_pan()
-		_set_zoom(zoom * pow(ZOOM_RATE, pull * delta), board.size * 0.5)
+	_quiet = false
+	_clock += delta
+	queue_redraw()
 
 
-# A node's centre in the window.
-func _on_board(id: StringName) -> Vector2:
-	return canvas.position + _centers[id] * zoom
+func _kick(what: StringName) -> void:
+	_kicks[what] = _clock
 
 
-# Zooms to `value`, keeping the board's point under `anchor` where it is.
-func _set_zoom(value: float, anchor: Vector2) -> void:
-	var under := (anchor - canvas.position) / zoom
-	zoom = clampf(value, ZOOM_MIN, ZOOM_MAX)
-	canvas.scale = Vector2.ONE * zoom
-	_place(anchor - under * zoom)
+func _since(what: StringName) -> float:
+	return _clock - float(_kicks.get(what, -1000.0))
 
 
-# --- The pointer ---
-
-func _node_at(at: Vector2) -> StringName:
-	var point := (at - canvas.position) / zoom
-	for id: StringName in nodes:
-		if point.distance_to(_centers[id]) <= (nodes[id] as Button).size.x * 0.5:
-			return id
-	return &""
+func _eased(what: StringName, time: float) -> float:
+	var share := clampf(_since(what) / time, 0.0, 1.0)
+	return 1.0 - pow(1.0 - share, 3.0)
 
 
-func _board_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
-		if event.pressed:
-			_stop_pan()
-			_set_zoom(zoom * (ZOOM_STEP if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / ZOOM_STEP), event.position)
-		board.accept_event()
-	elif event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT, MOUSE_BUTTON_MIDDLE]:
-		if event.pressed:
-			_press_at = event.position
-			_press_node = _node_at(event.position)
-			_dragging = false
-		elif _press_at != Vector2.INF:
-			if not _dragging and event.button_index == MOUSE_BUTTON_LEFT and not _press_node.is_empty() and _press_node == _node_at(event.position):
-				_choose_by_pointer(_press_node)
-			_press_at = Vector2.INF
-			_dragging = false
-		board.accept_event()
-	elif event is InputEventMouseMotion:
-		if _press_at != Vector2.INF:
-			if not _dragging and event.position.distance_to(_press_at) >= DRAG_THRESHOLD:
-				_dragging = true
-				_hover_node = &""
-				_stop_pan()
-			if _dragging:
-				_place(canvas.position + event.relative)
-			board.accept_event()
+# Where the cursor's ring is now, on its way to the chosen star.
+func _cursor() -> Vector2:
+	return _from.lerp(_places[selected], _eased(&"move", MOVE_TIME))
+
+
+# --- Input ---
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		_hover = _zone_at(event.position)
+		return
+	if event is InputEventMouseButton:
+		if not event.pressed:
 			return
-		var under := _node_at(event.position)
-		if under != _hover_node:
-			_hover_node = under
-			if not under.is_empty():
-				_rest_on(under)
-
-
-# Resting the pointer on a node a moment chooses it.
-func _rest_on(id: StringName) -> void:
-	await get_tree().create_timer(HubLobby.HOVER_INTENT).timeout
-	if _hover_node == id and not _dragging and _press_at == Vector2.INF and is_visible_in_tree():
-		_choose_by_pointer(id)
-
-
-func _choose_by_pointer(id: StringName) -> void:
-	var node: Button = nodes[id]
-	if node.has_focus():
+		match event.button_index:
+			MOUSE_BUTTON_LEFT:
+				grab_focus()
+				var id: Variant = _zone_at(event.position)
+				if id != null:
+					_press(id)
+				accept_event()
+			MOUSE_BUTTON_WHEEL_UP:
+				turn(-1)
+				accept_event()
+			MOUSE_BUTTON_WHEEL_DOWN:
+				turn(1)
+				accept_event()
 		return
-	_pointer_focus = true
-	node.grab_focus()
-	_pointer_focus = false
+	var handled := true
+	if event.is_action_pressed(&"ui_left", true):
+		step(Vector2.LEFT)
+	elif event.is_action_pressed(&"ui_right", true):
+		step(Vector2.RIGHT)
+	elif event.is_action_pressed(&"ui_up", true):
+		step(Vector2.UP)
+	elif event.is_action_pressed(&"ui_down", true):
+		step(Vector2.DOWN)
+	elif event.is_action_pressed(&"ui_accept"):
+		request_buy()
+	elif _pressed(event, KEY_Q, JOY_BUTTON_LEFT_SHOULDER):
+		turn(-1)
+	elif _pressed(event, KEY_E, JOY_BUTTON_RIGHT_SHOULDER):
+		turn(1)
+	elif _pressed(event, KEY_C, JOY_BUTTON_Y):
+		return_to_root()
+	else:
+		handled = false
+	if handled:
+		accept_event()
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not is_visible_in_tree():
-		return
-	if event is InputEventJoypadMotion and event.axis in [JOY_AXIS_TRIGGER_LEFT, JOY_AXIS_TRIGGER_RIGHT]:
-		_triggers[0 if event.axis == JOY_AXIS_TRIGGER_LEFT else 1] = event.axis_value
-		return
-	var key: bool = event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_C
-	var pad: bool = event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_Y
-	if key or pad:
-		center_view()
-		get_viewport().set_input_as_handled()
+func _pressed(event: InputEvent, key: Key, button: int) -> bool:
+	if event is InputEventKey:
+		return event.pressed and not event.echo and event.keycode == key
+	return event is InputEventJoypadButton and event.pressed and event.button_index == button
+
+
+func _press(id: Variant) -> void:
+	var what: Array = id
+	match what[0]:
+		&"star":
+			choose(what[1])
+		&"part":
+			choose(first_of(what[1]))
+
+
+func _zone(rect: Rect2, id: Variant) -> void:
+	_zones.append([rect, id])
+
+
+func _zone_at(point: Vector2) -> Variant:
+	var at := (point - _origin) / _zoom
+	for index in range(_zones.size() - 1, -1, -1):
+		if (_zones[index][0] as Rect2).has_point(at):
+			return _zones[index][1]
+	return null
+
+
+func _hovered(kind: StringName, what: StringName) -> bool:
+	if not _hover is Array:
+		return false
+	var held: Array = _hover
+	return held[0] == kind and held[1] == what
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_MOUSE_EXIT:
+		_hover = null
 
 
 # --- Drawing ---
 
-func _state_color(id: StringName) -> Color:
-	if MetaProgress.find(id) == null or meta == null:
-		return get_theme_color(&"line_closed", &"UpgradeTree")
-	if meta.rank(id) > 0:
-		return get_theme_color(&"line_held", &"UpgradeTree")
-	return get_theme_color(&"line_open" if meta.unlocked(id) else &"line_closed", &"UpgradeTree")
+func _colour(item: StringName, share := 1.0) -> Color:
+	var colour := get_theme_color(item)
+	return Color(colour, colour.a * share)
 
 
-# A line's two ends: from the rim of the node it grows from to just short of
-# its own.
-func _segment(id: StringName) -> PackedVector2Array:
-	var parent: StringName = _parents[id]
-	var from: Vector2 = _centers[parent]
-	var to: Vector2 = _centers[id]
-	var along := (to - from).normalized()
-	return PackedVector2Array([from + along * (nodes[parent] as Button).size.x * 0.5, to - along * ((nodes[id] as Button).size.x * 0.5 + 4.0)])
+func _face(item: StringName) -> Font:
+	return get_theme_font(item)
 
 
-# How far a node's centre lies from the root's, along the lines between.
-func _path_length(id: StringName) -> float:
-	var parent: StringName = _parents[id]
-	if parent.is_empty():
+func _size(item: StringName) -> int:
+	return get_theme_font_size(item)
+
+
+func _words(at: Vector2, words: String, face: StringName, size: StringName, colour: Color, align := HORIZONTAL_ALIGNMENT_LEFT, width := -1.0) -> void:
+	draw_string(_face(face), at, words, align, width, _size(size), colour)
+
+
+func _width(words: String, face: StringName, size: StringName) -> float:
+	return _face(face).get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, _size(size)).x
+
+
+# Japanese breaks between any two letters; a script with spaces, at them.
+func _breaks() -> int:
+	return TextServer.BREAK_MANDATORY | (TextServer.BREAK_GRAPHEME_BOUND if TranslationServer.get_locale().begins_with("ja") else TextServer.BREAK_WORD_BOUND)
+
+
+# Wrapped words in the card; returns the height they took.
+func _lines(at: Vector2, words: String, face: StringName, size: StringName, colour: Color, width: float, align := HORIZONTAL_ALIGNMENT_LEFT, most := 6) -> float:
+	if words.is_empty():
 		return 0.0
-	return _path_length(parent) + (_centers[id] as Vector2).distance_to(_centers[parent])
+	draw_multiline_string(_face(face), at, words, align, width, _size(size), most, colour, _breaks())
+	return _face(face).get_multiline_string_size(words, align, width, _size(size), most, _breaks()).y
+
+
+func _ring(centre: Vector2, radius: float, colour: Color, width := 1.5) -> void:
+	draw_arc(centre, radius, 0.0, TAU, maxi(24, int(radius * 0.9)), colour, width, true)
+
+
+# A ring of the chart round the pole, or a part of one.
+func _oval(radius: float, colour: Color, width := 1.0, from := 0.0, to := TAU) -> void:
+	var count := maxi(8, int(128.0 * (to - from) / TAU))
+	var points := PackedVector2Array()
+	for index in count + 1:
+		points.append(_at(lerpf(from, to, float(index) / count), radius))
+	draw_polyline(points, colour, width, true)
+
+
+# A soft round light.
+func _glow(centre: Vector2, radius: float, colour: Color) -> void:
+	var points := PackedVector2Array([centre])
+	var colours := PackedColorArray([colour])
+	for index in 33:
+		points.append(centre + Vector2.from_angle(TAU * index / 32.0) * radius)
+		colours.append(Color(colour, 0.0))
+	for index in 32:
+		draw_polygon(PackedVector2Array([points[0], points[index + 1], points[index + 2]]), PackedColorArray([colours[0], colours[index + 1], colours[index + 2]]))
+
+
+# A four-pointed star.
+func _spark(centre: Vector2, radius: float, colour: Color) -> void:
+	var points := PackedVector2Array()
+	for index in 8:
+		points.append(centre + Vector2.from_angle(TAU * index / 8.0 - PI * 0.5) * (radius if index % 2 == 0 else radius * 0.32))
+	draw_colored_polygon(points, colour)
+
+
+# The picture inside a medallion, without its bronze rim, as a disc.
+func _picture(centre: Vector2, radius: float, key: String, tint: Color) -> void:
+	var picture := EmblemIcons.texture(key)
+	if picture == null:
+		return
+	var points := PackedVector2Array()
+	var uvs := PackedVector2Array()
+	for index in 48:
+		var way := Vector2.from_angle(TAU * index / 48.0)
+		points.append(centre + way * radius)
+		uvs.append(Vector2(0.5, 0.5) + way * 0.36)
+	draw_polygon(points, PackedColorArray([tint]), uvs, picture)
+
+
+func _draw() -> void:
+	_zones.clear()
+	if meta == null or told.is_empty():
+		return
+	draw_set_transform(_origin, 0.0, Vector2.ONE * _zoom)
+	_draw_instrument()
+	_draw_lines()
+	for upgrade in MetaProgress.UPGRADES:
+		_draw_star(upgrade)
+	_draw_names()
+	_draw_cursor()
+	_draw_card()
+	draw_set_transform(Vector2.ZERO)
+
+
+# The rings of the generations, the rim, the parts of the sky and their names.
+func _draw_instrument() -> void:
+	var rings := {}
+	for id: StringName in _places:
+		if _depths[id] > 0:
+			rings[snappedf(_ring_of(id), 0.5)] = true
+	for radius: float in rings:
+		_oval(radius, _colour(&"brass", 0.22))
+	_oval(RIM, _colour(&"brass", 0.6), 1.5)
+	_oval(RIM + 6.0, _colour(&"brass", 0.32))
+	for index in 120:
+		var angle := TAU * index / 120.0
+		draw_line(_at(angle, RIM), _at(angle, RIM + (6.0 if index % 5 == 0 else 3.0)), _colour(&"brass", 0.55), 1.0)
+	var chosen_part := MetaProgress.find(selected).branch
+	for branch in ORDER:
+		if not _parts.has(branch):
+			continue
+		var part: Array = _parts[branch]
+		var from: float = part[0]
+		var to: float = part[1]
+		var here := chosen_part == branch
+		draw_line(_at(from, FIRST_RING * 0.6), _at(from, RIM), _colour(&"brass", 0.16), 1.0)
+		if here:
+			_oval(RIM + 3.0, _colour(&"gold", 0.9), 4.0, from, to)
+		# Its name stands outside the rim, read level.
+		var mid := (from + to) * 0.5
+		var way := Vector2(cos(mid), sin(mid))
+		var count := tally(branch)
+		var name := "%s　%d / %d" % [tr(BRANCH_NAMES[branch]), count[0], count[1]]
+		var wide := _width(name, &"title_font", &"part_size")
+		var edge := _at(mid, RIM + 20.0)
+		# Beside the rim at its sides, centred over or under it at its head and foot.
+		var lean := clampf(way.x * 2.0, -1.0, 1.0)
+		var at := Vector2(edge.x + wide * 0.5 * (lean - 1.0), edge.y + 6.0 + 10.0 * way.y)
+		at.x = clampf(at.x, 4.0, CARD.position.x - wide - 12.0)
+		at.y = clampf(at.y, 20.0, DESIGN.y - 6.0)
+		var colour := _colour(&"gold") if here else (_colour(&"pale") if _hovered(&"part", branch) else _colour(&"dim"))
+		_words(at, name, &"title_font", &"part_size", colour)
+		_zone(Rect2(at - Vector2(6.0, 22.0), Vector2(wide + 12.0, 30.0)), [&"part", branch])
+
+
+# The ring a star stands on: its distance from the pole, up the chart.
+func _ring_of(id: StringName) -> float:
+	var offset: Vector2 = _places[id] - POLE
+	return Vector2(offset.x / STRETCH, offset.y).length()
+
+
+func _radius(id: StringName) -> float:
+	return POLE_STAR if id == MetaProgress.ROOT else STAR
+
+
+# A line's two ends: clear of the star it grows from and of its own.
+func _segment(upgrade: MetaUpgrade) -> PackedVector2Array:
+	var from: Vector2 = _places[upgrade.parent]
+	var to: Vector2 = _places[upgrade.id]
+	var along := (to - from).normalized()
+	return PackedVector2Array([from + along * (_radius(upgrade.parent) + 5.0), to - along * (STAR + 5.0)])
 
 
 func _draw_lines() -> void:
-	_draw_altar()
-	for id: StringName in nodes:
-		if (_parents[id] as StringName).is_empty():
+	var breath := 0.5 + 0.5 * sin(_clock * BREATH)
+	for upgrade in MetaProgress.UPGRADES:
+		if upgrade.parent.is_empty():
 			continue
-		var ends := _segment(id)
-		var start := ends[0]
-		var end := ends[1]
-		if MetaProgress.find(id) == null:
-			canvas.draw_dashed_line(start, end, _state_color(id), LINE_WIDTH, 10.0)
+		var ends := _segment(upgrade)
+		var state := state_of(upgrade.id)
+		if meta.rank(upgrade.id) > 0:
+			draw_line(ends[0], ends[1], _colour(&"gold", 0.85), 2.0, true)
+			# The light that runs out to a star just lit.
+			var lit := moment(upgrade.id)
+			if lit < 1.0:
+				var head := ends[0].lerp(ends[1], clampf(lit * 2.5, 0.0, 1.0))
+				draw_line(ends[0], head, _colour(&"pale", 1.0 - lit), 5.0, true)
+				_glow(head, 24.0, _colour(&"gold", 0.8 * (1.0 - lit)))
+		elif state == State.LOCKED:
+			draw_dashed_line(ends[0], ends[1], _colour(&"dark", 0.9), 1.2, 6.0)
 		else:
-			canvas.draw_line(start, end, _state_color(id), LINE_WIDTH, true)
+			draw_line(ends[0], ends[1], _colour(&"blue", (0.35 + 0.35 * breath) if state == State.BUY else 0.3), 1.5, true)
 
 
-# The echo's light, from the lamp outward. Along every held line sparks run
-# away from the root, spaced along the whole path so they pass on from line
-# to line as one stream; each fades where its line meets a node. A line to a
-# node the echo held can buy breathes a soft gold, once a period.
-func _draw_flow() -> void:
-	if meta == null:
-		return
-	var now := Time.get_ticks_msec() / 1000.0
-	var head := fmod(now * FLOW_SPEED, FLOW_SPACING)
-	var light := get_theme_color(&"flow", &"UpgradeTree")
-	var glow := get_theme_color(&"flow_glow", &"UpgradeTree")
-	var beckon := get_theme_color(&"beckon", &"UpgradeTree")
-	var breath := 0.5 + 0.5 * sin(now * TAU / BECKON_PERIOD)
-	for id: StringName in nodes:
-		if (_parents[id] as StringName).is_empty() or MetaProgress.find(id) == null:
-			continue
-		var ends := _segment(id)
-		var length := ends[0].distance_to(ends[1])
-		if length <= 0.0:
-			continue
-		var along := (ends[1] - ends[0]) / length
-		if meta.rank(id) == 0:
-			if meta.can_buy(id):
-				_flow.draw_line(ends[0], ends[1], Color(beckon, beckon.a * breath), LINE_WIDTH + 1.0, true)
-			continue
-		# Path distance from the root at this line's start, and the first
-		# spark at or past it.
-		var from := _path_length(_parents[id]) + (nodes[_parents[id]] as Button).size.x * 0.5
-		var spark := head + ceilf((from - head) / FLOW_SPACING) * FLOW_SPACING
-		while spark - from <= length + FLOW_TAIL:
-			var tip := minf(spark - from, length)
-			var tail := maxf(spark - from - FLOW_TAIL, 0.0)
-			if tip > tail:
-				var fade := clampf(minf(tip, length - tail) / FLOW_FADE, 0.0, 1.0)
-				var a := ends[0] + along * tail
-				var b := ends[0] + along * tip
-				_flow.draw_polyline_colors(PackedVector2Array([a, b]), PackedColorArray([Color(glow, 0.0), Color(glow, glow.a * fade)]), LINE_WIDTH * 3.0, true)
-				_flow.draw_polyline_colors(PackedVector2Array([a, b]), PackedColorArray([Color(light, 0.0), Color(light, light.a * fade)]), LINE_WIDTH, true)
-				if tip < length:
-					_flow.draw_circle(b, LINE_WIDTH * 2.4, Color(glow, glow.a * fade))
-					_flow.draw_circle(b, LINE_WIDTH * 1.1, Color(light, light.a * fade))
-			spark += FLOW_SPACING
-
-
-# The altar's stone under the tree, round the root: lighter toward the lamp,
-# the rings and spokes cut into it (a dark groove with a faint lit lip), the
-# rim, and studs inside the rim. The spokes sit between the eight ways the
-# branches leave the root, so no groove runs under a line.
-func _draw_altar() -> void:
-	var core: Vector2 = _centers[MetaProgress.ROOT]
-	var reach := _altar_radius
-	var face := get_theme_color(&"stone_face", &"UpgradeTree")
-	var heart := get_theme_color(&"stone_core", &"UpgradeTree")
-	for step in STONE_STEPS:
-		var weight := float(step) / float(STONE_STEPS - 1)
-		canvas.draw_circle(core, lerpf(reach, ROOT_SIZE * 0.5, weight), face.lerp(heart, pow(weight, 1.6)))
-	var lamp := get_theme_color(&"lamp", &"UpgradeTree")
-	for step in LAMP_STEPS:
-		canvas.draw_circle(core, lerpf(ROOT_SIZE * 2.4, ROOT_SIZE * 0.6, float(step) / float(LAMP_STEPS - 1)), lamp)
-	var groove := get_theme_color(&"groove", &"UpgradeTree")
-	var lip := get_theme_color(&"groove_light", &"UpgradeTree")
-	var radius := RING_STEP
-	while radius < reach - RING_STEP * 0.5:
-		canvas.draw_arc(core, radius, 0.0, TAU, 96, groove, 2.0, true)
-		canvas.draw_arc(core, radius + 1.5, 0.0, TAU, 96, lip, 1.0, true)
-		radius += RING_STEP
-	var inner := ROOT_SIZE * 0.5 + 18.0
-	for index in SPOKES:
-		var way := Vector2.from_angle((index + 0.5) * TAU / SPOKES)
-		canvas.draw_line(core + way * inner, core + way * (reach - RIM_WIDTH - 24.0), groove, 1.0, true)
-	var rim := get_theme_color(&"stone_rim", &"UpgradeTree")
-	canvas.draw_arc(core, reach - RIM_WIDTH * 0.5, 0.0, TAU, 128, rim, RIM_WIDTH, true)
-	canvas.draw_arc(core, reach - RIM_WIDTH - 1.0, 0.0, TAU, 128, groove, 2.0, true)
-	canvas.draw_arc(core, reach + 1.0, 0.0, TAU, 128, groove, 2.0, true)
-	var stud := get_theme_color(&"stud", &"UpgradeTree")
-	for index in STUDS:
-		HubUI.diamond(canvas, core + Vector2.from_angle((index + 0.5) * TAU / STUDS) * (reach - RIM_WIDTH - 12.0), 5.0, stud)
-
-
-func _draw_node(node: Button, id: StringName) -> void:
-	var middle := node.size * 0.5
-	var radius := node.size.x * 0.5
-	var upgrade := MetaProgress.find(id)
-	node.draw_circle(middle, radius, get_theme_color(&"disc", &"UpgradeTree"))
-	var closed := upgrade == null or (meta != null and not meta.unlocked(id))
-	var emblem := EmblemIcons.texture(_emblem(id))
-	if emblem != null:
-		node.draw_texture_rect(emblem, Rect2(Vector2.ZERO, node.size), false, get_theme_color(&"closed_tint", &"UpgradeTree") if closed else Color.WHITE)
-	if upgrade == null:
-		node.draw_arc(middle, radius + 2.0, 0.0, TAU, 48, get_theme_color(&"seal", &"UpgradeTree"), 2.0, true)
-	elif meta != null and meta.rank(id) > 0:
-		node.draw_arc(middle, radius + 2.0, 0.0, TAU, 48, get_theme_color(&"line_held", &"UpgradeTree"), 2.0, true)
-	if node.has_focus():
-		node.draw_arc(middle, radius + 5.0, 0.0, TAU, 64, get_theme_color(&"focus", &"UpgradeTree"), RING_WIDTH, true)
-	if upgrade != null and meta != null:
-		_paint_pips(node, Vector2(middle.x, node.size.y + 5.0), upgrade, meta.rank(id))
-		# The echo held can buy its next rank: a gold diamond over it.
-		if meta.can_buy(id):
-			var mark := Vector2(middle.x, -BUY_MARK - 1.0)
-			HubUI.diamond(node, mark, BUY_MARK + 1.5, get_theme_color(&"buyable_edge", &"UpgradeTree"))
-			HubUI.diamond(node, mark, BUY_MARK, get_theme_color(&"buyable", &"UpgradeTree"))
-
-
-# An upgrade's ranks as sockets, centred on `top`. On the board one rank
-# shows none; the column, where the sockets are all that tells the rank,
-# shows that one too (`single`).
-func _paint_pips(target: CanvasItem, top: Vector2, upgrade: MetaUpgrade, held: int, single := false, extent := PIP_SIZE) -> void:
+func _draw_star(upgrade: MetaUpgrade) -> void:
+	var id := upgrade.id
+	var at: Vector2 = _places[id]
+	var radius := _radius(id)
+	var state := state_of(id)
+	var rank := meta.rank(id)
+	var held := rank > 0
+	var pole := upgrade.parent.is_empty()
+	var near := pole or MetaProgress.find(selected).branch == upgrade.branch
+	var breath := 0.5 + 0.5 * sin(_clock * BREATH + at.x * 0.01)
+	# The stars come out ring by ring as the page opens.
+	var out := clampf((_since(&"open") - 0.04 * (_depths[id] as int)) / UIMotion.ENTER_TIME, 0.0, 1.0)
+	out = 1.0 - pow(1.0 - out, 3.0)
+	radius *= 0.6 + 0.4 * out
+	if held:
+		_glow(at, radius * 2.6, _colour(&"gold", 0.32 * out))
+		for index in 4:
+			var way := Vector2.from_angle(TAU * index / 4.0 + PI * 0.25)
+			draw_line(at + way * (radius + 4.0), at + way * (radius + 12.0 + 3.0 * breath), _colour(&"gold", 0.8 * out), 1.5, true)
+	elif state == State.BUY:
+		_glow(at, radius * (2.2 + 0.5 * breath), _colour(&"blue", (0.30 + 0.15 * breath) * out))
+	draw_circle(at, radius + 2.0, _colour(&"void"))
+	var tint := Color.WHITE
+	if state == State.LOCKED:
+		tint = _colour(&"veil")
+	elif not held:
+		tint = _colour(&"pale")
+	_picture(at, radius, upgrade.emblem, Color(tint, tint.a * out * (1.0 if near else 0.8)))
+	var edge := &"gold" if held else (&"blue" if state == State.BUY else (&"dim" if state == State.SHORT else &"dark"))
+	_ring(at, radius + 1.0, _colour(edge, out), 2.0)
+	# Its ranks as points of light on an arc under it.
 	var count := upgrade.max_rank()
-	if count < 1 or (count == 1 and not single):
-		return
-	var empty := get_theme_icon(&"pip_empty", &"AbilityCard")
-	var full := get_theme_icon(&"pip_full", &"AbilityCard")
-	var width := extent * full.get_width() / full.get_height()
-	var gap := 2.0
-	var start := top.x - (width * count + gap * (count - 1)) * 0.5
-	for index in count:
-		var rect := Rect2(start + index * (width + gap), top.y, width, extent)
-		target.draw_texture_rect(empty, rect, false)
-		if index < held:
-			target.draw_texture_rect(full, rect, false)
+	if count > 1:
+		for index in count:
+			var spot := at + Vector2.from_angle(PI * 0.5 + (index - (count - 1) * 0.5) * 0.44) * (radius + 8.0)
+			draw_circle(spot, 2.8, _colour(&"gold") if index < rank else _colour(&"void"))
+			_ring(spot, 2.8, _colour(&"gold") if index < rank else _colour(&"dim"), 1.0)
+	if id != selected and _hovered(&"star", id):
+		_ring(at, radius + 7.0, _colour(&"pale", 0.6), 1.5)
+	# The moment a star is lit.
+	var lit := moment(id)
+	if lit < 1.0:
+		var spread := 1.0 - pow(1.0 - lit, 3.0)
+		_glow(at, radius * 5.0 * (0.4 + spread), _colour(&"lamp", 0.7 * (1.0 - lit)))
+		_ring(at, radius + 10.0 + 64.0 * spread, _colour(&"gold", 1.0 - lit), 2.5)
+		for index in 8:
+			var way := Vector2.from_angle(TAU * index / 8.0)
+			draw_line(at + way * (radius + 12.0 + 36.0 * spread), at + way * (radius + 24.0 + 70.0 * spread), _colour(&"gold", 1.0 - lit), 2.0, true)
+	_zone(Rect2(at - Vector2.ONE * (radius + 7.0), Vector2.ONE * (radius + 7.0) * 2.0), [&"star", id])
 
 
-# Arrows at the window's edge toward the branches wholly out of sight. Like
-# the tree, they carry no words.
-func _draw_edges() -> void:
-	var window := Rect2(Vector2.ZERO, board.size)
-	var inset := window.grow(-26.0)
-	if inset.size.x <= 0.0 or inset.size.y <= 0.0:
-		return
-	var color := get_theme_color(&"font_color", &"MutedLabel")
-	for id: StringName in nodes:
-		if _parents[id] != MetaProgress.ROOT:
+# The names of the stars in the cursor's constellation: each under its star,
+# or over it in the upper sky, where under would run into the star it grows
+# from. The chosen star's is written last and in full; another's is left
+# off where it would run into the cursor or the chosen star's name. In a
+# script written with spaces the names run long, so only the chosen star
+# carries its own.
+func _draw_names() -> void:
+	var chosen := MetaProgress.find(selected)
+	var all := TranslationServer.get_locale().begins_with("ja")
+	var taken: Array[Rect2] = [Rect2(_places[selected] as Vector2 - Vector2.ONE * (_radius(selected) + 16.0), Vector2.ONE * (_radius(selected) + 16.0) * 2.0)]
+	if not chosen.parent.is_empty():
+		taken.append(_name_rect(chosen, true))
+	for upgrade in MetaProgress.UPGRADES:
+		if not all or upgrade == chosen or upgrade.parent.is_empty() or upgrade.branch != chosen.branch:
 			continue
-		var center := _on_board(id)
-		var extent := (nodes[id] as Button).size * zoom
-		if window.intersects(Rect2(center - extent * 0.5, extent)):
+		var rect := _name_rect(upgrade, false)
+		if taken.any(func(other: Rect2) -> bool: return other.intersects(rect)):
 			continue
-		var at := Vector2(clampf(center.x, inset.position.x, inset.end.x), clampf(center.y, inset.position.y, inset.end.y))
-		var toward := (center - at).normalized()
-		var side := toward.orthogonal()
-		_edges.draw_colored_polygon(PackedVector2Array([at + toward * 9.0, at - toward * 3.0 + side * 7.0, at - toward * 3.0 - side * 7.0]), color)
+		draw_rect(rect, _colour(&"void", 0.78))
+		_words(rect.position + Vector2(4.0, 15.0), tr(upgrade.display_name), &"font", &"star_size", _colour(&"faint") if state_of(upgrade.id) == State.LOCKED else _colour(&"dim"))
+	if not chosen.parent.is_empty():
+		draw_rect(taken[1], _colour(&"void", 0.78))
+		_words(taken[1].position + Vector2(4.0, 15.0), tr(chosen.display_name), &"bold_font", &"star_size", _colour(&"pale"))
+
+
+# The plate a star's name is written on.
+func _name_rect(upgrade: MetaUpgrade, bold: bool) -> Rect2:
+	var at: Vector2 = _places[upgrade.id]
+	var wide := _width(tr(upgrade.display_name), &"bold_font" if bold else &"font", &"star_size")
+	# The chosen star's stands clear of the cursor's ring.
+	var top := at.y + STAR + (18.0 if bold else (14.0 if upgrade.max_rank() > 1 else 7.0))
+	if sin(float(_angles[upgrade.id])) < -0.5:
+		top = at.y - STAR - (38.0 if bold else 27.0)
+	return Rect2(clampf(at.x - wide * 0.5 - 4.0, 0.0, CARD.position.x - wide - 16.0), top, wide + 8.0, 20.0)
+
+
+# The cursor: a ring with four ticks that turn, on its way to the chosen star.
+func _draw_cursor() -> void:
+	var at := _cursor()
+	var radius := _radius(selected) + 8.0
+	var colour := _colour(&"pale") if has_focus() else _colour(&"dim")
+	_ring(at, radius, colour, 2.0)
+	for index in 4:
+		var way := Vector2.from_angle(TAU * index / 4.0 + _clock * 0.4)
+		draw_line(at + way * radius, at + way * (radius + 8.0), colour, 2.0, true)
+
+
+# The card: the chosen star in full. The button lies over its foot.
+func _draw_card() -> void:
+	var state: State = told.state
+	draw_rect(CARD, _colour(&"panel"))
+	draw_rect(CARD, _colour(&"brass", 0.8), false, 1.0)
+	draw_rect(CARD.grow(-6.0), _colour(&"brass", 0.3), false, 1.0)
+	for corner: Vector2 in [CARD.position, Vector2(CARD.end.x, CARD.position.y), CARD.end, Vector2(CARD.position.x, CARD.end.y)]:
+		HubUI.diamond(self, corner, 6.0, _colour(&"brass"))
+	var mid := CARD.get_center().x
+	var left := CARD.position.x + 28.0
+	var inner := CARD.size.x - 56.0
+	var upgrade := MetaProgress.find(told.id)
+	var fade := 0.35 + 0.65 * _eased(&"move", MOVE_TIME)
+	var part: String = told.part
+	_words(Vector2(CARD.position.x, 46.0), part if upgrade.branch.is_empty() else tr("%sの星座") % part, &"font", &"label_size", _colour(&"dim", fade), HORIZONTAL_ALIGNMENT_CENTER, CARD.size.x)
+	var lit := 1.0 - moment(told.id)
+	var rank: int = told.rank
+	_glow(Vector2(mid, 128.0), 118.0, _colour(&"gold" if rank > 0 else &"blue", 0.12 + 0.4 * lit))
+	var emblem := EmblemIcons.texture(upgrade.emblem)
+	if emblem != null:
+		var tint := _colour(&"veil") if state == State.LOCKED else Color.WHITE
+		draw_texture_rect(emblem, Rect2(Vector2(mid - 60.0, 68.0), Vector2.ONE * 120.0), false, Color(tint, tint.a * fade))
+	_words(Vector2(CARD.position.x + 12.0, 232.0), told.name, &"title_font", &"name_size", _colour(&"pale", fade), HORIZONTAL_ALIGNMENT_CENTER, CARD.size.x - 24.0)
+	var ranks: int = told.ranks
+	for index in ranks:
+		var spot := Vector2(mid + (index - (ranks - 1) * 0.5) * 28.0, 258.0)
+		if index < rank:
+			_spark(spot, 10.0 + (9.0 * lit if index == rank - 1 else 0.0), _colour(&"gold"))
+		else:
+			_spark(spot, 10.0, _colour(&"dark"))
+			_spark(spot, 6.0, _colour(&"panel"))
+	draw_line(Vector2(left, 282.0), Vector2(left + inner, 282.0), _colour(&"brass", 0.4), 1.0)
+	var y := 318.0
+	var figure: String = told.figure
+	if not figure.is_empty():
+		y += _lines(Vector2(left, y), figure, &"bold_font", &"figure_size", _colour(&"gold", fade), inner, HORIZONTAL_ALIGNMENT_CENTER, 3) + 14.0
+	var note: String = told.note
+	if not note.is_empty():
+		y += _lines(Vector2(left, y), note, &"font", &"body_size", _colour(&"pale", fade), inner) + 14.0
+	_lines(Vector2(left, y), told.waits, &"font", &"body_size", _colour(&"warn", fade), inner, HORIZONTAL_ALIGNMENT_LEFT, 2)
+	# The price beside the echo held, and how much is missing; once all its
+	# ranks are held there is no price to set beside it.
+	var price: int = told.price
+	if price >= 0:
+		draw_line(Vector2(left, 508.0), Vector2(left + inner, 508.0), _colour(&"brass", 0.4), 1.0)
+		var needed := tr("必要")
+		var kept := tr("所持")
+		_words(Vector2(left, 542.0), needed, &"font", &"label_size", _colour(&"dim"))
+		_words(Vector2(left + _width(needed, &"font", &"label_size") + 12.0, 546.0), UIFormat.amount(price), &"title_font", &"value_size", _colour(&"gold" if state == State.BUY else &"dim"))
+		_words(Vector2(mid + 16.0, 542.0), kept, &"font", &"label_size", _colour(&"dim"))
+		_words(Vector2(mid + 16.0 + _width(kept, &"font", &"label_size") + 12.0, 546.0), UIFormat.amount(told.held), &"title_font", &"value_size", _colour(&"pale"))
+		var missing: int = told.missing
+		if missing > 0:
+			_words(Vector2(left, 574.0), tr("残響があと%s足りない") % UIFormat.amount(missing), &"font", &"label_size", _colour(&"warn"), HORIZONTAL_ALIGNMENT_CENTER, inner)

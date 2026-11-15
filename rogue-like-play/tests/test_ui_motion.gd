@@ -41,6 +41,9 @@ func run_tests() -> void:
 	hub.show_page("upgrade")
 	var page: MetaUpgradePage = hub.upgrade_page
 	var button: Button = page.buy_button
+	# The chart keeps the focus for itself; here the button takes it, to see
+	# that the focus and the pointer are answered alike.
+	button.focus_mode = Control.FOCUS_ALL
 	var motion := UIMotion.of(button)
 	await settle()
 	var position_before := button.position
@@ -96,10 +99,13 @@ func run_tests() -> void:
 	var cost: int = MetaProgress.find(&"sturdy_body").costs[0]
 	check(main.meta.echo == 1000 - cost and hub.echo_label.text == UIFormat.amount(1000 - cost), "Echo and its text change at once")
 	check(hub.feedback.text.contains("残響 -%d" % cost), "The note says what it cost")
+	check(page.moment(&"sturdy_body") < 1.0 and page.moment(MetaProgress.ROOT) == 1.0, "The star bought begins its moment once the purchase is made")
 	await settle(0.08)
 	check(hub.echo_label.scale.x > 1.02 and hub.echo_label.scale.x <= 1.081, "The echo pulses within bounds")
 	await settle()
 	check(near_scale(hub.echo_label, 1.0), "The pulse settles")
+	await settle(MetaUpgradePage.MOMENT_TIME)
+	check(page.moment(&"sturdy_body") == 1.0, "The star's moment ends by itself")
 	main.meta.echo = 0
 	var before: Dictionary = MetaCodec.encode(main.meta)
 	check(not main.buy_upgrade(&"double_dash"), "A purchase the echo cannot pay for is refused")
