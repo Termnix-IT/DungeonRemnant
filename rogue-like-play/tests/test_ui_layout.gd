@@ -58,6 +58,7 @@ func run_tests() -> void:
 	await settle(UIMotion.WINDOW_TIME + 0.05)
 	var chart: MetaUpgradePage = hub.upgrade_page
 	check(screen.encloses(chart.buy_button.get_global_rect()), "The upgrade's action stays on the screen")
+	check(chart._sky.get_global_rect().encloses(screen), "The upgrade's night sky covers the whole screen")
 	var chart_card := Rect2(chart.global_position + chart._origin + MetaUpgradePage.CARD.position * chart._zoom, MetaUpgradePage.CARD.size * chart._zoom)
 	check(screen.encloses(chart_card) and chart_card.grow(1.0).encloses(chart.buy_button.get_global_rect()), "The chart_card stays on the screen, the action inside it")
 	var in_sight := true

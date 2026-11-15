@@ -1,12 +1,13 @@
 class_name MetaUpgradePage
 extends Control
 
-# The lasting upgrades (MetaProgress.UPGRADES) as a star chart, read like an
-# astrolabe: the whole tree on one round window of night sky, all of it in
-# sight at once, nothing dragged or zoomed. The lantern (the tree's root) is
-# the pole. Every upgrade is a star on the ring of its generation (how many
-# steps it stands from the lantern), and each branch is a constellation in
-# its own part of the sky, named outside the rim with the ranks held in it.
+# The lasting upgrades (MetaProgress.UPGRADES) as a star chart: the whole
+# tree on a night sky that fills the screen, all of it in sight at once,
+# nothing dragged or zoomed. The lantern (the tree's root) is the pole. Every
+# upgrade is a star on the ring of its generation (how many steps it stands
+# from the lantern); the rings grow wider and squarer outward, so the last
+# one reaches toward the screen's corners. Each branch is a constellation in
+# its own part of the sky, named past its last stars with the ranks held in it.
 # A line joins a star to the one it grows from. A star held burns gold with
 # rays, one the echo held can light breathes blue, one that waits on another
 # is dark; its ranks are points of light under it. The stars of the
@@ -26,7 +27,8 @@ extends Control
 #
 # The page is one focusable control that draws itself in a design space of
 # 1520x686 scaled to its rect, in the colours and faces of the theme's
-# StarChart type. The sky is a shader (ui/star_chart/star_sky.gdshader); the
+# StarChart type. The sky is a shader (ui/star_chart/star_sky.gdshader) on a
+# rect that covers the whole screen, behind the hub's title and keys; the
 # button is a node laid over the card. The pointer acts through zones named
 # while drawing.
 
@@ -36,14 +38,18 @@ enum State { FULL, BUY, SHORT, LOCKED }
 
 const SKY := preload("res://ui/star_chart/star_sky.gdshader")
 const DESIGN := Vector2(1520.0, 686.0)
-const POLE := Vector2(545.0, 343.0)
+const POLE := Vector2(552.0, 343.0)
 # The chart is wider than it is tall: every distance across it is this much
 # longer than the same distance up it.
-const STRETCH := 1.32
-# The rings of the first and the last generation, and the rim past them.
+const STRETCH := 1.6
+# The rings of the first and the last generation. The first is an oval; the
+# last is squared off (a superellipse of this power), to fill the screen.
 const FIRST_RING := 92.0
-const LAST_RING := 284.0
-const RIM := 308.0
+const LAST_RING := 292.0
+const SQUARE := 3.6
+# The sky runs this far past the screen's edges, to cover it as the page
+# slides in.
+const SKY_MARGIN := 240.0
 const STAR := 18.0
 const POLE_STAR := 27.0
 # The constellations, clockwise from the top.
@@ -66,13 +72,16 @@ var told := {}
 var buy_button: Button
 var _sky: ColorRect
 # Upgrade id -> where its star stands (design space), its angle from the
-# pole, its generation, and the upgrades that grow from it.
+# pole, its ring's size, its generation, and the upgrades that grow from it.
 var _places: Dictionary = {}
+var _rings: Dictionary = {}
 var _angles: Dictionary = {}
 var _depths: Dictionary = {}
 var _grown: Dictionary = {}
 # Branch -> [first angle, last angle] of its part of the sky.
 var _parts: Dictionary = {}
+# A constellation's name as written -> the room found for it.
+var _spots: Dictionary = {}
 var _clock := 0.0
 var _kicks := {}
 var _zones: Array = []
@@ -91,7 +100,6 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_sky = ColorRect.new()
-	_sky.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_sky.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_sky.show_behind_parent = true
 	var night := ShaderMaterial.new()
@@ -111,6 +119,8 @@ func _ready() -> void:
 	_lay_out()
 	resized.connect(_fit)
 	theme_changed.connect(_fit)
+	visibility_changed.connect(_fit)
+	get_viewport().size_changed.connect(_fit.call_deferred)
 	_fit()
 
 
@@ -120,12 +130,19 @@ func _fit() -> void:
 		return
 	_zoom = minf(size.x / DESIGN.x, size.y / DESIGN.y)
 	_origin = ((size - DESIGN * _zoom) * 0.5).round()
+	# The sky covers the screen, wherever in it the page stands.
+	var screen := Rect2(Vector2.ZERO, size)
+	if is_inside_tree():
+		screen = get_global_transform().affine_inverse() * get_viewport_rect()
+	_sky.position = screen.position - Vector2.ONE * SKY_MARGIN
+	_sky.size = screen.size + Vector2.ONE * SKY_MARGIN * 2.0
 	var night := _sky.material as ShaderMaterial
-	night.set_shader_parameter(&"extent", size)
-	night.set_shader_parameter(&"origin", _origin)
+	night.set_shader_parameter(&"extent", _sky.size)
+	night.set_shader_parameter(&"origin", _origin - _sky.position)
 	night.set_shader_parameter(&"zoom", _zoom)
 	night.set_shader_parameter(&"pole", POLE)
-	night.set_shader_parameter(&"reach", Vector2(RIM * STRETCH, RIM))
+	night.set_shader_parameter(&"centre", (screen.get_center() - _origin) / _zoom)
+	night.set_shader_parameter(&"reach", screen.size * 0.5 / _zoom)
 	for item: StringName in [&"sky_deep", &"sky_light", &"sky_haze", &"lamp", &"speck"]:
 		night.set_shader_parameter(item, get_theme_color(item))
 	buy_button.position = _origin + BUTTON.position * _zoom
@@ -135,9 +152,13 @@ func _fit() -> void:
 
 # --- The chart ---
 
-# A point of the chart: `radius` from the pole at `angle`.
+# A point of the chart: at `angle` on the ring of `radius` (its reach up the
+# chart from the pole). The rings past the first are squared off.
 func _at(angle: float, radius: float) -> Vector2:
-	return POLE + Vector2(cos(angle) * STRETCH, sin(angle)) * radius
+	var power := lerpf(2.0, SQUARE, clampf((radius - FIRST_RING) / (LAST_RING - FIRST_RING), 0.0, 1.0))
+	var way := Vector2(cos(angle), sin(angle))
+	var reach := radius * pow(pow(absf(way.x), power) + pow(absf(way.y), power), -1.0 / power)
+	return POLE + Vector2(way.x * STRETCH, way.y) * reach
 
 
 # A leaf to a slot of sky, an upgrade at the middle of what grows from it,
@@ -170,6 +191,7 @@ func _lay_out() -> void:
 	for id: StringName in _angles:
 		var steps: int = _depths[id]
 		var radius := 0.0 if steps == 0 else lerpf(FIRST_RING, LAST_RING, float(steps - 1) / maxf(1.0, deepest - 1.0))
+		_rings[id] = radius
 		_places[id] = _at(_angles[id], radius)
 
 
@@ -572,19 +594,14 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO)
 
 
-# The rings of the generations, the rim, the parts of the sky and their names.
+# The rings of the generations, the parts of the sky and their names.
 func _draw_instrument() -> void:
 	var rings := {}
 	for id: StringName in _places:
 		if _depths[id] > 0:
-			rings[snappedf(_ring_of(id), 0.5)] = true
+			rings[_rings[id]] = true
 	for radius: float in rings:
-		_oval(radius, _colour(&"brass", 0.22))
-	_oval(RIM, _colour(&"brass", 0.6), 1.5)
-	_oval(RIM + 6.0, _colour(&"brass", 0.32))
-	for index in 120:
-		var angle := TAU * index / 120.0
-		draw_line(_at(angle, RIM), _at(angle, RIM + (6.0 if index % 5 == 0 else 3.0)), _colour(&"brass", 0.55), 1.0)
+		_oval(radius, _colour(&"brass", 0.12))
 	var chosen_part := MetaProgress.find(selected).branch
 	for branch in ORDER:
 		if not _parts.has(branch):
@@ -593,30 +610,63 @@ func _draw_instrument() -> void:
 		var from: float = part[0]
 		var to: float = part[1]
 		var here := chosen_part == branch
-		draw_line(_at(from, FIRST_RING * 0.6), _at(from, RIM), _colour(&"brass", 0.16), 1.0)
+		var last := _last_ring(branch)
+		draw_line(_at(from, FIRST_RING * 0.6), _at(from, LAST_RING), _colour(&"brass", 0.1), 1.0)
+		# The rings glow where they cross the cursor's constellation.
 		if here:
-			_oval(RIM + 3.0, _colour(&"gold", 0.9), 4.0, from, to)
-		# Its name stands outside the rim, read level.
-		var mid := (from + to) * 0.5
-		var way := Vector2(cos(mid), sin(mid))
+			for radius: float in rings:
+				if radius <= last:
+					_oval(radius, _colour(&"gold", 0.42), 1.5, from + 0.03, to - 0.03)
 		var count := tally(branch)
 		var name := "%s　%d / %d" % [tr(BRANCH_NAMES[branch]), count[0], count[1]]
-		var wide := _width(name, &"title_font", &"part_size")
-		var edge := _at(mid, RIM + 20.0)
-		# Beside the rim at its sides, centred over or under it at its head and foot.
-		var lean := clampf(way.x * 2.0, -1.0, 1.0)
-		var at := Vector2(edge.x + wide * 0.5 * (lean - 1.0), edge.y + 6.0 + 10.0 * way.y)
-		at.x = clampf(at.x, 4.0, CARD.position.x - wide - 12.0)
-		at.y = clampf(at.y, 20.0, DESIGN.y - 6.0)
+		if not _spots.has(name):
+			_spots[name] = _part_spot(branch, _width(name, &"title_font", &"part_size"))
+		var room: Rect2 = _spots[name]
 		var colour := _colour(&"gold") if here else (_colour(&"pale") if _hovered(&"part", branch) else _colour(&"dim"))
-		_words(at, name, &"title_font", &"part_size", colour)
-		_zone(Rect2(at - Vector2(6.0, 22.0), Vector2(wide + 12.0, 30.0)), [&"part", branch])
+		_words(room.position + Vector2(0.0, 20.0), name, &"title_font", &"part_size", colour)
+		_zone(room.grow_individual(6.0, 2.0, 6.0, 2.0), [&"part", branch])
 
 
-# The ring a star stands on: its distance from the pole, up the chart.
-func _ring_of(id: StringName) -> float:
-	var offset: Vector2 = _places[id] - POLE
-	return Vector2(offset.x / STRETCH, offset.y).length()
+# The ring of a constellation's farthest stars.
+func _last_ring(branch: StringName) -> float:
+	var last := FIRST_RING
+	for upgrade in MetaProgress.UPGRADES:
+		if upgrade.branch == branch and not upgrade.parent.is_empty():
+			last = maxf(last, _rings[upgrade.id])
+	return last
+
+
+# The room a constellation's name is written in: past its farthest stars,
+# over the chart's head, under its foot or beside it. The first place along
+# its part of the sky, from the middle outward, that stands clear of the
+# card and every star: first one that needs no pulling in from the page's
+# edges, then one pulled in.
+func _part_spot(branch: StringName, wide: float) -> Rect2:
+	var part: Array = _parts[branch]
+	var mid: float = (part[0] + part[1]) * 0.5
+	var half: float = (part[1] - part[0]) * 0.5
+	var last := _last_ring(branch)
+	var field := Rect2(6.0, 4.0, CARD.position.x - 22.0, DESIGN.y - 8.0)
+	for pulled: bool in [false, true]:
+		for index in 61:
+			var angle := mid + half * ceilf(index * 0.5) / 30.0 * (1.0 if index % 2 == 1 else -1.0)
+			var room := _part_room(angle, last, wide)
+			if pulled:
+				room.position = room.position.clamp(field.position, field.end - room.size)
+			elif not field.encloses(room):
+				continue
+			if not _places.values().any(func(at: Vector2) -> bool: return Rect2(at - Vector2(34.0, 34.0), Vector2(68.0, 76.0)).intersects(room)):
+				return room
+	var kept := _part_room(mid, last, wide)
+	kept.position = kept.position.clamp(field.position, field.end - kept.size)
+	return kept
+
+
+func _part_room(angle: float, last: float, wide: float) -> Rect2:
+	var way := Vector2(cos(angle), sin(angle))
+	var lean := clampf(way.x * 2.0, -1.0, 1.0)
+	var centre := _at(angle, last + 26.0) + Vector2(lean * (wide * 0.5 + 14.0), way.y * 40.0)
+	return Rect2(centre - Vector2(wide * 0.5, 13.0), Vector2(wide, 26.0))
 
 
 func _radius(id: StringName) -> float:
