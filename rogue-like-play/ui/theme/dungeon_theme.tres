@@ -361,19 +361,6 @@ expand_margin_bottom = 3.0
 [sub_resource type="StyleBoxTexture" id="ExperienceFill"]
 texture = ExtResource("VitalExperienceTexture")
 
-[sub_resource type="Gradient" id="ClearGradient"]
-colors = PackedColorArray(0, 0, 0, 0, 0, 0, 0, 0)
-
-[sub_resource type="GradientTexture2D" id="SliderGrabber"]
-gradient = SubResource("ClearGradient")
-width = 24
-height = 24
-
-[sub_resource type="StyleBoxEmpty" id="SliderTrack"]
-resource_name = "SliderTrack"
-content_margin_top = 13.0
-content_margin_bottom = 13.0
-
 [sub_resource type="StyleBoxTexture" id="PlateGoldDisabled"]
 resource_name = "PlateGoldDisabled"
 content_margin_left = 24.0
@@ -786,13 +773,6 @@ expand_margin_bottom = 4.0
 [sub_resource type="StyleBoxTexture" id="VitalManaTrail"]
 texture = ExtResource("VitalManaTrailTexture")
 
-[sub_resource type="StyleBoxEmpty" id="CyclerRest"]
-resource_name = "CyclerRest"
-content_margin_left = 48.0
-content_margin_top = 8.0
-content_margin_right = 52.0
-content_margin_bottom = 8.0
-
 [sub_resource type="FontVariation" id="DisplayMediumKana"]
 base_font = ExtResource("DisplayMedium")
 opentype_features = {
@@ -1168,13 +1148,6 @@ corner_radius_bottom_left = 3
 shadow_color = Color(0.72, 0.52, 0.2, 0.12)
 shadow_size = 4
 
-[sub_resource type="StyleBoxEmpty" id="TextActionRest"]
-resource_name = "TextActionRest"
-content_margin_left = 2.0
-content_margin_top = 8.0
-content_margin_right = 2.0
-content_margin_bottom = 8.0
-
 [resource]
 default_font = ExtResource("BodyRegular")
 default_font_size = 16
@@ -1402,18 +1375,6 @@ ExpBar/styles/background = SubResource("VitalTrackThin")
 ExpBar/styles/fill = SubResource("ExperienceFill")
 FloatingHand/base_type = &"PanelContainer"
 FloatingHand/styles/panel = SubResource("Invisible")
-GameSlider/base_type = &"HSlider"
-GameSlider/colors/fill = Color(0.8392157, 0.7176471, 0.48235294, 1)
-GameSlider/colors/knob = Color(0.15, 0.14, 0.102, 1)
-GameSlider/colors/knob_core = Color(0.96, 0.85, 0.6, 1)
-GameSlider/colors/track = Color(0.45, 0.42, 0.36, 0.8)
-GameSlider/icons/grabber = SubResource("SliderGrabber")
-GameSlider/icons/grabber_disabled = SubResource("SliderGrabber")
-GameSlider/icons/grabber_highlight = SubResource("SliderGrabber")
-GameSlider/styles/focus = SubResource("Invisible")
-GameSlider/styles/grabber_area = SubResource("Invisible")
-GameSlider/styles/grabber_area_highlight = SubResource("Invisible")
-GameSlider/styles/slider = SubResource("SliderTrack")
 GearGrid/base_type = &"GridContainer"
 GearGrid/constants/h_separation = 4
 GearGrid/constants/v_separation = 4
@@ -1825,18 +1786,6 @@ OptionButton/styles/hover = SubResource("SurfaceHover")
 OptionButton/styles/hover_pressed = SubResource("ButtonPressed")
 OptionButton/styles/normal = SubResource("Surface")
 OptionButton/styles/pressed = SubResource("ButtonPressed")
-OptionCycler/base_type = &"Button"
-OptionCycler/colors/arrow = Color(0.62, 0.59, 0.52, 1)
-OptionCycler/colors/arrow_active = Color(0.96, 0.85, 0.6, 1)
-OptionCycler/constants/arrow_inset = 14
-OptionCycler/font_sizes/font_size = 20
-OptionCycler/fonts/font = ExtResource("BodyBold")
-OptionCycler/styles/disabled = SubResource("CyclerRest")
-OptionCycler/styles/focus = SubResource("CyclerRest")
-OptionCycler/styles/hover = SubResource("CyclerRest")
-OptionCycler/styles/hover_pressed = SubResource("CyclerRest")
-OptionCycler/styles/normal = SubResource("CyclerRest")
-OptionCycler/styles/pressed = SubResource("CyclerRest")
 Panel/styles/panel = SubResource("FramePanel")
 PanelContainer/styles/panel = SubResource("FramePanel")
 PlaqueNote/base_type = &"Label"
@@ -1960,13 +1909,28 @@ SelectorValue/fonts/font = ExtResource("BodyBold")
 SelectorValue/styles/focus = SubResource("Invisible")
 SelectorValue/styles/normal = SubResource("SelectorPlain")
 SelectorValue/styles/read_only = SubResource("SelectorPlain")
-SettingsRow/base_type = &"HBoxContainer"
-SettingsRow/constants/separation = 18
-SettingsRows/base_type = &"VBoxContainer"
-SettingsRows/constants/separation = 0
-SettingsValue/base_type = &"Label"
-SettingsValue/font_sizes/font_size = 22
-SettingsValue/fonts/font = ExtResource("BodyBold")
+SettingsStage/base_type = &"Control"
+SettingsStage/colors/dim = Color(0.69803923, 0.7019608, 0.6666667, 1)
+SettingsStage/colors/foe = Color(0.74, 0.18, 0.14, 1)
+SettingsStage/colors/gold = Color(1, 0.82, 0.48, 1)
+SettingsStage/colors/ink = Color(0.02, 0.018, 0.02, 0.88)
+SettingsStage/colors/line = Color(0.8392157, 0.7176471, 0.48235294, 1)
+SettingsStage/colors/pale = Color(0.93333334, 0.9137255, 0.8745098, 1)
+SettingsStage/colors/prop = Color(0.23, 0.23, 0.23, 1)
+SettingsStage/colors/scene = Color(0.13, 0.13, 0.13, 1)
+SettingsStage/colors/track = Color(1, 1, 1, 0.16)
+SettingsStage/colors/veil = Color(0, 0, 0, 1)
+SettingsStage/colors/warn = Color(0.98, 0.6, 0.52, 1)
+SettingsStage/font_sizes/body_size = 18
+SettingsStage/font_sizes/head_size = 18
+SettingsStage/font_sizes/key_size = 14
+SettingsStage/font_sizes/label_size = 16
+SettingsStage/font_sizes/name_size = 34
+SettingsStage/font_sizes/row_size = 18
+SettingsStage/font_sizes/value_size = 22
+SettingsStage/fonts/bold_font = ExtResource("BodyBold")
+SettingsStage/fonts/font = ExtResource("BodyRegular")
+SettingsStage/fonts/title_font = ExtResource("DisplayBold")
 ShadeColumn/base_type = &"PanelContainer"
 ShadeColumn/styles/panel = SubResource("ShadeSurface")
 ShopColumns/base_type = &"HBoxContainer"
@@ -2083,22 +2047,6 @@ TabActive/base_type = &"Button"
 TabActive/colors/font_color = Color(0.96, 0.85, 0.6, 1)
 TabActive/styles/hover = SubResource("GoldHover")
 TabActive/styles/normal = SubResource("ButtonPressed")
-TextAction/base_type = &"Button"
-TextAction/colors/font_color = Color(0.69803923, 0.7019608, 0.6666667, 1)
-TextAction/colors/font_disabled_color = Color(0.32, 0.32, 0.32, 1)
-TextAction/colors/font_focus_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-TextAction/colors/font_hover_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-TextAction/colors/font_hover_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-TextAction/colors/font_pressed_color = Color(0.93333334, 0.9137255, 0.8745098, 1)
-TextAction/font_sizes/font_size = 16
-TextAction/styles/disabled = SubResource("TextActionRest")
-TextAction/styles/focus = SubResource("Invisible")
-TextAction/styles/hover = SubResource("TextActionRest")
-TextAction/styles/hover_pressed = SubResource("TextActionRest")
-TextAction/styles/normal = SubResource("TextActionRest")
-TextAction/styles/pressed = SubResource("TextActionRest")
-TextActions/base_type = &"HBoxContainer"
-TextActions/constants/separation = 26
 TitleLabel/base_type = &"Label"
 TitleLabel/font_sizes/font_size = 30
 TitleLabel/fonts/font = SubResource("DisplayBoldKana")

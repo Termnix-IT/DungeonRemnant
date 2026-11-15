@@ -164,14 +164,15 @@ func run_tests() -> void:
 	hub.show_page("settings")
 	hub.settings_page.focus_language()
 	await process_frame
-	check(hub.settings_page.language_cycler.has_focus() and hub.settings_page.tabs.selected == 2, "The language leads the settings' last tab")
-	hub.settings_page.language_cycler.step(1)
+	check(hub.settings_page.has_focus() and hub.settings_page.focused_row == HubSettings.LANGUAGE_ROW and hub.settings_page.rows_of(2)[0] == HubSettings.LANGUAGE_ROW, "The language leads the settings' last group")
+	hub.settings_page.change(1)
 	await process_frame
 	await process_frame
 	var rebuilt: Node = main.get_node("Hub")
 	check(rebuilt != hub and TranslationServer.get_locale() == "en" and rebuilt.settings.language == "en", "Another language rebuilds the base in it")
-	check(rebuilt.page == "settings" and rebuilt.settings_page.language_cycler.has_focus() and rebuilt.settings_page.language_cycler.text == "English", "The rebuilt base opens on the language's row")
-	rebuilt.settings_page.language_cycler.step(1)
+	check(rebuilt.page == "settings" and rebuilt.settings_page.has_focus() and rebuilt.settings_page.focused_row == HubSettings.LANGUAGE_ROW and rebuilt.settings_page.value_text(HubSettings.LANGUAGE_ROW) == "English", "The rebuilt base opens on the language's row")
+	check(not rebuilt.settings_page.change(1), "The language stops at its last")
+	rebuilt.settings_page.change(-1)
 	await process_frame
 	await process_frame
 	check(TranslationServer.get_locale() == "ja", "And back to Japanese")
@@ -190,7 +191,7 @@ func run_tests() -> void:
 		untranslated(hub, seen)
 		if page == "settings":
 			for tab in hub.settings_page.TABS.size():
-				hub.settings_page.show_tab(tab)
+				hub.settings_page.show_group(tab)
 				await process_frame
 				untranslated(hub, seen)
 			for topic in hub.settings_page.HELP.size():
@@ -261,7 +262,7 @@ func run_tests() -> void:
 	area.menu.back()
 	area.menu.open_settings()
 	for tab in area.menu.settings_page.TABS.size():
-		area.menu.settings_page.show_tab(tab)
+		area.menu.settings_page.show_group(tab)
 		await process_frame
 		untranslated(director, seen)
 	area.menu.back()

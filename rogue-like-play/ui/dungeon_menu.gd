@@ -295,7 +295,6 @@ func _build_settings() -> void:
 	settings_page.in_run = true
 	settings_page.position = PAGE_RECT.position
 	settings_page.size = PAGE_RECT.size
-	settings_page.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	settings_view.add_child(settings_page)
 	settings_page.changed.connect(func(): settings_changed.emit())
 	settings_page.help_opened.connect(_settings_hints)

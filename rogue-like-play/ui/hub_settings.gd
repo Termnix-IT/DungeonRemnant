@@ -1,14 +1,22 @@
 class_name HubSettings
 extends Control
 
-# The settings page, laid out as action roguelites commonly lay theirs: one
-# panel in the middle of the screen, tabs over the rows (sound, graphics,
-# other; Q / E or LB / RB, or a click) showing one group at a time, and
-# under a gilt rule what the focused setting does, sliding in anew as the
-# focus moves. With so few rows a column of its own for one line of account
-# stood mostly empty. The focused row draws no band: the control on it shows
-# the focus itself (the bar's knob glows, the selector's arrows light, the
-# help's and the quit's words brighten). Changes apply at once and are
+# The settings page, as a list and a stage: every setting in one list down
+# the left, under the names of their groups (sound, graphics, other), and on
+# the right a stage that shows what the one under the cursor does, moving as
+# it would in play. A volume is rings of sound from a bell, carrying as far
+# as it is set, beside the four levels; the shake is a struck frame that
+# shakes as hard as it is set; the screen is a window on a monitor or the
+# whole of it; the language is a line of the game in it; the controls guide
+# is the fight's foot with or without its keys; the help is its topics; the
+# end of the game is what is kept. Under the stage stand the setting's name
+# and value, large, and what it does.
+#
+# Up and down go through the list, left and right change the setting under
+# the cursor, Q / E (LB / RB) jump from group to group, and Enter takes an
+# action (or a choice's next value). The pointer chooses a row by resting on
+# it or clicking, sets a volume by clicking or dragging along its bar, and
+# changes a choice by the marks at its sides. Changes apply at once and are
 # stored by GameSettings when the hub reports them, so the page holds no
 # primary action.
 # A row opens the help: the game's rules that the screens keep out of their
@@ -16,6 +24,13 @@ extends Control
 # last row ends the game, once a prompt has asked.
 # The same page opens over the dungeon from its menu (DungeonMenu), so it
 # reaches nothing outside itself: whoever shows it listens to its signals.
+#
+# The list and the stage are one focusable control that draws itself in a
+# design space of 1520x686 scaled to its rect, in the colours and faces of
+# the theme's SettingsStage type. At the base a child behind it darkens the
+# whole screen so the words read on the hall; over the dungeon the menu has
+# darkened the field already. The help window and the question before the
+# end of the game are built of nodes, on layers of their own.
 
 signal changed
 # The help opened from its row; the screen showing the page updates its keys.
@@ -31,23 +46,17 @@ const QUIT_BODY := "設定と拠点での強化は保存済みです。"
 # In a run nothing of it is kept (the base saves at a run's start and end).
 const QUIT_BODY_IN_RUN := "探索の途中で終了すると、この探索のレベル・強化・得た残響は残らず、最後に保存した拠点の状態に戻ります。"
 
-const ROW_HEIGHT := 64.0
-# The panel's width; its height holds the longest tab, so it keeps its size
-# from tab to tab.
-const PANEL_WIDTH := 1000.0
 # The help window: over the page and the fight's menu, under the quit's
 # question; its backdrop, size and topic column.
 const HELP_LAYER := 15
 const HELP_SHADE := Color(0.01, 0.015, 0.025, 0.7)
 const HELP_SIZE := Vector2(1280, 780)
 const HELP_TOPICS_WIDTH := 260.0
-# The settings' tabs: [name, the rows it shows].
-# The language (row 9) leads the last tab, and is changed at the base only:
-# the dungeon's menu leaves it out (_tab_rows).
+# The settings' groups: [name, the rows it lists].
+# The language (row 9) leads the last group, and is changed at the base only:
+# the dungeon's menu leaves it out (rows_of).
 const TABS := [["サウンド", [0, 1, 2, 3]], ["グラフィック", [4, 5]], ["その他", [9, 6, 7, 8]]]
 const LANGUAGE_ROW := 9
-# The rows' captions are at least this wide.
-const CAPTION_WIDTH := 150.0
 const CAPTIONS := ["全体の音量", "音楽", "効果音", "環境音", "画面の揺れ", "画面モード", "操作の案内", "ヘルプ", "ゲームの終了", "言語"]
 const NOTES := ["すべての音の大きさ。0%で消音。", "拠点・戦場・ボスの曲の大きさ。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "戦場の空気の音の大きさ。", "攻撃が当たったときや被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "戦闘中、画面の下に操作の一覧を出す。", "探索の決まりごとと操作。", "ゲームを閉じる。確かめてから終了する。", "画面の文字の言語。"]
 # The help's topics, in order: [title, points], each point a line of its own
@@ -125,32 +134,36 @@ const POINT_MARKER := Vector2(14, 25)
 # the last, so the halo is brightest by the letters.
 const TOPIC_GLOW: Array[int] = [14, 9, 5]
 
-var volume_slider: GameSlider
-var effects_slider: GameSlider
-var music_slider: GameSlider
-var ambience_slider: GameSlider
-var help_button: Button
-var quit_button: Button
+const DESIGN := Vector2(1520.0, 686.0)
+const SLIDERS: Array[int] = [0, 1, 2, 3]
+const SHAKE_ROW := 4
+const DISPLAY_ROW := 5
+const CONTROLS_ROW := 6
+const HELP_ROW := 7
+const QUIT_ROW := 8
+const ACTION_WORDS := {7: "開く", 8: "終了する"}
+# The list, the stage, and the heights of a row and of a group's name.
+const LIST := Rect2(56.0, 14.0, 640.0, 640.0)
+const STAGE := Rect2(776.0, 24.0, 688.0, 400.0)
+const ROW := 44.0
+const HEAD := 50.0
+const GROUP_GAP := 14.0
+const TRACK_LEFT := 220.0
+const TRACK_WIDTH := 300.0
+const MOVE_TIME := UIMotion.SELECT_TIME
+const CHANGE_TIME := UIMotion.GOLD_TIME
+# The veil runs this far past the screen's edges, to cover it as the page
+# slides in.
+const VEIL_MARGIN := 40.0
+
 var quit_prompt: ChoicePrompt
 # Set by the dungeon's menu, so the prompt says what a run loses.
 var in_run := false
 # What ending the game does; tests replace it.
 var quit_action := func(): get_tree().quit()
-var volume_value: Label
-var music_value: Label
-var effects_value: Label
-var ambience_value: Label
-var shake_cycler: OptionCycler
-var display_cycler: OptionCycler
-var controls_cycler: OptionCycler
-var language_cycler: OptionCycler
 var settings: GameSettings
-var rows: VBoxContainer
-var note: Label
+# The row under the cursor (its place in CAPTIONS).
 var focused_row := 0
-var tabs: CategoryTabs
-# Every row's control, in row order (their focus is chained within a tab).
-var controls: Array[Control] = []
 var help_shown := false
 var help_layer: CanvasLayer
 var help_view: Control
@@ -163,107 +176,41 @@ var help_points: VBoxContainer
 var topic_rows: VBoxContainer
 var topic_buttons: Array[Button] = []
 var selected_topic := 0
-var _rows: Array[Control] = []
-var _columns: HBoxContainer
-# The detail column (what the focused setting does) and the help's page,
-# which slide in from the right when what they tell changes.
-var info_column: VBoxContainer
+# The help's page, which slides in from the right when what it tells changes.
 var help_words: VBoxContainer
-# What the column and the help's page tell now: telling it again (a click
-# lands as a focus and a press) does not slide them.
-var _shown_note := -1
+# What the help's page tells now: telling it again (a click lands as a focus
+# and a press) does not slide it.
 var _shown_topic := -1
 var _hover_topic := -1
-var _hover_row := -1
+var _veil: Control
+var _from := 0
+var _clock := 0.0
+var _kicks := {}
+# [rect, id] of every place the pointer can act on; a volume's bar by row.
+var _zones: Array = []
+var _tracks := {}
+var _hover: Variant = null
+# The row the pointer rests on and since when, and the volume being dragged.
+var _rest_row := -1
+var _rest_since := 0.0
+var _dragging := -1
+var _origin := Vector2.ZERO
+var _zoom := 1.0
+var _quiet := true
 
 
 func _ready() -> void:
-	var columns := HBoxContainer.new()
-	_columns = columns
-	columns.theme_type_variation = &"ShopColumns"
-	add_child(columns)
-	columns.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	columns.alignment = BoxContainer.ALIGNMENT_CENTER
-	var left := HubUI.open_column(columns, 1.0, &"SlabSolid")
-	var panel := left.get_parent() as Control
-	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	panel.custom_minimum_size.x = PANEL_WIDTH
-	panel.clip_contents = true
-	left.theme_type_variation = &"DetailStack"
-	tabs = CategoryTabs.new()
-	left.add_child(tabs)
-	var names: Array[String] = []
-	for tab: Array in TABS:
-		names.append(tab[0])
-	tabs.setup(names)
-	tabs.changed.connect(func(_index: int): show_tab(tabs.selected, true))
-	rows = VBoxContainer.new()
-	rows.theme_type_variation = &"SettingsRows"
-	var longest := 0
-	for index in TABS.size():
-		longest = maxi(longest, _tab_rows(index).size())
-	rows.custom_minimum_size.y = ROW_HEIGHT * longest
-	left.add_child(rows)
-	UIMotion.of(rows)
-	rows.draw.connect(_draw_rows)
-	# The rules follow the rows once the container has placed them.
-	rows.sort_children.connect(rows.queue_redraw)
-	# Four volumes, each a bar: everything, the music, the effects, the room tone.
-	var volume_parts := _volume_row(tr("全体の音量"), "VolumeSlider")
-	volume_slider = volume_parts[0]
-	volume_value = volume_parts[1]
-	var music_parts := _volume_row(tr("音楽"), "MusicSlider")
-	music_slider = music_parts[0]
-	music_value = music_parts[1]
-	var effects_parts := _volume_row(tr("効果音"), "EffectsSlider")
-	effects_slider = effects_parts[0]
-	effects_value = effects_parts[1]
-	var ambience_parts := _volume_row(tr("環境音"), "AmbienceSlider")
-	ambience_slider = ambience_parts[0]
-	ambience_value = ambience_parts[1]
-	var shake_row := _row(tr("画面の揺れ"))
-	shake_cycler = OptionCycler.new()
-	shake_cycler.name = "ShakeCycler"
-	shake_cycler.custom_minimum_size = Vector2(300, 52)
-	shake_cycler.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	shake_cycler.tooltip_text = tr("画面の揺れ")
-	shake_row.add_child(shake_cycler)
-	shake_cycler.setup(GameSettings.SHAKE_NAMES)
-	shake_cycler.item_selected.connect(func(index: int):
-		settings.shake_level = index
-		changed.emit())
-	var display_row := _row(tr("画面モード"))
-	display_cycler = OptionCycler.new()
-	display_cycler.name = "DisplayCycler"
-	display_cycler.custom_minimum_size = Vector2(300, 52)
-	display_cycler.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	display_cycler.tooltip_text = tr("画面モード")
-	display_row.add_child(display_cycler)
-	display_cycler.setup(GameSettings.DISPLAY_NAMES)
-	display_cycler.item_selected.connect(func(index: int):
-		settings.fullscreen = index == 1
-		settings.apply_display()
-		changed.emit())
-	var controls_row := _row(tr("操作の案内"))
-	controls_cycler = OptionCycler.new()
-	controls_cycler.name = "ControlsCycler"
-	controls_cycler.custom_minimum_size = Vector2(300, 52)
-	controls_cycler.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	controls_cycler.tooltip_text = tr("操作の案内")
-	controls_row.add_child(controls_cycler)
-	controls_cycler.setup(GameSettings.CONTROLS_NAMES)
-	controls_cycler.item_selected.connect(func(index: int):
-		settings.show_controls = index == 0
-		changed.emit())
-	var help_row := _row(tr("ヘルプ"))
-	help_button = HubUI.button(help_row, tr("開く"), func():
-		open_help(TOPIC_RUN)
-		help_opened.emit(), &"TextAction")
-	help_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var quit_row := _row(tr("ゲームの終了"))
-	quit_button = HubUI.button(quit_row, tr("終了する"), ask_quit, &"TextAction")
-	quit_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	theme_type_variation = &"SettingsStage"
+	focus_mode = Control.FOCUS_ALL
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	if not in_run:
+		_veil = Control.new()
+		_veil.name = "Veil"
+		_veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_veil.show_behind_parent = true
+		_veil.draw.connect(_draw_veil)
+		add_child(_veil)
 	quit_prompt = ChoicePrompt.new()
 	add_child(quit_prompt)
 	# Over the dungeon's menu as well as the hub.
@@ -273,41 +220,657 @@ func _ready() -> void:
 		quit_action.call())
 	quit_prompt.canceled.connect(func():
 		quit_prompt.hide()
-		quit_button.grab_focus())
-	var language_row := _row(tr("言語"))
-	# Shown at the head of its tab, over the controls guide.
-	rows.move_child(language_row, controls_row.get_index())
-	language_cycler = OptionCycler.new()
-	language_cycler.name = "LanguageCycler"
-	language_cycler.custom_minimum_size = Vector2(300, 52)
-	language_cycler.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	language_cycler.tooltip_text = tr("言語")
-	language_row.add_child(language_cycler)
-	language_cycler.setup(GameSettings.LANGUAGE_NAMES, 0, false)
-	language_cycler.item_selected.connect(func(index: int):
-		settings.language = GameSettings.LANGUAGES[index]
-		language_changed.emit())
-	controls = [volume_slider, music_slider, effects_slider, ambience_slider, shake_cycler, display_cycler, controls_cycler, help_button, quit_button, language_cycler]
-	for index in controls.size():
-		controls[index].focus_entered.connect(_focus_row.bind(index))
-		# As in the lobby and the help, resting the pointer on a row chooses
-		# it: read from the pointer entering or moving over the row or its
-		# control.
-		_rows[index].mouse_filter = Control.MOUSE_FILTER_PASS
-		for watched: Control in [_rows[index], controls[index]]:
-			watched.mouse_entered.connect(_hover_setting_row.bind(index))
-			watched.gui_input.connect(func(event: InputEvent):
-				if event is InputEventMouseMotion and _hover_row != index:
-					_hover_setting_row(index))
-	_align_captions()
-	# What the focused setting does, under the rows.
-	HubUI.rule(left)
-	var info := VBoxContainer.new()
-	left.add_child(info)
-	info_column = info
-	note = HubUI.label(info, tr(NOTES[0]), &"DescriptionLabel")
+		grab_focus())
 	_build_help()
-	show_tab(0)
+	resized.connect(_fit)
+	theme_changed.connect(_fit)
+	visibility_changed.connect(_fit)
+	get_viewport().size_changed.connect(_fit.call_deferred)
+	_fit()
+
+
+# Places the design space in the rect, and the veil over the screen.
+func _fit() -> void:
+	if size.x <= 0.0 or size.y <= 0.0:
+		return
+	_zoom = minf(size.x / DESIGN.x, size.y / DESIGN.y)
+	_origin = ((size - DESIGN * _zoom) * 0.5).round()
+	if _veil != null:
+		var screen := Rect2(Vector2.ZERO, size)
+		if is_inside_tree():
+			screen = get_global_transform().affine_inverse() * get_viewport_rect()
+		_veil.position = screen.position - Vector2.ONE * VEIL_MARGIN
+		_veil.size = screen.size + Vector2.ONE * VEIL_MARGIN * 2.0
+		_veil.queue_redraw()
+	queue_redraw()
+
+
+# --- The settings ---
+
+# A group's rows in order; in a run, without the language, whose change
+# rebuilds the base's words.
+func rows_of(group: int) -> Array[int]:
+	var shown: Array[int] = []
+	shown.assign(TABS[group][1])
+	if in_run:
+		shown.erase(LANGUAGE_ROW)
+	return shown
+
+
+# Every row shown, in the list's order.
+func shown_rows() -> Array[int]:
+	var shown: Array[int] = []
+	for group in TABS.size():
+		shown.append_array(rows_of(group))
+	return shown
+
+
+func group_of(row: int) -> int:
+	for group in TABS.size():
+		if (TABS[group][1] as Array).has(row):
+			return group
+	return 0
+
+
+# &"slider" (a volume), &"cycle" (one of a few choices) or &"action".
+static func kind(row: int) -> StringName:
+	if SLIDERS.has(row):
+		return &"slider"
+	return &"action" if ACTION_WORDS.has(row) else &"cycle"
+
+
+# A volume from 0 to 100.
+func percent(row: int) -> int:
+	return settings.volume_percent([settings.volume, settings.music_volume, settings.effects_volume, settings.ambience_volume][row])
+
+
+# A choice's names, as shown.
+func choices(row: int) -> Array[String]:
+	var names: Array[String] = []
+	match row:
+		SHAKE_ROW:
+			names.assign(GameSettings.SHAKE_NAMES.map(func(name: String) -> String: return tr(name)))
+		DISPLAY_ROW:
+			names.assign(GameSettings.DISPLAY_NAMES.map(func(name: String) -> String: return tr(name)))
+		CONTROLS_ROW:
+			names.assign(GameSettings.CONTROLS_NAMES)
+		LANGUAGE_ROW:
+			names.assign(GameSettings.LANGUAGE_NAMES)
+	return names
+
+
+# Which of a choice's names is set.
+func chosen(row: int) -> int:
+	match row:
+		SHAKE_ROW:
+			return settings.shake_level
+		DISPLAY_ROW:
+			return 1 if settings.fullscreen else 0
+		CONTROLS_ROW:
+			return 0 if settings.show_controls else 1
+		LANGUAGE_ROW:
+			return GameSettings.LANGUAGES.find(settings.shown_language())
+	return 0
+
+
+# The row's value as words: "80%", "標準", "開く".
+func value_text(row: int) -> String:
+	if settings == null:
+		return ""
+	match kind(row):
+		&"slider":
+			return "%d%%" % percent(row)
+		&"cycle":
+			return choices(row)[chosen(row)]
+	return tr(ACTION_WORDS[row])
+
+
+# What the setting under the cursor does.
+func note_text() -> String:
+	return tr(NOTES[focused_row])
+
+
+# Sets a volume (0 to 100, in steps of 5) or a choice, applies it at once
+# and reports it; false when nothing changed.
+func put(row: int, to: int) -> bool:
+	if settings == null:
+		return false
+	if kind(row) == &"slider":
+		var level := clampi(roundi(to / 5.0) * 5, 0, 100)
+		if level == percent(row):
+			return false
+		match row:
+			0:
+				settings.volume = level / 100.0
+			1:
+				settings.music_volume = level / 100.0
+			2:
+				settings.effects_volume = level / 100.0
+			3:
+				settings.ambience_volume = level / 100.0
+		settings.apply_volume()
+	elif kind(row) == &"cycle":
+		var choice := clampi(to, 0, choices(row).size() - 1)
+		if choice == chosen(row):
+			return false
+		match row:
+			SHAKE_ROW:
+				settings.shake_level = choice
+			DISPLAY_ROW:
+				settings.fullscreen = choice == 1
+				settings.apply_display()
+			CONTROLS_ROW:
+				settings.show_controls = choice == 0
+			LANGUAGE_ROW:
+				settings.language = GameSettings.LANGUAGES[choice]
+	else:
+		return false
+	_kick(&"change")
+	_sound(&"ui_move")
+	if row == LANGUAGE_ROW:
+		language_changed.emit()
+	else:
+		changed.emit()
+	queue_redraw()
+	return true
+
+
+# A step up or down for the setting under the cursor: 5% of a volume, the
+# next or the last of a choice (round again past its ends, but for the
+# language, which stops at them).
+func change(by: int) -> bool:
+	match kind(focused_row):
+		&"slider":
+			return put(focused_row, percent(focused_row) + by * 5)
+		&"cycle":
+			var count := choices(focused_row).size()
+			var to := chosen(focused_row) + by
+			return put(focused_row, clampi(to, 0, count - 1) if focused_row == LANGUAGE_ROW else posmod(to, count))
+	return false
+
+
+# Enter (A): the help opens, the game asks before it ends, or a choice
+# takes its next value.
+func accept() -> void:
+	match focused_row:
+		HELP_ROW:
+			open_help(TOPIC_RUN)
+			help_opened.emit()
+		QUIT_ROW:
+			ask_quit()
+		_:
+			if kind(focused_row) == &"cycle":
+				change(1)
+
+
+# Moves the cursor to a row.
+func choose(row: int) -> void:
+	if row == focused_row or not shown_rows().has(row):
+		return
+	_from = focused_row
+	focused_row = row
+	_kick(&"move")
+	_sound(&"ui_move")
+	queue_redraw()
+
+
+# Moves the cursor along the list.
+func step(by: int) -> void:
+	var shown := shown_rows()
+	choose(shown[clampi(shown.find(focused_row) + by, 0, shown.size() - 1)])
+
+
+# Goes to the first row of the next group (the previous with -1).
+func turn(by: int) -> void:
+	show_group(posmod(group_of(focused_row) + by, TABS.size()))
+
+
+# Puts the cursor on a group's first row.
+func show_group(group: int) -> void:
+	choose(rows_of(group)[0])
+
+
+func refresh(value: GameSettings) -> void:
+	settings = value
+	queue_redraw()
+
+
+func focus_first() -> void:
+	if help_shown:
+		close_help()
+	focused_row = shown_rows()[0]
+	_from = focused_row
+	grab_focus()
+	queue_redraw()
+
+
+# Puts the cursor on the language's row.
+func focus_language() -> void:
+	focused_row = LANGUAGE_ROW
+	_from = focused_row
+	grab_focus()
+	queue_redraw()
+
+
+# Opening the page: the rows arrive top first.
+func play_entrance() -> void:
+	_kick(&"open")
+
+
+func _sound(cue: StringName) -> void:
+	if not _quiet and is_visible_in_tree():
+		GameAudio.play(self, cue, -22.0)
+
+
+# --- Clock ---
+
+func _process(delta: float) -> void:
+	if not is_visible_in_tree():
+		return
+	_quiet = false
+	_clock += delta
+	# As in the lobby and the help, resting the pointer on a row chooses it.
+	if _rest_row >= 0 and _rest_row != focused_row and _clock - _rest_since >= HubLobby.HOVER_INTENT and not help_shown and not quit_prompt.visible:
+		choose(_rest_row)
+	queue_redraw()
+
+
+func _kick(what: StringName) -> void:
+	_kicks[what] = _clock
+
+
+func _since(what: StringName) -> float:
+	return _clock - float(_kicks.get(what, -1000.0))
+
+
+func _eased(what: StringName, time: float) -> float:
+	var share := clampf(_since(what) / time, 0.0, 1.0)
+	return 1.0 - pow(1.0 - share, 3.0)
+
+
+# A value's small jump as it changes (1 at rest).
+func _pop() -> float:
+	return 1.0 + 0.18 * (1.0 - _eased(&"change", CHANGE_TIME))
+
+
+# --- Input ---
+
+func _gui_input(event: InputEvent) -> void:
+	if help_shown or quit_prompt.visible:
+		return
+	if event is InputEventMouseMotion:
+		var zone: Variant = _zone_at(event.position)
+		_hover = zone
+		var row: int = (zone as Array)[1][1] if zone != null else -1
+		if row != _rest_row:
+			_rest_row = row
+			_rest_since = _clock
+		if _dragging >= 0:
+			_drag_to(event.position)
+		return
+	if event is InputEventMouseButton:
+		if event.button_index != MOUSE_BUTTON_LEFT:
+			return
+		if not event.pressed:
+			_dragging = -1
+			return
+		grab_focus()
+		var zone: Variant = _zone_at(event.position)
+		if zone != null:
+			_press((zone as Array)[1], event.position)
+		accept_event()
+		return
+	var handled := true
+	if event.is_action_pressed(&"ui_up", true):
+		step(-1)
+	elif event.is_action_pressed(&"ui_down", true):
+		step(1)
+	elif event.is_action_pressed(&"ui_left", true):
+		change(-1)
+	elif event.is_action_pressed(&"ui_right", true):
+		change(1)
+	elif event.is_action_pressed(&"ui_accept"):
+		accept()
+	elif _pressed(event, KEY_Q, JOY_BUTTON_LEFT_SHOULDER):
+		turn(-1)
+	elif _pressed(event, KEY_E, JOY_BUTTON_RIGHT_SHOULDER):
+		turn(1)
+	else:
+		handled = false
+	if handled:
+		accept_event()
+
+
+func _pressed(event: InputEvent, key: Key, button: int) -> bool:
+	if event is InputEventKey:
+		return event.pressed and not event.echo and event.keycode == key
+	return event is InputEventJoypadButton and event.pressed and event.button_index == button
+
+
+# A place the pointer clicked: [&"item", row] (the cursor goes there),
+# [&"step", row, by], [&"track", row] (a volume's bar, set where it was
+# clicked and dragged from there) and [&"act", row].
+func _press(id: Variant, at := Vector2.ZERO) -> void:
+	var what: Array = id
+	choose(what[1])
+	match what[0]:
+		&"step":
+			change(what[2])
+		&"track":
+			_dragging = what[1]
+			_drag_to(at)
+		&"act":
+			accept()
+
+
+# Sets the volume being dragged from where the pointer is along its bar.
+func _drag_to(point: Vector2) -> void:
+	if not _tracks.has(_dragging):
+		return
+	var track: Rect2 = _tracks[_dragging]
+	var x := (point.x - _origin.x) / _zoom
+	put(_dragging, roundi(clampf((x - track.position.x) / track.size.x, 0.0, 1.0) * 100.0))
+
+
+func _zone(rect: Rect2, id: Variant) -> void:
+	_zones.append([rect, id])
+
+
+func _zone_at(point: Vector2) -> Variant:
+	var at := (point - _origin) / _zoom
+	for index in range(_zones.size() - 1, -1, -1):
+		if (_zones[index][0] as Rect2).has_point(at):
+			return _zones[index]
+	return null
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_MOUSE_EXIT:
+		_hover = null
+		_rest_row = -1
+		_dragging = -1
+
+
+# --- Drawing ---
+
+func _colour(item: StringName, share := 1.0) -> Color:
+	var colour := get_theme_color(item)
+	return Color(colour, colour.a * share)
+
+
+func _face(item: StringName) -> Font:
+	return get_theme_font(item)
+
+
+func _size(item: StringName) -> int:
+	return get_theme_font_size(item)
+
+
+func _words(at: Vector2, words: String, face: StringName, size: StringName, colour: Color, align := HORIZONTAL_ALIGNMENT_LEFT, width := -1.0) -> void:
+	draw_string(_face(face), at, words, align, width, _size(size), colour)
+
+
+func _width(words: String, face: StringName, size: StringName) -> float:
+	return _face(face).get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, _size(size)).x
+
+
+# Japanese breaks between any two letters; a script with spaces, at them.
+func _breaks() -> int:
+	return TextServer.BREAK_MANDATORY | (TextServer.BREAK_GRAPHEME_BOUND if TranslationServer.get_locale().begins_with("ja") else TextServer.BREAK_WORD_BOUND)
+
+
+func _plate(rect: Rect2, fill: Color, edge: Color, corner := 4) -> void:
+	var box := StyleBoxFlat.new()
+	box.bg_color = fill
+	box.border_color = edge
+	box.set_border_width_all(1 if edge.a > 0.0 else 0)
+	box.set_corner_radius_all(corner)
+	draw_style_box(box, rect)
+
+
+# A rect whose colour runs from `first` at its left to `last` at its right.
+func _fall(canvas: CanvasItem, rect: Rect2, first: Color, last: Color) -> void:
+	canvas.draw_polygon(
+		PackedVector2Array([rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]),
+		PackedColorArray([first, last, last, first]))
+
+
+# A soft round light.
+func _glow(centre: Vector2, radius: float, colour: Color) -> void:
+	var points := PackedVector2Array([centre])
+	var colours := PackedColorArray([colour])
+	for index in 33:
+		points.append(centre + Vector2.from_angle(TAU * index / 32.0) * radius)
+		colours.append(Color(colour, 0.0))
+	for index in 32:
+		draw_polygon(PackedVector2Array([points[0], points[index + 1], points[index + 2]]), PackedColorArray([colours[0], colours[index + 1], colours[index + 2]]))
+
+
+# The veil over the hall: dark all over, darker still under the list.
+func _draw_veil() -> void:
+	var room := Rect2(Vector2.ZERO, _veil.size)
+	_veil.draw_rect(room, _colour(&"veil", 0.78))
+	_fall(_veil, Rect2(0.0, 0.0, room.size.x * 0.56, room.size.y), _colour(&"veil", 0.5), _colour(&"veil", 0.0))
+
+
+func _draw() -> void:
+	_zones.clear()
+	_tracks.clear()
+	if settings == null:
+		return
+	draw_set_transform(_origin, 0.0, Vector2.ONE * _zoom)
+	var places := {}
+	var y := LIST.position.y
+	var order := 0
+	for group in TABS.size():
+		var rows := rows_of(group)
+		if rows.is_empty():
+			continue
+		var here := group_of(focused_row) == group
+		_words(Vector2(LIST.position.x, y + 30.0), tr(TABS[group][0]), &"title_font", &"head_size", _colour(&"gold") if here else _colour(&"dim"))
+		draw_line(Vector2(LIST.position.x, y + 42.0), Vector2(LIST.end.x, y + 42.0), _colour(&"line", 0.6 if here else 0.25), 1.0)
+		y += HEAD
+		for row in rows:
+			places[row] = y
+			y += ROW
+		y += GROUP_GAP
+	# The cursor's bar slides from the row it left.
+	var bar := lerpf(places.get(_from, places[focused_row]), places[focused_row], _eased(&"move", MOVE_TIME))
+	_fall(self, Rect2(LIST.position.x - 24.0, bar, LIST.size.x + 48.0, ROW), _colour(&"line", 0.22 if has_focus() else 0.10), _colour(&"line", 0.0))
+	draw_rect(Rect2(LIST.position.x - 24.0, bar, 3.0, ROW), _colour(&"gold") if has_focus() else _colour(&"dim"))
+	for row: int in shown_rows():
+		# The rows arrive top first as the page opens.
+		var arrived := clampf((_since(&"open") - UIMotion.ROW_STAGGER * order) / UIMotion.ROW_TIME, 0.0, 1.0)
+		_draw_row(row, Rect2(LIST.position.x, places[row], LIST.size.x, ROW), 1.0 - pow(1.0 - arrived, 3.0))
+		order += 1
+	_draw_stage()
+	draw_set_transform(Vector2.ZERO)
+
+
+func _draw_row(row: int, rect: Rect2, shown: float) -> void:
+	var lit := row == focused_row
+	var rested: bool = _hover is Array and (_hover as Array)[1][1] == row
+	var ink := _colour(&"pale" if lit or rested else &"dim", shown)
+	var base := rect.position.y + 29.0
+	_zone(rect, [&"item", row])
+	_words(Vector2(rect.position.x, base), tr(CAPTIONS[row]), &"bold_font" if lit else &"font", &"row_size", _colour(&"gold", shown) if lit else ink)
+	match kind(row):
+		&"slider":
+			var track := Rect2(rect.position.x + TRACK_LEFT, rect.get_center().y - 2.0, TRACK_WIDTH, 4.0)
+			var level := percent(row) / 100.0
+			draw_rect(track, _colour(&"track", shown))
+			draw_rect(Rect2(track.position, Vector2(track.size.x * level, 4.0)), _colour(&"gold", shown) if lit else _colour(&"line", 0.8 * shown))
+			var knob := Vector2(track.position.x + track.size.x * level, rect.get_center().y)
+			if lit:
+				_glow(knob, 22.0, _colour(&"gold", 0.4))
+			HubUI.diamond(self, knob, 8.0 * (_pop() if lit else 1.0), _colour(&"gold", shown) if lit else _colour(&"line", shown))
+			_words(Vector2(rect.position.x, base), value_text(row), &"title_font", &"value_size", ink, HORIZONTAL_ALIGNMENT_RIGHT, rect.size.x)
+			_tracks[row] = track
+			_zone(Rect2(track.position.x - 12.0, rect.position.y, track.size.x + 24.0, ROW), [&"track", row])
+		&"cycle":
+			var words := value_text(row)
+			var wide := maxf(110.0, _width(words, &"bold_font", &"row_size"))
+			var right := rect.end.x
+			_words(Vector2(right - wide - 30.0, base), words, &"bold_font", &"row_size", ink, HORIZONTAL_ALIGNMENT_CENTER, wide)
+			var at_first := row == LANGUAGE_ROW and chosen(row) == 0
+			var at_last := row == LANGUAGE_ROW and chosen(row) == choices(row).size() - 1
+			_words(Vector2(right - wide - 62.0, base), "〈", &"font", &"row_size", _colour(&"gold", shown) if lit and not at_first else _colour(&"dim", 0.5 * shown))
+			_words(Vector2(right - 22.0, base), "〉", &"font", &"row_size", _colour(&"gold", shown) if lit and not at_last else _colour(&"dim", 0.5 * shown))
+			_zone(Rect2(right - wide - 72.0, rect.position.y, 46.0, ROW), [&"step", row, -1])
+			_zone(Rect2(right - 36.0, rect.position.y, 46.0, ROW), [&"step", row, 1])
+		&"action":
+			_words(Vector2(rect.position.x, base), value_text(row) + "　›", &"bold_font", &"row_size", (_colour(&"warn", shown) if row == QUIT_ROW else _colour(&"gold", shown)) if lit else ink, HORIZONTAL_ALIGNMENT_RIGHT, rect.size.x)
+			_zone(Rect2(rect.end.x - 170.0, rect.position.y, 170.0, ROW), [&"act", row])
+
+
+# The stage: what the setting under the cursor does, shown; under it, the
+# setting's name and value, and what it does in words.
+func _draw_stage() -> void:
+	_plate(STAGE, _colour(&"ink"), _colour(&"line", 0.5))
+	draw_rect(STAGE.grow(-7.0), _colour(&"line", 0.18), false, 1.0)
+	_words(STAGE.position + Vector2(22.0, 32.0), tr("実演"), &"font", &"label_size", _colour(&"dim"))
+	var centre := STAGE.get_center() + Vector2(0.0, 10.0)
+	match focused_row:
+		0, 1, 2, 3:
+			_show_sound(centre)
+		SHAKE_ROW:
+			_show_shake(centre)
+		DISPLAY_ROW:
+			_show_screen(centre)
+		LANGUAGE_ROW:
+			_show_language(centre)
+		CONTROLS_ROW:
+			_show_guide(centre)
+		HELP_ROW:
+			_show_help()
+		_:
+			_show_quit(centre)
+	var fade := 0.3 + 0.7 * _eased(&"move", MOVE_TIME)
+	var y := STAGE.end.y + 58.0
+	_words(Vector2(STAGE.position.x, y), tr(CAPTIONS[focused_row]), &"title_font", &"name_size", _colour(&"pale", fade))
+	draw_string(_face(&"title_font"), Vector2(STAGE.position.x, y), value_text(focused_row), HORIZONTAL_ALIGNMENT_RIGHT, STAGE.size.x, int(_size(&"name_size") * _pop()), _colour(&"warn" if focused_row == QUIT_ROW else &"gold", fade))
+	draw_line(Vector2(STAGE.position.x, y + 20.0), Vector2(STAGE.end.x, y + 20.0), _colour(&"line", 0.4), 1.0)
+	draw_multiline_string(_face(&"font"), Vector2(STAGE.position.x, y + 54.0), note_text(), HORIZONTAL_ALIGNMENT_LEFT, STAGE.size.x, _size(&"body_size"), 3, _colour(&"pale", 0.92 * fade), _breaks())
+
+
+# A bell whose rings carry as far as the volume under the cursor (under the
+# volume of everything), beside the four levels.
+func _show_sound(centre: Vector2) -> void:
+	var bell := centre - Vector2(170.0, 0.0)
+	var loud := percent(focused_row) / 100.0 * (percent(0) / 100.0 if focused_row != 0 else 1.0)
+	for index in 5:
+		var out := fmod(_clock * 0.6 + index / 5.0, 1.0)
+		if loud > 0.0:
+			draw_arc(bell, 30.0 + 150.0 * out * loud, -PI * 0.42, PI * 0.42, 32, _colour(&"gold", (1.0 - out) * (0.25 + 0.75 * loud)), 2.0, true)
+	draw_circle(bell, 24.0, _colour(&"gold") if loud > 0.0 else _colour(&"dim"))
+	draw_circle(bell, 15.0, _colour(&"ink"))
+	if loud == 0.0:
+		draw_line(bell + Vector2(-34.0, 34.0), bell + Vector2(34.0, -34.0), _colour(&"warn"), 4.0, true)
+		_words(bell + Vector2(-80.0, 74.0), tr("消音"), &"bold_font", &"body_size", _colour(&"warn"), HORIZONTAL_ALIGNMENT_CENTER, 160.0)
+	for index in SLIDERS.size():
+		var row := SLIDERS[index]
+		var x := centre.x + 70.0 + index * 56.0
+		var level := percent(row) / 100.0
+		draw_rect(Rect2(x, centre.y - 110.0, 24.0, 220.0), _colour(&"track"))
+		draw_rect(Rect2(x, centre.y + 110.0 - 220.0 * level, 24.0, 220.0 * level), _colour(&"gold") if row == focused_row else _colour(&"line", 0.55))
+		if row == focused_row:
+			HubUI.diamond(self, Vector2(x + 12.0, centre.y + 128.0), 5.0, _colour(&"gold"))
+
+
+# A frame struck every second or so, shaking as hard as the shake is set.
+func _show_shake(centre: Vector2) -> void:
+	var beat := fmod(_clock, 1.3)
+	var force := GameSettings.SHAKE_SCALES[settings.shake_level] * maxf(0.0, 1.0 - beat / 0.35)
+	var shift := Vector2(sin(_clock * 71.0), cos(_clock * 53.0)) * 16.0 * force
+	var frame := Rect2(centre - Vector2(210.0, 120.0) + shift, Vector2(420.0, 240.0))
+	draw_rect(frame, _colour(&"scene"))
+	draw_rect(frame, _colour(&"line", 0.7), false, 2.0)
+	draw_rect(Rect2(frame.position.x, frame.end.y - 60.0, frame.size.x, 60.0), _colour(&"prop"))
+	var hero := frame.position + Vector2(150.0, 158.0)
+	draw_circle(hero, 18.0, _colour(&"pale"))
+	draw_rect(Rect2(hero + Vector2(-12.0, 16.0), Vector2(24.0, 34.0)), _colour(&"pale"))
+	var foe := frame.position + Vector2(290.0, 150.0)
+	draw_rect(Rect2(foe - Vector2(26.0, 26.0), Vector2(52.0, 62.0)), _colour(&"foe"))
+	if beat < 0.22:
+		var cut := 1.0 - beat / 0.22
+		draw_arc(hero + Vector2(40.0, 6.0), 86.0, -0.9, 0.7, 20, _colour(&"pale", cut), 6.0, true)
+		draw_circle(foe, 40.0 * (1.0 - cut) + 12.0, _colour(&"gold", 0.6 * cut))
+
+
+# A monitor: a window on it, or the whole of it.
+func _show_screen(centre: Vector2) -> void:
+	var monitor := Rect2(centre - Vector2(200.0, 130.0), Vector2(400.0, 230.0))
+	draw_rect(monitor.grow(8.0), _colour(&"prop"))
+	draw_rect(monitor, _colour(&"scene"))
+	draw_rect(Rect2(centre.x - 30.0, monitor.end.y + 8.0, 60.0, 26.0), _colour(&"prop"))
+	draw_rect(Rect2(centre.x - 80.0, monitor.end.y + 34.0, 160.0, 8.0), _colour(&"prop"))
+	var grow := _eased(&"change", CHANGE_TIME)
+	var small := Rect2(monitor.position + Vector2(70.0, 44.0), Vector2(260.0, 150.0))
+	var a := monitor if not settings.fullscreen else small
+	var b := small if not settings.fullscreen else monitor
+	var game := Rect2(a.position.lerp(b.position, grow), a.size.lerp(b.size, grow))
+	var art := Chapters.ALL[0].illustration
+	if art != null:
+		draw_texture_rect(art, game, false, _colour(&"pale"))
+	if not settings.fullscreen:
+		draw_rect(Rect2(game.position - Vector2(0.0, 16.0), Vector2(game.size.x, 16.0)), _colour(&"pale"))
+		draw_circle(game.position + Vector2(game.size.x - 12.0, -8.0), 4.0, _colour(&"foe"))
+	draw_rect(game, _colour(&"gold", 0.8), false, 2.0)
+
+
+# The languages, the one shown marked, and a line of the game in it.
+func _show_language(centre: Vector2) -> void:
+	var names := choices(LANGUAGE_ROW)
+	for index in names.size():
+		var on := index == chosen(LANGUAGE_ROW)
+		_words(Vector2(centre.x - 200.0 + index * 200.0, centre.y - 96.0), names[index], &"title_font", &"value_size", _colour(&"gold") if on else _colour(&"dim", 0.6), HORIZONTAL_ALIGNMENT_CENTER, 200.0)
+		if on:
+			draw_line(Vector2(centre.x - 160.0 + index * 200.0, centre.y - 82.0), Vector2(centre.x - 40.0 + index * 200.0, centre.y - 82.0), _colour(&"gold"), 2.0)
+	var first := Chapters.ALL[0]
+	_words(Vector2(STAGE.position.x, centre.y + 4.0), tr(first.display_name), &"title_font", &"name_size", _colour(&"pale"), HORIZONTAL_ALIGNMENT_CENTER, STAGE.size.x)
+	draw_multiline_string(_face(&"font"), Vector2(STAGE.position.x + 60.0, centre.y + 52.0), tr(first.description), HORIZONTAL_ALIGNMENT_CENTER, STAGE.size.x - 120.0, _size(&"body_size"), 2, _colour(&"dim"), _breaks())
+
+
+# The fight's foot, with its line of keys or without.
+func _show_guide(centre: Vector2) -> void:
+	var frame := Rect2(centre - Vector2(250.0, 130.0), Vector2(500.0, 250.0))
+	draw_rect(frame, _colour(&"scene"))
+	draw_rect(frame, _colour(&"line", 0.6), false, 1.5)
+	draw_circle(frame.get_center() - Vector2(0.0, 20.0), 16.0, _colour(&"pale"))
+	draw_rect(Rect2(frame.position + Vector2(18.0, 16.0), Vector2(150.0, 12.0)), _colour(&"foe"))
+	var y := frame.end.y - 36.0
+	if not settings.show_controls:
+		draw_dashed_line(Vector2(frame.position.x + 12.0, y + 11.0), Vector2(frame.end.x - 12.0, y + 11.0), _colour(&"dim", 0.6), 1.5, 8.0)
+		return
+	var x := frame.position.x + 22.0
+	for entry: Array in [HELP_KEYS[0], HELP_KEYS[1], HELP_KEYS[3], HELP_KEYS[4]]:
+		var cap: String = tr(entry[1][0])
+		var deed: String = tr(entry[0])
+		var wide := _width(cap, &"bold_font", &"key_size") + 12.0
+		if x + wide + _width(deed, &"font", &"key_size") + 8.0 > frame.end.x - 14.0:
+			break
+		_plate(Rect2(x, y, wide, 22.0), _colour(&"prop"), _colour(&"dim", 0.6), 3)
+		_words(Vector2(x + 6.0, y + 16.0), cap, &"bold_font", &"key_size", _colour(&"pale"))
+		_words(Vector2(x + wide + 6.0, y + 16.0), deed, &"font", &"key_size", _colour(&"dim"))
+		x += wide + _width(deed, &"font", &"key_size") + 22.0
+	draw_rect(Rect2(frame.position.x + 12.0, y - 8.0, frame.size.x - 24.0, 38.0), _colour(&"gold", 0.8), false, 1.5)
+
+
+# The help's topics.
+func _show_help() -> void:
+	for index in HELP.size():
+		var at := Vector2(STAGE.position.x + 80.0 + (index % 2) * 300.0, STAGE.position.y + 110.0 + (index / 2) * 92.0)
+		HubUI.diamond(self, at + Vector2(0.0, -8.0), 6.0, _colour(&"gold"))
+		_words(at + Vector2(22.0, 0.0), tr(HELP[index][0]), &"title_font", &"value_size", _colour(&"pale"))
+
+
+# Ending the game: a door, and what is kept (or, in a run, what is lost).
+func _show_quit(centre: Vector2) -> void:
+	var door := Rect2(centre - Vector2(46.0, 130.0), Vector2(92.0, 150.0))
+	draw_rect(door, _colour(&"veil"))
+	draw_rect(door, _colour(&"warn", 0.8), false, 2.0)
+	draw_circle(door.position + Vector2(74.0, 80.0), 5.0, _colour(&"warn"))
+	draw_multiline_string(_face(&"font"), Vector2(STAGE.position.x + 50.0, centre.y + 70.0), tr(QUIT_BODY_IN_RUN if in_run else QUIT_BODY), HORIZONTAL_ALIGNMENT_CENTER, STAGE.size.x - 100.0, _size(&"body_size"), 3, _colour(&"pale"), _breaks())
 
 
 # The help, as action games commonly show their tips: a framed window over a
@@ -448,7 +1011,9 @@ func open_help(topic: int) -> void:
 func close_help() -> void:
 	help_shown = false
 	help_layer.hide()
-	help_button.grab_focus()
+	focused_row = HELP_ROW
+	_from = focused_row
+	grab_focus()
 
 
 func select_topic(index: int) -> void:
@@ -484,15 +1049,6 @@ func _help_point(text: String) -> void:
 	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 
-func _hover_setting_row(index: int) -> void:
-	_hover_row = index
-	await get_tree().create_timer(HubLobby.HOVER_INTENT).timeout
-	if _hover_row != index or not is_visible_in_tree() or help_shown or quit_prompt.visible:
-		return
-	if _rows[index].visible and not controls[index].has_focus():
-		controls[index].grab_focus()
-
-
 func _hover_topic_row(index: int) -> void:
 	_hover_topic = index
 	await get_tree().create_timer(HubLobby.HOVER_INTENT).timeout
@@ -513,165 +1069,3 @@ func _draw_topic_glow() -> void:
 	var glow := chosen.get_theme_color(&"glow")
 	for spread: int in TOPIC_GLOW:
 		topic_rows.draw_string_outline(font, Vector2(x, y), chosen.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, spread, glow)
-
-
-func _row(caption: String) -> HBoxContainer:
-	var row := HBoxContainer.new()
-	row.theme_type_variation = &"SettingsRow"
-	row.custom_minimum_size.y = ROW_HEIGHT
-	rows.add_child(row)
-	_rows.append(row)
-	var label := HubUI.label(row, caption, &"ItemNameLabel")
-	label.autowrap_mode = TextServer.AUTOWRAP_OFF
-	label.custom_minimum_size.x = CAPTION_WIDTH
-	label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	return row
-
-
-# Every row's caption as wide as the widest (at least CAPTION_WIDTH), so the
-# controls start at one line whatever the language's names.
-func _align_captions() -> void:
-	var widest := CAPTION_WIDTH
-	for row in _rows:
-		var label: Label = row.get_child(0)
-		var font := label.get_theme_font(&"font")
-		widest = maxf(widest, ceilf(font.get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, label.get_theme_font_size(&"font_size")).x))
-	for row in _rows:
-		(row.get_child(0) as Label).custom_minimum_size.x = widest
-
-
-# A volume as a bar from 0 to 100% in 5% steps, its value at the right.
-# Returns [the bar, the value].
-func _volume_row(caption: String, slider_name: String) -> Array:
-	var row := _row(caption)
-	var slider := GameSlider.new()
-	slider.name = slider_name
-	slider.min_value = 0
-	slider.max_value = 100
-	slider.step = 5
-	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	slider.tooltip_text = caption
-	row.add_child(slider)
-	var value := HubUI.label(row, "", &"SettingsValue")
-	value.autowrap_mode = TextServer.AUTOWRAP_OFF
-	value.custom_minimum_size.x = 72
-	value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	value.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	slider.value_changed.connect(_volume_changed.bind(slider))
-	return [slider, value]
-
-
-# The rows are parted by faint rules; the focused one draws no band.
-func _draw_rows() -> void:
-	var rail := rows.get_theme_color(&"rail", &"HubLobby")
-	var shown: Array[int] = []
-	shown.assign(_tab_rows(tabs.selected))
-	for place in shown.size() - 1:
-		var index := shown[place]
-		var y := _rows[index].position.y + _rows[index].size.y
-		rows.draw_polyline_colors(PackedVector2Array([Vector2(0, y), Vector2(rows.size.x * 0.5, y), Vector2(rows.size.x, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.22), Color(rail, 0.0)]), 1.0, true)
-
-
-func _focus_row(index: int) -> void:
-	focused_row = index
-	if index == _shown_note:
-		return
-	_shown_note = index
-	note.text = tr(NOTES[index])
-	UIMotion.of(info_column).slide_in()
-
-
-func refresh(value: GameSettings) -> void:
-	settings = value
-	for pair: Array in [[volume_slider, volume_value, settings.volume], [music_slider, music_value, settings.music_volume], [effects_slider, effects_value, settings.effects_volume], [ambience_slider, ambience_value, settings.ambience_volume]]:
-		(pair[0] as GameSlider).set_value_no_signal(settings.volume_percent(pair[2]))
-		(pair[0] as GameSlider).queue_redraw()
-		(pair[1] as Label).text = "%d%%" % settings.volume_percent(pair[2])
-	shake_cycler.select(settings.shake_level)
-	display_cycler.select(1 if settings.fullscreen else 0)
-	controls_cycler.select(0 if settings.show_controls else 1)
-	language_cycler.select(GameSettings.LANGUAGES.find(settings.shown_language()))
-
-
-func focus_first() -> void:
-	if help_shown:
-		close_help()
-	var first: int = _tab_rows(tabs.selected)[0]
-	controls[first].grab_focus()
-	_focus_row(first)
-
-
-# Shows one tab's rows, their focus chained top to bottom; `take_focus` puts
-# the focus on its first row (a tab changed from the keys or a click).
-func show_tab(index: int, take_focus: bool = false) -> void:
-	if tabs.selected != index:
-		tabs.select(index)
-	var shown := _tab_rows(index)
-	for row in _rows.size():
-		_rows[row].visible = shown.has(row)
-	for place in shown.size():
-		var control := controls[shown[place]]
-		control.focus_neighbor_top = controls[shown[place - 1]].get_path() if place > 0 else control.get_path()
-		control.focus_neighbor_bottom = controls[shown[place + 1]].get_path() if place < shown.size() - 1 else control.get_path()
-	rows.queue_redraw()
-	if take_focus:
-		controls[shown[0]].grab_focus()
-	_focus_row(shown[0])
-
-
-# A tab's rows in order; in a run, without the language, whose change
-# rebuilds the base's words.
-func _tab_rows(index: int) -> Array[int]:
-	var shown: Array[int] = []
-	shown.assign(TABS[index][1])
-	if in_run:
-		shown.erase(LANGUAGE_ROW)
-	return shown
-
-
-# Puts the focus on the language's row, on its tab.
-func focus_language() -> void:
-	show_tab(TABS.size() - 1)
-	language_cycler.grab_focus()
-	_focus_row(LANGUAGE_ROW)
-
-
-# Q / E (LB / RB) step through the tabs while the page is shown and the help
-# and the quit's question are not.
-func _unhandled_input(event: InputEvent) -> void:
-	if not is_visible_in_tree() or help_shown or quit_prompt.visible:
-		return
-	var pad := event is InputEventJoypadButton
-	if pad or event is InputEventKey:
-		tabs.use_pad(pad)
-	var back: bool = (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_Q) or (pad and event.pressed and event.button_index == JOY_BUTTON_LEFT_SHOULDER)
-	var next: bool = (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E) or (pad and event.pressed and event.button_index == JOY_BUTTON_RIGHT_SHOULDER)
-	if back or next:
-		tabs.step(-1 if back else 1)
-		get_viewport().set_input_as_handled()
-
-
-# Opening the page: the rows arrive top first, the note a beat later.
-func play_entrance() -> void:
-	for index in _rows.size():
-		UIMotion.of(_rows[index]).appear(UIMotion.ROW_STAGGER * index, UIMotion.ROW_TIME)
-	UIMotion.of(note).appear(UIMotion.STAGGER_TIME)
-
-
-func _volume_changed(percent: float, slider: GameSlider) -> void:
-	var level := percent / 100.0
-	if slider == music_slider:
-		settings.music_volume = level
-		music_value.text = "%d%%" % settings.volume_percent(level)
-	elif slider == effects_slider:
-		settings.effects_volume = level
-		effects_value.text = "%d%%" % settings.volume_percent(level)
-	elif slider == ambience_slider:
-		settings.ambience_volume = level
-		ambience_value.text = "%d%%" % settings.volume_percent(level)
-	else:
-		settings.volume = level
-		volume_value.text = "%d%%" % settings.volume_percent(level)
-	settings.apply_volume()
-	changed.emit()

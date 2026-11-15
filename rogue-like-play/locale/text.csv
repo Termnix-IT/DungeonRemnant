@@ -722,6 +722,8 @@ Q・E（ゲームパッドはLB・RB）で種類を切り替えます。,,Switch
 クリック,,Click,ui/hub_settings.gd
 開く,,Open,ui/hub_settings.gd
 終了する,,Quit,ui/hub_settings.gd
+実演,,Preview,ui/hub_settings.gd
+消音,,Muted,ui/hub_settings.gd
 キーボード,,Keyboard,ui/hub_settings.gd
 ゲームパッド,,Gamepad,ui/hub_settings.gd
 話題,,Topic,ui/hub_settings.gd

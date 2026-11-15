@@ -164,6 +164,7 @@ func run_tests() -> void:
 	check_book(theme)
 	check_chart(theme)
 	check_vista(theme)
+	check_stage(theme)
 	# A secondary action that can be pressed must never look like one that
 	# cannot.
 	for state in [&"normal", &"hover", &"focus", &"pressed", &"hover_pressed", &"disabled"]:
@@ -200,7 +201,7 @@ func run_tests() -> void:
 # 19px at 1080p, above the 18px floor of Xbox Accessibility Guideline 101
 # for PC. The fight's HUD (Hud*) keeps its own sizes.
 func check_readable_floor(theme: Theme) -> void:
-	for pair: Array in [[&"font_size", &"NoteLabel"], [&"font_size", &"MutedLabel"], [&"font_size", &"LobbyFactCaption"], [&"cap_font_size", &"KeyGuideButton"], [&"font_size", &"KeyGuideButton"], [&"font_size", &"CategoryCap"], [&"font_size", &"HintMark"], [&"font_size", &"TextAction"], [&"font_size", &"SecondaryButton"]]:
+	for pair: Array in [[&"font_size", &"NoteLabel"], [&"font_size", &"MutedLabel"], [&"font_size", &"LobbyFactCaption"], [&"cap_font_size", &"KeyGuideButton"], [&"font_size", &"KeyGuideButton"], [&"font_size", &"CategoryCap"], [&"font_size", &"HintMark"], [&"label_size", &"SettingsStage"], [&"font_size", &"SecondaryButton"]]:
 		check(theme.get_font_size(pair[0], pair[1]) >= 16, "%s %s stays at 16px or more" % [pair[1], pair[0]])
 	# Notes share the muted size, so they step down by tone instead.
 	check(theme.get_color(&"font_color", &"NoteLabel") != theme.get_color(&"font_color", &"MutedLabel"), "Notes stay a step quieter than muted text")
@@ -316,6 +317,19 @@ func check_vista(theme: Theme) -> void:
 	check(theme.get_color(&"art_locked", &"Vista").get_luminance() < 0.3, "A sealed chapter's painting is dark")
 	for item in theme.get_font_size_list(&"Vista"):
 		check(theme.get_font_size(item, &"Vista") >= 14, "The vista's %s stays at 14px or more" % item)
+
+
+# The settings' list and stage: their words stand on the stage's dark face
+# or on the veil laid over the hall.
+func check_stage(theme: Theme) -> void:
+	for ground: StringName in [&"ink", &"veil", &"scene"]:
+		var face := theme.get_color(ground, &"SettingsStage")
+		face.a = 1.0
+		for item: StringName in [&"pale", &"dim", &"gold", &"warn"]:
+			var colour := theme.get_color(item, &"SettingsStage")
+			check(contrast(colour, face) >= 4.5, "The settings' %s reads on its %s at 4.5:1 or more (%.1f)" % [item, ground, contrast(colour, face)])
+	for item in theme.get_font_size_list(&"SettingsStage"):
+		check(theme.get_font_size(item, &"SettingsStage") >= 14, "The settings' %s stays at 14px or more" % item)
 
 
 func theme_color(theme: Theme, item: StringName, type: StringName) -> Color:

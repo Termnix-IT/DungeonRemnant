@@ -218,31 +218,53 @@ func run_tests() -> void:
 	check(codex.sort == 0 and codex.kind == 0, "The order comes round to the catalog's own")
 	hub.show_page("home")
 
-	# The settings: three tabs, one group of rows at a time, the focused one
-	# told in the column beside.
+	# The settings: every row in one list under its group's name, the one
+	# under the cursor shown and told beside it.
 	hub.show_page("settings")
 	var settings_page: HubSettings = hub.settings_page
-	var shown_rows := func() -> Array: return range(settings_page._rows.size()).filter(func(row: int): return settings_page._rows[row].visible)
-	check(settings_page.tabs.tabs.map(func(tab: Button): return tab.text) == ["サウンド", "グラフィック", "その他"] and settings_page.tabs.selected == 0 and shown_rows.call() == [0, 1, 2, 3], "The settings open on the sound tab, its four volumes alone")
-	settings_page.effects_slider.grab_focus()
+	check(settings_page.has_focus() and settings_page.focused_row == 0 and settings_page.shown_rows() == [0, 1, 2, 3, 4, 5, 9, 6, 7, 8], "The settings open on the first of all ten rows, the language leading the last group")
+	check(HubSettings.TABS.map(func(tab: Array): return tab[0]) == ["サウンド", "グラフィック", "その他"] and settings_page.value_text(0) == "100%" and settings_page.value_text(4) == "標準" and settings_page.value_text(7) == "開く", "The rows stand in three groups, each telling its value")
+	root.push_input(key(KEY_DOWN))
+	root.push_input(key(KEY_DOWN))
 	await process_frame
-	check(settings_page.note.text == HubSettings.NOTES[2], "The focused setting is told under the rows")
-	settings_page.tabs.step(1)
+	check(settings_page.focused_row == 2 and settings_page.note_text() == HubSettings.NOTES[2], "Down goes through the list, and the row under the cursor is told beside it")
+	var effects_before: float = hub.settings.effects_volume
+	root.push_input(key(KEY_LEFT))
 	await process_frame
-	check(shown_rows.call() == [4, 5] and settings_page.shake_cycler.has_focus() and settings_page.note.text == HubSettings.NOTES[4], "The next tab shows the graphics rows and focuses the first")
-	check(settings_page.display_cycler.get_node(settings_page.display_cycler.focus_neighbor_bottom) == settings_page.display_cycler, "The focus stays within the tab")
-	settings_page.tabs.step(1)
+	check(is_equal_approx(hub.settings.effects_volume, effects_before - 0.05) and settings_page.value_text(2) == "95%", "Left turns a volume down a step, at once")
+	root.push_input(key(KEY_RIGHT))
 	await process_frame
-	check(shown_rows.call() == [6, 7, 8, 9] and settings_page.language_cycler.has_focus() and settings_page.note.text == HubSettings.NOTES[9], "The last tab holds the language (first), the controls guide, the help and quitting")
-	# As in the lobby, the pointer resting on a row (its caption or its
-	# control) chooses it; a chosen row draws no band or frame.
-	settings_page._rows[8].gui_input.emit(InputEventMouseMotion.new())
-	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
-	check(settings_page.quit_button.has_focus() and settings_page.focused_row == 8, "Pointing at a settings row chooses it")
-	settings_page.help_button.mouse_entered.emit()
-	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
-	check(settings_page.help_button.has_focus() and settings_page.note.text == HubSettings.NOTES[7], "Pointing at a row's control chooses it too")
-	check(settings_page.help_button.get_theme_stylebox(&"focus") is StyleBoxEmpty and settings_page.topic_buttons[0].get_theme_stylebox(&"focus") is StyleBoxEmpty, "Chosen settings and help rows draw no frame")
+	check(is_equal_approx(hub.settings.effects_volume, effects_before) and not settings_page.change(1), "Right turns it up again, no higher than all of it")
+	root.push_input(key(KEY_E))
+	await process_frame
+	check(settings_page.focused_row == HubSettings.SHAKE_ROW and settings_page.note_text() == HubSettings.NOTES[4], "E jumps to the next group's first row")
+	root.push_input(key(KEY_ENTER))
+	root.push_input(key(KEY_ENTER, false))
+	await process_frame
+	check(hub.settings.shake_level == 1 and settings_page.value_text(4) == "弱め", "Enter on a choice takes its next")
+	settings_page.put(HubSettings.SHAKE_ROW, 0)
+	root.push_input(key(KEY_E))
+	await process_frame
+	check(settings_page.focused_row == HubSettings.LANGUAGE_ROW and settings_page.note_text() == HubSettings.NOTES[9], "The last group opens on the language")
+	root.push_input(key(KEY_E))
+	await process_frame
+	check(settings_page.focused_row == 0, "E from the last group comes round to the first")
+	# The pointer: resting on a row chooses it, a click on a volume's bar
+	# sets it there, and a mark beside a choice steps it.
+	settings_page._rest_row = HubSettings.QUIT_ROW
+	settings_page._rest_since = settings_page._clock
+	await create_timer(HubLobby.HOVER_INTENT + 0.1).timeout
+	check(settings_page.focused_row == HubSettings.QUIT_ROW, "Pointing at a settings row chooses it")
+	settings_page._rest_row = -1
+	settings_page._tracks[1] = Rect2(276.0, 0.0, 300.0, 4.0)
+	settings_page._press([&"track", 1], settings_page._origin + Vector2(276.0 + 150.0, 0.0) * settings_page._zoom)
+	check(settings_page.focused_row == 1 and settings_page.percent(1) == 50, "A click on a volume's bar sets it there")
+	settings_page._dragging = -1
+	settings_page.put(1, 80)
+	settings_page._press([&"step", HubSettings.CONTROLS_ROW, 1])
+	check(settings_page.focused_row == HubSettings.CONTROLS_ROW and not hub.settings.show_controls, "A mark beside a choice steps it")
+	settings_page.put(HubSettings.CONTROLS_ROW, 0)
+	check(settings_page.topic_buttons[0].get_theme_stylebox(&"focus") is StyleBoxEmpty, "Chosen help rows draw no frame")
 	# From the lobby, Esc asks whether to leave the game; on a page it only goes back.
 	var left := [0]
 	var quit_before: Callable = settings_page.quit_action
@@ -287,12 +309,12 @@ func run_tests() -> void:
 	await process_frame
 	hub.ask_quit()
 	check(not hub.quit_prompt.visible and not hub.lobby_guide.visible, "It is the lobby's question only, and the lobby's upper row of keys shows there alone")
-	settings_page.show_tab(2)
 	# Quitting's way back says so, beside the way out.
-	settings_page.ask_quit()
+	settings_page.choose(HubSettings.QUIT_ROW)
+	settings_page.accept()
 	check(settings_page.quit_prompt.visible and settings_page.quit_prompt.cancel_button.text == "戻る" and settings_page.quit_prompt.cancel_button.has_focus(), "Quitting asks first, its way back named and waiting")
 	settings_page.quit_prompt.canceled.emit()
-	settings_page.show_tab(0)
+	check(not settings_page.quit_prompt.visible and settings_page.has_focus() and settings_page.focused_row == HubSettings.QUIT_ROW, "The way back returns to the row it was asked from")
 	# The help opens as a window over the dimmed page and closes back to it.
 	settings_page.open_help(HubSettings.TOPIC_GROWTH)
 	await process_frame
@@ -315,7 +337,7 @@ func run_tests() -> void:
 	check(settings_page.help_close_hint.mouse_filter != Control.MOUSE_FILTER_IGNORE, "The help's close hint takes a click")
 	settings_page.help_close_hint.pressed.emit()
 	await process_frame
-	check(not settings_page.help_layer.visible and settings_page.help_button.has_focus() and hub.title_label.text == "設定", "Clicking the close returns to the settings")
+	check(not settings_page.help_layer.visible and settings_page.has_focus() and settings_page.focused_row == HubSettings.HELP_ROW and hub.title_label.text == "設定", "Clicking the close returns to the settings")
 	settings_page.open_help(HubSettings.TOPIC_RUN)
 	await process_frame
 	var click := InputEventMouseButton.new()

@@ -111,9 +111,8 @@ func capture() -> void:
 		# The popups a click opens: the help, and the quit's question.
 	hub.show_page("settings")
 	await create_timer(UIMotion.WINDOW_TIME + 0.3).timeout
-	# The last tab, its help row focused: no band on the row.
-	hub.settings_page.show_tab(2)
-	hub.settings_page.help_button.grab_focus()
+	# The help's row, its topics on the stage.
+	hub.settings_page.choose(HubSettings.HELP_ROW)
 	await create_timer(0.3).timeout
 	await _grab("hub_settings_other_1600")
 	hub.settings_page.open_help(HubSettings.TOPIC_RUN)

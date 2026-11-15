@@ -56,7 +56,7 @@ Nodeの `@export` 変数に、Script定数と同じ `.tres` をpreloadした既�
 - `rogue-like-play/参考アート/` を参照する変更では、ファイル名だけでなく画像内容を確認する。情報階層・比率・選択状態を実装へ翻訳し、参考画像をそのまま背景や一枚のUI素材として使用しない。
 - UIの外観変更でゲームロジック・セーブ仕様・`data/` の値を変更しない。現行データにない値を参考画像から捏造せず、空のPlaceholderも追加しない。
 - Motionは `UIMotion` に集約する。色・枠線はThemeに残し、Containerの位置や最小サイズをTweenしない。競合するTweenの停止と非表示時のリセットを維持し、演出完了をゲーム処理から待たない。
-- ステータス画面（`HubStatus`、1冊の本）、図鑑（`HubCodex`、1体に1枚の図版）、強化（`MetaUpgradePage`、ツリーの全体を載せた星図）、出撃（`HubSortie`、選んだ章の絵を画面全体に広げた一枚絵）は、自分で全体を描く画面で、石板・金の枠・「左に一覧、右に詳細」の決まりの対象外とする。色・書体・文字サイズは、共通Themeの `Grimoire` 型（図鑑はそれを継ぐ `Bestiary` 型）、`StarChart` 型（強化）、`Vista` 型（出撃）とそのトークンで管理し、ほかの画面の見た目をこの4つに合わせて変えない（`docs/画面とUI.md` の1章）。図鑑で出会っていない敵が見せてよいのは、分類と形だけの影までとする。
+- ステータス画面（`HubStatus`、1冊の本）、図鑑（`HubCodex`、1体に1枚の図版）、強化（`MetaUpgradePage`、ツリーの全体を載せた星図）、出撃（`HubSortie`、選んだ章の絵を画面全体に広げた一枚絵）、設定（`HubSettings`、全項目の一覧と、選んだ設定の効き方を見せる舞台）は、自分で全体を描く画面で、石板・金の枠・「左に一覧、右に詳細」の決まりの対象外とする。色・書体・文字サイズは、共通Themeの `Grimoire` 型（図鑑はそれを継ぐ `Bestiary` 型）、`StarChart` 型（強化）、`Vista` 型（出撃）、`SettingsStage` 型（設定）とそのトークンで管理し、ほかの画面の見た目をこの5つに合わせて変えない（`docs/画面とUI.md` の1章）。図鑑で出会っていない敵が見せてよいのは、分類と形だけの影までとする。設定のヘルプの窓と終了の確認は、今までどおり部品で組んだ窓のままとする。
 - 光のにじみ・輪・細線のような装飾は、`_draw()` で描かずに `ui/ornaments/` の `Ornament`（シェーダーで描く装飾のノード）で描く。色をシェーダーへ渡すときは `Ornament.set_value()` を使う（`docs/画面とUI.md` の2.1）。
 - 永続強化の購入の成功演出は、保存まで成功した後に始める。選択と確定を分け、保存失敗時の復元、Disabled状態、マウス・キーボード・ゲームパッド操作を維持する。
 
@@ -89,6 +89,7 @@ Nodeの `@export` 変数に、Script定数と同じ `.tres` をpreloadした既�
 - 図鑑（図譜）の状態ごとの見た目（開いた直後、出会った敵、めくっている途中、出会っていない敵、精鋭、ボス、数値順の盆、長い盆の奥、英語）は `godot --path . --rendering-method gl_compatibility --log-file .godot/codex-capture.log --script res://tests/capture_codex.gd` で確認する。
 - 強化（星図）の状態ごとの見た目（開いた直後、買える星、購入した瞬間、上限に達した星、残響が足りない星、前提を満たさない星、別の星座、始めたばかりの星図、英語）は `godot --path . --rendering-method gl_compatibility --log-file .godot/upgrade-capture.log --script res://tests/capture_upgrade.gd` で確認する。
 - 出撃（一枚絵）の状態ごとの見た目（開いた直後、踏破した章、切り替わる途中、封印中の章、出撃した瞬間、始めたばかりの出撃、段階の選択、開いている最高の段階、英語）は `godot --path . --rendering-method gl_compatibility --log-file .godot/sortie-capture.log --script res://tests/capture_sortie.gd` で確認する。
+- 設定（一覧と実演）の状態ごとの見た目（開いた直後、音量を下げた、消音、打たれた瞬間の揺れ、画面モード、言語、操作の案内のONとOFF、ヘルプの行、ゲームの終了の行、英語、探索中のメニューから開いた設定）は `godot --path . --rendering-method gl_compatibility --log-file .godot/settings-capture.log --script res://tests/capture_settings.gd` で確認する。
 - 戦闘・ラン・ボスの見た目を変更した場合は `tests/capture_run_flow.gd`、`tests/capture_boss.gd`、`tests/capture_action_sandbox.gd` を、敵の描画や数を変えた場合は `tests/capture_crowd_perf.gd` でフレーム時間を描画可能な環境で確認する。実行できない検証は未確認として報告する。テストの操作手順をUIの変更に合わせる際も、保存・記録・状態復元などの検証を弱めない。
 - 群れの敵のリグを直したときは、描画できる環境で `godot --path . --script res://tools/bake_foe_frames.gd` を実行して連番画像を焼き直し、続けてimportする。
 

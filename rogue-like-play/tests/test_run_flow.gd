@@ -738,6 +738,11 @@ func run_tests() -> void:
 	await process_frame
 	check(map_menu.visible and not map_menu.showing_settings() and not map_menu.settings_page.help_shown, "Back from them leads to the menu")
 	check(map_menu.controls_button.has_focus(), "With the focus back on the controls entry (focus: %s)" % root.gui_get_focus_owner())
+	map_menu.open_settings()
+	await process_frame
+	check(map_menu.settings_page.has_focus() and not map_menu.settings_page.shown_rows().has(HubSettings.LANGUAGE_ROW) and map_menu.settings_page.shown_rows().size() == 9, "The settings open over a run with the focus on their list, without the language")
+	map_menu.back()
+	map_menu.controls_button.grab_focus()
 	map_menu._unhandled_input(_key(KEY_ESCAPE))
 	await process_frame
 	check(not map_menu.visible and not director.map_view.covered, "Esc again lifts the menu off the map")
