@@ -547,8 +547,14 @@ func _draw_menu_slab() -> void:
 	draw_polygon(PackedVector2Array([Vector2(MENU_WIDTH - 8, 0), Vector2(right, 0), Vector2(right, size.y), Vector2(MENU_WIDTH - 8, size.y)]), PackedColorArray([colors[2], colors[3], colors[3], colors[2]]))
 	# Double gilt rail with diamond studs along the slab's edge.
 	var x := MENU_WIDTH - 6.0
-	draw_line(Vector2(x, 36), Vector2(x, size.y - 36), Color(rail, 0.75), 2.0, true)
-	draw_line(Vector2(x - 7, 60), Vector2(x - 7, size.y - 60), Color(rail, 0.3), 1.0, true)
+	if HubUI.starred():
+		# The rail runs out from each stud instead of standing as one bar.
+		for span: Array in [[36.0, size.y * 0.5], [size.y * 0.5, size.y - 36.0]]:
+			HubUI.hairline(self, Vector2(x, span[0] + 16.0), Vector2(x, span[1] - 16.0), rail, 2.0)
+		HubUI.hairline(self, Vector2(x - 8, 60), Vector2(x - 8, size.y - 60), Color(rail, 0.45))
+	else:
+		draw_line(Vector2(x, 36), Vector2(x, size.y - 36), Color(rail, 0.75), 2.0, true)
+		draw_line(Vector2(x - 7, 60), Vector2(x - 7, size.y - 60), Color(rail, 0.3), 1.0, true)
 	for y in [36.0, size.y * 0.5, size.y - 36.0]:
 		_diamond(Vector2(x, y), 7.0, rail)
 	# Crest above the entries: a compass star in a ring.
@@ -574,8 +580,12 @@ func _draw_menu_slab() -> void:
 func _ornament_line(y: float) -> void:
 	var rail := get_theme_color(&"rail", &"HubLobby")
 	var middle := MENU_WIDTH * 0.5
-	draw_polyline_colors(PackedVector2Array([Vector2(28, y), Vector2(middle - 14, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.7)]), 1.0, true)
-	draw_polyline_colors(PackedVector2Array([Vector2(middle + 14, y), Vector2(MENU_WIDTH - 28, y)]), PackedColorArray([Color(rail, 0.7), Color(rail, 0.0)]), 1.0, true)
+	if HubUI.starred():
+		HubUI.trail(self, Vector2(middle - 16, y), Vector2(28, y), Color(rail, 0.8))
+		HubUI.trail(self, Vector2(middle + 16, y), Vector2(MENU_WIDTH - 28, y), Color(rail, 0.8))
+	else:
+		draw_polyline_colors(PackedVector2Array([Vector2(28, y), Vector2(middle - 14, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.7)]), 1.0, true)
+		draw_polyline_colors(PackedVector2Array([Vector2(middle + 14, y), Vector2(MENU_WIDTH - 28, y)]), PackedColorArray([Color(rail, 0.7), Color(rail, 0.0)]), 1.0, true)
 	_diamond(Vector2(middle, y), 6.0, rail)
 
 
@@ -600,4 +610,4 @@ func _draw_selection() -> void:
 
 
 func _diamond(center: Vector2, radius: float, color: Color) -> void:
-	draw_colored_polygon(PackedVector2Array([center + Vector2(0, -radius), center + Vector2(radius, 0), center + Vector2(0, radius), center + Vector2(-radius, 0)]), color)
+	HubUI.diamond(self, center, radius, color)

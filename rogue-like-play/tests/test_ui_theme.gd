@@ -165,6 +165,7 @@ func run_tests() -> void:
 	check_chart(theme)
 	check_vista(theme)
 	check_stage(theme)
+	check(HubUI.ornaments == &"plain" and not HubUI.starred(), "The game draws its plain ornaments unless a run asks for the star style")
 	# A secondary action that can be pressed must never look like one that
 	# cannot.
 	for state in [&"normal", &"hover", &"focus", &"pressed", &"hover_pressed", &"disabled"]:

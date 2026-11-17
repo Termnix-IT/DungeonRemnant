@@ -668,7 +668,7 @@ func _draw() -> void:
 			continue
 		var here := group_of(focused_row) == group
 		_words(Vector2(LIST.position.x, y + 30.0), tr(TABS[group][0]), &"title_font", &"head_size", _colour(&"gold") if here else _colour(&"dim"))
-		draw_line(Vector2(LIST.position.x, y + 42.0), Vector2(LIST.end.x, y + 42.0), _colour(&"line", 0.6 if here else 0.25), 1.0)
+		HubUI.trail(self, Vector2(LIST.position.x, y + 42.0), Vector2(LIST.end.x, y + 42.0), _colour(&"line", 0.6 if here else 0.25))
 		y += HEAD
 		for row in rows:
 			places[row] = y
@@ -703,7 +703,7 @@ func _draw_row(row: int, rect: Rect2, shown: float) -> void:
 			var knob := Vector2(track.position.x + track.size.x * level, rect.get_center().y)
 			if lit:
 				_glow(knob, 22.0, _colour(&"gold", 0.4))
-			HubUI.diamond(self, knob, 8.0 * (_pop() if lit else 1.0), _colour(&"gold", shown) if lit else _colour(&"line", shown))
+			HubUI.lozenge(self, knob, 8.0 * (_pop() if lit else 1.0), _colour(&"gold", shown) if lit else _colour(&"line", shown))
 			_words(Vector2(rect.position.x, base), value_text(row), &"title_font", &"value_size", ink, HORIZONTAL_ALIGNMENT_RIGHT, rect.size.x)
 			_tracks[row] = track
 			_zone(Rect2(track.position.x - 12.0, rect.position.y, track.size.x + 24.0, ROW), [&"track", row])
@@ -749,7 +749,7 @@ func _draw_stage() -> void:
 	var y := STAGE.end.y + 58.0
 	_words(Vector2(STAGE.position.x, y), tr(CAPTIONS[focused_row]), &"title_font", &"name_size", _colour(&"pale", fade))
 	draw_string(_face(&"title_font"), Vector2(STAGE.position.x, y), value_text(focused_row), HORIZONTAL_ALIGNMENT_RIGHT, STAGE.size.x, int(_size(&"name_size") * _pop()), _colour(&"warn" if focused_row == QUIT_ROW else &"gold", fade))
-	draw_line(Vector2(STAGE.position.x, y + 20.0), Vector2(STAGE.end.x, y + 20.0), _colour(&"line", 0.4), 1.0)
+	HubUI.trail(self, Vector2(STAGE.position.x, y + 20.0), Vector2(STAGE.end.x, y + 20.0), _colour(&"line", 0.4))
 	draw_multiline_string(_face(&"font"), Vector2(STAGE.position.x, y + 54.0), note_text(), HORIZONTAL_ALIGNMENT_LEFT, STAGE.size.x, _size(&"body_size"), 3, _colour(&"pale", 0.92 * fade), _breaks())
 
 

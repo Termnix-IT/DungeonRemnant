@@ -545,7 +545,7 @@ func _draw_name(share: float) -> void:
 # The foot: the way, the record and the boss, the foes, and what she carries.
 func _draw_foot(share: float) -> void:
 	var y := 620.0
-	draw_line(Vector2(EDGE, y - 24.0), Vector2(COLUMN + COLUMN_WIDTH, y - 24.0), _colour(&"rule"), 1.0)
+	HubUI.hairline(self, Vector2(EDGE, y - 24.0), Vector2(COLUMN + COLUMN_WIDTH, y - 24.0), _colour(&"rule", 1.6 if HubUI.starred() else 1.0))
 	var x := EDGE
 	for fact: Array in [[tr("道のり"), told.route], [tr("記録"), told.record], [tr("ボス"), told.boss]]:
 		_words(Vector2(x, y), fact[0], &"font", &"label_size", _colour(&"dim"))

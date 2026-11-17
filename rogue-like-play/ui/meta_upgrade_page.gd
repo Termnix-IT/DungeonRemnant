@@ -845,7 +845,7 @@ func _draw_card() -> void:
 		else:
 			_spark(spot, 10.0, _colour(&"dark"))
 			_spark(spot, 6.0, _colour(&"panel"))
-	draw_line(Vector2(left, 282.0), Vector2(left + inner, 282.0), _colour(&"brass", 0.4), 1.0)
+	HubUI.hairline(self, Vector2(left, 282.0), Vector2(left + inner, 282.0), _colour(&"brass", 0.4))
 	var y := 318.0
 	var figure: String = told.figure
 	if not figure.is_empty():
@@ -858,7 +858,7 @@ func _draw_card() -> void:
 	# ranks are held there is no price to set beside it.
 	var price: int = told.price
 	if price >= 0:
-		draw_line(Vector2(left, 508.0), Vector2(left + inner, 508.0), _colour(&"brass", 0.4), 1.0)
+		HubUI.hairline(self, Vector2(left, 508.0), Vector2(left + inner, 508.0), _colour(&"brass", 0.4))
 		var needed := tr("必要")
 		var kept := tr("所持")
 		_words(Vector2(left, 542.0), needed, &"font", &"label_size", _colour(&"dim"))
