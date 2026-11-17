@@ -1,14 +1,14 @@
 extends SceneTree
 
-# The status page's book drawn for real, state by state: the first skill's
-# chapter as it opens (at 1600x900, 1280x720 and 1920x1080), then at
-# 1600x900 the cursor on a skill set in the other slot (the ledger comparing
-# the two, the foot saying they change places), on a free skill, on one not
-# learned, on the entry that empties the slot, the seal coming down just
-# after an equip, the attack's chapter, the sealed special's chapter, an
-# empty slot's chapter, her figures in full, and the first chapter in
-# English. Images go to .godot/status_<state>_<width>.png. Look at them:
-# what leads the eye, what each entry's state is, whether the ledger reads,
+# The status page's pillars drawn for real, state by state: the first
+# skill's pillar as it opens (at 1600x900, 1280x720 and 1920x1080), then at
+# 1600x900 the cursor on a skill set in the other slot (the card comparing
+# the two and saying they change places), on a free skill, on one not
+# learned, on the entry that empties the slot, the stars flaring just after
+# an equip, the attack's pillar, the sealed special's pillar, an empty
+# slot's pillar, her figures in full, and the page in English. Images go to
+# .godot/status_<state>_<width>.png. Look at them: which pillar the cursor
+# is in, what each entry's state is, whether the card's comparison reads,
 # and any cut text. Needs a rendering display driver:
 #   godot --path . --rendering-method gl_compatibility --log-file .godot/status-capture.log --script res://tests/capture_status.gd
 
@@ -51,7 +51,7 @@ func capture() -> void:
 		status.move_cursor(status.entry_ids().find(pair[0]))
 		await create_timer(0.4).timeout
 		await _grab("status_%s_1600" % pair[1])
-	# The seal coming down: just after an equip was saved.
+	# The stars flaring: just after an equip was saved.
 	status.move_cursor(status.entry_ids().find(&"swallow_cut"))
 	await create_timer(0.3).timeout
 	status.seal()
@@ -75,7 +75,7 @@ func capture() -> void:
 	status.toggle_details()
 	await create_timer(0.6).timeout
 	await _grab("status_figures_1600")
-	# In English: the tabs' words run down, turned, and nothing is cut.
+	# In English: the longer names keep to their pillars, and nothing is cut.
 	TranslationServer.set_locale("en")
 	hub.show_page("home")
 	hub.refresh(main.meta)

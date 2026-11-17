@@ -430,7 +430,7 @@ func open_help(topic: int) -> void:
 	_settings_hints()
 
 
-# The status's keys: those of a slot's chapter, or, turned to her figures,
+# The status's keys: those of a slot's pillar, or, with her figures open,
 # the way back to it.
 func _status_hints() -> void:
 	key_guide.clear_hints()
@@ -441,7 +441,7 @@ func _status_hints() -> void:
 		key_guide.add_hint("↑ / ↓", "▲ / ▼", tr("選ぶ"))
 		key_guide.add_hint("X", "X", tr("外す"), status_page.clear_slot)
 		key_guide.add_hint("R", "Y", tr("能力"), status_page.toggle_details)
-	key_guide.add_hint("Q / E", "LB / RB", tr("章"))
+	key_guide.add_hint("← / →", "◀ / ▶", tr("枠"))
 	key_guide.add_hint("Tab", "View", tr("強化へ"), func(): show_page("upgrade"))
 
 

@@ -114,7 +114,7 @@ func run_tests() -> void:
 			check(hub.get(page + "_page").theme == mood_theme, "The %s page wears its mood" % page)
 	check(hub.echo_label.get_theme_color(&"font_color") == theme.get_color(&"font_color", &"GoldLabel"), "The header keeps the one theme's colours")
 	# The status page draws itself in the Grimoire type's colours and faces.
-	check(hub.status_page.theme_type_variation == &"Grimoire" and hub.status_page.get_theme_color(&"ink") == theme.get_color(&"ink", &"Grimoire") and hub.status_page.get_theme_font(&"title_font") == theme.get_font(&"title_font", &"Grimoire"), "The status page's book takes its ink and faces from the theme")
+	check(hub.status_page.theme_type_variation == &"StarChart" and hub.status_page.get_theme_color(&"pale") == theme.get_color(&"pale", &"StarChart") and hub.status_page.get_theme_font(&"title_font") == theme.get_font(&"title_font", &"StarChart"), "The status page draws itself in the colours and faces it shares with the upgrades' chart")
 	hub.show_page("upgrade")
 	for frame in 3:
 		await process_frame

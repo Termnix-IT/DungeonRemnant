@@ -63,6 +63,15 @@ func run_tests() -> void:
 	check((vista.get_node(^"Vista") as Control).get_global_rect().encloses(screen), "The departure's painting covers the whole screen")
 	var set_out := Rect2(vista.global_position + vista._origin + HubSortie.BUTTON.position * vista._zoom, HubSortie.BUTTON.size * vista._zoom)
 	check(set_out.grow(1).encloses(vista.action_button.get_global_rect()) and not HubSortie.BUTTON.intersects(HubSortie.STEP_PLATE), "Its action keeps its room, clear of the step")
+	hub.show_page("status")
+	await settle(UIMotion.WINDOW_TIME + 0.05)
+	var pillars: HubStatus = hub.status_page
+	check(pillars._sky.get_global_rect().encloses(screen), "The status page's night sky covers the whole screen")
+	var longest := 0
+	for index in HubStatus.SLOTS.size():
+		longest = maxi(longest, pillars.entries_of(index).size())
+	check(HubStatus.FIRST + HubStatus.STEP * (longest - 0.5) <= HubStatus.DESIGN.y and HubStatus.LEFT + HubStatus.SLOTS.size() * (HubStatus.WIDE + HubStatus.GAP) - HubStatus.GAP <= HubStatus.CARD.position.x, "Every pillar and everything hung on it fits the page, clear of the card")
+	check(not HubStatus.CARD.intersects(HubStatus.FIGURES_PLATE) and Rect2(Vector2.ZERO, HubStatus.DESIGN).encloses(HubStatus.FIGURES_PLATE), "The plate that opens her figures keeps its room under the card")
 	hub.show_page("settings")
 	await settle(UIMotion.WINDOW_TIME + 0.05)
 	var stage: HubSettings = hub.settings_page
