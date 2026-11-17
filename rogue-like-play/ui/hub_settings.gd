@@ -29,14 +29,14 @@ extends Control
 # design space of 1520x686 scaled to its rect, in the colours and faces of
 # the theme's SettingsStage type. At the base a child behind it darkens the
 # whole screen so the words read on the hall; over the dungeon the menu has
-# darkened the field already. The help window and the question before the
-# end of the game are built of nodes, on layers of their own.
+# darkened the field already. The help is a view of its own (HelpView) and
+# the question before the end of the game a prompt, each on its own layer.
 
 signal changed
 # The help opened from its row; the screen showing the page updates its keys.
 signal help_opened
-# The help's close was clicked (its key hint, or the dimmed backdrop round
-# the window); whoever shows the page closes it as its own Esc would.
+# The help's close was clicked (the close among its keys); whoever shows
+# the page closes it as its own Esc would.
 signal help_close_requested
 # The language row chose another language (already set in the settings);
 # whoever shows the page rebuilds its words in it.
@@ -46,12 +46,9 @@ const QUIT_BODY := "設定と拠点での強化は保存済みです。"
 # In a run nothing of it is kept (the base saves at a run's start and end).
 const QUIT_BODY_IN_RUN := "探索の途中で終了すると、この探索のレベル・強化・得た残響は残らず、最後に保存した拠点の状態に戻ります。"
 
-# The help window: over the page and the fight's menu, under the quit's
-# question; its backdrop, size and topic column.
+# The help's layer: over the page and the fight's menu, under the quit's
+# question.
 const HELP_LAYER := 15
-const HELP_SHADE := Color(0.01, 0.015, 0.025, 0.7)
-const HELP_SIZE := Vector2(1280, 780)
-const HELP_TOPICS_WIDTH := 260.0
 # The settings' groups: [name, the rows it lists].
 # The language (row 9) leads the last group, and is changed at the base only:
 # the dungeon's menu leaves it out (rows_of).
@@ -128,12 +125,6 @@ const HELP_KEYS := [
 	["強化を選ぶ", ["1", "2", "3", "クリック"], ["◀ / ▶", "A"]],
 	["メニュー", ["Esc"], ["START"]],
 ]
-# The point's gilt star: its box, as tall as a line of the words.
-const POINT_MARKER := Vector2(14, 25)
-# The chosen topic's glow: the widths of its halo's outlines, each laid over
-# the last, so the halo is brightest by the letters.
-const TOPIC_GLOW: Array[int] = [14, 9, 5]
-
 const DESIGN := Vector2(1520.0, 686.0)
 const SLIDERS: Array[int] = [0, 1, 2, 3]
 const SHAKE_ROW := 4
@@ -166,22 +157,12 @@ var settings: GameSettings
 var focused_row := 0
 var help_shown := false
 var help_layer: CanvasLayer
-var help_view: Control
-var help_window: PanelContainer
+var help_view: HelpView
 var help_close_hint: Button
-var help_title: Label
-# The chosen topic's table of keys (the controls only) and its points.
-var help_keys: GridContainer
-var help_points: VBoxContainer
-var topic_rows: VBoxContainer
-var topic_buttons: Array[Button] = []
-var selected_topic := 0
-# The help's page, which slides in from the right when what it tells changes.
-var help_words: VBoxContainer
-# What the help's page tells now: telling it again (a click lands as a focus
-# and a press) does not slide it.
-var _shown_topic := -1
-var _hover_topic := -1
+# The help's open topic (its place in HELP).
+var selected_topic: int:
+	get:
+		return help_view.topic if help_view != null else 0
 var _veil: Control
 var _from := 0
 var _clock := 0.0
@@ -873,121 +854,20 @@ func _show_quit(centre: Vector2) -> void:
 	draw_multiline_string(_face(&"font"), Vector2(STAGE.position.x + 50.0, centre.y + 70.0), tr(QUIT_BODY_IN_RUN if in_run else QUIT_BODY), HORIZONTAL_ALIGNMENT_CENTER, STAGE.size.x - 100.0, _size(&"body_size"), 3, _colour(&"pale"), _breaks())
 
 
-# The help, as action games commonly show their tips: a framed window over a
-# dimmed backdrop (on a layer of its own, above the page and the fight's
-# menu), its title over the topics listed on the left (the chosen one's words
-# lit, no band behind them) and, on the right, a sunk frame holding the
-# chosen one's title, a table of the keys for the controls, and its points a
-# line each; the keys at the window's foot.
+# The help: a view of its own (HelpView) that fills the screen, on a layer
+# over the page and the fight's menu.
 func _build_help() -> void:
 	help_layer = CanvasLayer.new()
 	help_layer.layer = HELP_LAYER
 	add_child(help_layer)
 	help_layer.hide()
-	help_view = Control.new()
+	help_view = HelpView.new()
 	help_view.theme = preload("res://ui/theme/dungeon_theme.tres")
-	help_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	help_layer.add_child(help_view)
-	var shade := ColorRect.new()
-	shade.color = HELP_SHADE
-	shade.mouse_filter = Control.MOUSE_FILTER_STOP
-	# A click outside the window closes it, as dialogs commonly do.
-	shade.gui_input.connect(func(event: InputEvent):
-		if help_shown and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			help_close_requested.emit())
-	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	help_view.add_child(shade)
-	var center := CenterContainer.new()
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	help_view.add_child(center)
-	help_window = PanelContainer.new()
-	help_window.theme_type_variation = &"QuietWindow"
-	help_window.custom_minimum_size = HELP_SIZE
-	center.add_child(help_window)
-	var margin := MarginContainer.new()
-	help_window.add_child(margin)
-	var stack := VBoxContainer.new()
-	stack.theme_type_variation = &"DetailStack"
-	margin.add_child(stack)
-	var heading := HubUI.label(stack, tr("ヘルプ"), &"TitleLabel")
-	heading.autowrap_mode = TextServer.AUTOWRAP_OFF
-	var body := HBoxContainer.new()
-	body.theme_type_variation = &"HelpBody"
-	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	stack.add_child(body)
-	var topics := VBoxContainer.new()
-	topics.theme_type_variation = &"DetailStack"
-	topics.custom_minimum_size.x = HELP_TOPICS_WIDTH
-	body.add_child(topics)
-	topic_rows = VBoxContainer.new()
-	topic_rows.theme_type_variation = &"SlotRows"
-	topics.add_child(topic_rows)
-	topic_rows.draw.connect(_draw_topic_glow)
-	for index in HELP.size():
-		var row := HubUI.button(topic_rows, tr(HELP[index][0]), select_topic.bind(index), &"HelpTopic")
-		row.toggle_mode = true
-		row.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		row.custom_minimum_size.y = 56
-		row.focus_entered.connect(select_topic.bind(index))
-		# As in the lobby, resting the pointer on a topic chooses it: read from
-		# the pointer moving over the row, so a pointer already there when the
-		# window opened, or an entry that went unreported, still counts.
-		row.mouse_entered.connect(_hover_topic_row.bind(index))
-		row.gui_input.connect(func(event: InputEvent):
-			if event is InputEventMouseMotion and _hover_topic != index:
-				_hover_topic_row(index))
-		row.mouse_exited.connect(func():
-			if _hover_topic == index:
-				_hover_topic = -1)
-		topic_buttons.append(row)
-	# The page, in a sunk frame of its own, slides in from the right, kept
-	# inside the frame.
-	var page := PanelContainer.new()
-	page.theme_type_variation = &"HelpPage"
-	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	page.clip_contents = true
-	body.add_child(page)
-	var words := VBoxContainer.new()
-	words.theme_type_variation = &"DetailStack"
-	page.add_child(words)
-	help_words = words
-	help_title = HubUI.label(words, "", &"HeadingLabel")
-	HubUI.rule(words)
-	help_keys = GridContainer.new()
-	help_keys.theme_type_variation = &"HelpKeys"
-	help_keys.columns = 3
-	words.add_child(help_keys)
-	for title: String in ["", tr("キーボード"), tr("ゲームパッド")]:
-		HubUI.label(help_keys, title, &"MutedLabel").autowrap_mode = TextServer.AUTOWRAP_OFF
-	for entry: Array in HELP_KEYS:
-		var action := HubUI.label(help_keys, tr(entry[0]), &"BodyLabel")
-		action.autowrap_mode = TextServer.AUTOWRAP_OFF
-		action.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		for keys: Array in [entry[1], entry[2]]:
-			var caps := HBoxContainer.new()
-			caps.theme_type_variation = &"HelpKeyCaps"
-			help_keys.add_child(caps)
-			for key: String in keys:
-				var cap := PanelContainer.new()
-				cap.theme_type_variation = &"HelpKeyCap"
-				cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				caps.add_child(cap)
-				var name := HubUI.label(cap, tr(key), &"HelpKeyName")
-				name.autowrap_mode = TextServer.AUTOWRAP_OFF
-				name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var gap := Control.new()
-	gap.custom_minimum_size.y = 6
-	words.add_child(gap)
-	help_points = VBoxContainer.new()
-	help_points.theme_type_variation = &"HelpPoints"
-	words.add_child(help_points)
-	var guide := KeyGuide.new()
-	guide.alignment = BoxContainer.ALIGNMENT_CENTER
-	stack.add_child(guide)
-	guide.add_hint("↑ / ↓", "▲ / ▼", tr("話題"))
-	help_close_hint = guide.add_hint("Esc", "B", tr("閉じる"), func(): help_close_requested.emit())
-	# A page hidden behind another takes its help window with it.
+	help_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	help_view.close_requested.connect(func(): help_close_requested.emit())
+	help_close_hint = help_view.close_hint
+	# A page hidden behind another takes its help with it.
 	visibility_changed.connect(func():
 		if not is_visible_in_tree():
 			help_layer.hide())
@@ -1003,9 +883,7 @@ func ask_quit() -> void:
 func open_help(topic: int) -> void:
 	help_shown = true
 	help_layer.show()
-	select_topic(topic)
-	topic_buttons[topic].grab_focus()
-	UIMotion.of(help_window).appear(0.0, UIMotion.WINDOW_TIME)
+	help_view.open(topic)
 
 
 func close_help() -> void:
@@ -1016,56 +894,6 @@ func close_help() -> void:
 	grab_focus()
 
 
+# Turns the open help to a topic.
 func select_topic(index: int) -> void:
-	selected_topic = index
-	for other in topic_buttons.size():
-		topic_buttons[other].set_pressed_no_signal(other == index)
-	topic_rows.queue_redraw()
-	if index == _shown_topic:
-		return
-	_shown_topic = index
-	help_title.text = tr(HELP[index][0])
-	help_keys.visible = index == TOPIC_CONTROLS
-	for child in help_points.get_children():
-		child.free()
-	for point: String in HELP[index][1]:
-		_help_point(tr(point))
-	UIMotion.of(help_words).slide_in()
-
-
-# One of the topic's points: a small gilt star by its first line, then
-# the words.
-func _help_point(text: String) -> void:
-	var row := HBoxContainer.new()
-	row.theme_type_variation = &"HelpPoint"
-	help_points.add_child(row)
-	var marker := Control.new()
-	marker.custom_minimum_size = POINT_MARKER
-	marker.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	marker.draw.connect(func(): HubUI.mark(marker, marker.size * 0.5, 4.0, marker.get_theme_color(&"rail", &"HubLobby")))
-	row.add_child(marker)
-	var words := HubUI.label(row, text, &"DescriptionLabel")
-	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-
-
-func _hover_topic_row(index: int) -> void:
-	_hover_topic = index
-	await get_tree().create_timer(HubLobby.HOVER_INTENT).timeout
-	if _hover_topic == index and help_shown and selected_topic != index:
-		topic_buttons[index].grab_focus()
-		select_topic(index)
-
-
-# The chosen topic's words glow: a soft gilt halo under the gold letters,
-# laid as outlines of the words, the widest faintest, so it gathers to the
-# letters; the row itself draws no band or frame.
-func _draw_topic_glow() -> void:
-	var chosen := topic_buttons[selected_topic]
-	var font := chosen.get_theme_font(&"font")
-	var font_size := chosen.get_theme_font_size(&"font_size")
-	var x := chosen.position.x + chosen.get_theme_stylebox(&"normal").get_margin(SIDE_LEFT)
-	var y := chosen.position.y + (chosen.size.y - font.get_height(font_size)) * 0.5 + font.get_ascent(font_size)
-	var glow := chosen.get_theme_color(&"glow")
-	for spread: int in TOPIC_GLOW:
-		topic_rows.draw_string_outline(font, Vector2(x, y), chosen.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, spread, glow)
+	help_view.choose(index)

@@ -590,6 +590,10 @@ Godot Engine のロゴ　Andrea Calabró,,Godot Engine logo　Andrea Calabró,ui
 ライセンスの全文は、ゲームに同梱の THIRD_PARTY_NOTICES.md にあります。,,"The full license texts are in THIRD_PARTY_NOTICES.md, included with the game.",ui/ending_view.gd
 遊んでくれて、ありがとう。,,Thank you for playing.,ui/ending_view.gd
 Esc（B）を長押しで飛ばす,,Hold Esc (B) to skip,ui/ending_view.gd
+閉じる,,Close,ui/help_view.gd
+話題,,Topic,ui/help_view.gd
+キーボード,,Keyboard,ui/help_view.gd
+ゲームパッド,,Gamepad,ui/help_view.gd
 ？？？,,???,ui/hub_codex.gd
 まだ出会っていない敵。探索で戦場に現れると記録される。,,A foe you haven't met yet. It is recorded once it appears on a run.,ui/hub_codex.gd
 番号順,,By number,ui/hub_codex.gd
@@ -724,10 +728,6 @@ Q・E（ゲームパッドはLB・RB）で種類を切り替えます。,,Switch
 終了する,,Quit,ui/hub_settings.gd
 実演,,Preview,ui/hub_settings.gd
 消音,,Muted,ui/hub_settings.gd
-キーボード,,Keyboard,ui/hub_settings.gd
-ゲームパッド,,Gamepad,ui/hub_settings.gd
-話題,,Topic,ui/hub_settings.gd
-閉じる,,Close,ui/hub_settings.gd
 封印中,,Sealed,ui/hub_sortie.gd
 未踏,,Unexplored,ui/hub_sortie.gd
 %sを踏破すると開く,,Opens when %s is cleared,ui/hub_sortie.gd

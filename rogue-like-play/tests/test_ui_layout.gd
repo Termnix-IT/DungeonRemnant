@@ -78,6 +78,18 @@ func run_tests() -> void:
 	check((stage.get_node(^"Veil") as Control).get_global_rect().encloses(screen), "The settings' veil covers the whole screen")
 	check(Rect2(Vector2.ZERO, HubSettings.DESIGN).encloses(HubSettings.LIST) and Rect2(Vector2.ZERO, HubSettings.DESIGN).encloses(HubSettings.STAGE) and not HubSettings.LIST.intersects(HubSettings.STAGE), "The settings' list and stage keep to the page, clear of each other")
 	check(HubSettings.LIST.position.y + HubSettings.TABS.size() * (HubSettings.HEAD + HubSettings.GROUP_GAP) + stage.shown_rows().size() * HubSettings.ROW <= HubSettings.DESIGN.y, "Every settings row fits the list")
+	# The help: every topic's two columns fit its page, in both languages.
+	stage.open_help(HubSettings.TOPIC_RUN)
+	await settle(UIMotion.WINDOW_TIME + 0.05)
+	var help: HelpView = stage.help_view
+	check(help.get_global_rect().encloses(screen) and (help.get_node(^"KeyGuide") if help.has_node(^"KeyGuide") else help.close_hint.get_parent()).get_global_rect().end.y <= screen.end.y, "The help fills the screen, its keys on it")
+	for language: String in ["ja", "en"]:
+		TranslationServer.set_locale(language)
+		for topic in HelpView.count():
+			var tall := help.heights_of(topic)
+			check(maxf(tall.x, tall.y) <= HelpView.points_room(), "The help's %s fits its page in %s (%d of %d)" % [HubSettings.HELP[topic][0], language, int(maxf(tall.x, tall.y)), int(HelpView.points_room())])
+	TranslationServer.set_locale("ja")
+	stage.close_help()
 	hub.show_page("upgrade")
 	await settle(UIMotion.WINDOW_TIME + 0.05)
 	var chart: MetaUpgradePage = hub.upgrade_page

@@ -272,7 +272,6 @@ func run_tests() -> void:
 	settings_page._press([&"step", HubSettings.CONTROLS_ROW, 1])
 	check(settings_page.focused_row == HubSettings.CONTROLS_ROW and not hub.settings.show_controls, "A mark beside a choice steps it")
 	settings_page.put(HubSettings.CONTROLS_ROW, 0)
-	check(settings_page.topic_buttons[0].get_theme_stylebox(&"focus") is StyleBoxEmpty, "Chosen help rows draw no frame")
 	# From the lobby, Esc asks whether to leave the game; on a page it only goes back.
 	var left := [0]
 	var quit_before: Callable = settings_page.quit_action
@@ -323,37 +322,42 @@ func run_tests() -> void:
 	check(settings_page.quit_prompt.visible and settings_page.quit_prompt.cancel_button.text == "戻る" and settings_page.quit_prompt.cancel_button.has_focus(), "Quitting asks first, its way back named and waiting")
 	settings_page.quit_prompt.canceled.emit()
 	check(not settings_page.quit_prompt.visible and settings_page.has_focus() and settings_page.focused_row == HubSettings.QUIT_ROW, "The way back returns to the row it was asked from")
-	# The help opens as a window over the dimmed page and closes back to it.
+	# The help opens as a view of its own over the page and closes back to it.
 	settings_page.open_help(HubSettings.TOPIC_GROWTH)
 	await process_frame
-	check(settings_page.help_layer.visible and settings_page.is_visible_in_tree() and settings_page.help_title.text == HubSettings.HELP[HubSettings.TOPIC_GROWTH][0], "The help opens as a window over the page, at its topic")
-	# As in the lobby, resting the pointer on a topic chooses it.
-	settings_page.topic_buttons[HubSettings.TOPIC_CODEX].mouse_entered.emit()
-	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
-	check(settings_page.selected_topic == HubSettings.TOPIC_CODEX and settings_page.topic_buttons[HubSettings.TOPIC_CODEX].has_focus() and settings_page.help_title.text == HubSettings.HELP[HubSettings.TOPIC_CODEX][0], "Pointing at a help topic moves the choice there")
-	# The pointer moving over a row counts too, with no entry reported.
-	var moved := InputEventMouseMotion.new()
-	settings_page.topic_buttons[HubSettings.TOPIC_CONTROLS].gui_input.emit(moved)
-	await create_timer(HubLobby.HOVER_INTENT + 0.05).timeout
-	check(settings_page.selected_topic == HubSettings.TOPIC_CONTROLS and settings_page.help_title.text == HubSettings.HELP[HubSettings.TOPIC_CONTROLS][0], "Moving the pointer over a topic chooses it even when its entry went unreported")
-	# The controls show their keys as a table over the points; a topic is told
-	# a point a line.
-	check(settings_page.help_keys.visible and settings_page.help_keys.get_child_count() == 3 * (HubSettings.HELP_KEYS.size() + 1) and settings_page.help_points.get_child_count() == HubSettings.HELP[HubSettings.TOPIC_CONTROLS][1].size(), "The controls are a table of keys over their points")
+	var help: HelpView = settings_page.help_view
+	check(settings_page.help_layer.visible and settings_page.is_visible_in_tree() and help.has_focus() and help.topic == HubSettings.TOPIC_GROWTH and help.title_of(help.topic) == HubSettings.HELP[HubSettings.TOPIC_GROWTH][0], "The help opens over the page, at its topic, with the focus")
+	check(help.points_of(help.topic).size() == HubSettings.HELP[HubSettings.TOPIC_GROWTH][1].size() and not HelpView.shows_keys(help.topic), "A topic is its points, a line each")
+	# Left and right go from topic to topic, stopping at the ends.
+	root.push_input(key(KEY_RIGHT))
+	await process_frame
+	check(settings_page.selected_topic == HubSettings.TOPIC_CONTROLS and HelpView.shows_keys(help.topic) and help.columns_of(help.topic).all(func(column: int): return column == 1), "Right turns to the controls, whose points stand beside their table of keys")
+	root.push_input(key(KEY_LEFT))
+	root.push_input(key(KEY_LEFT))
+	root.push_input(key(KEY_LEFT))
+	await process_frame
+	check(help.topic == 0 and settings_page.focused_row == HubSettings.QUIT_ROW, "Left stops at the first topic, and moves nothing on the page under the help")
+	check(help.columns_of(0).has(0) and help.columns_of(0).has(1), "A long topic's points are shared between two columns")
+	# As in the lobby, resting the pointer on a topic opens it.
+	help._rest = HubSettings.TOPIC_CODEX
+	help._rest_since = help._clock
+	await create_timer(HubLobby.HOVER_INTENT + 0.1).timeout
+	check(settings_page.selected_topic == HubSettings.TOPIC_CODEX, "Pointing at a help topic opens it")
+	help._rest = -1
+	help._press([&"topic", HubSettings.TOPIC_EVENTS])
+	check(help.topic == HubSettings.TOPIC_EVENTS, "A click on a topic's star opens it")
 	settings_page.select_topic(HubSettings.TOPIC_RUN)
-	check(not settings_page.help_keys.visible and settings_page.help_points.get_child_count() == HubSettings.HELP[HubSettings.TOPIC_RUN][1].size(), "Another topic is its points alone")
-	# Its close can be clicked: the key hint, or the dimmed backdrop round it.
+	check(help.topic == HubSettings.TOPIC_RUN, "The page can turn the help to a topic")
+	# Its close can be clicked, among the keys at its foot.
 	check(settings_page.help_close_hint.mouse_filter != Control.MOUSE_FILTER_IGNORE, "The help's close hint takes a click")
 	settings_page.help_close_hint.pressed.emit()
 	await process_frame
 	check(not settings_page.help_layer.visible and settings_page.has_focus() and settings_page.focused_row == HubSettings.HELP_ROW and hub.title_label.text == "設定", "Clicking the close returns to the settings")
 	settings_page.open_help(HubSettings.TOPIC_RUN)
 	await process_frame
-	var click := InputEventMouseButton.new()
-	click.button_index = MOUSE_BUTTON_LEFT
-	click.pressed = true
-	(settings_page.help_view.get_child(0) as Control).gui_input.emit(click)
+	hub._unhandled_input(cancel)
 	await process_frame
-	check(not settings_page.help_shown, "A click outside the window closes the help too")
+	check(not settings_page.help_shown and hub.page == "settings", "Esc closes the help and stays on the settings")
 	hub.show_page("home")
 
 	# The help speaks of the real-time game.

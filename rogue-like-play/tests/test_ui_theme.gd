@@ -115,6 +115,8 @@ func run_tests() -> void:
 	check(hub.echo_label.get_theme_color(&"font_color") == theme.get_color(&"font_color", &"GoldLabel"), "The header keeps the one theme's colours")
 	# The status page draws itself in the Grimoire type's colours and faces.
 	check(hub.status_page.theme_type_variation == &"StarChart" and hub.status_page.get_theme_color(&"pale") == theme.get_color(&"pale", &"StarChart") and hub.status_page.get_theme_font(&"title_font") == theme.get_font(&"title_font", &"StarChart"), "The status page draws itself in the colours and faces it shares with the upgrades' chart")
+	# The help shares the upgrades' chart's colours and faces.
+	check(hub.settings_page.help_view.theme_type_variation == &"StarChart" and hub.settings_page.help_view.get_theme_color(&"pale") == theme.get_color(&"pale", &"StarChart"), "The help draws itself in the StarChart type's colours")
 	hub.show_page("upgrade")
 	for frame in 3:
 		await process_frame
@@ -175,8 +177,6 @@ func run_tests() -> void:
 	# cannot be undone is drawn in red.
 	check(theme.get_color(&"lit_edge", &"BandButton") != theme.get_color(&"edge", &"BandButton"), "The chosen answer's edge turns gold")
 	check(theme.get_type_variation_base(&"BandDangerButton") == &"BandButton" and theme.get_color(&"lit_edge", &"BandDangerButton").r > theme.get_color(&"lit_edge", &"BandDangerButton").g + 0.2, "An answer that cannot be undone is drawn in red")
-	# The help's chosen topic is told apart from the others.
-	check(theme.get_color(&"font_pressed_color", &"HelpTopic") != theme.get_color(&"font_color", &"HelpTopic"), "A help topic is chosen by its lit words")
 	var primary := theme.get_stylebox(&"normal", &"PrimaryButton") as StyleBoxFlat
 	check((theme.get_stylebox(&"focus", &"PrimaryButton") as StyleBoxFlat).border_width_top > primary.border_width_top, "A focused primary action draws a stronger edge")
 	check(theme.get_stylebox(&"normal", &"LobbyAction") is StyleBoxTexture, "The lobby keeps its painted plate")
