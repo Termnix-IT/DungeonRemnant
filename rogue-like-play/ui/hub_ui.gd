@@ -3,13 +3,12 @@ extends RefCounted
 
 # Structure only: appearance and spacing are owned by dungeon_theme.tres.
 const PRIMARY_ACTION_HEIGHT := 60.0
-# How the game draws its gilt lines and small marks: &"plain" (hairlines of
-# one width and diamonds) or &"star" (four-pointed stars, and lines that
-# taper). On trial: a run started with `-- --ornaments=star` shows the star
-# style; the game ships plain until one is chosen.
-static var ornaments: StringName = &"star" if OS.get_cmdline_user_args().has("--ornaments=star") else &"plain"
-# A star stands this much wider than the diamond it replaces, its waist this
-# share of its reach; a line keeps this far clear of a star, and a needle is
+# The game's gilt ornaments: its small mark is a four-pointed star, as the
+# lobby's crest and the upgrades' chart draw theirs, and its lines taper (a
+# needle, or a trail drawn out from a star or a heading) instead of keeping
+# one width. A mark asked for at a radius stands this much wider, its points
+# being thin; a star's waist is this share of its reach (fuller when the
+# star is small); a line keeps this far clear of a star, and a needle is
 # this thick at its middle.
 const STAR_SCALE := 1.5
 const STAR_WAIST := 0.3
@@ -104,12 +103,9 @@ static func rule(parent: Node) -> Control:
 		var y := rule.size.y * 0.5
 		var w := rule.size.x
 		var c := Vector2(w * 0.5, y)
-		if starred():
-			trail(rule, c - Vector2(STAR_ROOM, 0), Vector2(0, y), Color(rail, 0.7))
-			trail(rule, c + Vector2(STAR_ROOM, 0), Vector2(w, y), Color(rail, 0.7))
-		else:
-			rule.draw_polyline_colors(PackedVector2Array([Vector2(0, y), Vector2(w * 0.5, y), Vector2(w, y)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.55), Color(rail, 0.0)]), 1.0, true)
-		diamond(rule, c, 4.0, Color(rail, 0.85)))
+		trail(rule, c - Vector2(STAR_ROOM, 0), Vector2(0, y), Color(rail, 0.7))
+		trail(rule, c + Vector2(STAR_ROOM, 0), Vector2(w, y), Color(rail, 0.7))
+		mark(rule, c, 4.0, Color(rail, 0.85)))
 	parent.add_child(rule)
 	return rule
 
@@ -126,12 +122,9 @@ static func column_rule(parent: Node, width: float) -> Control:
 		var x := rule.size.x * 0.5
 		var h := rule.size.y
 		var c := Vector2(x, h * 0.5)
-		if starred():
-			trail(rule, c - Vector2(0, STAR_ROOM), Vector2(x, 0), Color(rail, 0.7))
-			trail(rule, c + Vector2(0, STAR_ROOM), Vector2(x, h), Color(rail, 0.7))
-		else:
-			rule.draw_polyline_colors(PackedVector2Array([Vector2(x, 0), Vector2(x, h * 0.12), Vector2(x, h * 0.88), Vector2(x, h)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.55), Color(rail, 0.55), Color(rail, 0.0)]), 1.0, true)
-		diamond(rule, c, 4.0, Color(rail, 0.85)))
+		trail(rule, c - Vector2(0, STAR_ROOM), Vector2(x, 0), Color(rail, 0.7))
+		trail(rule, c + Vector2(0, STAR_ROOM), Vector2(x, h), Color(rail, 0.7))
+		mark(rule, c, 4.0, Color(rail, 0.85)))
 	parent.add_child(rule)
 	return rule
 
@@ -174,8 +167,8 @@ static func plaque_note(parts: Array[String]) -> String:
 
 # The lobby's ornate frame, laid over a panel (the lobby's panel, the
 # departure's band): a gilt line round the edge with a fainter one inside,
-# brackets at the corners and a diamond at the middle of the top and the
-# foot. Returns the frame, which draws over what the panel holds.
+# star at each corner with a line running out from it along both sides, and
+# a star at the middle of the top and the foot. Returns the frame, which draws over what the panel holds.
 static func ornate_frame(panel: Control) -> Control:
 	var frame := Control.new()
 	frame.name = "Frame"
@@ -183,28 +176,17 @@ static func ornate_frame(panel: Control) -> Control:
 	frame.draw.connect(func():
 		var rail := frame.get_theme_color(&"rail", &"HubLobby")
 		var rect := Rect2(Vector2.ZERO, frame.size)
-		if starred():
-			# A faint edge, and at each corner a star with a line running out
-			# from it along both sides; a star at the middle of the top and foot.
-			frame.draw_rect(rect.grow(-1), Color(rail, 0.3), false, 1.0)
-			for corner in [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]:
-				var inward := Vector2(signf(rect.get_center().x - corner.x), signf(rect.get_center().y - corner.y))
-				var at: Vector2 = corner + inward
-				trail(frame, at + Vector2(inward.x * STAR_ROOM, 0), at + Vector2(inward.x * minf(170.0, rect.size.x * 0.4), 0), rail)
-				trail(frame, at + Vector2(0, inward.y * STAR_ROOM), at + Vector2(0, inward.y * minf(70.0, rect.size.y * 0.4)), rail)
-				star(frame, at, 9.0, rail)
-			for center in [Vector2(rect.get_center().x, 1), Vector2(rect.get_center().x, rect.end.y - 1)]:
-				star(frame, center, 7.0, Color(rail, 0.85))
-			return
-		frame.draw_rect(rect.grow(-1), Color(rail, 0.55), false, 1.0)
-		frame.draw_rect(rect.grow(-6), Color(rail, 0.18), false, 1.0)
-		var arm := 26.0
+		# A faint edge, and at each corner a star with a line running out
+		# from it along both sides; a star at the middle of the top and foot.
+		frame.draw_rect(rect.grow(-1), Color(rail, 0.3), false, 1.0)
 		for corner in [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]:
 			var inward := Vector2(signf(rect.get_center().x - corner.x), signf(rect.get_center().y - corner.y))
-			var at: Vector2 = corner + inward * 3.0
-			frame.draw_polyline(PackedVector2Array([at + Vector2(inward.x * arm, 0), at, at + Vector2(0, inward.y * arm)]), rail, 2.0, true)
+			var at: Vector2 = corner + inward
+			trail(frame, at + Vector2(inward.x * STAR_ROOM, 0), at + Vector2(inward.x * minf(170.0, rect.size.x * 0.4), 0), rail)
+			trail(frame, at + Vector2(0, inward.y * STAR_ROOM), at + Vector2(0, inward.y * minf(70.0, rect.size.y * 0.4)), rail)
+			star(frame, at, 9.0, rail)
 		for center in [Vector2(rect.get_center().x, 1), Vector2(rect.get_center().x, rect.end.y - 1)]:
-			diamond(frame, center, 6.0, rail))
+			star(frame, center, 7.0, Color(rail, 0.85)))
 	panel.add_child(frame)
 	return frame
 
@@ -263,25 +245,18 @@ static func strip_divider(row: HBoxContainer) -> void:
 		var middle := mark.size * 0.5
 		mark.draw_polyline_colors(PackedVector2Array([middle + Vector2(0, -22), middle + Vector2(0, -8)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.6)]), 1.0, true)
 		mark.draw_polyline_colors(PackedVector2Array([middle + Vector2(0, 8), middle + Vector2(0, 22)]), PackedColorArray([Color(rail, 0.6), Color(rail, 0.0)]), 1.0, true)
-		diamond(mark, middle, 5.0, Color(rail, 0.9)))
+		mark(mark, middle, 5.0, Color(rail, 0.9)))
 	row.add_child(mark)
 
 
-# The game's small mark: a diamond or, in the star style, a four-pointed
-# star standing a little wider, as its points are thin.
-static func diamond(canvas: CanvasItem, center: Vector2, radius: float, color: Color) -> void:
-	if starred():
-		star(canvas, center, radius * STAR_SCALE, color)
-		return
-	canvas.draw_colored_polygon(PackedVector2Array([center + Vector2(0, -radius), center + Vector2(radius, 0), center + Vector2(0, radius), center + Vector2(-radius, 0)]), color)
+# The game's small mark: a four-pointed star about `radius` in weight (it
+# stands a little wider than that, as its points are thin).
+static func mark(canvas: CanvasItem, center: Vector2, radius: float, color: Color) -> void:
+	star(canvas, center, radius * STAR_SCALE, color)
 
 
-static func starred() -> bool:
-	return ornaments == &"star"
-
-
-# A four-pointed star, as the lobby's crest and the upgrades' chart draw
-# theirs: long points up, down and to the sides, pinched in between.
+# A four-pointed star: long points up, down and to the sides, pinched in
+# between.
 static func star(canvas: CanvasItem, center: Vector2, radius: float, color: Color, turn := 0.0) -> void:
 	# A small star keeps a fuller waist, or its thin points read as a plus sign.
 	var waist := lerpf(STAR_WAIST_SMALL, STAR_WAIST, clampf((radius - 6.0) / 8.0, 0.0, 1.0))
@@ -291,29 +266,22 @@ static func star(canvas: CanvasItem, center: Vector2, radius: float, color: Colo
 	canvas.draw_colored_polygon(points, color)
 
 
-# A diamond in either style: the knob of a bar, which is a thing to hold
-# and not a mark.
+# A diamond: the knob of a bar, which is a thing to hold and not a mark.
 static func lozenge(canvas: CanvasItem, center: Vector2, radius: float, color: Color) -> void:
 	canvas.draw_colored_polygon(PackedVector2Array([center + Vector2(0, -radius), center + Vector2(radius, 0), center + Vector2(0, radius), center + Vector2(-radius, 0)]), color)
 
 
-# A gilt line between two points: a hairline or, in the star style, a
-# needle, thickest in its middle and running out to nothing at both ends.
+# A gilt line between two points: a needle, thickest in its middle and
+# running out to nothing at both ends.
 static func hairline(canvas: CanvasItem, from: Vector2, to: Vector2, color: Color, width := 1.0) -> void:
-	if not starred():
-		canvas.draw_line(from, to, color, width, true)
-		return
 	var middle := (from + to) * 0.5
 	var side := (to - from).orthogonal().normalized() * maxf(NEEDLE, width * 2.2) * 0.5
 	canvas.draw_polygon(PackedVector2Array([from, middle - side, to, middle + side]), PackedColorArray([Color(color, 0.0), color, Color(color, 0.0), color]))
 
 
-# A gilt line that starts at `from` and runs out toward `to`: a hairline or,
-# in the star style, a point drawn out from a star or a heading.
+# A gilt line that starts at `from` and runs out to nothing toward `to`: a
+# point drawn out from a star or a heading.
 static func trail(canvas: CanvasItem, from: Vector2, to: Vector2, color: Color, width := 1.0) -> void:
-	if not starred():
-		canvas.draw_line(from, to, color, width, true)
-		return
 	var side := (to - from).orthogonal().normalized() * maxf(NEEDLE, width * 1.5) * 0.5
 	canvas.draw_polygon(PackedVector2Array([from - side, to, from + side]), PackedColorArray([color, Color(color, 0.0), color]))
 

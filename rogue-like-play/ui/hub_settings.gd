@@ -60,7 +60,7 @@ const LANGUAGE_ROW := 9
 const CAPTIONS := ["全体の音量", "音楽", "効果音", "環境音", "画面の揺れ", "画面モード", "操作の案内", "ヘルプ", "ゲームの終了", "言語"]
 const NOTES := ["すべての音の大きさ。0%で消音。", "拠点・戦場・ボスの曲の大きさ。", "攻撃・被弾・取得・決定などの効果音の大きさ。", "戦場の空気の音の大きさ。", "攻撃が当たったときや被弾したときの画面の揺れ。「なし」で揺らさない。", "ウィンドウか全画面。", "戦闘中、画面の下に操作の一覧を出す。", "探索の決まりごとと操作。", "ゲームを閉じる。確かめてから終了する。", "画面の文字の言語。"]
 # The help's topics, in order: [title, points], each point a line of its own
-# behind a gilt diamond, as action games' tips are told, in the polite form
+# behind a gilt star, as action games' tips are told, in the polite form
 # the game's other messages use. HintMarks name the topics by index.
 const TOPIC_RUN := 0
 const TOPIC_GROWTH := 1
@@ -128,7 +128,7 @@ const HELP_KEYS := [
 	["強化を選ぶ", ["1", "2", "3", "クリック"], ["◀ / ▶", "A"]],
 	["メニュー", ["Esc"], ["START"]],
 ]
-# The point's gilt diamond: its box, as tall as a line of the words.
+# The point's gilt star: its box, as tall as a line of the words.
 const POINT_MARKER := Vector2(14, 25)
 # The chosen topic's glow: the widths of its halo's outlines, each laid over
 # the last, so the halo is brightest by the letters.
@@ -774,7 +774,7 @@ func _show_sound(centre: Vector2) -> void:
 		draw_rect(Rect2(x, centre.y - 110.0, 24.0, 220.0), _colour(&"track"))
 		draw_rect(Rect2(x, centre.y + 110.0 - 220.0 * level, 24.0, 220.0 * level), _colour(&"gold") if row == focused_row else _colour(&"line", 0.55))
 		if row == focused_row:
-			HubUI.diamond(self, Vector2(x + 12.0, centre.y + 128.0), 5.0, _colour(&"gold"))
+			HubUI.mark(self, Vector2(x + 12.0, centre.y + 128.0), 5.0, _colour(&"gold"))
 
 
 # A frame struck every second or so, shaking as hard as the shake is set.
@@ -860,7 +860,7 @@ func _show_guide(centre: Vector2) -> void:
 func _show_help() -> void:
 	for index in HELP.size():
 		var at := Vector2(STAGE.position.x + 80.0 + (index % 2) * 300.0, STAGE.position.y + 110.0 + (index / 2) * 92.0)
-		HubUI.diamond(self, at + Vector2(0.0, -8.0), 6.0, _colour(&"gold"))
+		HubUI.mark(self, at + Vector2(0.0, -8.0), 6.0, _colour(&"gold"))
 		_words(at + Vector2(22.0, 0.0), tr(HELP[index][0]), &"title_font", &"value_size", _colour(&"pale"))
 
 
@@ -1033,7 +1033,7 @@ func select_topic(index: int) -> void:
 	UIMotion.of(help_words).slide_in()
 
 
-# One of the topic's points: a small gilt diamond by its first line, then
+# One of the topic's points: a small gilt star by its first line, then
 # the words.
 func _help_point(text: String) -> void:
 	var row := HBoxContainer.new()
@@ -1043,7 +1043,7 @@ func _help_point(text: String) -> void:
 	marker.custom_minimum_size = POINT_MARKER
 	marker.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	marker.draw.connect(func(): HubUI.diamond(marker, marker.size * 0.5, 4.0, marker.get_theme_color(&"rail", &"HubLobby")))
+	marker.draw.connect(func(): HubUI.mark(marker, marker.size * 0.5, 4.0, marker.get_theme_color(&"rail", &"HubLobby")))
 	row.add_child(marker)
 	var words := HubUI.label(row, text, &"DescriptionLabel")
 	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL

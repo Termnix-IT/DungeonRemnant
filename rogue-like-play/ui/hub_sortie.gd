@@ -494,11 +494,11 @@ func _draw_views() -> void:
 		draw_rect(rect, _colour(&"gold") if here else _colour(&"rule"), false, 2.0 if here else 1.0)
 		if here:
 			draw_rect(rect.grow(4.0), _colour(&"gold", 0.35), false, 1.0)
-			HubUI.diamond(self, Vector2(rect.get_center().x, rect.end.y + 12.0), 5.0, _colour(&"gold"))
+			HubUI.mark(self, Vector2(rect.get_center().x, rect.end.y + 12.0), 5.0, _colour(&"gold"))
 		if not open:
 			_fit_picture(Rect2(rect.get_center() - Vector2.ONE * 20.0, Vector2.ONE * 40.0), EmblemIcons.texture("seal_chapter"))
 		elif meta.clears_of(chapter.id) > 0:
-			HubUI.diamond(self, rect.position + Vector2(14.0, 14.0), 6.0, _colour(&"gold"))
+			HubUI.mark(self, rect.position + Vector2(14.0, 14.0), 6.0, _colour(&"gold"))
 		# Its number, on a dark plate so it reads on any painting.
 		var number := Chapters.short_name(chapter)
 		var wide := _width(number, &"font", &"label_size") + 20.0
@@ -537,7 +537,7 @@ func _draw_name(share: float) -> void:
 		size = maxi(_size(&"value_size"), int(size * TITLE_ROOM / wide))
 	draw_string(_face(&"title_font"), Vector2(EDGE - 4.0, 452.0 + rise), title, HORIZONTAL_ALIGNMENT_LEFT, -1, size, _colour(&"pale" if open else &"dim", share))
 	var state_colour := _colour(&"warn" if not open else (&"gold" if told.cleared else &"pale"), share)
-	HubUI.diamond(self, Vector2(EDGE + 8.0, 486.0 + rise), 6.0, state_colour)
+	HubUI.mark(self, Vector2(EDGE + 8.0, 486.0 + rise), 6.0, state_colour)
 	_words(Vector2(EDGE + 26.0, 494.0 + rise), told.state, &"title_font", &"state_size", state_colour)
 	draw_multiline_string(_face(&"font"), Vector2(EDGE, 534.0 + rise), told.description, HORIZONTAL_ALIGNMENT_LEFT, TITLE_ROOM, _size(&"body_size"), 2, _colour(&"pale", 0.92 * share), _breaks())
 
@@ -545,7 +545,7 @@ func _draw_name(share: float) -> void:
 # The foot: the way, the record and the boss, the foes, and what she carries.
 func _draw_foot(share: float) -> void:
 	var y := 620.0
-	HubUI.hairline(self, Vector2(EDGE, y - 24.0), Vector2(COLUMN + COLUMN_WIDTH, y - 24.0), _colour(&"rule", 1.6 if HubUI.starred() else 1.0))
+	HubUI.hairline(self, Vector2(EDGE, y - 24.0), Vector2(COLUMN + COLUMN_WIDTH, y - 24.0), _colour(&"rule", 1.6))
 	var x := EDGE
 	for fact: Array in [[tr("道のり"), told.route], [tr("記録"), told.record], [tr("ボス"), told.boss]]:
 		_words(Vector2(x, y), fact[0], &"font", &"label_size", _colour(&"dim"))
@@ -594,12 +594,12 @@ func _draw_step() -> void:
 	for level in DifficultySteps.MAX + 1:
 		var spot := at + Vector2(214.0 + level * 26.0, 17.0)
 		if level <= step:
-			HubUI.diamond(self, spot, 7.0, _colour(&"gold"))
+			HubUI.mark(self, spot, 7.0, _colour(&"gold"))
 		elif level <= most:
-			HubUI.diamond(self, spot, 7.0, _colour(&"pale"))
-			HubUI.diamond(self, spot, 4.5, _colour(&"night"))
+			HubUI.mark(self, spot, 7.0, _colour(&"pale"))
+			HubUI.mark(self, spot, 4.5, _colour(&"night"))
 		else:
-			HubUI.diamond(self, spot, 4.0, _colour(&"dim", 0.45))
+			HubUI.mark(self, spot, 4.0, _colour(&"dim", 0.45))
 		if level <= most:
 			_zone(Rect2(spot - Vector2(13.0, 13.0), Vector2(26.0, 26.0)), [&"step", level])
 	var y := at.y + 60.0

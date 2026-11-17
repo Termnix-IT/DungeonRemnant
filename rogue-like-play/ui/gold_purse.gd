@@ -5,7 +5,7 @@ extends VBoxContainer
 # and the amount in one typeface (the coin stands for the unit, so no word
 # sits beside the digits at another height), over a gilt rule drawn like the
 # lobby menu's
-# rail (a double line with diamond studs), on a faint pool of shade that
+# rail (a double line with star studs), on a faint pool of shade that
 # keeps it legible against the lantern-lit wall.
 
 const COIN_SIZE := 30.0
@@ -90,7 +90,7 @@ func _draw() -> void:
 
 
 # Bright under the amount, fading out to the left: a double line like the
-# menu's rail, with a diamond stud at each end.
+# menu's rail, with a star stud at each end.
 func _draw_rule(rule: Control) -> void:
 	var rail := rule.get_theme_color(&"rail", &"HubLobby")
 	var y := rule.size.y * 0.5
@@ -100,4 +100,4 @@ func _draw_rule(rule: Control) -> void:
 	rule.draw_polyline_colors(PackedVector2Array([Vector2(start + 40, y + 2.5), Vector2(end - 10, y + 2.5)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.4)]), 1.0, true)
 	for stud: Vector2 in [Vector2(end + 3, y), Vector2(start + 60, y - 1.5)]:
 		var radius := 5.0 if stud.x > start + 60 else 3.0
-		rule.draw_colored_polygon(PackedVector2Array([stud + Vector2(0, -radius), stud + Vector2(radius, 0), stud + Vector2(0, radius), stud + Vector2(-radius, 0)]), Color(rail, 1.0 if radius > 4.0 else 0.55))
+		HubUI.mark(rule, stud, radius, Color(rail, 1.0 if radius > 4.0 else 0.55))

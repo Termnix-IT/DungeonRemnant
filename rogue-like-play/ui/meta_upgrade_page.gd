@@ -821,7 +821,7 @@ func _draw_card() -> void:
 	draw_rect(CARD, _colour(&"brass", 0.8), false, 1.0)
 	draw_rect(CARD.grow(-6.0), _colour(&"brass", 0.3), false, 1.0)
 	for corner: Vector2 in [CARD.position, Vector2(CARD.end.x, CARD.position.y), CARD.end, Vector2(CARD.position.x, CARD.end.y)]:
-		HubUI.diamond(self, corner, 6.0, _colour(&"brass"))
+		HubUI.mark(self, corner, 6.0, _colour(&"brass"))
 	var mid := CARD.get_center().x
 	var left := CARD.position.x + 28.0
 	var inner := CARD.size.x - 56.0
