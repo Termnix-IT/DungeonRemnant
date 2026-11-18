@@ -1,9 +1,11 @@
 class_name GameAudio
 extends RefCounted
 ## Sound cues. A cue plays its recorded sound when it has one (ASSETS: third-party
-## recordings matched to the synthesized level by tools/build_sound_effects.py;
-## see THIRD_PARTY_NOTICES.md), else its synthesized placeholder (PROFILES).
-## set_override() replaces either, e.g. in tests.
+## recordings matched to the synthesized level by tools/build_sound_effects.py,
+## see THIRD_PARTY_NOTICES.md; and the game's own sounds under audio/made/,
+## built from tones and noise by tools/build_gate_sounds.py), else its
+## synthesized placeholder (PROFILES). set_override() replaces either, e.g. in
+## tests.
 
 const SAMPLE_RATE := 22050
 # Enough for a crowd fight: swings, hits, falls, pickups and triggers at once.
@@ -35,6 +37,11 @@ const PROFILES := {
 	&"ui_back": [0.08, 700.0, 420.0, 0.0, 2.0, []],
 	&"ui_deny": [0.14, 220.0, 180.0, 0.1, 1.5, []],
 	&"ui_open": [0.1, 500.0, 900.0, 0.0, 1.8, []],
+	&"gate_turn": [0.3, 240.0, 196.0, 0.45, 2.2, []],
+	&"gate_shut": [0.34, 120.0, 46.0, 0.5, 2.6, []],
+	&"gate_lift": [0.3, 700.0, 1300.0, 0.6, 1.6, []],
+	&"gate_go": [0.7, 220.0, 880.0, 0.25, 0.8, []],
+	&"gate_wake": [0.6, 49.0, 98.0, 0.3, 1.1, []],
 }
 
 const ASSETS := {
@@ -54,6 +61,11 @@ const ASSETS := {
 	&"ui_back": "res://audio/third_party/kenney_interface_sounds/ui_back.ogg",
 	&"ui_deny": "res://audio/third_party/kenney_interface_sounds/ui_deny.ogg",
 	&"ui_open": "res://audio/third_party/kenney_interface_sounds/ui_open.ogg",
+	&"gate_turn": "res://audio/made/gate_turn.ogg",
+	&"gate_shut": "res://audio/made/gate_shut.ogg",
+	&"gate_lift": "res://audio/made/gate_lift.ogg",
+	&"gate_go": "res://audio/made/gate_go.ogg",
+	&"gate_wake": "res://audio/made/gate_wake.ogg",
 }
 
 static var _streams: Dictionary = {}

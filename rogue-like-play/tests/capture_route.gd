@@ -6,8 +6,8 @@ extends SceneTree
 # two areas in with three ways open (at 1600x900, 1280x720 and 1920x1080),
 # another gate turned to, an event's gate, the question asked, her walk
 # into the light, an area read on the thread, the page held behind an
-# event's window, the boss's gate dark, coming out and come out, and the
-# page in English. The run is a real RunDirector's on a fixed seed, moved on
+# event's window, the boss's gate dark, coming out and come out, the other
+# chapters' gates and floors, and the page in English. The run is a real RunDirector's on a fixed seed, moved on
 # without its fights. Images go to .godot/route_<state>_<width>.png.
 # Needs a rendering display driver:
 #   godot --path . --rendering-method gl_compatibility --log-file .godot/route-capture.log --script res://tests/capture_route.gd
@@ -71,6 +71,11 @@ func capture() -> void:
 	await _grab("boss_dark", RouteGates.REVEAL_DARK * 0.7)
 	await _grab("boss_coming", RouteGates.REVEAL_DARK * 0.3 + RouteGates.COMING_OUT * 0.75)
 	await _grab("boss", RouteGates.COMING_OUT + RouteGates.REVEAL_HOLD + RouteGates.REVEAL_FADE + 0.8)
+	# Each chapter's own gates and floor.
+	for id: String in ["ash_corridor", "amethyst_mausoleum", "abyss_of_echoes"]:
+		_start(null, TWO_IN, id)
+		page.choose(1)
+		await _grab("chapter_" + id, 1.3)
 	TranslationServer.set_locale("en")
 	_start(null, TWO_IN)
 	await _grab("english", 1.2)
@@ -89,12 +94,12 @@ func _size(size: Vector2i) -> void:
 
 # A run on the fixed seed through the second chapter, moved on past the
 # areas of these rows without their fights.
-func _start(meta: MetaProgress, rows: Array) -> void:
+func _start(meta: MetaProgress, rows: Array, chapter := "gale_woods") -> void:
 	if director != null:
 		director.free()
 	director = RunDirector.new()
 	director.seed_value = SEED
-	director.chapter = load("res://data/chapters/gale_woods.tres")
+	director.chapter = load("res://data/chapters/%s.tres" % chapter)
 	director.meta = meta
 	root.add_child(director)
 	page = director.map_view.page

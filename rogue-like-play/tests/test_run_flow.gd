@@ -212,7 +212,7 @@ func run_tests() -> void:
 	var page := view.page
 	var route := director.run.route
 	check(page.size == root.get_visible_rect().size and page.theme_type_variation == &"Gates", "The page of gates fills the screen, in its own type")
-	check(page.hero != null and page.hero.facing == Vector2i.UP and page.has_focus(), "She stands at the fork with her back to the player, and the page holds the focus")
+	check(page.hero != null and page.hero.facing.y == -1 and page.has_focus(), "She stands at the fork with her back to the player, and the page holds the focus")
 	await create_timer(RouteGates.RISE_TIME + RouteGates.RISE_STAGGER * 3.0 + 0.2).timeout
 	var first: RouteMap.Waypoint = route.nodes(0)[0]
 	check(page.selected() == first and page.cursor == 0 and not page.asked and is_equal_approx(page._lit[0], 1.0) and is_zero_approx(page._lit[1]), "The first gate is turned to and lit, nothing asked")

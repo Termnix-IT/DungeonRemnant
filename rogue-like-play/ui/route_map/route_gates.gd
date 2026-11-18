@@ -31,10 +31,15 @@ extends Control
 # light and the area is entered. Esc (B) takes the question
 # back; with none asked Esc (Start) calls the run's menu.
 #
-# The page is one focusable control that fills the screen and draws itself
-# in a design space of 1600x900 scaled to its rect, in the colours and faces
-# of the theme's Gates type. Her figure is the fight's rig, and the keys at
-# the foot are a KeyGuide.
+# The page is one focusable control that fills the screen, laid in a design
+# space of 1600x900 scaled to its rect. The hall is built of layers behind
+# its words: the chapter's painting and its stone floor in perspective, lit
+# by the gates (one shader over the whole screen, route_hall.gdshader); the
+# gates themselves, each a RouteGateView of painted stone with light, dust
+# and an iron grille in it; her figure, the fight's rig; and a dark pillar
+# at either edge, nearer than all of it. Over them the page draws its words,
+# the thread and the card in the colours and faces of the theme's Gates
+# type. The keys at the foot are a KeyGuide.
 
 # The pick was gone ahead with (the end of her walk, or take()).
 signal taken(waypoint: RouteMap.Waypoint)
@@ -48,14 +53,24 @@ const MIO_RIG := preload("res://art/characters/mio_rig/mio_rig.tscn")
 const DESIGN := Vector2(1600.0, 900.0)
 # The line the gates stand on, a gate's opening, its stone's thickness, and
 # how far apart gates stand (three of them, or fewer).
-const FLOOR := 516.0
-const GATE := Vector2(236.0, 330.0)
-const FRAME := 20.0
+const HALL := preload("res://ui/route_map/route_hall.gdshader")
+const STONE := preload("res://ui/route_map/route_gate_stone.gdshader")
+const PILLAR := "res://art/ui/route/hall_pillar.png"
+# Each chapter's floor: its battle ground (AreaGround's atlases).
+const GROUNDS := {&"ash_corridor": 0, &"gale_woods": 4, &"amethyst_mausoleum": 5, &"abyss_of_echoes": 6}
+# The line the gates stand on, and how far apart they stand (three of them,
+# or fewer).
+const FLOOR := 532.0
 const GATE_GAP := 400.0
 const GATE_GAP_WIDE := 480.0
 # Where she stands, and how tall.
-const HERO := Vector2(800.0, 858.0)
+const HERO := Vector2(800.0, 872.0)
 const HERO_HEIGHT := 104.0
+# The pillars nearer than everything: how tall they stand, where their feet
+# are, and how far in from the screen's edge their middles stand.
+const PILLAR_HEIGHT := 1000.0
+const PILLAR_FOOT := 940.0
+const PILLAR_IN := -66.0
 # What stands under a gate: its name and signs, and under the one turned to
 # its goal, its foes' pictures and the ways on, no wider than this; then the
 # question's word, this tall.
@@ -69,7 +84,7 @@ const QUESTION := Vector2(220.0, 30.0)
 # The thread: its ends, its line, and the gap between a layer's areas.
 const THREAD_FROM := 480.0
 const THREAD_TO := 1120.0
-const THREAD_Y := 64.0
+const THREAD_Y := 56.0
 const THREAD_ROW := 24.0
 const CARD_WIDTH := 400.0
 const CARD_TOP := 116.0
@@ -85,7 +100,26 @@ const TURN_TIME := 0.18
 const RISE_TIME := 0.5
 const RISE_STAGGER := 0.12
 const ASK_TIME := 0.28
-const TRAVEL_TIME := 0.95
+const TRAVEL_TIME := 1.15
+# A grille falls under this pull (shares of its way a second, squared) and
+# is drawn back up in this long; the second to fall waits this long after
+# the first; and landing shakes its gate this far for this long.
+const GRILLE_PULL := 26.0
+const LIFT_TIME := 0.3
+const GRILLE_WAIT := 0.07
+const LAND_SHAKE := 5.0
+const LAND_TIME := 0.3
+# The flare a gate gives as it is turned to and as it is chosen, and how
+# fast it dies down (a second).
+const TURN_FLARE := 0.5
+const ASK_FLARE := 0.42
+const FLARE_FADE := 2.4
+# How fast the view leans toward the gate turned to, how far the painting
+# and the pillars slide for it, and how far the view pushes in as she goes.
+const LOOK_TIME := 0.35
+const FAR_SLIDE := 12.0
+const NEAR_SLIDE := 16.0
+const PUSH := 0.34
 const REVEAL_DARK := 0.5
 const COMING_OUT := 0.9
 const REVEAL_HOLD := 1.0
@@ -134,9 +168,27 @@ var note_text := ""
 var curses_text := ""
 var hero: DirectionalRig
 var guide: KeyGuide
+# The gates, in the order of `open`.
+var gates: Array[RouteGateView] = []
 var _max_hp := 1
 # How far each gate is turned to (0 to 1), eased every frame.
 var _lit: Array[float] = []
+# Each gate's grille: how far down it is (0 to 1), how fast it falls, and
+# since when it has stood on the threshold (-1: it has not landed).
+var _drop: Array[float] = []
+var _fall_speed: Array[float] = []
+var _landed: Array[float] = []
+# The flare each gate gives over its steady light, dying down.
+var _flare: Array[float] = []
+# How far the view leans toward the gate turned to (-1 to 1).
+var _look := 0.0
+# The hall behind the words: the painting, floor and light; the layers of
+# the gates, her figure and the pillars, in the design space.
+var _hall: ColorRect
+var _stage: Node2D
+var _gate_room: Node2D
+var _hero_room: Node2D
+var _pillars: Array[Sprite2D] = []
 # The route whose boss has come out of the dark, and whether its bell has
 # been tolled.
 var _revealed_route: RouteMap
@@ -153,6 +205,10 @@ var _hinted: StringName
 # The pictures drawn, kept: a texture drawn and then let go is freed before
 # the frame is rendered.
 var _portraits: Dictionary = {}
+# Each chapter's painting and floor as the hall's shader takes them (with
+# their smaller copies for the far and the slanted), made once.
+static var _paintings: Dictionary = {}
+static var _grounds: Dictionary = {}
 
 
 func _ready() -> void:
@@ -161,6 +217,24 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# The hall, behind the page's own words.
+	_hall = ColorRect.new()
+	_hall.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_hall.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hall.show_behind_parent = true
+	var lit := ShaderMaterial.new()
+	lit.shader = HALL
+	_hall.material = lit
+	add_child(_hall)
+	_stage = Node2D.new()
+	_stage.show_behind_parent = true
+	_stage.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	add_child(_stage)
+	_gate_room = Node2D.new()
+	_stage.add_child(_gate_room)
+	_hero_room = Node2D.new()
+	_stage.add_child(_hero_room)
+	_stand_pillars()
 	guide = KeyGuide.new()
 	add_child(guide)
 	guide.anchor_top = 1.0
@@ -173,14 +247,85 @@ func _ready() -> void:
 	_fit()
 
 
-# Places the design space in the rect, and her figure with it.
+# A dark pillar at either edge, nearer than the gates: the hall's own stone,
+# catching a little of the gates' light on the side turned to them.
+func _stand_pillars() -> void:
+	if not ResourceLoader.exists(PILLAR):
+		return
+	var art: Texture2D = load(PILLAR)
+	var inward := Gradient.new()
+	inward.set_color(0, Color(0.0, 0.0, 0.0))
+	inward.set_color(1, Color(0.0, 1.0, 0.0))
+	var falls := GradientTexture2D.new()
+	falls.gradient = inward
+	falls.width = 64
+	falls.height = 4
+	for side in 2:
+		var pillar := Sprite2D.new()
+		pillar.texture = art
+		pillar.centered = false
+		pillar.flip_h = side == 1
+		pillar.scale = Vector2.ONE * PILLAR_HEIGHT / art.get_height()
+		var stone := ShaderMaterial.new()
+		stone.shader = STONE
+		stone.set_shader_parameter(&"light_map", falls)
+		stone.set_shader_parameter(&"ambient", 0.13)
+		stone.set_shader_parameter(&"ambient_tone", Color(0.5, 0.55, 0.72))
+		pillar.material = stone
+		_stage.add_child(pillar)
+		_pillars.append(pillar)
+
+
+# Places the design space in the rect, and the hall's layers with it.
 func _fit() -> void:
-	if size.x <= 0.0 or size.y <= 0.0:
+	if size.x <= 0.0 or size.y <= 0.0 or _stage == null:
 		return
 	_zoom = minf(size.x / DESIGN.x, size.y / DESIGN.y)
 	_origin = ((size - DESIGN * _zoom) * 0.5).round()
-	_place_hero(HERO, 1.0)
+	_stage.position = _origin
+	_stage.scale = Vector2.ONE * _zoom
+	var hall := _hall.material as ShaderMaterial
+	hall.set_shader_parameter(&"extent", size)
+	hall.set_shader_parameter(&"origin", _origin)
+	hall.set_shader_parameter(&"zoom", _zoom)
+	hall.set_shader_parameter(&"night", get_theme_color(&"night"))
+	hall.set_shader_parameter(&"art", get_theme_color(&"art"))
 	queue_redraw()
+
+
+# A chapter's painting with its smaller copies, for the hall to draw it soft.
+static func painting_of(chapter: ChapterData) -> Texture2D:
+	if not _paintings.has(chapter.id):
+		var soft: Texture2D = null
+		if chapter.illustration != null:
+			var image := chapter.illustration.get_image()
+			if image.is_compressed():
+				image.decompress()
+			image.generate_mipmaps()
+			soft = ImageTexture.create_from_image(image)
+		_paintings[chapter.id] = soft
+	return _paintings[chapter.id]
+
+
+# A chapter's floor: the block of its battle ground's floor tiles that
+# repeats, as one picture the hall lays in perspective.
+static func ground_of(chapter: StringName) -> Texture2D:
+	if not _grounds.has(chapter):
+		var atlas: Texture2D = AreaGround.ATLASES[GROUNDS.get(chapter, 0)]
+		var tiles := atlas.get_image()
+		if tiles.is_compressed():
+			tiles.decompress()
+		tiles.convert(Image.FORMAT_RGBA8)
+		var cell := AreaGround.PAINTED_CELL
+		var period := AreaGround.FLOOR_PERIOD
+		var block := Image.create_empty(cell * period, cell * period, false, Image.FORMAT_RGBA8)
+		for row in period:
+			for column in period:
+				var index := AreaGround.FLOOR_START + row * period + column
+				block.blit_rect(tiles, Rect2i(index % AreaGround.COLUMNS * cell, index / AreaGround.COLUMNS * cell, cell, cell), Vector2i(column * cell, row * cell))
+		block.generate_mipmaps()
+		_grounds[chapter] = ImageTexture.create_from_image(block)
+	return _grounds[chapter]
 
 
 # --- The route ---
@@ -206,13 +351,21 @@ func present(route_map: RouteMap, at_layer: int, run_state: RunState, max_hp: in
 	thread_at = null
 	peek = null
 	_hover = null
-	_lit.clear()
-	for index in open.size():
-		_lit.append(1.0 if index == 0 else 0.0)
 	_kicks.clear()
 	_kick(&"open")
 	_quiet = true
+	_look = 0.0
+	pivot_offset = Vector2.ZERO
+	scale = Vector2.ONE
+	_stand_gates()
 	_stand_hero()
+	var hall := _hall.material as ShaderMaterial
+	hall.set_shader_parameter(&"painting", painting_of(route.chapter))
+	hall.set_shader_parameter(&"ground", ground_of(route.chapter.id))
+	if route.chapter.illustration != null:
+		hall.set_shader_parameter(&"painting_size", route.chapter.illustration.get_size())
+	hall.set_shader_parameter(&"floor_line", FLOOR)
+	hall.set_shader_parameter(&"far_line", FLOOR - 78.0)
 	# Her way reaches the boss: once a run, it comes out of the dark.
 	revealing = not open.is_empty() and (open[0] as RouteMap.Waypoint).area.boss != null and _revealed_route != route
 	_tolled = false
@@ -226,6 +379,35 @@ func present(route_map: RouteMap, at_layer: int, run_state: RunState, max_hp: in
 	queue_redraw()
 
 
+# A gate for each way open now, the first turned to.
+func _stand_gates() -> void:
+	for gate in gates:
+		gate.free()
+	gates.clear()
+	_lit.clear()
+	_drop.clear()
+	_fall_speed.clear()
+	_landed.clear()
+	_flare.clear()
+	for index in open.size():
+		var point: RouteMap.Waypoint = open[index]
+		var told := tell(point)
+		var gate := RouteGateView.new()
+		_gate_room.add_child(gate)
+		gate.setup(route.chapter.id, portrait_of(point.area), told.boss, _colour(&"shape"))
+		gate.colour = light_of(told)
+		gate.known = figure_known(point)
+		var foe := RouteStage.leader(point.area)
+		gate.tone = foe.tint if foe != null and not point.area.is_event() else Color.WHITE
+		gates.append(gate)
+		_lit.append(1.0 if index == 0 else 0.0)
+		_drop.append(0.0)
+		_fall_speed.append(0.0)
+		_landed.append(-1.0)
+		_flare.append(0.0)
+	_lay_gates()
+
+
 # Her figure: the fight's rig with the weapon she carries, her back to the
 # player.
 func _stand_hero() -> void:
@@ -233,8 +415,7 @@ func _stand_hero() -> void:
 		hero.free()
 	hero = MIO_RIG.instantiate()
 	hero.world_height = HERO_HEIGHT
-	add_child(hero)
-	move_child(hero, 0)
+	_hero_room.add_child(hero)
 	if run != null and run.moveset != null and run.moveset.art != null:
 		WeaponMount.hold(hero, run.moveset)
 	hero.facing = Vector2i.UP
@@ -246,8 +427,8 @@ func _stand_hero() -> void:
 func _place_hero(at: Vector2, share: float) -> void:
 	if hero == null:
 		return
-	hero.position = _origin + at * _zoom
-	hero.scale = Vector2.ONE * _zoom * share
+	hero.position = at
+	hero.scale = Vector2.ONE * share
 
 
 # Every area that can still be come to from these.
@@ -373,6 +554,12 @@ func choose(index: int) -> void:
 		cursor = index
 		_kick(&"move")
 		_sound(&"ui_move")
+		_sound(&"gate_turn", -15.0)
+		# The gate answers: a flare of its light, sparks off its threshold.
+		if index < gates.size():
+			_flare[index] = TURN_FLARE
+			if not _quiet:
+				gates[index].kindle()
 		if threading:
 			thread_at = selected()
 	queue_redraw()
@@ -386,6 +573,8 @@ func ask() -> void:
 	_leave_thread()
 	_kick(&"ask")
 	_sound(&"ui_open")
+	if cursor < _flare.size():
+		_flare[cursor] = ASK_FLARE
 	_hint()
 
 
@@ -413,6 +602,7 @@ func cancel() -> void:
 	asked = false
 	_kick(&"unask")
 	_sound(&"ui_back")
+	_sound(&"gate_lift", -16.0)
 	_hint()
 
 
@@ -425,6 +615,7 @@ func go() -> void:
 	peek = null
 	_kick(&"go")
 	GameAudio.play(self, &"step", -16.0)
+	GameAudio.play(self, &"gate_go", -13.0)
 	_hint()
 
 
@@ -565,10 +756,16 @@ func _process(delta: float) -> void:
 		if revealing:
 			want = _coming()
 		_lit[index] = move_toward(_lit[index], want, delta / TURN_TIME)
+		_flare[index] = maxf(0.0, _flare[index] - delta * FLARE_FADE)
+	_move_grilles(delta)
 	if revealing:
 		if not _tolled and _since(&"reveal") >= REVEAL_DARK:
 			_tolled = true
 			GameAudio.play(self, &"boss", -10.0)
+			GameAudio.play(self, &"gate_wake", -13.0)
+			if not gates.is_empty():
+				_flare[0] = TURN_FLARE * 1.6
+				gates[0].kindle()
 		if _since(&"reveal") >= _reveal_time():
 			_end_reveal()
 	if traveling:
@@ -578,19 +775,150 @@ func _process(delta: float) -> void:
 			take(selected())
 	elif hero != null and hero.visible:
 		_place_hero(HERO, 1.0)
+		# She looks to the gate turned to.
+		var toward := gate_x(cursor) - HERO.x if not open.is_empty() else 0.0
+		hero.facing = Vector2i(int(signf(toward)) if absf(toward) > 60.0 else 0, -1)
+	_look = lerpf(_look, clampf((gate_x(cursor) - DESIGN.x * 0.5) / GATE_GAP, -1.0, 1.0) if not open.is_empty() else 0.0, minf(1.0, delta / LOOK_TIME * 2.2))
+	_lay_gates()
+	_light_hall()
 	queue_redraw()
 
 
-# One moment of her walk: toward the gate, smaller and darker against its light.
+# The grilles: down in the gates not chosen while the question is asked (or
+# the page is held behind an event), each falling under its own weight and
+# landing with a shake and a knock of dust; drawn back up when it is taken
+# back.
+func _move_grilles(delta: float) -> void:
+	var waited := 0
+	for index in _drop.size():
+		var shut := (asked or held or traveling) and index != cursor
+		if shut:
+			var since := 10.0 if held else _since(&"ask")
+			if since < waited * GRILLE_WAIT:
+				waited += 1
+				continue
+			waited += 1
+			if _drop[index] < 1.0:
+				_fall_speed[index] += GRILLE_PULL * delta
+				_drop[index] = minf(1.0, _drop[index] + _fall_speed[index] * delta)
+				if _drop[index] >= 1.0 and _landed[index] < 0.0:
+					_landed[index] = _clock
+					gates[index].land()
+					_sound(&"gate_shut", -13.0)
+		else:
+			_fall_speed[index] = 0.0
+			_landed[index] = -1.0
+			_drop[index] = move_toward(_drop[index], 0.0, delta / LIFT_TIME)
+
+
+# How far a gate's landing grille shakes it now.
+func _land_shake(index: int) -> Vector2:
+	if _landed[index] < 0.0:
+		return Vector2.ZERO
+	var since := _clock - _landed[index]
+	if since >= LAND_TIME:
+		return Vector2.ZERO
+	return Vector2(0.0, sin(since / LAND_TIME * TAU * 3.0) * LAND_SHAKE * (1.0 - since / LAND_TIME))
+
+
+# Where a gate's foot stands now.
+func gate_foot(index: int) -> Vector2:
+	return Vector2(gate_x(index), FLOOR + (1.0 - _rise(index)) * 26.0)
+
+
+# Tells each gate how it stands, and lays it.
+func _lay_gates() -> void:
+	var flooding := smoothstep(0.3, 1.0, clampf(_since(&"go") / TRAVEL_TIME, 0.0, 1.0)) if traveling else 0.0
+	for index in gates.size():
+		var gate := gates[index]
+		gate.lit = _lit[index]
+		gate.flare = _flare[index] + (flooding * 0.8 if index == cursor else 0.0)
+		gate.drop = _drop[index]
+		gate.open_share = 1.0 - smoothstep(0.0, 1.0, _drop[index])
+		gate.rise = _rise(index)
+		gate.dark = veiled(open[index])
+		gate.flood = flooding if index == cursor else 0.0
+		gate.position = gate_foot(index) + _land_shake(index) + _toll_shake()
+		gate.apply(_clock)
+	# The pillars, sliding a little against the view's lean.
+	for side in _pillars.size():
+		var pillar := _pillars[side]
+		var wide := pillar.texture.get_width() * pillar.scale.x
+		var middle := PILLAR_IN if side == 0 else DESIGN.x - PILLAR_IN
+		pillar.position = Vector2(middle - wide * 0.5 - _look * NEAR_SLIDE, PILLAR_FOOT - PILLAR_HEIGHT) + _toll_shake() * 1.4
+		var stone := pillar.material as ShaderMaterial
+		var turned: RouteGateView = gates[cursor] if cursor < gates.size() else null
+		stone.set_shader_parameter(&"colour", turned.colour if turned != null else Color.WHITE)
+		stone.set_shader_parameter(&"power", (turned.power() if turned != null else 0.0) * 0.16)
+
+
+# The boss's toll shakes the whole hall.
+func _toll_shake() -> Vector2:
+	if not revealing:
+		return Vector2.ZERO
+	var since := _since(&"reveal") - REVEAL_DARK
+	if since < 0.0 or since >= SHAKE_TIME:
+		return Vector2.ZERO
+	return Vector2(0.0, sin(since / SHAKE_TIME * TAU * 4.0) * SHAKE * (1.0 - since / SHAKE_TIME))
+
+
+# Tells the hall's shader what lights it: each gate's place, colour and
+# strength, where she stands, and where the words want the light hushed.
+func _light_hall() -> void:
+	var hall := _hall.material as ShaderMaterial
+	var places := PackedFloat32Array([0.0, 0.0, 0.0])
+	var halves := PackedFloat32Array([1.0, 1.0, 1.0])
+	var powers := PackedFloat32Array([0.0, 0.0, 0.0])
+	var tones := PackedColorArray([Color.BLACK, Color.BLACK, Color.BLACK])
+	for index in mini(gates.size(), 3):
+		places[index] = gate_x(index)
+		halves[index] = gates[index].opening().x * 0.5
+		powers[index] = gates[index].power() * (1.0 + gates[index].flood * 1.5)
+		tones[index] = gates[index].colour
+	hall.set_shader_parameter(&"gate_count", mini(gates.size(), 3))
+	hall.set_shader_parameter(&"gate_x", places)
+	hall.set_shader_parameter(&"gate_half", halves)
+	hall.set_shader_parameter(&"gate_power", powers)
+	hall.set_shader_parameter(&"gate_colour", tones)
+	hall.set_shader_parameter(&"hero", hero.position if hero != null else HERO)
+	hall.set_shader_parameter(&"hero_shadow", 1.0 if hero != null and hero.visible else 0.0)
+	hall.set_shader_parameter(&"lamp_x", gate_x(cursor) if not open.is_empty() else HERO.x)
+	hall.set_shader_parameter(&"drift", _look * FAR_SLIDE)
+	hall.set_shader_parameter(&"clock", _clock)
+	# The words under the gate turned to.
+	var hushed := Rect2()
+	var share := 0.0
+	if selected() != null and not held and not revealing and cursor < gates.size():
+		var foot := gate_foot(cursor)
+		hushed = Rect2(foot.x - BLOCK_WIDTH * 0.5, foot.y + 24.0, BLOCK_WIDTH, block_height(selected()) - 24.0 + (QUESTION.y + 8.0) * asking())
+		share = _lit[cursor] * _rise(cursor)
+	hall.set_shader_parameter(&"hush", Vector4(hushed.position.x, hushed.position.y, hushed.size.x, hushed.size.y))
+	hall.set_shader_parameter(&"hush_share", share)
+	# The boss's toll: a red flush over it all.
+	var flush := _colour(&"flush")
+	var flushed := 0.0
+	if revealing:
+		var since := _since(&"reveal") - REVEAL_DARK
+		var swell := COMING_OUT * 0.4
+		if since >= 0.0:
+			flushed = since / swell if since < swell else maxf(0.0, 1.0 - (since - swell) / COMING_OUT)
+	hall.set_shader_parameter(&"flush", Color(flush, flush.a * flushed))
+
+
+# One moment of her walk: toward the gate, smaller and darker against its
+# light, the view pushing in after her.
 func _walk() -> void:
 	if hero == null:
 		return
-	var share := smoothstep(0.0, 0.8, _since(&"go") / TRAVEL_TIME)
+	var along := clampf(_since(&"go") / TRAVEL_TIME, 0.0, 1.0)
+	var share := smoothstep(0.0, 0.8, along)
 	var gate := Vector2(gate_x(cursor), FLOOR)
 	var next := HERO.lerp(gate, share)
-	hero.step((_origin + next * _zoom) - hero.position)
+	hero.step(next - hero.position)
 	_place_hero(next, lerpf(1.0, 0.6, share))
 	hero.modulate = Color.WHITE.lerp(_colour(&"shape"), share * 0.85)
+	pivot_offset = _origin + (gate + Vector2(0.0, -gates[cursor].opening().y * 0.4)) * _zoom
+	scale = Vector2.ONE * (1.0 + PUSH * along * along * along)
 
 
 func _kick(what: StringName) -> void:
@@ -610,9 +938,9 @@ func _breath(period := 2.1) -> float:
 	return 0.5 + 0.5 * sin(_clock * TAU / period)
 
 
-func _sound(cue: StringName) -> void:
+func _sound(cue: StringName, volume := -22.0) -> void:
 	if not _quiet and is_visible_in_tree():
-		GameAudio.play(self, cue, -22.0)
+		GameAudio.play(self, cue, volume)
 
 
 # --- Input ---
@@ -881,22 +1209,15 @@ func _draw() -> void:
 	_zones.clear()
 	if route == null:
 		return
-	_draw_backdrop()
-	# The boss's toll shakes the whole fork.
-	var shake := Vector2.ZERO
-	if revealing:
-		var since := _since(&"reveal") - REVEAL_DARK
-		if since >= 0.0 and since < SHAKE_TIME:
-			shake.y = sin(since / SHAKE_TIME * TAU * 4.0) * SHAKE * (1.0 - since / SHAKE_TIME)
+	# The boss's toll shakes the words with the hall.
+	var shake := _toll_shake() * _zoom
 	_origin += shake
 	_to()
 	for index in open.size():
-		_draw_path(index)
-	for index in open.size():
 		if index != cursor:
-			_draw_gate(index)
+			_draw_gate_words(index)
 	if selected() != null:
-		_draw_gate(cursor)
+		_draw_gate_words(cursor)
 	_draw_thread()
 	_draw_top()
 	if revealing:
@@ -909,43 +1230,6 @@ func _draw() -> void:
 		_draw_card(shown)
 	_draw_tip()
 	_origin -= shake
-	draw_set_transform(Vector2.ZERO)
-
-
-# The chapter's own painting, far back in the dark, over the whole screen,
-# and the floor she stands on.
-func _draw_backdrop() -> void:
-	var night := _colour(&"night")
-	var clear := Color(night, 0.0)
-	draw_rect(Rect2(Vector2.ZERO, size), night)
-	var line := _origin.y + (FLOOR + 72.0) * _zoom
-	var art := route.chapter.illustration
-	if art != null:
-		var room := Rect2(0.0, 0.0, size.x, line)
-		var full := art.get_size()
-		var part := room.size / maxf(room.size.x / full.x, room.size.y / full.y)
-		draw_texture_rect_region(art, room, Rect2((full - part) * Vector2(0.5, 0.25), part), _colour(&"art"))
-	_fall(Rect2(0.0, 0.0, size.x, line * 0.25), Color(night, 0.92), Color(night, 0.35))
-	_fall(Rect2(0.0, line * 0.25, size.x, line * 0.5), Color(night, 0.35), Color(night, 0.62))
-	_fall(Rect2(0.0, line * 0.75, size.x, line * 0.25), Color(night, 0.62), night)
-	var side := size.x * 0.19
-	_fall_across(Rect2(0.0, 0.0, side, line), Color(night, 0.9), clear)
-	_fall_across(Rect2(size.x - side, 0.0, side, line), clear, Color(night, 0.9))
-	# The boss's toll: a red flush over it all.
-	if revealing:
-		var since := _since(&"reveal") - REVEAL_DARK
-		if since >= 0.0:
-			var flush := _colour(&"flush")
-			var rise := COMING_OUT * 0.4
-			draw_rect(Rect2(Vector2.ZERO, size), Color(flush, flush.a * (since / rise if since < rise else maxf(0.0, 1.0 - (since - rise) / COMING_OUT))))
-	# The flagstones' lines, running to where the gates stand.
-	_to()
-	var seam := Color(1.0, 1.0, 1.0, 0.025)
-	for index in 9:
-		draw_line(Vector2(DESIGN.x * 0.5 + (index - 4) * 120.0, FLOOR + 6.0), Vector2(DESIGN.x * 0.5 + (index - 4) * 210.0, DESIGN.y), seam, 1.0, true)
-	for index in 5:
-		var y := FLOOR + 14.0 + index * index * 16.0
-		draw_line(Vector2(-_origin.x / _zoom, y), Vector2(DESIGN.x + _origin.x / _zoom, y), Color(seam, 0.02), 1.0)
 	draw_set_transform(Vector2.ZERO)
 
 
@@ -1014,122 +1298,43 @@ func _rise(index: int) -> float:
 	return _eased(&"open", RISE_TIME + index * RISE_STAGGER)
 
 
-# The light a gate throws down the floor to her feet.
-func _draw_path(index: int) -> void:
-	var told := tell(open[index])
-	var colour := light_of(told)
-	var lit := _lit[index]
-	var x := gate_x(index)
-	var strength := (0.07 + 0.3 * lit) * _open_share(index) * _rise(index)
-	if told.veiled:
-		strength = 0.0
-	var half := GATE.x * 0.42
-	draw_polygon(
-		PackedVector2Array([Vector2(x - half, FLOOR + 4.0), Vector2(x + half, FLOOR + 4.0), Vector2(HERO.x + 44.0, HERO.y + 6.0), Vector2(HERO.x - 44.0, HERO.y + 6.0)]),
-		PackedColorArray([Color(colour, strength), Color(colour, strength), Color(colour, strength * 0.12), Color(colour, strength * 0.12)]))
-	_glow(Vector2(x, FLOOR + 10.0), 230.0, Color(colour, strength * 0.8), 0.16)
-
-
-# The pointed arch of a gate `wide` across and `high` to its tip, standing
-# on (0, 0).
-static func arch(wide: float, high: float) -> PackedVector2Array:
-	var spring := -(high - wide * 0.866)
-	var points := PackedVector2Array([Vector2(-wide * 0.5, 0.0)])
-	for step in 13:
-		var turn := PI - PI / 3.0 * step / 12.0
-		points.append(Vector2(wide * 0.5 + cos(turn) * wide, spring - sin(turn) * wide))
-	for step in range(11, -1, -1):
-		var turn := PI - PI / 3.0 * step / 12.0
-		points.append(Vector2(-wide * 0.5 - cos(turn) * wide, spring - sin(turn) * wide))
-	points.append(Vector2(wide * 0.5, 0.0))
-	return points
-
-
-func _draw_gate(index: int) -> void:
+# The words of a gate: its key on its keystone, its name and signs under its
+# threshold, and under the one turned to its goal, its foes and the ways on.
+func _draw_gate_words(index: int) -> void:
+	if index >= gates.size():
+		return
 	var point: RouteMap.Waypoint = open[index]
 	var told := tell(point)
+	var gate := gates[index]
 	var colour := light_of(told)
 	var lit := _lit[index]
 	var open_share := _open_share(index)
-	var boss: bool = told.boss
 	var rise := _rise(index)
-	var grown := 1.0 + 0.13 * lit - 0.03 * (1.0 - lit)
-	var foot := Vector2(gate_x(index), FLOOR + (1.0 - rise) * 26.0)
-	var wide := GATE.x * grown
-	var high := GATE.y * grown
+	var foot := gate_foot(index)
+	var box := gate.box()
 	var pale := _colour(&"pale")
-	# Under the gate turned to stand its goal, its foes and the ways on.
 	var mine := index == cursor and not held and not revealing
 	var under := block_height(point) if mine else SIGNS_LINE + 16.0
-	_zone(Rect2(foot.x - maxf(wide * 0.5 + FRAME, BLOCK_WIDTH * 0.5 if mine else 0.0), foot.y - high - FRAME, maxf(wide + FRAME * 2.0, BLOCK_WIDTH if mine else 0.0), high + FRAME + under), [&"gate", index])
+	var left := minf(box.position.x, -BLOCK_WIDTH * 0.5 if mine else 0.0)
+	var right := maxf(box.end.x, BLOCK_WIDTH * 0.5 if mine else 0.0)
+	_zone(Rect2(foot.x + left, foot.y + box.position.y, right - left, -box.position.y + under), [&"gate", index])
 	_to(foot)
-	# The glow round it, and its stone.
-	var beat := 0.75 + 0.25 * _breath(BOSS_BEAT) if boss else 1.0
-	_glow(Vector2(0.0, -high * 0.5), wide * 1.5, Color(colour, (0.05 + 0.2 * lit) * open_share * rise * beat))
-	var outer := arch(wide + FRAME * 2.0, high + FRAME * 1.6)
-	var stone := PackedColorArray()
-	for at in outer:
-		stone.append(Color(_colour(&"stone").lerp(_colour(&"stone_dark"), clampf(-at.y / high, 0.0, 1.0) * 0.8).lerp(colour, 0.06 * lit * open_share), rise))
-	draw_polygon(outer, stone)
-	outer.append(outer[0])
-	draw_polyline(outer, Color(1.0, 1.0, 1.0, (0.1 + 0.12 * lit) * rise), 1.0, true)
-	for side in [-1.0, 1.0]:
-		draw_rect(Rect2(side * (wide * 0.5 + FRAME * 0.5) - FRAME * 0.75, -10.0, FRAME * 1.5, 16.0), Color(_colour(&"stone").lightened(0.06), rise))
-	# The light within: brightest at the threshold.
-	var inner := arch(wide, high)
-	var light := PackedColorArray()
-	var strength := (0.42 + 0.58 * lit) * open_share * rise
-	if told.veiled:
-		strength = 0.08
-	var dark := _colour(&"shape")
-	for at in inner:
-		var up := clampf(-at.y / high, 0.0, 1.0)
-		light.append(dark.lerp(colour.lerp(Color.WHITE, 0.25 * (1.0 - up)), strength * pow(1.0 - up, 1.4) * 0.95))
-	draw_polygon(inner, light)
-	_glow(Vector2(0.0, -8.0), wide * 0.66, Color(colour.lerp(Color.WHITE, 0.4), 0.55 * strength), 0.55)
-	# What leads it, standing in the light: a dark shape until it is turned to.
-	var art := portrait_of(point.area)
-	if art != null:
-		var room := Vector2(wide * 0.94, high * 0.8 - 2.0)
-		var full := art.get_size()
-		var kept := full * minf(room.x / full.x, room.y / full.y)
-		var foe := RouteStage.leader(point.area)
-		# A foe not met stays a shape against the light, turned to or not.
-		var seen := Color(dark, 0.94).lerp(foe.tint if foe != null and not point.area.is_event() else Color.WHITE, lit if figure_known(point) else 0.0)
-		draw_texture_rect(art, Rect2(-kept.x * 0.5, -2.0 - kept.y, kept.x, kept.y), false, Color(seen, seen.a * rise * (0.25 + 0.75 * open_share)))
-		# The light catching its feet.
-		_glow(Vector2(0.0, -4.0), wide * 0.5, Color(colour.lerp(Color.WHITE, 0.5), 0.34 * strength), 0.3)
-	inner.append(inner[0])
-	draw_polyline(inner, Color(colour, ((0.3 + 0.7 * lit) * open_share if not told.veiled else 0.25) * rise), 1.5 + 1.5 * lit, true)
-	# Its key on the keystone.
-	var tip := Vector2(0.0, -high - FRAME * 1.6 + 8.0)
-	_lozenge(tip, 20.0, Color(_colour(&"stone_dark"), rise))
-	_lozenge(tip, 20.0, Color(colour, ((0.4 + 0.6 * lit) * open_share + 0.15) * rise), 1.5)
-	_words(Vector2(tip.x - 14.0, tip.y + 7.0), str(index + 1), &"title_font", &"key_size", Color(pale, (0.5 + 0.5 * lit) * rise), HORIZONTAL_ALIGNMENT_CENTER, 28.0)
+	# Its key, a rune on its keystone, alight in the gate's colour once it is
+	# turned to.
+	var key := gate.keystone()
+	var alight := (0.3 + 0.7 * lit) * (0.3 + 0.7 * open_share) * rise
+	_glow(key, 26.0 + 8.0 * lit, Color(colour, 0.5 * lit * open_share * rise))
+	_words(Vector2(key.x - 20.0, key.y + 9.0), str(index + 1), &"title_font", &"key_size", Color(_colour(&"night"), 0.7 * rise), HORIZONTAL_ALIGNMENT_CENTER, 40.0)
+	_words(Vector2(key.x - 20.0, key.y + 7.0), str(index + 1), &"title_font", &"key_size", Color(colour.lerp(Color.WHITE, 0.25 + 0.5 * lit), alight), HORIZONTAL_ALIGNMENT_CENTER, 40.0)
 	# Its name and signs under the threshold (the boss's own title, while it
 	# comes out).
 	if not revealing:
 		var fade := (0.55 + 0.45 * lit) * (0.3 + 0.7 * open_share) * rise
-		if mine:
-			_draw_plate(14.0, under + (QUESTION.y + 8.0) * asking(), lit * rise)
 		_words(Vector2(-BLOCK_WIDTH * 0.5, NAME_LINE), told.name, &"title_font", &"name_size", Color(pale, fade), HORIZONTAL_ALIGNMENT_CENTER, BLOCK_WIDTH)
 		_draw_signs(Vector2(0.0, SIGNS_LINE), told, fade)
 		if mine:
 			_draw_block(point, told, foot, lit * rise)
 	_to()
-
-
-# The dark the words under the gate turned to stand on, over the gate's own
-# light running down the floor: plain in its middle, clear at its sides and foot.
-func _draw_plate(top: float, bottom: float, share: float) -> void:
-	var face := _colour(&"plate", 0.66 * share)
-	var clear := Color(face, 0.0)
-	var half := BLOCK_WIDTH * 0.5
-	var side := 60.0
-	draw_rect(Rect2(-half + side, top, BLOCK_WIDTH - side * 2.0, bottom - top), face)
-	_fall_across(Rect2(-half, top, side, bottom - top), clear, face)
-	_fall_across(Rect2(half - side, top, side, bottom - top), face, clear)
-	_fall(Rect2(-half + side, bottom, BLOCK_WIDTH - side * 2.0, 16.0), face, clear)
 
 
 # What an area's goal line says: a fight's goal, an event's trade.
@@ -1401,8 +1606,9 @@ func _draw_boss_title() -> void:
 # The gate's light flooding out as she walks into it.
 func _draw_flood() -> void:
 	var share := clampf(_since(&"go") / TRAVEL_TIME, 0.0, 1.0)
-	var colour := light_of(tell(selected())).lerp(Color.WHITE, 0.5)
-	_glow(Vector2(gate_x(cursor), FLOOR - GATE.y * 0.4), 200.0 + 1900.0 * smoothstep(0.2, 0.95, share), Color(colour, 0.95 * smoothstep(0.15, 0.75, share)))
+	var colour := light_of(tell(selected())).lerp(Color.WHITE, 0.55)
+	var high := gates[cursor].opening().y if cursor < gates.size() else 300.0
+	_glow(Vector2(gate_x(cursor), FLOOR - high * 0.4), 160.0 + 2100.0 * smoothstep(0.3, 1.0, share), Color(colour, 0.97 * smoothstep(0.32, 0.9, share)))
 
 
 # The card under the thread: what an area read there is.
