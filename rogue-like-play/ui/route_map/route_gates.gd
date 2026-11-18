@@ -15,31 +15,44 @@ extends Control
 # and throws its light down the floor to her feet: its goal (an event's
 # trade), its foes, and what the ways on from it give. And for whoever wants
 # the rest (an area's kind, the time it takes, the echo every clearing
-# brings, what its foes are like), the card of the thread below.
+# brings, what its foes are like), the card of the tablet below.
 #
-# The chapter's whole route runs across the top as a thread: the way walked
-# in gold, the ways open as rings, each area further on by the sign of what
+# The chapter's whole route is cut into a stone tablet that hangs over the
+# hall (RouteTablet): the way walked filled with gold, the ways open as
+# jewels in their gates' colours, each area further on by the sign of what
 # it gives, the boss a lozenge at its end; the areas the cursor's pick would
-# put out of reach go dark on it. Any area on the thread can be read in full
+# put out of reach go dark on it. Any area on the tablet can be read in full
 # (the pointer on it, or Up, which starts on the gate's own area, and the
-# arrows): a card under it tells all of it. The boss is kept in the dark until her way reaches it; then
-# its gate stands dark a moment, tolls, and it comes out with its name.
+# arrows): a card under it tells all of it. The boss is kept in the dark
+# until her way reaches it; then its gate stands dark a moment, tolls, and it
+# comes out with its name.
+#
+# One light ties the hall together. A gate turned to throws its light out
+# over the floor, sends it running down the bronze channel of its causeway
+# to the round stone she stands on, and up to its socket on the tablet;
+# asked, the grilles of the other gates fall, their causeways and their
+# jewels go dark, and the view leans in; going, she walks the causeway into
+# the gate while the view follows her through it and the star on the tablet
+# walks the groove with her.
 #
 # Left and right turn from gate to gate, 1-3 turn to one and ask at once,
 # Enter (A) asks whether to go (the other gates go dark, and the one word of
 # the question stands under the gate) and again goes: she walks into the
-# light and the area is entered. Esc (B) takes the question
-# back; with none asked Esc (Start) calls the run's menu.
+# gate and the area is entered (Enter again on the way hurries her). Esc (B)
+# takes the question back; with none asked Esc (Start) calls the run's menu.
 #
 # The page is one focusable control that fills the screen, laid in a design
 # space of 1600x900 scaled to its rect. The hall is built of layers behind
-# its words: the chapter's painting and its stone floor in perspective, lit
+# its words: the chapter's painting and a paved floor in perspective, lit
 # by the gates (one shader over the whole screen, route_hall.gdshader); the
-# gates themselves, each a RouteGateView of painted stone with light, dust
-# and an iron grille in it; her figure, the fight's rig; and a dark pillar
-# at either edge, nearer than all of it. Over them the page draws its words,
-# the thread and the card in the colours and faces of the theme's Gates
-# type. The keys at the foot are a KeyGuide.
+# gates themselves, each a RouteGateView of painted stone with the place it
+# leads to, dust and an iron grille in it; her figure, the fight's rig; and
+# a dark pillar at either edge, nearer than all of it. These are seen by a
+# camera (a place of the page at the screen's middle, and a zoom) that leans
+# in as the question is asked and goes through the gate with her. Over them,
+# not moved by the camera, hang the tablet and what the page writes of the
+# run; the page draws its words and the card in the colours and faces of the
+# theme's Gates type. The keys at the foot are a KeyGuide.
 
 # The pick was gone ahead with (the end of her walk, or take()).
 signal taken(waypoint: RouteMap.Waypoint)
@@ -56,6 +69,12 @@ const DESIGN := Vector2(1600.0, 900.0)
 const HALL := preload("res://ui/route_map/route_hall.gdshader")
 const STONE := preload("res://ui/route_map/route_gate_stone.gdshader")
 const PILLAR := "res://art/ui/route/hall_pillar.png"
+# The floor: the hall's paving, a causeway's slabs and the round stone the
+# causeways meet at; and the slab the card of an area is written on.
+const FLAGS := "res://art/ui/route/floor_flags.png"
+const ROAD := "res://art/ui/route/road_strip.png"
+const DAIS := "res://art/ui/route/floor_dais.png"
+const PLATE := "res://art/ui/route/route_plate.png"
 # Each chapter's floor: its battle ground (AreaGround's atlases).
 const GROUNDS := {&"ash_corridor": 0, &"gale_woods": 4, &"amethyst_mausoleum": 5, &"abyss_of_echoes": 6}
 # The line the gates stand on, and how far apart they stand (three of them,
@@ -81,13 +100,13 @@ const BLOCK_TOP := 86.0
 const TILE := 36.0
 const ONWARD_LINE := 26.0
 const QUESTION := Vector2(220.0, 30.0)
-# The thread: its ends, its line, and the gap between a layer's areas.
-const THREAD_FROM := 480.0
-const THREAD_TO := 1120.0
-const THREAD_Y := 56.0
-const THREAD_ROW := 24.0
+# The card of an area read on the tablet: its width, and how far under the
+# tablet it hangs.
 const CARD_WIDTH := 400.0
-const CARD_TOP := 116.0
+const CARD_GAP := 12.0
+# The bronze at the slab's ends and along its edges (px of its picture).
+const PLATE_SIDE := 30.0
+const PLATE_EDGE := 9.0
 const EDGE := 52.0
 const STATUS_WIDTH := 300.0
 const EMBLEM := 30.0
@@ -100,7 +119,16 @@ const TURN_TIME := 0.18
 const RISE_TIME := 0.5
 const RISE_STAGGER := 0.12
 const ASK_TIME := 0.28
-const TRAVEL_TIME := 1.15
+const TRAVEL_TIME := 1.3
+# How long a gate's light takes to run down its causeway to her feet, how
+# far down it the light of a gate not turned to lies, and how brightly that
+# channel shows.
+const RUN_TIME := 0.34
+# How long her choice takes to run up the channel to the gate, which then
+# answers it (its flare, its sparks, its sound).
+const SPUR_TIME := 0.2
+const REST_RUN := 0.3
+const REST_ROAD := 0.16
 # A grille falls under this pull (shares of its way a second, squared) and
 # is drawn back up in this long; the second to fall waits this long after
 # the first; and landing shakes its gate this far for this long.
@@ -114,12 +142,24 @@ const LAND_TIME := 0.3
 const TURN_FLARE := 0.5
 const ASK_FLARE := 0.42
 const FLARE_FADE := 2.4
-# How fast the view leans toward the gate turned to, how far the painting
-# and the pillars slide for it, and how far the view pushes in as she goes.
+# How fast the view leans toward the gate turned to, and how far the painting
+# and the pillars slide for it. The camera: how far it leans to the gate and
+# pushes in while the question is asked, how far a landing grille knocks it,
+# how far it pushes in as she goes through the gate, how much less the far
+# painting follows it, and from what share of her walk the screen goes dark.
 const LOOK_TIME := 0.35
 const FAR_SLIDE := 12.0
 const NEAR_SLIDE := 16.0
-const PUSH := 0.34
+const ASK_LEAN := 0.1
+const ASK_PUSH := 0.035
+const THUMP := 3.5
+const PUSH := 2.7
+const FAR_FOLLOW := 0.3
+const CURTAIN_FROM := 0.74
+# Where on the gate's threshold her walk ends, as a share of the way from
+# where she stands, and how small the floor's depth makes her there.
+const THRESHOLD := 0.8
+const FAR_SIZE := 0.7
 const REVEAL_DARK := 0.85
 const COMING_OUT := 0.9
 const REVEAL_HOLD := 1.0
@@ -154,10 +194,10 @@ var traveling := false
 var covered := false
 # Kept behind an event's window: shown where she stopped, taking no pick.
 var held := false
-# The keys are on the thread, and the area they are on.
+# The keys are on the tablet, and the area they are on.
 var threading := false
 var thread_at: RouteMap.Waypoint
-# An area on the thread the pointer reads.
+# An area on the tablet the pointer reads.
 var peek: RouteMap.Waypoint
 # The boss is coming out of the dark (nothing is picked meanwhile).
 var revealing := false
@@ -180,21 +220,33 @@ var _fall_speed: Array[float] = []
 var _landed: Array[float] = []
 # The flare each gate gives over its steady light, dying down.
 var _flare: Array[float] = []
+# How far down its causeway each gate's light has run (0 to 1), eased.
+var _run: Array[float] = []
 # How far the view leans toward the gate turned to (-1 to 1).
 var _look := 0.0
+# The camera: the place of the page at the screen's middle, and its zoom.
+var _eye := DESIGN * 0.5
+var _eye_zoom := 1.0
 # The hall behind the words: the painting, floor and light; the layers of
-# the gates, her figure and the pillars, in the design space.
+# the gates, her figure and the pillars, as the camera sees them; and what
+# hangs before it all, the tablet of the chapter's route.
 var _hall: ColorRect
 var _stage: Node2D
 var _gate_room: Node2D
 var _hero_room: Node2D
 var _pillars: Array[Sprite2D] = []
+var _front: Node2D
+var tablet: RouteTablet
 # The route whose boss has come out of the dark, and whether its bell has
 # been tolled.
 var _revealed_route: RouteMap
 var _tolled := false
 var _hover: Variant = null
 var _clock := 0.0
+# The steps of her walk heard so far.
+var _steps := 0
+# The gate chosen has answered the question (its flare and its sparks).
+var _answered := true
 var _kicks := {}
 var _zones: Array = []
 var _origin := Vector2.ZERO
@@ -205,6 +257,7 @@ var _hinted: StringName
 # The pictures drawn, kept: a texture drawn and then let go is freed before
 # the frame is rendered.
 var _portraits: Dictionary = {}
+var _slab: StyleBoxTexture
 # Each chapter's painting and floor as the hall's shader takes them (with
 # their smaller copies for the far and the slanted), made once.
 static var _paintings: Dictionary = {}
@@ -235,6 +288,15 @@ func _ready() -> void:
 	_hero_room = Node2D.new()
 	_stage.add_child(_hero_room)
 	_stand_pillars()
+	_front = Node2D.new()
+	_front.show_behind_parent = true
+	_front.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	add_child(_front)
+	tablet = RouteTablet.new(self)
+	_front.add_child(tablet)
+	for pair: Array in [[&"flags", FLAGS], [&"road", ROAD], [&"dais", DAIS]]:
+		if ResourceLoader.exists(pair[1]):
+			lit.set_shader_parameter(pair[0], load(pair[1]))
 	guide = KeyGuide.new()
 	add_child(guide)
 	guide.anchor_top = 1.0
@@ -271,6 +333,7 @@ func _stand_pillars() -> void:
 		stone.set_shader_parameter(&"light_map", falls)
 		stone.set_shader_parameter(&"ambient", 0.13)
 		stone.set_shader_parameter(&"ambient_tone", Color(0.5, 0.55, 0.72))
+		stone.set_shader_parameter(&"heart", Vector2(1.6 if side == 0 else -0.6, 0.5))
 		pillar.material = stone
 		_stage.add_child(pillar)
 		_pillars.append(pillar)
@@ -282,15 +345,39 @@ func _fit() -> void:
 		return
 	_zoom = minf(size.x / DESIGN.x, size.y / DESIGN.y)
 	_origin = ((size - DESIGN * _zoom) * 0.5).round()
-	_stage.position = _origin
-	_stage.scale = Vector2.ONE * _zoom
+	_front.position = _origin
+	_front.scale = Vector2.ONE * _zoom
 	var hall := _hall.material as ShaderMaterial
 	hall.set_shader_parameter(&"extent", size)
-	hall.set_shader_parameter(&"origin", _origin)
-	hall.set_shader_parameter(&"zoom", _zoom)
 	hall.set_shader_parameter(&"night", get_theme_color(&"night"))
+	hall.set_shader_parameter(&"walked", get_theme_color(&"boon"))
+	_see()
 	hall.set_shader_parameter(&"art", get_theme_color(&"art"))
 	queue_redraw()
+
+
+# Lays the hall as the camera sees it: the place `_eye` at the screen's
+# middle, `_eye_zoom` times larger, knocked aside by `shake` (px of the page).
+func _see(shake := Vector2.ZERO) -> void:
+	if _stage == null:
+		return
+	_stage.scale = Vector2.ONE * _zoom * _eye_zoom
+	_stage.position = _origin + (DESIGN * 0.5 - _eye * _eye_zoom + shake) * _zoom
+	var hall := _hall.material as ShaderMaterial
+	hall.set_shader_parameter(&"origin", _stage.position)
+	hall.set_shader_parameter(&"zoom", _stage.scale.x)
+	hall.set_shader_parameter(&"far_focus", _stage.position + _eye * _stage.scale.x)
+	hall.set_shader_parameter(&"far_zoom", 1.0 + (_eye_zoom - 1.0) * FAR_FOLLOW)
+
+
+# A place of the hall (the design space) on the page, as the camera sees it,
+# and a place of the page in the hall.
+func seen(at: Vector2) -> Vector2:
+	return _stage.position + at * _stage.scale.x
+
+
+func in_hall(at: Vector2) -> Vector2:
+	return (at - _stage.position) / _stage.scale.x
 
 
 # A chapter's painting with its smaller copies, for the hall to draw it soft.
@@ -355,10 +442,12 @@ func present(route_map: RouteMap, at_layer: int, run_state: RunState, max_hp: in
 	_kick(&"open")
 	_quiet = true
 	_look = 0.0
-	pivot_offset = Vector2.ZERO
-	scale = Vector2.ONE
+	_eye = DESIGN * 0.5
+	_eye_zoom = 1.0
+	_stage.modulate = Color.WHITE
 	_stand_gates()
 	_stand_hero()
+	tablet.present()
 	var hall := _hall.material as ShaderMaterial
 	hall.set_shader_parameter(&"painting", painting_of(route.chapter))
 	hall.set_shader_parameter(&"ground", ground_of(route.chapter.id))
@@ -366,6 +455,9 @@ func present(route_map: RouteMap, at_layer: int, run_state: RunState, max_hp: in
 		hall.set_shader_parameter(&"painting_size", route.chapter.illustration.get_size())
 	hall.set_shader_parameter(&"floor_line", FLOOR)
 	hall.set_shader_parameter(&"far_line", FLOOR - 78.0)
+	hall.set_shader_parameter(&"stand", HERO + Vector2(0.0, 4.0))
+	hall.set_shader_parameter(&"dusk", 0.0)
+	_see()
 	# Her way reaches the boss: once a run, it comes out of the dark.
 	revealing = not open.is_empty() and (open[0] as RouteMap.Waypoint).area.boss != null and _revealed_route != route
 	_tolled = false
@@ -389,23 +481,38 @@ func _stand_gates() -> void:
 	_fall_speed.clear()
 	_landed.clear()
 	_flare.clear()
+	_run.clear()
 	for index in open.size():
 		var point: RouteMap.Waypoint = open[index]
 		var told := tell(point)
 		var gate := RouteGateView.new()
 		_gate_room.add_child(gate)
-		gate.setup(route.chapter.id, portrait_of(point.area), told.boss, _colour(&"shape"))
+		gate.setup(route.chapter.id, kind_of(point.area), portrait_of(point.area), _colour(&"shape"))
 		gate.colour = light_of(told)
 		gate.known = figure_known(point)
 		var foe := RouteStage.leader(point.area)
 		gate.tone = foe.tint if foe != null and not point.area.is_event() else Color.WHITE
+		gate.alive = not point.area.is_event()
 		gates.append(gate)
 		_lit.append(1.0 if index == 0 else 0.0)
+		_run.append(REST_RUN)
 		_drop.append(0.0)
 		_fall_speed.append(0.0)
 		_landed.append(-1.0)
 		_flare.append(0.0)
 	_lay_gates()
+
+
+# What a gate is dressed as: its area's kind.
+static func kind_of(area: AreaData) -> StringName:
+	match area.kind:
+		AreaData.Kind.ARENA:
+			return RouteGateView.ARENA
+		AreaData.Kind.EVENT:
+			return RouteGateView.EVENT
+		AreaData.Kind.BOSS:
+			return RouteGateView.BOSS
+	return RouteGateView.BOSS if area.boss != null else RouteGateView.FIELD
 
 
 # Her figure: the fight's rig with the weapon she carries, her back to the
@@ -421,6 +528,7 @@ func _stand_hero() -> void:
 	hero.facing = Vector2i.UP
 	hero.modulate = Color.WHITE
 	hero.show()
+	hero.idle()
 	_place_hero(HERO, 1.0)
 
 
@@ -555,11 +663,14 @@ func choose(index: int) -> void:
 		_kick(&"move")
 		_sound(&"ui_move")
 		_sound(&"gate_turn", -15.0)
-		# The gate answers: a flare of its light, sparks off its threshold.
+		# The gate answers: a flare of its light, sparks off its threshold,
+		# and one sent up to its socket on the tablet.
 		if index < gates.size():
 			_flare[index] = TURN_FLARE
 			if not _quiet:
 				gates[index].kindle()
+				tablet.send_spark(gate_foot(index) + gates[index].keystone(), selected(), gates[index].colour)
+		tablet.turn()
 		if threading:
 			thread_at = selected()
 	queue_redraw()
@@ -570,11 +681,11 @@ func ask() -> void:
 	if traveling or held or revealing or covered or asked or selected() == null:
 		return
 	asked = true
+	_answered = false
 	_leave_thread()
 	_kick(&"ask")
 	_sound(&"ui_open")
-	if cursor < _flare.size():
-		_flare[cursor] = ASK_FLARE
+	_sound(&"gate_charge", -14.0)
 	_hint()
 
 
@@ -614,9 +725,19 @@ func go() -> void:
 	traveling = true
 	peek = null
 	_kick(&"go")
-	GameAudio.play(self, &"step", -16.0)
+	_steps = 0
 	GameAudio.play(self, &"gate_go", -13.0)
 	_hint()
+
+
+# A key or a click on her way hurries her: the walk jumps on to where the
+# screen goes dark.
+func hurry() -> void:
+	if not traveling:
+		return
+	var along := _since(&"go") / TRAVEL_TIME
+	if along < CURTAIN_FROM:
+		_kicks[&"go"] = _clock - TRAVEL_TIME * CURTAIN_FROM
 
 
 # The pick taken at once (the end of her walk, and the tests).
@@ -642,6 +763,13 @@ func hold() -> void:
 	_leave_thread()
 	if hero != null:
 		hero.hide()
+	_eye = DESIGN * 0.5
+	_eye_zoom = 1.0
+	_stage.modulate = Color.WHITE
+	(_hall.material as ShaderMaterial).set_shader_parameter(&"dusk", 0.0)
+	for gate in gates:
+		gate.near = 0.0
+		gate.flood = 0.0
 	_hint()
 	queue_redraw()
 
@@ -667,9 +795,30 @@ func asking() -> float:
 	return 1.0 - _eased(&"unask", TURN_TIME) if _since(&"unask") < TURN_TIME else 0.0
 
 
-# --- Reading the thread ---
+# How far she has gone on her walk (0 to 1), and how dark the screen has
+# gone over it (0 to 1): the layer that holds the page draws that dark.
+func going() -> float:
+	return clampf(_since(&"go") / TRAVEL_TIME, 0.0, 1.0) if traveling else 0.0
 
-# Up from the gates: the keys go to the thread, on the gate's own area.
+
+func leaving() -> float:
+	return smoothstep(CURTAIN_FROM, 0.98, going())
+
+
+# How far down the grille of an area's gate is (0 to 1; 0 for an area with
+# no gate now).
+func grille_of(point: RouteMap.Waypoint) -> float:
+	var index := open.find(point)
+	return _drop[index] if index >= 0 and index < _drop.size() else 0.0
+
+
+func theme_colour(item: StringName) -> Color:
+	return get_theme_color(item)
+
+
+# --- Reading the tablet ---
+
+# Up from the gates: the keys go to the tablet, on the gate's own area.
 func enter_thread() -> void:
 	if asked or traveling or held or revealing or selected() == null:
 		return
@@ -688,8 +837,8 @@ func _leave_thread() -> void:
 	_hint()
 
 
-# The keys along the thread: a layer on or back, or the next area of the
-# layer; down past a layer's last leaves the thread.
+# The keys along the tablet: a layer on or back, or the next area of the
+# layer; down past a layer's last leaves the tablet.
 func move_thread(by: Vector2i) -> void:
 	if not threading or thread_at == null:
 		return
@@ -757,7 +906,17 @@ func _process(delta: float) -> void:
 			want = _coming()
 		_lit[index] = move_toward(_lit[index], want, delta / TURN_TIME)
 		_flare[index] = maxf(0.0, _flare[index] - delta * FLARE_FADE)
+		# Its light runs down its causeway to her feet while it is turned to,
+		# and draws back to the gate when it is not (or is shut).
+		var far := 1.0 if index == cursor and not revealing else (0.0 if _drop[index] > 0.0 else REST_RUN)
+		_run[index] = move_toward(_run[index], far, delta / RUN_TIME)
 	_move_grilles(delta)
+	# Asked, her choice runs up the channel, and the gate answers it.
+	if asked and not _answered and _since(&"ask") >= SPUR_TIME:
+		_answered = true
+		if cursor < _flare.size():
+			_flare[cursor] = ASK_FLARE
+			gates[cursor].kindle(true)
 	if revealing:
 		if not _tolled and _since(&"reveal") >= REVEAL_DARK:
 			_tolled = true
@@ -771,8 +930,8 @@ func _process(delta: float) -> void:
 	if traveling:
 		_walk()
 		if _since(&"go") >= TRAVEL_TIME:
-			GameAudio.play(self, &"confirm", -16.0)
 			take(selected())
+			return
 	elif hero != null and hero.visible:
 		_place_hero(HERO, 1.0)
 		hero.modulate = _hero_tone()
@@ -780,9 +939,29 @@ func _process(delta: float) -> void:
 		var toward := gate_x(cursor) - HERO.x if not open.is_empty() else 0.0
 		hero.facing = Vector2i(int(signf(toward)) if absf(toward) > 60.0 else 0, -1)
 	_look = lerpf(_look, clampf((gate_x(cursor) - DESIGN.x * 0.5) / GATE_GAP, -1.0, 1.0) if not open.is_empty() else 0.0, minf(1.0, delta / LOOK_TIME * 2.2))
-	_lay_gates()
+	_aim()
+	_lay_gates(delta)
 	_light_hall()
+	tablet.step(delta)
 	queue_redraw()
+
+
+# Where the camera looks now: leaning in to the gate while the question is
+# asked, knocked by a landing grille and by the boss's toll. Her walk aims
+# it itself (_walk).
+func _aim() -> void:
+	if not traveling:
+		var leaning := asking() if not held else 0.0
+		var middle := DESIGN * 0.5
+		if cursor < gates.size():
+			_eye = middle.lerp(Vector2(gate_x(cursor), FLOOR - 120.0), ASK_LEAN * leaning)
+		else:
+			_eye = middle
+		_eye_zoom = 1.0 + ASK_PUSH * leaning
+	var shake := toll_shake()
+	for index in _landed.size():
+		shake += _land_shake(index) * (THUMP / LAND_SHAKE)
+	_see(shake)
 
 
 # The grilles: down in the gates not chosen while the question is asked (or
@@ -841,25 +1020,34 @@ func _words_left() -> float:
 
 
 # Tells each gate how it stands, and lays it.
-func _lay_gates() -> void:
-	var flooding := smoothstep(0.3, 1.0, clampf(_since(&"go") / TRAVEL_TIME, 0.0, 1.0)) if traveling else 0.0
+func _lay_gates(delta := 0.0) -> void:
+	var along := going()
+	var flooding := smoothstep(0.42, 1.0, along)
 	for index in gates.size():
 		var gate := gates[index]
 		gate.lit = _lit[index]
-		gate.flare = _flare[index] + (flooding * 0.8 if index == cursor else 0.0)
+		gate.flare = _flare[index] + (flooding * 0.5 if index == cursor else 0.0)
 		gate.drop = _drop[index]
 		gate.open_share = 1.0 - smoothstep(0.0, 1.0, _drop[index])
 		gate.rise = _rise(index)
 		gate.dark = veiled(open[index])
 		gate.flood = flooding if index == cursor else 0.0
-		gate.position = gate_foot(index) + _land_shake(index) + _toll_shake()
-		gate.apply(_clock)
+		gate.near = smoothstep(0.15, 1.0, along) if index == cursor else 0.0
+		gate.parted = smoothstep(0.3, 0.72, along) if index == cursor else 0.0
+		gate.lean = _look
+		gate.aside = clampf((gate_x(index) - DESIGN.x * 0.5) / GATE_GAP, -1.0, 1.0)
+		gate.position = gate_foot(index) + _land_shake(index)
+		# As she goes through hers, the others fall back into the dark.
+		gate.modulate = Color.WHITE if index == cursor else Color.WHITE.lerp(_colour(&"night"), smoothstep(0.2, 0.8, along) * 0.85)
+		gate.apply(_clock, delta)
 	# The pillars, sliding a little against the view's lean.
 	for side in _pillars.size():
 		var pillar := _pillars[side]
 		var wide := pillar.texture.get_width() * pillar.scale.x
 		var middle := PILLAR_IN if side == 0 else DESIGN.x - PILLAR_IN
-		pillar.position = Vector2(middle - wide * 0.5 - _look * NEAR_SLIDE, PILLAR_FOOT - PILLAR_HEIGHT) + _toll_shake() * 1.4
+		# Nearer than the gates, they leave the view faster as it pushes in.
+		var parting := (_eye_zoom - 1.0) * 420.0 * (-1.0 if side == 0 else 1.0)
+		pillar.position = Vector2(middle - wide * 0.5 - _look * NEAR_SLIDE + parting, PILLAR_FOOT - PILLAR_HEIGHT) + toll_shake() * 0.4
 		var stone := pillar.material as ShaderMaterial
 		var turned: RouteGateView = gates[cursor] if cursor < gates.size() else null
 		stone.set_shader_parameter(&"colour", turned.colour if turned != null else Color.WHITE)
@@ -867,7 +1055,7 @@ func _lay_gates() -> void:
 
 
 # The boss's toll shakes the whole hall.
-func _toll_shake() -> Vector2:
+func toll_shake() -> Vector2:
 	if not revealing:
 		return Vector2.ZERO
 	var since := _since(&"reveal") - REVEAL_DARK
@@ -887,8 +1075,43 @@ func _light_hall() -> void:
 	for index in mini(gates.size(), 3):
 		places[index] = gate_x(index)
 		halves[index] = gates[index].opening().x * 0.5
-		powers[index] = gates[index].power() * (1.0 + gates[index].flood * 1.5)
+		powers[index] = gates[index].power() * (1.0 + gates[index].flood * 0.6) * (1.0 if index == cursor else 1.0 - smoothstep(0.2, 0.8, going()))
 		tones[index] = gates[index].colour
+	# Each gate's causeway and fires, and what stands in it, for its shadow.
+	var roads := PackedFloat32Array([0.0, 0.0, 0.0])
+	var runs := PackedFloat32Array([0.0, 0.0, 0.0])
+	var shades := PackedVector2Array([Vector2.ZERO, Vector2.ZERO, Vector2.ZERO])
+	var fires := PackedFloat32Array([0.0, 0.0, 0.0])
+	var fire_offs := PackedFloat32Array([0.0, 0.0, 0.0])
+	var fire_tones := PackedColorArray([Color.BLACK, Color.BLACK, Color.BLACK])
+	var asked_share := asking()
+	for index in mini(gates.size(), 3):
+		var gate := gates[index]
+		var mine := index == cursor and not revealing
+		roads[index] = gate.rise * (1.0 - _drop[index]) * (lerpf(REST_ROAD, 1.0, _lit[index]) + _flare[index] * 0.8 + (0.5 * asked_share if mine else 0.0)) * (0.0 if gate.dark else 1.0)
+		runs[index] = _run[index]
+		shades[index] = gate.figure_size() * gate.rise
+		fires[index] = gate.fire_power() * gate.rise
+		fire_offs[index] = gate.fire_off()
+		fire_tones[index] = gate.fire_colour()
+		hall.set_shader_parameter([&"shade_0", &"shade_1", &"shade_2"][index], gate.figure.texture)
+	hall.set_shader_parameter(&"road_power", roads)
+	hall.set_shader_parameter(&"road_fill", runs)
+	hall.set_shader_parameter(&"shade_size", shades)
+	hall.set_shader_parameter(&"fire_power", fires)
+	hall.set_shader_parameter(&"fire_off", fire_offs)
+	hall.set_shader_parameter(&"fire_colour", fire_tones)
+	# The round stone she stands on takes the light that has reached it.
+	var reached := 0.0
+	var reached_tone := _colour(&"pale")
+	if cursor < gates.size() and not revealing:
+		reached = smoothstep(0.86, 1.0, _run[cursor]) * gates[cursor].rise
+		reached_tone = gates[cursor].colour
+	hall.set_shader_parameter(&"dais_colour", reached_tone)
+	hall.set_shader_parameter(&"dais_power", 0.1 + reached * (0.75 + 0.6 * asked_share + _flare[cursor] if cursor < _flare.size() else 0.0))
+	hall.set_shader_parameter(&"dusk", smoothstep(0.25, 0.85, going()) * 0.8)
+	var spur := _since(&"ask") / SPUR_TIME
+	hall.set_shader_parameter(&"spur", Vector2(cursor, spur if asked and spur <= 1.0 else -1.0))
 	hall.set_shader_parameter(&"gate_count", mini(gates.size(), 3))
 	hall.set_shader_parameter(&"gate_x", places)
 	hall.set_shader_parameter(&"gate_half", halves)
@@ -919,20 +1142,30 @@ func _light_hall() -> void:
 	hall.set_shader_parameter(&"flush", Color(flush, flush.a * flushed))
 
 
-# One moment of her walk: toward the gate, smaller and darker against its
-# light, the view pushing in after her.
+# One moment of her walk: up her causeway to the gate's threshold, smaller
+# with the floor's depth and darker against the gate's light, and on into
+# the place beyond; the camera goes after her, through the gate, and the
+# hall behind falls dark.
 func _walk() -> void:
-	if hero == null:
+	if hero == null or cursor >= gates.size():
 		return
-	var along := clampf(_since(&"go") / TRAVEL_TIME, 0.0, 1.0)
-	var share := smoothstep(0.0, 0.8, along)
-	var gate := Vector2(gate_x(cursor), FLOOR)
-	var next := HERO.lerp(gate, share)
+	var along := going()
+	var gate := Vector2(gate_x(cursor), FLOOR - 2.0)
+	var share := smoothstep(0.0, THRESHOLD, along)
+	var within := smoothstep(THRESHOLD, 1.0, along)
+	var next := HERO.lerp(gate, share) + Vector2(0.0, -10.0 * within)
 	hero.step(next - hero.position)
-	_place_hero(next, lerpf(1.0, 0.6, share))
-	hero.modulate = _hero_tone().lerp(_colour(&"shape"), share * 0.85)
-	pivot_offset = _origin + (gate + Vector2(0.0, -gates[cursor].opening().y * 0.4)) * _zoom
-	scale = Vector2.ONE * (1.0 + PUSH * along * along * along)
+	_place_hero(next, lerpf(1.0, FAR_SIZE, share) * lerpf(1.0, 0.86, within))
+	hero.modulate = _hero_tone().lerp(_colour(&"shape"), smoothstep(0.25, 1.0, share) * 0.92)
+	# Her steps on the stone.
+	var step := floori(along / 0.19)
+	if step > _steps and along < THRESHOLD:
+		_steps = step
+		GameAudio.play(self, &"step", -17.0 - 2.0 * step)
+	var push := along * along * (3.0 - 2.0 * along)
+	push *= push
+	_eye = (DESIGN * 0.5).lerp(Vector2(gate.x, FLOOR - gates[cursor].opening().y * 0.44), smoothstep(0.0, 0.85, along))
+	_eye_zoom = 1.0 + ASK_PUSH + (PUSH - 1.0) * push
 
 
 func _kick(what: StringName) -> void:
@@ -993,6 +1226,9 @@ func _gui_input(event: InputEvent) -> void:
 		if event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			grab_focus()
 			accept_event()
+			if traveling:
+				hurry()
+				return
 			if revealing:
 				_end_reveal()
 				return
@@ -1017,6 +1253,8 @@ func _take_key(event: InputEvent) -> bool:
 	if not (event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion or event is InputEventAction):
 		return false
 	if traveling:
+		if event.is_action_pressed(&"ui_accept"):
+			hurry()
 		return true
 	if revealing:
 		if event.is_pressed() and not event.is_echo() and not event is InputEventJoypadMotion:
@@ -1109,14 +1347,17 @@ func _press(id: Variant) -> void:
 		choose(index)
 
 
-func _zone(rect: Rect2, id: Variant) -> void:
-	_zones.append([rect, id])
+# A place the pointer may be on: in the hall (seen by the camera) or, with
+# `hung`, among what hangs before it (the tablet, her boons).
+func _zone(rect: Rect2, id: Variant, hung := false) -> void:
+	_zones.append([rect, id, hung])
 
 
 func _zone_at(point: Vector2) -> Variant:
-	var at := (point - _origin) / _zoom
+	var hung_at := (point - _origin) / _zoom
+	var hall_at := in_hall(point)
 	for index in range(_zones.size() - 1, -1, -1):
-		if (_zones[index][0] as Rect2).has_point(at):
+		if (_zones[index][0] as Rect2).has_point(hung_at if _zones[index][2] else hall_at):
 			return _zones[index][1]
 	return null
 
@@ -1126,7 +1367,7 @@ func gate_rect(index: int) -> Rect2:
 	for zone: Array in _zones:
 		if zone[1] is Array and zone[1] == [&"gate", index]:
 			var rect: Rect2 = zone[0]
-			return Rect2(_origin + rect.position * _zoom, rect.size * _zoom)
+			return Rect2(seen(rect.position), rect.size * _stage.scale.x)
 	return Rect2()
 
 
@@ -1157,7 +1398,7 @@ func _words(at: Vector2, words: String, face: StringName, size: StringName, colo
 
 # Words that stand over the lit floor: with a shade under them.
 func _shaded(at: Vector2, words: String, face: StringName, size: StringName, colour: Color, align := HORIZONTAL_ALIGNMENT_LEFT, width := -1.0) -> void:
-	var shade := Color(_colour(&"night"), 0.85 * colour.a)
+	var shade := Color(_colour(&"night"), 0.85 * minf(1.0, colour.a * 1.7))
 	draw_string_outline(_face(face), at + Vector2(0.0, 1.5), words, align, width, _size(size), 5, Color(shade, shade.a * 0.5))
 	draw_string(_face(face), at + Vector2(0.0, 1.5), words, align, width, _size(size), shade)
 	draw_string(_face(face), at, words, align, width, _size(size), colour)
@@ -1203,13 +1444,9 @@ func gate_x(index: int) -> float:
 	return DESIGN.x * 0.5 + (index - (count - 1) * 0.5) * gap
 
 
-# Where an area stands on the thread (null: the start).
+# Where an area lies on the tablet (null: the start).
 func thread_spot(point: RouteMap.Waypoint) -> Vector2:
-	var gap := (THREAD_TO - THREAD_FROM) / route.size()
-	if point == null:
-		return Vector2(THREAD_FROM, THREAD_Y)
-	var points := route.nodes(point.layer)
-	return Vector2(THREAD_FROM + gap * (point.layer + 1), THREAD_Y + (points.find(point) - (points.size() - 1) * 0.5) * THREAD_ROW)
+	return tablet.spot(point)
 
 
 # What stands in an area's gate: its leading foe's painted portrait (its
@@ -1231,8 +1468,14 @@ func portrait_of(area: AreaData) -> Texture2D:
 
 # --- Drawing ---
 
-# The transform of the design space, moved to `at` within it.
+# Draws in the hall as the camera sees it, from `at` within it.
 func _to(at := Vector2.ZERO) -> void:
+	draw_set_transform(seen(at), 0.0, Vector2.ONE * _stage.scale.x)
+
+
+# Draws among what hangs before the hall (the design space, unmoved by the
+# camera), from `at` within it.
+func _hung(at := Vector2.ZERO) -> void:
 	draw_set_transform(_origin + at * _zoom, 0.0, Vector2.ONE * _zoom)
 
 
@@ -1240,27 +1483,27 @@ func _draw() -> void:
 	_zones.clear()
 	if route == null:
 		return
-	# The boss's toll shakes the words with the hall.
-	var shake := _toll_shake() * _zoom
-	_origin += shake
 	_to()
 	for index in open.size():
 		if index != cursor:
 			_draw_gate_words(index)
 	if selected() != null:
 		_draw_gate_words(cursor)
-	_draw_thread()
-	_draw_top()
 	if revealing:
+		_to()
 		_draw_boss_title()
-	if traveling:
-		_draw_flood()
+	_hung()
+	# Each area's place on the tablet is the pointer's to read.
+	for index in route.size():
+		for point: RouteMap.Waypoint in route.nodes(index):
+			var at := tablet.spot(point)
+			_zone(Rect2(at - Vector2(18.0, RouteTablet.ROW * 0.5), Vector2(36.0, RouteTablet.ROW)), [&"node", point], true)
+	_draw_top()
 	var shown := read()
 	if shown != null and not covered:
-		_to()
+		_hung()
 		_draw_card(shown)
 	_draw_tip()
-	_origin -= shake
 	draw_set_transform(Vector2.ZERO)
 
 
@@ -1291,32 +1534,13 @@ func _glow(centre: Vector2, radius: float, colour: Color, squash := 1.0) -> void
 
 
 func _lozenge(centre: Vector2, radius: float, colour: Color, width := 0.0) -> void:
-	var points := PackedVector2Array([centre + Vector2(0.0, -radius), centre + Vector2(radius, 0.0), centre + Vector2(0.0, radius), centre + Vector2(-radius, 0.0)])
-	if width <= 0.0:
-		draw_colored_polygon(points, colour)
-	else:
-		points.append(points[0])
-		draw_polyline(points, colour, width, true)
+	RouteSigns.lozenge(self, centre, radius, colour, width)
 
 
 # A reward's sign: a boon's star, a heal's heart, the echo's ring; an event
 # (reward -1) a lozenge with a dot.
 func _sign(centre: Vector2, radius: float, reward: int, colour: Color) -> void:
-	match reward:
-		AreaData.Reward.BOON:
-			HubUI.star(self, centre, radius * 1.25, colour)
-		AreaData.Reward.HEAL:
-			var points := PackedVector2Array()
-			for step in 32:
-				var t := TAU * step / 32.0
-				points.append(centre + Vector2(16.0 * pow(sin(t), 3.0), -(13.0 * cos(t) - 5.0 * cos(2.0 * t) - 2.0 * cos(3.0 * t) - cos(4.0 * t))) * radius / 16.0 + Vector2(0.0, -radius * 0.12))
-			draw_colored_polygon(points, colour)
-		AreaData.Reward.ECHO:
-			draw_arc(centre, radius * 0.92, 0.0, TAU, 24, colour, maxf(1.5, radius * 0.22), true)
-			draw_circle(centre, radius * 0.36, colour)
-		_:
-			_lozenge(centre, radius, colour, maxf(1.5, radius * 0.2))
-			draw_circle(centre, radius * 0.22, colour)
+	RouteSigns.reward(self, centre, radius, reward, colour)
 
 
 # How open a gate is: 1, or going dark while the question is asked of another.
@@ -1524,124 +1748,68 @@ func _draw_signs(centre: Vector2, told: Dictionary, fade: float) -> void:
 	_shaded(Vector2(x, centre.y + 5.0), gives, &"bold_font", &"label_size", Color(colour, fade))
 
 
-# The chapter's whole route as one thread across the top.
-func _draw_thread() -> void:
-	var chosen := selected()
-	var kept := reach_from([chosen]) if chosen != null else {}
-	var colour := light_of(tell(chosen)) if chosen != null else _colour(&"pale")
-	var pale := _colour(&"pale")
-	var gold := _colour(&"boon")
-	var walked := run.taken.slice(0, route_layer)
-	var come := _eased(&"open", RISE_TIME)
-	for point: RouteMap.Waypoint in route.nodes(0):
-		_draw_strand(null, point, walked, kept, colour, come)
-	for index in route.size() - 1:
-		for from: RouteMap.Waypoint in route.nodes(index):
-			for to: RouteMap.Waypoint in from.next:
-				_draw_strand(from, to, walked, kept, colour, come)
-	draw_circle(thread_spot(null), 3.5, Color(gold if not walked.is_empty() else pale, come))
-	var reading := read()
-	for index in route.size():
-		for point: RouteMap.Waypoint in route.nodes(index):
-			var at := thread_spot(point)
-			var state := mark(point)
-			_zone(Rect2(at - Vector2(20.0, THREAD_ROW * 0.5), Vector2(40.0, THREAD_ROW)), [&"node", point])
-			if state != Mark.SHUT and state != Mark.PASSED:
-				draw_circle(at, 9.0, _colour(&"night", 0.85 * come))
-			if point.area.boss != null:
-				var dark := veiled(point)
-				_lozenge(at, 9.0, _colour(&"boss", (0.3 if dark else 1.0) * come))
-				_lozenge(at, 13.0, _colour(&"boss", (0.4 + 0.3 * _breath(BOSS_BEAT)) * come), 1.0)
-			else:
-				match state:
-					Mark.TAKEN:
-						draw_circle(at, 5.0, Color(gold, come))
-					Mark.OPEN:
-						if point == chosen:
-							draw_circle(at, 4.5, Color(colour, come))
-							draw_arc(at, 9.0 + _breath() * 1.5, 0.0, TAU, 24, Color(colour, come), 1.5, true)
-						else:
-							draw_arc(at, 5.5, 0.0, TAU, 20, Color(pale, (0.9 - 0.6 * asking()) * come), 1.5, true)
-					Mark.AHEAD:
-						var told := tell(point)
-						_sign(at, 5.5, told.reward, Color(light_of(told), (0.9 if kept.has(point) else 0.25) * come))
-					_:
-						draw_circle(at, 2.5, Color(pale, 0.18 * come))
-			if reading == point:
-				draw_arc(at, 13.0, 0.0, TAU, 28, pale, 1.5, true)
-				for tick in 4:
-					var way := Vector2.from_angle(TAU * tick / 4.0 + _clock * 0.5)
-					draw_line(at + way * 13.0, at + way * 18.0, pale, 1.5, true)
-
-
-func _draw_strand(from: RouteMap.Waypoint, to: RouteMap.Waypoint, walked: Array, kept: Dictionary, colour: Color, come: float) -> void:
-	var a := thread_spot(from)
-	var b := thread_spot(to)
-	var pale := _colour(&"pale")
-	var at := walked.find(to)
-	if at >= 0 and (from == null and at == 0 or at > 0 and walked[at - 1] == from):
-		draw_line(a, b, _colour(&"boon", 0.16 * come), 7.0, true)
-		draw_line(a, b, _colour(&"boon", come), 2.0, true)
-	elif from == here() and open.has(to):
-		var mine := to == selected()
-		if mine:
-			draw_line(a, b, Color(colour, 0.2 * come), 7.0, true)
-		draw_line(a, b, Color(colour, come) if mine else Color(pale, (0.5 - 0.35 * asking()) * come), 2.0 if mine else 1.0, true)
-	elif from != null and reach.has(from) and from.layer >= route_layer:
-		draw_line(a, b, Color(colour, 0.55 * come) if kept.has(from) else Color(pale, 0.1 * come), 1.0, true)
-		# A bead of the gate's light runs along each way on from it.
-		if from == selected():
-			var run_along := fposmod(_clock * 0.55 + float(route.nodes(to.layer).find(to)) * 0.31, 1.0)
-			var bead := a.lerp(b, run_along)
-			var seen := sin(run_along * PI) * come
-			_glow(bead, 9.0, Color(colour, 0.55 * seen))
-			draw_circle(bead, 1.8, Color(colour.lerp(Color.WHITE, 0.5), seen))
-	else:
-		draw_line(a, b, Color(pale, 0.07 * come), 1.0, true)
-
-
 # The chapter at the top left; her health, level, echo and boons at the top
-# right.
+# right: plain words, as they must be read at a glance, with the hall's own
+# ornament (the tapering line and the small star) to hold them.
 func _draw_top() -> void:
 	var pale := _colour(&"pale")
 	var dim := _colour(&"dim")
-	# Where along the chapter she is, the thread tells.
+	var gold := _colour(&"boon")
+	var come := _eased(&"open", RISE_TIME)
+	# Where along the chapter she is, the tablet tells.
 	var number := Chapters.short_name(route.chapter)
-	_words(Vector2(EDGE, 46.0), number, &"font", &"label_size", dim)
+	_shaded(Vector2(EDGE, 46.0), number, &"font", &"label_size", dim)
 	var x := EDGE + _width(number, &"font", &"label_size") + 12.0
-	_words(Vector2(x, 48.0), Chapters.title(route.chapter), &"title_font", &"name_size", pale)
+	_shaded(Vector2(x, 48.0), Chapters.title(route.chapter), &"title_font", &"name_size", pale)
 	if run.step > 0:
-		_words(Vector2(x + _width(Chapters.title(route.chapter), &"title_font", &"name_size") + 14.0, 46.0), tr("段階%d") % run.step, &"font", &"label_size", dim)
+		_shaded(Vector2(x + _width(Chapters.title(route.chapter), &"title_font", &"name_size") + 14.0, 46.0), tr("段階%d") % run.step, &"font", &"label_size", dim)
+	HubUI.mark(self, Vector2(EDGE + 4.0, 61.0), 4.0, Color(gold, 0.9 * come))
+	HubUI.hairline(self, Vector2(EDGE + 14.0, 61.0), Vector2(EDGE + 14.0 + 250.0 * come, 61.0), Color(gold, 0.55))
 	if not note_text.is_empty():
-		_words(Vector2(EDGE, 76.0), note_text, &"font", &"label_size", Color(dim, _eased(&"open", RISE_TIME)))
+		_shaded(Vector2(EDGE, 84.0), note_text, &"font", &"label_size", Color(dim, come))
 	var right := DESIGN.x - EDGE
 	var left := right - STATUS_WIDTH
 	var hp := run.hp if run.hp > 0 else _max_hp
-	_words(Vector2(left, 44.0), "HP", &"bold_font", &"label_size", _colour(&"boss"))
-	_words(Vector2(left + 30.0, 46.0), str(hp), &"title_font", &"name_size", pale)
-	_words(Vector2(left + 30.0 + _width(str(hp), &"title_font", &"name_size") + 6.0, 46.0), "/ %d" % _max_hp, &"lead_font", &"body_size", dim)
-	_words(Vector2(left, 46.0), "Lv %d" % run.progression.level, &"title_font", &"key_size", pale, HORIZONTAL_ALIGNMENT_RIGHT, STATUS_WIDTH)
-	draw_rect(Rect2(left, 56.0, STATUS_WIDTH, 6.0), Color(1.0, 1.0, 1.0, 0.1))
-	draw_rect(Rect2(left, 56.0, STATUS_WIDTH * clampf(hp / float(_max_hp), 0.0, 1.0), 6.0), _colour(&"boss"))
-	_sign(Vector2(left + 8.0, 86.0), 7.0, AreaData.Reward.ECHO, _colour(&"echo"))
-	_words(Vector2(left + 24.0, 91.0), tr("残響"), &"font", &"label_size", dim)
-	_words(Vector2(left + 28.0 + _width(tr("残響"), &"font", &"label_size") + 6.0, 93.0), UIFormat.amount(run.echo), &"title_font", &"key_size", pale)
+	_shaded(Vector2(left, 44.0), "HP", &"bold_font", &"label_size", _colour(&"boss"))
+	_shaded(Vector2(left + 30.0, 46.0), str(hp), &"title_font", &"name_size", pale)
+	_shaded(Vector2(left + 30.0 + _width(str(hp), &"title_font", &"name_size") + 6.0, 46.0), "/ %d" % _max_hp, &"lead_font", &"body_size", dim)
+	_shaded(Vector2(left, 46.0), "Lv %d" % run.progression.level, &"title_font", &"key_size", pale, HORIZONTAL_ALIGNMENT_RIGHT, STATUS_WIDTH)
+	_draw_gauge(Rect2(left, 55.0, STATUS_WIDTH, 8.0), clampf(hp / float(_max_hp), 0.0, 1.0), _colour(&"boss"))
+	_sign(Vector2(left + 8.0, 88.0), 7.0, AreaData.Reward.ECHO, _colour(&"echo"))
+	_shaded(Vector2(left + 24.0, 93.0), tr("残響"), &"font", &"label_size", dim)
+	_shaded(Vector2(left + 28.0 + _width(tr("残響"), &"font", &"label_size") + 6.0, 95.0), UIFormat.amount(run.echo), &"title_font", &"key_size", pale)
 	# Her boons, the newest at the right; a second row once the first is full.
 	var held_boons := run.build.owned()
 	var per_row := 5
 	for index in held_boons.size():
 		var boon := held_boons[index]
 		var from_end := held_boons.size() - 1 - index
-		var at := Vector2(right - EMBLEM * 0.5 - (from_end % per_row) * (EMBLEM + 6.0), 86.0 + (from_end / per_row) * (EMBLEM + 6.0))
+		var at := Vector2(right - EMBLEM * 0.5 - (from_end % per_row) * (EMBLEM + 6.0), 88.0 + (from_end / per_row) * (EMBLEM + 6.0))
 		var emblem := EmblemIcons.texture(boon.emblem)
 		if emblem != null:
 			draw_texture_rect(emblem, Rect2(at - Vector2.ONE * EMBLEM * 0.5, Vector2.ONE * EMBLEM), false)
 		if boon.max_level > 1:
-			_words(Vector2(at.x + 4.0, at.y + EMBLEM * 0.5 + 2.0), str(run.build.rank(boon.id)), &"bold_font", &"label_size", pale)
-		_zone(Rect2(at - Vector2.ONE * EMBLEM * 0.5, Vector2.ONE * EMBLEM), [&"boon", index])
+			_shaded(Vector2(at.x + 4.0, at.y + EMBLEM * 0.5 + 2.0), str(run.build.rank(boon.id)), &"bold_font", &"label_size", pale)
+		_zone(Rect2(at - Vector2.ONE * EMBLEM * 0.5, Vector2.ONE * EMBLEM), [&"boon", index], true)
 	if not curses_text.is_empty():
 		var rows := 1 + (held_boons.size() - 1) / per_row if not held_boons.is_empty() else 0
-		_words(Vector2(left, 122.0 + rows * (EMBLEM + 6.0) - EMBLEM), curses_text, &"bold_font", &"label_size", _colour(&"boss"), HORIZONTAL_ALIGNMENT_RIGHT, STATUS_WIDTH)
+		_shaded(Vector2(left, 124.0 + rows * (EMBLEM + 6.0) - EMBLEM), curses_text, &"bold_font", &"label_size", _colour(&"boss"), HORIZONTAL_ALIGNMENT_RIGHT, STATUS_WIDTH)
+
+
+# A gauge: a dark trough between two fine lines with a lozenge at either
+# end, filled to `share` in `colour`, brighter along its top and at its head.
+func _draw_gauge(rect: Rect2, share: float, colour: Color) -> void:
+	var pale := _colour(&"pale")
+	draw_rect(rect, Color(_colour(&"night"), 0.82))
+	var full := Rect2(rect.position, Vector2(rect.size.x * share, rect.size.y))
+	if full.size.x > 0.0:
+		_fall(full, colour.lerp(Color.WHITE, 0.24), colour.darkened(0.3))
+		draw_rect(Rect2(full.position, Vector2(full.size.x, 1.5)), Color(1.0, 1.0, 1.0, 0.3))
+		draw_rect(Rect2(full.end.x - 2.0, rect.position.y, 2.0, rect.size.y), colour.lerp(Color.WHITE, 0.6))
+	for y: float in [rect.position.y - 1.0, rect.end.y]:
+		draw_rect(Rect2(rect.position.x, y, rect.size.x, 1.0), Color(pale, 0.28))
+	for x: float in [rect.position.x - 5.0, rect.end.x + 5.0]:
+		_lozenge(Vector2(x, rect.get_center().y), 4.0, Color(pale, 0.5))
 
 
 # The boss's epithet and name, risen under its gate while it comes out.
@@ -1657,15 +1825,32 @@ func _draw_boss_title() -> void:
 	_words(Vector2(DESIGN.x * 0.5 - 500.0, FLOOR + 92.0), tr(boss.display_name), &"title_font", &"boss_size", _colour(&"pale", share), HORIZONTAL_ALIGNMENT_CENTER, 1000.0)
 
 
-# The gate's light flooding out as she walks into it.
-func _draw_flood() -> void:
-	var share := clampf(_since(&"go") / TRAVEL_TIME, 0.0, 1.0)
-	var colour := light_of(tell(selected())).lerp(Color.WHITE, 0.55)
-	var high := gates[cursor].opening().y if cursor < gates.size() else 300.0
-	_glow(Vector2(gate_x(cursor), FLOOR - high * 0.4), 160.0 + 2100.0 * smoothstep(0.3, 1.0, share), Color(colour, 0.97 * smoothstep(0.32, 0.9, share)))
+# A slab like the tablet's own, for what is written before the hall: the
+# card of an area, the name of a boon.
+func _plate(rect: Rect2) -> void:
+	var shade := StyleBoxFlat.new()
+	shade.bg_color = Color(0.0, 0.0, 0.0, 0.0)
+	shade.shadow_color = Color(0.0, 0.0, 0.0, 0.5)
+	shade.shadow_size = 16
+	shade.shadow_offset = Vector2(0.0, 5.0)
+	shade.draw_center = false
+	draw_style_box(shade, rect.grow(-4.0))
+	if _slab == null and ResourceLoader.exists(PLATE):
+		_slab = StyleBoxTexture.new()
+		_slab.texture = load(PLATE)
+		_slab.texture_margin_left = PLATE_SIDE
+		_slab.texture_margin_right = PLATE_SIDE
+		_slab.texture_margin_top = PLATE_EDGE
+		_slab.texture_margin_bottom = PLATE_EDGE
+		_slab.modulate_color = Color(0.6, 0.6, 0.64)
+	if _slab != null:
+		draw_style_box(_slab, rect)
+		draw_rect(rect.grow_individual(-PLATE_SIDE + 4.0, -PLATE_EDGE, -PLATE_SIDE + 4.0, -PLATE_EDGE), Color(_colour(&"plate"), 0.78))
+	else:
+		draw_rect(rect, _colour(&"plate"))
 
 
-# The card under the thread: what an area read there is.
+# The card under the tablet: what an area read there is.
 func _draw_card(point: RouteMap.Waypoint) -> void:
 	var told := tell(point)
 	var colour := light_of(told)
@@ -1673,29 +1858,27 @@ func _draw_card(point: RouteMap.Waypoint) -> void:
 	var dim := _colour(&"dim")
 	var spot := thread_spot(point)
 	var foes: Array = told.foes
-	var summary := _face(&"font").get_multiline_string_size(told.summary, HORIZONTAL_ALIGNMENT_LEFT, CARD_WIDTH - 40.0, _size(&"label_size"), 2, _breaks()).y if not told.summary.is_empty() else 0.0
+	var inner := CARD_WIDTH - (PLATE_SIDE + 8.0) * 2.0
+	var summary := _face(&"font").get_multiline_string_size(told.summary, HORIZONTAL_ALIGNMENT_LEFT, inner, _size(&"label_size"), 2, _breaks()).y if not told.summary.is_empty() else 0.0
 	var high := 118.0
 	if told.event:
-		high = 138.0 + _face(&"bold_font").get_multiline_string_size(told.reward_words, HORIZONTAL_ALIGNMENT_LEFT, CARD_WIDTH - 40.0, _size(&"body_size"), 2, _breaks()).y + summary
+		high = 138.0 + _face(&"bold_font").get_multiline_string_size(told.reward_words, HORIZONTAL_ALIGNMENT_LEFT, inner, _size(&"body_size"), 2, _breaks()).y + summary
 	elif not told.veiled:
 		high = (232.0 if not foes.is_empty() else 178.0) + summary
-	var rect := Rect2(clampf(spot.x - CARD_WIDTH * 0.5, EDGE, DESIGN.x - EDGE - CARD_WIDTH), CARD_TOP, CARD_WIDTH, high)
-	var face := StyleBoxFlat.new()
-	face.bg_color = _colour(&"plate")
-	face.border_color = Color(pale, 0.22)
-	face.set_border_width_all(1)
-	face.set_corner_radius_all(3)
-	draw_style_box(face, rect)
-	draw_line(spot + Vector2(0.0, 16.0), Vector2(spot.x, rect.position.y), Color(pale, 0.3), 1.0)
-	var left := rect.position.x + 20.0
-	var wide := rect.size.x - 40.0
-	var y := rect.position.y + 30.0
+	var top := tablet.rect().end.y + CARD_GAP
+	var rect := Rect2(clampf(spot.x - CARD_WIDTH * 0.5, EDGE, DESIGN.x - EDGE - CARD_WIDTH), top, CARD_WIDTH, high + 8.0)
+	_plate(rect)
+	# It hangs from its area's socket.
+	HubUI.hairline(self, Vector2(spot.x, rect.position.y + 2.0), spot + Vector2(0.0, 18.0), Color(colour, 0.8), 1.5)
+	var left := rect.position.x + PLATE_SIDE + 8.0
+	var wide := rect.size.x - (PLATE_SIDE + 8.0) * 2.0
+	var y := rect.position.y + 34.0
 	_words(Vector2(left, y), told.kind, &"font", &"label_size", dim)
 	_words(Vector2(left, y), told.state, &"bold_font", &"label_size", _colour(&"boon"), HORIZONTAL_ALIGNMENT_RIGHT, wide)
 	y += 36.0
 	draw_string(_face(&"title_font"), Vector2(left, y), told.name, HORIZONTAL_ALIGNMENT_LEFT, wide, _size(&"name_size"), pale)
 	y += 14.0
-	HubUI.hairline(self, Vector2(left, y), Vector2(left + wide, y), Color(pale, 0.35))
+	HubUI.hairline(self, Vector2(left, y), Vector2(left + wide, y), Color(colour, 0.7))
 	y += 26.0
 	if told.veiled:
 		_lines(Vector2(left, y), told.goal, &"font", &"body_size", dim, wide)
@@ -1753,12 +1936,14 @@ func _draw_tip() -> void:
 	var from_end := held_boons.size() - 1 - index
 	var wide := _width(words, &"font", &"label_size") + 24.0
 	var right := DESIGN.x - EDGE - (from_end % 5) * (EMBLEM + 6.0)
-	var rect := Rect2(minf(right - EMBLEM * 0.5 - wide * 0.5, DESIGN.x - EDGE - wide), 86.0 + (from_end / 5) * (EMBLEM + 6.0) + EMBLEM * 0.5 + 8.0, wide, 30.0)
-	_to()
+	var rect := Rect2(minf(right - EMBLEM * 0.5 - wide * 0.5, DESIGN.x - EDGE - wide), 88.0 + (from_end / 5) * (EMBLEM + 6.0) + EMBLEM * 0.5 + 8.0, wide, 30.0)
+	_hung()
 	var face := StyleBoxFlat.new()
 	face.bg_color = _colour(&"plate")
-	face.border_color = _colour(&"pale", 0.22)
+	face.border_color = _colour(&"boon", 0.5)
 	face.set_border_width_all(1)
 	face.set_corner_radius_all(3)
+	face.shadow_color = Color(0.0, 0.0, 0.0, 0.4)
+	face.shadow_size = 8
 	draw_style_box(face, rect)
 	_words(Vector2(rect.position.x, rect.position.y + 21.0), words, &"font", &"label_size", _colour(&"pale"), HORIZONTAL_ALIGNMENT_CENTER, wide)

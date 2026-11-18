@@ -121,10 +121,12 @@ func run_tests() -> void:
 		var gate := gates.gate_rect(index)
 		check(gate.has_area() and screen.encloses(Rect2(gates.global_position + gate.position, gate.size)), "Gate %d stands on the screen" % (index + 1))
 	check(screen.encloses(gates.guide.get_global_rect()), "The gates' keys stay on the screen")
-	check(gates.gates.all(func(gate: RouteGateView) -> bool: return gate.position.y + gate.box().position.y > RouteGates.THREAD_Y + RouteGates.THREAD_ROW * 1.5), "No gate's stone reaches up into the thread")
+	var slab := gates.tablet.rect()
+	check(gates.gates.all(func(gate: RouteGateView) -> bool: return gate.position.y - gate.crown() >= slab.end.y - 1.0), "No gate reaches up into the tablet, whatever crowns it")
 	var under := RouteGates.FLOOR + gates.block_height(gates.selected()) + RouteGates.QUESTION.y + 8.0
 	check(RouteGates.BLOCK_WIDTH < RouteGates.GATE_GAP and under < RouteGates.HERO.y - RouteGates.HERO_HEIGHT, "What stands under the gate turned to keeps within its own gate's room and clear of her (%.0f)" % under)
-	check(RouteGates.CARD_TOP > RouteGates.THREAD_Y + RouteGates.THREAD_ROW * 1.5 and RouteGates.THREAD_FROM > RouteGates.EDGE + 320.0 and RouteGates.THREAD_TO < RouteGates.DESIGN.x - RouteGates.EDGE - RouteGates.STATUS_WIDTH, "The thread stands clear of the chapter's name, her state and its own card")
+	check(slab.position.y >= 0.0 and slab.position.x > RouteGates.EDGE + 320.0 and slab.end.x < RouteGates.DESIGN.x - RouteGates.EDGE - RouteGates.STATUS_WIDTH and RouteGates.CARD_GAP > 0.0, "The tablet hangs clear of the chapter's name and her state, its card under it")
+	check(RouteGateView.HEIGHT * (1.0 + RouteGateView.GROWTH) * (1.0 + RouteGateView.CREST - RouteGateView.CREST_REST) <= RouteGates.FLOOR - slab.end.y, "A gate turned to, with a crest on its gable, still stands under the tablet")
 	# An area: the HUD in its corners, off the fight round the hero.
 	run.map_view._choose(run.run.route.nodes(0)[0])
 	await settle(BattleArea.BANNER_TIME + 0.2)

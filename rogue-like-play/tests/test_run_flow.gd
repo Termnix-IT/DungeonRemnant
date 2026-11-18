@@ -207,7 +207,7 @@ func run_tests() -> void:
 	await process_frame
 	check(director.map_view.visible and director.map_view.route_layer == 0 and director.map_view.current == director.run.route.nodes(0), "A run opens on its route, the whole first layer to choose from")
 	# The gates: every way open now is a gate before her, and the chapter's
-	# whole route the thread over them.
+	# whole route the tablet over them.
 	var view := director.map_view
 	var page := view.page
 	var route := director.run.route
@@ -222,6 +222,17 @@ func run_tests() -> void:
 	var hall_light := page._hall.material as ShaderMaterial
 	check(hall_light.get_shader_parameter(&"ground") == RouteGates.ground_of(route.chapter.id) and hall_light.get_shader_parameter(&"painting") == RouteGates.painting_of(route.chapter) and RouteGates.ground_of(route.chapter.id).get_width() == AreaGround.PAINTED_CELL * AreaGround.FLOOR_PERIOD, "The hall is floored with the chapter's own ground under its painting")
 	check(page.gates[0].power() > page.gates[1].power() * 2.0 and page.gates[1].power() > 0.2 and page.gates[0].grown() > page.gates[1].grown(), "The gate turned to stands larger and burns brighter; the others smoulder")
+	# The floor is paved: the hall's flags, a causeway from each gate to the
+	# round stone she stands on, the light of the gate turned to run down its
+	# channel to her feet and the others' lying short of her.
+	check(hall_light.get_shader_parameter(&"flags") == load(RouteGates.FLAGS) and hall_light.get_shader_parameter(&"road") == load(RouteGates.ROAD) and hall_light.get_shader_parameter(&"dais") == load(RouteGates.DAIS) and (hall_light.get_shader_parameter(&"stand") as Vector2).distance_to(RouteGates.HERO) < 8.0, "The hall is paved, a causeway running from each gate to the round stone she stands on")
+	check(is_equal_approx(page._run[0], 1.0) and is_equal_approx(page._run[1], RouteGates.REST_RUN) and (hall_light.get_shader_parameter(&"road_power") as PackedFloat32Array)[0] > (hall_light.get_shader_parameter(&"road_power") as PackedFloat32Array)[1] * 3.0, "The light of the gate turned to has run down its channel to her feet; the others' lies short of her")
+	# Each gate is dressed by its area's kind, and shows the place it leads to.
+	for index in page.gates.size():
+		var dressed := page.gates[index]
+		var kind := RouteGates.kind_of((page.open[index] as RouteMap.Waypoint).area)
+		check(dressed.kind == kind and (dressed.inside.material as ShaderMaterial).get_shader_parameter(&"beyond") == load(RouteGateView.INSIDES % kind) and dressed.has_fires() == (kind == RouteGateView.ARENA or kind == RouteGateView.BOSS) and (dressed.crest != null) == (kind != RouteGateView.FIELD) and dressed.stands.size() == (2 if dressed.has_fires() else 0), "Gate %d is dressed as its area's kind (%s), the place it leads to seen through it" % [index + 1, kind])
+	check(RouteGates.kind_of(load("res://data/areas/moss_plain.tres")) == RouteGateView.FIELD and RouteGates.kind_of(arena_data) == RouteGateView.ARENA and RouteGates.kind_of(route.chapter.boss) == RouteGateView.BOSS and RouteGates.kind_of(route.chapter.events[0]) == RouteGateView.EVENT, "A field, a trial, an event and the boss each have their own gate")
 	for chapter in Chapters.ALL:
 		var light_art: Texture2D = load(RouteGateView.LIGHTS % chapter.id)
 		var stone_art: Texture2D = load(RouteGateView.STONES % chapter.id)
@@ -235,8 +246,12 @@ func run_tests() -> void:
 	for index in route.size():
 		all_points.append_array(route.nodes(index))
 	check(all_points.all(func(point: RouteMap.Waypoint) -> bool: return page.mark(point) == (RouteGates.Mark.OPEN if point.layer == 0 else RouteGates.Mark.AHEAD)), "At the start the first layer is open and every area further on within reach")
+	# The tablet over the hall: the whole route cut into it, a layer a step
+	# along it, and its jewels lit as the gates are.
+	var slab := page.tablet.rect()
 	var step := page.thread_spot(route.nodes(1)[0]).x - page.thread_spot(route.nodes(0)[0]).x
-	check(is_equal_approx(step, (RouteGates.THREAD_TO - RouteGates.THREAD_FROM) / route.size()) and all_points.all(func(point: RouteMap.Waypoint) -> bool: return page.thread_spot(point).x > RouteGates.THREAD_FROM and page.thread_spot(point).x <= RouteGates.THREAD_TO + 0.5) and page.thread_spot(null).x == RouteGates.THREAD_FROM, "The whole route stands on the thread, a layer a step along it")
+	check(is_equal_approx(step, (slab.size.x - RouteTablet.INSET * 2.0) / route.size()) and all_points.all(func(point: RouteMap.Waypoint) -> bool: return slab.grow(-RouteTablet.SOCKET).has_point(page.thread_spot(point))) and is_equal_approx(page.thread_spot(null).x, slab.position.x + RouteTablet.INSET) and page.tablet.slab.texture == load(RouteTablet.SLAB), "The whole route is cut into the tablet, a layer a step along it")
+	check(float(page.tablet._held[first]) > float(page.tablet._held[route.nodes(0)[1]]) * 1.5 and float(page.tablet._held[route.nodes(0)[1]]) > float(page.tablet._held[route.nodes(1)[0]]) and float(page.tablet._held[route.nodes(1)[0]]) > 0.0, "On it the gate turned to shines brightest, the other ways open less, the areas further on faintly")
 	# What stands in a gate: the area's leading foe painted, or an event's object.
 	var fights: Array = all_points.filter(func(point: RouteMap.Waypoint) -> bool: return not point.area.is_event())
 	check(fights.all(func(point: RouteMap.Waypoint) -> bool: return page.portrait_of(point.area) != null and page.portrait_of(point.area) == EnemySprites.codex_portrait(RouteStage.leader(point.area).visual_id)), "A fight's gate holds its leading foe, painted")
@@ -262,7 +277,7 @@ func run_tests() -> void:
 	var boss_point: RouteMap.Waypoint = route.nodes(route.size() - 1)[0]
 	var hidden := page.tell(boss_point)
 	check(page.veiled(boss_point) and hidden.name == RouteGates.VEILED_NAME and hidden.goal == RouteGates.VEILED_NOTE and hidden.reward == -1 and hidden.foes.is_empty() and hidden.danger == 0, "The boss waits in the dark: it names nothing, only that something waits")
-	# Reading the thread: any area can be read, only an open one gone to.
+	# Reading the tablet: any area can be read, only an open one gone to.
 	var later: RouteMap.Waypoint = route.nodes(1)[0]
 	page._point([&"node", later])
 	check(page.read() == later and page.tell(later).name == later.area.display_name and page.tell(later).state == RouteGates.AHEAD_NOTE, "A later area can be read on the thread")
@@ -279,7 +294,7 @@ func run_tests() -> void:
 	page._take_key(_key(KEY_ESCAPE))
 	check(not page.threading and page.read() == null and not director.map_menu.visible, "Esc there comes back to the gates, not to the run's menu")
 	# What is told, and when: every gate its danger and what it gives, the gate
-	# turned to its goal, foes and ways on, and the rest on the thread's card.
+	# turned to its goal, foes and ways on, and the rest on the tablet's card.
 	for point: RouteMap.Waypoint in page.open:
 		var short := page.tell(point)
 		check(page._gives(short) == ("残響 %s" % UIFormat.amount(short.echo) if point.reward == AreaData.Reward.ECHO else short.reward_words) and not page._gives(short).is_empty(), "Under every gate stands what it gives, the echo with its amount")
@@ -308,10 +323,11 @@ func run_tests() -> void:
 	# The grilles come down in the gates not chosen, and go up again.
 	await create_timer(0.8).timeout
 	check(is_zero_approx(page._drop[0]) and is_equal_approx(page._drop[1], 1.0) and is_equal_approx(page._drop[2], 1.0) and page._landed[1] >= 0.0 and page.gates[1].bars.visible and page.gates[1].power() < page.gates[0].power() * 0.25, "Asked, a grille has fallen in each gate not chosen and its light is all but out")
+	check(page._answered and is_zero_approx(page._run[1]) and is_zero_approx(page._run[2]) and is_equal_approx(page.grille_of(page.open[1]), 1.0) and float(page.tablet._held[page.open[1]]) < 0.15 and float(page.tablet._held[page.open[0]]) > 1.0 and page._eye_zoom > 1.0, "The gate chosen has answered; the others' causeways and their jewels on the tablet have gone dark, and the view leans in")
 	page._take_key(_key(KEY_ESCAPE))
 	check(not page.asked and view.visible and not director.map_menu.visible, "Esc takes the question back and stays at the fork")
 	await create_timer(RouteGates.LIFT_TIME + 0.2).timeout
-	check(is_zero_approx(page._drop[1]) and is_zero_approx(page._drop[2]) and not page.gates[1].bars.visible, "Taken back, the grilles are drawn up again")
+	check(is_zero_approx(page._drop[1]) and is_zero_approx(page._drop[2]) and not page.gates[1].bars.visible and is_equal_approx(page._eye_zoom, 1.0), "Taken back, the grilles are drawn up again and the view stands back")
 	page._take_key(_key(KEY_2))
 	check(page.cursor == 1 and page.asked, "A number key turns to its gate and asks at once")
 	page._press([&"gate", 0])
@@ -322,8 +338,15 @@ func run_tests() -> void:
 	page._take_key(_key(KEY_2))
 	await create_timer(RouteGates.TRAVEL_TIME * 0.5).timeout
 	check(page.hero.position != start and page.hero.rig.animation_player.current_animation == CharacterRig.WALK and director.area == null and page.cursor == 0, "She walks, and a key on the way does nothing")
+	check(page._eye_zoom > 1.05 and page._eye.x < RouteGates.DESIGN.x * 0.5 and page.gates[0].near > 0.0 and is_zero_approx(page.leaving()), "The view goes after her toward her gate, the screen not dark yet")
+	page._take_key(_key(KEY_ENTER))
+	check(page.traveling and page.going() >= RouteGates.CURTAIN_FROM - 0.02 and director.area == null, "Enter on the way hurries her to where the screen goes dark")
+	await create_timer(RouteGates.TRAVEL_TIME * (1.0 - RouteGates.CURTAIN_FROM) * 0.75).timeout
+	check(page.traveling and director.map_view.curtain.layer > director.map_view.layer and director.map_view._dark.color.a > 0.5, "As she goes through the gate the screen goes dark, over everything")
 	await create_timer(RouteGates.TRAVEL_TIME * 0.5 + 0.15).timeout
 	check(director.area != null and director.area.data == first.area and not director.map_view.visible, "A choice enters its area")
+	await create_timer(RouteMapView.LIFT_TIME + 0.1).timeout
+	check(director.map_view._lifting != null and is_zero_approx(director.map_view._dark.color.a), "And the dark she walked into has lifted off the area")
 	check(director.area.hero.health.hp == director.max_hp() and director.area.hero.build == director.run.build, "She comes in whole, with the run's build")
 	director.area.hero.controlled = false
 	director.area.hero.health.hp = 60

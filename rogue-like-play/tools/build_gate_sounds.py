@@ -9,6 +9,8 @@ anyone else's):
 	gate_lift   the grilles are drawn back up: a short run of the chain
 	gate_go     she walks into the light: a chord rising out of the air
 	gate_wake   the boss's gate lights: a swell from under the floor
+	gate_charge the gate chosen gathers its light as the others shut: a low
+	            breath swelling, a tone climbing in it
 
 Each is written to audio/made/<cue>.ogg (Ogg Vorbis, mono, 44.1 kHz), its
 peak just under full scale; GameAudio plays them by these names. A hall's
@@ -163,12 +165,25 @@ def gate_wake() -> np.ndarray:
 	return echo((rumble * 0.8 + growl * 0.55) * shape + hiss, 0.8, 0.36, 103, 1500.0)
 
 
+def gate_charge() -> np.ndarray:
+	t = span(0.85)
+	along = t / 0.85
+	# The air drawn in toward the gate, brightening as it gathers.
+	air = band(noise(0.85, 107), 180.0, 1300.0 + 2400.0 * along) * swell(t, 0.42, 4.5) * 0.55
+	# A tone climbing half an octave in it, and the floor answering under it.
+	phase = 2.0 * np.pi * np.cumsum(196.0 * 2.0 ** (along * 0.5)) / RATE
+	tone = (np.sin(phase) + 0.45 * np.sin(phase * 2.0) + 0.2 * np.sin(phase * 3.01)) * swell(t, 0.5, 5.0) * 0.4
+	low = np.sin(2.0 * np.pi * 61.0 * t) * swell(t, 0.3, 3.2) * 0.5
+	return echo(air + tone + low, 0.7, 0.34, 109, 2600.0)
+
+
 SOUNDS = {
 	"gate_turn": gate_turn,
 	"gate_shut": gate_shut,
 	"gate_lift": gate_lift,
 	"gate_go": gate_go,
 	"gate_wake": gate_wake,
+	"gate_charge": gate_charge,
 }
 
 

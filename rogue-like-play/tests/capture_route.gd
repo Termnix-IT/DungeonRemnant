@@ -5,7 +5,7 @@ extends SceneTree
 # the same with its leading foe not met either (a shape in its lit gate),
 # two areas in with three ways open (at 1600x900, 1280x720 and 1920x1080),
 # another gate turned to, an event's gate, the question asked, her walk
-# into the light, an area read on the thread, the page held behind an
+# into the light, an area read on the tablet, the page held behind an
 # event's window, the boss's gate dark, coming out and come out, the other
 # chapters' gates and floors, and the page in English. The run is a real RunDirector's on a fixed seed, moved on
 # without its fights. Images go to .godot/route_<state>_<width>.png.

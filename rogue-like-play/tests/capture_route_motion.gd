@@ -3,7 +3,8 @@ extends SceneTree
 # The route's gates in motion, as strips of frames a twentieth of a second
 # apart, to read the timing of what a still cannot show: the page opening,
 # a gate turned to, the question asked (the grilles falling), the question
-# taken back, her walk into the light, and the boss's coming out. Each strip
+# taken back, her walk into the gate, the dark lifting off the area she has
+# come into, and the boss's coming out. Each strip
 # is written to .godot/route_motion_<moment>.png, its frames left to right
 # and top to bottom. The run is a real RunDirector's on a fixed seed, moved
 # on without its fights.
@@ -46,6 +47,16 @@ func capture() -> void:
 	await create_timer(0.7).timeout
 	page.go()
 	await _strip("go", 24, false)
+	# The same walk with the run going on into the area: the last of it, and
+	# the dark lifting off the fight.
+	_start([0, 1])
+	await create_timer(0.8).timeout
+	page.choose(0)
+	page.ask()
+	await create_timer(0.6).timeout
+	page.go()
+	await create_timer(RouteGates.TRAVEL_TIME * 0.7).timeout
+	await _strip("enter", 18)
 	_start([0, 1, 1, 1])
 	await _strip("boss", 48)
 	print("Captured the route's motion")

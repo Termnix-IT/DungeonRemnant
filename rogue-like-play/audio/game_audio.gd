@@ -42,6 +42,7 @@ const PROFILES := {
 	&"gate_lift": [0.3, 700.0, 1300.0, 0.6, 1.6, []],
 	&"gate_go": [0.7, 220.0, 880.0, 0.25, 0.8, []],
 	&"gate_wake": [0.6, 49.0, 98.0, 0.3, 1.1, []],
+	&"gate_charge": [0.5, 196.0, 277.0, 0.35, 1.2, []],
 }
 
 const ASSETS := {
@@ -66,6 +67,7 @@ const ASSETS := {
 	&"gate_lift": "res://audio/made/gate_lift.ogg",
 	&"gate_go": "res://audio/made/gate_go.ogg",
 	&"gate_wake": "res://audio/made/gate_wake.ogg",
+	&"gate_charge": "res://audio/made/gate_charge.ogg",
 }
 
 static var _streams: Dictionary = {}
