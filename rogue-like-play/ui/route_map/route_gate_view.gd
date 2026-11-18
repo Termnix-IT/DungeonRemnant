@@ -224,8 +224,8 @@ func _burst() -> CPUParticles2D:
 	thrown.emitting = false
 	thrown.one_shot = true
 	thrown.explosiveness = 0.86
-	thrown.amount = 22
-	thrown.lifetime = 0.85
+	thrown.amount = 30
+	thrown.lifetime = 0.95
 	thrown.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 	thrown.direction = Vector2.UP
 	thrown.spread = 34.0
@@ -234,8 +234,8 @@ func _burst() -> CPUParticles2D:
 	thrown.initial_velocity_max = 190.0
 	thrown.damping_min = 60.0
 	thrown.damping_max = 110.0
-	thrown.scale_amount_min = 0.035
-	thrown.scale_amount_max = 0.1
+	thrown.scale_amount_min = 0.045
+	thrown.scale_amount_max = 0.14
 	var life := Gradient.new()
 	life.set_color(0, Color(1.0, 1.0, 1.0, 1.0))
 	life.set_color(1, Color(1.0, 1.0, 1.0, 0.0))

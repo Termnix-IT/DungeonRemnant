@@ -121,6 +121,7 @@ func run_tests() -> void:
 		var gate := gates.gate_rect(index)
 		check(gate.has_area() and screen.encloses(Rect2(gates.global_position + gate.position, gate.size)), "Gate %d stands on the screen" % (index + 1))
 	check(screen.encloses(gates.guide.get_global_rect()), "The gates' keys stay on the screen")
+	check(gates.gates.all(func(gate: RouteGateView) -> bool: return gate.position.y + gate.box().position.y > RouteGates.THREAD_Y + RouteGates.THREAD_ROW * 1.5), "No gate's stone reaches up into the thread")
 	var under := RouteGates.FLOOR + gates.block_height(gates.selected()) + RouteGates.QUESTION.y + 8.0
 	check(RouteGates.BLOCK_WIDTH < RouteGates.GATE_GAP and under < RouteGates.HERO.y - RouteGates.HERO_HEIGHT, "What stands under the gate turned to keeps within its own gate's room and clear of her (%.0f)" % under)
 	check(RouteGates.CARD_TOP > RouteGates.THREAD_Y + RouteGates.THREAD_ROW * 1.5 and RouteGates.THREAD_FROM > RouteGates.EDGE + 320.0 and RouteGates.THREAD_TO < RouteGates.DESIGN.x - RouteGates.EDGE - RouteGates.STATUS_WIDTH, "The thread stands clear of the chapter's name, her state and its own card")

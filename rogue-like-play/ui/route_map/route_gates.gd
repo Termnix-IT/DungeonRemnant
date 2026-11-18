@@ -120,7 +120,7 @@ const LOOK_TIME := 0.35
 const FAR_SLIDE := 12.0
 const NEAR_SLIDE := 16.0
 const PUSH := 0.34
-const REVEAL_DARK := 0.5
+const REVEAL_DARK := 0.85
 const COMING_OUT := 0.9
 const REVEAL_HOLD := 1.0
 const REVEAL_FADE := 0.3
@@ -775,6 +775,7 @@ func _process(delta: float) -> void:
 			take(selected())
 	elif hero != null and hero.visible:
 		_place_hero(HERO, 1.0)
+		hero.modulate = _hero_tone()
 		# She looks to the gate turned to.
 		var toward := gate_x(cursor) - HERO.x if not open.is_empty() else 0.0
 		hero.facing = Vector2i(int(signf(toward)) if absf(toward) > 60.0 else 0, -1)
@@ -824,6 +825,19 @@ func _land_shake(index: int) -> Vector2:
 # Where a gate's foot stands now.
 func gate_foot(index: int) -> Vector2:
 	return Vector2(gate_x(index), FLOOR + (1.0 - _rise(index)) * 26.0)
+
+
+# How the hall's own dim light and the gate turned to colour her.
+func _hero_tone() -> Color:
+	var tone := Color(0.8, 0.83, 0.93)
+	if cursor < gates.size():
+		tone = tone.lerp(gates[cursor].colour, 0.14 * _lit[cursor])
+	return tone
+
+
+# How much of the words under the gates is left as she walks off over them.
+func _words_left() -> float:
+	return 1.0 - smoothstep(0.0, 0.22, _since(&"go") / TRAVEL_TIME) if traveling else 1.0
 
 
 # Tells each gate how it stands, and lays it.
@@ -891,7 +905,7 @@ func _light_hall() -> void:
 	if selected() != null and not held and not revealing and cursor < gates.size():
 		var foot := gate_foot(cursor)
 		hushed = Rect2(foot.x - BLOCK_WIDTH * 0.5, foot.y + 24.0, BLOCK_WIDTH, block_height(selected()) - 24.0 + (QUESTION.y + 8.0) * asking())
-		share = _lit[cursor] * _rise(cursor)
+		share = _lit[cursor] * _rise(cursor) * _words_left()
 	hall.set_shader_parameter(&"hush", Vector4(hushed.position.x, hushed.position.y, hushed.size.x, hushed.size.y))
 	hall.set_shader_parameter(&"hush_share", share)
 	# The boss's toll: a red flush over it all.
@@ -916,7 +930,7 @@ func _walk() -> void:
 	var next := HERO.lerp(gate, share)
 	hero.step(next - hero.position)
 	_place_hero(next, lerpf(1.0, 0.6, share))
-	hero.modulate = Color.WHITE.lerp(_colour(&"shape"), share * 0.85)
+	hero.modulate = _hero_tone().lerp(_colour(&"shape"), share * 0.85)
 	pivot_offset = _origin + (gate + Vector2(0.0, -gates[cursor].opening().y * 0.4)) * _zoom
 	scale = Vector2.ONE * (1.0 + PUSH * along * along * along)
 
@@ -1141,6 +1155,23 @@ func _words(at: Vector2, words: String, face: StringName, size: StringName, colo
 	draw_string(_face(face), at, words, align, width, _size(size), colour)
 
 
+# Words that stand over the lit floor: with a shade under them.
+func _shaded(at: Vector2, words: String, face: StringName, size: StringName, colour: Color, align := HORIZONTAL_ALIGNMENT_LEFT, width := -1.0) -> void:
+	var shade := Color(_colour(&"night"), 0.85 * colour.a)
+	draw_string_outline(_face(face), at + Vector2(0.0, 1.5), words, align, width, _size(size), 5, Color(shade, shade.a * 0.5))
+	draw_string(_face(face), at + Vector2(0.0, 1.5), words, align, width, _size(size), shade)
+	draw_string(_face(face), at, words, align, width, _size(size), colour)
+
+
+# How far a line under the gate turned to has come in, and how far it still
+# has to settle (px): each a moment after the one above it.
+func _line_in(order: int) -> Vector2:
+	var since := minf(_since(&"move"), _since(&"open") - RISE_TIME * 0.7)
+	var share := clampf((since - 0.05 * order) / 0.18, 0.0, 1.0)
+	var eased := 1.0 - pow(1.0 - share, 3.0)
+	return Vector2(eased, (1.0 - eased) * 8.0)
+
+
 func _width(words: String, face: StringName, size: StringName) -> float:
 	return _face(face).get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, _size(size)).x
 
@@ -1329,11 +1360,11 @@ func _draw_gate_words(index: int) -> void:
 	# Its name and signs under the threshold (the boss's own title, while it
 	# comes out).
 	if not revealing:
-		var fade := (0.55 + 0.45 * lit) * (0.3 + 0.7 * open_share) * rise
-		_words(Vector2(-BLOCK_WIDTH * 0.5, NAME_LINE), told.name, &"title_font", &"name_size", Color(pale, fade), HORIZONTAL_ALIGNMENT_CENTER, BLOCK_WIDTH)
+		var fade := (0.55 + 0.45 * lit) * (0.3 + 0.7 * open_share) * rise * _words_left()
+		_shaded(Vector2(-BLOCK_WIDTH * 0.5, NAME_LINE), told.name, &"title_font", &"name_size", Color(pale, fade), HORIZONTAL_ALIGNMENT_CENTER, BLOCK_WIDTH)
 		_draw_signs(Vector2(0.0, SIGNS_LINE), told, fade)
 		if mine:
-			_draw_block(point, told, foot, lit * rise)
+			_draw_block(point, told, foot, lit * rise * _words_left())
 	_to()
 
 
@@ -1367,15 +1398,20 @@ func block_height(point: RouteMap.Waypoint) -> float:
 func _draw_block(point: RouteMap.Waypoint, told: Dictionary, foot: Vector2, share: float) -> void:
 	var colour := light_of(told)
 	var pale := _colour(&"pale")
-	var fade := share * (0.3 + 0.7 * _eased(&"move", UIMotion.GOLD_TIME) if _since(&"move") < 0.6 else share)
 	var half := BLOCK_WIDTH * 0.5
 	var y := BLOCK_TOP
+	# Each line comes in a moment after the one above it, settling upward.
 	var goal := _goal_of(told)
 	if not goal.is_empty():
-		draw_multiline_string(_face(&"title_font"), Vector2(-half, y + _face(&"title_font").get_ascent(_size(&"goal_size"))), goal, HORIZONTAL_ALIGNMENT_CENTER, BLOCK_WIDTH, _size(&"goal_size"), 2, Color(colour if told.event else pale, fade), _breaks())
+		var come := _line_in(0)
+		var ink := Color(colour if told.event else pale, share * come.x)
+		var at := Vector2(-half, y + come.y + _face(&"title_font").get_ascent(_size(&"goal_size")))
+		draw_multiline_string_outline(_face(&"title_font"), at + Vector2(0.0, 1.5), goal, HORIZONTAL_ALIGNMENT_CENTER, BLOCK_WIDTH, _size(&"goal_size"), 2, 5, Color(_colour(&"night"), 0.45 * ink.a), _breaks())
+		draw_multiline_string(_face(&"title_font"), at, goal, HORIZONTAL_ALIGNMENT_CENTER, BLOCK_WIDTH, _size(&"goal_size"), 2, ink, _breaks())
 		y += _goal_height(told)
 	var foes: Array = told.foes
 	if not foes.is_empty():
+		var come := _line_in(1)
 		var each := minf(TILE + 6.0, BLOCK_WIDTH / foes.size())
 		var from := -each * foes.size() * 0.5
 		for index in foes.size():
@@ -1383,25 +1419,33 @@ func _draw_block(point: RouteMap.Waypoint, told: Dictionary, foot: Vector2, shar
 			var tile := HubCodex.tile_picture(foe.visual_id, foes[index][1], foe.tint)
 			if tile == null:
 				continue
-			var cell := Rect2(from + index * each + 3.0, y + 4.0 + TILE - (each - 6.0), each - 6.0, each - 6.0)
+			var cell := Rect2(from + index * each + 3.0, y + come.y + 4.0 + TILE - (each - 6.0), each - 6.0, each - 6.0)
+			# Each stands on a small shade, so it reads over the lit stone.
+			_glow(Vector2(cell.get_center().x, cell.end.y - 2.0), cell.size.x * 0.62, Color(_colour(&"night"), 0.55 * share * come.x), 0.3)
 			if not foes[index][1]:
-				draw_circle(cell.get_center(), cell.size.x * 0.5, Color(1.0, 1.0, 1.0, 0.07 * fade))
-			draw_texture_rect(tile, cell, false, Color(1.0, 1.0, 1.0, fade))
+				draw_circle(cell.get_center(), cell.size.x * 0.5, Color(1.0, 1.0, 1.0, 0.07 * share * come.x))
+			draw_texture_rect(tile, cell, false, Color(1.0, 1.0, 1.0, share * come.x))
 		y += TILE + 10.0
 	if not told.boss and not point.next.is_empty():
-		_draw_onward(Vector2(0.0, y + 12.0), point.next, fade)
+		var come := _line_in(2)
+		_draw_onward(Vector2(0.0, y + 12.0 + come.y), point.next, share * come.x)
 		y += ONWARD_LINE
-	# The question, once asked: its one word, and the place the pointer goes on from.
+	# The question, once asked: its one word, struck in under the rest, and
+	# the place the pointer goes on from.
 	var asked_share := asking()
 	if asked_share > 0.0 and not traveling:
-		var rect := Rect2(-QUESTION.x * 0.5, y + 8.0, QUESTION.x, QUESTION.y)
+		var struck := 1.0 + 0.16 * (1.0 - asked_share) if asked else 1.0
+		var rect := Rect2(-QUESTION.x * 0.5 * struck, y + 8.0 - QUESTION.y * (struck - 1.0) * 0.5, QUESTION.x * struck, QUESTION.y * struck)
+		_glow(rect.get_center(), QUESTION.x * 0.75, Color(colour, 0.2 * asked_share * (0.7 + 0.3 * _breath(1.4))), 0.34)
 		var face := StyleBoxFlat.new()
-		face.bg_color = Color(colour, 0.16 * asked_share)
+		face.bg_color = Color(_colour(&"night").lerp(colour, 0.22), 0.86 * asked_share)
 		face.border_color = Color(colour, asked_share)
 		face.set_border_width_all(1)
 		face.set_corner_radius_all(3)
 		draw_style_box(face, rect)
-		_words(Vector2(rect.position.x, rect.position.y + 22.0), tr("この道を往く"), &"title_font", &"key_size", Color(pale, asked_share), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x)
+		for end in [-1.0, 1.0]:
+			HubUI.mark(self, Vector2(rect.get_center().x + end * rect.size.x * 0.5, rect.get_center().y), 5.0, Color(colour, asked_share))
+		_words(Vector2(rect.position.x, rect.get_center().y + 7.0), tr("この道を往く"), &"title_font", &"key_size", Color(pale, asked_share), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x)
 		_zone(Rect2(foot + rect.position, rect.size), [&"go"])
 
 
@@ -1418,7 +1462,7 @@ func _draw_onward(centre: Vector2, leads: Array, fade: float) -> void:
 			wide += tell(next_point).danger * 9.0 + 34.0
 		wide -= 12.0
 	var x := centre.x - wide * 0.5
-	_words(Vector2(x, centre.y + 5.0), label, &"font", &"label_size", _colour(&"dim", fade))
+	_shaded(Vector2(x, centre.y + 5.0), label, &"font", &"label_size", _colour(&"dim", fade))
 	x += _width(label, &"font", &"label_size") + 14.0
 	if to_boss:
 		_lozenge(Vector2(x + 6.0, centre.y), 6.0, _colour(&"boss", fade))
@@ -1477,7 +1521,7 @@ func _draw_signs(centre: Vector2, told: Dictionary, fade: float) -> void:
 	if not told.boss:
 		_sign(Vector2(x + 7.0, centre.y), 7.0, told.reward, Color(colour, fade))
 		x += 22.0
-	_words(Vector2(x, centre.y + 5.0), gives, &"bold_font", &"label_size", Color(colour, fade))
+	_shaded(Vector2(x, centre.y + 5.0), gives, &"bold_font", &"label_size", Color(colour, fade))
 
 
 # The chapter's whole route as one thread across the top.
@@ -1536,12 +1580,22 @@ func _draw_strand(from: RouteMap.Waypoint, to: RouteMap.Waypoint, walked: Array,
 	var pale := _colour(&"pale")
 	var at := walked.find(to)
 	if at >= 0 and (from == null and at == 0 or at > 0 and walked[at - 1] == from):
+		draw_line(a, b, _colour(&"boon", 0.16 * come), 7.0, true)
 		draw_line(a, b, _colour(&"boon", come), 2.0, true)
 	elif from == here() and open.has(to):
 		var mine := to == selected()
+		if mine:
+			draw_line(a, b, Color(colour, 0.2 * come), 7.0, true)
 		draw_line(a, b, Color(colour, come) if mine else Color(pale, (0.5 - 0.35 * asking()) * come), 2.0 if mine else 1.0, true)
 	elif from != null and reach.has(from) and from.layer >= route_layer:
 		draw_line(a, b, Color(colour, 0.55 * come) if kept.has(from) else Color(pale, 0.1 * come), 1.0, true)
+		# A bead of the gate's light runs along each way on from it.
+		if from == selected():
+			var run_along := fposmod(_clock * 0.55 + float(route.nodes(to.layer).find(to)) * 0.31, 1.0)
+			var bead := a.lerp(b, run_along)
+			var seen := sin(run_along * PI) * come
+			_glow(bead, 9.0, Color(colour, 0.55 * seen))
+			draw_circle(bead, 1.8, Color(colour.lerp(Color.WHITE, 0.5), seen))
 	else:
 		draw_line(a, b, Color(pale, 0.07 * come), 1.0, true)
 

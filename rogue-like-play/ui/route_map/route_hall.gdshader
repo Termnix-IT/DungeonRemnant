@@ -83,7 +83,7 @@ void fragment() {
 	vec2 uv = ((painting_size - part) * vec2(0.5, 0.25) + (at + vec2(drift * zoom, 0.0)) / fit) / painting_size;
 	vec3 far = textureLod(painting, uv, 1.6).rgb * art.rgb;
 	float down = clamp(at.y / room.y, 0.0, 1.0);
-	float veil = down < 0.25 ? mix(0.92, 0.35, down / 0.25) : (down < 0.75 ? mix(0.35, 0.62, (down - 0.25) / 0.5) : mix(0.62, 1.0, (down - 0.75) / 0.25));
+	float veil = down < 0.25 ? mix(0.9, 0.26, down / 0.25) : (down < 0.75 ? mix(0.26, 0.56, (down - 0.25) / 0.5) : mix(0.56, 1.0, (down - 0.75) / 0.25));
 	float side = abs(at.x / extent.x - 0.5) * 2.0;
 	veil = max(veil, smoothstep(0.62, 1.0, side) * 0.9);
 	col = mix(far, night.rgb, veil);
@@ -143,7 +143,7 @@ void fragment() {
 	if (hush_share > 0.0) {
 		vec2 inside = smoothstep(hush.xy - vec2(46.0, 18.0), hush.xy + vec2(34.0, 10.0), p) * (1.0 - smoothstep(hush.xy + hush.zw - vec2(34.0, 10.0), hush.xy + hush.zw + vec2(46.0, 26.0), p));
 		float quiet = inside.x * inside.y * hush_share;
-		col = mix(col, col * 0.2 + night.rgb * 0.5, quiet * 0.86);
+		col = mix(col, col * 0.2 + night.rgb * 0.5, quiet * 0.62);
 		haze *= 1.0 - quiet * 0.8;
 	}
 

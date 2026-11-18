@@ -216,6 +216,17 @@ func run_tests() -> void:
 	await create_timer(RouteGates.RISE_TIME + RouteGates.RISE_STAGGER * 3.0 + 0.2).timeout
 	var first: RouteMap.Waypoint = route.nodes(0)[0]
 	check(page.selected() == first and page.cursor == 0 and not page.asked and is_equal_approx(page._lit[0], 1.0) and is_zero_approx(page._lit[1]), "The first gate is turned to and lit, nothing asked")
+	# The hall: a gate of the chapter's painted stone for each way open, the
+	# chapter's floor and painting behind them.
+	check(page.gates.size() == page.open.size() and page.gates.all(func(gate: RouteGateView) -> bool: return gate.stone.texture == load(RouteGateView.STONES % route.chapter.id) and gate.figure.texture != null), "Each way open is a gate of the chapter's stone, with what leads it standing in it")
+	var hall_light := page._hall.material as ShaderMaterial
+	check(hall_light.get_shader_parameter(&"ground") == RouteGates.ground_of(route.chapter.id) and hall_light.get_shader_parameter(&"painting") == RouteGates.painting_of(route.chapter) and RouteGates.ground_of(route.chapter.id).get_width() == AreaGround.PAINTED_CELL * AreaGround.FLOOR_PERIOD, "The hall is floored with the chapter's own ground under its painting")
+	check(page.gates[0].power() > page.gates[1].power() * 2.0 and page.gates[1].power() > 0.2 and page.gates[0].grown() > page.gates[1].grown(), "The gate turned to stands larger and burns brighter; the others smoulder")
+	for chapter in Chapters.ALL:
+		var light_art: Texture2D = load(RouteGateView.LIGHTS % chapter.id)
+		var stone_art: Texture2D = load(RouteGateView.STONES % chapter.id)
+		var opening := RouteGateView.opening_in(light_art)
+		check(stone_art.get_size() == light_art.get_size() and opening.size.x > stone_art.get_width() * 0.5 and opening.size.y > stone_art.get_height() * 0.6 and opening.end.y >= stone_art.get_height() - 1.0 and opening.position.x > 0.0 and opening.end.x < stone_art.get_width(), "%s has its own gate, its opening found within its stone" % chapter.id)
 	var told := page.tell(first)
 	check(told.name == first.area.display_name and told.kind == first.area.kind_name() and told.danger == first.area.difficulty and told.reward == first.reward and told.goal == first.area.condition and told.summary == first.area.foe_summary and told.state == "", "What waits behind a gate and what it gives are told: its name, kind, danger, reward and goal")
 	check(told.foes.size() == Chapters.area_foes(first.area).size() and told.foes.size() > 0 and told.foes.all(func(entry: Array) -> bool: return entry[1]), "With its foes, all pictured when no record says otherwise")
@@ -294,8 +305,13 @@ func run_tests() -> void:
 	page._press([&"gate", 0])
 	check(page.asked and not page.traveling and director.area == null and view.visible, "A press on the gate turned to first asks whether to go there")
 	check(page.guide.get_child_count() == 2, "Asked, the keys tell only going and taking it back")
+	# The grilles come down in the gates not chosen, and go up again.
+	await create_timer(0.8).timeout
+	check(is_zero_approx(page._drop[0]) and is_equal_approx(page._drop[1], 1.0) and is_equal_approx(page._drop[2], 1.0) and page._landed[1] >= 0.0 and page.gates[1].bars.visible and page.gates[1].power() < page.gates[0].power() * 0.25, "Asked, a grille has fallen in each gate not chosen and its light is all but out")
 	page._take_key(_key(KEY_ESCAPE))
 	check(not page.asked and view.visible and not director.map_menu.visible, "Esc takes the question back and stays at the fork")
+	await create_timer(RouteGates.LIFT_TIME + 0.2).timeout
+	check(is_zero_approx(page._drop[1]) and is_zero_approx(page._drop[2]) and not page.gates[1].bars.visible, "Taken back, the grilles are drawn up again")
 	page._take_key(_key(KEY_2))
 	check(page.cursor == 1 and page.asked, "A number key turns to its gate and asks at once")
 	page._press([&"gate", 0])
