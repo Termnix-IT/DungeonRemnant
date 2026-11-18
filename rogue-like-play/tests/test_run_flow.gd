@@ -267,6 +267,21 @@ func run_tests() -> void:
 	check(page.read() != null and page.read().layer == 1, "The arrows go along it, a layer on")
 	page._take_key(_key(KEY_ESCAPE))
 	check(not page.threading and page.read() == null and not director.map_menu.visible, "Esc there comes back to the gates, not to the run's menu")
+	# What is told, and when: every gate its danger and what it gives, the gate
+	# turned to its goal, foes and ways on, and the rest on the thread's card.
+	for point: RouteMap.Waypoint in page.open:
+		var short := page.tell(point)
+		check(page._gives(short) == ("残響 %s" % UIFormat.amount(short.echo) if point.reward == AreaData.Reward.ECHO else short.reward_words) and not page._gives(short).is_empty(), "Under every gate stands what it gives, the echo with its amount")
+	check(page._goal_of(told) == first.area.condition and page.block_height(first) > RouteGates.BLOCK_TOP + RouteGates.TILE + RouteGates.ONWARD_LINE, "Under the gate turned to stand its goal, its foes and the ways on")
+	check(page._goal_of(page.tell(events[0])) == (events[0] as RouteMap.Waypoint).area.condition and page._gives(page.tell(events[0])) == "イベント", "An event tells its trade there, in place of a goal")
+	check(page.guide.get_child_count() == 4, "At the gates the keys tell the four things they do")
+	(page.guide.get_child(2) as Button).pressed.emit()
+	check(page.threading and page.read() == first and page.guide.get_child_count() == 2, "The details can be opened from the keys' hint too: the card of the gate turned to")
+	page.choose(1)
+	check(page.threading and page.read() == page.open[1], "And the card follows the gate turned to")
+	(page.guide.get_child(1) as Button).pressed.emit()
+	page.choose(0)
+	check(not page.threading and page.cursor == 0 and page.read() == null, "Its hint closes it again")
 	for point: RouteMap.Waypoint in page.open:
 		var lost := page.closes(point)
 		check(lost.keys().all(func(other: RouteMap.Waypoint) -> bool: return page.reach.has(other) and not page.reach_from([point]).has(other) and not page.open.has(other)) and lost.size() + page.reach_from([point]).size() + page.open.size() - 1 == page.reach.size(), "A pick closes just the areas further on that no way from it leads to")
@@ -278,6 +293,7 @@ func run_tests() -> void:
 	var start: Vector2 = page.hero.position
 	page._press([&"gate", 0])
 	check(page.asked and not page.traveling and director.area == null and view.visible, "A press on the gate turned to first asks whether to go there")
+	check(page.guide.get_child_count() == 2, "Asked, the keys tell only going and taking it back")
 	page._take_key(_key(KEY_ESCAPE))
 	check(not page.asked and view.visible and not director.map_menu.visible, "Esc takes the question back and stays at the fork")
 	page._take_key(_key(KEY_2))

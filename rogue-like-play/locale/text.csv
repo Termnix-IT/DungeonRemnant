@@ -843,26 +843,16 @@ X・RT長押し,,Hold X / RT,ui/action_hud/action_hud.gd
 門を選ぶ,,Choose Gate,ui/route_map/route_gates.gd
 進む,,Go,ui/route_map/route_gates.gd
 十字の上,,D-pad Up,ui/route_map/route_gates.gd
-道筋を読む,,Read Route,ui/route_map/route_gates.gd
+詳細,,Details,ui/route_map/route_gates.gd
 出発する,,Set Out,ui/route_map/route_gates.gd
 道筋をたどる,,Follow Route,ui/route_map/route_gates.gd
 ↓・Esc,,↓ / Esc,ui/route_map/route_gates.gd
 門へ戻る,,Back to Gates,ui/route_map/route_gates.gd
-取引,,Deal,ui/route_map/route_gates.gd
-最奥,,The Depths,ui/route_map/route_gates.gd
-第%d層,,Floor %d,ui/route_map/route_gates.gd
-%s　／　%s,,%s  /  %s,ui/route_map/route_gates.gd
-待ち受けるもの,,What Waits,ui/route_map/route_gates.gd
-戦闘なし,,No combat,ui/route_map/route_gates.gd
-得るもの,,What It Gives,ui/route_map/route_gates.gd
-この章の踏破,,The chapter cleared,ui/route_map/route_gates.gd
-残響 %s,,%s Echoes,ui/route_map/route_gates.gd
-＋ 残響 %s,,+%s Echoes,ui/route_map/route_gates.gd
-その先　ボスへ,,Beyond: the boss,ui/route_map/route_gates.gd
-その先　%dつの道,,Ways beyond: %d,ui/route_map/route_gates.gd
-選ぶと %dつの場所へは行けなくなる,,Places this pick closes: %d,ui/route_map/route_gates.gd
 この道を往く,,Take this way,ui/route_map/route_gates.gd
-もう一度決定すると出発する,,Confirm again to set out,ui/route_map/route_gates.gd
+その先,,Beyond,ui/route_map/route_gates.gd
+残響 %s,,%s Echoes,ui/route_map/route_gates.gd
+戦闘なし,,No combat,ui/route_map/route_gates.gd
+＋ 残響 %s,,+%s Echoes,ui/route_map/route_gates.gd
 この探索で取得した強化はない,,No boons were gained on this run,ui/route_map/run_end_view.gd
 持ち帰った残響,,Echoes Brought Back,ui/route_map/run_end_view.gd
 取得した強化,,Boons Gained,ui/route_map/run_end_view.gd
@@ -875,6 +865,7 @@ X・RT長押し,,Hold X / RT,ui/action_hud/action_hud.gd
 第%d層で中断した,,Abandoned on Floor %d,ui/route_map/run_end_view.gd
 第%d層で倒れた,,Fell on Floor %d,ui/route_map/run_end_view.gd
 拠点へ戻る,,Return to Base,ui/route_map/run_end_view.gd
+第%d層,,Floor %d,ui/route_map/run_end_view.gd
 到達,,Reached,ui/route_map/run_end_view.gd
 戦った時間,,Time,ui/route_map/run_end_view.gd
 撃破,,Kills,ui/route_map/run_end_view.gd

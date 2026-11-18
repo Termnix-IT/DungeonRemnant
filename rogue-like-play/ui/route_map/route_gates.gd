@@ -7,22 +7,28 @@ extends Control
 # echo's blue, an event's violet, the boss's red) with what leads it
 # standing in the light (RouteStage.leader, an event's object): a dark shape
 # until the cursor turns to its gate, and then it is seen, unless it is a
-# foe she has not met, which stays a shape (figure_known). The gate turned
-# to grows and its light runs down the floor to her feet; what waits behind
-# it is told at her left and what it gives at her right, so the two are
-# weighed across her.
+# foe she has not met, which stays a shape (figure_known).
+#
+# What is told stands where it is looked for, in three steps. Under every
+# gate, always: its name, its danger and what it gives, so the ways are
+# compared without turning to each. Under the gate turned to, which grows
+# and throws its light down the floor to her feet: its goal (an event's
+# trade), its foes, and what the ways on from it give. And for whoever wants
+# the rest (an area's kind, the time it takes, the echo every clearing
+# brings, what its foes are like), the card of the thread below.
 #
 # The chapter's whole route runs across the top as a thread: the way walked
 # in gold, the ways open as rings, each area further on by the sign of what
 # it gives, the boss a lozenge at its end; the areas the cursor's pick would
-# put out of reach go dark on it. Any area on the thread can be read (the
-# pointer on it, or Up and the arrows): a card under it tells what the map's
-# card used to. The boss is kept in the dark until her way reaches it; then
+# put out of reach go dark on it. Any area on the thread can be read in full
+# (the pointer on it, or Up, which starts on the gate's own area, and the
+# arrows): a card under it tells all of it. The boss is kept in the dark until her way reaches it; then
 # its gate stands dark a moment, tolls, and it comes out with its name.
 #
 # Left and right turn from gate to gate, 1-3 turn to one and ask at once,
-# Enter (A) asks whether to go (the other gates go dark) and again goes: she
-# walks into the light and the area is entered. Esc (B) takes the question
+# Enter (A) asks whether to go (the other gates go dark, and the one word of
+# the question stands under the gate) and again goes: she walks into the
+# light and the area is entered. Esc (B) takes the question
 # back; with none asked Esc (Start) calls the run's menu.
 #
 # The page is one focusable control that fills the screen and draws itself
@@ -42,19 +48,24 @@ const MIO_RIG := preload("res://art/characters/mio_rig/mio_rig.tscn")
 const DESIGN := Vector2(1600.0, 900.0)
 # The line the gates stand on, a gate's opening, its stone's thickness, and
 # how far apart gates stand (three of them, or fewer).
-const FLOOR := 548.0
-const GATE := Vector2(236.0, 350.0)
+const FLOOR := 516.0
+const GATE := Vector2(236.0, 330.0)
 const FRAME := 20.0
 const GATE_GAP := 400.0
 const GATE_GAP_WIDE := 480.0
-const BOSS_SCALE := 1.04
 # Where she stands, and how tall.
-const HERO := Vector2(800.0, 800.0)
-const HERO_HEIGHT := 130.0
-# What waits, at her left; what it gives, at her right.
-const LEFT := Rect2(70.0, 664.0, 520.0, 170.0)
-const RIGHT := Rect2(1010.0, 664.0, 520.0, 170.0)
-const TILE := 46.0
+const HERO := Vector2(800.0, 858.0)
+const HERO_HEIGHT := 104.0
+# What stands under a gate: its name and signs, and under the one turned to
+# its goal, its foes' pictures and the ways on, no wider than this; then the
+# question's word, this tall.
+const BLOCK_WIDTH := 380.0
+const NAME_LINE := 44.0
+const SIGNS_LINE := 68.0
+const BLOCK_TOP := 86.0
+const TILE := 36.0
+const ONWARD_LINE := 26.0
+const QUESTION := Vector2(220.0, 30.0)
 # The thread: its ends, its line, and the gap between a layer's areas.
 const THREAD_FROM := 480.0
 const THREAD_TO := 1120.0
@@ -362,6 +373,8 @@ func choose(index: int) -> void:
 		cursor = index
 		_kick(&"move")
 		_sound(&"ui_move")
+		if threading:
+			thread_at = selected()
 	queue_redraw()
 
 
@@ -615,14 +628,14 @@ func _hint() -> void:
 		&"gates":
 			guide.add_hint(tr("← / →・1〜3"), tr("十字"), tr("門を選ぶ"))
 			guide.add_hint("Enter", "A", tr("進む"))
-			guide.add_hint("↑", tr("十字の上"), tr("道筋を読む"))
+			guide.add_hint("↑", tr("十字の上"), tr("詳細"), enter_thread).focus_mode = Control.FOCUS_NONE
 			guide.add_hint("Esc", "START", tr("メニュー"))
 		&"asked":
 			guide.add_hint("Enter", "A", tr("出発する"))
 			guide.add_hint("Esc", "B", tr("やめる"))
 		&"thread":
 			guide.add_hint(tr("←→↑↓"), tr("十字"), tr("道筋をたどる"))
-			guide.add_hint(tr("↓・Esc"), "B", tr("門へ戻る"))
+			guide.add_hint(tr("↓・Esc"), "B", tr("門へ戻る"), _leave_thread).focus_mode = Control.FOCUS_NONE
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -886,9 +899,6 @@ func _draw() -> void:
 		_draw_gate(cursor)
 	_draw_thread()
 	_draw_top()
-	if not held and not revealing:
-		_draw_weighing()
-		_draw_question()
 	if revealing:
 		_draw_boss_title()
 	if traveling:
@@ -1043,12 +1053,15 @@ func _draw_gate(index: int) -> void:
 	var open_share := _open_share(index)
 	var boss: bool = told.boss
 	var rise := _rise(index)
-	var grown := (1.0 + 0.13 * lit - 0.03 * (1.0 - lit)) * (BOSS_SCALE if boss else 1.0)
+	var grown := 1.0 + 0.13 * lit - 0.03 * (1.0 - lit)
 	var foot := Vector2(gate_x(index), FLOOR + (1.0 - rise) * 26.0)
 	var wide := GATE.x * grown
 	var high := GATE.y * grown
 	var pale := _colour(&"pale")
-	_zone(Rect2(foot.x - wide * 0.5 - FRAME, foot.y - high - FRAME, wide + FRAME * 2.0, high + FRAME + 96.0), [&"gate", index])
+	# Under the gate turned to stand its goal, its foes and the ways on.
+	var mine := index == cursor and not held and not revealing
+	var under := block_height(point) if mine else SIGNS_LINE + 16.0
+	_zone(Rect2(foot.x - maxf(wide * 0.5 + FRAME, BLOCK_WIDTH * 0.5 if mine else 0.0), foot.y - high - FRAME, maxf(wide + FRAME * 2.0, BLOCK_WIDTH if mine else 0.0), high + FRAME + under), [&"gate", index])
 	_to(foot)
 	# The glow round it, and its stone.
 	var beat := 0.75 + 0.25 * _breath(BOSS_BEAT) if boss else 1.0
@@ -1097,33 +1110,169 @@ func _draw_gate(index: int) -> void:
 	# comes out).
 	if not revealing:
 		var fade := (0.55 + 0.45 * lit) * (0.3 + 0.7 * open_share) * rise
-		_words(Vector2(-190.0, 46.0), told.name, &"title_font", &"name_size", Color(pale, fade), HORIZONTAL_ALIGNMENT_CENTER, 380.0)
-		_draw_signs(Vector2(0.0, 72.0), told, fade)
+		if mine:
+			_draw_plate(14.0, under + (QUESTION.y + 8.0) * asking(), lit * rise)
+		_words(Vector2(-BLOCK_WIDTH * 0.5, NAME_LINE), told.name, &"title_font", &"name_size", Color(pale, fade), HORIZONTAL_ALIGNMENT_CENTER, BLOCK_WIDTH)
+		_draw_signs(Vector2(0.0, SIGNS_LINE), told, fade)
+		if mine:
+			_draw_block(point, told, foot, lit * rise)
 	_to()
+
+
+# The dark the words under the gate turned to stand on, over the gate's own
+# light running down the floor: plain in its middle, clear at its sides and foot.
+func _draw_plate(top: float, bottom: float, share: float) -> void:
+	var face := _colour(&"plate", 0.66 * share)
+	var clear := Color(face, 0.0)
+	var half := BLOCK_WIDTH * 0.5
+	var side := 60.0
+	draw_rect(Rect2(-half + side, top, BLOCK_WIDTH - side * 2.0, bottom - top), face)
+	_fall_across(Rect2(-half, top, side, bottom - top), clear, face)
+	_fall_across(Rect2(half - side, top, side, bottom - top), face, clear)
+	_fall(Rect2(-half + side, bottom, BLOCK_WIDTH - side * 2.0, 16.0), face, clear)
+
+
+# What an area's goal line says: a fight's goal, an event's trade.
+func _goal_of(told: Dictionary) -> String:
+	return told.reward_words if told.event else told.goal
+
+
+func _goal_height(told: Dictionary) -> float:
+	var words := _goal_of(told)
+	if words.is_empty():
+		return 0.0
+	return _face(&"title_font").get_multiline_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, BLOCK_WIDTH, _size(&"goal_size"), 2, _breaks()).y
+
+
+# How far under its threshold the words of the gate turned to reach: its
+# name and signs, its goal, its foes' pictures and the ways on.
+func block_height(point: RouteMap.Waypoint) -> float:
+	var told := tell(point)
+	var reach := BLOCK_TOP + _goal_height(told)
+	if not told.foes.is_empty():
+		reach += TILE + 10.0
+	if not told.boss and not point.next.is_empty():
+		reach += ONWARD_LINE
+	return reach + 6.0
+
+
+# Under the gate turned to (in its own space, `foot` its place on the page):
+# its goal or trade, its foes as pictures, what the ways on from it give,
+# and, asked, the question's one word.
+func _draw_block(point: RouteMap.Waypoint, told: Dictionary, foot: Vector2, share: float) -> void:
+	var colour := light_of(told)
+	var pale := _colour(&"pale")
+	var fade := share * (0.3 + 0.7 * _eased(&"move", UIMotion.GOLD_TIME) if _since(&"move") < 0.6 else share)
+	var half := BLOCK_WIDTH * 0.5
+	var y := BLOCK_TOP
+	var goal := _goal_of(told)
+	if not goal.is_empty():
+		draw_multiline_string(_face(&"title_font"), Vector2(-half, y + _face(&"title_font").get_ascent(_size(&"goal_size"))), goal, HORIZONTAL_ALIGNMENT_CENTER, BLOCK_WIDTH, _size(&"goal_size"), 2, Color(colour if told.event else pale, fade), _breaks())
+		y += _goal_height(told)
+	var foes: Array = told.foes
+	if not foes.is_empty():
+		var each := minf(TILE + 6.0, BLOCK_WIDTH / foes.size())
+		var from := -each * foes.size() * 0.5
+		for index in foes.size():
+			var foe: FoeData = foes[index][0]
+			var tile := HubCodex.tile_picture(foe.visual_id, foes[index][1], foe.tint)
+			if tile == null:
+				continue
+			var cell := Rect2(from + index * each + 3.0, y + 4.0 + TILE - (each - 6.0), each - 6.0, each - 6.0)
+			if not foes[index][1]:
+				draw_circle(cell.get_center(), cell.size.x * 0.5, Color(1.0, 1.0, 1.0, 0.07 * fade))
+			draw_texture_rect(tile, cell, false, Color(1.0, 1.0, 1.0, fade))
+		y += TILE + 10.0
+	if not told.boss and not point.next.is_empty():
+		_draw_onward(Vector2(0.0, y + 12.0), point.next, fade)
+		y += ONWARD_LINE
+	# The question, once asked: its one word, and the place the pointer goes on from.
+	var asked_share := asking()
+	if asked_share > 0.0 and not traveling:
+		var rect := Rect2(-QUESTION.x * 0.5, y + 8.0, QUESTION.x, QUESTION.y)
+		var face := StyleBoxFlat.new()
+		face.bg_color = Color(colour, 0.16 * asked_share)
+		face.border_color = Color(colour, asked_share)
+		face.set_border_width_all(1)
+		face.set_corner_radius_all(3)
+		draw_style_box(face, rect)
+		_words(Vector2(rect.position.x, rect.position.y + 22.0), tr("この道を往く"), &"title_font", &"key_size", Color(pale, asked_share), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x)
+		_zone(Rect2(foot + rect.position, rect.size), [&"go"])
+
+
+# What the ways on from an area give, in a row round `centre`: each way's
+# danger and sign, or the boss.
+func _draw_onward(centre: Vector2, leads: Array, fade: float) -> void:
+	var label := tr("その先")
+	var to_boss: bool = (leads[0] as RouteMap.Waypoint).area.boss != null
+	var wide := _width(label, &"font", &"label_size") + 14.0
+	if to_boss:
+		wide += 20.0 + _width(tr("ボス"), &"bold_font", &"label_size")
+	else:
+		for next_point: RouteMap.Waypoint in leads:
+			wide += tell(next_point).danger * 9.0 + 34.0
+		wide -= 12.0
+	var x := centre.x - wide * 0.5
+	_words(Vector2(x, centre.y + 5.0), label, &"font", &"label_size", _colour(&"dim", fade))
+	x += _width(label, &"font", &"label_size") + 14.0
+	if to_boss:
+		_lozenge(Vector2(x + 6.0, centre.y), 6.0, _colour(&"boss", fade))
+		_words(Vector2(x + 20.0, centre.y + 5.0), tr("ボス"), &"bold_font", &"label_size", _colour(&"boss", fade))
+		return
+	for next_point: RouteMap.Waypoint in leads:
+		var next := tell(next_point)
+		for pip in next.danger:
+			_lozenge(Vector2(x + 3.5 + pip * 9.0, centre.y), 3.5, _colour(&"boss", fade))
+		x += next.danger * 9.0 + 4.0
+		_sign(Vector2(x + 8.0, centre.y), 7.0, next.reward, Color(light_of(next), fade))
+		x += 30.0
+
+# What an area gives, in a word beside its sign: the reward (the echo with
+# its amount), an event, the boss.
+func _gives(told: Dictionary) -> String:
+	if told.veiled:
+		return ""
+	if told.boss:
+		return tr("ボス")
+	if told.event:
+		return told.kind
+	if told.reward == AreaData.Reward.ECHO:
+		return tr("残響 %s") % UIFormat.amount(told.echo)
+	return told.reward_words
 
 
 # How wide an area's signs stand in a row.
 func _signs_width(told: Dictionary) -> float:
-	var gives: String = "" if told.boss or told.veiled else (tr("取引") if told.event else told.reward_words)
+	var gives := _gives(told)
 	var danger: int = told.danger
-	return _width(told.kind, &"font", &"label_size") + (16.0 + danger * 15.0 if danger > 0 else 0.0) + (40.0 + _width(gives, &"bold_font", &"label_size") if not gives.is_empty() else 0.0)
+	var wide := 45.0 if danger > 0 else 0.0
+	if not gives.is_empty():
+		wide += (12.0 if danger > 0 else 0.0) + (0.0 if told.boss else 22.0) + _width(gives, &"bold_font", &"label_size")
+	return wide
 
 
-# An area's signs in a row round `centre`: its kind, its danger, what it gives.
+# An area's signs in a row round `centre`: its danger, then what it gives by
+# its sign and its word.
 func _draw_signs(centre: Vector2, told: Dictionary, fade: float) -> void:
 	var colour := light_of(told)
-	var gives: String = "" if told.boss or told.veiled else (tr("取引") if told.event else told.reward_words)
+	var gives := _gives(told)
 	var danger: int = told.danger
 	var x := centre.x - _signs_width(told) * 0.5
-	_words(Vector2(x, centre.y + 5.0), told.kind, &"font", &"label_size", _colour(&"dim", fade))
-	x += _width(told.kind, &"font", &"label_size") + 16.0
-	for index in danger:
-		_lozenge(Vector2(x + 5.0, centre.y), 5.5, _colour(&"boss", fade))
-		x += 15.0
-	if not gives.is_empty():
-		x += 10.0
+	if danger > 0:
+		for index in 3:
+			if index < danger:
+				_lozenge(Vector2(x + 5.0, centre.y), 5.5, _colour(&"boss", fade))
+			else:
+				_lozenge(Vector2(x + 5.0, centre.y), 5.0, _colour(&"faint", fade), 1.0)
+			x += 15.0
+	if gives.is_empty():
+		return
+	if danger > 0:
+		x += 12.0
+	if not told.boss:
 		_sign(Vector2(x + 7.0, centre.y), 7.0, told.reward, Color(colour, fade))
-		_words(Vector2(x + 22.0, centre.y + 5.0), gives, &"bold_font", &"label_size", Color(colour, fade))
+		x += 22.0
+	_words(Vector2(x, centre.y + 5.0), gives, &"bold_font", &"label_size", Color(colour, fade))
 
 
 # The chapter's whole route as one thread across the top.
@@ -1197,15 +1346,15 @@ func _draw_strand(from: RouteMap.Waypoint, to: RouteMap.Waypoint, walked: Array,
 func _draw_top() -> void:
 	var pale := _colour(&"pale")
 	var dim := _colour(&"dim")
-	_words(Vector2(EDGE, 44.0), Chapters.short_name(route.chapter), &"font", &"label_size", dim)
-	_words(Vector2(EDGE, 78.0), Chapters.title(route.chapter), &"title_font", &"title_size", pale)
-	var where := tr("最奥") if selected() != null and selected().area.boss != null else tr("第%d層") % (route_layer + 1)
-	var along := tr("%s　／　%s") % [where, tr("%d層とボス") % (route.size() - 1)]
+	# Where along the chapter she is, the thread tells.
+	var number := Chapters.short_name(route.chapter)
+	_words(Vector2(EDGE, 46.0), number, &"font", &"label_size", dim)
+	var x := EDGE + _width(number, &"font", &"label_size") + 12.0
+	_words(Vector2(x, 48.0), Chapters.title(route.chapter), &"title_font", &"name_size", pale)
 	if run.step > 0:
-		along += "　" + tr("段階%d") % run.step
-	_words(Vector2(EDGE, 104.0), along, &"font", &"label_size", dim)
+		_words(Vector2(x + _width(Chapters.title(route.chapter), &"title_font", &"name_size") + 14.0, 46.0), tr("段階%d") % run.step, &"font", &"label_size", dim)
 	if not note_text.is_empty():
-		_words(Vector2(EDGE, 134.0), note_text, &"lead_font", &"note_size", _colour(&"boon", _eased(&"open", RISE_TIME)))
+		_words(Vector2(EDGE, 76.0), note_text, &"font", &"label_size", Color(dim, _eased(&"open", RISE_TIME)))
 	var right := DESIGN.x - EDGE
 	var left := right - STATUS_WIDTH
 	var hp := run.hp if run.hp > 0 else _max_hp
@@ -1234,107 +1383,6 @@ func _draw_top() -> void:
 	if not curses_text.is_empty():
 		var rows := 1 + (held_boons.size() - 1) / per_row if not held_boons.is_empty() else 0
 		_words(Vector2(left, 122.0 + rows * (EMBLEM + 6.0) - EMBLEM), curses_text, &"bold_font", &"label_size", _colour(&"boss"), HORIZONTAL_ALIGNMENT_RIGHT, STATUS_WIDTH)
-
-
-# What waits behind the gate turned to, at her left; what it gives, at her
-# right.
-func _draw_weighing() -> void:
-	var point := selected()
-	if point == null:
-		return
-	var told := tell(point)
-	var colour := light_of(told)
-	var pale := _colour(&"pale")
-	var dim := _colour(&"dim")
-	var fade := (0.25 + 0.75 * _eased(&"move", UIMotion.GOLD_TIME) if _since(&"move") < 0.6 else 1.0) * _eased(&"open", RISE_TIME)
-	# Left: what waits.
-	var x := LEFT.position.x
-	var y := LEFT.position.y + 20.0
-	var heading := tr("待ち受けるもの")
-	_words(Vector2(x, y), heading, &"bold_font", &"label_size", _colour(&"boss", fade))
-	var after := x + _width(heading, &"bold_font", &"label_size") + 14.0
-	var until := LEFT.end.x
-	if not told.time.is_empty():
-		_words(Vector2(x, y), told.time, &"font", &"label_size", Color(dim, fade), HORIZONTAL_ALIGNMENT_RIGHT, LEFT.size.x)
-		until -= _width(told.time, &"font", &"label_size") + 14.0
-	HubUI.trail(self, Vector2(after, y - 5.0), Vector2(until, y - 5.0), _colour(&"boss", 0.5 * fade))
-	y += 40.0
-	if told.event:
-		_words(Vector2(x, y), tr("戦闘なし"), &"title_font", &"goal_size", Color(pale, fade))
-		_lines(Vector2(x, y + 32.0), told.summary, &"font", &"body_size", Color(dim, fade), LEFT.size.x)
-	else:
-		for index in 3:
-			var at := Vector2(x + 10.0 + index * 24.0, y - 8.0)
-			if index < told.danger:
-				_lozenge(at, 9.0, _colour(&"boss", fade))
-			else:
-				_lozenge(at, 9.0, _colour(&"faint", fade), 1.0)
-		draw_string(_face(&"title_font"), Vector2(x + 86.0, y), told.goal, HORIZONTAL_ALIGNMENT_LEFT, LEFT.size.x - 86.0, _size(&"goal_size"), Color(pale, fade))
-		y += 16.0
-		var foes: Array = told.foes
-		var each := minf(TILE + 8.0, LEFT.size.x / maxf(1.0, foes.size()))
-		for index in foes.size():
-			var foe: FoeData = foes[index][0]
-			var tile := HubCodex.tile_picture(foe.visual_id, foes[index][1], foe.tint)
-			if tile == null:
-				continue
-			var cell := Rect2(x + index * each, y + TILE - (each - 8.0), each - 8.0, each - 8.0)
-			if not foes[index][1]:
-				draw_circle(cell.get_center(), cell.size.x * 0.5, Color(1.0, 1.0, 1.0, 0.07 * fade))
-			draw_texture_rect(tile, cell, false, Color(1.0, 1.0, 1.0, fade))
-		y += 70.0
-		var words: String = told.summary
-		if told.boss:
-			words = tr("%s　%s") % [tr(point.area.boss.epithet), told.summary]
-		_lines(Vector2(x, y), words, &"font", &"body_size", Color(dim, fade), LEFT.size.x)
-	# Right: what it gives, and where it leads.
-	x = RIGHT.position.x
-	y = RIGHT.position.y + 20.0
-	heading = tr("得るもの")
-	var wide := _width(heading, &"bold_font", &"label_size")
-	_words(Vector2(RIGHT.end.x - wide, y), heading, &"bold_font", &"label_size", Color(colour, fade))
-	HubUI.trail(self, Vector2(RIGHT.end.x - wide - 14.0, y - 5.0), Vector2(x, y - 5.0), Color(colour, 0.5 * fade))
-	y += 44.0
-	if told.boss:
-		_words(Vector2(x, y), tr("この章の踏破"), &"title_font", &"give_size", Color(colour, fade), HORIZONTAL_ALIGNMENT_RIGHT, RIGHT.size.x)
-	elif told.event:
-		_lines(Vector2(x, y - 6.0), told.reward_words, &"title_font", &"goal_size", Color(colour, fade), RIGHT.size.x, 2, HORIZONTAL_ALIGNMENT_RIGHT)
-	else:
-		var words: String = tr("残響 %s") % UIFormat.amount(told.echo) if told.reward == AreaData.Reward.ECHO else told.reward_words
-		_words(Vector2(x, y), words, &"title_font", &"give_size", Color(colour, fade), HORIZONTAL_ALIGNMENT_RIGHT, RIGHT.size.x)
-		_sign(Vector2(RIGHT.end.x - _width(words, &"title_font", &"give_size") - 26.0, y - 11.0), 12.0, told.reward, Color(colour, fade))
-		if told.reward != AreaData.Reward.ECHO and told.echo > 0:
-			_words(Vector2(x, y + 30.0), tr("＋ 残響 %s") % UIFormat.amount(told.echo), &"font", &"body_size", _colour(&"echo", fade), HORIZONTAL_ALIGNMENT_RIGHT, RIGHT.size.x)
-	if told.boss or point.next.is_empty():
-		return
-	y = RIGHT.position.y + 138.0
-	var leads := point.next
-	if (leads[0] as RouteMap.Waypoint).area.boss != null:
-		_words(Vector2(x, y), tr("その先　ボスへ"), &"bold_font", &"body_size", _colour(&"boss", fade), HORIZONTAL_ALIGNMENT_RIGHT, RIGHT.size.x)
-		return
-	var onward := tr("その先　%dつの道") % leads.size()
-	_words(Vector2(x, y), onward, &"bold_font", &"body_size", Color(pale, fade), HORIZONTAL_ALIGNMENT_RIGHT, RIGHT.size.x)
-	var lost := closes(point).size()
-	if lost > 0:
-		_words(Vector2(x, y + 24.0), tr("選ぶと %dつの場所へは行けなくなる") % lost, &"font", &"label_size", Color(dim, fade), HORIZONTAL_ALIGNMENT_RIGHT, RIGHT.size.x)
-	var at := RIGHT.end.x - _width(onward, &"bold_font", &"body_size") - 28.0
-	for index in range(leads.size() - 1, -1, -1):
-		var next := tell(leads[index])
-		_sign(Vector2(at, y - 5.0), 7.0, next.reward, Color(light_of(next), fade))
-		for pip in next.danger:
-			_lozenge(Vector2(at - 14.0 - pip * 9.0, y - 5.0), 3.5, _colour(&"boss", fade))
-		at -= 26.0 + next.danger * 9.0 + 10.0
-
-
-# The question at her feet.
-func _draw_question() -> void:
-	var share := asking()
-	if share <= 0.0 or traveling:
-		return
-	var colour := light_of(tell(selected()))
-	_words(Vector2(DESIGN.x * 0.5 - 300.0, 838.0), tr("この道を往く"), &"title_font", &"name_size", _colour(&"pale", share), HORIZONTAL_ALIGNMENT_CENTER, 600.0)
-	_words(Vector2(DESIGN.x * 0.5 - 300.0, 862.0), tr("もう一度決定すると出発する"), &"font", &"label_size", Color(colour, share), HORIZONTAL_ALIGNMENT_CENTER, 600.0)
-	_zone(Rect2(DESIGN.x * 0.5 - 200.0, 812.0, 400.0, 58.0), [&"go"])
 
 
 # The boss's epithet and name, risen under its gate while it comes out.
@@ -1370,7 +1418,7 @@ func _draw_card(point: RouteMap.Waypoint) -> void:
 	if told.event:
 		high = 138.0 + _face(&"bold_font").get_multiline_string_size(told.reward_words, HORIZONTAL_ALIGNMENT_LEFT, CARD_WIDTH - 40.0, _size(&"body_size"), 2, _breaks()).y + summary
 	elif not told.veiled:
-		high = (216.0 if not foes.is_empty() else 162.0) + summary
+		high = (232.0 if not foes.is_empty() else 178.0) + summary
 	var rect := Rect2(clampf(spot.x - CARD_WIDTH * 0.5, EDGE, DESIGN.x - EDGE - CARD_WIDTH), CARD_TOP, CARD_WIDTH, high)
 	var face := StyleBoxFlat.new()
 	face.bg_color = _colour(&"plate")
