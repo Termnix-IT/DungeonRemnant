@@ -82,6 +82,37 @@ func run_tests() -> void:
 	# A run: into the first area.
 	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
 	var run: RunDirector = main.active_run
+	# The route's gates: the D-pad turns, A asks, B takes it back, up reads the
+	# thread, Start calls the run's menu.
+	var gates := run.map_view.page
+	await create_timer(RouteGates.RISE_TIME + 0.4).timeout
+	root.push_input(pad(JOY_BUTTON_DPAD_RIGHT))
+	root.push_input(pad(JOY_BUTTON_DPAD_RIGHT, false))
+	await process_frame
+	check(gates.has_focus() and gates.cursor == 1, "At the route's gates the D-pad turns to the next gate")
+	root.push_input(pad(JOY_BUTTON_A))
+	root.push_input(pad(JOY_BUTTON_A, false))
+	await process_frame
+	check(gates.asked and run.area == null, "A asks whether to go there")
+	root.push_input(pad(JOY_BUTTON_B))
+	root.push_input(pad(JOY_BUTTON_B, false))
+	await process_frame
+	check(not gates.asked and not run.map_menu.visible, "B takes the question back")
+	root.push_input(pad(JOY_BUTTON_DPAD_UP))
+	root.push_input(pad(JOY_BUTTON_DPAD_UP, false))
+	await process_frame
+	check(gates.threading and gates.read() == gates.selected(), "Up reads the thread")
+	root.push_input(pad(JOY_BUTTON_B))
+	root.push_input(pad(JOY_BUTTON_B, false))
+	await process_frame
+	check(not gates.threading, "B comes back to the gates")
+	root.push_input(pad(JOY_BUTTON_START))
+	root.push_input(pad(JOY_BUTTON_START, false))
+	await process_frame
+	check(run.map_menu.visible and gates.covered, "Start calls the run's menu over them")
+	run.map_menu.resume()
+	await process_frame
+	check(not gates.covered and gates.has_focus(), "Lifted, the gates hold the focus again")
 	run.map_view._choose(run.run.route.nodes(0)[0])
 	await process_frame
 	var hero: Hero = run.area.hero

@@ -1,8 +1,8 @@
-"""Build the route map's roads from their generated pictures.
+"""Build the route's roads from their generated pictures.
 
 art/ui/route/source/road_<chapter>.png is a straight road painted from
 above, running across the whole picture on a flat magenta (#FF00FF)
-background. RouteMapView repeats a road along each path with a Line2D, so the
+background. The result's journey (RunJourney) repeats a road along its path with a Line2D, so the
 road has to join itself end to end. This keys the magenta out, trims the
 picture to the road's band, cross-fades its ends so the right end runs on
 into the left (the generator does not join them exactly), scales it to

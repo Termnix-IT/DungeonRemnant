@@ -1,18 +1,18 @@
-"""Build the route map's stages and objects from their generated pictures.
+"""Build the route's stages and objects from their generated pictures.
 
 art/ui/route/source/plate_<chapter>.png is an oval platform of the chapter's
 ground seen a little from above, and prop_<name>.png an object standing on
 its base (an event's: altar, curse, merchant, shelf, spring; the start's
 signpost: sign), each on a flat magenta (#FF00FF) background. This keys the
 magenta out, trims each to what is painted, scales a stage to PLATE_WIDTH
-and an object to PROP_HEIGHT (about twice the size RouteNode draws them) and
+and an object to PROP_HEIGHT (about twice the size the journey draws them) and
 writes art/ui/route/<name>.png.
 
 With --measure it prints, for each stage, where the middle of its top lies
 down the picture and the top's half width: a cylinder seen from above is
 widest from the top's middle down, so the first row that nearly reaches the
-widest is the top's middle. RouteNode holds these as PLATE_TOP,
-TOP_HALF_HEIGHT and TOP_HALF_WIDTH; update them when a picture changes.
+widest is the top's middle. RouteStage holds the first as PLATE_TOP (the
+result's journey stands its figures there); update it when a picture changes.
 
 	python tools/build_route_stages.py              # everything
 	python tools/build_route_stages.py plate_gale_woods prop_sign

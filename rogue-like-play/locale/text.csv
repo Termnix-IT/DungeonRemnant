@@ -426,7 +426,7 @@ Appears in Chapter 3's fields and arenas.",data/foes/wisp.tres
 第%d層まで,,Reached Floor %d,game/expedition/chapters.gd
 段階%d　%s,,Tier %d: %s,game/expedition/difficulty_steps.gd
 残響 +%d%%,,Echoes +%d%%,game/expedition/difficulty_steps.gd
-地図に戻る,,Back to Map,game/expedition/run_director.gd
+分かれ道に戻る,,Back to the Fork,game/expedition/run_director.gd
 旅立ちの加護　強化を1つ選ぶ,,Parting Blessing: Choose a boon,game/expedition/run_director.gd
 　残響 +%s,,  Echoes +%s,game/expedition/run_director.gd
 報酬　強化を1つ選ぶ,,Reward: Choose a boon,game/expedition/run_director.gd
@@ -675,7 +675,7 @@ HPの高い順,,Highest HP first,ui/hub_codex.gd
 ゲームを閉じる。確かめてから終了する。,,"Close the game, after asking first.",ui/hub_settings.gd
 画面の文字の言語。,,The language of the text on screen.,ui/hub_settings.gd
 探索の流れ,,How a Run Goes,ui/hub_settings.gd
-探索はいつもLv 1から始まります。分岐マップで行き先を選び、章の最後のボスを倒すと踏破です。,,Every run starts at Lv 1. Choose where to go on the branching map; defeat the boss at the end of the chapter to clear it.,ui/hub_settings.gd
+探索はいつもLv 1から始まります。分かれ道で行き先の門を選び、章の最後のボスを倒すと踏破です。,,Every run starts at Lv 1. Choose a gate at each fork in the way; defeat the boss at the end of the chapter to clear it.,ui/hub_settings.gd
 フィールドは決まった時間を生き延びるか、決まった数の敵を倒すと制圧です。目標は画面上に出ます。,,A field is secured when you survive for a set time or defeat a set number of foes. The goal is shown at the top of the screen.,ui/hub_settings.gd
 アリーナは、すべてのウェーブを倒すと制圧です。,,An arena is secured when you defeat every wave.,ui/hub_settings.gd
 宝石を拾うとレベルが上がり、カード3枚（拠点の強化で4枚）から強化を1つ選びます。カードは光ってから選べます。,,Picking up gems raises your level; then choose 1 boon from 3 cards (4 with an upgrade from the base). Cards can be chosen once they light up.,ui/hub_settings.gd
@@ -706,7 +706,7 @@ Q・E（ゲームパッドはLB・RB）で種類を切り替えます。,,Switch
 「締めの一撃」は連撃の最後の段です。剣と槍は3段目、大槌は2段目です。,,"The finisher is the last hit of a combo: the 3rd for the Sword and Spear, the 2nd for the Warhammer.",ui/hub_settings.gd
 取った強化は、探索中のメニュー（Esc、ゲームパッドはSTART）で見返せます。,,"Look back over the boons you've taken in the menu during a run (Esc, or START on a gamepad).",ui/hub_settings.gd
 イベントと呪い,,Events and Curses,ui/hub_settings.gd
-分岐マップのイベントは、戦闘のない立ち寄り先です。残響やHPと引き換えに、強化や回復を得られます。,,Events on the branching map are stops with no combat. Trade Echoes or HP for boons or healing.,ui/hub_settings.gd
+分かれ道のイベントは、戦闘のない立ち寄り先です。残響やHPと引き換えに、強化や回復を得られます。,,Events at a fork are stops with no combat. Trade Echoes or HP for boons or healing.,ui/hub_settings.gd
 呪いは探索の終わりまで残ります。1つ受けるごとに、以後のエリアで得る残響が5割増えます。,,Curses last until the end of the run. Each one you take adds 50% to the Echoes from later areas.,ui/hub_settings.gd
 脆さ：受けるダメージが2増えます。,,Frailty: Damage taken +2.,ui/hub_settings.gd
 鈍足：移動速度が12%落ちます。,,Slowness: Move speed -12%.,ui/hub_settings.gd
@@ -832,25 +832,37 @@ X・RT長押し,,Hold X / RT,ui/action_hud/action_hud.gd
 固定 %d体,,Fixed at %d,ui/action_hud/action_hud.gd
 時間で増加（目標 %d体）,,Grows over time (target %d),ui/action_hud/action_hud.gd
 立ち去る,,Leave,ui/route_map/event_view.gd
-この先にある,,Further ahead,ui/route_map/route_map_view.gd
-この道からは行けない,,Can't be reached from this path,ui/route_map/route_map_view.gd
-通り過ぎた,,Passed,ui/route_map/route_map_view.gd
-この章の最奥で、何かが待ち構えている,,Something lies in wait at the heart of this chapter,ui/route_map/route_map_view.gd
-←→↑↓・1〜3,,←→↑↓ / 1–3,ui/route_map/route_map_view.gd
-エリアを選ぶ,,Choose Area,ui/route_map/route_map_view.gd
-進む,,Go,ui/route_map/route_map_view.gd
-ホイール,,Wheel,ui/route_map/route_map_view.gd
-地図を見渡す,,Look Around,ui/route_map/route_map_view.gd
-%s　段階%d,,%s  Tier %d,ui/route_map/route_map_view.gd
-呪い：%s,,Curses: %s,ui/route_map/route_map_view.gd
-イベント　戦闘なし,,Event  No combat,ui/route_map/route_map_view.gd
-%s　%s　目安 %d分%02d秒,,%s  %s  About %d:%02d,ui/route_map/route_map_view.gd
-報酬：残響 %s,,Reward: %s Echoes,ui/route_map/route_map_view.gd
-報酬：%s　残響 +%s,,Reward: %s  Echoes +%s,ui/route_map/route_map_view.gd
-「%s」に立ち寄りますか？,,Stop at %s?,ui/route_map/route_map_view.gd
-立ち寄る,,Stop By,ui/route_map/route_map_view.gd
-「%s」に進みますか？,,Head to %s?,ui/route_map/route_map_view.gd
-報酬：%s　%s,,Reward: %s  %s,ui/route_map/route_map_view.gd
+この先にある,,Further ahead,ui/route_map/route_gates.gd
+この道からは行けない,,Can't be reached from this path,ui/route_map/route_gates.gd
+通り過ぎた,,Passed,ui/route_map/route_gates.gd
+この章の最奥で、何かが待ち構えている,,Something lies in wait at the heart of this chapter,ui/route_map/route_gates.gd
+%s　段階%d,,%s  Tier %d,ui/route_map/route_gates.gd
+呪い：%s,,Curses: %s,ui/route_map/route_gates.gd
+目安 %d分%02d秒,,About %d:%02d,ui/route_map/route_gates.gd
+← / →・1〜3,,← / → / 1–3,ui/route_map/route_gates.gd
+門を選ぶ,,Choose Gate,ui/route_map/route_gates.gd
+進む,,Go,ui/route_map/route_gates.gd
+十字の上,,D-pad Up,ui/route_map/route_gates.gd
+道筋を読む,,Read Route,ui/route_map/route_gates.gd
+出発する,,Set Out,ui/route_map/route_gates.gd
+道筋をたどる,,Follow Route,ui/route_map/route_gates.gd
+↓・Esc,,↓ / Esc,ui/route_map/route_gates.gd
+門へ戻る,,Back to Gates,ui/route_map/route_gates.gd
+取引,,Deal,ui/route_map/route_gates.gd
+最奥,,The Depths,ui/route_map/route_gates.gd
+第%d層,,Floor %d,ui/route_map/route_gates.gd
+%s　／　%s,,%s  /  %s,ui/route_map/route_gates.gd
+待ち受けるもの,,What Waits,ui/route_map/route_gates.gd
+戦闘なし,,No combat,ui/route_map/route_gates.gd
+得るもの,,What It Gives,ui/route_map/route_gates.gd
+この章の踏破,,The chapter cleared,ui/route_map/route_gates.gd
+残響 %s,,%s Echoes,ui/route_map/route_gates.gd
+＋ 残響 %s,,+%s Echoes,ui/route_map/route_gates.gd
+その先　ボスへ,,Beyond: the boss,ui/route_map/route_gates.gd
+その先　%dつの道,,Ways beyond: %d,ui/route_map/route_gates.gd
+選ぶと %dつの場所へは行けなくなる,,Places this pick closes: %d,ui/route_map/route_gates.gd
+この道を往く,,Take this way,ui/route_map/route_gates.gd
+もう一度決定すると出発する,,Confirm again to set out,ui/route_map/route_gates.gd
 この探索で取得した強化はない,,No boons were gained on this run,ui/route_map/run_end_view.gd
 持ち帰った残響,,Echoes Brought Back,ui/route_map/run_end_view.gd
 取得した強化,,Boons Gained,ui/route_map/run_end_view.gd
@@ -863,7 +875,6 @@ X・RT長押し,,Hold X / RT,ui/action_hud/action_hud.gd
 第%d層で中断した,,Abandoned on Floor %d,ui/route_map/run_end_view.gd
 第%d層で倒れた,,Fell on Floor %d,ui/route_map/run_end_view.gd
 拠点へ戻る,,Return to Base,ui/route_map/run_end_view.gd
-第%d層,,Floor %d,ui/route_map/run_end_view.gd
 到達,,Reached,ui/route_map/run_end_view.gd
 戦った時間,,Time,ui/route_map/run_end_view.gd
 撃破,,Kills,ui/route_map/run_end_view.gd

@@ -168,7 +168,7 @@ func run_tests() -> void:
 	root.add_child(director_run)
 	await process_frame
 	check(director_run.run.step == 8 and director_run.run.curses.size() == 1, "The run is played at its step, carrying its curse")
-	check(director_run.map_view._title.text.ends_with("段階8"), "The map names the step")
+	check(director_run.map_view.page.title_text.ends_with("段階8"), "The map names the step")
 	director_run.map_view._choose(director_run.map_view.current[0])
 	await process_frame
 	var fight := director_run.area

@@ -1,7 +1,7 @@
 class_name RunJourney
 extends Control
 
-# The way a run went, drawn as the route map draws it, small: from the
+# The way a run went, drawn as a road of small stages: from the
 # start's stage along the chapter's road to each stage she reached (the ones
 # she cleared stand empty), then the rest of the way to the boss, faint. The
 # stage where it ended tells how: she stands on the boss's (won), the foe
@@ -25,6 +25,9 @@ const FOE_GROW := 1.25
 const SIGN_HEIGHT := 62.0
 const SIGN_PLACE := Vector2(20.0, 2.0)
 const CAPTION_GAP := 4.0
+# Her figure: the rig of the fight, small, facing the way she walked.
+const MIO_RIG := preload("res://art/characters/mio_rig/mio_rig.tscn")
+const IDLE_FACING := Vector2i(1, 1)
 
 # Where each stage's top's middle stands: the start, then each layer.
 var spots: Array[Vector2] = []
@@ -57,13 +60,13 @@ func show_run(result: Dictionary) -> void:
 	var path: Array = result.get("path", [])
 	var layers := maxi(int(result.get("layers", path.size())), path.size())
 	var chapter := StringName(result.get("chapter_id", ""))
-	var stage := RouteNode.plate_for(chapter)
+	var stage := RouteStage.plate_for(chapter)
 	spots.clear()
 	for index in layers + 1:
 		spots.append(Vector2(MARGIN + (WIDTH - MARGIN * 2.0) * index / layers, LINE_Y))
 	ended_at = path.size()
 	# The way walked, then the way she never reached, faint.
-	var road := RouteMapView.road_for(chapter)
+	var road := RouteStage.road_for(chapter)
 	var ahead := CanvasGroup.new()
 	ahead.self_modulate.a = AHEAD_ALPHA
 	_scene.add_child(ahead)
@@ -73,7 +76,7 @@ func show_run(result: Dictionary) -> void:
 		_road(ahead if index >= ended_at else walked, road, spots[index], spots[index + 1])
 	# The stages: the start's, smaller, with its signpost; each layer's.
 	_stage(stage, spots[0], STAGE_WIDTH * START_SCALE, 1.0)
-	var post := RouteNode.prop_for(&"sign")
+	var post := RouteStage.prop_for(&"sign")
 	if post != null:
 		var sign := Sprite2D.new()
 		sign.texture = post
@@ -85,22 +88,22 @@ func show_run(result: Dictionary) -> void:
 	for index in range(1, layers + 1):
 		var boss := index == layers
 		var shade := 1.0 if index <= ended_at else AHEAD_ALPHA
-		_stage(stage, spots[index], STAGE_WIDTH * (RouteNode.BOSS_SCALE if boss else 1.0), shade)
+		_stage(stage, spots[index], STAGE_WIDTH * (RouteStage.BOSS_SCALE if boss else 1.0), shade)
 	# Who stands where it ended, and the line under it.
 	var last: AreaData = path[-1] if not path.is_empty() else null
 	if not won and not left and last != null:
 		var foe: FoeData = result.get("fallen_to")
 		if foe == null:
-			foe = RouteNode.leader(last)
+			foe = RouteStage.leader(last)
 		if foe != null:
-			figure = RouteNode.foe_figure(foe, FOE_TALLEST, 1.0, FOE_GROW)
+			figure = RouteStage.foe_figure(foe, FOE_TALLEST, 1.0, FOE_GROW)
 			caption.text = tr("%sに倒された") % tr(foe.display_name)
 		else:
 			caption.text = tr("%sで倒れた") % tr(last.display_name)
 	else:
-		figure = RouteMapView.MIO_RIG.instantiate()
+		figure = MIO_RIG.instantiate()
 		figure.world_height = HERO_HEIGHT
-		figure.facing = RouteMapView.IDLE_FACING
+		figure.facing = IDLE_FACING
 		var moveset: Moveset = result.get("moveset")
 		if moveset != null and moveset.art != null:
 			WeaponMount.hold(figure, moveset)
@@ -124,8 +127,8 @@ func _stage(texture: Texture2D, at: Vector2, width: float, shade: float) -> void
 	plate.texture = texture
 	plate.centered = false
 	plate.scale = Vector2.ONE * width / texture.get_width()
-	var high := RouteNode.plate_height(texture, width)
-	plate.position = at - Vector2(width * 0.5, high * RouteNode.PLATE_TOP)
+	var high := RouteStage.plate_height(texture, width)
+	plate.position = at - Vector2(width * 0.5, high * RouteStage.PLATE_TOP)
 	plate.modulate.a = shade
 	_scene.add_child(plate)
 
@@ -133,16 +136,16 @@ func _stage(texture: Texture2D, at: Vector2, width: float, shade: float) -> void
 func _road(layer: Node2D, road: Texture2D, from: Vector2, to: Vector2) -> void:
 	for middle in [false, true]:
 		var line := Line2D.new()
-		line.width = ROAD_WIDTH * (RouteMapView.MIDDLE_SHARE if middle else 1.0)
+		line.width = ROAD_WIDTH * (RouteStage.MIDDLE_SHARE if middle else 1.0)
 		line.begin_cap_mode = Line2D.LINE_CAP_ROUND
 		line.end_cap_mode = Line2D.LINE_CAP_ROUND
 		line.antialiased = true
-		var texture := RouteMapView.middle_of(road) if middle else road
+		var texture := RouteStage.middle_of(road) if middle else road
 		if texture != null:
 			line.texture = texture
 			line.texture_mode = Line2D.LINE_TEXTURE_TILE
 			line.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 		else:
-			line.default_color = RouteMapView.ROAD_PLAIN
+			line.default_color = RouteStage.ROAD_PLAIN
 		line.points = PackedVector2Array([from, to])
 		layer.add_child(line)

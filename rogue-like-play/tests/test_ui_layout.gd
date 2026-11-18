@@ -111,19 +111,18 @@ func run_tests() -> void:
 	main.start_run()
 	await settle(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1)
 	var run: RunDirector = main.active_run
-	# The route map: the whole screen, the run's state in its corners; once
-	# panned back to her, the open nodes on the screen and the focused one's
-	# card beside it, on the screen and clear of the HUD's corners.
-	var map := run.map_view
-	check(map._frame.get_global_rect().is_equal_approx(screen), "The route map fills the screen")
-	await settle(RouteMapView.PAN_HOLD + RouteMapView.PAN_TIME + RouteMapView.DRAW_TIME + RouteMapView.FOCUS_DELAY + 0.2)
-	check(map.buttons.all(func(node: RouteNode): return screen.encloses(node.get_global_rect())), "The open nodes are on the screen")
-	var card := map._card.get_global_rect()
-	var told: Rect2 = map.nodes_by_point[map.told].get_global_rect()
-	check(map._card.visible and screen.encloses(card) and not card.intersects(told), "The focused node's card is on the screen beside it")
-	check(not card.intersects(map._title.get_global_rect()) and not card.intersects(map._hp_gauge.get_global_rect()) and not card.intersects(map._guide.get_global_rect()), "The card keeps clear of the corners and the keys")
-	for corner: Control in [map._title, map._level, map._echo, map._hp_gauge, map._guide]:
-		check(screen.encloses(corner.get_global_rect()), "The map's %s stays on the screen" % corner.get_class())
+	# The route's gates: the page fills the screen, and its design space, every
+	# gate and the keys at the foot stay on it.
+	var gates := run.map_view.page
+	check(gates.get_global_rect().is_equal_approx(screen), "The route's gates fill the screen")
+	await settle(RouteGates.RISE_TIME + RouteGates.RISE_STAGGER * 3.0 + 0.2)
+	check(screen.grow(1.0).encloses(Rect2(gates.global_position + gates._origin, RouteGates.DESIGN * gates._zoom)), "The gates' design space stays on the screen")
+	for index in gates.open.size():
+		var gate := gates.gate_rect(index)
+		check(gate.has_area() and screen.encloses(Rect2(gates.global_position + gate.position, gate.size)), "Gate %d stands on the screen" % (index + 1))
+	check(screen.encloses(gates.guide.get_global_rect()), "The gates' keys stay on the screen")
+	check(not RouteGates.LEFT.intersects(RouteGates.RIGHT) and RouteGates.LEFT.end.x < RouteGates.HERO.x - 100.0 and RouteGates.RIGHT.position.x > RouteGates.HERO.x + 100.0, "What waits and what it gives stand clear of her, either side")
+	check(RouteGates.CARD_TOP > RouteGates.THREAD_Y + RouteGates.THREAD_ROW * 1.5 and RouteGates.THREAD_FROM > RouteGates.EDGE + 320.0 and RouteGates.THREAD_TO < RouteGates.DESIGN.x - RouteGates.EDGE - RouteGates.STATUS_WIDTH, "The thread stands clear of the chapter's name, her state and its own card")
 	# An area: the HUD in its corners, off the fight round the hero.
 	run.map_view._choose(run.run.route.nodes(0)[0])
 	await settle(BattleArea.BANNER_TIME + 0.2)

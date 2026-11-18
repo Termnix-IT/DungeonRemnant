@@ -3,7 +3,7 @@ extends Node
 
 # A real-time run through a chapter, from the first choice to its end (run
 # it with F6 from run_director.tscn). It lays out the route (RouteMap) and
-# shows it (RouteMapView); the area chosen is fought (BattleArea) with the
+# shows it (RouteMapView, a page of gates); the area chosen is fought (BattleArea) with the
 # run's health and build; a cleared area gives its waypoint's reward (three
 # boon cards, a heal, or echo) and the route moves on a layer. The boss
 # cleared, the hero fallen, or the run left from a fight's menu, ends the
@@ -122,7 +122,7 @@ func _ready() -> void:
 	add_child(event_view)
 	event_view.chosen.connect(_on_event_choice)
 	map_menu = DungeonMenu.new()
-	map_menu.resume_caption = tr("地図に戻る")
+	map_menu.resume_caption = tr("分かれ道に戻る")
 	map_menu.settings = settings if settings != null else GameSettings.new()
 	map_menu.run = run
 	add_child(map_menu)

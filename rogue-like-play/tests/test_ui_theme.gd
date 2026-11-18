@@ -166,6 +166,7 @@ func run_tests() -> void:
 	check_book(theme)
 	check_chart(theme)
 	check_vista(theme)
+	check_gates(theme)
 	check_stage(theme)
 	check(HubUI.STAR_WAIST_SMALL > HubUI.STAR_WAIST and HubUI.STAR_SCALE > 1.0, "A small star keeps a fuller waist than a large one, so it does not read as a plus sign")
 	# A secondary action that can be pressed must never look like one that
@@ -318,6 +319,29 @@ func check_vista(theme: Theme) -> void:
 	check(theme.get_color(&"art_locked", &"Vista").get_luminance() < 0.3, "A sealed chapter's painting is dark")
 	for item in theme.get_font_size_list(&"Vista"):
 		check(theme.get_font_size(item, &"Vista") >= 14, "The vista's %s stays at 14px or more" % item)
+
+
+# The route's gates: their words stand on the night the painting falls into
+# and on the card under the thread, each reward's light among them, and none
+# is smaller than 14px.
+func check_gates(theme: Theme) -> void:
+	var plate := theme.get_color(&"plate", &"Gates")
+	check(plate.a >= 0.9, "The thread's card hides the gates behind its words")
+	plate.a = 1.0
+	for ground: Color in [theme.get_color(&"night", &"Gates"), plate]:
+		for item: StringName in [&"pale", &"dim", &"boon", &"heal", &"echo", &"event", &"boss"]:
+			var colour := theme.get_color(item, &"Gates")
+			check(contrast(colour, ground) >= 4.5, "The gates' %s reads on their dark at 4.5:1 or more (%.1f)" % [item, contrast(colour, ground)])
+		check(contrast(theme.get_color(&"faint", &"Gates"), ground) >= 3.0, "The gates' empty marks stay legible at 3:1 or more")
+	var lights: Array[Color] = []
+	for item: StringName in [&"boon", &"heal", &"echo", &"event", &"boss"]:
+		lights.append(theme.get_color(item, &"Gates"))
+	for index in lights.size():
+		for other in range(index + 1, lights.size()):
+			check(absf(lights[index].h - lights[other].h) > 0.06 and absf(lights[index].h - lights[other].h) < 0.94, "No two gates' lights are of one hue")
+	check(theme.get_color(&"art", &"Gates").get_luminance() < 0.3 and theme.get_color(&"shape", &"Gates").get_luminance() < 0.05, "The far painting and a foe not turned to are dark")
+	for item in theme.get_font_size_list(&"Gates"):
+		check(theme.get_font_size(item, &"Gates") >= 14, "The gates' %s stays at 14px or more" % item)
 
 
 # The settings' list and stage: their words stand on the stage's dark face
