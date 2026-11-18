@@ -6,7 +6,8 @@ extends Control
 # within in the colour of what it gives (a boon's gold, a heal's green, the
 # echo's blue, an event's violet, the boss's red) with what leads it
 # standing in the light (RouteStage.leader, an event's object): a dark shape
-# until the cursor turns to its gate, and then it is seen. The gate turned
+# until the cursor turns to its gate, and then it is seen, unless it is a
+# foe she has not met, which stays a shape (figure_known). The gate turned
 # to grows and its light runs down the floor to her feet; what waits behind
 # it is told at her left and what it gives at her right, so the two are
 # weighed across her.
@@ -287,6 +288,18 @@ func closes(point: RouteMap.Waypoint) -> Dictionary:
 
 func is_met(foe: FoeData) -> bool:
 	return meta == null or meta.has_met(foe.id)
+
+
+# Whether what stands in an area's gate is seen once the gate is turned to:
+# an event's object always, and the boss, whose coming out is the meeting;
+# another fight's leading foe only once it has been met, as the encyclopedia
+# shows a foe not met by its shape alone.
+func figure_known(point: RouteMap.Waypoint) -> bool:
+	var area := point.area
+	if area.is_event() or area.boss != null:
+		return true
+	var foe := RouteStage.leader(area)
+	return foe == null or is_met(foe)
 
 
 # The echo an area brings in all: an echo reward's whole amount, else what
@@ -1068,7 +1081,8 @@ func _draw_gate(index: int) -> void:
 		var full := art.get_size()
 		var kept := full * minf(room.x / full.x, room.y / full.y)
 		var foe := RouteStage.leader(point.area)
-		var seen := Color(dark, 0.94).lerp(foe.tint if foe != null and not point.area.is_event() else Color.WHITE, lit)
+		# A foe not met stays a shape against the light, turned to or not.
+		var seen := Color(dark, 0.94).lerp(foe.tint if foe != null and not point.area.is_event() else Color.WHITE, lit if figure_known(point) else 0.0)
 		draw_texture_rect(art, Rect2(-kept.x * 0.5, -2.0 - kept.y, kept.x, kept.y), false, Color(seen, seen.a * rise * (0.25 + 0.75 * open_share)))
 		# The light catching its feet.
 		_glow(Vector2(0.0, -4.0), wide * 0.5, Color(colour.lerp(Color.WHITE, 0.5), 0.34 * strength), 0.3)

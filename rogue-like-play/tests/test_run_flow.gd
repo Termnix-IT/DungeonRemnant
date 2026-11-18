@@ -233,6 +233,15 @@ func run_tests() -> void:
 	check(not events.is_empty() and events.all(func(point: RouteMap.Waypoint) -> bool:
 		var stop := page.tell(point)
 		return page.portrait_of(point.area) == RouteStage.prop_for(point.area.event) and stop.danger == 0 and stop.reward == -1 and stop.reward_words == point.area.condition and stop.foes.is_empty()), "An event's gate holds its object instead, and tells its trade")
+	# A foe not met stays a shape in its gate; an event's object and the boss
+	# (whose coming out is the meeting) are seen.
+	check(all_points.all(func(point: RouteMap.Waypoint) -> bool: return page.figure_known(point)), "With no record every gate's figure is seen once turned to")
+	page.meta = MetaProgress.new()
+	check(not page.figure_known(first) and page.tell(first).foes.all(func(entry: Array) -> bool: return not entry[1]), "A leading foe not met stays a shape, as its picture among the foes does")
+	check(events.all(func(point: RouteMap.Waypoint) -> bool: return page.figure_known(point)) and page.figure_known(route.nodes(route.size() - 1)[0]), "An event's object and the boss are seen all the same")
+	page.meta.met[String(RouteStage.leader(first.area).id)] = true
+	check(page.figure_known(first), "Once met, it is seen")
+	page.meta = null
 	var field: AreaData = fights.map(func(point: RouteMap.Waypoint) -> AreaData: return point.area).filter(func(area: AreaData) -> bool: return area.spawn_table != null)[0]
 	var heaviest: SpawnEntry = field.spawn_table.entries[0]
 	for entry: SpawnEntry in field.spawn_table.entries:

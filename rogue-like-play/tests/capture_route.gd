@@ -2,6 +2,7 @@ extends SceneTree
 
 # The route's gates drawn for real, in the states worth looking at: the
 # run's first choice (a new player's record, the foes not met as shapes),
+# the same with its leading foe not met either (a shape in its lit gate),
 # two areas in with three ways open (at 1600x900, 1280x720 and 1920x1080),
 # another gate turned to, an event's gate, the question asked, her walk
 # into the light, an area read on the thread, the page held behind an
@@ -36,6 +37,8 @@ func capture() -> void:
 	director.meta.met = {"moss_sentinel": true, "gale_rat": true}
 	director.show_map()
 	await _grab("start", 1.2)
+	director.meta.met = {}
+	await _grab("unmet", 0.3)
 	_start(null, TWO_IN)
 	for size: Vector2i in [Vector2i(1600, 900), Vector2i(1280, 720), Vector2i(1920, 1080)]:
 		_size(size)
