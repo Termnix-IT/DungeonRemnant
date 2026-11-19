@@ -49,7 +49,7 @@ void fragment() {
 	float seen = mix(0.8, 1.0, deep);
 	vec2 look = FAR + (q - FAR) * seen + shift;
 	float value = dot(textureLod(beyond, clamp(look, vec2(0.003), vec2(0.997)), 0.8).rgb, vec3(0.3, 0.5, 0.2));
-	float strength = power + flood * 0.55;
+	float strength = power + flood * 0.3;
 	vec3 tone = mix(colour.rgb, vec3(1.0), clamp(smoothstep(0.5, 1.1, value * strength) * 0.55 + flood * 0.12, 0.0, 1.0));
 	vec3 col = dark.rgb + tone * value * (0.16 + 1.5 * strength);
 	// Its far light, swelling with the gate's strength.

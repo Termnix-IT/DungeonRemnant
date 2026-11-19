@@ -153,7 +153,21 @@ const NEAR_SLIDE := 16.0
 const ASK_LEAN := 0.1
 const ASK_PUSH := 0.035
 const THUMP := 3.5
-const PUSH := 2.7
+const PUSH := 4.6
+# Her walk: the share of it she takes to gather herself, the share one step
+# takes, and how far a step lifts the view (px).
+const SET_OFF := 0.07
+const STEP_SHARE := 0.17
+const STEP_BOB := 1.3
+# The grille's rebound off the threshold (a share of its fall), and how
+# long the ring of light the gate's answer sends over the floor takes.
+const REBOUND := 0.035
+# Past the threshold she walks on into the place beyond: how far up the
+# opening its floor takes her (a share of the opening's height) and how
+# small its depth makes her there.
+const DEPTH := 0.3
+const DEEP_SIZE := 0.5
+const RING_TIME := 0.6
 const FAR_FOLLOW := 0.3
 const CURTAIN_FROM := 0.74
 # Where on the gate's threshold her walk ends, as a share of the way from
@@ -247,6 +261,8 @@ var _clock := 0.0
 var _steps := 0
 # The gate chosen has answered the question (its flare and its sparks).
 var _answered := true
+# She has crossed her gate's threshold (heard once).
+var _crossed := false
 var _kicks := {}
 var _zones: Array = []
 var _origin := Vector2.ZERO
@@ -726,6 +742,7 @@ func go() -> void:
 	peek = null
 	_kick(&"go")
 	_steps = 0
+	_crossed = false
 	GameAudio.play(self, &"gate_go", -13.0)
 	_hint()
 
@@ -1001,6 +1018,14 @@ func _land_shake(index: int) -> Vector2:
 	return Vector2(0.0, sin(since / LAND_TIME * TAU * 3.0) * LAND_SHAKE * (1.0 - since / LAND_TIME))
 
 
+# How far a grille that has just landed has sprung back up off the stone.
+func _rebound(index: int) -> float:
+	if _landed[index] < 0.0:
+		return 0.0
+	var since := _clock - _landed[index]
+	return REBOUND * exp(-since * 15.0) * absf(sin(since * 36.0)) if since < 0.4 else 0.0
+
+
 # Where a gate's foot stands now.
 func gate_foot(index: int) -> Vector2:
 	return Vector2(gate_x(index), FLOOR + (1.0 - _rise(index)) * 26.0)
@@ -1026,8 +1051,8 @@ func _lay_gates(delta := 0.0) -> void:
 	for index in gates.size():
 		var gate := gates[index]
 		gate.lit = _lit[index]
-		gate.flare = _flare[index] + (flooding * 0.5 if index == cursor else 0.0)
-		gate.drop = _drop[index]
+		gate.flare = _flare[index] + (flooding * 0.2 if index == cursor else 0.0)
+		gate.drop = _drop[index] - _rebound(index)
 		gate.open_share = 1.0 - smoothstep(0.0, 1.0, _drop[index])
 		gate.rise = _rise(index)
 		gate.dark = veiled(open[index])
@@ -1112,6 +1137,9 @@ func _light_hall() -> void:
 	hall.set_shader_parameter(&"dusk", smoothstep(0.25, 0.85, going()) * 0.8)
 	var spur := _since(&"ask") / SPUR_TIME
 	hall.set_shader_parameter(&"spur", Vector2(cursor, spur if asked and spur <= 1.0 else -1.0))
+	var ring := (_since(&"ask") - SPUR_TIME) / RING_TIME
+	hall.set_shader_parameter(&"shock", Vector3(cursor, ring if asked and _answered and ring <= 1.0 else -1.0, 1.5))
+	hall.set_shader_parameter(&"focus", asked_share if not held else 0.0)
 	hall.set_shader_parameter(&"gate_count", mini(gates.size(), 3))
 	hall.set_shader_parameter(&"gate_x", places)
 	hall.set_shader_parameter(&"gate_half", halves)
@@ -1142,30 +1170,49 @@ func _light_hall() -> void:
 	hall.set_shader_parameter(&"flush", Color(flush, flush.a * flushed))
 
 
-# One moment of her walk: up her causeway to the gate's threshold, smaller
-# with the floor's depth and darker against the gate's light, and on into
-# the place beyond; the camera goes after her, through the gate, and the
-# hall behind falls dark.
+# One moment of her walk. She gathers herself, goes up her causeway to the
+# gate's threshold (smaller with the floor's depth, darker against the
+# gate's light) and on into the place beyond, toward its far light; the
+# camera goes after her with her steps in it, through the gate, and the hall
+# behind falls dark.
 func _walk() -> void:
 	if hero == null or cursor >= gates.size():
 		return
 	var along := going()
 	var gate := Vector2(gate_x(cursor), FLOOR - 2.0)
-	var share := smoothstep(0.0, THRESHOLD, along)
+	var share := smoothstep(SET_OFF, THRESHOLD, along)
 	var within := smoothstep(THRESHOLD, 1.0, along)
-	var next := HERO.lerp(gate, share) + Vector2(0.0, -10.0 * within)
+	var deep := gates[cursor].opening().y * DEPTH
+	var next := HERO.lerp(gate, share) + Vector2(0.0, -deep * within)
 	hero.step(next - hero.position)
-	_place_hero(next, lerpf(1.0, FAR_SIZE, share) * lerpf(1.0, 0.86, within))
+	# Before the first step she sinks a little on her feet.
+	var gather := sin(clampf(along / SET_OFF, 0.0, 1.0) * PI)
+	var small := lerpf(1.0, FAR_SIZE, share) * lerpf(1.0, DEEP_SIZE, within)
+	_place_hero(next, small)
+	hero.scale = Vector2(small * (1.0 + 0.03 * gather), small * (1.0 - 0.05 * gather))
 	hero.modulate = _hero_tone().lerp(_colour(&"shape"), smoothstep(0.25, 1.0, share) * 0.92)
-	# Her steps on the stone.
-	var step := floori(along / 0.19)
+	hero.modulate.a = 1.0 - 0.6 * smoothstep(0.45, 1.0, within)
+	# Her steps on the stone, and the threshold crossed.
+	var step := floori(maxf(0.0, along - SET_OFF) / STEP_SHARE)
 	if step > _steps and along < THRESHOLD:
 		_steps = step
-		GameAudio.play(self, &"step", -17.0 - 2.0 * step)
+		GameAudio.play(self, &"step", -17.0 - 1.5 * step)
+	if within > 0.0 and not _crossed:
+		_crossed = true
+		GameAudio.play(self, &"gate_turn", -19.0, 0.8)
 	var push := along * along * (3.0 - 2.0 * along)
 	push *= push
-	_eye = (DESIGN * 0.5).lerp(Vector2(gate.x, FLOOR - gates[cursor].opening().y * 0.44), smoothstep(0.0, 0.85, along))
+	var stride := sin(maxf(0.0, along - SET_OFF) / STEP_SHARE * TAU) * STEP_BOB * (1.0 - smoothstep(THRESHOLD - 0.2, THRESHOLD, along))
+	_eye = (DESIGN * 0.5).lerp(Vector2(gate.x, FLOOR - gates[cursor].opening().y * 0.4), smoothstep(0.0, 0.8, along)) + Vector2(0.0, stride)
 	_eye_zoom = 1.0 + ASK_PUSH + (PUSH - 1.0) * push
+
+
+# Where on the page the gate she goes through has its far light (a share of
+# the page's size): the dark closes on it.
+func exit_point() -> Vector2:
+	if cursor >= gates.size() or size.x <= 0.0 or size.y <= 0.0:
+		return Vector2(0.5, 0.5)
+	return seen(Vector2(gate_x(cursor), FLOOR - gates[cursor].opening().y * 0.52)) / size
 
 
 func _kick(what: StringName) -> void:
@@ -1584,7 +1631,7 @@ func _draw_gate_words(index: int) -> void:
 	# Its name and signs under the threshold (the boss's own title, while it
 	# comes out).
 	if not revealing:
-		var fade := (0.55 + 0.45 * lit) * (0.3 + 0.7 * open_share) * rise * _words_left()
+		var fade := (0.84 + 0.16 * lit) * (0.34 + 0.66 * open_share) * rise * _words_left()
 		_shaded(Vector2(-BLOCK_WIDTH * 0.5, NAME_LINE), told.name, &"title_font", &"name_size", Color(pale, fade), HORIZONTAL_ALIGNMENT_CENTER, BLOCK_WIDTH)
 		_draw_signs(Vector2(0.0, SIGNS_LINE), told, fade)
 		if mine:
@@ -1756,23 +1803,40 @@ func _draw_top() -> void:
 	var dim := _colour(&"dim")
 	var gold := _colour(&"boon")
 	var come := _eased(&"open", RISE_TIME)
+	# A soft shade behind what is written at either end of the top and
+	# behind the keys at the foot: the words are read against it, whatever
+	# the chapter's painting and floor do there.
+	var night := _colour(&"night")
+	_shelf(Rect2(0.0, 0.0, 420.0, 132.0), Vector2(0.0, 0.0), night)
+	_shelf(Rect2(DESIGN.x - 430.0, 0.0, 430.0, 150.0), Vector2(1.0, 0.0), night)
+	_shelf(Rect2(0.0, DESIGN.y - 96.0, 700.0, 96.0), Vector2(0.0, 1.0), night)
 	# Where along the chapter she is, the tablet tells.
 	var number := Chapters.short_name(route.chapter)
 	_shaded(Vector2(EDGE, 46.0), number, &"font", &"label_size", dim)
 	var x := EDGE + _width(number, &"font", &"label_size") + 12.0
-	_shaded(Vector2(x, 48.0), Chapters.title(route.chapter), &"title_font", &"name_size", pale)
+	# The chapter's name keeps clear of the tablet: a long one (another
+	# language's) is written a size smaller.
+	var name_size: StringName = &"name_size" if x + _width(Chapters.title(route.chapter), &"title_font", &"name_size") < tablet.rect().position.x - 24.0 else &"key_size"
+	_shaded(Vector2(x, 48.0), Chapters.title(route.chapter), &"title_font", name_size, pale)
 	if run.step > 0:
-		_shaded(Vector2(x + _width(Chapters.title(route.chapter), &"title_font", &"name_size") + 14.0, 46.0), tr("段階%d") % run.step, &"font", &"label_size", dim)
+		_shaded(Vector2(x + _width(Chapters.title(route.chapter), &"title_font", name_size) + 14.0, 46.0), tr("段階%d") % run.step, &"font", &"label_size", dim)
 	HubUI.mark(self, Vector2(EDGE + 4.0, 61.0), 4.0, Color(gold, 0.9 * come))
 	HubUI.hairline(self, Vector2(EDGE + 14.0, 61.0), Vector2(EDGE + 14.0 + 250.0 * come, 61.0), Color(gold, 0.55))
 	if not note_text.is_empty():
-		_shaded(Vector2(EDGE, 84.0), note_text, &"font", &"label_size", Color(dim, come))
+		# What the last area gave: within the room left of the tablet, on two
+		# lines where a language needs them.
+		var room := tablet.rect().position.x - EDGE - 18.0
+		var ink := Color(dim, come)
+		var from := Vector2(EDGE, 84.0)
+		draw_multiline_string_outline(_face(&"font"), from + Vector2(0.0, 1.5), note_text, HORIZONTAL_ALIGNMENT_LEFT, room, _size(&"label_size"), 2, 5, Color(_colour(&"night"), 0.45 * come), _breaks())
+		draw_multiline_string(_face(&"font"), from, note_text, HORIZONTAL_ALIGNMENT_LEFT, room, _size(&"label_size"), 2, ink, _breaks())
 	var right := DESIGN.x - EDGE
 	var left := right - STATUS_WIDTH
 	var hp := run.hp if run.hp > 0 else _max_hp
 	_shaded(Vector2(left, 44.0), "HP", &"bold_font", &"label_size", _colour(&"boss"))
-	_shaded(Vector2(left + 30.0, 46.0), str(hp), &"title_font", &"name_size", pale)
-	_shaded(Vector2(left + 30.0 + _width(str(hp), &"title_font", &"name_size") + 6.0, 46.0), "/ %d" % _max_hp, &"lead_font", &"body_size", dim)
+	var figures := left + _width("HP", &"bold_font", &"label_size") + 9.0
+	_shaded(Vector2(figures, 46.0), str(hp), &"title_font", &"name_size", pale)
+	_shaded(Vector2(figures + _width(str(hp), &"title_font", &"name_size") + 6.0, 46.0), "/ %d" % _max_hp, &"lead_font", &"body_size", dim)
 	_shaded(Vector2(left, 46.0), "Lv %d" % run.progression.level, &"title_font", &"key_size", pale, HORIZONTAL_ALIGNMENT_RIGHT, STATUS_WIDTH)
 	_draw_gauge(Rect2(left, 55.0, STATUS_WIDTH, 8.0), clampf(hp / float(_max_hp), 0.0, 1.0), _colour(&"boss"))
 	_sign(Vector2(left + 8.0, 88.0), 7.0, AreaData.Reward.ECHO, _colour(&"echo"))
@@ -1794,6 +1858,18 @@ func _draw_top() -> void:
 	if not curses_text.is_empty():
 		var rows := 1 + (held_boons.size() - 1) / per_row if not held_boons.is_empty() else 0
 		_shaded(Vector2(left, 124.0 + rows * (EMBLEM + 6.0) - EMBLEM), curses_text, &"bold_font", &"label_size", _colour(&"boss"), HORIZONTAL_ALIGNMENT_RIGHT, STATUS_WIDTH)
+
+
+# A shade thickest at one corner of `rect` (`corner`: 0 or 1 across and
+# down) and gone at the opposite one.
+func _shelf(rect: Rect2, corner: Vector2, colour: Color) -> void:
+	var points := PackedVector2Array([rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)])
+	var colours := PackedColorArray()
+	for point in points:
+		var across := 1.0 - absf((point.x - rect.position.x) / rect.size.x - corner.x)
+		var down := 1.0 - absf((point.y - rect.position.y) / rect.size.y - corner.y)
+		colours.append(Color(colour, 0.62 * across * down))
+	draw_polygon(points, colours)
 
 
 # A gauge: a dark trough between two fine lines with a lozenge at either

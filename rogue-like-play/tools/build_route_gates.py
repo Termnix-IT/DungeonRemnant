@@ -24,6 +24,10 @@ fills its picture):
 	finial_<kind>.png         what crowns a gate by its area's kind (arena,
 	                          event, boss), cut from the one board
 	                          gate_finials.png, FINIAL_HEIGHT tall at most
+	dress_<part>.png          the rest of a gate's dress: a trial's banner
+	                          and spiked ridge (cut from dress_arena.png),
+	                          an event's candles and string of charms (from
+	                          dress_event.png)
 	floor_flags.png           the hall's paving seen from straight above, laid
 	                          beside its mirror both ways so that it repeats
 	                          without a seam (FLAGS_SIZE a quarter)
@@ -62,8 +66,14 @@ OTHERS = ["gate_bars", "hall_pillar"]
 KEYED = {"route_tablet": ("width", 1472), "brazier": ("height", 440), "floor_dais": ("width", 640)}
 INSIDES = ["inside_field", "inside_arena", "inside_event", "inside_boss"]
 FINIALS = ["arena", "event", "boss"]
-HALL = list(KEYED) + INSIDES + ["gate_finials", "floor_flags", "road_strip"]
-FINIAL_HEIGHT = 320
+# A board of things side by side: the files its things are written to, left
+# to right, and how tall each may be at most.
+BOARDS = {
+	"gate_finials": [(f"finial_{kind}", 320) for kind in FINIALS],
+	"dress_arena": [("dress_banner", 420), ("dress_ridge", 200)],
+	"dress_event": [("dress_candles", 300), ("dress_charms", 420)],
+}
+HALL = list(KEYED) + INSIDES + list(BOARDS) + ["floor_flags", "road_strip"]
 PLATE_WIDTH = 736
 FLAGS_SIZE = 768
 ROAD_WIDTH = 384
@@ -163,9 +173,9 @@ def build_hall(name: str) -> list[Path]:
 			sized(built, "width", PLATE_WIDTH).save(plate)
 			return [target, plate]
 		return [target]
-	if name == "gate_finials":
-		# Three things side by side on one board: each is cut where the board
-		# is see-through from top to bottom.
+	if name in BOARDS:
+		# Things side by side on one board: each is cut where the board is
+		# see-through from top to bottom.
 		board = key_out(Image.open(SOURCE / f"{name}.png"), 2)
 		painted = np.asarray(board.getchannel("A")) > 24
 		columns = painted.any(axis=0)
@@ -180,14 +190,15 @@ def build_hall(name: str) -> list[Path]:
 				start = None
 		if start is not None:
 			runs.append((start, len(columns)))
-		if len(runs) != len(FINIALS):
-			raise ValueError(f"the board holds {len(runs)} things, not {len(FINIALS)}")
+		things = BOARDS[name]
+		if len(runs) != len(things):
+			raise ValueError(f"the board holds {len(runs)} things, not {len(things)}")
 		targets = []
-		for kind, (left, right) in zip(FINIALS, runs):
+		for (thing, tall), (left, right) in zip(things, runs):
 			piece = board.crop((left, 0, right, board.height))
 			piece = piece.crop(piece.getchannel("A").point(lambda value: 255 if value > 24 else 0).getbbox())
-			target = OUTPUT / f"finial_{kind}.png"
-			sized(piece, "height", min(FINIAL_HEIGHT, piece.height)).save(target)
+			target = OUTPUT / f"{thing}.png"
+			sized(piece, "height", min(tall, piece.height)).save(target)
 			targets.append(target)
 		return targets
 	source = Image.open(SOURCE / f"{name}.png").convert("RGB")

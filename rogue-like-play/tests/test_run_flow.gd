@@ -221,7 +221,7 @@ func run_tests() -> void:
 	check(page.gates.size() == page.open.size() and page.gates.all(func(gate: RouteGateView) -> bool: return gate.stone.texture == load(RouteGateView.STONES % route.chapter.id) and gate.figure.texture != null), "Each way open is a gate of the chapter's stone, with what leads it standing in it")
 	var hall_light := page._hall.material as ShaderMaterial
 	check(hall_light.get_shader_parameter(&"ground") == RouteGates.ground_of(route.chapter.id) and hall_light.get_shader_parameter(&"painting") == RouteGates.painting_of(route.chapter) and RouteGates.ground_of(route.chapter.id).get_width() == AreaGround.PAINTED_CELL * AreaGround.FLOOR_PERIOD, "The hall is floored with the chapter's own ground under its painting")
-	check(page.gates[0].power() > page.gates[1].power() * 2.0 and page.gates[1].power() > 0.2 and page.gates[0].grown() > page.gates[1].grown(), "The gate turned to stands larger and burns brighter; the others smoulder")
+	check(page.gates[0].power() > page.gates[1].power() * 1.6 and page.gates[1].power() >= 0.5 and page.gates[0].grown() > page.gates[1].grown(), "The gate turned to stands larger and burns brighter; the others smoulder, bright enough to be weighed against it")
 	# The floor is paved: the hall's flags, a causeway from each gate to the
 	# round stone she stands on, the light of the gate turned to run down its
 	# channel to her feet and the others' lying short of her.
@@ -233,6 +233,22 @@ func run_tests() -> void:
 		var kind := RouteGates.kind_of((page.open[index] as RouteMap.Waypoint).area)
 		check(dressed.kind == kind and (dressed.inside.material as ShaderMaterial).get_shader_parameter(&"beyond") == load(RouteGateView.INSIDES % kind) and dressed.has_fires() == (kind == RouteGateView.ARENA or kind == RouteGateView.BOSS) and (dressed.crest != null) == (kind != RouteGateView.FIELD) and dressed.stands.size() == (2 if dressed.has_fires() else 0), "Gate %d is dressed as its area's kind (%s), the place it leads to seen through it" % [index + 1, kind])
 	check(RouteGates.kind_of(load("res://data/areas/moss_plain.tres")) == RouteGateView.FIELD and RouteGates.kind_of(arena_data) == RouteGateView.ARENA and RouteGates.kind_of(route.chapter.boss) == RouteGateView.BOSS and RouteGates.kind_of(route.chapter.events[0]) == RouteGateView.EVENT, "A field, a trial, an event and the boss each have their own gate")
+	# A gate's outline tells its kind: every kind is dressed from the one
+	# table, with parts no other kind's bare gate has.
+	for kind: StringName in [RouteGateView.FIELD, RouteGateView.ARENA, RouteGateView.EVENT, RouteGateView.BOSS]:
+		var worn := RouteGateView.new()
+		root.add_child(worn)
+		worn.setup(route.chapter.id, kind, null, Color.BLACK)
+		var wears: Array = RouteGateView.DRESS[kind]
+		check(wears.all(func(part: StringName) -> bool: return worn.wears(part)) and worn.ridges.size() == (2 if wears.has(&"ridges") else 0) and worn.banners.size() == (2 if wears.has(&"banners") else 0) and worn.charms.size() == (2 if wears.has(&"charms") else 0) and worn.candles.size() == (2 if wears.has(&"candles") else 0) and worn.wicks.size() == worn.candles.size() * RouteGateView.WICKS.size() and worn.pylons.size() == (2 if wears.has(&"pylons") else 0), "A %s's gate wears what its kind's row says, and nothing else" % kind)
+		worn.free()
+	check(RouteGateView.DRESS[RouteGateView.FIELD].is_empty() and RouteGateView.DRESS[RouteGateView.ARENA] != RouteGateView.DRESS[RouteGateView.EVENT] and RouteGateView.DRESS[RouteGateView.BOSS].has(&"pylons") and not RouteGateView.DRESS[RouteGateView.ARENA].has(&"pylons"), "A field's gate stands bare; a trial's, an event's and the boss's each wear their own")
+	var roof := RouteGateView.roof_of(load(RouteGateView.STONES % route.chapter.id))
+	check(roof[0].x == 0.0 and roof[1].y < roof[0].y and roof[0].y < load(RouteGateView.STONES % route.chapter.id).get_height() * 0.4, "The slope of a gate's roof is read from its stone, for the spiked iron to lie on")
+	# What stands in a gate lives, and a foe she has met shows a little of
+	# itself before its gate is turned to (one not met stays a shape).
+	var living := page.gates[1].figure.material as ShaderMaterial
+	check(page.gates[1].alive and is_equal_approx(living.get_shader_parameter(&"alive"), 1.0) and is_equal_approx(living.get_shader_parameter(&"glimpse"), RouteGateView.GLIMPSE) and is_zero_approx(living.get_shader_parameter(&"seen")) and page.gates[1].mist != null, "What stands in a gate not turned to lives and, being known, is dimly seen; mist lies over its feet")
 	for chapter in Chapters.ALL:
 		var light_art: Texture2D = load(RouteGateView.LIGHTS % chapter.id)
 		var stone_art: Texture2D = load(RouteGateView.STONES % chapter.id)
@@ -252,6 +268,12 @@ func run_tests() -> void:
 	var step := page.thread_spot(route.nodes(1)[0]).x - page.thread_spot(route.nodes(0)[0]).x
 	check(is_equal_approx(step, (slab.size.x - RouteTablet.INSET * 2.0) / route.size()) and all_points.all(func(point: RouteMap.Waypoint) -> bool: return slab.grow(-RouteTablet.SOCKET).has_point(page.thread_spot(point))) and is_equal_approx(page.thread_spot(null).x, slab.position.x + RouteTablet.INSET) and page.tablet.slab.texture == load(RouteTablet.SLAB), "The whole route is cut into the tablet, a layer a step along it")
 	check(float(page.tablet._held[first]) > float(page.tablet._held[route.nodes(0)[1]]) * 1.5 and float(page.tablet._held[route.nodes(0)[1]]) > float(page.tablet._held[route.nodes(1)[0]]) and float(page.tablet._held[route.nodes(1)[0]]) > 0.0, "On it the gate turned to shines brightest, the other ways open less, the areas further on faintly")
+	# What an area is to her is told by its socket's size: the gate turned
+	# to the largest, the other ways open next, the areas further on smaller.
+	check(is_equal_approx(float(page.tablet._sized[first]), RouteTablet.CHOSEN) and is_equal_approx(float(page.tablet._sized[route.nodes(0)[1]]), RouteTablet.OPEN) and is_equal_approx(float(page.tablet._sized[route.nodes(1)[0]]), RouteTablet.SOCKET) and RouteTablet.CHOSEN > RouteTablet.OPEN and RouteTablet.OPEN > RouteTablet.SOCKET and RouteTablet.SOCKET > RouteTablet.TAKEN and RouteTablet.HERE > RouteTablet.TAKEN, "The sockets tell by their size what an area is to her")
+	# A way runs straight out of its area, aslant, and straight into the next.
+	var groove := page.tablet.way(route.nodes(0)[0], (route.nodes(0)[0] as RouteMap.Waypoint).next[0])
+	check(groove.size() == 4 and is_equal_approx(groove[0].y, groove[1].y) and is_equal_approx(groove[2].y, groove[3].y) and is_equal_approx(groove[1].x - groove[0].x, RouteTablet.STUB) and groove[0] == page.thread_spot(route.nodes(0)[0]) and page.tablet.along(null, first, 1.0).is_equal_approx(page.thread_spot(first)) and page.tablet.along(null, first, 0.0).is_equal_approx(page.thread_spot(null)), "A way on the tablet runs straight out of its area, aslant, and straight into the next")
 	# What stands in a gate: the area's leading foe painted, or an event's object.
 	var fights: Array = all_points.filter(func(point: RouteMap.Waypoint) -> bool: return not point.area.is_event())
 	check(fights.all(func(point: RouteMap.Waypoint) -> bool: return page.portrait_of(point.area) != null and page.portrait_of(point.area) == EnemySprites.codex_portrait(RouteStage.leader(point.area).visual_id)), "A fight's gate holds its leading foe, painted")
@@ -343,6 +365,8 @@ func run_tests() -> void:
 	check(page.traveling and page.going() >= RouteGates.CURTAIN_FROM - 0.02 and director.area == null, "Enter on the way hurries her to where the screen goes dark")
 	await create_timer(RouteGates.TRAVEL_TIME * (1.0 - RouteGates.CURTAIN_FROM) * 0.75).timeout
 	check(page.traveling and director.map_view.curtain.layer > director.map_view.layer and director.map_view._dark.color.a > 0.5, "As she goes through the gate the screen goes dark, over everything")
+	var exit := page.exit_point()
+	check(page.hero.position.y < RouteGates.FLOOR and page.hero.scale.y < RouteGates.FAR_SIZE and page._crossed and exit.x > 0.0 and exit.x < 1.0 and exit.y > 0.0 and exit.y < 1.0 and ((director.map_view._dark.material as ShaderMaterial).get_shader_parameter(&"centre") as Vector2).distance_to(exit) < 0.05, "She has crossed the threshold and walks on into the place beyond, the dark closing on its far light")
 	await create_timer(RouteGates.TRAVEL_TIME * 0.5 + 0.15).timeout
 	check(director.area != null and director.area.data == first.area and not director.map_view.visible, "A choice enters its area")
 	await create_timer(RouteMapView.LIFT_TIME + 0.1).timeout

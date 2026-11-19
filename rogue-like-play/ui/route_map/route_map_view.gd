@@ -19,10 +19,11 @@ signal chosen(waypoint: RouteMap.Waypoint)
 # The run's menu was asked for (Esc, Start).
 signal menu_requested
 
+const CLOSING := preload("res://ui/route_map/route_curtain.gdshader")
 # How long the dark takes to lift off what she has come into, and how many
 # frames it waits first (the area is built in the frame of the pick, and
 # that long frame would otherwise eat the lifting).
-const LIFT_TIME := 0.38
+const LIFT_TIME := 0.45
 const LIFT_WAIT := 2
 
 var page: RouteGates
@@ -72,20 +73,28 @@ func _ready() -> void:
 	_dark.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_dark.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dark.color = Color(0.0, 0.0, 0.0, 0.0)
+	var closing := ShaderMaterial.new()
+	closing.shader = CLOSING
+	_dark.material = closing
 	curtain.add_child(_dark)
 	hide()
 
 
-# The dark follows her walk into the gate, and lifts once she is through.
+# The dark follows her walk into the gate, closing on its far light, and
+# lifts once she is through, opening from the screen's middle.
 func _process(_delta: float) -> void:
+	var closing := _dark.material as ShaderMaterial
+	closing.set_shader_parameter(&"extent", _dark.size)
 	if _lift_in > 0:
 		_lift_in -= 1
 		if _lift_in == 0:
+			closing.set_shader_parameter(&"centre", Vector2(0.5, 0.5))
 			_lifting = create_tween()
-			_lifting.tween_property(_dark, "color:a", 0.0, LIFT_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+			_lifting.tween_property(_dark, "color:a", 0.0, LIFT_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	if page == null or not visible or not page.traveling:
 		return
 	var night := page.theme_colour(&"night")
+	closing.set_shader_parameter(&"centre", page.exit_point())
 	_dark.color = Color(night.r, night.g, night.b, page.leaving())
 
 

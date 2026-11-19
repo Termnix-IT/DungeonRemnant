@@ -65,6 +65,12 @@ uniform float road_fill[3];
 // Her choice, sent up the channel of the gate chosen: which gate (x) and
 // how far from her feet it has run (y: 0 to 1; under 0: none).
 uniform vec2 spur = vec2(0.0, -1.0);
+// The gate's answer: a ring of its light running out over the floor from
+// its threshold (x: which gate, y: how far it has run, 0 to 1; under 0:
+// none, z: its strength); and how far the far wall is dimmed while the
+// question stands (0 to 1).
+uniform vec3 shock = vec3(0.0, -1.0, 0.0);
+uniform float focus = 0.0;
 // What stands in each gate: its width and height on the page (0: nothing).
 uniform vec2 shade_size[3];
 // Each gate's fires: their strength (0: none), how far from its middle they
@@ -152,7 +158,7 @@ void fragment() {
 	float veil = down < 0.25 ? mix(0.9, 0.26, down / 0.25) : (down < 0.75 ? mix(0.26, 0.56, (down - 0.25) / 0.5) : mix(0.56, 1.0, (down - 0.75) / 0.25));
 	float side = abs(far_at.x / extent.x - 0.5) * 2.0;
 	veil = max(veil, smoothstep(0.62, 1.0, side) * 0.9);
-	col = mix(far, night.rgb, veil);
+	col = mix(far * (1.0 - 0.32 * focus), night.rgb, veil);
 
 	// The floor's own place under this pixel.
 	vec2 w = on_floor(p);
@@ -198,6 +204,11 @@ void fragment() {
 			}
 		}
 		glow += tone * power * (pool * 0.5 + fan * 1.25) * (1.0 - shadow);
+		if (shock.y >= 0.0 && index == int(shock.x + 0.5)) {
+			float out_by = length(vec2(across, toward));
+			float ring = exp(-pow((out_by - 0.04 - shock.y * 0.66) / 0.034, 2.0)) * (1.0 - shock.y) * (1.0 - shock.y) * smoothstep(-0.03, 0.04, toward);
+			glow += tone * ring * shock.z;
+		}
 		// The dust hanging in the light, in slow streaks.
 		float streak = fbm(vec2(across * 9.0, before * 5.0 - clock * 0.05 + float(index) * 7.0));
 		haze += tone * power * fan * (0.035 + 0.07 * streak) * (1.0 - shadow * 0.6);

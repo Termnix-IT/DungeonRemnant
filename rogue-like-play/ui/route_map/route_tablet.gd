@@ -2,16 +2,25 @@ class_name RouteTablet
 extends Node2D
 
 # The chapter's whole route, cut into a stone tablet that hangs over the
-# hall of gates (RouteGates). Every area is a socket ringed with bronze and
-# every way between two a groove in the slate, and they are lit the way the
-# gates are: the way walked stands filled with gold, the socket she is at
-# under a small star; each way open now is a jewel in the colour of its
-# gate; the gate turned to sends its light along the groove to its socket,
-# which wears a ring, and faintly on down every way that pick keeps open,
-# while the areas it would put out of reach go dark; the boss is a lozenge
-# at the end, dim until her way reaches it. Asked, the jewels of the gates
-# not chosen go out as their grilles land; going, the star walks the groove
-# with her.
+# hall of gates (RouteGates), to be read at a glance: where she has been,
+# where she is, what she may choose now, and how far the boss still is.
+#
+# What an area is to her is told by its socket's size and shape, not by its
+# colour alone. Where she is: the largest round, gold, a star in it and a
+# compass turning round it. The areas she has taken: small gold stones, the
+# grooves between them filled with gold (the widest on the tablet). The ways
+# open now: large jewels in their gates' colours, each with its gate's
+# number, the one turned to grown larger and ringed, its light running to it
+# along the groove. The areas further on: smaller sockets with the sign of
+# what they give, glowing faintly where the gate turned to still leads and
+# dark where it does not. The areas out of reach: small empty sockets, their
+# grooves only scratched. The boss: a lozenge at the end, dim until her way
+# reaches it. Along the tablet's foot a small stone for every stage counts
+# the way to the boss.
+#
+# A way runs straight out of its area, slants, and runs straight into the
+# next, so ways that part or meet do so at an area's side and are not
+# mistaken for ways that merely cross.
 #
 # The page tells it nothing but when the route is shown anew and when the
 # gate turned to changes; what each area is to her now it asks the page
@@ -22,24 +31,36 @@ const CARVING := preload("res://ui/route_map/route_tablet.gdshader")
 const SLAB := "res://art/ui/route/route_tablet.png"
 # The tablet on the page: its size, how far down from the top its upper
 # edge hangs, and how far in from its ends the start and the boss lie.
-const SIZE := Vector2(736.0, 94.0)
+const SIZE := Vector2(820.0, 105.0)
 const TOP := 4.0
-const INSET := 50.0
-# The gap between a layer's areas, and the room a layer may take in all.
-const ROW := 25.0
+const INSET := 58.0
+# The gap between a layer's areas, the room a layer may take in all, how far
+# above the tablet's middle the route's own middle lies (the stages run
+# along the foot), and how far a way runs straight out of an area.
+const ROW := 28.0
 const ROOM := 62.0
-# The sockets: an area's, the boss's, the start's and one passed by.
+const LIFT := 3.0
+const STUB := 22.0
+# The sockets: an area further on, a way open now, the one turned to, where
+# she is, an area taken, the boss's, the start's and one out of reach.
 const SOCKET := 8.5
-const BOSS_SOCKET := 12.5
-const START := 4.5
-const EMPTY := 4.5
+const OPEN := 10.5
+const CHOSEN := 12.5
+const HERE := 10.5
+const TAKEN := 6.0
+const BOSS_SOCKET := 14.0
+const START := 5.0
+const EMPTY := 4.0
+# The stages' line, up from the tablet's foot.
+const STAGE_LINE := 8.5
 # How long the light takes to run to the area turned to, the tablet to come
 # down as the page opens, and the way just walked to cool to gold.
 const RUN_TIME := 0.26
 const DROP_TIME := 0.5
 const COOL_TIME := 1.1
-const WAYS := 40
+const WAYS := 96
 const AREAS := 20
+const STAGES := 8
 
 var page: RouteGates
 var slab: Sprite2D
@@ -47,8 +68,9 @@ var slab: Sprite2D
 var _spots: Dictionary = {}
 var _tones: Dictionary = {}
 var _rewards: Dictionary = {}
-# The light each area's jewel holds now (eased), by area.
+# The light each area's jewel holds now and its socket's size (eased), by area.
 var _held: Dictionary = {}
+var _sized: Dictionary = {}
 var _clock := 0.0
 var _opened := 0.0
 var _turned := -100.0
@@ -69,6 +91,7 @@ func _init(owner_page: RouteGates) -> void:
 	var carved := ShaderMaterial.new()
 	carved.shader = CARVING
 	carved.set_shader_parameter(&"size", SIZE)
+	carved.set_shader_parameter(&"stage_y", SIZE.y - STAGE_LINE)
 	slab.material = carved
 	add_child(slab)
 	_spark = CPUParticles2D.new()
@@ -104,17 +127,42 @@ func spot(point: RouteMap.Waypoint) -> Vector2:
 	return _spots.get(point, rect().get_center())
 
 
+# The way from one area to another on the tablet, as the groove runs: out of
+# the one, aslant, into the other.
+func way(from: RouteMap.Waypoint, to: RouteMap.Waypoint) -> PackedVector2Array:
+	var a := spot(from)
+	var b := spot(to)
+	return PackedVector2Array([a, a + Vector2(STUB, 0.0), b - Vector2(STUB, 0.0), b])
+
+
+# A place a share of the way along a groove.
+func along(from: RouteMap.Waypoint, to: RouteMap.Waypoint, share: float) -> Vector2:
+	var points := way(from, to)
+	var lengths: Array[float] = []
+	var whole := 0.0
+	for index in points.size() - 1:
+		lengths.append(points[index].distance_to(points[index + 1]))
+		whole += lengths[index]
+	var left := clampf(share, 0.0, 1.0) * whole
+	for index in lengths.size():
+		if left <= lengths[index] or index == lengths.size() - 1:
+			return points[index].lerp(points[index + 1], left / maxf(lengths[index], 0.001))
+		left -= lengths[index]
+	return points[points.size() - 1]
+
+
 # The route is shown anew: its areas are given their places.
 func present() -> void:
 	_spots.clear()
 	_tones.clear()
 	_rewards.clear()
 	_held.clear()
+	_sized.clear()
 	var route := page.route
 	var face := rect()
 	var from := face.position.x + INSET
 	var gap := (face.size.x - INSET * 2.0) / route.size()
-	var middle := face.get_center().y
+	var middle := face.get_center().y - LIFT
 	_spots[null] = Vector2(from, middle)
 	for layer in route.size():
 		var points := route.nodes(layer)
@@ -162,9 +210,9 @@ func step(delta: float) -> void:
 		return
 	var come := _come()
 	position = Vector2(0.0, -(1.0 - come) * 30.0) + page.toll_shake() * 0.6
-	modulate.a = come
+	modulate.a = come * (1.0 - page.leaving())
 	slab.position = rect().position
-	_carve()
+	_carve(delta)
 	queue_redraw()
 
 
@@ -180,21 +228,44 @@ func _run() -> float:
 	return share * share * (3.0 - 2.0 * share)
 
 
+# What a way between two areas holds now: its light, how far along it the
+# light has come, the beads running on it, half its width and its depth.
+func _way_state(from: RouteMap.Waypoint, to: RouteMap.Waypoint, shared: Dictionary) -> Dictionary:
+	var pale: Color = shared.pale
+	var gold: Color = shared.gold
+	var walked: Array = shared.walked
+	var at := walked.find(to)
+	if at >= 0 and (from == null and at == 0 or at > 0 and walked[at - 1] == from):
+		# The way walked: gold, the last of it still cooling from white.
+		var fresh := 1.0 - clampf((_clock - _opened) / COOL_TIME, 0.0, 1.0) if at == walked.size() - 1 else 0.0
+		return {tone = Color(gold.lerp(Color.WHITE, 0.6 * fresh), 0.9 + 0.6 * fresh), fill = 1.0, beads = 0.0, wide = 2.7, deep = 1.0}
+	if from == page.here() and page.open.has(to):
+		if to == shared.chosen:
+			# As she goes, the way turns to gold behind her.
+			return {tone = Color((shared.colour as Color).lerp(gold, shared.going), 1.05 + 0.45 * shared.asking), fill = maxf(_run(), shared.going), beads = 1.0 - shared.going, wide = 2.4, deep = 1.0}
+		return {tone = Color(pale, 0.34 * (1.0 - 0.85 * shared.asking)), fill = 1.0, beads = 0.0, wide = 1.7, deep = 1.0}
+	if from != null and page.reach.has(from) and from.layer >= page.route_layer:
+		if (shared.kept as Dictionary).has(from):
+			return {tone = Color(shared.colour, 0.4 * _run()), fill = 1.0, beads = 0.7 if from == shared.chosen else 0.0, wide = 1.6, deep = 1.0}
+		return {tone = Color(pale, 0.08), fill = 1.0, beads = 0.0, wide = 1.5, deep = 0.8}
+	return {tone = Color(pale, 0.0), fill = 1.0, beads = 0.0, wide = 1.2, deep = 0.3}
+
+
 # Tells the carving what every way and every area holds now.
-func _carve() -> void:
+func _carve(delta := 0.0) -> void:
 	var route := page.route
 	var corner := rect().position
 	var chosen := page.selected()
-	var kept := page.reach_from([chosen]) if chosen != null else {}
-	var colour: Color = _tones.get(chosen, page.theme_colour(&"pale"))
 	var pale := page.theme_colour(&"pale")
 	var gold := page.theme_colour(&"boon")
 	var walked := page.run.taken.slice(0, page.route_layer)
-	var asking := page.asking()
-	var going := page.going()
+	var shared := {
+		chosen = chosen, kept = page.reach_from([chosen]) if chosen != null else {}, colour = _tones.get(chosen, pale),
+		pale = pale, gold = gold, walked = walked, asking = page.asking(), going = page.going(),
+	}
 	var ways := PackedVector4Array()
 	var way_tones := PackedColorArray()
-	var way_runs := PackedVector2Array()
+	var way_runs := PackedVector4Array()
 	var pairs: Array = []
 	for point: RouteMap.Waypoint in route.nodes(0):
 		pairs.append([null, point])
@@ -202,55 +273,61 @@ func _carve() -> void:
 		for from: RouteMap.Waypoint in route.nodes(layer):
 			for to: RouteMap.Waypoint in from.next:
 				pairs.append([from, to])
+	# The straight runs out of an area and into one are shared by every way
+	# through it: each takes the brightest of them.
+	var outs := {}
+	var ins := {}
+	var slants: Array = []
 	for pair: Array in pairs:
+		var state := _way_state(pair[0], pair[1], shared)
+		var light := (state.tone as Color).a * 10.0 + float(state.wide) + float(state.deep)
+		if not outs.has(pair[0]) or light > outs[pair[0]][1]:
+			outs[pair[0]] = [state, light]
+		if not ins.has(pair[1]) or light > ins[pair[1]][1]:
+			ins[pair[1]] = [state, light]
+		slants.append([pair[0], pair[1], state])
+	var stretches: Array = []
+	for from: Variant in outs:
+		var a := spot(from)
+		stretches.append([a, a + Vector2(STUB, 0.0), outs[from][0], 0.0, 0.2])
+	for entry: Array in slants:
+		stretches.append([spot(entry[0]) + Vector2(STUB, 0.0), spot(entry[1]) - Vector2(STUB, 0.0), entry[2], 0.2, 0.8])
+	for to: Variant in ins:
+		var b := spot(to)
+		stretches.append([b - Vector2(STUB, 0.0), b, ins[to][0], 0.8, 1.0])
+	for stretch: Array in stretches:
 		if ways.size() >= WAYS:
 			break
-		var from: RouteMap.Waypoint = pair[0]
-		var to: RouteMap.Waypoint = pair[1]
-		var a := spot(from) - corner
-		var b := spot(to) - corner
-		var tone := Color(pale, 0.0)
-		var run := Vector2(1.0, 0.0)
-		var at := walked.find(to)
-		if at >= 0 and (from == null and at == 0 or at > 0 and walked[at - 1] == from):
-			# The way walked: gold, the last of it still cooling from white.
-			var fresh := 1.0 - clampf((_clock - _opened) / COOL_TIME, 0.0, 1.0) if at == walked.size() - 1 else 0.0
-			tone = Color(gold.lerp(Color.WHITE, 0.6 * fresh), 0.85 + 0.6 * fresh)
-		elif from == page.here() and page.open.has(to):
-			if to == chosen:
-				# As she goes, the way turns to gold behind her.
-				tone = Color(colour.lerp(gold, going), 1.0 + 0.45 * asking)
-				run = Vector2(maxf(_run(), going), 1.0 - going)
-			else:
-				tone = Color(pale, 0.3 * (1.0 - 0.8 * asking))
-		elif from != null and page.reach.has(from) and from.layer >= page.route_layer:
-			if kept.has(from):
-				tone = Color(colour, 0.36 * _run())
-				run = Vector2(1.0, 0.7 if from == chosen else 0.0)
-			else:
-				tone = Color(pale, 0.07)
+		var a: Vector2 = stretch[0] - corner
+		var b: Vector2 = stretch[1] - corner
+		var state: Dictionary = stretch[2]
+		# The light comes along the whole way; this stretch is a part of it.
+		var filled := clampf((float(state.fill) - float(stretch[3])) / (float(stretch[4]) - float(stretch[3])), 0.0, 1.0) if float(state.fill) < 1.0 else 1.0
 		ways.append(Vector4(a.x, a.y, b.x, b.y))
-		way_tones.append(tone)
-		way_runs.append(run)
+		way_tones.append(state.tone if filled > 0.0 else Color(state.tone, 0.0))
+		way_runs.append(Vector4(filled, state.beads, state.wide, state.deep))
 	var areas := PackedVector4Array()
 	var area_tones := PackedColorArray()
 	var area_rings := PackedVector2Array()
 	var start := spot(null) - corner
-	areas.append(Vector4(start.x, start.y, START, 0.0))
-	area_tones.append(Color(gold if not walked.is_empty() else pale, 0.8 if not walked.is_empty() else 0.45))
-	area_rings.append(Vector2(0.0, 0.3 if walked.is_empty() else 0.0))
+	var at_start := page.here() == null
+	areas.append(Vector4(start.x, start.y, HERE - 2.0 if at_start else START, 2.0 if at_start else 0.0))
+	area_tones.append(Color(gold, 1.1 if at_start else 0.85))
+	area_rings.append(Vector2(0.0, 0.7 if at_start else 0.0))
 	for layer in route.size():
 		for point: RouteMap.Waypoint in route.nodes(layer):
 			if areas.size() >= AREAS:
 				break
 			var at := spot(point) - corner
 			var state := page.mark(point)
-			var radius := SOCKET
+			var radius := EMPTY
 			var want := 0.0
+			var shape := 0.0
 			var tone: Color = _tones.get(point, pale)
 			var ring := Vector2.ZERO
 			if point.area.boss != null:
 				radius = BOSS_SOCKET
+				shape = 1.0
 				var dark := page.veiled(point)
 				want = 0.2 + 0.1 * sin(_clock * TAU / RouteGates.BOSS_BEAT) if dark else 1.1
 				ring = Vector2(0.0 if dark or point != chosen else 1.0, 0.18 if dark else 0.7)
@@ -258,46 +335,77 @@ func _carve() -> void:
 				match state:
 					RouteGates.Mark.TAKEN:
 						tone = gold
-						want = 1.15 if point == page.here() else 0.85
-						ring.y = 0.75 if point == page.here() else 0.0
+						if point == page.here():
+							radius = HERE
+							shape = 2.0
+							want = 1.2
+							ring.y = 0.85
+						else:
+							radius = TAKEN
+							want = 0.95
 					RouteGates.Mark.OPEN:
 						if point == chosen:
-							want = 1.2 + 0.3 * asking
+							radius = CHOSEN
+							want = 1.2 + 0.3 * float(shared.asking)
 							ring = Vector2(1.0, 0.95)
 						else:
 							# Its jewel goes out as its gate's grille comes down.
-							want = lerpf(0.6, 0.06, page.grille_of(point))
-							ring.y = 0.25 * (1.0 - page.grille_of(point))
+							radius = OPEN
+							want = lerpf(0.7, 0.06, page.grille_of(point))
+							ring.y = 0.3 * (1.0 - page.grille_of(point))
 					RouteGates.Mark.AHEAD:
-						radius = SOCKET - 1.0
-						want = 0.2 if kept.has(point) else 0.045
-					_:
-						radius = EMPTY
-			var light: float = move_toward(_held.get(point, 0.0), want, 0.12 + absf(want - float(_held.get(point, 0.0))) * 0.22)
+						radius = SOCKET
+						want = 0.22 if (shared.kept as Dictionary).has(point) else 0.05
+			var held: float = _held.get(point, 0.0)
+			var light := want if delta <= 0.0 else move_toward(held, want, delta * (3.0 + absf(want - held) * 9.0))
 			_held[point] = light
-			areas.append(Vector4(at.x, at.y, radius, 1.0 if point.area.boss != null else 0.0))
+			var size: float = radius if delta <= 0.0 else move_toward(float(_sized.get(point, radius)), radius, delta * 26.0)
+			_sized[point] = size
+			areas.append(Vector4(at.x, at.y, size, shape))
 			area_tones.append(Color(tone, light))
 			area_rings.append(ring)
+	# The stages along the foot: those behind her gold, the one she chooses
+	# now alight in the colour of the gate turned to, the rest dark, the
+	# boss's red.
+	var stage_xs := PackedFloat32Array()
+	var stage_tones := PackedColorArray()
+	for layer in mini(route.size(), STAGES):
+		var points := route.nodes(layer)
+		stage_xs.append(spot(points[0]).x - corner.x)
+		if layer < page.route_layer:
+			stage_tones.append(Color(gold, 0.9))
+		elif layer == page.route_layer:
+			stage_tones.append(Color(shared.colour, 0.75 + 0.2 * sin(_clock * 2.6)))
+		elif (points[0] as RouteMap.Waypoint).area.boss != null:
+			stage_tones.append(Color(page.theme_colour(&"boss"), 0.5))
+		else:
+			stage_tones.append(Color(pale, 0.1))
 	var carved := slab.material as ShaderMaterial
 	carved.set_shader_parameter(&"way_count", ways.size())
 	carved.set_shader_parameter(&"area_count", areas.size())
+	carved.set_shader_parameter(&"stage_count", stage_xs.size())
 	ways.resize(WAYS)
 	way_tones.resize(WAYS)
 	way_runs.resize(WAYS)
 	areas.resize(AREAS)
 	area_tones.resize(AREAS)
 	area_rings.resize(AREAS)
+	stage_xs.resize(STAGES)
+	stage_tones.resize(STAGES)
 	carved.set_shader_parameter(&"way", ways)
 	carved.set_shader_parameter(&"way_tone", way_tones)
 	carved.set_shader_parameter(&"way_run", way_runs)
 	carved.set_shader_parameter(&"area", areas)
 	carved.set_shader_parameter(&"area_tone", area_tones)
 	carved.set_shader_parameter(&"area_ring", area_rings)
+	carved.set_shader_parameter(&"stage_x", stage_xs)
+	carved.set_shader_parameter(&"stage_tone", stage_tones)
 	carved.set_shader_parameter(&"clock", _clock)
 
 
-# Over the carving: each area's sign in its socket, the star over where she
-# is, and the mark round an area being read.
+# Over the carving: each open way's number and each further area's sign in
+# its socket, the star where she is (walking the groove as she goes), and
+# the mark round an area being read.
 func _draw() -> void:
 	if page == null or page.route == null:
 		return
@@ -307,6 +415,8 @@ func _draw() -> void:
 	var night := page.theme_colour(&"night")
 	var pale := page.theme_colour(&"pale")
 	var gold := page.theme_colour(&"boon")
+	var face := page.get_theme_font(&"bold_font")
+	var size := page.get_theme_font_size(&"label_size")
 	for layer in route.size():
 		for point: RouteMap.Waypoint in route.nodes(layer):
 			if point.area.boss != null:
@@ -314,21 +424,25 @@ func _draw() -> void:
 			var at := spot(point)
 			match page.mark(point):
 				RouteGates.Mark.OPEN:
-					# Dark on its lit jewel.
-					RouteSigns.reward(self, at, 4.6, _rewards.get(point, -1), Color(night, 0.78 * clampf(float(_held.get(point, 0.0)) * 1.6, 0.0, 1.0)))
+					# Its gate's number, as on the gate's keystone.
+					var number := str(page.open.find(point) + 1)
+					var lit := clampf(float(_held.get(point, 0.0)) * 1.8, 0.25, 1.0)
+					var from := at + Vector2(-12.0, size * 0.36)
+					draw_string_outline(face, from, number, HORIZONTAL_ALIGNMENT_CENTER, 24.0, size, 4, Color(night, 0.9 * lit))
+					draw_string(face, from, number, HORIZONTAL_ALIGNMENT_CENTER, 24.0, size, Color(pale.lerp(Color.WHITE, 0.4), lit))
 				RouteGates.Mark.AHEAD:
-					RouteSigns.reward(self, at, 4.6, _rewards.get(point, -1), Color(_tones.get(point, pale), 0.95 if kept.has(point) else 0.3))
-	# Where she is: a small star over the socket, walking the groove as she goes.
+					RouteSigns.reward(self, at, 4.8, _rewards.get(point, -1), Color(_tones.get(point, pale), 0.95 if kept.has(point) else 0.34))
+	# Where she is: a star in the socket, walking the groove as she goes.
 	var here := spot(page.here())
-	if chosen != null:
-		here = here.lerp(spot(chosen), page.going())
-	var bob := sin(_clock * 2.4) * 1.5
-	HubUI.mark(self, here + Vector2(0.0, -SOCKET - 9.0 + bob), 5.0, gold.lerp(Color.WHITE, 0.35))
+	if chosen != null and page.going() > 0.0:
+		here = along(page.here(), chosen, page.going())
+	HubUI.star(self, here, 7.5, Color(night, 0.85))
+	HubUI.star(self, here, 6.0, gold.lerp(Color.WHITE, 0.75))
 	var reading := page.read()
 	if reading != null and _spots.has(reading):
 		var at := spot(reading)
-		var radius := (BOSS_SOCKET if reading.area.boss != null else SOCKET) + 7.0
+		var radius := float(_sized.get(reading, SOCKET)) + 8.0
 		draw_arc(at, radius, 0.0, TAU, 28, pale, 1.5, true)
 		for tick in 4:
-			var way := Vector2.from_angle(TAU * tick / 4.0 + _clock * 0.5)
-			draw_line(at + way * radius, at + way * (radius + 5.0), pale, 1.5, true)
+			var out := Vector2.from_angle(TAU * tick / 4.0 + _clock * 0.5)
+			draw_line(at + out * radius, at + out * (radius + 5.0), pale, 1.5, true)
