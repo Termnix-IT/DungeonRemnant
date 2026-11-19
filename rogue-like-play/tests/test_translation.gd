@@ -98,6 +98,7 @@ func wait(seconds: float) -> void:
 func make_main() -> Node:
 	var main: Node = load("res://game/main.tscn").instantiate()
 	main.show_prologue = false
+	main.show_opening = false
 	main.saving_enabled = false
 	root.add_child(main)
 	main.meta.echo = 500

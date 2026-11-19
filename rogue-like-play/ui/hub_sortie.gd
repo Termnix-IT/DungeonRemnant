@@ -2,18 +2,27 @@ class_name HubSortie
 extends Control
 
 # Where to set out, as a vista: the chosen chapter's painting is the whole
-# screen, as if she stood at its gate, and turning to another chapter fades
-# one place into the next. The chapter's number and name stand large at the
-# lower left over a dark fall, with how far it has been taken (未踏,
-# 第2層まで, 踏破 2回, or 封印中) and what it is. A row of small views along the
-# top tells where among the chapters she is, each marked once cleared and
-# sealed until it opens. Along the foot run the way, the record and the boss
+# screen, as if she stood at its gate, and it is a place: its fires flicker,
+# the light at its way in swells and falls, mist drifts through it and motes
+# float in its air (vista.gdshader; what lives where in each painting is
+# PLACES). Turning to another chapter turns the head: one place slides off
+# as the next comes in from the side turned to. The chapter's number and
+# name stand large at the lower left over a dark fall, with how far it has
+# been taken (未踏, 第2層まで, 踏破 2回, or 封印中) and what it is. A row of
+# small views along the top tells where among the chapters she is: each is
+# its painting seen through a stone window (vista_view.gdshader), the one
+# turned to lit and larger, each marked once cleared and chained under a
+# seal until it opens. Along the foot run the way, the record and the boss
 # (unnamed until met, as in the encyclopedia), the foes that come in it
 # (pictured when met and dark shapes when not) and what she carries. At the
 # right stand the difficulty step, once the ending has opened the steps
 # (the step, what it adds and the echo it brings back), and the one action,
-# a crest button (CrestButton) that sets out. A sealed chapter is dark under
-# its seal; it can be chosen to read what opens it, not set out for.
+# a crest button (CrestButton) with the departure's medallion that sets out.
+# A sealed chapter is dark and still under its seal; it can be chosen to
+# read what opens it, not set out for.
+#
+# Setting out is shown by the game's cover (SceneTransition), which takes
+# the painting as it stands here (outlook()) and goes into its way in.
 #
 # Left and right (the d-pad, the left stick) and the wheel turn from chapter
 # to chapter, Q / E (LB / RB) change the step, and Enter (A) sets out at
@@ -42,10 +51,55 @@ const VIEW_FOCUS := {
 	&"amethyst_mausoleum": 0.73,
 	&"abyss_of_echoes": 0.74,
 }
+# What lives in each chapter's painting, in the painting's UV: the way in
+# (the gate, stair or door it is drawn round) with how far its light reaches
+# and that light's colour, its fires (where each burns, and how far its
+# light reaches as a share of the painting's height), its mist (the alpha is
+# how thick), and the motes in its air (their colour, and the way they
+# drift).
+const PLACES := {
+	&"ash_corridor": {
+		way = Vector2(0.8, 0.46), reach = 0.17, light = Color(1.0, 0.72, 0.38),
+		fires = [Vector3(0.755, 0.49, 0.06), Vector3(0.872, 0.49, 0.06), Vector3(0.807, 0.44, 0.045)],
+		mist = Color(0.72, 0.76, 0.84, 0.2), motes = Color(0.94, 0.88, 0.72), drift = Vector2(0.25, -1.0),
+	},
+	&"gale_woods": {
+		way = Vector2(0.855, 0.45), reach = 0.17, light = Color(1.0, 0.74, 0.4),
+		fires = [Vector3(0.773, 0.49, 0.065), Vector3(0.912, 0.47, 0.065)],
+		mist = Color(0.66, 0.8, 0.8, 0.22), motes = Color(0.8, 0.84, 0.5), drift = Vector2(-1.0, 0.45),
+	},
+	&"amethyst_mausoleum": {
+		way = Vector2(0.735, 0.6), reach = 0.14, light = Color(0.6, 1.0, 0.8),
+		fires = [Vector3(0.175, 0.4, 0.07), Vector3(0.068, 0.52, 0.05), Vector3(0.545, 0.17, 0.06), Vector3(0.95, 0.18, 0.05), Vector3(0.965, 0.46, 0.06), Vector3(0.89, 0.61, 0.05)],
+		mist = Color(0.62, 0.56, 0.78, 0.18), motes = Color(0.8, 0.68, 1.0), drift = Vector2(0.0, -1.0),
+	},
+	&"abyss_of_echoes": {
+		way = Vector2(0.775, 0.2), reach = 0.15, light = Color(1.0, 0.82, 0.45),
+		fires = [],
+		mist = Color(0.42, 0.36, 0.5, 0.16), motes = Color(1.0, 0.84, 0.48), drift = Vector2(0.1, -1.0),
+	},
+}
+const FIRES := 6
+const VISTA_SHADER := preload("res://ui/vista/vista.gdshader")
+const VIEW_SHADER := preload("res://ui/vista/vista_view.gdshader")
+const VIEW_FRAME: Texture2D = preload("res://art/hub/sortie/view_frame.png")
+const VIEW_HOLE: Texture2D = preload("res://art/hub/sortie/view_hole.png")
+const VIEW_SEAL: Texture2D = preload("res://art/hub/sortie/view_seal.png")
+const STEP_SLATE: Texture2D = preload("res://art/ui/route/route_plate.png")
+const MEDAL: Texture2D = preload("res://art/hub/lobby/icon_departure.png")
 const UNKNOWN_NAME := "？？？"
-const VIEW := Vector2(168.0, 84.0)
-const VIEW_GAP := 14.0
-const VIEW_TOP := 8.0
+# A chapter's view: the stone window's size, how much of the painting's
+# height is behind it, how much larger the one turned to stands, how bright
+# the others and the sealed ones are, and how fast a view answers.
+const VIEW := Vector2(200.0, 101.0)
+const VIEW_GAP := 18.0
+const VIEW_TOP := 2.0
+const VIEW_CROP := 0.56
+const VIEW_CHOSEN := 1.13
+const VIEW_REST := 0.5
+const VIEW_SEALED := 0.4
+const VIEW_EASE := 14.0
+const SEAL_SHARE := 0.66
 # Where the words begin at the left, and the column at the right.
 const EDGE := 56.0
 const COLUMN := 1044.0
@@ -75,7 +129,14 @@ var told := {}
 var foes: Array = []
 var gear: Array = []
 var action_button: Button
-var _vista: Control
+var _vista: ColorRect
+var _look: ShaderMaterial
+var _motes: CPUParticles2D
+# The chapters' views, their seals, and how far each is the one turned to.
+var _views: Array[TextureRect] = []
+var _seals: Array[TextureRect] = []
+var _view_share: Array[float] = []
+var _step_plate: StyleBoxTexture
 # The chapter the cursor came from, and the one set out for (-1: none).
 var _from := 0
 var _departed := -1
@@ -94,16 +155,29 @@ func _ready() -> void:
 	focus_mode = Control.FOCUS_ALL
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	_vista = Control.new()
+	_look = ShaderMaterial.new()
+	_look.shader = VISTA_SHADER
+	_look.set_shader_parameter(&"shade", get_theme_color(&"shade"))
+	_vista = ColorRect.new()
 	_vista.name = "Vista"
+	_vista.color = get_theme_color(&"night")
+	_vista.material = _look
 	_vista.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_vista.show_behind_parent = true
-	_vista.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	_vista.draw.connect(_draw_vista)
 	add_child(_vista)
-	# Setting out is this screen's moment: the crest with the lobby's mark
-	# for it. The focus stays on the page, so Enter there and the button are one.
-	action_button = CrestButton.new()
+	_build_motes()
+	_build_views()
+	_step_plate = StyleBoxTexture.new()
+	_step_plate.texture = STEP_SLATE
+	_step_plate.set_texture_margin_all(30.0)
+	_step_plate.texture_margin_left = 44.0
+	_step_plate.texture_margin_right = 44.0
+	_step_plate.modulate_color = get_theme_color(&"slate")
+	# Setting out is this screen's moment: the crest with the departure's
+	# medallion. The focus stays on the page, so Enter there and the button are one.
+	var crest := CrestButton.new()
+	crest.medal = MEDAL
+	action_button = crest
 	action_button.name = "SetOut"
 	action_button.focus_mode = Control.FOCUS_NONE
 	action_button.pressed.connect(set_out)
@@ -130,7 +204,98 @@ func _fit() -> void:
 	_vista.size = screen.size + Vector2.ONE * VISTA_MARGIN * 2.0
 	action_button.position = _origin + BUTTON.position * _zoom
 	action_button.size = BUTTON.size * _zoom
+	_motes.position = _vista.size * 0.5
+	_motes.emission_rect_extents = _vista.size * 0.5
+	_place_views()
 	queue_redraw()
+
+
+# Motes in the place's air: dust, leaves, sparks, by its chapter.
+func _build_motes() -> void:
+	_motes = CPUParticles2D.new()
+	_motes.amount = 34
+	_motes.lifetime = 8.0
+	_motes.preprocess = 8.0
+	_motes.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	_motes.spread = 34.0
+	_motes.gravity = Vector2.ZERO
+	_motes.initial_velocity_min = 8.0
+	_motes.initial_velocity_max = 26.0
+	_motes.scale_amount_min = 1.4
+	_motes.scale_amount_max = 3.4
+	var fade := Gradient.new()
+	fade.set_color(0, Color(1, 1, 1, 0))
+	fade.set_color(1, Color(1, 1, 1, 0))
+	fade.add_point(0.25, Color(1, 1, 1, 0.5))
+	fade.add_point(0.75, Color(1, 1, 1, 0.5))
+	_motes.color_ramp = fade
+	var additive := CanvasItemMaterial.new()
+	additive.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	_motes.material = additive
+	_vista.add_child(_motes)
+
+
+# A stone window for each chapter, its painting behind it and its seal over it.
+func _build_views() -> void:
+	for chapter in Chapters.ALL:
+		var look := ShaderMaterial.new()
+		look.shader = VIEW_SHADER
+		look.set_shader_parameter(&"place", chapter.illustration)
+		look.set_shader_parameter(&"hole", VIEW_HOLE)
+		look.set_shader_parameter(&"glow_colour", get_theme_color(&"gold"))
+		if chapter.illustration != null:
+			var full := chapter.illustration.get_size()
+			var part := Vector2(full.y * VIEW_CROP * VIEW.aspect(), full.y * VIEW_CROP)
+			var from := (full - part) * Vector2(VIEW_FOCUS.get(chapter.id, 0.5), 0.5)
+			look.set_shader_parameter(&"window", Vector4(from.x / full.x, from.y / full.y, part.x / full.x, part.y / full.y))
+		var view := TextureRect.new()
+		view.name = "View%d" % (_views.size() + 1)
+		view.texture = VIEW_FRAME
+		view.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		view.stretch_mode = TextureRect.STRETCH_SCALE
+		view.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		view.material = look
+		view.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(view)
+		var seal := TextureRect.new()
+		seal.name = "Seal"
+		seal.texture = VIEW_SEAL
+		seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		seal.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		seal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		view.add_child(seal)
+		_views.append(view)
+		_seals.append(seal)
+		_view_share.append(0.0)
+
+
+# Where a chapter's view stands in the design space.
+func _view_rect(index: int) -> Rect2:
+	var count := Chapters.ALL.size()
+	var left := (DESIGN.x - count * VIEW.x - (count - 1) * VIEW_GAP) * 0.5
+	return Rect2(Vector2(left + index * (VIEW.x + VIEW_GAP), VIEW_TOP), VIEW)
+
+
+# The views in their places: the one turned to larger and lit, the sealed
+# ones dim under their chains.
+func _place_views() -> void:
+	for index in _views.size():
+		var view := _views[index]
+		var rect := _view_rect(index)
+		var share := _view_share[index]
+		var open := meta != null and meta.chapter_open(Chapters.ALL[index])
+		view.position = _origin + rect.position * _zoom
+		view.size = rect.size * _zoom
+		view.pivot_offset = view.size * 0.5
+		view.scale = Vector2.ONE * lerpf(1.0, VIEW_CHOSEN, share)
+		var bright := lerpf(VIEW_REST, 1.0, maxf(share, 0.55 if _hovered(&"chapter", index) else 0.0))
+		var look := view.material as ShaderMaterial
+		look.set_shader_parameter(&"bright", bright * (1.0 if open else VIEW_SEALED))
+		look.set_shader_parameter(&"glow", share)
+		_seals[index].visible = not open
+		_seals[index].size = view.size * SEAL_SHARE
+		_seals[index].position = (view.size - _seals[index].size) * 0.5 + Vector2(0.0, view.size.y * 0.04)
 
 
 # --- What it tells ---
@@ -202,7 +367,41 @@ func _tell() -> void:
 	if open and step > 0:
 		action_button.text += tr("（段階%d）") % step
 	action_button.tooltip_text = "" if open else opener
+	_tell_place()
 	queue_redraw()
+
+
+# What lives in the chosen chapter's painting, told to the vista.
+func _tell_place() -> void:
+	var chapter := chosen()
+	var place: Dictionary = PLACES.get(chapter.id, {})
+	var fires := PackedVector3Array()
+	for fire: Vector3 in place.get(&"fires", []):
+		fires.append(fire)
+	fires.resize(FIRES)
+	_look.set_shader_parameter(&"fires", fires)
+	_look.set_shader_parameter(&"way", place.get(&"way", Vector2(0.5, 0.5)))
+	_look.set_shader_parameter(&"way_reach", place.get(&"reach", 0.16))
+	_look.set_shader_parameter(&"way_colour", place.get(&"light", Color.WHITE))
+	_look.set_shader_parameter(&"mist_colour", place.get(&"mist", Color(1, 1, 1, 0)))
+	_look.set_shader_parameter(&"still", 0.0 if meta.chapter_open(chapter) else 1.0)
+	_motes.color = place.get(&"motes", Color.WHITE)
+	_motes.direction = place.get(&"drift", Vector2.UP)
+	_motes.emitting = meta.chapter_open(chapter) and is_visible_in_tree()
+
+
+# What setting out is shown leaving from: the painting as it stands on the
+# screen now (the part of it seen), where its way in is and that light's
+# colour, all in the painting's UV.
+func outlook() -> Dictionary:
+	var chapter := chosen()
+	var place: Dictionary = PLACES.get(chapter.id, {})
+	var seen := _window(selected)
+	# The vista runs past the screen's edges; the screen sees its middle.
+	var whole := _vista.size
+	var edge := Vector2.ONE * VISTA_MARGIN / whole
+	var screen := Vector4(seen.x + seen.z * edge.x, seen.y + seen.w * edge.y, seen.z * (1.0 - edge.x * 2.0), seen.w * (1.0 - edge.y * 2.0))
+	return {&"chapter": chapter, &"window": screen, &"way": place.get(&"way", Vector2(0.5, 0.5)), &"light": place.get(&"light", Color.WHITE)}
 
 
 # Turns to a chapter.
@@ -273,8 +472,11 @@ func _process(delta: float) -> void:
 		return
 	_quiet = false
 	_clock += delta
+	for index in _view_share.size():
+		_view_share[index] = lerpf(_view_share[index], 1.0 if index == selected else 0.0, 1.0 - exp(-delta * VIEW_EASE))
+	_place_views()
+	_show_vista()
 	queue_redraw()
-	_vista.queue_redraw()
 
 
 func _kick(what: StringName) -> void:
@@ -383,45 +585,38 @@ func _colour(item: StringName, share := 1.0) -> Color:
 	return Color(colour, colour.a * share)
 
 
-# A chapter's painting over the whole of the child, slowly drifting.
-func _paint_place(index: int, share: float, closer: float) -> void:
-	var chapter := Chapters.ALL[index]
-	var art := chapter.illustration
-	if art == null:
-		return
-	var open := meta != null and meta.chapter_open(chapter)
-	var tint := _colour(&"art_open" if open else &"art_locked")
-	var room := Rect2(Vector2.ZERO, _vista.size)
+# The part of a chapter's painting the vista sees (x, y, width, height of
+# its UV): the painting covers the vista and drifts slowly within it.
+func _window(index: int) -> Vector4:
+	var art := Chapters.ALL[index].illustration
+	if art == null or _vista.size.x <= 0.0:
+		return Vector4(0.0, 0.0, 1.0, 1.0)
+	var room := _vista.size
 	var full := art.get_size()
-	var part := room.size / (maxf(room.size.x / full.x, room.size.y / full.y) * (1.04 + closer))
+	var part := room / (maxf(room.x / full.x, room.y / full.y) * 1.04)
 	var drift := Vector2(0.5 + 0.06 * sin(_clock * 0.11 + index), 0.5 + 0.05 * cos(_clock * 0.09))
-	_vista.draw_texture_rect_region(art, room, Rect2((full - part) * drift, part), Color(tint, share))
+	var from := (full - part) * drift
+	return Vector4(from.x / full.x, from.y / full.y, part.x / full.x, part.y / full.y)
 
 
-func _shade(rect: Rect2, first: Color, last: Color, across := false) -> void:
-	var corners := PackedVector2Array([rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)])
-	_vista.draw_polygon(corners, PackedColorArray([first, last, last, first] if across else [first, first, last, last]))
-
-
-# The painting, the place it is turning from under it, and the dark falls
-# the words stand on: from the foot up, from the left in and from the top down.
-func _draw_vista() -> void:
+# The vista as it stands this frame: the place turned to, the one turned
+# from under it while the head still turns, each in its own light.
+func _show_vista() -> void:
 	if meta == null:
 		return
-	var room := Rect2(Vector2.ZERO, _vista.size)
-	var share := _eased(&"move", TURN_TIME)
-	var leaving := 1.0 - moment()
-	_vista.draw_rect(room, _colour(&"night"))
-	if _from != selected and share < 1.0:
-		_paint_place(_from, 1.0, 0.0)
-	_paint_place(selected, share if _from != selected else 1.0, 0.10 * moment() if _departed == selected else 0.0)
-	var dark := _colour(&"shade")
-	var clear := Color(dark, 0.0)
-	_shade(Rect2(0.0, room.size.y * 0.40, room.size.x, room.size.y * 0.60), clear, Color(dark, 0.95))
-	_shade(Rect2(0.0, 0.0, room.size.x * 0.52, room.size.y), Color(dark, 0.55), clear, true)
-	_shade(Rect2(0.0, 0.0, room.size.x, room.size.y * 0.20), Color(dark, 0.72), clear)
-	if leaving > 0.0:
-		_vista.draw_rect(room, _colour(&"flash", 0.6 * leaving * leaving))
+	var to := Chapters.ALL[selected]
+	var from := Chapters.ALL[_from]
+	_look.set_shader_parameter(&"place", to.illustration)
+	_look.set_shader_parameter(&"place_from", from.illustration)
+	_look.set_shader_parameter(&"window", _window(selected))
+	_look.set_shader_parameter(&"window_from", _window(_from))
+	_look.set_shader_parameter(&"tint", _colour(&"art_open" if meta.chapter_open(to) else &"art_locked"))
+	_look.set_shader_parameter(&"tint_from", _colour(&"art_open" if meta.chapter_open(from) else &"art_locked"))
+	_look.set_shader_parameter(&"turn", _eased(&"move", TURN_TIME) if _from != selected else 1.0)
+	_look.set_shader_parameter(&"side", 1.0 if selected >= _from else -1.0)
+	_look.set_shader_parameter(&"clock", _clock)
+	if to.illustration != null:
+		_look.set_shader_parameter(&"aspect", to.illustration.get_size().aspect())
 
 
 # --- Drawing ---
@@ -456,16 +651,6 @@ func _fit_picture(rect: Rect2, art: Texture2D, tint := Color.WHITE) -> void:
 	draw_texture_rect(art, Rect2(rect.get_center() - held * 0.5, held), false, tint)
 
 
-# A painting filling a rect, cropped round where its way in is.
-func _view_picture(rect: Rect2, chapter: ChapterData, tint: Color) -> void:
-	var art := chapter.illustration
-	if art == null:
-		return
-	var full := art.get_size()
-	var part := rect.size / maxf(rect.size.x / full.x, rect.size.y / full.y)
-	draw_texture_rect_region(art, rect, Rect2((full - part) * Vector2(VIEW_FOCUS.get(chapter.id, 0.5), 0.55), part), tint)
-
-
 func _draw() -> void:
 	_zones.clear()
 	if meta == null or told.is_empty():
@@ -480,33 +665,27 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO)
 
 
-# The chapters as small views along the top.
+# What is written under the chapters' views along the top (the views
+# themselves are the stone windows, _place_views()): each one's number, a
+# star under the one turned to, and a star beside the number of one cleared.
 func _draw_views() -> void:
-	var count := Chapters.ALL.size()
-	var left := (DESIGN.x - count * VIEW.x - (count - 1) * VIEW_GAP) * 0.5
-	for index in count:
+	for index in Chapters.ALL.size():
 		var chapter := Chapters.ALL[index]
-		var rect := Rect2(Vector2(left + index * (VIEW.x + VIEW_GAP), VIEW_TOP), VIEW)
+		var rect := _view_rect(index)
 		var open := meta.chapter_open(chapter)
 		var here := index == selected
-		var bright := (1.0 if here else (0.78 if _hovered(&"chapter", index) else 0.5)) * (1.0 if open else 0.35)
-		_view_picture(rect, chapter, Color(bright, bright, bright))
-		draw_rect(rect, _colour(&"gold") if here else _colour(&"rule"), false, 2.0 if here else 1.0)
 		if here:
-			draw_rect(rect.grow(4.0), _colour(&"gold", 0.35), false, 1.0)
-			HubUI.mark(self, Vector2(rect.get_center().x, rect.end.y + 12.0), 5.0, _colour(&"gold"))
-		if not open:
-			_fit_picture(Rect2(rect.get_center() - Vector2.ONE * 20.0, Vector2.ONE * 40.0), EmblemIcons.texture("seal_chapter"))
-		elif meta.clears_of(chapter.id) > 0:
-			HubUI.mark(self, rect.position + Vector2(14.0, 14.0), 6.0, _colour(&"gold"))
+			HubUI.mark(self, Vector2(rect.get_center().x, rect.end.y + 13.0), 5.0, _colour(&"gold"))
 		# Its number, on a dark plate so it reads on any painting.
 		var number := Chapters.short_name(chapter)
 		var wide := _width(number, &"font", &"label_size") + 20.0
 		var tag := StyleBoxFlat.new()
 		tag.bg_color = _colour(&"plate")
-		tag.set_corner_radius_all(11)
-		draw_style_box(tag, Rect2(rect.get_center().x - wide * 0.5, rect.end.y + 20.0, wide, 22.0))
-		_words(Vector2(rect.position.x, rect.end.y + 36.0), number, &"font", &"label_size", _colour(&"gold") if here else _colour(&"pale"), HORIZONTAL_ALIGNMENT_CENTER, VIEW.x)
+		tag.set_corner_radius_all(12)
+		draw_style_box(tag, Rect2(rect.get_center().x - wide * 0.5, rect.end.y + 22.0, wide, 24.0))
+		_words(Vector2(rect.position.x, rect.end.y + 40.0), number, &"font", &"label_size", _colour(&"gold") if here else _colour(&"pale", 1.0 if open else 0.6), HORIZONTAL_ALIGNMENT_CENTER, VIEW.x)
+		if open and meta.clears_of(chapter.id) > 0:
+			HubUI.mark(self, Vector2(rect.get_center().x + wide * 0.5 + 10.0, rect.end.y + 34.0), 5.0, _colour(&"gold"))
 		_zone(rect.grow_individual(0.0, 0.0, 0.0, 40.0), [&"chapter", index], "%s　%s" % [Chapters.title(chapter), state_of(index)])
 
 
@@ -545,7 +724,6 @@ func _draw_name(share: float) -> void:
 # The foot: the way, the record and the boss, the foes, and what she carries.
 func _draw_foot(share: float) -> void:
 	var y := 620.0
-	HubUI.hairline(self, Vector2(EDGE, y - 24.0), Vector2(COLUMN + COLUMN_WIDTH, y - 24.0), _colour(&"rule", 1.6))
 	var x := EDGE
 	for fact: Array in [[tr("道のり"), told.route], [tr("記録"), told.record], [tr("ボス"), told.boss]]:
 		_words(Vector2(x, y), fact[0], &"font", &"label_size", _colour(&"dim"))
@@ -575,12 +753,7 @@ func _draw_step() -> void:
 	var most: int = told.steps
 	if most == 0:
 		return
-	var box := StyleBoxFlat.new()
-	box.bg_color = _colour(&"plate")
-	box.border_color = _colour(&"rule", 0.5)
-	box.set_border_width_all(1)
-	box.set_corner_radius_all(4)
-	draw_style_box(box, STEP_PLATE)
+	draw_style_box(_step_plate, STEP_PLATE.grow_individual(8.0, 4.0, 8.0, 4.0))
 	var at := Vector2(COLUMN, STEP_PLATE.position.y + 10.0)
 	var pop := 1.0 + 0.25 * (1.0 - _eased(&"step", UIMotion.GOLD_TIME))
 	_words(at + Vector2(0.0, 24.0), tr("段階"), &"font", &"label_size", _colour(&"dim"))

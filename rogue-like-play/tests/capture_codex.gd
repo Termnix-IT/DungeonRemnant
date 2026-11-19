@@ -29,6 +29,7 @@ func capture() -> void:
 		return
 	var main: Node = load("res://game/main.tscn").instantiate()
 	main.show_prologue = false
+	main.show_opening = false
 	main.saving_enabled = false
 	for id in MET:
 		main.meta.met[id] = true

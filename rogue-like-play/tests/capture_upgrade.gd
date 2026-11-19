@@ -30,6 +30,7 @@ func capture() -> void:
 		return
 	var main: Node = load("res://game/main.tscn").instantiate()
 	main.show_prologue = false
+	main.show_opening = false
 	main.saving_enabled = false
 	main.meta.echo = 400
 	main.meta.ranks = RANKS.duplicate()

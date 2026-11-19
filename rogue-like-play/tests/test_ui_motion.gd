@@ -33,6 +33,7 @@ func near_scale(control: Control, value: float) -> bool:
 func run_tests() -> void:
 	var main: Node = load("res://game/main.tscn").instantiate()
 	main.show_prologue = false
+	main.show_opening = false
 	main.saving_enabled = false
 	main.meta.echo = 1000
 	root.add_child(main)
@@ -184,7 +185,7 @@ func run_tests() -> void:
 	hub.show_page("home")
 	await settle(UIMotion.WINDOW_TIME + 0.2)
 	check(not motion.is_processing(), "The helper has no idle per-frame polling")
-	await settle(HubAmbience.FOCUS_TIME * 1.5 + 0.05)
+	await settle(maxf(HubHall.FOCUS_TIME * 2.0, hub.HOME_TIME) + 0.1)
 	check(get_processed_tweens().is_empty(), "Completed and cancelled UI tweens do not pile up")
 	main.free()
 	await process_frame

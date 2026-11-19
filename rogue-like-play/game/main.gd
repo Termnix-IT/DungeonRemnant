@@ -26,6 +26,10 @@ var ending_view: EndingView
 @export var show_prologue := true
 var prologue_view: EndingView
 var _prologue_played := false
+# The game's opening (HubOpening): the hall coming out of the dark behind
+# the game's name, once at the start of a sitting. Tests and captures of
+# what comes after it turn it off.
+@export var show_opening := true
 var _loaded := false
 
 
@@ -45,6 +49,8 @@ func _ready() -> void:
 	get_viewport().gui_focus_changed.connect(_on_focus_changed)
 	_hook_hub()
 	_update_save_status()
+	if show_opening:
+		$Hub.play_opening()
 
 
 # The saves are read, and the language set, before the hub writes its words
@@ -188,6 +194,12 @@ func start_run() -> void:
 	if saving_enabled and not store.save_progress(meta):
 		_update_save_status()
 		return
+	# What setting out is shown leaving from, taken before the hub goes: the
+	# departure's painting as it stands, and the screen's last picture.
+	var outlook: Dictionary = $Hub.outlook()
+	var frame: Texture2D = null
+	if not outlook.is_empty() and DisplayServer.get_name() != "headless":
+		frame = ImageTexture.create_from_image(get_viewport().get_texture().get_image())
 	$Hub.hide()
 	active_run = run_scene.instantiate()
 	active_run.name = "Run"
@@ -203,8 +215,9 @@ func start_run() -> void:
 	active_run.finished.connect(_on_run_finished)
 	active_run.base_requested.connect(return_to_hub)
 	add_child(active_run)
-	# The run is already live underneath; the cover only eases the cut.
-	transition.play_departure(active_run.chapter)
+	# The run is already live underneath; the cover is the way there, and
+	# the hall of gates opens as the cover does.
+	transition.play_departure(active_run.chapter, outlook, frame, active_run.arrive)
 
 
 # The run's end, recorded and saved before its result offers the way home.

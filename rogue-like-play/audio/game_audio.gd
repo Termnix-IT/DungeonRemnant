@@ -43,6 +43,11 @@ const PROFILES := {
 	&"gate_go": [0.7, 220.0, 880.0, 0.25, 0.8, []],
 	&"gate_wake": [0.6, 49.0, 98.0, 0.3, 1.1, []],
 	&"gate_charge": [0.5, 196.0, 277.0, 0.35, 1.2, []],
+	&"title_swell": [0.7, 73.0, 147.0, 0.2, 0.8, []],
+	&"title_start": [0.5, 587.0, 880.0, 0.25, 1.4, []],
+	&"hall_gate": [0.45, 98.0, 131.0, 0.5, 1.2, []],
+	&"set_out": [0.7, 110.0, 44.0, 0.45, 1.6, []],
+	&"chapter_toll": [0.7, 220.0, 220.0, 0.1, 1.8, []],
 }
 
 const ASSETS := {
@@ -68,6 +73,11 @@ const ASSETS := {
 	&"gate_go": "res://audio/made/gate_go.ogg",
 	&"gate_wake": "res://audio/made/gate_wake.ogg",
 	&"gate_charge": "res://audio/made/gate_charge.ogg",
+	&"title_swell": "res://audio/made/title_swell.ogg",
+	&"title_start": "res://audio/made/title_start.ogg",
+	&"hall_gate": "res://audio/made/hall_gate.ogg",
+	&"set_out": "res://audio/made/set_out.ogg",
+	&"chapter_toll": "res://audio/made/chapter_toll.ogg",
 }
 
 static var _streams: Dictionary = {}

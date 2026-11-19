@@ -142,6 +142,13 @@ func max_hp() -> int:
 	return run.tuning.max_hp
 
 
+# The cover over setting out has opened on the route: its gates open now
+# (they had, unseen, when the run began).
+func arrive() -> void:
+	if map_view != null and map_view.visible:
+		map_view.arrive()
+
+
 # The parting blessing: a boon from three once the first area is picked;
 # false when there is nothing to offer, and the area is entered at once.
 func _bless(next: RouteMap.Waypoint) -> bool:

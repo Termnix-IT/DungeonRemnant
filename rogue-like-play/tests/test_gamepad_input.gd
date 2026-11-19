@@ -44,6 +44,7 @@ func run_tests() -> void:
 
 	var main: Node = load("res://game/main.tscn").instantiate()
 	main.show_prologue = false
+	main.show_opening = false
 	main.saving_enabled = false
 	main.run_seed = 3
 	root.add_child(main)
@@ -79,9 +80,17 @@ func run_tests() -> void:
 	await process_frame
 	check(main.active_run != null, "A on the chapter sets out")
 
-	# A run: into the first area.
-	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.1).timeout
+	# Setting out covers the screen while the way in is gone into: A again
+	# hurries the cover and does not reach the gates under it.
 	var run: RunDirector = main.active_run
+	check(main.transition.departing and main.transition.covering, "Setting out covers the screen as the chapter's way in is gone into")
+	root.push_input(pad(JOY_BUTTON_A))
+	root.push_input(pad(JOY_BUTTON_A, false))
+	await process_frame
+	check(is_equal_approx(main.transition._speed, SceneTransition.HURRY) and not run.map_view.page.asked and run.area == null, "A hurries the cover and asks nothing of the gates under it")
+	await create_timer((SceneTransition.PUSH_TIME + SceneTransition.NAME_TIME + SceneTransition.OPEN_TIME) / SceneTransition.HURRY + 0.3).timeout
+	check(not main.transition.covering and not main.transition.departing, "The cover opens on the hall of gates")
+	# A run: into the first area.
 	# The route's gates: the D-pad turns, A asks, B takes it back, up reads the
 	# thread, Start calls the run's menu.
 	var gates := run.map_view.page

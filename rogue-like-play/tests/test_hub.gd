@@ -27,6 +27,7 @@ func check(ok: bool, label: String) -> void:
 func make_main(echo: int, save_path: String = "") -> Node:
 	var main: Node = load("res://game/main.tscn").instantiate()
 	main.show_prologue = false
+	main.show_opening = false
 	main.saving_enabled = not save_path.is_empty()
 	if not save_path.is_empty():
 		main.store.path = save_path
@@ -287,8 +288,8 @@ func run_tests() -> void:
 	check(lobby_hints == ["決定", "終了"] and hub.lobby_guide.visible and upper_hints == ["選ぶ"], "The lobby's keys name the way out of the game, in two rows")
 	var upper_row: Rect2 = hub.lobby_guide.get_global_rect()
 	var lower_row: Rect2 = hub.key_guide.get_global_rect()
-	var rail := HubLobby.MENU_WIDTH - 20.0
-	check(upper_row.end.x < rail and lower_row.end.x < rail and upper_row.position.x >= hub.EDGE_X - 1.0 and is_equal_approx(upper_row.position.x, lower_row.position.x) and upper_row.get_center().y < lower_row.position.y + 8.0, "Both rows end inside the lobby's rail, one over the other")
+	var rail := HubLobby.PILLAR_WIDTH - 20.0
+	check(upper_row.end.x < rail and lower_row.end.x < rail and upper_row.position.x >= hub.EDGE_X - 1.0 and is_equal_approx(upper_row.position.x, lower_row.position.x) and upper_row.get_center().y < lower_row.position.y + 8.0, "Both rows end on the lobby's pier, one over the other")
 	hub._unhandled_input(cancel)
 	await process_frame
 	check(hub.quit_prompt.visible and hub.quit_prompt.cancel_button.has_focus() and hub.quit_prompt.cancel_button.text == "戻る" and left[0] == 0, "Esc on the lobby asks before leaving, its way back focused")

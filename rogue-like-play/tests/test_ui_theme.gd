@@ -97,6 +97,7 @@ func run_tests() -> void:
 	check_moods(theme)
 	var main: Node = load("res://game/main.tscn").instantiate()
 	main.show_prologue = false
+	main.show_opening = false
 	main.saving_enabled = false
 	main.meta.echo = 100
 	root.add_child(main)

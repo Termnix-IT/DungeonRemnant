@@ -67,6 +67,7 @@ func run_tests() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 	var main: Node = load("res://game/main.tscn").instantiate()
 	main.show_prologue = false
+	main.show_opening = false
 	main.store.path = folder + "/progress.json"
 	main.run_seed = 21
 	root.add_child(main)
@@ -164,6 +165,7 @@ func run_tests() -> void:
 	# without a roll, then the run; never again once a run is on record.
 	var first: Node = load("res://game/main.tscn").instantiate()
 	first.saving_enabled = false
+	first.show_opening = false
 	first.run_seed = 21
 	root.add_child(first)
 	await process_frame

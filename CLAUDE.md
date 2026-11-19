@@ -29,6 +29,7 @@ Godotを `godot` コマンドとして利用できる状態で、`rogue-like-pla
 - `godot --headless --path . --log-file .godot/run-cycle-tests.log --script res://tests/test_run_cycle.gd`: 拠点から出撃し、踏破・敗北・中断のそれぞれで拠点へ戻るまでの流れ全体を検証する。
 - `godot --headless --path . --log-file .godot/smoke-test.log --quit-after 5`: 短時間の起動確認を行う。
 - `godot --headless --path . --script res://tools/text_catalog.gd`: 画面の日本語を変えた・足したときに、翻訳の表 `locale/text.csv` を作り直す。書いてある英訳は残り、使われなくなった行は消える（英訳があった行は表示する）。続けてimportし、`tests/test_translation.gd` で確かめる。
+- `python tools/build_start_art.py`: ロゴ・メニューの石柱と紋章・章の窓枠と封印・広間の遠景の範囲を、`art/hub/source/` の元絵から作り直す。`python tools/build_start_sounds.py` は、起動から出撃までの音を作り直す。どちらの後もimportする。
 - `godot --headless --path . --script res://tools/build_theme.gd`: トークン（`ui/theme/theme_tokens.tres`）を変えたとき、またはThemeに色・文字サイズを手で足したときに、`ui/theme/dungeon_theme.tres` の色と文字サイズを書き出し直す。末尾に `-- --check` を付けると、書き出さずに食い違いだけを調べる。
 
 ## 公開に向けた進め方
@@ -50,7 +51,8 @@ Nodeの `@export` 変数に、Script定数と同じ `.tres` をpreloadした既�
 - 情報は「常時表示／開いた時だけ／別画面」に分け、枠線は主要操作・選択とFocus・取り消せない操作の確認に絞る（同書の該当節）。表示から外した情報にも導線を残し、機能は消さない。
 - 外観は `rogue-like-play/ui/theme/dungeon_theme.tres` のTheme Type Variation・StyleBox・定数で管理する。色と文字サイズはThemeに直接書かず、トークン（`ui/theme/theme_tokens.tres`）を直して `tools/build_theme.gd` で書き出す（`docs/画面とUI.md` の2.1）。画面ごとの色・フォントサイズ・StyleBox・定数のoverrideや、手で作った別Themeの追加を避ける（`tests/test_ui_theme.gd` が検査する）。画面ごとに色の調子を変えたいときは、`ui/theme/moods/<画面>.tres` の表情（`ThemeMood`）でトークンを差し替える（`docs/画面とUI.md` の2.1）。
 - 拠点背景の明るさは `rogue-like-play/game/hub/hub.gd` の背景上の暗幕で、メインコンテンツパネルとポップアップの面は `ui/quiet_window_style.gd`（Themeの `QuietWindowSurface`・`SlabSolidSurface`・`SlabSolidEndSurface`）で、項目カードの面はThemeの `Card*` のStyleBoxで調整する。背景の暖かい光と、青みのない石墨色のパネルを分け、選択の金枠と本文の視認性を保つ。
-- 拠点のロビー（最初の待機画面、`HubLobby`）は、ほかの画面の外観を整えるときも今の見た目のまま残す。数字の明朝体（`LobbyFactValue`）と、出撃ボタンの装飾板（`LobbyAction`）を保ち、共有のTheme Typeを変えるとロビーまで変わる場合は、ロビーを専用のTypeに分ける。ロビーの見た目を変える、または項目を足すときは、事前にユーザーへ確認する。
+- 拠点のロビー（最初の待機画面、`HubLobby`）は、ほかの画面の外観を整えるときも今の見た目のまま残す。今の見た目は、2026-11-20にユーザーの指示で起動・ロビー・出撃・出撃の幕をまとめて作り替えたもので、左の石柱に刻んだメニュー（青銅の紋章と名前）、金の額縁の情報パネル、右の主人公、後ろの広間（`HubHall`）という並びを保つ。数字の明朝体（`LobbyFactValue`）と、出撃ボタンの装飾板（`LobbyAction`）を保ち、共有のTheme Typeを変えるとロビーまで変わる場合は、ロビーを専用のTypeに分ける。ロビーの見た目を変える、または項目を足すときは、事前にユーザーへ確認する。
+- ゲームを起動してから三つの門の前に立つまで（起動 `HubOpening`、広間 `HubHall`、ロビー、出撃、出撃の幕 `SceneTransition.play_departure`）は、広間・広間の奥の門・章の入口・三つの門の広間をたどる1本の道として作ってある（`docs/画面とUI.md` の1章）。この間の切り替えを、横滑りや一様な暗転に戻さない。起動は入力を待つ画面にせず（自分でロビーへ進み、キーでいつでも飛ばせる）、出撃の幕は早送りできる状態を保つ。選んだものは、枠で囲むのではなく、灯りが点くことで示す（ロビーの紋章と広間の物、出撃の窓）。
 - パネル構造には `HubUI`、タブには `CategoryTabs`、操作ガイドには `KeyGuide`、通貨の表示には `GoldPurse` を優先して再利用する。
 - 配置はContainerを基本とする。現在の基準解像度は1600×900（16:9）、Stretchは `canvas_items`。1920×1080専用の固定配置を作らず、縮小時も主要操作・Focus表示が収まるようにする。
 - `rogue-like-play/参考アート/` を参照する変更では、ファイル名だけでなく画像内容を確認する。情報階層・比率・選択状態を実装へ翻訳し、参考画像をそのまま背景や一枚のUI素材として使用しない。
@@ -90,6 +92,7 @@ Nodeの `@export` 変数に、Script定数と同じ `.tres` をpreloadした既�
 - 強化（星図）の状態ごとの見た目（開いた直後、買える星、購入した瞬間、上限に達した星、残響が足りない星、前提を満たさない星、別の星座、始めたばかりの星図、英語）は `godot --path . --rendering-method gl_compatibility --log-file .godot/upgrade-capture.log --script res://tests/capture_upgrade.gd` で確認する。
 - 出撃（一枚絵）の状態ごとの見た目（開いた直後、踏破した章、切り替わる途中、封印中の章、出撃した瞬間、始めたばかりの出撃、段階の選択、開いている最高の段階、英語）は `godot --path . --rendering-method gl_compatibility --log-file .godot/sortie-capture.log --script res://tests/capture_sortie.gd` で確認する。
 - 設定（一覧と実演）の状態ごとの見た目（開いた直後、音量を下げた、消音、打たれた瞬間の揺れ、画面モード、言語、操作の案内のONとOFF、ヘルプの行、ゲームの終了の行、英語、探索中のメニューから開いた設定）は `godot --path . --rendering-method gl_compatibility --log-file .godot/settings-capture.log --script res://tests/capture_settings.gd` で確認する。
+- 起動から三つの門までの状態ごとの見た目（門の光だけの闇、灯りが点く途中、ロゴが書かれる途中、ロゴが立った所、ロビーが入る途中、ロビー、別の項目を選んだロビー、広間の門へ近づく途中、出撃、章を変える途中、封印中の章、踏み込む途中、闇が閉じる所、闇の中の章の名前、闇が開く所、三つの門。1280×720・1920×1080・英語でも主な状態）は `godot --path . --rendering-method gl_compatibility --log-file .godot/start-capture.log --script res://tests/capture_start.gd` で確認する。音を含む通しの動画は、`tests/capture_start_movie.gd` の冒頭にある2つのコマンド（Godotの動画書き出しとffmpeg）で `.godot/start_movie.mp4` に書き出す。流れそのもの（起動が自分で進むこと、キーで飛ばせること、ロビーの入退場、カメラ、出撃の幕の段階と早送り、門が幕の開く瞬間に立ち上がること）は `tests/test_start_flow.gd` が検査する。
 - 進路の選択（分かれ道の門）の状態ごとの見た目（ランの最初の選択、出会っていない敵の門、3つの門、別の門、向いた門の詳細の札、イベントの門、進むかの確認、門へ歩く途中、石板で読んだエリアとボス、イベントの窓の後ろ、ボスの登場の前・途中・後、英語）は `godot --path . --rendering-method gl_compatibility --log-file .godot/route-capture.log --script res://tests/capture_route.gd` で確認する。動き（開く、門を向く、進むかを確かめる、取り消す、門へ歩く、ボスの登場）は、0.05秒おきのコマを並べた画像を `godot --path . --rendering-method gl_compatibility --log-file .godot/route-motion.log --script res://tests/capture_route_motion.gd` で撮って確かめる。音を含む通しの動画は、`tests/capture_route_movie.gd` の冒頭にある2つのコマンド（Godotの動画書き出しとffmpeg）で `.godot/route_movie.mp4` に書き出す。
 - 戦闘・ラン・ボスの見た目を変更した場合は `tests/capture_run_flow.gd`、`tests/capture_boss.gd`、`tests/capture_action_sandbox.gd` を、敵の描画や数を変えた場合は `tests/capture_crowd_perf.gd` でフレーム時間を描画可能な環境で確認する。実行できない検証は未確認として報告する。テストの操作手順をUIの変更に合わせる際も、保存・記録・状態復元などの検証を弱めない。
 - 群れの敵のリグを直したときは、描画できる環境で `godot --path . --script res://tools/bake_foe_frames.gd` を実行して連番画像を焼き直し、続けてimportする。

@@ -1,14 +1,20 @@
 extends CanvasLayer
 
-# The base between runs: the lobby (HubLobby) over the hall painting, and the
-# pages it opens: where to set out (HubSortie), the lasting upgrades
-# (MetaUpgradePage), the status and skill slots (HubStatus), the
-# encyclopedia (HubCodex) and the settings (HubSettings). Tab (View) goes
-# between the upgrades and the status, and from the departure to the status
-# and back. The header holds the page's name and the echo held; the footer,
-# the keys. It shows a MetaProgress and asks Main to change it
-# (start_requested, upgrade_requested, equip_requested); Main saves,
-# refreshes it and calls present_action or present_equip for the moment.
+# The base between runs: the lobby (HubLobby) in the hall of preparation
+# (HubHall), and the pages it opens: where to set out (HubSortie), the
+# lasting upgrades (MetaUpgradePage), the status and skill slots
+# (HubStatus), the encyclopedia (HubCodex) and the settings (HubSettings).
+# Tab (View) goes between the upgrades and the status, and from the
+# departure to the status and back. The header holds the page's name and
+# the echo held; the footer, the keys. It shows a MetaProgress and asks Main
+# to change it (start_requested, upgrade_requested, equip_requested); Main
+# saves, refreshes it and calls present_action or present_equip for the
+# moment.
+#
+# The places on the way out are one path. The game opens on the hall's great
+# gate (play_opening(), HubOpening) and draws back from it into the lobby;
+# the departure is reached by going up to that gate, the chapter's painting
+# coming through its light, and left by drawing back from it.
 
 signal start_requested
 signal upgrade_requested(id: StringName)
@@ -26,6 +32,13 @@ const LOBBY_ROW_RISE := 30.0
 # Page content for the 1600×900 base: 80px of hall either side, and the
 # whole block shrinks together on smaller screens.
 const CONTENT_SIZE := Vector2(1440, 810)
+# Going up to the hall's gate for the departure: where the camera ends, how
+# close, how hard the gate shines, and how long the way there and back take.
+const GATE_VIEW := Vector2(0.553, 0.3)
+const GATE_ZOOM := 2.3
+const GATE_SHINE := 2.6
+const GATE_TIME := 0.6
+const HOME_TIME := 0.6
 
 # The chapter the lobby shows and the departure opens on: the frontier at
 # first, then the last one chosen, or one that has just opened.
@@ -69,28 +82,20 @@ var _content: Control
 var _page_host: Control
 var _shell: VBoxContainer
 var _frame: Control
-var _ambience: HubAmbience
+# The hall behind everything, and the game's opening over it (once, at the
+# start of a sitting).
+var hall: HubHall
+var opening: HubOpening
 var _title_block: HBoxContainer
 
 
 func _ready() -> void:
 	# HintMarks find the hub here to open the help at their topic.
 	add_to_group(&"hub")
-	var background := TextureRect.new()
-	background.texture = preload("res://art/hub/lobby_hall.png")
-	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(background)
-	var shade := ColorRect.new()
-	shade.color = Color(0, 0, 0, 0.16)
-	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(shade)
-	# Flickering light and dust over the painting, beneath every panel.
-	_ambience = HubAmbience.new()
-	add_child(_ambience)
+	# The hall: its lamps, its gate's light and its dust, beneath every panel.
+	hall = HubHall.new()
+	hall.name = "Hall"
+	add_child(hall)
 	_content = Control.new()
 	_content.name = "Content"
 	_content.theme = HubTheme.create()
@@ -247,7 +252,7 @@ func _build_home() -> void:
 	home_page.settings = settings
 	add_child(home_page)
 	home_page.hide()
-	home_page.selection_changed.connect(func(id: StringName): _ambience.focus(id))
+	home_page.selection_changed.connect(func(id: StringName): hall.focus(id))
 	home_page.activated.connect(_enter)
 	start_button = home_page.buttons[0]
 	upgrade_button = home_page.buttons[1]
@@ -312,12 +317,19 @@ func _pick_chapter(meta: MetaProgress) -> void:
 
 
 func show_page(target: String) -> void:
+	var from := page
 	page = target
 	hero_speech.hide()
 	if page in ["home", "sortie"]:
 		status_return = ""
+	# To the departure the lobby leaves by itself, as the view goes up to the gate.
+	var to_gate := from == "home" and page == "sortie" and home_page.visible
+	var from_gate := from == "sortie" and page == "home"
 	for control in [home_page, sortie_page, upgrade_page, status_page, codex_page, settings_page]:
-		control.hide()
+		if control == home_page and to_gate:
+			home_page.leave()
+		else:
+			control.hide()
 	key_guide.clear_hints()
 	# The lobby has nowhere to go back to; it shows how to choose and enter.
 	back_button.visible = page != "home"
@@ -327,7 +339,20 @@ func show_page(target: String) -> void:
 	for child in _title_block.get_children():
 		child.visible = page != "home"
 	save_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if page == "home" else HORIZONTAL_ALIGNMENT_LEFT
-	_ambience.focus(home_page.selected_id() if page == "home" else &"")
+	hall.focus(home_page.selected_id() if page == "home" else &"", GATE_SHINE if page == "sortie" else -1.0)
+	if page == "sortie":
+		if to_gate:
+			hall.look(GATE_VIEW, GATE_ZOOM, GATE_TIME, Tween.TRANS_CUBIC, Tween.EASE_IN_OUT)
+		else:
+			hall.set_camera(GATE_VIEW, GATE_ZOOM)
+	elif not hall.rests() and not opening_up():
+		if page == "home":
+			hall.look(Vector2(0.5, 0.5), 1.0, HOME_TIME, Tween.TRANS_CUBIC, Tween.EASE_OUT)
+		else:
+			# Another page straight from the departure: the hall lies behind
+			# it as it does behind the lobby.
+			hall.set_camera(Vector2(0.5, 0.5), 1.0)
+	hall.dress(page in ["home", "sortie"])
 	feedback.text = ""
 	GameMusic.cue(self, &"hub")
 	if page != "home":
@@ -387,13 +412,72 @@ func show_page(target: String) -> void:
 			_settings_hints()
 	# Pages are anchored in a plain host, not laid out by a Container, so the
 	# whole page can slide: forward pages from the right, home from the left.
+	# Between the lobby and the departure there is no slide: the view goes up
+	# to the gate and the chapter's painting comes through its light, or
+	# draws back from the gate as the lobby's things return to their places.
 	var side := -1.0 if page == "home" else 1.0
 	for control in [home_page, sortie_page, upgrade_page, status_page, codex_page, settings_page]:
-		if control.visible:
+		if control == home_page:
+			if page != "home":
+				continue
+			if from_gate:
+				home_page.present(true)
+			elif opening_up():
+				home_page.hold()
+			else:
+				home_page.settle()
+				UIMotion.of(control).enter(0.0, Vector2(side * UIMotion.PAGE_DISTANCE, 0), UIMotion.WINDOW_TIME)
+			continue
+		if not control.visible:
+			continue
+		if to_gate:
+			UIMotion.of(control).appear(GATE_TIME * 0.5, GATE_TIME * 0.55)
+		else:
 			UIMotion.of(control).enter(0.0, Vector2(side * UIMotion.PAGE_DISTANCE, 0), UIMotion.WINDOW_TIME)
-			# Pages built in the screen grammar bring their parts in one by one.
-			if control.has_method(&"play_entrance"):
-				control.play_entrance()
+		# Pages built in the screen grammar bring their parts in one by one.
+		if control.has_method(&"play_entrance"):
+			control.play_entrance()
+	if to_gate:
+		# The page's name waits for the lobby's pier to be out of its way.
+		UIMotion.of(title_label).appear(GATE_TIME * 0.5, GATE_TIME * 0.5)
+		GameAudio.play(self, &"hall_gate", -15.0)
+
+
+# The game's opening, once at the start of a sitting: the hall comes out of
+# the dark behind the game's name (HubOpening), and any key brings the lobby
+# in. The lobby is already there underneath, its things held back.
+func play_opening() -> void:
+	if opening_up():
+		return
+	opening = HubOpening.new()
+	opening.hall = hall
+	add_child(opening)
+	home_page.hold()
+	_frame.modulate.a = 0.0
+	opening.begun.connect(_enter_lobby)
+	opening.play()
+
+
+# The opening is up and has not been answered.
+func opening_up() -> bool:
+	return is_instance_valid(opening) and opening.playing
+
+
+# The opening's key: the lobby's things come to their places, and the
+# header and the keys with them.
+func _enter_lobby() -> void:
+	if page == "home":
+		home_page.present(false)
+		home_page.focus_selected()
+	else:
+		home_page.settle()
+	create_tween().tween_property(_frame, "modulate:a", 1.0, HubOpening.LOBBY_TIME).set_delay(HubOpening.LOBBY_TIME * 0.5)
+
+
+# What setting out is shown leaving from: the chapter's painting as the
+# departure shows it now (HubSortie.outlook()), or nothing away from it.
+func outlook() -> Dictionary:
+	return sortie_page.outlook() if page == "sortie" and sortie_page.visible else {}
 
 
 # Routine save notes ("保存済み" and the like) stay out of sight so the hub
@@ -498,6 +582,8 @@ func _status_from_sortie() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if opening_up():
+		return
 	if visible and event.is_action_pressed("ui_cancel"):
 		go_back()
 		get_viewport().set_input_as_handled()

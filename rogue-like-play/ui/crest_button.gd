@@ -19,6 +19,13 @@ extends Button
 # The plate and crest are drawn on a layer behind the button's words
 # (show_behind_parent); the button's styles only make room for the crest
 # (CrestAction).
+#
+# Given a medallion (`medal`, a painted bronze one: the lobby's menu
+# medallions), the button is painted instead of drawn: the medallion stands
+# at the left over a forged gold plate (button_gold.png and its lit and
+# pressed states). Chosen, the plate turns to its lit state, the medallion
+# brightens and swells a little and a warm light spreads behind it; a press
+# sets both down; sealed, both go dark.
 
 const CREST_RADIUS := 38.0
 const PLATE_HEIGHT := 54.0
@@ -29,6 +36,20 @@ const RING_WIDTH := 4.0
 const ARC_POINTS := 64
 const GLOW_RADII := [20.0, 17.0, 14.0, 11.0, 8.0, 5.0, 2.0]
 const PRESS_SHADE := 0.82
+# Painted: the plate's three states, how much of each end is kept whole as
+# its middle stretches, how tall it stands, the medallion's size and how
+# much it swells when chosen, and how wide the light behind it spreads.
+const PLATES := {
+	&"rest": preload("res://art/ui/button_gold.png"),
+	&"lit": preload("res://art/ui/button_gold_hover.png"),
+	&"pressed": preload("res://art/ui/button_gold_pressed.png"),
+}
+const PLATE_ENDS := Vector2(19.0, 21.0)
+const PAINTED_PLATE_HEIGHT := 60.0
+const MEDAL_RADIUS := 42.0
+const MEDAL_SWELL := 0.08
+const MEDAL_PRESS := 0.95
+const MEDAL_LIGHT := 170.0
 # How much of the bronze edge the button keeps while it cannot be pressed.
 const SEALED_EDGE := 0.45
 
@@ -45,8 +66,18 @@ var kind := &"departure":
 		if _icon != null:
 			_icon.kind = value
 			_icon.queue_redraw()
+# The painted medallion; none: the crest is drawn, with its mark.
+var medal: Texture2D:
+	set(value):
+		medal = value
+		if _icon != null:
+			_icon.visible = medal == null
+		if _back != null:
+			_back.queue_redraw()
 var _back: Control
 var _icon: NavigationIcon
+var _boxes := {}
+var _light: GradientTexture2D
 var _pointed := false
 
 
@@ -60,8 +91,10 @@ func _init() -> void:
 	add_child(_back)
 	_back.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_back.draw.connect(_draw_back)
+	_back.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_icon = NavigationIcon.new()
 	_icon.kind = kind
+	_icon.visible = medal == null
 	_back.add_child(_icon)
 	_back.resized.connect(_place_icon)
 	focus_entered.connect(_kindle)
@@ -90,7 +123,56 @@ func _place_icon() -> void:
 	_icon.position = _crest_centre() - _icon.size * 0.5
 
 
+# One of the painted plate's states as a box whose ends keep their size.
+func _plate_box(state: StringName) -> StyleBoxTexture:
+	if not _boxes.has(state):
+		var box := StyleBoxTexture.new()
+		box.texture = PLATES[state]
+		box.texture_margin_left = PLATE_ENDS.x
+		box.texture_margin_right = PLATE_ENDS.x
+		box.texture_margin_top = PLATE_ENDS.y
+		box.texture_margin_bottom = PLATE_ENDS.y
+		_boxes[state] = box
+	return _boxes[state]
+
+
+func _draw_painted() -> void:
+	var weight := 0.0 if disabled else clampf(stand, 0.0, 1.0)
+	var centre := _crest_centre()
+	var pressed := get_draw_mode() in [DRAW_PRESSED, DRAW_HOVER_PRESSED]
+	var off := get_theme_color(&"emblem_off")
+	var plate := Rect2(centre.x - 4.0, centre.y - PAINTED_PLATE_HEIGHT * 0.5, _back.size.x - centre.x + 4.0, PAINTED_PLATE_HEIGHT)
+	# The plate at rest, its lit state coming over it as it is chosen.
+	var rest := _plate_box(&"pressed" if pressed else &"rest")
+	rest.modulate_color = off if disabled else Color.WHITE
+	_back.draw_style_box(rest, plate)
+	if weight > 0.0 and not pressed:
+		var lit := _plate_box(&"lit")
+		lit.modulate_color = Color(1.0, 1.0, 1.0, weight)
+		_back.draw_style_box(lit, plate)
+	# The light behind the medallion, and the medallion.
+	if _light == null:
+		var fall := Gradient.new()
+		fall.set_color(0, Color.WHITE)
+		fall.set_color(1, Color(1, 1, 1, 0))
+		fall.add_point(0.5, Color(1, 1, 1, 0.3))
+		_light = GradientTexture2D.new()
+		_light.gradient = fall
+		_light.fill = GradientTexture2D.FILL_RADIAL
+		_light.fill_from = Vector2(0.5, 0.5)
+		_light.fill_to = Vector2(1.0, 0.5)
+		_light.changed.connect(_back.queue_redraw)
+	if weight > 0.0:
+		_back.draw_texture_rect(_light, Rect2(centre - Vector2.ONE * MEDAL_LIGHT * 0.5, Vector2.ONE * MEDAL_LIGHT), false, Color(get_theme_color(&"ring"), 0.55 * weight))
+	var radius := MEDAL_RADIUS * (1.0 + MEDAL_SWELL * weight) * (MEDAL_PRESS if pressed else 1.0)
+	var tint := off if disabled else get_theme_color(&"emblem_rest").lerp(get_theme_color(&"medal_lit"), weight)
+	_back.draw_texture_rect(medal, Rect2(centre - Vector2.ONE * radius, Vector2.ONE * radius * 2.0), false, tint)
+
+
 func _draw_back() -> void:
+	if medal != null:
+		_draw_painted()
+		return
 	var weight := 0.0 if disabled else clampf(stand, 0.0, 1.0)
 	var centre := _crest_centre()
 	var shade := PRESS_SHADE if get_draw_mode() in [DRAW_PRESSED, DRAW_HOVER_PRESSED] else 1.0

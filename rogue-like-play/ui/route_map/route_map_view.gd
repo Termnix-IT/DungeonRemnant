@@ -109,6 +109,11 @@ func present(route_map: RouteMap, at_layer: int, run: RunState, max_hp: int, not
 	page.present(route_map, at_layer, run, max_hp, note)
 
 
+# The cover over setting out opens on the route: the page opens again, seen.
+func arrive() -> void:
+	page.arrive()
+
+
 # The run's menu lies over the route (or is lifted off it).
 func cover(on: bool) -> void:
 	page.cover(on)

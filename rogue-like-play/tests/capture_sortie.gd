@@ -49,6 +49,7 @@ func capture() -> void:
 		return
 	main = load("res://game/main.tscn").instantiate()
 	main.show_prologue = false
+	main.show_opening = false
 	main.saving_enabled = false
 	main.meta.echo = 240
 	root.add_child(main)

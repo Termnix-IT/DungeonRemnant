@@ -431,6 +431,15 @@ static func ground_of(chapter: StringName) -> Texture2D:
 	return _grounds[chapter]
 
 
+# The cover over setting out has opened on the page (it was presented
+# unseen, under the cover): its gates rise again, now seen.
+func arrive() -> void:
+	if route == null or traveling or asked or revealing:
+		return
+	_kick(&"open")
+	tablet.present()
+
+
 # --- The route ---
 
 # Shows the route at `at_layer` (the next to choose), with the run's state

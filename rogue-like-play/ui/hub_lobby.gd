@@ -2,9 +2,17 @@ class_name HubLobby
 extends Control
 
 # The hub's home, laid out like a game lobby rather than a page of cards:
-# a decorated menu on the left, the chosen entry's short information floating
-# over the floor, and the heroine standing in the hall on the right. The hall
-# painting runs behind all three so they read as one scene.
+# the menu on the left, the chosen entry's short information on a plate over
+# the floor, and the heroine standing in the hall on the right. The hall
+# (HubHall) runs behind all three so they read as one scene.
+#
+# The menu is written on a near stone pier (menu_pillar.png) that stands at
+# the screen's left edge in front of the hall, the game's emblem in the ring
+# at its head. Each entry is a bronze medallion and its name; the chosen one
+# is the one in the light: a warm light lies across its row, its medallion
+# kindles and stands a little larger, its name turns gold, and the thing in
+# the hall it belongs to lights up (HubHall.focus()). The others stay dim
+# bronze.
 #
 # Choosing and entering are separate. Keyboard and gamepad focus chooses, and
 # confirming the focused entry enters it. A click chooses an entry; clicking
@@ -12,6 +20,11 @@ extends Control
 #
 # The upgrades' entry carries a small mark beside its name while the echo
 # held can buy a rank of anything, so that shows without choosing the entry.
+#
+# Its things can be held back and brought in (hold(), present()): the pier
+# slides in from the left, the heroine steps in from the right and the plate
+# rises, after the game's opening and on the way back from the departure;
+# leave() sends them off the same ways as the view goes up to the gate.
 
 signal selection_changed(id: StringName)
 signal activated(id: StringName)
@@ -48,6 +61,34 @@ const ART := {
 	&"settings": preload("res://art/hub/cards/settings.png"),
 }
 const HERO_TEXTURE := preload("res://art/characters/mio_lobby.png")
+const PILLAR: Texture2D = preload("res://art/hub/lobby/menu_pillar.png")
+const EMBLEM: Texture2D = preload("res://art/hub/title/emblem.png")
+# The medallion of each entry.
+const ICONS := {
+	&"departure": preload("res://art/hub/lobby/icon_departure.png"),
+	&"upgrade": preload("res://art/hub/lobby/icon_upgrade.png"),
+	&"status": preload("res://art/hub/lobby/icon_status.png"),
+	&"codex": preload("res://art/hub/lobby/icon_codex.png"),
+	&"settings": preload("res://art/hub/lobby/icon_settings.png"),
+}
+# The pier: how wide it stands on the 1600x900 base, and where in its
+# picture (as shares of it: tools/build_start_art.py --measure) its panel
+# and the middle of its ring are, and how wide the ring is. The plain
+# masonry at its foot (this share of its height) is mirrored on downward
+# past the picture's end, on a screen taller than it.
+const PILLAR_WIDTH := 378.0
+const PILLAR_PANEL := Rect2(0.0952, 0.1921, 0.8149, 0.4928)
+const PILLAR_RING := Vector2(0.4749, 0.1074)
+const PILLAR_RING_ACROSS := 0.2857
+const PILLAR_FOOT := 0.24
+# How far the pier's shadow reaches over the hall beside it.
+const PILLAR_SHADE := 110.0
+# How far in from its outer edge the lamps' light reaches, and how far that
+# light stays inside the edge's chipped outline.
+const PILLAR_RIM := 64.0
+const PILLAR_RIM_INSET := 5.0
+# The emblem in the ring, as a share of the ring's width.
+const EMBLEM_SHARE := 0.74
 # Where her face and the middle of her soles sit in the texture, as fractions.
 const FACE := Vector2(0.38, 0.165)
 const FEET := Vector2(0.52, 0.985)
@@ -67,33 +108,57 @@ const SPEECH_TIME := 4.0
 # Room between the line and the end studs, and from the tail's tip to her face.
 const SPEECH_GAP := 22.0
 const SPEECH_REACH := 46.0
-# Layout in the 1600×900 base viewport. The menu keeps about a fifth of the
-# width; the heroine stands about two thirds of the height tall.
-const MENU_WIDTH := 300.0
-const MENU_TOP := 168.0
-const ROW_HEIGHT := 80.0
-const BAND_INSET := 14.0
+# Layout in the 1600×900 base viewport. The menu's rows stand in the pier's
+# panel; the heroine stands about two thirds of the height tall.
+const MENU_LEFT := 46.0
+const MENU_WIDTH := 290.0
+const MENU_TOP := 157.0
+const ROW_HEIGHT := 72.0
+# An entry's medallion: its size at rest, where it stands in its row, and
+# how much larger the chosen one stands.
+const ICON_SIZE := 54.0
+const ICON_LEFT := 8.0
+const ICON_CHOSEN := 1.14
+const ICON_POP := 1.3
+# The light over the chosen row reaches this far past the row's ends, and
+# the glow behind its medallion is this wide.
+const LIGHT_REACH := Vector2(26.0, 10.0)
+const HALO := 104.0
 # The panel centres in the floor between the menu and the heroine.
 # How long the pointer must rest on an entry before it is chosen, so one
 # crossed on the way to the panel's button is not.
 const HOVER_INTENT := 0.1
-const PANEL_CENTER_X := 0.465
-const PANEL_WIDTH := 660.0
+const PANEL_CENTER_X := 0.474
+const PANEL_WIDTH := 640.0
 # Low enough that the altar and the foot of the stairs stay in view, its
 # bottom edge on the heroine's floor line.
 const PANEL_BOTTOM := 64.0
 # Every entry shows the same panel: one size, the name and line at the top,
 # the facts and the button at the bottom, so switching entries moves nothing.
-const PANEL_HEIGHT := 256.0
+const PANEL_HEIGHT := 270.0
 const STRIP_HEIGHT := 60.0
 # The texture keeps clear margins for swaying hair, so the figure itself
 # stands about 78% of the screen tall.
 const HERO_HEIGHT := 0.8
 const HERO_CENTER_X := 0.835
 const HERO_FEET_Y := 0.965
+# How strongly the hall's light catches her edges: the gate's, the lamps'.
+const RIM_COLD := 0.5
+const RIM_WARM := 0.3
 # The mark beside the upgrades' name: its room past the word, and its size.
 const MARK_GAP := 16.0
 const MARK_RADIUS := 6.0
+# Bringing the lobby's things in and sending them off: how long the pier,
+# the heroine and the plate take, how far each travels, and how much shorter
+# all of it is on the way back from the departure.
+const PILLAR_IN := 0.55
+const HERO_IN := 0.7
+const HERO_STEP := 46.0
+const PANEL_IN := 0.4
+const PANEL_WAIT := 0.42
+const PANEL_RISE := 22.0
+const QUICK := 0.6
+const LEAVE_TIME := 0.24
 
 var buttons: Array[Button] = []
 var selected := 0
@@ -119,7 +184,11 @@ var status_skills: Label
 var status_hp: Label
 var codex_met: Label
 var codex_runs: Label
-var title_icon: NavigationIcon
+var title_icon: TextureRect
+# The pier and the menu's rows on it.
+var menu: Control
+# Her things are leaving for the departure: nothing here answers the pointer.
+var leaving := false
 var route_value: Label
 var best_value: Label
 var volume_value: Label
@@ -132,6 +201,15 @@ var _meta: MetaProgress
 var _chapter: ChapterData
 var _band_y := 0.0
 var _band_tween: Tween
+var _icons: Array[TextureRect] = []
+var _light_texture: GradientTexture2D
+var _shade_texture: GradientTexture2D
+# How much of her is there (0 to 1), and how far to the right of her place
+# she stands, as she steps in.
+var _hero_share := 1.0
+var _hero_slide := 0.0
+var _stage: Tween
+var _pops := {}
 
 
 func _init() -> void:
@@ -141,6 +219,7 @@ func _init() -> void:
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_build_lights()
 	_build_hero()
 	_build_menu()
 	_build_panel()
@@ -152,7 +231,36 @@ func _ready() -> void:
 	_show_entry()
 
 
+# The soft lights the menu is drawn with: a round glow (the light over the
+# chosen row, the halo behind its medallion) and the pier's shadow.
+func _build_lights() -> void:
+	var glow := Gradient.new()
+	glow.set_color(0, Color.WHITE)
+	glow.set_color(1, Color(1, 1, 1, 0))
+	glow.add_point(0.45, Color(1, 1, 1, 0.42))
+	_light_texture = GradientTexture2D.new()
+	_light_texture.gradient = glow
+	_light_texture.fill = GradientTexture2D.FILL_RADIAL
+	_light_texture.fill_from = Vector2(0.5, 0.5)
+	_light_texture.fill_to = Vector2(1.0, 0.5)
+	var fall := Gradient.new()
+	fall.set_color(0, Color.WHITE)
+	fall.set_color(1, Color(1, 1, 1, 0))
+	fall.add_point(0.3, Color(1, 1, 1, 0.5))
+	_shade_texture = GradientTexture2D.new()
+	_shade_texture.gradient = fall
+	_shade_texture.fill_from = Vector2(0, 0.5)
+	_shade_texture.fill_to = Vector2(1, 0.5)
+
+
 func _build_menu() -> void:
+	menu = Control.new()
+	menu.name = "Menu"
+	menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	add_child(menu)
+	menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	menu.draw.connect(_draw_menu)
 	var previous: Button
 	for index in ENTRIES.size():
 		var entry: Array = ENTRIES[index]
@@ -161,16 +269,21 @@ func _build_menu() -> void:
 		button.text = tr(entry[1])
 		button.theme_type_variation = &"LobbyMenuButton"
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		add_child(button)
+		menu.add_child(button)
 		var row := _row_rect(index)
 		button.position = row.position
 		button.size = row.size
-		var icon := NavigationIcon.new()
+		var icon := TextureRect.new()
 		icon.name = "Icon"
-		icon.kind = entry[2]
+		icon.texture = ICONS[entry[0]]
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_SCALE
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		button.add_child(icon)
-		icon.position = Vector2(30, (row.size.y - 48) * 0.5)
-		icon.size = Vector2(48, 48)
+		icon.position = Vector2(ICON_LEFT, (row.size.y - ICON_SIZE) * 0.5)
+		icon.size = Vector2.ONE * ICON_SIZE
+		icon.pivot_offset = icon.size * 0.5
+		_icons.append(icon)
 		button.pressed.connect(_pressed.bind(index))
 		button.focus_entered.connect(_focused.bind(index))
 		button.mouse_entered.connect(_hovered.bind(index))
@@ -206,7 +319,7 @@ func _build_mark(button: Button) -> void:
 
 
 func _row_rect(index: int) -> Rect2:
-	return Rect2(Vector2(16, MENU_TOP + index * ROW_HEIGHT), Vector2(MENU_WIDTH - 16, ROW_HEIGHT))
+	return Rect2(Vector2(MENU_LEFT, MENU_TOP + index * ROW_HEIGHT), Vector2(MENU_WIDTH, ROW_HEIGHT))
 
 
 func _build_panel() -> void:
@@ -231,7 +344,7 @@ func _build_panel() -> void:
 	panel.add_child(_art)
 	# The art fades out towards the text on the left.
 	var fade := Gradient.new()
-	var ground := get_theme_stylebox(&"panel", &"LobbyInfoPanel").get(&"bg_color") as Color
+	var ground := get_theme_color(&"plate", &"HubLobby")
 	fade.set_color(0, Color(ground, 1.0))
 	fade.set_color(1, Color(ground, 0.15))
 	fade.add_point(0.45, Color(ground, 0.82))
@@ -256,7 +369,11 @@ func _build_panel() -> void:
 	var heading := HBoxContainer.new()
 	heading.theme_type_variation = &"CompactRow"
 	stack.add_child(heading)
-	title_icon = NavigationIcon.new()
+	title_icon = TextureRect.new()
+	title_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	title_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	title_icon.custom_minimum_size = Vector2(44, 44)
+	title_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	heading.add_child(title_icon)
 	title_label = HubUI.label(heading, "", &"LobbyTitle")
 	title_label.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -300,7 +417,6 @@ func _build_panel() -> void:
 	# The lobby keeps its painted plate; the pages' actions are quiet.
 	decide_button.theme_type_variation = &"LobbyAction"
 	decide_button.name = "Decide"
-	HubUI.ornate_frame(panel)
 
 
 func _build_hero() -> void:
@@ -309,6 +425,9 @@ func _build_hero() -> void:
 	hero.texture = HERO_TEXTURE
 	# Settle the bright illustration into the lantern light of the hall.
 	hero.modulate = get_theme_color(&"hero_tint", &"HubLobby")
+	# The gate's light is on her left, the stall's lamps on her right.
+	hero.rim_left = Color(HubHall.GATE_COLOUR, RIM_COLD)
+	hero.rim_right = Color(HubHall.LAMP_COLOUR, RIM_WARM)
 	add_child(hero)
 	hero_button = InkTooltip.HintButton.new()
 	hero_button.name = "HeroButton"
@@ -369,7 +488,7 @@ func _place_hero() -> void:
 	var extent := Vector2(HERO_TEXTURE.get_size().aspect(), 1.0) * size.y * HERO_HEIGHT
 	var feet := Vector2(size.x * HERO_CENTER_X, size.y * HERO_FEET_Y)
 	hero.size = extent
-	hero.position = feet - Vector2(extent.x * 0.5, extent.y)
+	hero.position = feet - Vector2(extent.x * 0.5, extent.y) + Vector2(_hero_slide, 0.0)
 	hero.pivot_offset = Vector2(extent.x * 0.5, extent.y)
 	# Only her figure answers the pointer, not the empty corners of the art.
 	hero_button.position = hero.position + Vector2(extent.x * 0.24, extent.y * 0.05)
@@ -445,6 +564,7 @@ func select(index: int) -> void:
 		_band_tween.kill()
 	_band_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_band_tween.tween_method(_move_band, _band_y, _row_rect(index).position.y, UIMotion.SELECT_TIME)
+	_pop(index)
 	UIMotion.of(panel).reveal(UIMotion.SELECT_TIME)
 	selection_changed.emit(selected_id())
 
@@ -455,13 +575,29 @@ func focus_selected() -> void:
 
 func _move_band(value: float) -> void:
 	_band_y = value
-	queue_redraw()
+	menu.queue_redraw()
+
+
+# The medallion just chosen swells past its size and settles a little
+# larger than the rest; the one let go goes back.
+func _pop(index: int) -> void:
+	for each in _icons.size():
+		var icon := _icons[each]
+		if _pops.has(each) and (_pops[each] as Tween).is_valid():
+			(_pops[each] as Tween).kill()
+		var tween := icon.create_tween()
+		_pops[each] = tween
+		if each == index:
+			icon.scale = Vector2.ONE * ICON_POP
+			tween.tween_property(icon, "scale", Vector2.ONE * ICON_CHOSEN, UIMotion.GOLD_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		else:
+			tween.tween_property(icon, "scale", Vector2.ONE, UIMotion.SELECT_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
 # Keys and the gamepad choose by moving focus and press to enter; the pointer
 # chooses by resting on an entry, so one click enters.
 func _pressed(index: int) -> void:
-	if not is_visible_in_tree():
+	if not is_visible_in_tree() or leaving:
 		return
 	select(index)
 	activated.emit(selected_id())
@@ -471,7 +607,7 @@ func _pressed(index: int) -> void:
 func _hovered(index: int) -> void:
 	_hover_index = index
 	await get_tree().create_timer(HOVER_INTENT).timeout
-	if _hover_index == index and is_visible_in_tree():
+	if _hover_index == index and is_visible_in_tree() and not leaving:
 		select(index)
 		buttons[index].grab_focus()
 
@@ -493,7 +629,9 @@ func _show_entry() -> void:
 	for index in buttons.size():
 		var chosen := index == selected
 		buttons[index].theme_type_variation = &"LobbyMenuButtonSelected" if chosen else &"LobbyMenuButton"
-		buttons[index].get_node("Icon").modulate = Color.WHITE if chosen else get_theme_color(&"icon_rest", &"HubLobby")
+		_icons[index].modulate = get_theme_color(&"icon_lit" if chosen else &"icon_rest", &"HubLobby")
+		if not _pops.has(index) or not (_pops[index] as Tween).is_running():
+			_icons[index].scale = Vector2.ONE * (ICON_CHOSEN if chosen else 1.0)
 	for key in _details:
 		var detail: Control = _details[key]
 		# Strips sit inside an inset panel and margin; show the outer one.
@@ -513,8 +651,7 @@ func _show_entry() -> void:
 	var line_font := description_label.get_theme_font(&"font")
 	var line_width := line_font.get_string_size(description_label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, description_label.get_theme_font_size(&"font_size")).x
 	description_label.tooltip_text = description_label.text if line_width > PANEL_WIDTH - 60.0 else ""
-	title_icon.kind = ENTRIES[selected][2]
-	title_icon.queue_redraw()
+	title_icon.texture = ICONS[id]
 	decide_button.visible = ACTIONS.has(id)
 	decide_button.text = tr(ACTIONS.get(id, ""), "lobby")
 	# Right from the menu reaches the panel's button.
@@ -522,84 +659,121 @@ func _show_entry() -> void:
 		button.focus_neighbor_right = decide_button.get_path()
 	decide_button.focus_neighbor_left = buttons[selected].get_path()
 	queue_redraw()
+	if menu != null:
+		menu.queue_redraw()
 
 
 func _draw() -> void:
-	_draw_menu_slab()
-	_draw_selection()
 	# A soft pool of shade, and a darker contact shadow right under her boots,
 	# ground the heroine on the floor.
 	var feet := hero.position + hero.size * FEET
 	var shadow := get_theme_color(&"shadow", &"HubLobby")
+	shadow.a *= _hero_share
 	draw_texture_rect(_shadow_texture, Rect2(feet - Vector2(200, 32), Vector2(400, 64)), false, Color(shadow, shadow.a * 0.7))
 	for sole: Vector2 in SOLES:
 		var at := hero.position + hero.size * sole
 		draw_texture_rect(_shadow_texture, Rect2(at - Vector2(62, 11), Vector2(124, 22)), false, shadow)
 
 
-func _draw_menu_slab() -> void:
-	var slab := get_theme_color(&"slab", &"HubLobby")
-	var rail := get_theme_color(&"rail", &"HubLobby")
-	# Dark stone slab that fades into the hall instead of ending in a box edge.
-	var colors := PackedColorArray([slab, slab, Color(slab, slab.a * 0.82), Color(slab, 0.0)])
-	var right := MENU_WIDTH + 70.0
-	draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(MENU_WIDTH - 8, 0), Vector2(MENU_WIDTH - 8, size.y), Vector2(0, size.y)]), PackedColorArray([slab, Color(slab, slab.a * 0.82), Color(slab, slab.a * 0.82), slab]))
-	draw_polygon(PackedVector2Array([Vector2(MENU_WIDTH - 8, 0), Vector2(right, 0), Vector2(right, size.y), Vector2(MENU_WIDTH - 8, size.y)]), PackedColorArray([colors[2], colors[3], colors[3], colors[2]]))
-	# Double gilt rail with star studs along the slab's edge.
-	var x := MENU_WIDTH - 6.0
-	# The rail swells between its studs and runs out toward each.
-	for span: Array in [[36.0, size.y * 0.5], [size.y * 0.5, size.y - 36.0]]:
-		HubUI.hairline(self, Vector2(x, span[0] + 16.0), Vector2(x, span[1] - 16.0), rail, 2.0)
-	HubUI.hairline(self, Vector2(x - 8, 60), Vector2(x - 8, size.y - 60), Color(rail, 0.45))
-	for y in [36.0, size.y * 0.5, size.y - 36.0]:
-		_mark(Vector2(x, y), 7.0, rail)
-	# Crest above the entries: a compass star in a ring.
-	var crest := Vector2(MENU_WIDTH * 0.5, MENU_TOP - 64)
-	draw_arc(crest, 30, 0, TAU, 48, Color(rail, 0.55), 1.5, true)
-	draw_arc(crest, 24, 0, TAU, 48, Color(rail, 0.25), 1.0, true)
-	for step in 8:
-		var length := 40.0 if step % 2 == 0 else 22.0
-		var angle := step * TAU / 8.0 - PI * 0.5
-		var tip := crest + Vector2.from_angle(angle) * length
-		var side := Vector2.from_angle(angle + PI * 0.5) * (5.0 if step % 2 == 0 else 3.5)
-		draw_colored_polygon(PackedVector2Array([crest + side, tip, crest - side]), Color(rail, 0.85 if step % 2 == 0 else 0.5))
-	draw_circle(crest, 3.0, rail)
-	_ornament_line(MENU_TOP - 14)
-	_ornament_line(MENU_TOP + ENTRIES.size() * ROW_HEIGHT + 14)
-	# Hairlines between the entries, faded at both ends.
-	for index in range(1, ENTRIES.size()):
-		var y := MENU_TOP + index * ROW_HEIGHT
-		var hair := Color(rail, 0.22)
-		draw_polyline_colors(PackedVector2Array([Vector2(40, y), Vector2(150, y), Vector2(262, y)]), PackedColorArray([Color(hair, 0.0), hair, Color(hair, 0.0)]), 1.0, true)
+# The pier with the game's emblem in its ring, its shadow on the hall beside
+# it, and the light on the chosen row.
+func _draw_menu() -> void:
+	var scale := PILLAR_WIDTH / PILLAR.get_width()
+	var tall := PILLAR.get_height() * scale
+	menu.draw_texture_rect(_shade_texture, Rect2(PILLAR_WIDTH - 4.0, 0.0, PILLAR_SHADE, size.y), false, get_theme_color(&"pier_shade", &"HubLobby"))
+	var stone := get_theme_color(&"pier_tint", &"HubLobby")
+	menu.draw_texture_rect(PILLAR, Rect2(0.0, 0.0, PILLAR_WIDTH, tall), false, stone)
+	# Past the picture's end the masonry of its foot carries on, mirrored
+	# each time so the courses meet.
+	var foot := PILLAR.get_height() * PILLAR_FOOT
+	var part := Rect2(0.0, PILLAR.get_height() - foot, PILLAR.get_width(), foot)
+	var y := tall
+	var flipped := true
+	while y < size.y:
+		if flipped:
+			menu.draw_set_transform(Vector2(0.0, y + foot * scale), 0.0, Vector2(1.0, -1.0))
+			menu.draw_texture_rect_region(PILLAR, Rect2(0.0, 0.0, PILLAR_WIDTH, foot * scale), part, stone)
+			menu.draw_set_transform(Vector2.ZERO)
+		else:
+			menu.draw_texture_rect_region(PILLAR, Rect2(0.0, y, PILLAR_WIDTH, foot * scale), part, stone)
+		y += foot * scale
+		flipped = not flipped
+	# It stands in the hall's light: dark toward the screen's edge, and its
+	# outer edge warm from the lamps beyond it.
+	menu.draw_texture_rect(_shade_texture, Rect2(0.0, 0.0, PILLAR_WIDTH * 0.8, size.y), false, get_theme_color(&"pier_shade", &"HubLobby"))
+	menu.draw_set_transform(Vector2(PILLAR_WIDTH - PILLAR_RIM_INSET, 0.0), 0.0, Vector2(-1.0, 1.0))
+	menu.draw_texture_rect(_shade_texture, Rect2(0.0, 0.0, PILLAR_RIM, size.y), false, get_theme_color(&"pier_rim", &"HubLobby"))
+	menu.draw_set_transform(Vector2.ZERO)
+	var ring := Vector2(PILLAR_RING.x * PILLAR_WIDTH, PILLAR_RING.y * tall)
+	var across := PILLAR_RING_ACROSS * PILLAR_WIDTH * EMBLEM_SHARE
+	menu.draw_texture_rect(_light_texture, Rect2(ring - Vector2.ONE * across * 0.8, Vector2.ONE * across * 1.6), false, get_theme_color(&"emblem_glow", &"HubLobby"))
+	menu.draw_texture_rect(EMBLEM, Rect2(ring - Vector2.ONE * across * 0.5, Vector2.ONE * across), false)
+	# The chosen row: a warm light lying across it, strongest behind its
+	# medallion, and a star where the row ends.
+	var row := Rect2(Vector2(MENU_LEFT, _band_y), Vector2(MENU_WIDTH, ROW_HEIGHT))
+	menu.draw_texture_rect(_light_texture, row.grow_individual(LIGHT_REACH.x, LIGHT_REACH.y, LIGHT_REACH.x, LIGHT_REACH.y), false, get_theme_color(&"band", &"HubLobby"))
+	var medal := row.position + Vector2(ICON_LEFT + ICON_SIZE * 0.5, ROW_HEIGHT * 0.5)
+	menu.draw_texture_rect(_light_texture, Rect2(medal - Vector2.ONE * HALO * 0.5, Vector2.ONE * HALO), false, get_theme_color(&"halo", &"HubLobby"))
+	HubUI.mark(menu, Vector2(row.end.x - 10.0, row.get_center().y), 5.0, get_theme_color(&"rail", &"HubLobby"))
 
 
-func _ornament_line(y: float) -> void:
-	var rail := get_theme_color(&"rail", &"HubLobby")
-	var middle := MENU_WIDTH * 0.5
-	HubUI.trail(self, Vector2(middle - 16, y), Vector2(28, y), Color(rail, 0.8))
-	HubUI.trail(self, Vector2(middle + 16, y), Vector2(MENU_WIDTH - 28, y), Color(rail, 0.8))
-	_mark(Vector2(middle, y), 6.0, rail)
+# --- Coming in and going off ---
+
+# Everything in its place, nothing moving: as the lobby stands at rest.
+func settle() -> void:
+	if _stage != null:
+		_stage.kill()
+	leaving = false
+	menu.position.x = 0.0
+	menu.modulate.a = 1.0
+	_set_hero(1.0, 0.0)
+	UIMotion.of(panel).reset()
 
 
-func _draw_selection() -> void:
-	var gold := get_theme_color(&"band", &"HubLobby")
-	var rail := get_theme_color(&"rail", &"HubLobby")
-	# The gold text, the point and the edge line say which entry is chosen;
-	# the fill and the halo only warm it, kept low so the heroine leads.
-	var top := _band_y + BAND_INSET
-	var bottom := _band_y + ROW_HEIGHT - BAND_INSET
-	var middle := (top + bottom) * 0.5
-	var tip := MENU_WIDTH + 22.0
-	# Warm light across the chosen row, ending in a point past the rail.
-	var shape := PackedVector2Array([Vector2(16, top), Vector2(tip - 22, top), Vector2(tip, middle), Vector2(tip - 22, bottom), Vector2(16, bottom)])
-	draw_polygon(shape, PackedColorArray([Color(gold, gold.a * 0.35), Color(gold, gold.a), Color(gold, gold.a * 1.1), Color(gold, gold.a), Color(gold, gold.a * 0.35)]))
-	draw_polyline_colors(PackedVector2Array([Vector2(16, top), Vector2(tip - 22, top), Vector2(tip, middle), Vector2(tip - 22, bottom), Vector2(16, bottom)]), PackedColorArray([Color(rail, 0.0), Color(rail, 0.9), rail, Color(rail, 0.9), Color(rail, 0.0)]), 1.5, true)
-	_mark(Vector2(tip, middle), 5.0, rail)
-	# Halo behind the chosen icon.
-	var halo := Vector2(16 + 54, middle)
-	for ring in 4:
-		draw_circle(halo, 26.0 - ring * 5.0, Color(gold, gold.a * 0.3))
+# Held back, out of sight, before present() brings them in.
+func hold() -> void:
+	if _stage != null:
+		_stage.kill()
+	leaving = false
+	menu.position.x = -PILLAR_WIDTH - PILLAR_SHADE
+	_set_hero(0.0, HERO_STEP)
+	UIMotion.of(panel).reset()
+	panel.modulate.a = 0.0
 
 
-func _mark(center: Vector2, radius: float, color: Color) -> void:
-	HubUI.mark(self, center, radius, color)
+# The pier slides in from the left, she steps in from the right, and the
+# plate rises after them. `quick` on the way back from the departure.
+func present(quick: bool) -> void:
+	hold()
+	var pace := QUICK if quick else 1.0
+	_stage = create_tween().set_parallel()
+	_stage.tween_property(menu, "position:x", 0.0, PILLAR_IN * pace).set_trans(Tween.TRANS_QUART).set_ease(Tween.EASE_OUT)
+	_stage.tween_method(_step_in, 0.0, 1.0, HERO_IN * pace).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	UIMotion.of(panel).enter(PANEL_WAIT * pace, Vector2(0.0, PANEL_RISE), PANEL_IN * pace)
+
+
+# Off the ways they came, as the view goes up to the gate; then the lobby is
+# hidden.
+func leave() -> void:
+	if _stage != null:
+		_stage.kill()
+	leaving = true
+	hero_speech.hide()
+	_stage = create_tween().set_parallel()
+	_stage.tween_property(menu, "position:x", -PILLAR_WIDTH - PILLAR_SHADE, LEAVE_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	_stage.tween_method(_step_in, 1.0, 0.0, LEAVE_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	UIMotion.of(panel).fade_out(0.0, LEAVE_TIME * 0.6)
+	_stage.chain().tween_callback(func():
+		hide()
+		settle())
+
+
+func _step_in(share: float) -> void:
+	_set_hero(share, HERO_STEP * (1.0 - share))
+
+
+func _set_hero(share: float, slide: float) -> void:
+	_hero_share = share
+	_hero_slide = slide
+	hero.modulate = Color(get_theme_color(&"hero_tint", &"HubLobby"), share)
+	_place_hero()

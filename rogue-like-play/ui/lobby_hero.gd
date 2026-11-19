@@ -10,6 +10,10 @@ extends TextureRect
 # her shoulder and the coat hem following by mio_lobby_motion.png. Her eyes
 # swap to cells of mio_lobby_eyes.png for a three-step blink and glances to
 # either side. Timing uses its own random numbers, never the game's.
+#
+# She stands in the hall's light: the edge of her turned to the hall's gate
+# catches its cold light, the other the lamps' warm one (rim_left,
+# rim_right), so she reads as standing in the place and not laid over it.
 
 const SHADER := """
 shader_type canvas_item;
@@ -49,6 +53,11 @@ uniform vec4 pose_rect = vec4(0.0);
 uniform float pose_from_mix = 0.0;
 uniform float pose_to_mix = 0.0;
 const float FEATHER = 18.0;
+// The hall's light on her edges: its colour, and in its alpha how strong.
+uniform vec4 rim_left : source_color = vec4(0.45, 0.62, 1.0, 0.0);
+uniform vec4 rim_right : source_color = vec4(1.0, 0.7, 0.4, 0.0);
+// How far in from her edge the light reaches (pixels of the texture).
+const float RIM = 9.0;
 
 varying vec4 tint;
 
@@ -105,6 +114,11 @@ void fragment() {
 	vec4 hair = texture(hair_texture, h / extent) * within(h / extent);
 	float alpha = body.a + hair.a * (1.0 - body.a);
 	vec3 rgb = (body.rgb * body.a + hair.rgb * hair.a * (1.0 - body.a)) / max(alpha, 0.0001);
+	// Where nothing of her lies just to one side, that side's light falls.
+	vec2 reach = vec2(RIM, 0.0);
+	float to_left = max(texture(TEXTURE, (b - reach) / extent).a * within((b - reach) / extent), texture(hair_texture, (h - reach) / extent).a * within((h - reach) / extent));
+	float to_right = max(texture(TEXTURE, (b + reach) / extent).a * within((b + reach) / extent), texture(hair_texture, (h + reach) / extent).a * within((h + reach) / extent));
+	rgb += rim_left.rgb * rim_left.a * (1.0 - to_left) + rim_right.rgb * rim_right.a * (1.0 - to_right);
 	COLOR = vec4(rgb, alpha) * tint;
 }
 """
@@ -159,6 +173,17 @@ const REACT_REST := 0.3
 const REACT_LIFT := 0.022
 const REACT_ANGLE := 2.5
 
+# The hall's light on her left and right edges (alpha: how strong).
+var rim_left := Color(0.45, 0.62, 1.0, 0.0):
+	set(value):
+		rim_left = value
+		if material != null:
+			(material as ShaderMaterial).set_shader_parameter(&"rim_left", value)
+var rim_right := Color(1.0, 0.7, 0.4, 0.0):
+	set(value):
+		rim_right = value
+		if material != null:
+			(material as ShaderMaterial).set_shader_parameter(&"rim_right", value)
 var time := 0.0
 var eye_frame: Eyes = Eyes.OPEN
 var gaze: Eyes = Eyes.OPEN
@@ -208,6 +233,8 @@ func _ready() -> void:
 	shader_material.set_shader_parameter(&"eye_atlas", preload("res://art/characters/mio_lobby_eyes.png"))
 	shader_material.set_shader_parameter(&"motion_mask", preload("res://art/characters/mio_lobby_motion.png"))
 	material = shader_material
+	rim_left = rim_left
+	rim_right = rim_right
 	_next_blink = rng.randf_range(BLINK_GAP.x, BLINK_GAP.y)
 	_next_glance = rng.randf_range(GLANCE_GAP.x, GLANCE_GAP.y)
 	_next_pose = rng.randf_range(POSE_GAP.x, POSE_GAP.y)
