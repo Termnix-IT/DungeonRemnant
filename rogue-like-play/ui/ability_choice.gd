@@ -29,12 +29,23 @@ const GameAudio := preload("res://audio/game_audio.gd")
 # dims the HUD's own.
 # No window holds the hand: as card games lay a hand on the table, the title,
 # the cards and their keys float over the darkened field, so the deal and the
-# cards themselves are what the eye meets. The cards are as tall as their
-# words need.
+# cards themselves are what the eye meets. The cards are painted ones of one
+# size (AbilityCard); they come up face down, one after another, and each
+# turns over as it lands. A warm light lies behind the hand, breathing, and
+# at the chosen moment a burst of it goes out from the card taken.
 const SHADE_TIME := 0.16
 const DEAL_TIME := 0.24
 const DEAL_STAGGER := 0.09
 const DEAL_RISE := 90.0
+# A card begins to turn over this long after it begins to rise, and has
+# turned by the time it lands.
+const TURN_AFTER := 0.06
+# The light behind the hand: its size as a share of the screen's height, how
+# strong it is and how it breathes; and the burst from the card taken.
+const LIGHT_ACROSS := 1.5
+const LIGHT_ALPHA := 0.2
+const LIGHT_BREATH := 0.05
+const BURST_GROW := 2.2
 # How dim a card waits before the hand is armed.
 const UNARMED_TINT := Color(0.62, 0.62, 0.62, 1.0)
 const PICK_KEYS: Array[Key] = [KEY_1, KEY_2, KEY_3, KEY_4]
@@ -67,6 +78,9 @@ var held_row: HFlowContainer
 # a button held through the deal to be let go.
 var armed := false
 var _mouse_held := false
+var _light: TextureRect
+var _rule: Control
+var _clock := 0.0
 # Above zero: the fight's actions have not rested yet (resting()).
 var _rest_left := 0.0
 var _rest_clock := 0
@@ -77,6 +91,30 @@ var _rest_clock := 0
 
 func _ready() -> void:
 	hide()
+	# The light behind the hand, over the shade.
+	_light = TextureRect.new()
+	_light.name = "Light"
+	_light.texture = _glow_texture()
+	_light.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_light.stretch_mode = TextureRect.STRETCH_SCALE
+	_light.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var added := CanvasItemMaterial.new()
+	added.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	_light.material = added
+	add_child(_light)
+	move_child(_light, shade.get_index() + 1)
+	# A star under the title, a line running out from it either way.
+	_rule = Control.new()
+	_rule.custom_minimum_size = Vector2(420.0, 18.0)
+	_rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_rule.draw.connect(func():
+		var gold := _rule.get_theme_color(&"font_color", &"GoldLabel")
+		var middle := _rule.size * 0.5
+		HubUI.trail(_rule, middle - Vector2(14.0, 0.0), middle - Vector2(210.0, 0.0), gold)
+		HubUI.trail(_rule, middle + Vector2(14.0, 0.0), middle + Vector2(210.0, 0.0), gold)
+		HubUI.mark(_rule, middle, 6.0, gold))
+	$Panel/Margin/Stack.add_child(_rule)
+	$Panel/Margin/Stack.move_child(_rule, $Panel/Margin/Stack/Title.get_index() + 1)
 	# Key caps under the cards rather than an instruction sentence.
 	key_guide = KeyGuide.new()
 	key_guide.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -112,6 +150,20 @@ func _ready() -> void:
 		buttons[index].focus_mode = Control.FOCUS_ALL
 		buttons[index].focus_entered.connect(_hover.bind(index, true))
 		buttons[index].focus_exited.connect(_hover.bind(index, false))
+
+
+# A soft round light, gold at its middle.
+static func _glow_texture() -> GradientTexture2D:
+	var fall := Gradient.new()
+	fall.set_color(0, Color(1.0, 0.8, 0.46, 1.0))
+	fall.set_color(1, Color(1.0, 0.8, 0.46, 0.0))
+	fall.add_point(0.5, Color(1.0, 0.8, 0.46, 0.34))
+	var light := GradientTexture2D.new()
+	light.gradient = fall
+	light.fill = GradientTexture2D.FILL_RADIAL
+	light.fill_from = Vector2(0.5, 0.5)
+	light.fill_to = Vector2(1.0, 0.5)
+	return light
 
 
 # A level-up's boons, at the ranks the build holds. `title` replaces the
@@ -213,6 +265,13 @@ func _deal() -> void:
 	for index in offers.size():
 		cards[index].self_modulate = UNARMED_TINT
 		UIMotion.of(cards[index]).enter(SHADE_TIME + index * DEAL_STAGGER, Vector2(0, DEAL_RISE), DEAL_TIME)
+		# Face down as it rises, turned over as it lands.
+		var card := cards[index]
+		card.turn = 0.0
+		var turning := card.create_tween()
+		turning.tween_interval(SHADE_TIME + index * DEAL_STAGGER + TURN_AFTER)
+		turning.tween_callback(GameAudio.play.bind(self, &"card_deal", -17.0, 1.0 + index * 0.06))
+		turning.tween_property(card, "turn", 1.0, DEAL_TIME - TURN_AFTER).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	# On the cards' own clock, so a slow frame that holds the deal back holds
 	# the arming back with it: no card is ever armed before it is in sight.
 	var arming := create_tween()
@@ -228,6 +287,7 @@ func _arm(dealt: Array[BoonData]) -> void:
 	for index in offers.size():
 		cards[index].self_modulate = Color.WHITE
 		UIMotion.of(cards[index]).flash(1.3, UIMotion.SELECT_TIME)
+		cards[index].turn = 1.0
 	create_tween().tween_property(key_guide, "modulate:a", 1.0, UIMotion.SELECT_TIME)
 	_mouse_held = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
 	if not _mouse_held:
@@ -249,7 +309,15 @@ func resting() -> bool:
 # The rest runs down in real time while none of the fight's actions is held,
 # from the deal on, so a hand left alone while it is dealt is free the
 # moment it arms.
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if visible:
+		# The light behind the hand, breathing where the cards lie.
+		_clock += delta
+		var screen := shade.size
+		var across := screen.y * LIGHT_ACROSS
+		_light.size = Vector2(across * 1.5, across)
+		_light.position = panel.position + panel.size * 0.5 - _light.size * 0.5
+		_light.modulate.a = shade.modulate.a * (LIGHT_ALPHA + LIGHT_BREATH * sin(_clock * 1.4))
 	if not visible or _rest_left <= 0.0:
 		return
 	var now := Time.get_ticks_msec()
@@ -282,6 +350,7 @@ func dismiss() -> void:
 	for card in cards:
 		UIMotion.of(card).reset()
 		card.hovered = false
+		card.turn = 1.0
 	hide()
 	offers.clear()
 
@@ -347,6 +416,24 @@ func _play_afterglow(chosen: int) -> void:
 		copy.hovered = source.hovered
 		if index == chosen:
 			UIMotion.of(copy).emphasize()
+			# A burst of the hand's light goes out from behind the card taken.
+			var burst := TextureRect.new()
+			burst.texture = _glow_texture()
+			burst.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			burst.stretch_mode = TextureRect.STRETCH_SCALE
+			burst.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			var added := CanvasItemMaterial.new()
+			added.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+			burst.material = added
+			burst.size = Vector2.ONE * source.size.y * 1.3
+			burst.position = source.global_position + source.size * 0.5 - burst.size * 0.5
+			burst.pivot_offset = burst.size * 0.5
+			burst.modulate.a = 0.75
+			root.add_child(burst)
+			root.move_child(burst, copy.get_index())
+			var going := burst.create_tween().set_parallel().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			going.tween_property(burst, "scale", Vector2.ONE * BURST_GROW, UIMotion.MOMENT_TIME)
+			going.tween_property(burst, "modulate:a", 0.0, UIMotion.MOMENT_TIME)
 		else:
 			UIMotion.of(copy).recede()
 	UIMotion.of(dim).fade_out(0.0, UIMotion.MOMENT_TIME)
@@ -356,6 +443,7 @@ func _play_afterglow(chosen: int) -> void:
 		if is_instance_valid(layer_node):
 			layer_node.queue_free())
 	GameAudio.play(self, &"confirm", -18.0)
+	GameAudio.play(self, &"card_take", -13.0)
 
 
 func _exit_tree() -> void:

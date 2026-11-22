@@ -19,6 +19,14 @@ extends CombatArea
 # run's difficulty step (RunState.step_rules) toughens its foes, swells its
 # crowd and waves, hastens its elites, mixes in the chapter's stronger kin,
 # and makes its boss rage sooner and call more help.
+#
+# The fight's great moments are staged here, over the rules and never in
+# them: she arrives in a pool of light as the view settles on her; a level
+# gained bursts into light round her before its cards; a boss is foretold by
+# a sigil burning on the floor as the hall darkens and reddens, comes in
+# under its entrance (BossIntro), reddens the hall further when it rages,
+# and falls in a slowed moment of white light; an area cleared brightens;
+# and her fall slows and reddens the world as the view closes on her.
 
 signal cleared
 # A setting was changed from the menu (the owner saves it).
@@ -53,10 +61,40 @@ const LEVEL_BURST_POWER := 2.0
 const LEVEL_BURST_KNOCKBACK := 320.0
 # How long level_haste quickens her swings.
 const LEVEL_HASTE_TIME := 10.0
-# A forest's trees (tools/build_painted_terrain.py trees), square frames side
-# by side, drawn this many world px across on a 2x2 pillar.
-const TREES := preload("res://art/tiles/painted/forest_trees.png")
-const TREE_ACROSS := 124.0
+# The light of a level gained, and the motes that rise round her with it.
+const LEVEL_LIGHT := Color(1.0, 0.86, 0.5)
+const LEVEL_MOTES := 30
+# She arrives: the view starts this close and settles over this long.
+const ARRIVE_ZOOM := 1.52
+const ARRIVE_TIME := 0.75
+# The dark she comes out of and leaves into (area_veil.gdshader): how much
+# of the view is open about her as she arrives, how long before a cleared
+# area is left the dark begins to close on her, and how far and in what
+# colour it closes as she falls.
+const VEIL := preload("res://world/areas/area_veil.gdshader")
+const VEIL_FROM := 0.1
+# Her arrival begins this many drawn frames after the place is made.
+const ARRIVE_AFTER := 3
+const LEAVE_TIME := 0.45
+const FALL_VEIL := 0.36
+const FALL_DARK := Color(0.1, 0.0, 0.012)
+# A boss: how much the hall reddens once it is foretold and once it rages,
+# how slow and for how long (real seconds) the world runs as it falls, and
+# how close the view comes at that moment.
+const BOSS_DREAD := 0.4
+const RAGE_DREAD := 0.85
+# Its rage: how slow and for how long (real seconds) the world runs.
+const RAGE_SLOW := 0.3
+const RAGE_SLOW_TIME := 0.32
+const BOSS_FALL_SLOW := 0.16
+const BOSS_FALL_TIME := 0.8
+const BOSS_FALL_ZOOM := 1.48
+# An area cleared: how much the place brightens.
+const CLEAR_LIFT := 1.3
+# Her fall: how slow and for how long the world runs, and how close the view comes.
+const FALL_SLOW := 0.25
+const FALL_SLOW_TIME := 0.9
+const FALL_ZOOM := 1.56
 
 @export var seed_value := 0
 # The controls being taught (the first area of a first run only; else null).
@@ -85,6 +123,18 @@ var _banner_left := 0.0
 var _leading := false
 # A boss's entrance is being staged (the world stopped).
 var staging := false
+# The sigil burning where the boss will stand.
+var sigil: BossSigil
+var _slowed := 0
+var _zoom: Tween
+var _mood: Tween
+# The veil, how far it is open (0: all dark; 1: all clear), and whether it
+# has begun to close on a cleared area.
+var veil: ColorRect
+var veil_open := 1.0
+var _veiling: Tween
+var _leaving := false
+var _arrive_in := 0
 
 
 # Sets what it plays before it enters the tree.
@@ -151,19 +201,113 @@ func _ready() -> void:
 		hud.show_message(tr(data.display_name))
 		_banner_left = BANNER_TIME
 		GameAudio.play(self, &"floor", -18.0)
+	_arrive()
+
+
+# She arrives: the view, close on her, draws back to the fight's, and her
+# light blooms where she stands.
+func _arrive() -> void:
+	camera.zoom = Vector2.ONE * ARRIVE_ZOOM
+	# Out of the dark the gate closed on: her light opens the place.
+	var over := CanvasLayer.new()
+	over.name = "Veil"
+	over.layer = 4
+	add_child(over)
+	veil = ColorRect.new()
+	veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var look := ShaderMaterial.new()
+	look.shader = VEIL
+	veil.material = look
+	over.add_child(veil)
+	_set_veil(VEIL_FROM)
+	_place_veil()
+	_arrive_in = ARRIVE_AFTER
+
+
+# The veil opened or closed to `open` over `time`, on the real clock.
+func _veil_to(open: float, time: float, dark := Color.BLACK) -> void:
+	if veil == null:
+		return
+	if _veiling != null:
+		_veiling.kill()
+	(veil.material as ShaderMaterial).set_shader_parameter(&"dark", dark)
+	_veiling = create_tween().set_ignore_time_scale(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_veiling.tween_method(_set_veil, veil_open, open, time)
+
+
+func _set_veil(open: float) -> void:
+	veil_open = open
+	(veil.material as ShaderMaterial).set_shader_parameter(&"open", open)
+	veil.visible = open < 1.0
+
+
+# The veil's round stays on her wherever she is on the screen.
+func _place_veil() -> void:
+	var screen := get_viewport().get_visible_rect().size
+	var at := hero.get_global_transform_with_canvas().origin + BODY_MIDDLE * camera.zoom.x
+	var look := veil.material as ShaderMaterial
+	look.set_shader_parameter(&"at", at / screen)
+	look.set_shader_parameter(&"aspect", screen.x / screen.y)
+
+
+func _process(delta: float) -> void:
+	super(delta)
+	# The place's first frames are long ones (it is drawn for the first
+	# time): her arrival begins once they are past, or it would be over
+	# before it was seen.
+	if _arrive_in > 0:
+		_arrive_in -= 1
+		if _arrive_in == 0:
+			_view(CAMERA_ZOOM, ARRIVE_TIME)
+			ground.flash(hero.global_position, 420.0, 0.7, AreaGround.HERO_LIGHT, 0.7)
+			_veil_to(1.0, ARRIVE_TIME)
+	if veil != null and veil.visible and hero != null:
+		_place_veil()
+
+
+# The view eased to a closeness, on the real clock.
+func _view(zoom: float, time: float) -> void:
+	if _zoom != null:
+		_zoom.kill()
+	_zoom = create_tween().set_ignore_time_scale(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_zoom.tween_property(camera, "zoom", Vector2.ONE * zoom, time)
+
+
+# The view goes in close and comes back, over `time` in all.
+func _punch(zoom: float, time: float) -> void:
+	if _zoom != null:
+		_zoom.kill()
+	_zoom = create_tween().set_ignore_time_scale(true)
+	_zoom.tween_property(camera, "zoom", Vector2.ONE * zoom, time * 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_zoom.tween_property(camera, "zoom", Vector2.ONE * CAMERA_ZOOM, time * 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+# The place's light eased: reddened (dread) and brightened (lift).
+func _colour_place(dread: float, lift: float, time: float) -> void:
+	if _mood != null:
+		_mood.kill()
+	_mood = create_tween().set_ignore_time_scale(true).set_parallel().set_trans(Tween.TRANS_SINE)
+	_mood.tween_property(ground, "dread", dread, time)
+	_mood.tween_property(ground, "lift", lift, time)
+
+
+# The world slowed for a moment of real time (not while a level's lead-in
+# or its cards hold it).
+func _slow(duration: float, scale: float) -> void:
+	if choosing():
+		return
+	hit_stop.hold(duration, scale)
+	_slowed += 1
+	var token := _slowed
+	get_tree().create_timer(duration, true, false, true).timeout.connect(func():
+		if token == _slowed and not _leading:
+			hit_stop.release())
 
 
 # The ground, the hero and the rules from its AreaData.
 func _lay_out() -> void:
-	# A forest's pillars stand as trees: their cells stop her but are drawn as floor.
-	var screened := {}
-	if data.trees:
-		for corner in data.pillar_corners():
-			for offset: Vector2i in [Vector2i.ZERO, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.ONE]:
-				screened[corner + offset] = true
-	ground.build(data.size, data.walls(), data.theme, screened)
-	if data.trees:
-		_plant_trees()
+	_raise_ground(data)
 	spawn_hero(ground.bounds().get_center(), run.tuning, run.moveset)
 	# The run's difficulty step: tougher foes, a boss quicker to rage.
 	var rules := run.step_rules
@@ -201,6 +345,10 @@ func _physics_process(delta: float) -> void:
 			hud.show_message("")
 	if _clear_left >= 0.0:
 		_clear_left -= delta
+		# The cleared place is left into the dark: it closes on her at the last.
+		if _clear_left < LEAVE_TIME and not _leaving:
+			_leaving = true
+			_veil_to(0.0, LEAVE_TIME)
 		if _clear_left < 0.0:
 			run.hp = hero.health.hp
 			run.special_charge = hero.special_charge
@@ -221,22 +369,19 @@ func _physics_process(delta: float) -> void:
 		clear()
 
 
-# A tree on each pillar, rooted at the pillar's bottom edge and sorted among
-# the fighters, so one walking behind it is hidden by its crown.
-func _plant_trees() -> void:
-	var frame := TREES.get_height()
-	var kinds := TREES.get_width() / frame
-	for corner in data.pillar_corners():
-		var tree := Sprite2D.new()
-		var picture := AtlasTexture.new()
-		picture.atlas = TREES
-		picture.region = Rect2(posmod(hash(corner), kinds) * frame, 0, frame, frame)
-		tree.texture = picture
-		tree.offset = Vector2(0.0, -frame * 0.5)
-		tree.scale = Vector2.ONE * TREE_ACROSS / frame
-		tree.position = (Vector2(corner) + Vector2(1.0, 2.0)) * AreaGround.CELL
-		tree.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-		actors.add_child(tree)
+# The ground of an area laid out as a place: its paving and walls, a thing
+# with height on each pillar (their cells stop her but are drawn as floor
+# under it; a boss's hall keeps a fire on each of its own), and the leavings
+# of old fights over the floor.
+func _raise_ground(area: AreaData) -> void:
+	var corners := area.pillar_corners()
+	var screened := {}
+	for corner in corners:
+		for offset: Vector2i in [Vector2i.ZERO, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.ONE]:
+			screened[corner + offset] = true
+	ground.build(area.size, area.walls(), area.theme, screened)
+	ground.plant(corners, actors, area.pillars.size(), area.boss != null)
+	ground.scatter(hash(String(area.id)) + area.size.x)
 
 
 func is_clear() -> bool:
@@ -269,6 +414,10 @@ func clear() -> void:
 	gems.pull_radius = INF
 	hud.show_message(tr("制圧完了"))
 	GameAudio.play(self, &"victory", -16.0)
+	# The place breathes out: it brightens, and light rises round her.
+	_colour_place(0.0, CLEAR_LIFT, 0.8)
+	ground.flash(hero.global_position, 560.0, 0.8, LEVEL_LIGHT, 0.8)
+	sparks.burst(hero.global_position + BODY_MIDDLE * 0.4, 22, LEVEL_LIGHT, Vector2.UP, 1.3, Vector2(30.0, 150.0), Vector2(0.5, 1.1), 5.0, 1.0)
 	_banner_left = CLEAR_PAUSE
 	_clear_left = CLEAR_PAUSE
 
@@ -297,6 +446,16 @@ func _bring_boss() -> void:
 	waves.mark(at, data.boss, BOSS_MARK_TIME)
 	waves.spawned.connect(_on_marked_spawn)
 	GameAudio.play(self, &"warning", -16.0)
+	# It is foretold: a sigil burns up out of the floor where it will stand,
+	# the hall darkens and reddens, the ground trembles.
+	sigil = BossSigil.new()
+	sigil.position = at
+	marks.add_child(sigil)
+	sigil.rise(BOSS_MARK_TIME)
+	_colour_place(BOSS_DREAD, 0.86, BOSS_MARK_TIME)
+	shake(HEAVY_SHAKE * 0.7)
+	sparks.burst(at, 26, BossSigil.COLOUR, Vector2.UP, 1.4, Vector2(20.0, 130.0), Vector2(0.5, 1.0), 5.0, 1.0)
+	GameAudio.play(self, &"boss_tremor", -11.0)
 
 
 func _on_marked_spawn(foe: Foe) -> void:
@@ -305,6 +464,7 @@ func _on_marked_spawn(foe: Foe) -> void:
 	boss_foe = foe
 	foe.phase_changed.connect(_on_boss_phase)
 	foe.fell.connect(func(_foe: Foe): boss_down = true)
+	foe.fell.connect(_on_boss_fell)
 	# Its entrance is staged with the world stopped: nothing moves, nothing is taken.
 	staging = true
 	get_tree().paused = true
@@ -316,14 +476,37 @@ func _on_marked_spawn(foe: Foe) -> void:
 	intro.name = "BossIntro"
 	add_child(intro)
 	intro.finished.connect(_after_entrance)
+	intro.roared.connect(_on_boss_roar.bind(foe))
 	# A boss met on a run before may have its entrance cut short.
 	intro.skippable = run.known.has(foe.data.id)
 	intro.present(foe, self, HubTheme.create())
 
 
+# Its roar: the sigil it stands in blazes and is gone, sparks fly out from
+# it and its light floods the hall.
+func _on_boss_roar(foe: Foe) -> void:
+	if is_instance_valid(sigil):
+		sigil.flare()
+	ground.flash(foe.global_position, 900.0, 1.5, BossSigil.COLOUR, 0.7)
+	sparks.burst(foe.global_position + BODY_MIDDLE, 46, BossSigil.HEART, Vector2.ZERO, PI, Vector2(120.0, 420.0), Vector2(0.35, 0.8), 5.5)
+
+
+# The boss falls: the world slows on a burst of white light, the view goes
+# in close and comes back, and the hall is let out of its red.
+func _on_boss_fell(foe: Foe) -> void:
+	_slow(BOSS_FALL_TIME, BOSS_FALL_SLOW)
+	shake(SPECIAL_SHAKE * 1.2)
+	ground.flash(foe.global_position, 900.0, 0.95, Color(1.0, 0.95, 0.85), 0.9)
+	sparks.burst(foe.global_position + BODY_MIDDLE, 70, GemField.LARGE, Vector2.ZERO, PI, Vector2(80.0, 420.0), Vector2(0.5, 1.3), 6.0, 0.6)
+	_punch(BOSS_FALL_ZOOM, BOSS_FALL_TIME + 0.5)
+	GameAudio.play(self, &"boss_fall", -9.0)
+
+
 func _after_entrance() -> void:
 	staging = false
 	camera_held = false
+	if is_instance_valid(sigil):
+		sigil.flare()
 	if not choosing() and not in_menu():
 		get_tree().paused = false
 
@@ -331,6 +514,12 @@ func _after_entrance() -> void:
 # The boss's second phase: its summons come in on marks around the hall.
 func _on_boss_phase(foe: Foe) -> void:
 	shake(HURT_SHAKE * 1.5)
+	# Its rage: the hall reddens further, its light bursts from it, and the
+	# world slows on the moment.
+	_colour_place(RAGE_DREAD, 0.9, 0.4)
+	ground.flash(foe.global_position, 900.0, 1.3, BossSigil.COLOUR, 0.6)
+	sparks.burst(foe.global_position + BODY_MIDDLE, 40, BossSigil.COLOUR, Vector2.ZERO, PI, Vector2(100.0, 380.0), Vector2(0.4, 0.9), 5.5)
+	_slow(RAGE_SLOW_TIME, RAGE_SLOW)
 	hud.show_message(tr("%sが怒り狂った") % tr(foe.data.display_name))
 	GameAudio.play(self, &"warning", -16.0)
 	_banner_left = BANNER_TIME * 0.6
@@ -388,6 +577,12 @@ func _lead_in() -> void:
 	marks.add_child(ring)
 	ring.start(hero.global_position, LEAD_RING, &"heavy")
 	shake(HEAVY_SHAKE * 0.4)
+	# The level gained bursts into light round her: on the floor, in the
+	# air, and over her head.
+	ground.flash(hero.global_position, 560.0, 1.2, LEVEL_LIGHT, LEAD_TIME + 0.35)
+	sparks.burst(hero.global_position + BODY_MIDDLE * 0.4, LEVEL_MOTES, LEVEL_LIGHT, Vector2.UP, 1.3, Vector2(40.0, 200.0), Vector2(0.5, 1.1), 5.0, 1.0)
+	_effect(&"level_up", hero.global_position + BODY_MIDDLE * 0.5, Vector2.RIGHT, LEVEL_UP_SCALE)
+	popups.show_number("LEVEL UP", number_spot(hero) + Vector2(0.0, -16.0), LEVEL_LIGHT, ECHO_OUTLINE, DamagePopups.FONT_SIZE + 2)
 	get_tree().create_timer(LEAD_TIME, true, false, true).timeout.connect(_after_lead)
 
 
@@ -433,6 +628,9 @@ func _on_chosen(id: StringName) -> void:
 		GameMusic.muffle(self, false)
 		# The power taken rises around her as the fight resumes.
 		_effect(&"level_up", hero.global_position + BODY_MIDDLE * 0.5, Vector2.RIGHT, LEVEL_UP_SCALE)
+		ground.flash(hero.global_position, 480.0, 0.9, LEVEL_LIGHT, 0.5)
+		sparks.burst(hero.global_position + BODY_MIDDLE * 0.4, 18, LEVEL_LIGHT, Vector2.UP, 1.3, Vector2(40.0, 170.0), Vector2(0.4, 0.9), 5.0, 1.0)
+		GameAudio.play(self, &"level_surge", -14.0)
 		_rise()
 
 
@@ -464,6 +662,12 @@ func _on_stood() -> void:
 func _on_hero_down() -> void:
 	run.hp = 0
 	hud.show_message(tr("倒れました"))
+	# Her fall: the world slows and reddens, and the view closes on her.
+	_slow(FALL_SLOW_TIME, FALL_SLOW)
+	_view(FALL_ZOOM, FALL_SLOW_TIME + 0.4)
+	_veil_to(FALL_VEIL, FALL_SLOW_TIME + 0.5, FALL_DARK)
+	_colour_place(1.0, 0.72, 0.8)
+	ground.flash(hero.global_position, 520.0, 1.0, HURT_COLOUR, 0.6)
 
 
 # The menu is open, or its leaving is being confirmed.

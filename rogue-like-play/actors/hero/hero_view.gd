@@ -28,6 +28,7 @@ const AIM_RIM := Color(0.1, 0.07, 0.04, 0.8)
 const MERCY_ALPHA := 0.82
 const MERCY_GLOW := 1.7
 const HURT_TINT := Color(2.2, 0.75, 0.7)
+const GAIN_TINT := Color(1.25, 1.5, 1.6)
 # The dash's afterimages: one left every GHOST_GAP seconds of the dash, in
 # her pose of that moment, cool and see-through, fading over GHOST_TIME.
 const GHOST_GAP := 0.045
@@ -103,6 +104,13 @@ func charge_ready() -> void:
 func hurt() -> void:
 	rig.hurt()
 	_tint(HURT_TINT, 0.18)
+
+
+# The echo taken in (a gem collected): a glint over her, unless a stronger
+# tint (a hurt) is still on her.
+func gain() -> void:
+	if _flash == null or not _flash.is_running():
+		_tint(GAIN_TINT, 0.14)
 
 
 func fall() -> void:

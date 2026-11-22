@@ -11,6 +11,8 @@ extends CanvasLayer
 # camera; nothing moves and nothing is taken until then.
 
 signal finished
+# The boss roars (the camera has settled on it).
+signal roared
 
 const BAR_HEIGHT := 78.0
 const BAR_TIME := 0.3
@@ -30,12 +32,16 @@ const RETURN_TIME := 0.6
 const OUT_TIME := 0.35
 # The name sits this share of the way down the screen.
 const NAME_PLACE := 0.74
+# The camera does not only go to the boss: it goes in close on it.
+const ZOOM := 1.64
 
 # Whether the entrance may be ended early (set by the area before present()),
 # and from how long after it began.
 const SKIP_AFTER := 0.6
 var skippable := false
 var _stage: Tween
+var _swell: Tween
+var _glare: Tween
 var _began := 0
 
 var _area: BattleArea
@@ -70,9 +76,15 @@ func skip() -> void:
 	if _stage != null:
 		_stage.kill()
 	_stage = null
+	# Its roar may be in the middle of swelling it: that ends here too, or
+	# it would be left swollen and glaring for the whole fight.
+	for roar: Tween in [_swell, _glare]:
+		if roar != null:
+			roar.kill()
 	_boss.scale = Vector2.ONE
 	_boss.modulate = Color.WHITE
 	_area.camera.global_position = _area.hero.global_position + CombatArea.CAMERA_LEAD
+	_area.camera.zoom = Vector2.ONE * CombatArea.CAMERA_ZOOM
 	_end()
 
 
@@ -114,6 +126,7 @@ func present(boss: Foe, area: BattleArea, theme: Theme) -> void:
 	stage.tween_property(_top, "position:y", 0.0, BAR_TIME).set_ease(Tween.EASE_OUT)
 	stage.tween_property(_bottom, "position:y", screen.y - BAR_HEIGHT, BAR_TIME).set_ease(Tween.EASE_OUT)
 	stage.tween_property(camera, "global_position", boss.global_position + CombatArea.CAMERA_LEAD, PAN_TIME).set_ease(Tween.EASE_IN_OUT)
+	stage.tween_property(camera, "zoom", Vector2.ONE * ZOOM, PAN_TIME + 0.25).set_ease(Tween.EASE_IN_OUT)
 	stage.tween_callback(_roar).set_delay(ROAR_AT)
 	stage.tween_method(_reach, 0.0, 1.0, NAME_TIME).set_delay(ROAR_AT)
 	for label: Label in [_epithet, _name]:
@@ -125,6 +138,7 @@ func present(boss: Foe, area: BattleArea, theme: Theme) -> void:
 	# Then back to her, and away.
 	var back_at := ROAR_AT + NAME_TIME + HOLD_TIME
 	stage.tween_method(_return_camera, 0.0, 1.0, RETURN_TIME).set_delay(back_at).set_ease(Tween.EASE_IN_OUT)
+	stage.tween_property(camera, "zoom", Vector2.ONE * CombatArea.CAMERA_ZOOM, RETURN_TIME).set_delay(back_at).set_ease(Tween.EASE_IN_OUT)
 	for label: Label in [_epithet, _name]:
 		stage.tween_property(label, "modulate:a", 0.0, RETURN_TIME).set_delay(back_at)
 	stage.tween_method(_reach, 1.0, 0.0, RETURN_TIME).set_delay(back_at)
@@ -136,14 +150,19 @@ func present(boss: Foe, area: BattleArea, theme: Theme) -> void:
 # The boss's roar: it swells and flashes, a red ring bursts from it, the
 # screen shakes and flushes red.
 func _roar() -> void:
+	roared.emit()
 	GameAudio.play(self, &"boss", -12.0)
 	_area.shake(CombatArea.HEAVY_SHAKE * 1.6)
-	var swell := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	swell.tween_property(_boss, "scale", Vector2.ONE * SWELL, SWELL_TIME)
-	swell.tween_property(_boss, "scale", Vector2.ONE, SETTLE_TIME).set_trans(Tween.TRANS_SINE)
-	var glare := create_tween()
+	# One roar at a time: an earlier one's swelling ends as this begins.
+	for earlier: Tween in [_swell, _glare]:
+		if earlier != null:
+			earlier.kill()
+	_swell = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_swell.tween_property(_boss, "scale", Vector2.ONE * SWELL, SWELL_TIME)
+	_swell.tween_property(_boss, "scale", Vector2.ONE, SETTLE_TIME).set_trans(Tween.TRANS_SINE)
+	_glare = create_tween()
 	_boss.modulate = Color(1.8, 1.25, 1.2)
-	glare.tween_property(_boss, "modulate", Color.WHITE, SETTLE_TIME + SWELL_TIME)
+	_glare.tween_property(_boss, "modulate", Color.WHITE, SETTLE_TIME + SWELL_TIME)
 	var ring := GroundRing.new()
 	ring.process_mode = Node.PROCESS_MODE_ALWAYS
 	_area.marks.add_child(ring)
@@ -159,6 +178,7 @@ func _return_camera(progress: float) -> void:
 
 
 func _end() -> void:
+	_area.camera.zoom = Vector2.ONE * CombatArea.CAMERA_ZOOM
 	_area.camera.position_smoothing_enabled = true
 	_area.camera.reset_smoothing()
 	finished.emit()
@@ -198,4 +218,4 @@ func _draw_rule() -> void:
 	var middle := Vector2(_rule.size.x * 0.5, _name.position.y + _name.size.y + 6.0)
 	var half := RULE_WIDTH * 0.5 * _rule_reach
 	_rule.draw_polyline_colors(PackedVector2Array([middle - Vector2(half, 0), middle, middle + Vector2(half, 0)]), PackedColorArray([Color(color, 0.0), color, Color(color, 0.0)]), 2.0, true)
-	_rule.draw_colored_polygon(PackedVector2Array([middle + Vector2(0, -5), middle + Vector2(5, 0), middle + Vector2(0, 5), middle + Vector2(-5, 0)]), Color(color, _rule_reach))
+	HubUI.mark(_rule, middle, 7.0, Color(color, _rule_reach))

@@ -103,7 +103,8 @@ func run_tests() -> void:
 	boss.receive(DamageInfo.make(king.max_hp * 0.25, Vector2.UP))
 	check(boss.phase == 2 and phases == [boss], "At half health it enters its second phase")
 	check(is_equal_approx(boss.speed, speed * king.phase_two_speed) and boss.attack_list().size() == 4, "It quickens and gains its wide quake")
-	await wait(WaveRunner.MARK_TIME + 0.2)
+	# The world runs slow for a moment as it rages; the marks wait that out.
+	await wait(WaveRunner.MARK_TIME + BattleArea.RAGE_SLOW_TIME + 0.2)
 	var rats := area.foes.filter(func(foe: Foe): return foe.data == rat).size()
 	check(rats - rats_before == king.summon_count, "Its summons come in on their marks")
 	boss.receive(DamageInfo.make(king.max_hp * 0.1, Vector2.UP))
@@ -145,9 +146,14 @@ func run_tests() -> void:
 	intro._input(early)
 	check(area.staging and is_instance_valid(intro) and not intro.is_queued_for_deletion(), "Not in its first moment")
 	await create_timer(BossIntro.SKIP_AFTER + 0.05).timeout
+	# The hardest moment to end it in: the roar has just begun to swell it.
+	if intro._swell == null:
+		intro._roar()
+	await process_frame
 	intro._input(early)
 	await process_frame
-	check(not area.staging and not paused and not area.camera_held and area.boss_foe.scale == Vector2.ONE and area.camera.global_position.distance_to(area.hero.global_position + CombatArea.CAMERA_LEAD) < 4.0, "A key then ends it: the camera is back on her and the fight goes on")
+	await process_frame
+	check(not area.staging and not paused and not area.camera_held and area.boss_foe.scale == Vector2.ONE and area.boss_foe.modulate == Color.WHITE and area.camera.zoom == Vector2.ONE * CombatArea.CAMERA_ZOOM and area.camera.global_position.distance_to(area.hero.global_position + CombatArea.CAMERA_LEAD) < 4.0, "A key then ends it, even in the middle of its roar: the camera is back on her and the fight goes on")
 	area.hit_stop.release()
 	area.free()
 	await process_frame

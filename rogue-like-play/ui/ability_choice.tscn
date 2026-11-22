@@ -10,7 +10,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.01, 0.02, 0.03, 0.9)
+color = Color(0.01, 0.014, 0.024, 0.84)
 [node name="Panel" type="PanelContainer" parent="."]
 anchors_preset = 8
 anchor_left = 0.5
@@ -37,25 +37,25 @@ horizontal_alignment = 1
 layout_mode = 2
 alignment = 1
 [node name="First" type="Button" parent="Panel/Margin/Stack/Choices"]
-custom_minimum_size = Vector2(272, 300)
+custom_minimum_size = Vector2(300, 450)
 layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"AbilityCardButton"
 flat = true
 [node name="Second" type="Button" parent="Panel/Margin/Stack/Choices"]
-custom_minimum_size = Vector2(272, 300)
+custom_minimum_size = Vector2(300, 450)
 layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"AbilityCardButton"
 flat = true
 [node name="Third" type="Button" parent="Panel/Margin/Stack/Choices"]
-custom_minimum_size = Vector2(272, 300)
+custom_minimum_size = Vector2(300, 450)
 layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"AbilityCardButton"
 flat = true
 [node name="Fourth" type="Button" parent="Panel/Margin/Stack/Choices"]
-custom_minimum_size = Vector2(272, 300)
+custom_minimum_size = Vector2(300, 450)
 layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"AbilityCardButton"

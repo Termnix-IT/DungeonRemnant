@@ -48,6 +48,11 @@ const PROFILES := {
 	&"hall_gate": [0.45, 98.0, 131.0, 0.5, 1.2, []],
 	&"set_out": [0.7, 110.0, 44.0, 0.45, 1.6, []],
 	&"chapter_toll": [0.7, 220.0, 220.0, 0.1, 1.8, []],
+	&"card_deal": [0.08, 900.0, 300.0, 0.7, 2.4, []],
+	&"card_take": [0.4, 523.0, 784.0, 0.25, 1.4, []],
+	&"level_surge": [0.45, 196.0, 392.0, 0.4, 1.2, []],
+	&"boss_tremor": [0.7, 41.0, 55.0, 0.5, 0.9, []],
+	&"boss_fall": [0.7, 150.0, 38.0, 0.4, 1.4, []],
 }
 
 const ASSETS := {
@@ -78,6 +83,11 @@ const ASSETS := {
 	&"hall_gate": "res://audio/made/hall_gate.ogg",
 	&"set_out": "res://audio/made/set_out.ogg",
 	&"chapter_toll": "res://audio/made/chapter_toll.ogg",
+	&"card_deal": "res://audio/made/card_deal.ogg",
+	&"card_take": "res://audio/made/card_take.ogg",
+	&"level_surge": "res://audio/made/level_surge.ogg",
+	&"boss_tremor": "res://audio/made/boss_tremor.ogg",
+	&"boss_fall": "res://audio/made/boss_fall.ogg",
 }
 
 static var _streams: Dictionary = {}

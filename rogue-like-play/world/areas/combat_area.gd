@@ -64,12 +64,34 @@ const SPECIAL_SLOW := 0.04
 const SPECIAL_SHAKE := 8.0
 const SPECIAL_FLASH := Color(1.0, 0.97, 0.9, 0.5)
 const SPECIAL_FLASH_TIME := 0.3
+# The light a blow throws on the floor, by its painted effect.
+# The sparks off a blow that lands (a heavy one throws more) and off her
+# when she is struck, and the motes that rise out of a foe that falls.
+const HIT_SPARKS := 5
+const HEAVY_SPARKS := 12
+const FALL_MOTES := 7
+# She kicks up dust every this many world px she runs, of this colour.
+const TREAD := 38.0
+const DUST := Color(0.62, 0.58, 0.5, 0.5)
+const SPARK_COLOUR := Color(1.0, 0.86, 0.6)
+const HURT_COLOUR := Color(1.0, 0.36, 0.28)
+const FLASH_TINTS := {
+	&"slash": Color(1.0, 0.92, 0.72),
+	&"thrust": Color(1.0, 0.92, 0.72),
+	&"heavy": Color(1.0, 0.74, 0.42),
+	&"magic": Color(0.62, 0.72, 1.0),
+	&"flame": Color(1.0, 0.56, 0.26),
+}
 
 var ground: AreaGround
 # The foes' warnings: over the ground, under the actors.
 var marks: Node2D
 var actors: Node2D
 var effects: Node2D
+# The small lights that fly off blows, falls and gains.
+var sparks: SparkField
+# Where she last kicked up dust.
+var _trod_at := Vector2.ZERO
 var popups: DamagePopups
 # How many special moves this area has staged (the first gets the cut-in in
 # full).
@@ -128,6 +150,10 @@ func _ready() -> void:
 	effects.name = "Effects"
 	effects.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(effects)
+	sparks = SparkField.new()
+	sparks.name = "Sparks"
+	sparks.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(sparks)
 	popups = DamagePopups.new()
 	popups.name = "Popups"
 	add_child(popups)
@@ -156,11 +182,24 @@ func _process(_delta: float) -> void:
 	# body, which moves on physics frames (TickSmoothing).
 	if hero != null and not camera_held:
 		camera.global_position = hero.drawn_position() + CAMERA_LEAD
+	# Her light goes where she goes, and the foes far from it are drawn darker.
+	if hero != null:
+		ground.follow(hero.drawn_position(), camera.get_screen_center_position())
+		for foe in foes:
+			if foe.view != null:
+				var shade := ground.shade_at(foe.global_position)
+				foe.view.modulate = Color(shade, shade, minf(1.0, shade * 1.05))
 
 
 func _physics_process(delta: float) -> void:
 	if hero != null and hero.health.alive() and not get_tree().paused:
 		gems.step(hero.global_position, delta)
+		# Dust kicked up behind her as she runs, a puff every few steps.
+		var moved := hero.global_position - _trod_at
+		if moved.length() > TREAD:
+			_trod_at = hero.global_position
+			if moved.length() < TREAD * 3.0:
+				sparks.burst(hero.global_position, 2, DUST, -moved, 0.8, Vector2(14.0, 44.0), Vector2(0.22, 0.42), 3.4, 0.25)
 
 
 # `tuning` replaces the scene's (a run's, with its lasting upgrades), and
@@ -224,9 +263,9 @@ func view_rect() -> Rect2:
 	return Rect2(camera.get_screen_center_position() - size * 0.5, size)
 
 
-func show_telegraph(attack: AttackData, origin: Vector2, facing: Vector2) -> Telegraph:
+func show_telegraph(attack: AttackData, origin: Vector2, facing: Vector2, weight: float = 0.0) -> Telegraph:
 	var telegraph := Telegraph.new()
-	telegraph.setup(attack, origin, facing)
+	telegraph.setup(attack, origin, facing, weight)
 	marks.add_child(telegraph)
 	return telegraph
 
@@ -278,6 +317,7 @@ func report_burst(foe: Foe) -> void:
 func blast(center: Vector2, radius: float, power: float, knockback: float, inflicts: Array[StringName], effect: StringName) -> void:
 	var across: float = StrikeEffect.PAINTED.get(effect, StrikeEffect.PAINTED[&"heavy"])[0]
 	_effect(effect, center + BODY_MIDDLE * 0.4, Vector2.RIGHT, radius * 2.0 / across)
+	ground.flash(center, radius * 2.6, 0.95, FLASH_TINTS.get(effect, FLASH_TINTS[&"heavy"]), 0.34)
 	for foe in foes.duplicate():
 		if foe.dying or foe.global_position.distance_to(center) > radius + foe.hit_radius:
 			continue
@@ -317,6 +357,7 @@ func chain(from: Vector2, skip: Foe, jumps: int, reach: float, power: float, inf
 		deal(next, info)
 	if points.size() > 1:
 		_lightning(points)
+		ground.flash(points[points.size() - 1], 240.0, 0.8, LIGHTNING, 0.2)
 		GameAudio.play(self, &"zap", -20.0)
 
 
@@ -361,6 +402,8 @@ func report_swing(by: Hero, attack: AttackData, facing: Vector2) -> void:
 		marks.add_child(ring)
 		ring.start(by.global_position, attack.reach, attack.effect)
 	GameAudio.play(self, SWING_SOUNDS.get(attack.effect, &"slash"), -18.0)
+	# The blade's light on the floor.
+	ground.flash(effect.position, attack.reach * 1.7, 0.3, FLASH_TINTS.get(attack.effect, FLASH_TINTS[&"slash"]), 0.16)
 
 
 # A special move let loose: the world nearly stops while its cut-in plays,
@@ -381,6 +424,7 @@ func report_special(by: Hero, move: SpecialData) -> void:
 # Its blow landing: a hard shake, a white flash and a heavy boom.
 func report_special_impact(by: Hero, attack: AttackData) -> void:
 	shake(SPECIAL_SHAKE)
+	ground.flash(by.global_position, 760.0, 1.5, Color(1.0, 0.94, 0.8), 0.55)
 	var flash := CanvasLayer.new()
 	flash.layer = 4
 	add_child(flash)
@@ -425,18 +469,25 @@ func report_hit(target: Node2D, lost: int, info: DamageInfo) -> void:
 	if lost > 0:
 		popups.dealt(lost, number_spot(target))
 	_effect(&"hit", target.global_position + BODY_MIDDLE, info.direction, 1.3)
+	# Sparks fly the way the blow went; a heavy one throws more, and its
+	# light falls on the floor.
+	var heavy := info.knockback >= HEAVY_KNOCKBACK
+	sparks.burst(target.global_position + BODY_MIDDLE, HEAVY_SPARKS if heavy else HIT_SPARKS, SPARK_COLOUR, info.direction, 0.7, Vector2(90.0, 300.0 if heavy else 220.0))
 	var now := Time.get_ticks_msec()
 	if now - _last_hit_sound >= HIT_SOUND_GAP:
 		_last_hit_sound = now
 		GameAudio.play(self, &"hit", -20.0)
-	if info.knockback >= HEAVY_KNOCKBACK:
+	if heavy:
 		shake(HEAVY_SHAKE)
+		ground.flash(target.global_position, 190.0, 0.5, SPARK_COLOUR, 0.18)
 
 
 func report_hero_hurt(by: Hero, lost: int, _info: DamageInfo) -> void:
 	popups.taken(lost, by.global_position + NUMBER_HEIGHT)
 	hit_stop.request(HURT_STOP)
 	shake(HURT_SHAKE)
+	sparks.burst(by.global_position + BODY_MIDDLE, HEAVY_SPARKS, HURT_COLOUR, _info.direction, 1.0, Vector2(80.0, 240.0))
+	ground.flash(by.global_position, 230.0, 0.6, HURT_COLOUR, 0.22)
 	GameAudio.play(self, &"heavy", -16.0)
 
 
@@ -458,6 +509,14 @@ func _on_foe_fell(foe: Foe) -> void:
 	kills += 1
 	gems.drop(foe.global_position, foe.data.exp_reward)
 	_effect(&"death", foe.global_position + BODY_MIDDLE * 0.7, Vector2.RIGHT, DEATH_SCALE)
+	# What it held goes out of it: motes of the echo rising, the colour of
+	# the gem it leaves; more of them, and a light on the floor, for one
+	# that mattered.
+	var worth := GemField.kind_of(foe.data.exp_reward)
+	var grand := foe.data.elite or foe.data.boss
+	sparks.burst(foe.global_position + BODY_MIDDLE * 0.6, FALL_MOTES * (3 if grand else 1), [GemField.SMALL, GemField.MIDDLE, GemField.LARGE][worth], Vector2.UP, 1.3, Vector2(30.0, 150.0 if grand else 110.0), Vector2(0.35, 0.8), 4.5, 1.0)
+	if grand:
+		ground.flash(foe.global_position, 420.0, 0.9, GemField.LARGE, 0.45)
 	var now := Time.get_ticks_msec()
 	if now - _last_death_sound >= DEATH_SOUND_GAP:
 		_last_death_sound = now
@@ -500,6 +559,10 @@ func _on_gem_collected(_amount: int) -> void:
 	if now - _last_pickup_sound >= PICKUP_SOUND_GAP:
 		_last_pickup_sound = now
 		GameAudio.play(self, &"pickup", -24.0, pickup_pitch())
+		# The echo taken in: a glint on her, a touch of its light on the floor.
+		if hero != null:
+			hero.view.gain()
+			ground.flash(hero.global_position, 130.0, 0.22, GemField.SMALL, 0.14)
 
 
 func pickup_pitch() -> float:

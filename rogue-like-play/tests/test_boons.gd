@@ -68,6 +68,20 @@ func run_tests() -> void:
 			var gain := each.gain_text(rank)
 			check(not gain.is_empty() and gain.contains("→") and gain.split("\n").size() <= 2, "Raising %s from rank %d tells what grows" % [each.id, rank])
 	check(build.pool.size() == 32 and ids.size() == 32, "Thirty-two boons, each its own id")
+	# What grows is told in the language shown, in English too.
+	TranslationServer.set_locale("en")
+	var foreign: Array[String] = []
+	for each in build.pool:
+		for rank in range(1, each.max_level):
+			var gain := each.gain_text(rank)
+			for index in gain.length():
+				var code := gain.unicode_at(index)
+				# Kana or kanji left in it.
+				if (code >= 0x3040 and code <= 0x30ff) or (code >= 0x4e00 and code <= 0x9fff):
+					foreign.append(String(each.id))
+					break
+	TranslationServer.set_locale("ja")
+	check(foreign.is_empty(), "Raising a rank tells what grows in English too: %s" % [foreign.slice(0, 5)])
 	check(build.find(&"discharge").requires == [&"thunder_blade"], "The discharge waits for the lightning blade")
 
 	# The offer: three different boons, requirements and last ranks respected.
@@ -238,6 +252,21 @@ func run_tests() -> void:
 	hero.health.hp = hero.health.max_hp
 	hero.receive(DamageInfo.make(5.0, Vector2.LEFT, 0.0, close))
 	check(close.health.hp < hp_close, "Hurt, she throws the foes around her back with the riposte")
+	# A foe felled by the riposte its own blow woke ends its attack there
+	# (it had none left to finish, which once stopped its step with an error).
+	# Once the riposte has rested from the blow before.
+	await drive(HeroInput.new(), 2.3)
+	var pouncer: FoeData = load("res://data/foes/dashing_rat.tres")
+	var striker := area.spawn_foe(pouncer, hero.global_position + Vector2(24, 0))
+	striker.set_physics_process(false)
+	striker.health.hp = 1
+	hero.health.hp = hero.health.max_hp
+	striker.begin_attack(pouncer.attacks[0], Vector2.LEFT)
+	var steps := 0
+	while not striker.dying and steps < 240:
+		striker.step(FRAME)
+		steps += 1
+	check(striker.dying and striker.attack == null and hero.health.hp < hero.health.max_hp, "A foe felled by the riposte its own blow woke ends its attack there")
 	var feast := TriggerBoon.new()
 	feast.action = TriggerBoon.Action.HEAL
 	feast.heal = 3

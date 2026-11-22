@@ -38,7 +38,7 @@ func _lay_out() -> void:
 	var hall := AreaData.new()
 	hall.size = SIZE
 	hall.pillars.assign(PILLARS)
-	ground.build(SIZE, hall.walls())
+	_raise_ground(hall)
 	spawn_hero(ground.bounds().get_center(), run.tuning, run.moveset)
 	director = EnemyDirector.new()
 	director.name = "Director"

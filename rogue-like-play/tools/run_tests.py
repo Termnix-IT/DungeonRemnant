@@ -1,9 +1,11 @@
 """Run the headless test suites (tests/test_*.gd) and report each one.
 
 Each suite runs in its own Godot process, several at a time, with its log in
-.godot/test-logs/<name>.log. A suite passes when Godot exits with 0; one
-that never calls quit() (a script error, an awaited signal that never comes)
-is stopped at the timeout and counted as failed. Suites that start a run from
+.godot/test-logs/<name>.log. A suite passes when Godot exits with 0 and no
+script error was printed (one stops the game's own code in the middle of a
+function, whatever the suite's checks say); one that never calls quit() (a
+script error in the suite itself, an awaited signal that never comes) is
+stopped at the timeout and counted as failed. Suites that start a run from
 the hub set Main.run_seed, so a rerun lays out the same floors.
 
 The Godot executable comes from --godot, then the GODOT environment variable,
@@ -57,8 +59,11 @@ def run_suite(godot: str, name: str, timeout: float) -> tuple[str, bool, float, 
 	command = [godot, "--headless", "--language", "ja", "--path", str(ROOT), "--log-file", str(log), "--script", f"res://tests/{name}.gd"]
 	try:
 		done = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout)
-		passed = done.returncode == 0
 		output = done.stdout + done.stderr
+		# A script error stops the game's own code in the middle of a
+		# function; the suite's checks may all still hold, so it is counted
+		# as a failure here.
+		passed = done.returncode == 0 and "SCRIPT ERROR:" not in output
 	except subprocess.TimeoutExpired as expired:
 		passed = False
 		output = (expired.stdout or b"").decode("utf-8", "replace") if isinstance(expired.stdout, bytes) else (expired.stdout or "")

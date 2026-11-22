@@ -191,7 +191,7 @@ func begin_attack(next: AttackData, direction: Vector2) -> void:
 	walk = Vector2.ZERO
 	_desired = Vector2.ZERO
 	if area != null:
-		telegraph = area.show_telegraph(attack, global_position, attack_facing)
+		telegraph = area.show_telegraph(attack, global_position, attack_facing, 2.0 if data.boss else (1.0 if data.elite else 0.0))
 	view.face(attack_facing.x < 0.0)
 	view.brace(true)
 
@@ -217,6 +217,11 @@ func _run_attack(delta: float) -> void:
 			if attack.lunge > 0.0 and attack.active > 0.0:
 				_lunge = attack_facing * attack.lunge / attack.active
 			_land_attack()
+		# What the blow woke in her may have ended it here and now (a boon
+		# that strikes back felling this foe, or driving a boss into its
+		# second phase): then there is no attack left to finish.
+		if attack == null:
+			return
 		if data.bursts:
 			_burst()
 			return

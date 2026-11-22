@@ -27,6 +27,9 @@ const CHOICE := preload("res://ui/ability_choice.tscn")
 const HEAL_SHARE := 0.35
 # From her fall to the end of the run.
 const FALL_PAUSE := 1.6
+# An area is left in the dark its veil closed to; what follows it (its
+# reward, the gates, the run's end) comes up out of that dark over this long.
+const COVER_TIME := 0.38
 
 @export var seed_value := 0
 # The base's lasting progress; none fights as a new player.
@@ -69,6 +72,8 @@ var _rewarding := false
 # The echo the area just cleared gave for being cleared (RunState.clear_echo).
 var _cleared_echo := 0
 var _blessing := false
+var _cover: ColorRect
+var _lifting: Tween
 # The event she stopped at, what she bought there, the curse its stone
 # offers, the boon card it opened, whether the event ends with that card,
 # and the line the map tells after it.
@@ -497,7 +502,9 @@ func advance(note: String = "") -> void:
 
 func _on_fallen() -> void:
 	fallen_to = RunDirector.foe_of(area.hero.last_blow) if area != null and area.hero != null else null
-	get_tree().create_timer(FALL_PAUSE, true).timeout.connect(_after_fall)
+	# On the real clock: the area slows the world as she falls, and the end
+	# comes no later for it.
+	get_tree().create_timer(FALL_PAUSE, true, false, true).timeout.connect(_after_fall)
 
 
 # The kind of foe a blow came from: the foe itself, or the one that shot it.
@@ -534,6 +541,30 @@ func _leave_area() -> void:
 	area.queue_free()
 	area = null
 	get_tree().paused = false
+	_uncover()
+
+
+# A dark over everything, lifting: seen only, it takes no input and holds
+# nothing back.
+func _uncover() -> void:
+	if _cover == null:
+		var over := CanvasLayer.new()
+		over.name = "Cover"
+		over.layer = 30
+		over.process_mode = Node.PROCESS_MODE_ALWAYS
+		add_child(over)
+		_cover = ColorRect.new()
+		_cover.color = Color.BLACK
+		_cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_cover.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		over.add_child(_cover)
+	if _lifting != null:
+		_lifting.kill()
+	_cover.modulate.a = 1.0
+	_cover.show()
+	_lifting = _cover.create_tween().set_ignore_time_scale(true)
+	_lifting.tween_property(_cover, "modulate:a", 0.0, COVER_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_lifting.tween_callback(_cover.hide)
 
 
 func finish(cleared: bool, abandoned: bool = false) -> void:

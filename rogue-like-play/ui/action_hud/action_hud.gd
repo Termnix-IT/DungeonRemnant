@@ -51,6 +51,15 @@ const SLOTS := [
 # The skill slots' HUD keys, in the motor's slot order.
 const SKILL_SLOTS: Array[StringName] = [&"skill", &"skill_2"]
 const CHARGE_COLOR := Color("ffd27a")
+# The echo bar: how brightly and for how long it glints as echoes come in
+# and as a level is gained, and how fast it runs to its new length (bars a
+# second at the least; the share of what is left a second when far behind).
+const EXP_FLASH := 1.5
+const EXP_FLASH_TIME := 0.22
+const LEVEL_FLASH := 1.9
+const LEVEL_FLASH_TIME := 0.6
+const EXP_RUN := 0.5
+const EXP_EASE := 10.0
 # The special's slot pulses this fast (per second) and this much once full.
 const SPECIAL_PULSE := 1.6
 const SPECIAL_SWELL := 0.08
@@ -129,6 +138,9 @@ var danger: TextureRect
 # The arrows toward foes out of view, drawn every frame.
 var pointers: Control
 var _boons_shown := ""
+# The echoes and the level last shown (-1: none yet).
+var _exp_seen := -1
+var _level_seen := -1
 var _special_full := false
 var _special_time := 0.0
 var _danger_time := 0.0
@@ -423,9 +435,24 @@ func _process(delta: float) -> void:
 	exp_bar.visible = run != null
 	level_label.visible = run != null
 	if run != null:
-		exp_bar.max_value = maxi(1, run.progression.required_exp())
-		exp_bar.value = run.progression.exp
-		level_label.text = "Lv %d" % run.progression.level
+		# Echoes gathered run into the bar rather than jump there, and it
+		# glints as they do; a level gained empties it and makes its number leap.
+		var needed := maxi(1, run.progression.required_exp())
+		var held: int = run.progression.exp
+		var level: int = run.progression.level
+		if _level_seen >= 0 and level != _level_seen:
+			exp_bar.value = 0.0
+			UIMotion.of(level_label).flash(LEVEL_FLASH, LEVEL_FLASH_TIME)
+			UIMotion.of(exp_bar).flash(LEVEL_FLASH, LEVEL_FLASH_TIME)
+		elif _exp_seen >= 0 and held > _exp_seen:
+			UIMotion.of(exp_bar).flash(EXP_FLASH, EXP_FLASH_TIME)
+		elif _exp_seen < 0:
+			exp_bar.value = held
+		_exp_seen = held
+		_level_seen = level
+		exp_bar.max_value = needed
+		exp_bar.value = move_toward(exp_bar.value, held, maxf(needed * EXP_RUN * delta, absf(held - exp_bar.value) * EXP_EASE * delta))
+		level_label.text = "Lv %d" % level
 		_show_boons(run.build)
 	if boss_in:
 		if boss_gauge.bar == null or not boss_gauge.visible or boss_gauge.bar.value != boss.health.hp:

@@ -11,6 +11,8 @@ extends Node2D
 const RIG_HEIGHT := 60.0
 const FLASH := Color(2.6, 2.6, 2.6)
 const FLASH_TIME := 0.12
+const SQUASH := Vector2(1.14, 0.86)
+const SQUASH_TIME := 0.16
 const SHADOW := Color(0.04, 0.045, 0.05, 0.5)
 const ELITE_RING := Color(0.95, 0.3, 0.2, 0.55)
 const BAR_BACK := Color(0.05, 0.04, 0.04, 0.8)
@@ -33,6 +35,7 @@ var sprite: AnimatedSprite2D
 var height := RIG_HEIGHT
 var _body: Node2D
 var _flash: Tween
+var _squash: Tween
 var _braced := false
 # The tint of the status it carries (Status.TINT), under any flash.
 var _tint := Color.WHITE
@@ -118,6 +121,12 @@ func hurt(flinch: bool) -> void:
 	_body.modulate = FLASH
 	_flash = create_tween()
 	_flash.tween_property(_body, "modulate", _tint, FLASH_TIME)
+	# It gives under the blow: squashed for a moment, then back.
+	if _squash != null:
+		_squash.kill()
+	scale = SQUASH
+	_squash = create_tween()
+	_squash.tween_property(self, "scale", Vector2.ONE, SQUASH_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	if flinch:
 		if rig != null:
 			rig.hurt()
@@ -151,6 +160,9 @@ func revive() -> void:
 	_tint = foe.data.tint
 	if _flash != null:
 		_flash.kill()
+	if _squash != null:
+		_squash.kill()
+	scale = Vector2.ONE
 	if _body != null:
 		_body.modulate = _tint
 	if rig != null:
