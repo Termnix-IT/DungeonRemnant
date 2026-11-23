@@ -27,6 +27,11 @@ func wait(seconds: float) -> void:
 		await physics_frame
 
 
+# Real seconds, whether or not the world is stopped.
+func real(seconds: float) -> void:
+	await create_timer(seconds, true, false, true).timeout
+
+
 func _on_phase(foe: Foe) -> void:
 	phases.append(foe)
 
@@ -52,32 +57,39 @@ func run_tests() -> void:
 	area.hero.health.max_hp = 100000
 	area.hero.health.hp = 100000
 	check(area.objective_text() == "遺跡王を倒す" and area.boss_foe == null, "The goal names the boss, who is not in yet")
-	await wait(BattleArea.BOSS_DELAY + BattleArea.BOSS_MARK_TIME + 0.2)
-	var boss := area.boss_foe
-	check(boss != null and boss.data == king and area.foes.has(boss), "The boss comes in on its mark")
-	check(boss.global_position.y < area.hero.global_position.y, "It comes in above her, across the hall")
+	# The hall opens with its boss's entrance: the world is stopped before
+	# the hall's first frame, not a while into the fight.
+	check(area.entrance != BattleArea.Entrance.NONE and area.entrance != BattleArea.Entrance.ACTIVE and paused and area.staging and area.choosing() and area.camera_held, "The hall opens with its entrance: the world is stopped and the camera held from the first")
 	var intro: BossIntro = area.get_node_or_null("BossIntro")
-	check(intro != null and intro._name.text == "遺跡王" and intro._epithet.text == king.epithet and not king.epithet.is_empty(), "It names itself as it arrives, its epithet over its name")
-	check(paused and area.staging and area.choosing() and area.camera_held, "Its entrance stops the world and holds the camera")
+	check(intro != null and intro._name.text == "遺跡王" and intro._epithet.text == king.epithet and not king.epithet.is_empty(), "It will name itself, its epithet over its name")
+	var hero_spot := area.hero.global_position
+	# Its clock starts once the hall's first, long frames are drawn.
+	while area.entrance == BattleArea.Entrance.PREPARING:
+		await process_frame
+	await real(BossIntro.ARRIVE_AT * 0.6)
+	check(area.entrance == BattleArea.Entrance.INTRO and area.boss_foe == null and is_instance_valid(area.sigil) and not area.hud.boss_gauge.visible, "First its omen: a sigil burns where it will stand, and it is not in yet")
+	await real(BossIntro.ARRIVE_AT * 0.4 + BossIntro.RISE_TIME + 0.08)
+	var boss := area.boss_foe
+	check(boss != null and boss.data == king and area.foes.has(boss) and boss.global_position == area.boss_place(), "The boss comes up out of its sigil")
+	check(boss.global_position.y < area.hero.global_position.y, "It comes in above her, across the hall")
 	# A boss never met before plays its entrance whole: no key cuts it short.
 	var early := InputEventKey.new()
 	early.keycode = KEY_ENTER
 	early.physical_keycode = KEY_ENTER
 	early.pressed = true
-	await create_timer(BossIntro.SKIP_AFTER + 0.05).timeout
 	intro._input(early)
 	check(not intro.skippable and area.get_node_or_null("BossIntro") == intro and area.staging, "The first sight of a boss cannot be skipped")
 	var boss_spot := boss.global_position
-	var hero_spot := area.hero.global_position
 	area.open_menu()
 	check(not area.menu.visible, "No menu opens during it")
-	await create_timer(BossIntro.PAN_TIME + 0.1 - BossIntro.SKIP_AFTER - 0.05).timeout
+	await real(BossIntro.ROAR_AT - BossIntro.ARRIVE_AT - BossIntro.RISE_TIME - 0.08 + 0.12)
 	check(area.camera.global_position.distance_to(boss_spot + CombatArea.CAMERA_LEAD) < 2.0 and boss.global_position == boss_spot and area.hero.global_position == hero_spot, "The camera settles on the boss, and neither it nor she moves")
 	await process_frame
-	check(area.hud.boss_gauge.visible and area.hud.boss_gauge.bar.value == king.max_hp, "Its health shows across the top")
+	await process_frame
+	check(area.boss_named and area.hud.boss_gauge.visible and area.hud.boss_gauge.bar.value == king.max_hp, "Named in its roar, its health shows across the top")
 	check(not area.is_clear(), "The hall is not won while it stands")
-	await create_timer(BossIntro.total_time() - BossIntro.PAN_TIME + 0.3).timeout
-	check(area.get_node_or_null("BossIntro") == null and not paused and not area.staging and not area.camera_held, "Then the camera returns to her and the fight goes on")
+	await real(BossIntro.total_time() - BossIntro.ROAR_AT - 0.12 + 0.3)
+	check(area.get_node_or_null("BossIntro") == null and not paused and not area.staging and not area.camera_held and area.entrance == BattleArea.Entrance.ACTIVE, "Then the camera returns to her and the fight goes on")
 	check(boss.scale == Vector2.ONE and area.camera.global_position.distance_to(area.hero.global_position + CombatArea.CAMERA_LEAD) < 4.0, "The boss is its size again, the camera back on her")
 
 	# The way it picks: at random among the attacks that fit.
@@ -97,6 +109,12 @@ func run_tests() -> void:
 	# The second phase.
 	boss.phase_changed.connect(_on_phase)
 	var speed := boss.speed
+	# Its escort has all come in by now (it starts with the fight), so the
+	# rats counted after are its summons.
+	var escort := 0
+	while area.waves._queue.size() + area.waves._marks.size() > 0 and escort < 600:
+		await physics_frame
+		escort += 1
 	var rats_before := area.foes.filter(func(foe: Foe): return foe.data == rat).size()
 	boss.receive(DamageInfo.make(king.max_hp * 0.3, Vector2.UP))
 	check(boss.phase == 1 and phases.is_empty(), "Above half health it keeps its first phase")
@@ -140,20 +158,38 @@ func run_tests() -> void:
 	root.add_child(area)
 	await process_frame
 	area.hero.controlled = false
-	await wait(BattleArea.BOSS_DELAY + BattleArea.BOSS_MARK_TIME + 0.2)
+	for frame in BattleArea.ARRIVE_AFTER + 2:
+		await process_frame
 	intro = area.get_node_or_null("BossIntro")
-	check(intro != null and intro.skippable and area.staging, "A boss met before may have its entrance skipped")
+	check(intro != null and intro.skippable and area.staging and area.entrance == BattleArea.Entrance.INTRO, "A boss met before may have its entrance skipped")
 	intro._input(early)
 	check(area.staging and is_instance_valid(intro) and not intro.is_queued_for_deletion(), "Not in its first moment")
-	await create_timer(BossIntro.SKIP_AFTER + 0.05).timeout
-	# The hardest moment to end it in: the roar has just begun to swell it.
-	if intro._swell == null:
-		intro._roar()
+	await real(BossIntro.SKIP_AFTER + 0.05)
+	# One hard moment to end it in: before the boss is in at all. It is
+	# brought in then, to stand where it will.
+	check(area.boss_foe == null, "(the boss is not in yet)")
+	intro._input(early)
+	check(area.boss_foe != null and area.boss_foe.global_position == area.boss_place() and area.boss_foe.scale == Vector2.ONE and area.boss_foe.modulate == Color.WHITE and area.boss_named, "A key then ends it, even before the boss is in: it is brought in, to stand where it will")
 	await process_frame
+	await process_frame
+	check(not area.staging and not paused and not area.camera_held and area.entrance == BattleArea.Entrance.ACTIVE and area.camera.zoom == Vector2.ONE * CombatArea.CAMERA_ZOOM and area.camera.global_position.distance_to(area.hero.global_position + CombatArea.CAMERA_LEAD) < 4.0, "The camera is back on her and the fight goes on")
+	area.hit_stop.release()
+	area.free()
+	await process_frame
+	# The other: in the middle of its roar, as it swells.
+	area = BattleArea.new()
+	area.setup(hall, again, 9)
+	root.add_child(area)
+	area.hero.controlled = false
+	for frame in BattleArea.ARRIVE_AFTER + 2:
+		await process_frame
+	intro = area.get_node_or_null("BossIntro")
+	await real(BossIntro.ROAR_AT + BossIntro.SWELL_TIME * 0.5)
+	check(area.boss_foe != null and area.boss_foe.scale != Vector2.ONE, "(the roar is swelling it)")
 	intro._input(early)
 	await process_frame
 	await process_frame
-	check(not area.staging and not paused and not area.camera_held and area.boss_foe.scale == Vector2.ONE and area.boss_foe.modulate == Color.WHITE and area.camera.zoom == Vector2.ONE * CombatArea.CAMERA_ZOOM and area.camera.global_position.distance_to(area.hero.global_position + CombatArea.CAMERA_LEAD) < 4.0, "A key then ends it, even in the middle of its roar: the camera is back on her and the fight goes on")
+	check(not area.staging and not paused and not area.camera_held and area.boss_foe.scale == Vector2.ONE and area.boss_foe.modulate == Color.WHITE and area.camera.zoom == Vector2.ONE * CombatArea.CAMERA_ZOOM and area.camera.global_position.distance_to(area.hero.global_position + CombatArea.CAMERA_LEAD) < 4.0, "A key ends it in the middle of its roar too: it is its size and colour again")
 	area.hit_stop.release()
 	area.free()
 	await process_frame

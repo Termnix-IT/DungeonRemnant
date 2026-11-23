@@ -60,6 +60,17 @@ const LEVEL_FLASH := 1.9
 const LEVEL_FLASH_TIME := 0.6
 const EXP_RUN := 0.5
 const EXP_EASE := 10.0
+# The star at the echo bar's end, and from what share of the bar it starts
+# to breathe brighter (a level is near).
+const EXP_TIP := 6.0
+const EXP_NEAR := 0.78
+# The keys' hint under the fight is shown as an area begins and whenever she
+# has stood still a while (the moment a player looks for it), and fades
+# once the fight is under way: it is small print over the floor, and it is
+# not needed while she fights.
+const GUIDE_TIME := 9.0
+const GUIDE_IDLE := 4.0
+const GUIDE_FADE := 0.8
 # The special's slot pulses this fast (per second) and this much once full.
 const SPECIAL_PULSE := 1.6
 const SPECIAL_SWELL := 0.08
@@ -110,7 +121,7 @@ var level_label: Label
 var goal: VBoxContainer
 var area_label: Label
 var info: Label
-var goal_bar: ProgressBar
+var goal_bar: Range
 var boons: HFlowContainer
 var kills_label: Label
 var echo_label: Label
@@ -138,6 +149,17 @@ var danger: TextureRect
 # The arrows toward foes out of view, drawn every frame.
 var pointers: Control
 var _boons_shown := ""
+var _exp_tip: Control
+var _tip_glow := 0.0
+var _tip_seen := 0
+var _near_time := 0.0
+# How long the keys' hint has been shown this time, and how long she has
+# stood still.
+var _guide_shown := 0.0
+var _idle := 0.0
+var _root: Control
+var _cinema: Tween
+var _cinematic := false
 # The echoes and the level last shown (-1: none yet).
 var _exp_seen := -1
 var _level_seen := -1
@@ -153,6 +175,7 @@ func _ready() -> void:
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
+	_root = root
 	_build_danger(root)
 	_build_shade(root)
 	pointers = Control.new()
@@ -244,6 +267,11 @@ func _build_top(root: Control) -> void:
 	exp_bar.offset_top = 14
 	exp_bar.offset_bottom = 24
 	root.add_child(exp_bar)
+	# A star at the bar's leading end: where the echoes just gathered show.
+	_exp_tip = Control.new()
+	_exp_tip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_exp_tip.draw.connect(func(): HubUI.mark(_exp_tip, Vector2.ZERO, EXP_TIP * (1.0 + 0.7 * _tip_glow), get_tip_colour()))
+	exp_bar.add_child(_exp_tip)
 	level_label = _label(root, &"HudValue")
 	level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	level_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
@@ -264,11 +292,10 @@ func _build_top(root: Control) -> void:
 	area_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	info = _label(goal, &"HudObjective")
 	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	goal_bar = ProgressBar.new()
-	goal_bar.theme_type_variation = &"ExpBar"
-	goal_bar.show_percentage = false
-	goal_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	goal_bar.custom_minimum_size = Vector2(GOAL_WIDTH, 8)
+	# A track and a star, not a band: it is not the echo bar and must not
+	# look like it.
+	goal_bar = GoalTrack.new()
+	goal_bar.custom_minimum_size = Vector2(GOAL_WIDTH, 16)
 	goal.add_child(goal_bar)
 	boons = HFlowContainer.new()
 	boons.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -424,12 +451,15 @@ func _process(delta: float) -> void:
 	hp_value.text = "%d / %d" % [health.hp, health.max_hp]
 	UIMotion.of(hp_trail).update_vital(health.hp, health.max_hp, hp_value)
 	var boss: Foe = area.get(&"boss_foe")
-	var boss_in := boss != null and is_instance_valid(boss) and not boss.dying
+	# A boss's health comes up when it is named, in its entrance.
+	var named: Variant = area.get(&"boss_named")
+	var boss_in: bool = boss != null and is_instance_valid(boss) and not boss.dying and (named == null or bool(named))
 	_show_goal(boss_in)
 	_show_tally()
 	_show_actions()
 	_show_special(delta)
 	_place_guide()
+	_time_guide(delta)
 	pointers.queue_redraw()
 	var run: RunState = area.get(&"run")
 	exp_bar.visible = run != null
@@ -452,6 +482,20 @@ func _process(delta: float) -> void:
 		_level_seen = level
 		exp_bar.max_value = needed
 		exp_bar.value = move_toward(exp_bar.value, held, maxf(needed * EXP_RUN * delta, absf(held - exp_bar.value) * EXP_EASE * delta))
+		# The star rides the bar's end and flares as echoes come in; near a
+		# level the whole bar breathes brighter.
+		if held > _tip_seen:
+			_tip_glow = 1.0
+		_tip_seen = held
+		_tip_glow = move_toward(_tip_glow, 0.0, delta * 3.2)
+		var share := clampf(float(exp_bar.value) / needed, 0.0, 1.0)
+		_exp_tip.position = Vector2(exp_bar.size.x * share, exp_bar.size.y * 0.5)
+		_exp_tip.visible = share > 0.004
+		_exp_tip.queue_redraw()
+		_near_time += delta
+		var near := smoothstep(EXP_NEAR, 1.0, share)
+		var breath := 1.0 + near * (0.18 + 0.14 * sin(_near_time * 7.0))
+		exp_bar.self_modulate = Color(breath, breath, breath)
 		level_label.text = "Lv %d" % level
 		_show_boons(run.build)
 	if boss_in:
@@ -459,6 +503,49 @@ func _process(delta: float) -> void:
 			boss_gauge.present(tr(boss.data.display_name), boss.health.hp, boss.health.max_hp)
 	elif boss_gauge.visible:
 		boss_gauge.present("", 0, 0)
+
+
+# The keys' hint in its time: shown at first and when she stands still.
+func _time_guide(delta: float) -> void:
+	if get_tree().paused:
+		return
+	var still: bool = area.hero.motor.motion().length() < 1.0 and area.hero.motor.state == HeroMotor.State.FREE
+	_idle = _idle + delta if still else 0.0
+	if _idle >= GUIDE_IDLE:
+		_guide_shown = 0.0
+	else:
+		_guide_shown += delta
+	var wanted := 1.0 - smoothstep(GUIDE_TIME, GUIDE_TIME + GUIDE_FADE, _guide_shown)
+	# (Not while a staged scene has the HUD put away or is bringing it back.)
+	if _cinematic or (_cinema != null and _cinema.is_running()):
+		return
+	guide.modulate.a = move_toward(guide.modulate.a, wanted, delta / GUIDE_FADE)
+
+
+func get_tip_colour() -> Color:
+	return Color(1.0, 1.0, 1.0, 0.6 + 0.4 * _tip_glow)
+
+
+# The fight's HUD put away for a staged scene (a boss's entrance) and
+# brought back after it, over `time` seconds: everything but the boss's
+# health and the banner, which belong to the scene.
+func set_cinematic(on: bool, time: float) -> void:
+	if _cinema != null:
+		_cinema.kill()
+	_cinema = null
+	_cinematic = on
+	var shown := 0.0 if on else 1.0
+	var parts: Array[Control] = []
+	for part in _root.get_children():
+		if part is Control and part != boss_gauge and part != banner:
+			parts.append(part)
+	if time <= 0.0:
+		for part in parts:
+			part.modulate.a = shown
+		return
+	_cinema = create_tween().set_parallel().set_ignore_time_scale(true)
+	for part in parts:
+		_cinema.tween_property(part, "modulate:a", shown, time)
 
 
 # The foes worth pointing at when out of view: the boss, the elites, and an

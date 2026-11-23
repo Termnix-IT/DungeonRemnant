@@ -13,7 +13,8 @@ const FLASH := Color(2.6, 2.6, 2.6)
 const FLASH_TIME := 0.12
 const SQUASH := Vector2(1.14, 0.86)
 const SQUASH_TIME := 0.16
-const SHADOW := Color(0.04, 0.045, 0.05, 0.5)
+const SHADOW := Color(1.0, 1.0, 1.0, 0.78)
+const SHADOW_SPREAD := 2.1
 const ELITE_RING := Color(0.95, 0.3, 0.2, 0.55)
 const BAR_BACK := Color(0.05, 0.04, 0.04, 0.8)
 const BAR_FILL := Color(0.92, 0.3, 0.22)
@@ -196,7 +197,10 @@ func _on_motion_finished() -> void:
 func _draw() -> void:
 	var size := foe.data.size_scale
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.35))
-	draw_circle(Vector2.ZERO, 13.0 * size, SHADOW)
+	# A soft dark under it, wider than its feet: it grounds the figure and
+	# parts it from a floor of cracks and glints.
+	var dark := 13.0 * size * SHADOW_SPREAD
+	draw_texture_rect(Vfx.shade(), Rect2(Vector2.ONE * -dark, Vector2.ONE * dark * 2.0), false, SHADOW)
 	if foe.data.elite and not foe.dying:
 		draw_arc(Vector2.ZERO, foe.hit_radius + 6.0, 0.0, TAU, 36, ELITE_RING, 3.0)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

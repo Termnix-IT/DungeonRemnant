@@ -45,6 +45,11 @@ func wait(seconds: float) -> void:
 # the director has handled it; takes a boon reward's first card.
 func clear_area(director: RunDirector) -> void:
 	var area := director.area
+	# A boss's hall opens with its entrance, the world stopped: it is cleared
+	# once the fight is on.
+	var until := Time.get_ticks_msec() + roundi((BossIntro.total_time() + BattleArea.ENTRANCE_GRACE) * 1000.0) + 2000
+	while area.staging and Time.get_ticks_msec() < until:
+		await process_frame
 	if area.data.kind == AreaData.Kind.FIELD and area.data.survive_time > 0.0:
 		area.elapsed = area.data.survive_time
 	else:
@@ -485,8 +490,7 @@ func run_tests() -> void:
 	# She is not to fall while the wolf is looked at.
 	den.hero.health.max_hp = 100000
 	den.hero.health.hp = 100000
-	await wait(BattleArea.BOSS_DELAY + BattleArea.BOSS_MARK_TIME + 0.4)
-	await create_timer(BossIntro.total_time() + 0.3, true, false, true).timeout
+	await create_timer(BossIntro.total_time() + 0.5, true, false, true).timeout
 	var wolf := den.boss_foe
 	check(wolf != null and wolf.data.id == &"gale_wolf_king" and wolf.view.rig != null, "The storm wolf comes in, drawn by its rig")
 	wolf.receive(DamageInfo.make(float(wolf.health.max_hp) * 0.55, Vector2.RIGHT))
@@ -535,8 +539,7 @@ func run_tests() -> void:
 	ossuary.hero.controlled = false
 	ossuary.hero.health.max_hp = 100000
 	ossuary.hero.health.hp = 100000
-	await wait(BattleArea.BOSS_DELAY + BattleArea.BOSS_MARK_TIME + 0.4)
-	await create_timer(BossIntro.total_time() + 0.3, true, false, true).timeout
+	await create_timer(BossIntro.total_time() + 0.5, true, false, true).timeout
 	var priest := ossuary.boss_foe
 	check(priest != null and priest.data.id == &"summoning_priest" and priest.view.rig != null, "The summoning priest comes in, drawn by its rig")
 	var skeletons_before := ossuary.foes.filter(func(foe: Foe): return foe.data.id == &"skeleton").size()
@@ -585,8 +588,7 @@ func run_tests() -> void:
 	throne.hero.controlled = false
 	throne.hero.health.max_hp = 100000
 	throne.hero.health.hp = 100000
-	await wait(BattleArea.BOSS_DELAY + BattleArea.BOSS_MARK_TIME + 0.4)
-	await create_timer(BossIntro.total_time() + 0.3, true, false, true).timeout
+	await create_timer(BossIntro.total_time() + 0.5, true, false, true).timeout
 	var master := throne.boss_foe
 	check(master != null and master.data.id == &"master_of_echoes" and master.view.rig != null, "The master of echoes comes in, drawn by its rig")
 	var wraiths_before := throne.foes.filter(func(foe: Foe): return foe.data.id == &"echo_wraith").size()

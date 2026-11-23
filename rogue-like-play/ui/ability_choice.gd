@@ -54,6 +54,14 @@ const PICK_KEYS: Array[Key] = [KEY_1, KEY_2, KEY_3, KEY_4]
 const FIGHT_ACTIONS: Array[StringName] = [&"strike", &"dash", &"skill_1", &"skill_2", &"special"]
 const REST := 0.3
 
+# How briskly a hand is dealt, set before it is presented: 0, in full (the
+# first hand of an area, a reward, the blessing); 1, briskly (a level's hand
+# once the area's first has been seen); 2, at once (the next hand of levels
+# gained together, and a hand drawn again): its shade is already down.
+# [the shade's fall, the gap between cards, a card's rise], seconds.
+const PACES := [[0.16, 0.09, 0.24], [0.12, 0.06, 0.2], [0.0, 0.04, 0.16]]
+var pace := 0
+
 var offers: Array[BoonData] = []
 var _levels: Array[int] = []
 var cards: Array[AbilityCard] = []
@@ -246,8 +254,9 @@ func _open(candidates: Array[BoonData], levels: Array[int], level: int, pending:
 
 
 # How long a hand of `count` takes to be dealt, from opening to armed.
-static func arm_time(count: int) -> float:
-	return SHADE_TIME + DEAL_STAGGER * maxi(0, count - 1) + DEAL_TIME
+static func arm_time(count: int, at_pace: int = 0) -> float:
+	var times: Array = PACES[clampi(at_pace, 0, PACES.size() - 1)]
+	return times[0] + times[1] * maxi(0, count - 1) + times[2]
 
 
 func _deal() -> void:
@@ -258,24 +267,31 @@ func _deal() -> void:
 	for button in buttons:
 		button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		button.release_focus()
-	shade.modulate.a = 0.0
-	var fall := create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	fall.tween_property(shade, "modulate:a", 1.0, SHADE_TIME)
+	var times: Array = PACES[clampi(pace, 0, PACES.size() - 1)]
+	var shade_time: float = times[0]
+	var stagger: float = times[1]
+	var rise: float = times[2]
+	if shade_time > 0.0:
+		shade.modulate.a = 0.0
+		var fall := create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		fall.tween_property(shade, "modulate:a", 1.0, shade_time)
+	else:
+		shade.modulate.a = 1.0
 	key_guide.modulate.a = 0.0
 	for index in offers.size():
 		cards[index].self_modulate = UNARMED_TINT
-		UIMotion.of(cards[index]).enter(SHADE_TIME + index * DEAL_STAGGER, Vector2(0, DEAL_RISE), DEAL_TIME)
+		UIMotion.of(cards[index]).enter(shade_time + index * stagger, Vector2(0, DEAL_RISE), rise)
 		# Face down as it rises, turned over as it lands.
 		var card := cards[index]
 		card.turn = 0.0
 		var turning := card.create_tween()
-		turning.tween_interval(SHADE_TIME + index * DEAL_STAGGER + TURN_AFTER)
+		turning.tween_interval(shade_time + index * stagger + TURN_AFTER)
 		turning.tween_callback(GameAudio.play.bind(self, &"card_deal", -17.0, 1.0 + index * 0.06))
-		turning.tween_property(card, "turn", 1.0, DEAL_TIME - TURN_AFTER).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		turning.tween_property(card, "turn", 1.0, rise - TURN_AFTER).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	# On the cards' own clock, so a slow frame that holds the deal back holds
 	# the arming back with it: no card is ever armed before it is in sight.
 	var arming := create_tween()
-	arming.tween_interval(arm_time(offers.size()))
+	arming.tween_interval(arm_time(offers.size(), pace))
 	arming.tween_callback(_arm.bind(offers.duplicate()))
 
 

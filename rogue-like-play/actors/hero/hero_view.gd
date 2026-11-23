@@ -44,6 +44,11 @@ var _facing_index := 0
 var _flash: Tween
 var _charge_pulse := 0.0
 var _down := false
+# The dark under her and the ring round her feet (world px, before the
+# floor's foreshortening).
+const SHADOW_REACH := 32.0
+const FOOT_RING := 20.0
+const FOOT_RING_COLOUR := Color(0.86, 0.95, 1.0, 0.5)
 var _ghost_left := 0.0
 
 
@@ -165,7 +170,10 @@ func _turn_to(direction: Vector2, force: bool = false) -> void:
 
 func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.45))
-	draw_circle(Vector2.ZERO, 15.0, Color(0.03, 0.035, 0.05, 0.45))
+	# A soft dark under her, and a pale ring round her feet: where she is,
+	# found at a glance in a crowd or under a blaze of effects.
+	draw_texture_rect(Vfx.shade(), Rect2(Vector2.ONE * -SHADOW_REACH, Vector2.ONE * SHADOW_REACH * 2.0), false, Color(1.0, 1.0, 1.0, 0.8))
+	draw_arc(Vector2.ZERO, FOOT_RING, 0.0, TAU, 44, FOOT_RING_COLOUR, 1.8, true)
 	if hero == null or _down:
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		return

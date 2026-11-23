@@ -22,6 +22,16 @@ var _spent := {}
 # where it is (TickSmoothing).
 var _tick_from := Vector2.ZERO
 var _image: Texture2D
+# The streak it trails (the painted blade's trail, laid along its way),
+# coloured by what it is: a foe's shot burns red.
+const TRAIL: Texture2D = preload("res://art/effects/vfx/slash_trail.png")
+const TINTS := {&"slash": Color(1.0, 0.92, 0.72), &"thrust": Color(1.0, 0.92, 0.72), &"heavy": Color(1.0, 0.74, 0.42), &"magic": Color(0.62, 0.72, 1.0), &"flame": Color(1.0, 0.56, 0.26)}
+const HOSTILE_TINT := Color(1.0, 0.42, 0.32)
+# The trail's length and half width, as shares of the shot's size.
+const TRAIL_LENGTH := 2.8
+const TRAIL_HALF := 0.4
+var _tint := Color.WHITE
+var _clock := 0.0
 
 
 func launch(shot: ProjectileData, combat_area: CombatArea, from: Vector2, toward: Vector2, hero_power: float, from_foe: bool = false) -> void:
@@ -34,6 +44,8 @@ func launch(shot: ProjectileData, combat_area: CombatArea, from: Vector2, toward
 	power = hero_power
 	z_index = 12
 	_image = StrikeEffect.image(data.effect)
+	_tint = HOSTILE_TINT if hostile else TINTS.get(data.effect, TINTS[&"slash"])
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	var light := CanvasItemMaterial.new()
 	light.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	material = light
@@ -43,7 +55,8 @@ func _physics_process(delta: float) -> void:
 	step(delta)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_clock += delta
 	queue_redraw()
 
 
@@ -88,4 +101,11 @@ func _draw() -> void:
 	var left := 1.0 - travelled / data.distance
 	var alpha := clampf(left * 3.0, 0.0, 1.0)
 	draw_set_transform(TickSmoothing.lag(_tick_from, position), direction.angle(), Vector2.ONE)
+	# Its trail behind it: the painted streak mirrored about its way, so
+	# its sharp edge is the core; it shivers as it flies.
+	var length := data.size * TRAIL_LENGTH * minf(1.0, travelled / maxf(data.size, 1.0))
+	var half := data.size * TRAIL_HALF * (0.9 + 0.1 * sin(_clock * 43.0))
+	var trail := Color(_tint, alpha * (0.8 + 0.2 * sin(_clock * 31.0)))
+	draw_texture_rect(TRAIL, Rect2(Vector2(data.size * 0.25 - length, 0.0), Vector2(length, half)), false, trail)
+	draw_texture_rect(TRAIL, Rect2(Vector2(data.size * 0.25 - length, 0.0), Vector2(length, -half)), false, trail)
 	draw_texture_rect(_image, Rect2(Vector2.ONE * -data.size * 0.5, Vector2.ONE * data.size), false, Color(1, 1, 1, alpha))

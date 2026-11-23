@@ -26,7 +26,10 @@ func capture() -> void:
 	area.hero.controlled = false
 	area.hero.health.max_hp = 100000
 	area.hero.health.hp = 100000
-	await create_timer(BattleArea.BOSS_DELAY + BattleArea.BOSS_MARK_TIME + 0.4).timeout
+	# The hall opens with the boss's entrance; the fight is looked at once it is on.
+	while area.staging:
+		await process_frame
+	await create_timer(0.4, true, false, true).timeout
 	var boss := area.boss_foe
 	boss.set_physics_process(false)
 	boss.global_position = area.hero.global_position + Vector2(0, -150)

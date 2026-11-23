@@ -45,7 +45,7 @@ func clear_area(run: RunDirector) -> void:
 	area.hero.controlled = false
 	if area.data.boss != null:
 		# The boss comes in, then falls.
-		await wait(BattleArea.BOSS_DELAY + BattleArea.BOSS_MARK_TIME + 0.3)
+		await create_timer(BossIntro.total_time() + 0.5, true, false, true).timeout
 		area.boss_foe.receive(DamageInfo.make(100000.0, Vector2.UP))
 	elif area.data.kind == AreaData.Kind.FIELD and area.data.survive_time > 0.0:
 		area.elapsed = area.data.survive_time

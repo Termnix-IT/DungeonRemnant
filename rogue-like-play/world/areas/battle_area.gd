@@ -9,7 +9,10 @@ extends CombatArea
 # ground and plays its rules: an open field's growing crowd (EnemyDirector)
 # until the hero has lasted survive_time or felled kill_target, or an
 # arena's waves (WaveRunner), or a boss hall's boss (its fall wins it; at
-# its second phase it calls its summons in on marks). When cleared, the
+# its second phase it calls its summons in on marks). A boss hall opens
+# with its boss's entrance: the world is stopped before the hall's first
+# frame and let go only when the entrance is over (`entrance`), so she
+# cannot move, strike or be struck until the fight begins. When cleared, the
 # foes left vanish, the gems
 # lying about fly to her, and `cleared` follows a moment later. The sandbox
 # extends it with its own hall and no clearing. The run's lasting rules
@@ -23,8 +26,8 @@ extends CombatArea
 # The fight's great moments are staged here, over the rules and never in
 # them: she arrives in a pool of light as the view settles on her; a level
 # gained bursts into light round her before its cards; a boss is foretold by
-# a sigil burning on the floor as the hall darkens and reddens, comes in
-# under its entrance (BossIntro), reddens the hall further when it rages,
+# a sigil burning on the floor as the hall darkens and reddens, comes up out
+# of it under its entrance (BossIntro), reddens the hall further when it rages,
 # and falls in a slowed moment of white light; an area cleared brightens;
 # and her fall slows and reddens the world as the view closes on her.
 
@@ -42,9 +45,14 @@ const CLEAR_PAUSE := 1.4
 const ECHO_NUMBER := Color("ffd27a")
 const ECHO_OUTLINE := Color("2a1a04")
 const BANNER_TIME := 2.6
-# From entering a boss hall to the boss's mark, and the mark's time.
-const BOSS_DELAY := 1.5
-const BOSS_MARK_TIME := 1.0
+# A boss hall's opening, in order: the world is stopped and the entrance
+# set up before the first frame (PREPARING); the entrance plays (INTRO);
+# the view goes back to her (RETURN); the fight is on (ACTIVE). NONE: not a
+# boss hall.
+enum Entrance { NONE, PREPARING, INTRO, RETURN, ACTIVE }
+# The entrance is let go by the area itself this long after it should have
+# ended, should it ever fail to end (real seconds).
+const ENTRANCE_GRACE := 1.5
 # The boss comes in this share of the way down from the hall's top.
 const BOSS_PLACE := 0.28
 # The light that rises around her when a level's boon is taken.
@@ -52,6 +60,15 @@ const LEVEL_UP_SCALE := 1.1
 # The lead-in to a level-up's cards: how long (real seconds) and how slow the
 # world runs, and the ring of light that bursts from her meanwhile.
 const LEAD_TIME := 0.32
+# Once an area's first level has been seen, the beat before a level's cards
+# is this long: the moment is kept, the wait is not.
+const LEAD_BRISK := 0.22
+# A clearing is told by itself for this long (real seconds) before the
+# cards of any level it brought: the two are never told at once. And a
+# cleared place is not left while a level's cards are owed, for at most
+# this long without a hand opening (so nothing can hold it for good).
+const CLEAR_BEAT := 0.85
+const LEVELS_GRACE := 3.0
 const LEAD_SLOW := 0.15
 const LEAD_RING := 170.0
 # The level-up burst (level_burst adds to its radius): its power as a share
@@ -113,7 +130,14 @@ var waves: WaveRunner
 # The boss once it is in, and whether it has fallen.
 var boss_foe: Foe
 var boss_down := false
-var _boss_left := -1.0
+# Where a boss hall's opening has got to.
+var entrance := Entrance.NONE
+# Whether the boss has been named (its health is shown from then on).
+var boss_named := true
+var _intro: BossIntro
+var _entrance_began := 0
+# The window was left during the entrance: the menu opens once it is over.
+var _menu_due := false
 # Seconds fought, counted while the hero stands and the fight runs.
 var elapsed := 0.0
 var finished := false
@@ -134,6 +158,15 @@ var veil: ColorRect
 var veil_open := 1.0
 var _veiling: Tween
 var _leaving := false
+# How many hands of cards this area has dealt, and whether the next follows
+# another directly.
+var _hands := 0
+var _chained := false
+# A level gained while a clearing is told is held until this (msec), and a
+# cleared place waits for owed cards only this long past the last hand.
+var _levels_held := false
+var _levels_after := 0
+var _levels_grace_from := 0
 var _arrive_in := 0
 
 
@@ -202,6 +235,8 @@ func _ready() -> void:
 		_banner_left = BANNER_TIME
 		GameAudio.play(self, &"floor", -18.0)
 	_arrive()
+	if data != null and data.boss != null:
+		_prepare_entrance()
 
 
 # She arrives: the view, close on her, draws back to the fight's, and her
@@ -259,11 +294,36 @@ func _process(delta: float) -> void:
 	if _arrive_in > 0:
 		_arrive_in -= 1
 		if _arrive_in == 0:
-			_view(CAMERA_ZOOM, ARRIVE_TIME)
 			ground.flash(hero.global_position, 420.0, 0.7, AreaGround.HERO_LIGHT, 0.7)
 			_veil_to(1.0, ARRIVE_TIME)
+			if entrance == Entrance.PREPARING:
+				# A boss hall: the view is the entrance's from here.
+				camera.zoom = Vector2.ONE * CAMERA_ZOOM
+				entrance = Entrance.INTRO
+				_entrance_began = Time.get_ticks_msec()
+				_intro.begin()
+			else:
+				_view(CAMERA_ZOOM, ARRIVE_TIME)
+	# The entrance never keeps the world: should it be gone, or run long
+	# past its end, the area lets the fight begin by itself.
+	if entrance == Entrance.INTRO or entrance == Entrance.RETURN:
+		var late := Time.get_ticks_msec() - _entrance_began > (BossIntro.total_time() + ENTRANCE_GRACE) * 1000.0
+		if not is_instance_valid(_intro):
+			camera.zoom = Vector2.ONE * CAMERA_ZOOM
+			camera.position_smoothing_enabled = true
+			_finish_entrance()
+		elif late:
+			_intro.skip()
 	if veil != null and veil.visible and hero != null:
 		_place_veil()
+	# A level held back while a clearing was told: its beat and cards now.
+	if _levels_held and Time.get_ticks_msec() >= _levels_after and not choosing() and not get_tree().paused:
+		_levels_held = false
+		_levels_grace_from = Time.get_ticks_msec()
+		hud.show_message("")
+		_banner_left = 0.0
+		GameAudio.play(self, &"level_up", -16.0)
+		_lead_in()
 
 
 # The view eased to a closeness, on the real clock.
@@ -331,8 +391,6 @@ func _lay_out() -> void:
 		marks.add_child(waves)
 		waves.crowd = rules.crowd
 		waves.start(self, data.waves, seed_value)
-	if data.boss != null:
-		_boss_left = BOSS_DELAY
 
 
 func _physics_process(delta: float) -> void:
@@ -344,6 +402,11 @@ func _physics_process(delta: float) -> void:
 		if _banner_left <= 0.0:
 			hud.show_message("")
 	if _clear_left >= 0.0:
+		# Not left while a level's cards are owed (they come after the
+		# clearing has been told): the last of the wait is kept for after.
+		var owed := _levels_held or (run.progression.pending_choices > 0 and hero.health.alive())
+		if owed and Time.get_ticks_msec() - _levels_grace_from < LEVELS_GRACE * 1000.0:
+			_clear_left = maxf(_clear_left, LEAVE_TIME + 0.25)
 		_clear_left -= delta
 		# The cleared place is left into the dark: it closes on her at the last.
 		if _clear_left < LEAVE_TIME and not _leaving:
@@ -361,10 +424,6 @@ func _physics_process(delta: float) -> void:
 		lessons.step(delta, hero.motor.motion().length() > 30.0)
 	if waves != null:
 		waves.advance(delta)
-	if _boss_left >= 0.0:
-		_boss_left -= delta
-		if _boss_left < 0.0:
-			_bring_boss()
 	if is_clear():
 		clear()
 
@@ -412,14 +471,28 @@ func clear() -> void:
 			gems.drop(foe.global_position, roundi(foe.data.exp_reward * (1.0 - float(foe.health.hp) / foe.health.max_hp)))
 	dismiss_foes()
 	gems.pull_radius = INF
-	hud.show_message(tr("制圧完了"))
-	GameAudio.play(self, &"victory", -16.0)
+	# The clearing is told by itself: after a boss's fall has had its
+	# moment, and before the cards of any level the last echoes bring.
+	var wait := BOSS_FALL_TIME if data != null and data.boss != null else 0.0
+	_levels_after = Time.get_ticks_msec() + roundi((wait + CLEAR_BEAT) * 1000.0)
+	_levels_grace_from = _levels_after
+	if wait > 0.0:
+		get_tree().create_timer(wait, true, false, true).timeout.connect(_tell_clearing)
+	else:
+		_tell_clearing()
 	# The place breathes out: it brightens, and light rises round her.
 	_colour_place(0.0, CLEAR_LIFT, 0.8)
 	ground.flash(hero.global_position, 560.0, 0.8, LEVEL_LIGHT, 0.8)
 	sparks.burst(hero.global_position + BODY_MIDDLE * 0.4, 22, LEVEL_LIGHT, Vector2.UP, 1.3, Vector2(30.0, 150.0), Vector2(0.5, 1.1), 5.0, 1.0)
-	_banner_left = CLEAR_PAUSE
+	_banner_left = CLEAR_PAUSE + wait
 	_clear_left = CLEAR_PAUSE
+
+
+func _tell_clearing() -> void:
+	if not is_inside_tree() or not finished:
+		return
+	hud.show_message(tr("制圧完了"))
+	GameAudio.play(self, &"victory", -16.0)
 
 
 # What the HUD says of the goal now.
@@ -440,55 +513,85 @@ func objective_text() -> String:
 	return tr("生き延びる　残り %d:%02d") % [floori(left / 60.0), floori(left) % 60]
 
 
-# The boss's mark, then the boss.
-func _bring_boss() -> void:
-	var at := Vector2(ground.bounds().get_center().x, ground.bounds().size.y * BOSS_PLACE)
-	waves.mark(at, data.boss, BOSS_MARK_TIME)
-	waves.spawned.connect(_on_marked_spawn)
-	GameAudio.play(self, &"warning", -16.0)
-	# It is foretold: a sigil burns up out of the floor where it will stand,
-	# the hall darkens and reddens, the ground trembles.
+# Where the boss stands as the fight begins.
+func boss_place() -> Vector2:
+	return Vector2(ground.bounds().get_center().x, ground.bounds().size.y * BOSS_PLACE)
+
+
+# A boss hall's opening is set up here, before the hall's first frame: the
+# world is stopped (so she cannot move, even with a key already held as she
+# came through the gate, and no foe acts), the view is held, the fight's
+# HUD is put away, and the entrance stands ready. It begins once the hall's
+# first frames have been drawn (_process).
+func _prepare_entrance() -> void:
+	entrance = Entrance.PREPARING
+	staging = true
+	camera_held = true
+	boss_named = false
+	get_tree().paused = true
+	# The hall's own banner gives way to the boss's name.
+	hud.show_message("")
+	_banner_left = 0.0
+	hud.set_cinematic(true, 0.0)
+	_intro = BossIntro.new()
+	_intro.name = "BossIntro"
+	add_child(_intro)
+	_intro.foretold.connect(_foretell_boss)
+	_intro.roared.connect(_on_boss_roar)
+	_intro.returning.connect(_on_entrance_returning)
+	_intro.finished.connect(_finish_entrance)
+	# A boss met on a run before may have its entrance cut short.
+	_intro.skippable = run.known.has(data.boss.id)
+	_intro.present(self, boss_place(), HubTheme.create())
+	_entrance_began = Time.get_ticks_msec()
+
+
+# It is foretold: a sigil burns up out of the floor where it will stand,
+# the hall darkens and reddens, the ground trembles.
+func _foretell_boss() -> void:
+	var at := boss_place()
+	var rise := BossIntro.ARRIVE_AT - BossIntro.OMEN_AT
 	sigil = BossSigil.new()
 	sigil.position = at
 	marks.add_child(sigil)
-	sigil.rise(BOSS_MARK_TIME)
-	_colour_place(BOSS_DREAD, 0.86, BOSS_MARK_TIME)
+	sigil.rise(rise)
+	_colour_place(BOSS_DREAD, 0.86, rise)
 	shake(HEAVY_SHAKE * 0.7)
 	sparks.burst(at, 26, BossSigil.COLOUR, Vector2.UP, 1.4, Vector2(20.0, 130.0), Vector2(0.5, 1.0), 5.0, 1.0)
+	GameAudio.play(self, &"warning", -16.0)
 	GameAudio.play(self, &"boss_tremor", -11.0)
 
 
-func _on_marked_spawn(foe: Foe) -> void:
-	if foe.data != data.boss or boss_foe != null:
-		return
+# The boss, put where it stands (once: asked again, the same boss).
+func bring_boss() -> Foe:
+	if boss_foe != null:
+		return boss_foe
+	var foe := spawn_foe(data.boss, boss_place())
 	boss_foe = foe
 	foe.phase_changed.connect(_on_boss_phase)
 	foe.fell.connect(func(_foe: Foe): boss_down = true)
 	foe.fell.connect(_on_boss_fell)
-	# Its entrance is staged with the world stopped: nothing moves, nothing is taken.
-	staging = true
-	get_tree().paused = true
-	camera_held = true
-	# The area's opening banner gives way to the boss's name.
-	hud.show_message("")
-	_banner_left = 0.0
-	var intro := BossIntro.new()
-	intro.name = "BossIntro"
-	add_child(intro)
-	intro.finished.connect(_after_entrance)
-	intro.roared.connect(_on_boss_roar.bind(foe))
-	# A boss met on a run before may have its entrance cut short.
-	intro.skippable = run.known.has(foe.data.id)
-	intro.present(foe, self, HubTheme.create())
+	sparks.burst(foe.global_position + BODY_MIDDLE * 0.5, 34, BossSigil.COLOUR, Vector2.UP, 0.9, Vector2(60.0, 260.0), Vector2(0.4, 0.9), 5.0, 1.0)
+	ground.flash(foe.global_position, 620.0, 1.0, BossSigil.COLOUR, 0.5)
+	return foe
 
 
 # Its roar: the sigil it stands in blazes and is gone, sparks fly out from
-# it and its light floods the hall.
-func _on_boss_roar(foe: Foe) -> void:
+# it, its light floods the hall, and it is named (its health comes up).
+func _on_boss_roar() -> void:
+	var foe := bring_boss()
+	boss_named = true
 	if is_instance_valid(sigil):
 		sigil.flare()
 	ground.flash(foe.global_position, 900.0, 1.5, BossSigil.COLOUR, 0.7)
 	sparks.burst(foe.global_position + BODY_MIDDLE, 46, BossSigil.HEART, Vector2.ZERO, PI, Vector2(120.0, 420.0), Vector2(0.35, 0.8), 5.5)
+
+
+# The view starts back to her: the fight's HUD comes back with it.
+func _on_entrance_returning() -> void:
+	if entrance == Entrance.INTRO:
+		entrance = Entrance.RETURN
+	hud.set_cinematic(false, BossIntro.RETURN_TIME)
 
 
 # The boss falls: the world slows on a burst of white light, the view goes
@@ -496,19 +599,34 @@ func _on_boss_roar(foe: Foe) -> void:
 func _on_boss_fell(foe: Foe) -> void:
 	_slow(BOSS_FALL_TIME, BOSS_FALL_SLOW)
 	shake(SPECIAL_SHAKE * 1.2)
-	ground.flash(foe.global_position, 900.0, 0.95, Color(1.0, 0.95, 0.85), 0.9)
+	ground.flash(foe.global_position, 820.0, 0.7, Color(1.0, 0.95, 0.85), 0.9)
 	sparks.burst(foe.global_position + BODY_MIDDLE, 70, GemField.LARGE, Vector2.ZERO, PI, Vector2(80.0, 420.0), Vector2(0.5, 1.3), 6.0, 0.6)
 	_punch(BOSS_FALL_ZOOM, BOSS_FALL_TIME + 0.5)
 	GameAudio.play(self, &"boss_fall", -9.0)
 
 
-func _after_entrance() -> void:
+# The entrance is over, however it ended (played whole, cut short, or let
+# go by the area itself): the boss stands, the view and the HUD are the
+# fight's, and the world goes on. Safe to call again.
+func _finish_entrance() -> void:
+	if entrance == Entrance.NONE or entrance == Entrance.ACTIVE:
+		return
+	entrance = Entrance.ACTIVE
+	bring_boss()
+	boss_named = true
 	staging = false
 	camera_held = false
+	_intro = null
 	if is_instance_valid(sigil):
 		sigil.flare()
+	if ground.dread < BOSS_DREAD:
+		_colour_place(BOSS_DREAD, 0.86, 0.3)
+	hud.set_cinematic(false, 0.2)
 	if not choosing() and not in_menu():
 		get_tree().paused = false
+	if _menu_due:
+		_menu_due = false
+		open_menu()
 
 
 # The boss's second phase: its summons come in on marks around the hall.
@@ -562,6 +680,11 @@ func choosing() -> bool:
 
 func _on_gems(amount: int) -> void:
 	if run.gain(amount):
+		# A level gained while a clearing is being told waits its turn: the
+		# level is hers at once, its beat and cards come after.
+		if finished and Time.get_ticks_msec() < _levels_after:
+			_levels_held = true
+			return
 		GameAudio.play(self, &"level_up", -16.0)
 		_lead_in()
 
@@ -572,18 +695,19 @@ func _lead_in() -> void:
 	if choosing() or run.progression.pending_choices <= 0 or not hero.health.alive():
 		return
 	_leading = true
-	hit_stop.hold(LEAD_TIME, LEAD_SLOW)
+	var beat := LEAD_TIME if _hands == 0 else LEAD_BRISK
+	hit_stop.hold(beat, LEAD_SLOW)
 	var ring := GroundRing.new()
 	marks.add_child(ring)
 	ring.start(hero.global_position, LEAD_RING, &"heavy")
 	shake(HEAVY_SHAKE * 0.4)
 	# The level gained bursts into light round her: on the floor, in the
 	# air, and over her head.
-	ground.flash(hero.global_position, 560.0, 1.2, LEVEL_LIGHT, LEAD_TIME + 0.35)
+	ground.flash(hero.global_position, 560.0, 1.2, LEVEL_LIGHT, beat + 0.35)
 	sparks.burst(hero.global_position + BODY_MIDDLE * 0.4, LEVEL_MOTES, LEVEL_LIGHT, Vector2.UP, 1.3, Vector2(40.0, 200.0), Vector2(0.5, 1.1), 5.0, 1.0)
 	_effect(&"level_up", hero.global_position + BODY_MIDDLE * 0.5, Vector2.RIGHT, LEVEL_UP_SCALE)
 	popups.show_number("LEVEL UP", number_spot(hero) + Vector2(0.0, -16.0), LEVEL_LIGHT, ECHO_OUTLINE, DamagePopups.FONT_SIZE + 2)
-	get_tree().create_timer(LEAD_TIME, true, false, true).timeout.connect(_after_lead)
+	get_tree().create_timer(beat, true, false, true).timeout.connect(_after_lead)
 
 
 func _after_lead() -> void:
@@ -604,6 +728,11 @@ func _offer() -> void:
 	get_tree().paused = true
 	GameMusic.muffle(self, true)
 	choice.show_vitals(hero.health.hp, hero.health.max_hp)
+	# In full the first time in this area; briskly after; at once when it
+	# follows another hand (levels gained together).
+	choice.pace = 2 if _chained else (0 if _hands == 0 else 1)
+	_hands += 1
+	_chained = false
 	choice.present_boons(offer, run.build, run.progression.level, run.progression.pending_choices, "", run.rerolls_left)
 
 
@@ -612,6 +741,7 @@ func _on_reroll() -> void:
 	var offer := run.reroll()
 	if offer.is_empty():
 		return
+	choice.pace = 2
 	choice.show_vitals(hero.health.hp, hero.health.max_hp)
 	choice.present_boons(offer, run.build, run.progression.level, run.progression.pending_choices, "", run.rerolls_left)
 
@@ -621,7 +751,9 @@ func _on_chosen(id: StringName) -> void:
 	var heal := run.rule(&"level_heal")
 	if heal > 0.0:
 		report_heal(hero, hero.health.heal(roundi(hero.health.max_hp * heal)))
+	_levels_grace_from = Time.get_ticks_msec()
 	if run.progression.pending_choices > 0:
+		_chained = true
 		_offer()
 	if not choosing():
 		get_tree().paused = false
@@ -698,7 +830,11 @@ func _on_joy_connection(_device: int, connected: bool) -> void:
 
 func _hold_for_player() -> void:
 	if hero != null and hero.controlled and is_inside_tree():
-		open_menu()
+		# During a boss's entrance the menu waits for its end.
+		if staging:
+			_menu_due = true
+		else:
+			open_menu()
 
 
 func _on_resumed() -> void:

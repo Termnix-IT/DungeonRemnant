@@ -61,6 +61,8 @@ func run_tests() -> void:
 	await _arrival_and_leaving()
 	await _levels()
 	await _boss()
+	await _boss_gate()
+	await _clear_then_level()
 	await _fall()
 	await _cover()
 	print("Battle staging tests: %d checks, %d failures" % [checks, failures])
@@ -158,6 +160,7 @@ func _levels() -> void:
 	await real(BattleArea.LEAD_TIME + 0.08)
 	var choice := area.choice
 	check(choice.visible and paused and is_equal_approx(Engine.time_scale, 1.0) and choice.offers.size() == run.card_count(), "Then the fight stops for the cards, as many as the run offers")
+	check(choice.pace == 0 and choice.cards[0].families_label.text == choice.offers[0].families_text(), "The area's first hand is dealt in full, each card showing what it belongs to")
 	check(not choice.armed and choice.cards[0].turn < 0.5 and not choice.cards[0]._content.visible, "They are dealt face down: no card's words show before it turns, and none can be taken")
 	await real(Choice.arm_time(choice.offers.size()) + 0.25)
 	var turned := true
@@ -177,10 +180,13 @@ func _levels() -> void:
 	await real(BattleArea.LEAD_TIME + 0.08)
 	var hands := 0
 	var held := true
+	var paces: Array[int] = []
 	while area.choosing() and hands < 6:
 		held = held and choice.visible and paused
+		paces.append(choice.pace)
 		choice._select(0)
 		hands += 1
+	check(paces.size() >= 2 and paces[0] == 1 and paces[1] == 2 and Choice.arm_time(3, 1) < Choice.arm_time(3, 0) and Choice.arm_time(3, 2) < Choice.arm_time(3, 1), "Later hands are dealt briskly, and one that follows another at once: %s" % [paces])
 	check(run.progression.level - level == hands and hands >= 2 and held and run.progression.pending_choices == 0, "Levels gained together each bring a hand, the fight stopped until the last is answered (%d levels, %d hands)" % [run.progression.level - level, hands])
 	check(not paused and is_equal_approx(Engine.time_scale, 1.0), "Then it goes on")
 	# A slow-down asked for before a level does not let the level's beat go early.
@@ -201,23 +207,42 @@ func _levels() -> void:
 
 func _boss() -> void:
 	var run := RunState.new(9)
+	# As a player comes through the gate: a way and a blow already held.
+	Input.action_press(&"move_right")
+	Input.action_press(&"strike")
 	var area := enter("guardian_hall", run)
-	area.hero.health.max_hp = 100000
-	area.hero.health.hp = 100000
-	await wait(BattleArea.BOSS_DELAY + BattleArea.BOSS_MARK_TIME * 0.5)
-	check(is_instance_valid(area.sigil) and area.sigil.shown > 0.0 and area.boss_foe == null and not paused and not area.staging, "A boss is foretold: its sigil burns up where it will stand while the fight goes on")
-	await wait(BattleArea.BOSS_MARK_TIME * 0.5 + 0.2)
+	area.hero.controlled = true
+	var start := area.hero.global_position
 	var hp := area.hero.health.hp
-	var clock := area.elapsed
-	check(area.boss_foe != null and area.staging and paused and area.ground.dread > BattleArea.BOSS_DREAD * 0.7, "It comes into a hall gone red, its entrance staged with the world stopped")
-	await real(BossIntro.ROAR_AT + 0.2)
-	check(area.camera.zoom.x > CombatArea.CAMERA_ZOOM + 0.2 and (not is_instance_valid(area.sigil) or area.sigil.flared >= 0.0), "The view closes on it as it roars, and its sigil blazes out")
-	# Until the very frame its entrance ends.
-	var until := Time.get_ticks_msec() + roundi(BossIntro.total_time() * 1000.0) + 2000
+	check(area.entrance == BattleArea.Entrance.PREPARING and area.staging and paused and area.camera_held and area.boss_foe == null and not area.hud.boss_gauge.visible, "A boss hall opens with its entrance: the world is stopped before the hall's first frame")
+	var most := 0.0
+	var acted := false
+	var seen := {}
+	var foretold := false
+	var closed_in := false
+	var until := Time.get_ticks_msec() + roundi((BossIntro.total_time() + BattleArea.ENTRANCE_GRACE) * 1000.0) + 2000
 	while area.staging and Time.get_ticks_msec() < until:
 		await process_frame
-	check(not area.staging and area.hero.health.hp == hp and area.elapsed - clock < 0.1, "Nothing was taken from her and the fight's clock stood still through it")
+		# (The frame after it ends is the fight's, not the entrance's.)
+		if not area.staging:
+			break
+		most = maxf(most, area.hero.global_position.distance_to(start))
+		acted = acted or area.hero.motor.state != HeroMotor.State.FREE
+		seen[area.entrance] = true
+		foretold = foretold or (area.boss_foe == null and is_instance_valid(area.sigil) and area.sigil.shown > 0.0)
+		closed_in = closed_in or (area.boss_foe != null and area.boss_named and area.camera.zoom.x > CombatArea.CAMERA_ZOOM + 0.2 and area.ground.dread > BattleArea.BOSS_DREAD * 0.7)
+	check(most == 0.0 and not acted, "With a way and a blow held all the while, she neither moves nor strikes before the fight begins (moved %.2f px)" % most)
+	check(seen.has(BattleArea.Entrance.INTRO) and seen.has(BattleArea.Entrance.RETURN) and area.entrance == BattleArea.Entrance.ACTIVE, "Its entrance goes through its steps in order and ends with the fight on")
+	check(foretold and closed_in, "It is foretold by its sigil before it is in, and the view closes on it in a hall gone red as it is named")
+	check(not area.staging and area.hero.health.hp == hp and area.elapsed < 0.1 and area.boss_foe != null, "Nothing was taken from her and the fight's clock had not begun")
 	check(not paused and not area.camera_held and area.camera.zoom.is_equal_approx(Vector2.ONE * CombatArea.CAMERA_ZOOM), "The view is back on her and the fight goes on")
+	await wait(0.4)
+	check(area.hero.global_position.distance_to(start) > 20.0, "And then the held way moves her: the fight is hers again")
+	Input.action_release(&"move_right")
+	Input.action_release(&"strike")
+	area.hero.controlled = false
+	area.hero.health.max_hp = 100000
+	area.hero.health.hp = 100000
 	await real(BossSigil.FLARE_TIME + 0.2)
 	check(not is_instance_valid(area.sigil), "Its sigil has burnt out")
 	# Its rage and its fall each slow the world for a moment, and no longer.
@@ -239,6 +264,98 @@ func _boss() -> void:
 		while area.choosing() and area.choice.visible:
 			area.choice._select(0)
 	check(won[0] and area.ground.dread < 0.05 and area.ground.lift > 1.2 and is_equal_approx(Engine.time_scale, 1.0) and not paused, "The hall is cleared as ever, let out of its red")
+	await leave(area)
+	# The entrance never keeps the world: gone, the area lets the fight begin.
+	var lost := enter("guardian_hall", RunState.new(9))
+	for frame in BattleArea.ARRIVE_AFTER + 2:
+		await process_frame
+	lost.get_node("BossIntro").free()
+	for frame in 3:
+		await process_frame
+	check(not lost.staging and not paused and not lost.camera_held and lost.entrance == BattleArea.Entrance.ACTIVE and lost.boss_foe != null and lost.camera.zoom.is_equal_approx(Vector2.ONE * CombatArea.CAMERA_ZOOM), "Should its entrance ever be gone, the area starts the fight by itself")
+	await leave(lost)
+	# Left in the middle of it (the run abandoned, the game closed): nothing stays stopped.
+	var left := enter("guardian_hall", RunState.new(9))
+	for frame in BattleArea.ARRIVE_AFTER + 2:
+		await process_frame
+	left.free()
+	await process_frame
+	check(not paused, "An area left in the middle of its boss's entrance leaves the world running")
+
+
+# In a run, through the gate with keys held: the real way into a boss hall.
+func _boss_gate() -> void:
+	var director = RunDirector.new()
+	director.seed_value = 12
+	root.add_child(director)
+	await process_frame
+	var run: RunState = director.run
+	var at: RouteMap.Waypoint = run.route.nodes(0)[0]
+	for layer in run.route.size() - 1:
+		run.taken.append(at)
+		at = at.next[0]
+	run.layer = run.route.size() - 1
+	director.show_map()
+	await process_frame
+	Input.action_press(&"move_left")
+	director.map_view._choose(director.map_view.current[0])
+	await process_frame
+	var area: BattleArea = director.area
+	check(area != null and area.data.boss != null and area.hero.controlled and area.staging and paused, "Through the last gate is the boss's hall, stopped from its first frame")
+	var start := area.hero.global_position
+	var most := 0.0
+	var until := Time.get_ticks_msec() + roundi((BossIntro.total_time() + BattleArea.ENTRANCE_GRACE) * 1000.0) + 2000
+	while area.staging and Time.get_ticks_msec() < until:
+		await process_frame
+		# (The frame after it ends is the fight's, not the entrance's.)
+		if not area.staging:
+			break
+		most = maxf(most, area.hero.global_position.distance_to(start))
+	check(most == 0.0 and not area.staging and not paused, "Coming through the gate with a way held, she stands until the fight begins (moved %.2f px)" % most)
+	await wait(0.4)
+	check(area.hero.global_position.distance_to(start) > 20.0, "Then she moves")
+	Input.action_release(&"move_left")
+	director.free()
+	paused = false
+	await process_frame
+
+
+# A clearing and the levels its last echoes bring are told one after the
+# other, never at once, and the place is not left while cards are owed.
+func _clear_then_level() -> void:
+	var run := RunState.new(9)
+	var area := enter("ember_waste", run)
+	area.hero.health.max_hp = 100000
+	area.hero.health.hp = 100000
+	await real(BattleArea.ARRIVE_TIME + 0.3)
+	area.director.running = false
+	area.dismiss_foes()
+	var need: int = run.progression.settings.required_exp(1) + run.progression.settings.required_exp(2)
+	for index in 6:
+		area.gems.drop(area.hero.global_position + Vector2.RIGHT.rotated(index) * 380.0, ceili(need / 6.0))
+	var began := Time.get_ticks_msec()
+	var left := [-1.0]
+	area.cleared.connect(func(): left[0] = (Time.get_ticks_msec() - began) / 1000.0)
+	area.kills = area.data.kill_target
+	var told := -1.0
+	var beat := -1.0
+	var together := false
+	var answered := 0
+	while left[0] < 0.0 and Time.get_ticks_msec() - began < 12000:
+		await process_frame
+		var now := (Time.get_ticks_msec() - began) / 1000.0
+		var banner: bool = area.hud.banner.visible and area.hud.message.text == "制圧完了"
+		if told < 0.0 and banner:
+			told = now
+		if beat < 0.0 and area._leading:
+			beat = now
+		together = together or (banner and (area._leading or area.choice.visible))
+		if area.choice.visible and area.choice.armed:
+			area.choice._select(0)
+			answered += 1
+	check(told >= 0.0 and beat - told >= BattleArea.CLEAR_BEAT - 0.08 and not together, "The clearing is told by itself, and the level's beat comes after it (told at %.2f, the beat at %.2f)" % [told, beat])
+	check(run.progression.level == 3 and answered == 2 and run.progression.pending_choices == 0, "Both levels are hers and both hands were answered before the place was left")
+	check(left[0] > 0.0 and area.veil_open < 0.05, "Then the place is left, the dark closed on it (after %.2f s)" % left[0])
 	await leave(area)
 
 

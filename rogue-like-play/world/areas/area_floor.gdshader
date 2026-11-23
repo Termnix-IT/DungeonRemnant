@@ -31,6 +31,11 @@ uniform float wall = 48.0;
 uniform float face = 96.0;
 // The floor's own colour cast, and how much mist lies on it.
 uniform vec4 tone : source_color = vec4(1.0);
+// How much of the paving's own colour and of its lights and darks is kept
+// (1: as painted). A floor of strong colour and deep cracks vies with the
+// small figures on it; drawn in toward its middle tone it stays the same
+// stone and lets them stand out.
+uniform vec2 calm = vec2(0.86, 1.0);
 uniform vec4 mist : source_color = vec4(0.7, 0.76, 0.86, 0.08);
 
 float fbm(vec2 p) {
@@ -56,7 +61,8 @@ void fragment() {
 		base *= 1.0 - 0.3 * damp;
 		// Quieter than what fights on it.
 		float grey = dot(base, vec3(0.3, 0.5, 0.2));
-		base = mix(vec3(grey), base, 0.86);
+		base = mix(vec3(grey), base, calm.x);
+		base *= mix(clamp(0.3 / max(grey, 0.03), 0.4, 3.0), 1.0, calm.y);
 		base = base * 1.12 * tone.rgb;
 		// Darker toward the foot of what stands on it, and of the walls.
 		float near_thing = texture(plan, at / room).r;

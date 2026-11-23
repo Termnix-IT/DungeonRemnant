@@ -79,7 +79,6 @@ func play() -> void:
 	area.setup(load("res://data/areas/guardian_hall.tres"), run, SEED)
 	root.add_child(area)
 	area.hero.controlled = false
-	await _fight(BattleArea.BOSS_DELAY + BattleArea.BOSS_MARK_TIME + 0.3)
 	while area.staging:
 		await process_frame
 	await _fight(6.0)

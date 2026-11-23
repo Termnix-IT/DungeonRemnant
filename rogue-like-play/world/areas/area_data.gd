@@ -58,7 +58,7 @@ const KIND_NAMES := {Kind.FIELD: "フィールド", Kind.ARENA: "アリーナ", 
 @export_range(0.0, 3600.0) var survive_time := 0.0
 @export_range(0, 10000) var kill_target := 0
 @export var waves: Array[WaveData] = []
-# A boss hall's boss, which comes in BOSS_DELAY after she enters.
+# A boss hall's boss: the hall opens with its entrance (BattleArea).
 @export var boss: FoeData
 
 

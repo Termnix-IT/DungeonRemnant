@@ -120,13 +120,15 @@ func _boss() -> void:
 	_enter("guardian_hall")
 	area.hero.health.max_hp = 100000
 	area.hero.health.hp = 100000
-	await _real(BattleArea.BOSS_DELAY + BattleArea.BOSS_MARK_TIME * 0.8)
+	await _real(0.16)
+	await _grab("combat_boss_open")
+	await _real(BossIntro.OMEN_AT + 0.7)
 	await _grab("combat_boss_omen")
-	while area.get_node_or_null("BossIntro") == null:
+	while area.boss_foe == null:
 		await process_frame
-	await _real(BossIntro.PAN_TIME * 0.75)
+	await _real(BossIntro.RISE_TIME * 0.45)
 	await _grab("combat_boss_approach")
-	await _real(BossIntro.ROAR_AT - BossIntro.PAN_TIME * 0.75 + 0.1)
+	await _real(BossIntro.ROAR_AT - BossIntro.ARRIVE_AT - BossIntro.RISE_TIME * 0.45 + 0.1)
 	await _grab("combat_boss_roar")
 	await _real(BossIntro.NAME_TIME + 0.4)
 	await _grab("combat_boss_name")

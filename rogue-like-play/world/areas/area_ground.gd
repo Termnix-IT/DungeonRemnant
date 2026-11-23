@@ -63,13 +63,13 @@ const FLASHES := 6
 # there is without her), its fires' colour, the cast over its stone and the
 # things on it, and its mist (alpha: how thick).
 const MOODS := [
-	{ambient = Color(0.5, 0.58, 0.76, 0.66), lamp = Color(1.0, 0.62, 0.3, 0.9), tone = Color(1.0, 1.0, 1.0), mist = Color(0.7, 0.78, 0.9, 0.07)},
-	{ambient = Color(0.5, 0.66, 0.6, 0.68), lamp = Color(1.0, 0.66, 0.32, 0.9), tone = Color(0.9, 1.0, 0.84), mist = Color(0.7, 0.86, 0.78, 0.09)},
-	{ambient = Color(0.82, 0.52, 0.42, 0.66), lamp = Color(1.0, 0.52, 0.22, 0.95), tone = Color(1.0, 1.0, 1.0), mist = Color(0.92, 0.52, 0.36, 0.06)},
-	{ambient = Color(0.5, 0.5, 0.78, 0.6), lamp = Color(1.0, 0.6, 0.3, 1.0), tone = Color(0.9, 0.88, 1.0), mist = Color(0.62, 0.62, 0.9, 0.06)},
-	{ambient = Color(0.52, 0.7, 0.58, 0.72), lamp = Color(1.0, 0.7, 0.36, 0.9), tone = Color(1.0, 1.0, 1.0), mist = Color(0.72, 0.88, 0.8, 0.1)},
-	{ambient = Color(0.6, 0.5, 0.82, 0.62), lamp = Color(1.0, 0.72, 0.5, 0.9), tone = Color(1.0, 1.0, 1.0), mist = Color(0.72, 0.6, 0.9, 0.07)},
-	{ambient = Color(0.46, 0.44, 0.64, 0.58), lamp = Color(1.0, 0.8, 0.42, 0.95), tone = Color(1.0, 1.0, 1.0), mist = Color(0.6, 0.52, 0.7, 0.06)},
+	{ambient = Color(0.5, 0.58, 0.76, 0.66), lamp = Color(1.0, 0.62, 0.3, 0.9), tone = Color(1.0, 1.0, 1.0), mist = Color(0.7, 0.78, 0.9, 0.07), calm = Vector2(0.8, 0.8)},
+	{ambient = Color(0.5, 0.66, 0.6, 0.68), lamp = Color(1.0, 0.66, 0.32, 0.9), tone = Color(0.9, 1.0, 0.84), mist = Color(0.7, 0.86, 0.78, 0.09), calm = Vector2(0.78, 0.8)},
+	{ambient = Color(0.82, 0.52, 0.42, 0.66), lamp = Color(1.0, 0.52, 0.22, 0.95), tone = Color(1.0, 1.0, 1.0), mist = Color(0.92, 0.52, 0.36, 0.06), calm = Vector2(0.6, 0.66)},
+	{ambient = Color(0.5, 0.5, 0.78, 0.6), lamp = Color(1.0, 0.6, 0.3, 1.0), tone = Color(0.9, 0.88, 1.0), mist = Color(0.62, 0.62, 0.9, 0.06), calm = Vector2(0.68, 0.7)},
+	{ambient = Color(0.52, 0.7, 0.58, 0.72), lamp = Color(1.0, 0.7, 0.36, 0.9), tone = Color(1.0, 1.0, 1.0), mist = Color(0.72, 0.88, 0.8, 0.1), calm = Vector2(0.72, 0.76)},
+	{ambient = Color(0.6, 0.5, 0.82, 0.62), lamp = Color(1.0, 0.72, 0.5, 0.9), tone = Color(1.0, 1.0, 1.0), mist = Color(0.72, 0.6, 0.9, 0.07), calm = Vector2(0.74, 0.8)},
+	{ambient = Color(0.46, 0.44, 0.64, 0.58), lamp = Color(1.0, 0.8, 0.42, 0.95), tone = Color(1.0, 1.0, 1.0), mist = Color(0.6, 0.52, 0.7, 0.06), calm = Vector2(0.8, 0.8)},
 ]
 # What drifts in each theme's air (area_air.gdshader): a mote's colour
 # (alpha: how bright), which way and how fast they drift (world px a
@@ -122,7 +122,7 @@ const DECAL_TINT := Color(0.82, 0.8, 0.8, 0.92)
 const UPRIGHT_HELD := 0.9
 const FLAT_HELD := 1.0
 # How dark a fighter far from her light is drawn (CombatArea shades the foes).
-const FAR_SHADE := 0.66
+const FAR_SHADE := 0.8
 
 var size := Vector2i.ZERO
 var walls: Dictionary = {}
@@ -172,6 +172,7 @@ func build(cells: Vector2i, wall_cells: Dictionary, theme_index: int = 0, screen
 	_floor.set_shader_parameter(&"face", FACE)
 	_floor.set_shader_parameter(&"tone", mood.tone)
 	_floor.set_shader_parameter(&"mist", mood.mist)
+	_floor.set_shader_parameter(&"calm", mood.calm)
 	_floor.set_shader_parameter(&"sheet_from", -Vector2.ONE * MARGIN)
 	_floor.set_shader_parameter(&"sheet_size", bounds().size + Vector2.ONE * MARGIN * 2.0)
 	_upright = _lit_material(1.0, mood.tone)

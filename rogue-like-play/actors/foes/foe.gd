@@ -207,6 +207,8 @@ func _run_attack(delta: float) -> void:
 		_attack_shown = true
 		view.brace(false)
 		view.strike()
+		if area != null:
+			area.report_foe_strike(self, attack, attack_facing)
 		if telegraph != null:
 			telegraph.strike()
 			telegraph = null

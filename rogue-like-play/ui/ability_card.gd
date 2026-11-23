@@ -29,7 +29,9 @@ const EMBLEM_ACROSS := 0.27
 const STATUS_Y := 0.078
 const NAME_Y := 0.452
 const PIPS_Y := 0.548
-const WORDS := Rect2(0.13, 0.6, 0.74, 0.31)
+const WORDS := Rect2(0.13, 0.595, 0.74, 0.265)
+# What the boon belongs to, at the card's foot.
+const FAMILIES_Y := 0.868
 # The plate stands this far inside the card's outline (the painting's
 # corners are round).
 const PLATE_INSET := 9.0
@@ -61,6 +63,7 @@ var key_label: Label
 var status_label: Label
 var name_label: Label
 var effect_label: Label
+var families_label: Label
 var symbol: Control
 var pips: Control
 var _content: Control
@@ -122,6 +125,13 @@ func _init() -> void:
 	# Its words stand in the middle of the slate under the ranks, few or many.
 	effect_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_place(effect_label, WORDS)
+	# Its families, always in sight: hands are compared by what a card adds
+	# to (her blade, her skills, her guard), before its words are read.
+	families_label = HubUI.label(_content, "", &"MutedLabel")
+	families_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	families_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	families_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_place(families_label, Rect2(0.1, FAMILIES_Y, 0.8, 0.05))
 
 
 # A part of the card held at a share of it, whatever the card's size.
@@ -151,15 +161,13 @@ func _light() -> void:
 	queue_redraw()
 
 
-# A rank being raised says so; a new boon says it is new, and names its
-# families only while it is pointed at or focused (the card's detail).
+# A rank being raised says so; a new boon says it is new. Its families are
+# at its foot either way.
 func _show_status() -> void:
 	if status_label == null or ability == null:
 		return
-	if level > 0:
-		status_label.text = "Lv %d → %d" % [level, level + 1]
-	else:
-		status_label.text = ability.families_text() if hovered else tr("新規")
+	status_label.text = "Lv %d → %d" % [level, level + 1] if level > 0 else tr("新規")
+	families_label.text = ability.families_text()
 
 
 func setup(data: BoonData, current_level: int, shortcut: int) -> void:

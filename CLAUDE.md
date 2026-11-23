@@ -6,7 +6,7 @@
 
 `rogue-like-play/` がGodot 4.7（4.7.2 stable）プロジェクトのルートです。ゲームを実行する際は、このディレクトリの `project.godot` を開きます。ゲームはリアルタイムの見下ろしアクションのローグライトで、全4章とエンディング、エンディング後に開く8段階の難易度の段階まで実装しています。
 
-コードは責務ごとに分けています。`actors/` は主人公（`hero/`）と敵（`foes/`）とカットアウトリグ（`rig/`）、`combat/action/` は攻撃データ・当たり判定・ダメージ・状態異常（`combat/` の直下は、火花やボスの陣のような戦闘の見せ方だけのもの）、`world/areas/` は戦場とエリアのルールと敵の出現、`game/expedition/` はランの進行・分岐マップ・章（`Chapters`）・難易度の段階（`DifficultySteps`）、`game/hub/` と `game/main.gd` は拠点と出撃・帰還、`game/save/` はセーブと設定を担当します。経験値と周回限定強化と永続育成は `progression/`、BGMと効果音の再生は `audio/` にあります。調整可能なバランス定義は `data/` 配下のGodot Resourceとして管理します。UIのSceneとScriptは `ui/`、自動テストと目視確認用Scriptは `tests/`、素材の加工と焼き出しのScriptは `tools/`、絵は `art/` に置きます。クラスごとの置き場所の一覧は `docs/ゲーム仕様.md` の「13. 責務の分け方」が正です。
+コードは責務ごとに分けています。`actors/` は主人公（`hero/`）と敵（`foes/`）とカットアウトリグ（`rig/`）、`combat/action/` は攻撃データ・当たり判定・ダメージ・状態異常（`combat/` の直下と `combat/vfx/` は、火花・ボスの陣・攻撃のエフェクトのような戦闘の見せ方だけのもの）、`world/areas/` は戦場とエリアのルールと敵の出現、`game/expedition/` はランの進行・分岐マップ・章（`Chapters`）・難易度の段階（`DifficultySteps`）、`game/hub/` と `game/main.gd` は拠点と出撃・帰還、`game/save/` はセーブと設定を担当します。経験値と周回限定強化と永続育成は `progression/`、BGMと効果音の再生は `audio/` にあります。調整可能なバランス定義は `data/` 配下のGodot Resourceとして管理します。UIのSceneとScriptは `ui/`、自動テストと目視確認用Scriptは `tests/`、素材の加工と焼き出しのScriptは `tools/`、絵は `art/` に置きます。クラスごとの置き場所の一覧は `docs/ゲーム仕様.md` の「13. 責務の分け方」が正です。
 
 文書は次の場所にあり、仕様や手順を変えたときは該当する文書の説明を書き換えます。
 
@@ -29,6 +29,7 @@ Godotを `godot` コマンドとして利用できる状態で、`rogue-like-pla
 - `godot --headless --path . --log-file .godot/run-cycle-tests.log --script res://tests/test_run_cycle.gd`: 拠点から出撃し、踏破・敗北・中断のそれぞれで拠点へ戻るまでの流れ全体を検証する。
 - `godot --headless --path . --log-file .godot/smoke-test.log --quit-after 5`: 短時間の起動確認を行う。
 - `godot --headless --path . --script res://tools/text_catalog.gd`: 画面の日本語を変えた・足したときに、翻訳の表 `locale/text.csv` を作り直す。書いてある英訳は残り、使われなくなった行は消える（英訳があった行は表示する）。続けてimportし、`tests/test_translation.gd` で確かめる。
+- `python tools/build_vfx_art.py`: 攻撃のエフェクトの素材（斬撃の軌跡・稲妻・炎・衝撃の輪・雲模様）を、元絵から作り直す。後でimportする。
 - `python tools/build_battle_art.py`: 戦場に立つ物・床の落とし物・画風ごとの床と壁・残響のかけら・ボスの陣・強化のカードを、元絵から作り直す。`python tools/build_battle_sounds.py` は、戦闘の見せ場の音を作り直す。どちらの後もimportする。
 - `python tools/build_start_art.py`: ロゴ・メニューの石柱と紋章・章の窓枠と封印・広間の遠景の範囲を、`art/hub/source/` の元絵から作り直す。`python tools/build_start_sounds.py` は、起動から出撃までの音を作り直す。どちらの後もimportする。
 - `godot --headless --path . --script res://tools/build_theme.gd`: トークン（`ui/theme/theme_tokens.tres`）を変えたとき、またはThemeに色・文字サイズを手で足したときに、`ui/theme/dungeon_theme.tres` の色と文字サイズを書き出し直す。末尾に `-- --check` を付けると、書き出さずに食い違いだけを調べる。
@@ -45,7 +46,7 @@ GDScriptはUTF-8で記述し、インデントにはタブを使用します。�
 
 Nodeの `@export` 変数に、Script定数と同じ `.tres` をpreloadした既定値を持たせない。終了時に `SelfList` のエラー（`p_elem`）が出るためで、既定値はSceneか生成する側で設定する。テストで同じResourceを使うときは `load()` と型付きの変数で受け取る。このエラーは終了コードを変えず `--log-file` にも出ないため、疑わしいときはGodotを直接実行してコンソール出力で `p_elem` を探す。
 
-戦闘の演出（`BattleArea` の闇・視点・場所の色・減速、`AreaGround` の灯り、`SparkField`、`BossSigil`、`GemField` の描画）は、当たり判定・ダメージ・攻撃と無敵の時間・敵の動き・経験値の計算に触れない。世界を遅くする演出は `BattleArea._slow` を通し、実時間で測って必ず等速へ戻す（`docs/ゲーム仕様.md` の6章の表）。待ち時間を足す演出は入れず、ゲームの時間で数えている待ち（制圧後の1.4秒など）に合わせる。戦闘が続いている間は、敵・予兆・弾・かけらが床より明るく見えることを保ち、画面全体を白くする光を出さない。
+戦闘の演出（`BattleArea` の闇・視点・場所の色・減速、`AreaGround` の灯り、`SparkField`、`BossSigil`、`GemField` の描画）は、当たり判定・ダメージ・攻撃と無敵の時間・敵の動き・経験値の計算に触れない。世界を遅くする演出は `BattleArea._slow` を通し、実時間で測って必ず等速へ戻す（`docs/ゲーム仕様.md` の6章の表）。待ち時間を足す演出は入れず、ゲームの時間で数えている待ち（制圧後の1.4秒など）に合わせる。ボスの間は、登場（`BossIntro`）から始まる。広間の最初のフレームの前に世界を止め、動かし直すのは `BattleArea._finish_entrance` の1か所だけにする（最後まで流れた・打ち切った・登場が消えた・時間を過ぎた、のどれでも通る）。演出の完了を `await` で待って操作を戻す作りにしない。重なって出ると印象を弱め合う知らせ（「制圧完了」とレベルアップなど）は、同時に出さずに順に見せ、内部の処理（レベルの加算）は遅らせない。攻撃のエフェクトは `Vfx`（素材の絵をシェーダーで動かす）で出し、線や円のコード描画と、1枚絵の拡大とフェードに戻さない。戦闘が続いている間は、敵・予兆・弾・かけらが床より明るく見えることを保ち、画面全体を白くする光を出さない。
 
 ## UI変更の指針
 
@@ -97,7 +98,8 @@ Nodeの `@export` 変数に、Script定数と同じ `.tres` をpreloadした既�
 - 設定（一覧と実演）の状態ごとの見た目（開いた直後、音量を下げた、消音、打たれた瞬間の揺れ、画面モード、言語、操作の案内のONとOFF、ヘルプの行、ゲームの終了の行、英語、探索中のメニューから開いた設定）は `godot --path . --rendering-method gl_compatibility --log-file .godot/settings-capture.log --script res://tests/capture_settings.gd` で確認する。
 - 起動から三つの門までの状態ごとの見た目（門の光だけの闇、灯りが点く途中、ロゴが書かれる途中、ロゴが立った所、ロビーが入る途中、ロビー、別の項目を選んだロビー、広間の門へ近づく途中、出撃、章を変える途中、封印中の章、踏み込む途中、闇が閉じる所、闇の中の章の名前、闇が開く所、三つの門。1280×720・1920×1080・英語でも主な状態）は `godot --path . --rendering-method gl_compatibility --log-file .godot/start-capture.log --script res://tests/capture_start.gd` で確認する。音を含む通しの動画は、`tests/capture_start_movie.gd` の冒頭にある2つのコマンド（Godotの動画書き出しとffmpeg）で `.godot/start_movie.mp4` に書き出す。流れそのもの（起動が自分で進むこと、キーで飛ばせること、ロビーの入退場、カメラ、出撃の幕の段階と早送り、門が幕の開く瞬間に立ち上がること）は `tests/test_start_flow.gd` が検査する。
 - 進路の選択（分かれ道の門）の状態ごとの見た目（ランの最初の選択、出会っていない敵の門、3つの門、別の門、向いた門の詳細の札、イベントの門、進むかの確認、門へ歩く途中、石板で読んだエリアとボス、イベントの窓の後ろ、ボスの登場の前・途中・後、英語）は `godot --path . --rendering-method gl_compatibility --log-file .godot/route-capture.log --script res://tests/capture_route.gd` で確認する。動き（開く、門を向く、進むかを確かめる、取り消す、門へ歩く、ボスの登場）は、0.05秒おきのコマを並べた画像を `godot --path . --rendering-method gl_compatibility --log-file .godot/route-motion.log --script res://tests/capture_route_motion.gd` で撮って確かめる。音を含む通しの動画は、`tests/capture_route_movie.gd` の冒頭にある2つのコマンド（Godotの動画書き出しとffmpeg）で `.godot/route_movie.mp4` に書き出す。
-- 戦闘の見せ場ごとの見た目（エリアへの到着、戦場、斬撃、撃破、残響のかけらが落ちた所と吸い寄せられる所、レベルアップの瞬間、カードが配られる途中、手札、指したカード、取った瞬間、再開、1280×720・1920×1080・英語の手札、ボスの予兆・寄っていく途中・咆哮・名前・戦闘・怒り・撃破・制圧、敗北、旅立ちの加護）は `godot --path . --rendering-method gl_compatibility --log-file .godot/combat-capture.log --script res://tests/capture_combat.gd` で確認する。音を含む通しの動画（門から戦闘・レベルアップ・制圧・ボス・敗北まで）は、`tests/capture_combat_movie.gd` の冒頭にある2つのコマンド（Godotの動画書き出しとffmpeg）で `.godot/combat_movie.mp4` に書き出す。演出がルールに触れないこと（止まる場所が `AreaData.walls()` のままであること、世界を遅くする瞬間が必ず等速に戻ること、ボスの登場の間は時間もHPも動かないこと、複数のレベルアップで手札が1つずつ出ること）は `tests/test_battle_staging.gd` が検査する。
+- 攻撃のエフェクトの動き（軽い斬撃、重い斬撃、1周、突き、命中、重い命中、魔法、衝撃の輪、雷、炎、敵の攻撃を、それぞれ寿命の6つの時点で並べた画像）は `godot --path . --rendering-method gl_compatibility --log-file .godot/vfx-capture.log --script res://tests/capture_vfx.gd` で確認する。
+- 戦闘の見せ場ごとの見た目（エリアへの到着、戦場、斬撃、撃破、残響のかけらが落ちた所と吸い寄せられる所、レベルアップの瞬間、カードが配られる途中、手札、指したカード、取った瞬間、再開、1280×720・1920×1080・英語の手札、ボスの間に入った瞬間・予兆・現れる途中・咆哮・名前・戦闘・怒り・撃破・制圧、敗北、旅立ちの加護）は `godot --path . --rendering-method gl_compatibility --log-file .godot/combat-capture.log --script res://tests/capture_combat.gd` で確認する。音を含む通しの動画（門から戦闘・レベルアップ・制圧・ボス・敗北まで）は、`tests/capture_combat_movie.gd` の冒頭にある2つのコマンド（Godotの動画書き出しとffmpeg）で `.godot/combat_movie.mp4` に書き出す。演出がルールに触れないこと（止まる場所が `AreaData.walls()` のままであること、世界を遅くする瞬間が必ず等速に戻ること、ボスの登場の間は時間もHPも動かないこと、複数のレベルアップで手札が1つずつ出ること、ボスの間ではキーを押したままでも戦闘が始まるまで主人公が動かないこと、登場が消えてもエリアが戦闘を始めること、「制圧完了」のあとにレベルアップが出ること）は `tests/test_battle_staging.gd` が検査する。
 - 戦闘・ラン・ボスの見た目を変更した場合は `tests/capture_run_flow.gd`、`tests/capture_boss.gd`、`tests/capture_action_sandbox.gd` を、敵の描画や数を変えた場合は `tests/capture_crowd_perf.gd` でフレーム時間を描画可能な環境で確認する。実行できない検証は未確認として報告する。テストの操作手順をUIの変更に合わせる際も、保存・記録・状態復元などの検証を弱めない。
 - 群れの敵のリグを直したときは、描画できる環境で `godot --path . --script res://tools/bake_foe_frames.gd` を実行して連番画像を焼き直し、続けてimportする。
 

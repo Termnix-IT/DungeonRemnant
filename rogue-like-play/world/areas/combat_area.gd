@@ -56,13 +56,13 @@ const HEAL_OUTLINE := Color("06220f")
 const BURN_NUMBER := Color("ffa45c")
 const BURN_OUTLINE := Color("2a1004")
 const LIGHTNING := Color(0.7, 0.88, 1.0)
-const LIGHTNING_TIME := 0.22
-const LIGHTNING_JAGS := 5
+# The flash where lightning strikes a foe (world px across).
+const LIGHTNING_BURST := 70.0
 # A special move: the world nearly stops for its cut-in, and its landing
 # shakes the screen and flashes it white.
 const SPECIAL_SLOW := 0.04
 const SPECIAL_SHAKE := 8.0
-const SPECIAL_FLASH := Color(1.0, 0.97, 0.9, 0.5)
+const SPECIAL_FLASH := Color(1.0, 0.97, 0.9, 0.26)
 const SPECIAL_FLASH_TIME := 0.3
 # The light a blow throws on the floor, by its painted effect.
 # The sparks off a blow that lands (a heavy one throws more) and off her
@@ -74,7 +74,14 @@ const FALL_MOTES := 7
 const TREAD := 38.0
 const DUST := Color(0.62, 0.58, 0.5, 0.5)
 const SPARK_COLOUR := Color(1.0, 0.86, 0.6)
+# A foe's blow is struck in the red of its warning.
+const HOSTILE_TINT := Color(1.0, 0.4, 0.3)
+# How many crowd foes' blows are drawn within FOE_STRIKE_TIME of each other.
+const FOE_STRIKES_SHOWN := 8
+const FOE_STRIKE_TIME := 0.3
 const HURT_COLOUR := Color(1.0, 0.36, 0.28)
+# The burst where she is struck (world px across).
+const HURT_BURST := 96.0
 const FLASH_TINTS := {
 	&"slash": Color(1.0, 0.92, 0.72),
 	&"thrust": Color(1.0, 0.92, 0.72),
@@ -90,6 +97,9 @@ var actors: Node2D
 var effects: Node2D
 # The small lights that fly off blows, falls and gains.
 var sparks: SparkField
+# Which way the next blade's trail is swept (1 or -1): they alternate.
+var _swing_turn := 1.0
+var _foe_strikes := 0
 # Where she last kicked up dust.
 var _trod_at := Vector2.ZERO
 var popups: DamagePopups
@@ -152,7 +162,9 @@ func _ready() -> void:
 	add_child(effects)
 	sparks = SparkField.new()
 	sparks.name = "Sparks"
-	sparks.process_mode = Node.PROCESS_MODE_PAUSABLE
+	# The sparks fly on while the world is stopped (a boss's entrance, a
+	# level's cards): they are light, and what threw them has happened.
+	sparks.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(sparks)
 	popups = DamagePopups.new()
 	popups.name = "Popups"
@@ -315,8 +327,15 @@ func report_burst(foe: Foe) -> void:
 
 # Every foe whose body is inside the circle takes the blow.
 func blast(center: Vector2, radius: float, power: float, knockback: float, inflicts: Array[StringName], effect: StringName) -> void:
-	var across: float = StrikeEffect.PAINTED.get(effect, StrikeEffect.PAINTED[&"heavy"])[0]
-	_effect(effect, center + BODY_MIDDLE * 0.4, Vector2.RIGHT, radius * 2.0 / across)
+	var tint: Color = FLASH_TINTS.get(effect, FLASH_TINTS[&"heavy"])
+	if effect == &"flame":
+		Vfx.flame(effects, center + BODY_MIDDLE * 0.3, radius)
+	else:
+		Vfx.burst(effects, center + BODY_MIDDLE * 0.4, radius * 1.5, Color(tint, 0.88), effect, Vector2.ZERO, 1.0)
+	# What it covered, on the floor.
+	var covered := GroundRing.new()
+	marks.add_child(covered)
+	covered.start(center, radius, effect)
 	ground.flash(center, radius * 2.6, 0.95, FLASH_TINTS.get(effect, FLASH_TINTS[&"heavy"]), 0.34)
 	for foe in foes.duplicate():
 		if foe.dying or foe.global_position.distance_to(center) > radius + foe.hit_radius:
@@ -361,49 +380,67 @@ func chain(from: Vector2, skip: Foe, jumps: int, reach: float, power: float, inf
 		GameAudio.play(self, &"zap", -20.0)
 
 
+# Lightning along the points: a bolt between each two, striking three times
+# along three lines, and a flash where each foe is struck.
 func _lightning(points: PackedVector2Array) -> void:
-	var bolt := Line2D.new()
-	bolt.width = 3.0
-	bolt.default_color = LIGHTNING
-	bolt.z_index = 13
-	var light := CanvasItemMaterial.new()
-	light.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-	bolt.material = light
-	var jagged := PackedVector2Array([points[0]])
 	for index in range(1, points.size()):
-		var start := points[index - 1]
-		var end := points[index]
-		var side := (end - start).orthogonal().normalized()
-		for jag in range(1, LIGHTNING_JAGS):
-			var share := float(jag) / LIGHTNING_JAGS
-			jagged.append(start.lerp(end, share) + side * randf_range(-9.0, 9.0))
-		jagged.append(end)
-	bolt.points = jagged
-	effects.add_child(bolt)
-	var tween := bolt.create_tween()
-	tween.tween_property(bolt, "modulate:a", 0.0, LIGHTNING_TIME)
-	tween.tween_callback(bolt.queue_free)
+		Vfx.bolt(effects, points[index - 1], points[index], LIGHTNING)
+		Vfx.burst(effects, points[index], LIGHTNING_BURST, LIGHTNING, &"magic", points[index] - points[index - 1], 0.2)
 
 
 func report_swing(by: Hero, attack: AttackData, facing: Vector2) -> void:
-	var effect := StrikeEffect.new()
-	var across: float = StrikeEffect.PAINTED.get(attack.effect, StrikeEffect.PAINTED[&"slash"])[0]
-	var spread := 1.5
-	effect.scale = Vector2.ONE * attack.reach * spread / across
-	var points: Array[Vector2] = [Vector2.ZERO]
-	effect.position = by.global_position + BODY_MIDDLE * 0.6
-	if attack.shape != AttackData.Shape.CIRCLE:
-		effect.position += facing * attack.reach * 0.45
-	effects.add_child(effect)
-	effect.start(attack.effect, points, facing)
-	# A round blow also races out over the floor to its reach.
-	if attack.shape == AttackData.Shape.CIRCLE:
-		var ring := GroundRing.new()
-		marks.add_child(ring)
-		ring.start(by.global_position, attack.reach, attack.effect)
+	var middle := by.global_position + BODY_MIDDLE * 0.6
+	_strike_effect(middle, by.global_position, attack, facing, FLASH_TINTS.get(attack.effect, FLASH_TINTS[&"slash"]), 1.0)
 	GameAudio.play(self, SWING_SOUNDS.get(attack.effect, &"slash"), -18.0)
 	# The blade's light on the floor.
-	ground.flash(effect.position, attack.reach * 1.7, 0.3, FLASH_TINTS.get(attack.effect, FLASH_TINTS[&"slash"]), 0.16)
+	var lit := middle if attack.shape == AttackData.Shape.CIRCLE else middle + facing * attack.reach * 0.45
+	ground.flash(lit, attack.reach * 1.7, 0.3, FLASH_TINTS.get(attack.effect, FLASH_TINTS[&"slash"]), 0.16)
+
+
+# A foe's blow, at the moment it comes: the same shapes as hers, in the
+# red of its warning and fainter, so a blow is seen to be struck as well
+# as warned of. (A shot is its own sight.)
+func report_foe_strike(foe: Foe, attack: AttackData, facing: Vector2) -> void:
+	if attack.projectile != null:
+		return
+	var grand := foe.data.boss or foe.data.elite
+	# A crowd striking together is not drawn blow by blow past a few at a
+	# time: the warnings tell of the rest, and the screen stays readable.
+	if not grand:
+		if _foe_strikes >= FOE_STRIKES_SHOWN:
+			return
+		_foe_strikes += 1
+		get_tree().create_timer(FOE_STRIKE_TIME, false).timeout.connect(func(): _foe_strikes -= 1)
+	_strike_effect(foe.global_position + BODY_MIDDLE * 0.6, foe.global_position, attack, facing, HOSTILE_TINT, 0.9 if grand else 0.6, &"hostile")
+
+
+# What a blow looks like as it is struck, by its shape: an arc is a blade's
+# trail swept round it, one way and then the other on alternate blows; a
+# line is a thrust's streak; a round blow is a whole turn of the trail (or,
+# for a spell or fire, its burst) and a shock over the floor out to its
+# reach. `strength` fades it (a foe's is fainter than hers).
+func _strike_effect(middle: Vector2, feet: Vector2, attack: AttackData, facing: Vector2, tint: Color, strength: float, ring_kind: StringName = &"") -> void:
+	var heavy := attack.effect == &"heavy" or attack.knockback >= HEAVY_KNOCKBACK
+	var colour := Color(tint, strength)
+	_swing_turn = -_swing_turn
+	match attack.shape:
+		AttackData.Shape.LINE:
+			Vfx.lance(effects, middle, facing, attack.reach, maxf(attack.width * 1.6, 34.0), colour)
+		AttackData.Shape.CIRCLE:
+			if attack.effect == &"flame":
+				Vfx.flame(effects, middle, attack.reach, Color(1.0, 1.0, 1.0, strength))
+			elif attack.effect == &"magic":
+				Vfx.burst(effects, middle, attack.reach * 1.45, Color(colour, colour.a * 0.85), &"magic", Vector2.ZERO, 0.6)
+			else:
+				Vfx.slash(effects, middle, facing, attack.reach, 360.0, colour, _swing_turn, 1.0 if heavy else 0.5)
+			var ring := GroundRing.new()
+			marks.add_child(ring)
+			ring.start(feet, attack.reach, ring_kind if ring_kind != &"" else attack.effect)
+		_:
+			if attack.effect == &"thrust":
+				Vfx.lance(effects, middle, facing, attack.reach, attack.reach * 0.5, colour)
+			else:
+				Vfx.slash(effects, middle, facing, attack.reach, attack.arc_degrees, colour, _swing_turn, 1.0 if heavy else 0.0)
 
 
 # A special move let loose: the world nearly stops while its cut-in plays,
@@ -436,6 +473,7 @@ func report_special_impact(by: Hero, attack: AttackData) -> void:
 	var fade := white.create_tween().set_ignore_time_scale(true)
 	fade.tween_property(white, "color:a", 0.0, SPECIAL_FLASH_TIME)
 	fade.tween_callback(flash.queue_free)
+	Vfx.burst(effects, by.global_position + BODY_MIDDLE * 0.5, maxf(attack.reach * 1.6, 260.0), FLASH_TINTS[&"heavy"], &"heavy", Vector2.ZERO, 1.0)
 	if attack.shape == AttackData.Shape.CIRCLE:
 		var ring := GroundRing.new()
 		marks.add_child(ring)
@@ -487,6 +525,7 @@ func report_hero_hurt(by: Hero, lost: int, _info: DamageInfo) -> void:
 	hit_stop.request(HURT_STOP)
 	shake(HURT_SHAKE)
 	sparks.burst(by.global_position + BODY_MIDDLE, HEAVY_SPARKS, HURT_COLOUR, _info.direction, 1.0, Vector2(80.0, 240.0))
+	Vfx.burst(effects, by.global_position + BODY_MIDDLE, HURT_BURST, HURT_COLOUR, &"hit", _info.direction, 0.6)
 	ground.flash(by.global_position, 230.0, 0.6, HURT_COLOUR, 0.22)
 	GameAudio.play(self, &"heavy", -16.0)
 
@@ -517,6 +556,7 @@ func _on_foe_fell(foe: Foe) -> void:
 	sparks.burst(foe.global_position + BODY_MIDDLE * 0.6, FALL_MOTES * (3 if grand else 1), [GemField.SMALL, GemField.MIDDLE, GemField.LARGE][worth], Vector2.UP, 1.3, Vector2(30.0, 150.0 if grand else 110.0), Vector2(0.35, 0.8), 4.5, 1.0)
 	if grand:
 		ground.flash(foe.global_position, 420.0, 0.9, GemField.LARGE, 0.45)
+		Vfx.burst(effects, foe.global_position + BODY_MIDDLE * 0.6, 220.0, GemField.LARGE, &"heavy", Vector2.ZERO, 1.0)
 	var now := Time.get_ticks_msec()
 	if now - _last_death_sound >= DEATH_SOUND_GAP:
 		_last_death_sound = now
@@ -541,13 +581,27 @@ func _effect(kind: StringName, at: Vector2, direction: Vector2, size: float) -> 
 	if shown >= EFFECT_CAPS.get(kind, 1000):
 		return
 	_effects_shown[kind] = shown + 1
-	var effect := StrikeEffect.new()
-	effect.scale = Vector2.ONE * size
-	effect.position = at
-	effects.add_child(effect)
+	var across: float = StrikeEffect.PAINTED.get(kind, StrikeEffect.PAINTED[&"hit"])[0] * size
+	var effect: Node
+	match kind:
+		&"hit":
+			effect = Vfx.burst(effects, at, across * 1.5, SPARK_COLOUR, &"hit", direction, 0.0)
+		&"heavy":
+			effect = Vfx.burst(effects, at, across * 1.4, FLASH_TINTS[&"heavy"], &"heavy", direction, 1.0)
+		&"magic":
+			effect = Vfx.burst(effects, at, across * 1.5, FLASH_TINTS[&"magic"], &"magic", direction, 0.5)
+		&"flame":
+			effect = Vfx.flame(effects, at, across * 0.6)
+		_:
+			# Smoke, healing and the level's pillar are painted stills.
+			var still := StrikeEffect.new()
+			still.scale = Vector2.ONE * size
+			still.position = at
+			effects.add_child(still)
+			var points: Array[Vector2] = [Vector2.ZERO]
+			still.start(kind, points, direction)
+			effect = still
 	effect.tree_exited.connect(func(): _effects_shown[kind] = _effects_shown[kind] - 1)
-	var points: Array[Vector2] = [Vector2.ZERO]
-	effect.start(kind, points, direction)
 
 
 # Gems taken in a run rise in pitch, as a string of pickups climbs in
