@@ -16,6 +16,8 @@ const HUB_SCENE := preload("res://game/hub/hub.tscn")
 var store := MetaStore.new()
 var meta := MetaProgress.new()
 var active_run: RunDirector
+# The practice ground while it is open (from the help).
+var practice: PracticeRoom
 var transition: SceneTransition
 # The ending is owed: the run just recorded was the last chapter's first
 # clear, so the way home plays it first (EndingView).
@@ -78,6 +80,11 @@ func _hook_hub() -> void:
 	$Hub.start_requested.connect(start_run)
 	$Hub.upgrade_requested.connect(buy_upgrade)
 	$Hub.equip_requested.connect(equip_skill)
+	$Hub.practice_requested.connect(open_practice)
+	# Pages newly opened in the bestiary are kept (so they are not marked new again).
+	$Hub.codex_noted.connect(func():
+		if saving_enabled:
+			store.save_progress(meta))
 	$Hub.refresh(meta)
 
 
@@ -256,6 +263,33 @@ func return_to_hub() -> void:
 		ending_view.play()
 		return
 	_arrive_home(false)
+
+
+# The help's practice ground: the fight, to be tried by hand. It belongs to
+# no run and nothing of it is kept; leaving it comes back to the help's
+# demonstrations.
+func open_practice() -> void:
+	if active_run != null or practice != null or not has_node("Hub") or not $Hub.visible:
+		return
+	practice = PracticeRoom.new()
+	practice.name = "Practice"
+	practice.settings = $Hub.settings
+	practice.left.connect(_close_practice, CONNECT_DEFERRED)
+	$Hub.hide()
+	add_child(practice)
+
+
+func _close_practice() -> void:
+	if practice == null:
+		return
+	get_tree().paused = false
+	remove_child(practice)
+	practice.queue_free()
+	practice = null
+	GameMusic.muffle(self, false)
+	GameMusic.cue(self, &"hub")
+	$Hub.show()
+	$Hub.open_help(HubSettings.TOPIC_DEMOS)
 
 
 # Home to the lobby; after the ending, the steps it opened are named.

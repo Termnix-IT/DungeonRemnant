@@ -19,6 +19,12 @@ const MAX_HOLD := 0.12
 # quits (a script's function left here crashes the engine as it exits).
 static var clock: Callable = Time.get_ticks_usec
 
+# A stop that holds only these nodes (their processing is switched off for
+# its length) and leaves the engine's clock alone: a fight shown inside
+# another screen (StageArea) stops itself, not the screen. Empty: the stop
+# is the whole world's, by the engine's time scale.
+var scope: Array[Node] = []
+
 var _started_usec := -1
 var _end_usec := -1
 var _holding := false
@@ -40,7 +46,7 @@ func request(duration: float) -> void:
 		_started_usec = now
 	var cap := _started_usec + int(MAX_HOLD * 1000000.0)
 	_end_usec = mini(maxi(_end_usec, now + int(duration * 1000000.0)), cap)
-	Engine.time_scale = SLOW
+	_slow_to(SLOW)
 
 
 func _process(_delta: float) -> void:
@@ -53,14 +59,25 @@ func hold(duration: float, scale: float) -> void:
 	_holding = true
 	_started_usec = clock.call()
 	_end_usec = _started_usec + int(duration * 1000000.0)
-	Engine.time_scale = scale
+	_slow_to(scale)
 
 
 func release() -> void:
 	_started_usec = -1
 	_end_usec = -1
 	_holding = false
-	Engine.time_scale = 1.0
+	_slow_to(1.0)
+
+
+# The world (or, with a scope, only its nodes) at this pace. A scope is
+# either held still or let go: it has no slow motion of its own.
+func _slow_to(scale: float) -> void:
+	if scope.is_empty():
+		Engine.time_scale = scale
+		return
+	for part in scope:
+		if is_instance_valid(part):
+			part.process_mode = Node.PROCESS_MODE_ALWAYS if scale >= 1.0 else Node.PROCESS_MODE_DISABLED
 
 
 func _exit_tree() -> void:

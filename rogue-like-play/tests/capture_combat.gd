@@ -30,6 +30,7 @@ func capture() -> void:
 	_size(Vector2i(1600, 900))
 	await _field()
 	await _boss()
+	await _slain_large()
 	await _defeat()
 	await _blessing()
 	var result := OK
@@ -145,12 +146,46 @@ func _boss() -> void:
 	boss.receive(DamageInfo.make(1000000.0, Vector2.UP))
 	await _real(0.22)
 	await _grab("combat_boss_fall")
-	await _real(1.3)
+	# Its fall told as its entrance was: its name back in the lower third,
+	# the blade of light across it, the word of its slaying stamped, and the
+	# word standing over the hall let out of its red.
+	while not is_instance_valid(area.outro):
+		await process_frame
+	await _real(BossOutro.NAME_AT + BossOutro.NAME_TIME)
+	await _grab("combat_boss_slain_name")
+	await _real(BossOutro.CUT_AT + BossOutro.CUT_TIME * 0.6 - BossOutro.NAME_AT - BossOutro.NAME_TIME)
+	await _grab("combat_boss_slain_cut")
+	await _real(BossOutro.word_time() - BossOutro.CUT_AT - BossOutro.CUT_TIME * 0.6 + 0.03)
+	await _grab("combat_boss_slain_word")
+	await _real(0.5)
+	await _grab("combat_boss_cleared")
+	await _real(0.9)
 	while area.choosing():
 		area.choice._select(0)
 		await _real(0.5)
-	await _grab("combat_boss_cleared")
 	_leave()
+
+
+# The word of a boss's slaying at 1920x1080.
+func _slain_large() -> void:
+	_size(Vector2i(1920, 1080))
+	_enter("guardian_hall")
+	area.hero.health.max_hp = 100000
+	area.hero.health.hp = 100000
+	while area.staging or area.boss_foe == null:
+		await process_frame
+	await _real(0.6)
+	area.boss_foe.receive(DamageInfo.make(1000000.0, Vector2.UP))
+	while not is_instance_valid(area.outro) or not area.outro.landed:
+		await process_frame
+	await _real(0.25)
+	await _grab("combat_boss_slain_1920")
+	await _real(1.4)
+	while area.choosing():
+		area.choice._select(0)
+		await _real(0.5)
+	_leave()
+	_size(Vector2i(1600, 900))
 
 
 # Her fall.

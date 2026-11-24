@@ -20,6 +20,10 @@ signal start_requested
 signal upgrade_requested(id: StringName)
 signal equip_requested(slot: int, id: StringName)
 signal settings_changed
+# Pages newly opened in the bestiary were noted on the progress.
+signal codex_noted
+# The help's practice ground was asked for.
+signal practice_requested
 # The settings chose another language; Main rebuilds the hub in it.
 signal language_changed
 
@@ -162,6 +166,7 @@ func _ready() -> void:
 	codex_page = _page(HubCodex.new(), &"codex") as HubCodex
 	codex_page.offset_left = bleed
 	codex_page.offset_right = -bleed
+	codex_page.noted.connect(func(): codex_noted.emit())
 	sortie_page = _page(HubSortie.new(), &"sortie") as HubSortie
 	sortie_page.offset_left = bleed
 	sortie_page.offset_right = -bleed
@@ -174,6 +179,7 @@ func _ready() -> void:
 	settings_page.offset_left = bleed
 	settings_page.offset_right = -bleed
 	settings_page.changed.connect(func(): settings_changed.emit())
+	settings_page.practice_requested.connect(func(): practice_requested.emit())
 	settings_page.help_opened.connect(_settings_hints)
 	settings_page.help_close_requested.connect(go_back)
 	settings_page.language_changed.connect(func(): language_changed.emit())
@@ -402,6 +408,8 @@ func show_page(target: String) -> void:
 				codex_page.refresh(_meta)
 			codex_page.focus_first()
 			key_guide.add_hint("← / →", "◀ / ▶", tr("めくる"))
+			key_guide.add_hint("Enter", "A", tr("図版・観察"), codex_page.turn_leaf)
+			key_guide.add_hint("↑ / ↓", "▲ / ▼", tr("振る舞い"))
 			key_guide.add_hint("Q / E", "LB / RB", tr("分類"))
 			key_guide.add_hint("R", "Y", tr("並び"), codex_page.cycle_sort)
 		"settings":

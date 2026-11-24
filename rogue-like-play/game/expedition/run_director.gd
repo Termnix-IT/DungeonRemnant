@@ -583,14 +583,20 @@ func finish(cleared: bool, abandoned: bool = false) -> void:
 	var reached := mini(run.layer, run.route.size() - 1) + 1
 	var record := meta != null and reached > meta.best_of(chapter.id)
 	var first_clear := meta != null and cleared and meta.clears_of(chapter.id) == 0
+	# The foes this run met that the bestiary did not hold yet.
+	var discovered: Array = []
+	if meta != null:
+		for id: Variant in run.met.keys():
+			if not meta.has_met(StringName(str(id))):
+				discovered.append(StringName(str(id)))
 	result = {"cleared": cleared, "abandoned": abandoned, "record": record, "first_clear": first_clear, "echo_before": meta.echo if meta != null else -1, "layer": mini(run.layer, run.route.size() - 1), "layers": run.route.size(),
 		"chapter": tr(chapter.display_name), "chapter_id": String(chapter.id), "step": run.step, "time": run.time, "kills": run.kills,
-		"level": run.progression.level, "boons": boons, "emblems": emblems, "echo": run.echo, "met": run.met.keys(),
+		"level": run.progression.level, "boons": boons, "emblems": emblems, "echo": run.echo, "met": run.met.keys(), "discovered": discovered,
 		"path": run.taken.map(func(point: RouteMap.Waypoint) -> AreaData: return point.area), "fallen_to": fallen_to if not cleared and not abandoned else null, "build": build, "moveset": run.moveset}
 	map_view.hide()
 	GameMusic.cue(self, &"")
 	GameMusic.muffle(self, false)
-	end_view.present(result, returns_to_base, chapter.illustration)
+	end_view.present(result, returns_to_base)
 	finished.emit(result)
 
 

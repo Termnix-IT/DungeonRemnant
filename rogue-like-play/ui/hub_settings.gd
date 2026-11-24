@@ -38,6 +38,8 @@ signal help_opened
 # The help's close was clicked (the close among its keys); whoever shows
 # the page closes it as its own Esc would.
 signal help_close_requested
+# The help's practice ground was asked for (at the base only).
+signal practice_requested
 # The language row chose another language (already set in the settings);
 # whoever shows the page rebuilds its words in it.
 signal language_changed
@@ -62,9 +64,11 @@ const NOTES := ["すべての音の大きさ。0%で消音。", "拠点・戦場
 const TOPIC_RUN := 0
 const TOPIC_GROWTH := 1
 const TOPIC_CONTROLS := 2
-const TOPIC_CODEX := 3
-const TOPIC_BOONS := 4
-const TOPIC_EVENTS := 5
+# The demonstrations: the fight's moves shown as they are in play (HelpView).
+const TOPIC_DEMOS := 3
+const TOPIC_CODEX := 4
+const TOPIC_BOONS := 5
+const TOPIC_EVENTS := 6
 const HELP := [
 	["探索の流れ", [
 		"探索はいつもLv 1から始まります。分かれ道で行き先の門を選び、章の最後のボスを倒すと踏破です。",
@@ -91,8 +95,10 @@ const HELP := [
 		"必殺技は、攻撃を当てる・敵を倒す・傷を負うとゲージが溜まり、満ちると使えます。",
 		"拠点では、矢印キー（ゲームパッドは十字キー）で選び、Enter（A）で決定、Esc（B）で戻ります。",
 	]],
+	["実演", []],
 	["図鑑", [
 		"拠点の「図鑑」で、探索中に出会った敵を見返せます。",
+		"Enter（A）で「観察」に切り替えると、その敵が実際に動き、攻撃するところを見られます。",
 		"出会っていない敵は、影と「？？？」で表示されます。",
 		"Q・E（ゲームパッドはLB・RB）で種類を切り替えます。",
 	]],
@@ -136,6 +142,14 @@ const ACTION_WORDS := {7: "開く", 8: "終了する"}
 # The list, the stage, and the heights of a row and of a group's name.
 const LIST := Rect2(56.0, 14.0, 640.0, 640.0)
 const STAGE := Rect2(776.0, 24.0, 688.0, 400.0)
+# The fight's window stands this far inside the stage, and shows this many
+# world px across.
+const STAGE_INSET := 10.0
+const STAGE_VIEW := 500.0
+# The rows tried with the fight in the stage's window, and with which scene.
+const TRIALS := {0: &"sounds", 2: &"sounds", 4: &"shake"}
+const MUSIC_ROW := 1
+const AMBIENCE_ROW := 3
 const ROW := 44.0
 const HEAD := 50.0
 const GROUP_GAP := 14.0
@@ -164,6 +178,16 @@ var selected_topic: int:
 	get:
 		return help_view.topic if help_view != null else 0
 var _veil: Control
+# What the setting under the cursor is tried with, as it is in play: the
+# fight itself in the stage's window (the sounds of blows for the volumes of
+# everything and of effects; blows given and taken for the shake), a battle
+# tune for the music's volume and the field's air for the ambience's (at the
+# base; in a run the run's own are sounding already). All of it stops when
+# the cursor leaves the row or the page is left.
+var stage: FightStage
+var _staged: StringName = &""
+var _tuning := false
+var _air: BattleAmbience
 var _from := 0
 var _clock := 0.0
 var _kicks := {}
@@ -202,6 +226,11 @@ func _ready() -> void:
 	quit_prompt.canceled.connect(func():
 		quit_prompt.hide()
 		grab_focus())
+	stage = FightStage.new()
+	stage.name = "Trial"
+	stage.hide()
+	add_child(stage)
+	visibility_changed.connect(_try_setting)
 	_build_help()
 	resized.connect(_fit)
 	theme_changed.connect(_fit)
@@ -216,6 +245,10 @@ func _fit() -> void:
 		return
 	_zoom = minf(size.x / DESIGN.x, size.y / DESIGN.y)
 	_origin = ((size - DESIGN * _zoom) * 0.5).round()
+	if stage != null:
+		var window := STAGE.grow(-STAGE_INSET)
+		stage.position = _origin + window.position * _zoom
+		stage.size = window.size * _zoom
 	if _veil != null:
 		var screen := Rect2(Vector2.ZERO, size)
 		if is_inside_tree():
@@ -337,6 +370,9 @@ func put(row: int, to: int) -> bool:
 		match row:
 			SHAKE_ROW:
 				settings.shake_level = choice
+				# Tried at once: the blows again, at the new strength.
+				if stage != null and stage.playing():
+					stage.replay()
 			DISPLAY_ROW:
 				settings.fullscreen = choice == 1
 				settings.apply_display()
@@ -382,6 +418,9 @@ func accept() -> void:
 		_:
 			if kind(focused_row) == &"cycle":
 				change(1)
+			elif stage.playing():
+				# A volume: Enter plays what it is tried with again.
+				stage.replay()
 
 
 # Moves the cursor to a row.
@@ -453,7 +492,43 @@ func _process(delta: float) -> void:
 	# As in the lobby and the help, resting the pointer on a row chooses it.
 	if _rest_row >= 0 and _rest_row != focused_row and _clock - _rest_since >= HubLobby.HOVER_INTENT and not help_shown and not quit_prompt.visible:
 		choose(_rest_row)
+	_try_setting()
 	queue_redraw()
+
+
+# Keeps what the setting under the cursor is tried with in step with the
+# cursor: started when the cursor comes to its row, stopped when it leaves
+# or the page (or the help over it) hides it.
+func _try_setting() -> void:
+	if stage == null or settings == null:
+		return
+	var live := is_visible_in_tree() and not help_shown
+	var scene: StringName = TRIALS.get(focused_row, &"") if live else &""
+	if scene != _staged:
+		_staged = scene
+		if scene == &"":
+			stage.hide()
+			stage.halt()
+		else:
+			stage.show()
+			stage.show_scene(_trial_scene, 0, STAGE_VIEW)
+	var tune := live and focused_row == MUSIC_ROW and not in_run
+	if tune != _tuning:
+		_tuning = tune
+		GameMusic.cue(self, &"battle" if tune else &"hub")
+	var air := live and focused_row == AMBIENCE_ROW and not in_run
+	if air and _air == null:
+		_air = BattleAmbience.new()
+		add_child(_air)
+	elif not air and _air != null:
+		_air.queue_free()
+		_air = null
+
+
+# The scene of the trial, shaking as hard as the shake is set.
+func _trial_scene(area: StageArea) -> void:
+	StageScenes.scene(_staged).call(area)
+	area.shake_scale = settings.shake_scale()
 
 
 func _kick(what: StringName) -> void:
@@ -712,10 +787,13 @@ func _draw_stage() -> void:
 	_words(STAGE.position + Vector2(22.0, 32.0), tr("実演"), &"font", &"label_size", _colour(&"dim"))
 	var centre := STAGE.get_center() + Vector2(0.0, 10.0)
 	match focused_row:
-		0, 1, 2, 3:
+		0, 2, SHAKE_ROW:
+			# The fight itself is in the window (_try_setting).
+			pass
+		1, 3:
 			_show_sound(centre)
-		SHAKE_ROW:
-			_show_shake(centre)
+			if not in_run:
+				_words(Vector2(STAGE.position.x, STAGE.end.y - 22.0), tr("戦場の曲を流しています") if focused_row == MUSIC_ROW else tr("戦場の環境音を流しています"), &"font", &"label_size", _colour(&"gold", 0.9), HORIZONTAL_ALIGNMENT_CENTER, STAGE.size.x)
 		DISPLAY_ROW:
 			_show_screen(centre)
 		LANGUAGE_ROW:
@@ -866,6 +944,8 @@ func _build_help() -> void:
 	help_layer.add_child(help_view)
 	help_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	help_view.close_requested.connect(func(): help_close_requested.emit())
+	help_view.practice_requested.connect(func(): practice_requested.emit())
+	help_view.allows_practice = not in_run
 	help_close_hint = help_view.close_hint
 	# A page hidden behind another takes its help with it.
 	visibility_changed.connect(func():
@@ -882,6 +962,7 @@ func ask_quit() -> void:
 
 func open_help(topic: int) -> void:
 	help_shown = true
+	help_view.allows_practice = not in_run
 	help_layer.show()
 	help_view.open(topic)
 

@@ -51,12 +51,16 @@ func clear_area(run: RunDirector) -> void:
 		area.elapsed = area.data.survive_time
 	else:
 		area.clear()
-	for attempt in 4:
-		await wait(BattleArea.CLEAR_PAUSE * 0.5)
-		while area != null and is_instance_valid(area) and area.choosing():
+	# The area is left once its clearing has been told and any level's cards
+	# are answered (a boss's hall later: its fall is told first).
+	for attempt in 60:
+		if run.area == null:
+			break
+		await wait(0.2)
+		while is_instance_valid(area) and area.choosing() and area.choice.visible:
 			area.choice._select(0)
 			await process_frame
-	await wait(BattleArea.CLEAR_PAUSE)
+	await wait(0.2)
 	if run.choice.visible:
 		run.choice._select(0)
 	await process_frame
@@ -83,9 +87,13 @@ func run_tests() -> void:
 	check(not run.result.is_empty() and run.result.cleared, "Every layer cleared, the boss beaten: the run is won")
 	check(run.end_view.visible and run.end_view._button.text == "拠点へ戻る", "The result offers the way home")
 	var summary := run.end_view
-	check(summary._button.has_focus(), "The summary opens with the way on focused")
-	check(summary._button.get_index() == summary._button.get_parent().get_child_count() - 1, "The way on is at the foot of the window")
-	check(summary._tiles.get_child_count() == 4 and summary._boons.visible and summary._boons.get_child_count() == run.result.build.size() and run.result.build.size() == run.run.build.owned().size() and run.result.build.size() > 0, "The run's figures and every boon taken are in view at once, without tabs")
+	check(summary.outcome == &"clear" and not summary.settled and not summary._button.has_focus(), "The won run's scene plays first: the way on takes no press yet")
+	var sheet: Rect2 = summary._panel.get_global_rect()
+	var way_on: Rect2 = summary._button.get_global_rect()
+	check(sheet.encloses(way_on) and way_on.get_center().x > sheet.get_center().x + sheet.size.x * 0.2 and way_on.get_center().y > sheet.get_center().y + sheet.size.y * 0.3, "The way on stands at the lower right of the scene")
+	check(summary.hero != null and summary.hero.is_visible_in_tree() and not summary._foe.visible, "She stands before the door of a run won")
+	check(summary.found.size() == run.result.discovered.size() and summary.found.size() > 0 and summary.found.any(func(foe: FoeData) -> bool: return foe.id == &"ruin_king"), "The foes this run recorded for the first time are shown")
+	check(summary.figures.size() == 4 and summary._boons.visible and summary._boons.get_child_count() == run.result.build.size() and run.result.build.size() == run.run.build.owned().size() and run.result.build.size() > 0, "The run's figures and every boon taken are in view at once, without tabs")
 	var first_boon: BoonData = run.result.build[0][0]
 	check(summary._boon_name.text == first_boon.display_name and summary._boon_cells[0].lit and summary._button.focus_neighbor_top == summary._boon_cells[0].get_path(), "The first boon is told under the grid, and up from the way on reaches it")
 	summary._boon_cells[-1].grab_focus()
@@ -101,7 +109,8 @@ func run_tests() -> void:
 	check(summary.counted and summary.total_label.text == "所持 残響 %s" % UIFormat.amount(run.result.echo_before + run.result.echo), "The echo has counted up, and so has the purse")
 	check(summary.seal.visible and summary.seal.texture == RunEndView.SEALS[&"clear"] and summary.seal.scale.is_equal_approx(Vector2.ONE), "The win's seal is stamped beside the heading")
 	check(summary.record_label.visible and summary.record_label.modulate.a > 0.95 and summary.record_label.text == "初めての踏破", "And the first clear is told in gold")
-	check(summary._art.texture == run.CHAPTER.illustration and summary._echo.text == UIFormat.amount(run.result.echo), "The summary lies over the chapter's illustration, the echo counted up to what was brought home")
+	check(summary._art.texture == RunEndView.PAINTINGS[&"clear"] and summary._echo.text == UIFormat.amount(run.result.echo), "The scene is the dawn at the last hall's door, the echo counted up to what was brought home")
+	check(summary.settled and summary._button.has_focus() and is_equal_approx(summary._button.modulate.a, 1.0), "Once the scene is all in, the way on is focused")
 	var echo: int = run.result.echo
 	check(main.meta.runs == 1 and main.meta.clears == 1 and main.meta.echo == echo and echo > 0, "The win is recorded with its echo")
 	check(main.meta.best_layer == run.run.route.size() and main.meta.has_met(&"ruin_king"), "The deepest layer and the foes met are recorded")
@@ -129,10 +138,28 @@ func run_tests() -> void:
 	shot.free()
 	await wait(RunDirector.FALL_PAUSE + 0.3)
 	check(not run.result.cleared and not run.result.abandoned and main.meta.echo == echo + 25 and main.meta.runs == 2, "A lost run is recorded, its echo kept")
-	check(run.result.fallen_to == shooter and run.end_view.journey.ended_at == 1 and not (run.end_view.journey.figure is DirectionalRig) and run.end_view.journey.caption.text == "%sに倒された" % shooter.display_name, "The way ends on the stage she fell on, the foe that felled her standing there")
-	run.end_view._button.pressed.emit()
+	var fallen := run.end_view
+	check(fallen.outcome == &"defeat" and fallen._art.texture == RunEndView.PAINTINGS[&"defeat"] and fallen.hero == null and fallen.felled_by == shooter and fallen._foe.visible and fallen._foe.texture == EnemySprites.codex_portrait(shooter.visual_id), "A lost run's scene is another: her sword in the dark, and who felled her standing over it")
+	check(fallen.found.is_empty() or not fallen.found.any(func(foe: FoeData) -> bool: return foe.id == &"ruin_king"), "A foe already recorded is not told as new again")
+	# A press while the scene plays brings it all in; it does not leave.
+	check(not fallen.settled and fallen.count_time() < 0.6, "It plays quietly, the echo counted quickly")
+	var enter := InputEventKey.new()
+	enter.keycode = KEY_ENTER
+	enter.physical_keycode = KEY_ENTER
+	enter.pressed = true
+	root.push_input(enter)
 	await process_frame
-	check(main.active_run == null and hub.visible, "A lost run comes home too")
+	check(fallen.settled and fallen.counted and main.active_run == run and fallen.visible and fallen._button.has_focus(), "A press during the scene shows all of it at once and stays on the result")
+	root.push_input(enter)
+	await process_frame
+	check(main.active_run == run, "A second press straight after does not leave either")
+	check(fallen._echo.text == UIFormat.amount(25) and fallen.seal.visible and fallen.seal.texture == RunEndView.SEALS[&"defeat"], "All of it is in: the echo kept, the seal of a fall")
+	check(run.result.fallen_to == shooter and run.end_view.journey.ended_at == 1 and not (run.end_view.journey.figure is DirectionalRig) and run.end_view.journey.caption.text == "%sに倒された" % shooter.display_name, "The way ends on the stage she fell on, the foe that felled her standing there")
+	await create_timer(RunEndView.LEAVE_GUARD + 0.1).timeout
+	root.push_input(enter)
+	await process_frame
+	await process_frame
+	check(main.active_run == null and hub.visible, "A moment later the press takes the way on: a lost run comes home too")
 
 	# A run left from the menu.
 	run = await set_out(main)
@@ -152,6 +179,7 @@ func run_tests() -> void:
 	check(run.result.abandoned and main.meta.echo == echo + 35 and main.meta.runs == 3, "A run left is recorded as left, its echo kept")
 	check(run.area == null and run.end_view.visible and not paused, "Leaving ends the run on its result")
 	check(run.result.fallen_to == null and run.end_view.journey.figure is DirectionalRig and run.end_view.journey.caption.text.ends_with("で引き返した"), "A run left ends with her where she turned back")
+	check(run.end_view.outcome == &"return" and run.end_view._art.texture == RunEndView.PAINTINGS[&"return"] and run.end_view.hero == null and not run.end_view._foe.visible and run.end_view.felled_by == null, "Its scene is the corridor back, with no one in it")
 	run.end_view._button.pressed.emit()
 	await process_frame
 	check(main.active_run == null and hub.visible, "A run left comes home too")

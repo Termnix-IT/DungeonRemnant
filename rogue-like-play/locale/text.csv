@@ -493,6 +493,8 @@ HPが足りない,,Not enough HP,game/expedition/run_director.gd
 ステータス,,Status,game/hub/hub.gd
 図鑑,,Bestiary,game/hub/hub.gd
 めくる,,Turn,game/hub/hub.gd
+図版・観察,,Plate / Watch,game/hub/hub.gd
+振る舞い,,Behaviour,game/hub/hub.gd
 分類,,Category,game/hub/hub.gd
 並び,,Order,game/hub/hub.gd
 設定,,Settings,game/hub/hub.gd
@@ -547,6 +549,7 @@ HPが足りない,,Not enough HP,game/expedition/run_director.gd
 引き直す（残り%d）,,Reroll (%d left),ui/ability_choice.gd
 Lv %d　強化を1つ選ぶ,,Lv %d: Choose a boon,ui/ability_choice.gd
 このあと、もう%d回選べます,,Picks left after this: %d,ui/ability_choice.gd
+討伐,,SLAIN,ui/boss_outro.gd
 決定,,Confirm,ui/choice_prompt.gd
 レベルアップで選んだ強化が、ここに並ぶ,,Boons chosen on level-up appear here,ui/dungeon_menu.gd
 探索を中断しますか？,,Abandon this run?,ui/dungeon_menu.gd
@@ -592,19 +595,47 @@ Godot Engine のロゴ　Andrea Calabró,,Godot Engine logo　Andrea Calabró,ui
 Esc（B）を長押しで飛ばす,,Hold Esc (B) to skip,ui/ending_view.gd
 閉じる,,Close,ui/help_view.gd
 話題,,Topic,ui/help_view.gd
+実際の戦闘で見る,,See it in a real fight,ui/help_view.gd
+↑ / ↓　動きを選ぶ　　Enter　もう一度,,↑ / ↓  Choose a move    Enter  Play again,ui/help_view.gd
+T　練習場で自分で試す,,T  Try it yourself in the practice ground,ui/help_view.gd
+練習場は、拠点のヘルプから行けます。,,The practice ground is reached from the Help at the base.,ui/help_view.gd
 キーボード,,Keyboard,ui/help_view.gd
 ゲームパッド,,Gamepad,ui/help_view.gd
 ？？？,,???,ui/hub_codex.gd
 まだ出会っていない敵。探索で戦場に現れると記録される。,,A foe you haven't met yet. It is recorded once it appears on a run.,ui/hub_codex.gd
+図版,,Plate,ui/hub_codex.gd
+観察,,Watch,ui/hub_codex.gd
 番号順,,By number,ui/hub_codex.gd
 HPの高い順,,Highest HP first,ui/hub_codex.gd
 ぶつかる力の高い順,,Highest contact damage first,ui/hub_codex.gd
 速さの高い順,,Fastest first,ui/hub_codex.gd
 ぶつかる力,,Contact Damage,ui/hub_codex.gd
 速さ,,Speed,ui/hub_codex.gd
+狩り,,Hunting,ui/hub_codex.gd
+実戦と同じように、主人公へ向かってくる。,,It comes for you as it does in a real fight.,ui/hub_codex.gd
+立ち姿,,Standing,ui/hub_codex.gd
+主人公と並べて、大きさを比べる。,,"It stands beside you, to compare its size.",ui/hub_codex.gd
+%s（怒り）,,%s (enraged),ui/hub_codex.gd
+弾を撃つ,,Shot,ui/hub_codex.gd
+飛びかかる,,Pounce,ui/hub_codex.gd
+周りを打つ,,Slam,ui/hub_codex.gd
+突く,,Thrust,ui/hub_codex.gd
+大きく薙ぐ,,Wide sweep,ui/hub_codex.gd
+斬りつける,,Slash,ui/hub_codex.gd
 図版　第 %02d,,Plate %02d,ui/hub_codex.gd
 %sの類,,Class: %s,ui/hub_codex.gd
 いまだ観察されず,,Not yet observed,ui/hub_codex.gd
+新,,NEW,ui/hub_codex.gd
+出会うと観察できる,,Meet it to watch it,ui/hub_codex.gd
+近くから見ている　Z で引く,,Close view   Z to pull back,ui/hub_codex.gd
+引いて見ている　Z で寄る,,Wide view   Z to close in,ui/hub_codex.gd
+主人公と並べた大きさ,,Its size beside you,ui/hub_codex.gd
+その振る舞い,,Its ways,ui/hub_codex.gd
+予備動作,,Wind-up,ui/hub_codex.gd
+%s秒,,%ss,ui/hub_codex.gd
+届く距離,,Reach,ui/hub_codex.gd
+%sマス,,%s tiles,ui/hub_codex.gd
+威力,,Power,ui/hub_codex.gd
 記,notes,Notes,ui/hub_codex.gd
 観察記,,Observations,ui/hub_codex.gd
 覚え書き,,Memorandum,ui/hub_codex.gd
@@ -695,7 +726,9 @@ HPは次のエリアへ持ち越します。レベルとレベルアップの強
 敵の攻撃の前には床に赤い印が出ます。印が埋まる前に外へ出るか、ダッシュで抜けてください。,,"Red warnings appear on the floor before a foe attacks. Get out before the warning fills, or dash through it.",ui/hub_settings.gd
 必殺技は、攻撃を当てる・敵を倒す・傷を負うとゲージが溜まり、満ちると使えます。,,"Your Special's gauge fills as you land hits, defeat foes and take damage; use it once the gauge is full.",ui/hub_settings.gd
 拠点では、矢印キー（ゲームパッドは十字キー）で選び、Enter（A）で決定、Esc（B）で戻ります。,,"At the base, choose with the arrow keys (D-pad on a gamepad), confirm with Enter (A) and go back with Esc (B).",ui/hub_settings.gd
+実演,,Preview,ui/hub_settings.gd
 拠点の「図鑑」で、探索中に出会った敵を見返せます。,,Look back over the foes met on your runs in the Bestiary at the base.,ui/hub_settings.gd
+Enter（A）で「観察」に切り替えると、その敵が実際に動き、攻撃するところを見られます。,,Press Enter (A) to turn to Watch and see the foe move and attack for real.,ui/hub_settings.gd
 出会っていない敵は、影と「？？？」で表示されます。,,Foes you haven't met are shown as a shadow and ???.,ui/hub_settings.gd
 Q・E（ゲームパッドはLB・RB）で種類を切り替えます。,,Switch categories with Q / E (LB / RB on a gamepad).,ui/hub_settings.gd
 強化と状態異常,,Boons and Ailments,ui/hub_settings.gd
@@ -726,7 +759,8 @@ Q・E（ゲームパッドはLB・RB）で種類を切り替えます。,,Switch
 クリック,,Click,ui/hub_settings.gd
 開く,,Open,ui/hub_settings.gd
 終了する,,Quit,ui/hub_settings.gd
-実演,,Preview,ui/hub_settings.gd
+戦場の曲を流しています,,Playing the battle tune,ui/hub_settings.gd
+戦場の環境音を流しています,,Playing the battlefield's ambience,ui/hub_settings.gd
 消音,,Muted,ui/hub_settings.gd
 封印中,,Sealed,ui/hub_sortie.gd
 未踏,,Unexplored,ui/hub_sortie.gd
@@ -767,11 +801,9 @@ Q・E（ゲームパッドはLB・RB）で種類を切り替えます。,,Switch
 未開放の枝,,Locked branch,ui/hub_status.gd
 「%s」を外す,,Removes %s,ui/hub_status.gd
 ゲージ,,Gauge,ui/hub_status.gd
-威力,,Power,ui/hub_status.gd
 装備する,,Equip,ui/hub_status.gd
 %s に付ける,,Equips to %s,ui/hub_status.gd
 再使用,,Cooldown,ui/hub_status.gd
-%s秒,,%ss,ui/hub_status.gd
 入れ替える,,Swap,ui/hub_status.gd
 %s から移す,,Moves from %s,ui/hub_status.gd
 「%s」と場所を入れ替える,,Swaps places with %s,ui/hub_status.gd
@@ -854,8 +886,6 @@ X・RT長押し,,Hold X / RT,ui/action_hud/action_hud.gd
 戦闘なし,,No combat,ui/route_map/route_gates.gd
 ＋ 残響 %s,,+%s Echoes,ui/route_map/route_gates.gd
 この探索で取得した強化はない,,No boons were gained on this run,ui/route_map/run_end_view.gd
-持ち帰った残響,,Echoes Brought Back,ui/route_map/run_end_view.gd
-取得した強化,,Boons Gained,ui/route_map/run_end_view.gd
 新しい探索を始める,,Start a New Run,ui/route_map/run_end_view.gd
 踏破,,Cleared,ui/route_map/run_end_view.gd
 中断,,Abandoned,ui/route_map/run_end_view.gd
@@ -874,12 +904,27 @@ X・RT長押し,,Hold X / RT,ui/action_hud/action_hud.gd
 初めての踏破,,First Clear,ui/route_map/run_end_view.gd
 最深到達を更新,,New Deepest Floor,ui/route_map/run_end_view.gd
 所持 残響 %s,,Echoes Held %s,ui/route_map/run_end_view.gd
+持ち帰った残響,,Echoes Brought Back,ui/route_map/run_end_view.gd
+新たに記録した魔物,,Newly Recorded Foes,ui/route_map/run_end_view.gd
+ほか%d体,,+%d more,ui/route_map/run_end_view.gd
+取得した強化,,Boons Gained,ui/route_map/run_end_view.gd
+倒された相手,,Felled By,ui/route_map/run_end_view.gd
+図鑑の「観察」で、動きと攻撃を確かめられます。,,Study how it moves and attacks under Watch in the Bestiary.,ui/route_map/run_end_view.gd
 %sに倒された,,Defeated by %s,ui/route_map/run_journey.gd
 %sで倒れた,,Fell in %s,ui/route_map/run_journey.gd
 %sを倒した,,Defeated %s,ui/route_map/run_journey.gd
 最奥まで踏破した,,Cleared to the very end,ui/route_map/run_journey.gd
 %sで引き返した,,Turned back at %s,ui/route_map/run_journey.gd
 出発点で引き返した,,Turned back at the start,ui/route_map/run_journey.gd
+足元の輪が主人公です。移動の向きへ走ります。,,The ring at your feet marks you. You run the way you steer.,ui/stage/stage_scenes.gd
+攻撃・連撃,,Attack & Combo,ui/stage/stage_scenes.gd
+続けて押すと連撃になり、最後の一撃が締めです。,,Press again and again for a combo; its last blow is the finisher.,ui/stage/stage_scenes.gd
+長押しで溜め、離すと周りをまとめて打ちます。,,"Hold to charge, then let go to strike everything around you.",ui/stage/stage_scenes.gd
+赤い印が埋まる前に、ダッシュで外へ抜けます。,,Dash out before the red mark fills.,ui/stage/stage_scenes.gd
+使うと、しばらく待ってからまた使えます。,,"Once used, it is ready again after a short wait.",ui/stage/stage_scenes.gd
+ゲージが満ちると、周りの敵をまとめて倒します。,,"With the gauge full, it fells the foes all around you.",ui/stage/stage_scenes.gd
+残響のかけら,,Echo Shards,ui/stage/stage_scenes.gd
+倒した敵が落とすかけらを集めると、レベルが上がります。,,Gather the shards fallen foes drop and your level rises.,ui/stage/stage_scenes.gd
 フィールド,,Field,world/areas/area_data.gd
 アリーナ,,Arena,world/areas/area_data.gd
 イベント,,Event,world/areas/area_data.gd
@@ -900,6 +945,19 @@ X・RT,,X / RT,world/areas/first_lessons.gd
 攻撃　続けて押すと連撃,,Attack: Press repeatedly to combo,world/areas/first_lessons.gd
 ダッシュ　赤い印は、これで抜ける,,Dash: Slip through red warnings with it,world/areas/first_lessons.gd
 溜め攻撃　溜まったら離す,,Charged Attack: Release once charged,world/areas/first_lessons.gd
+いない,,None,world/areas/practice_room.gd
+少し,,A few,world/areas/practice_room.gd
+大群,,Horde,world/areas/practice_room.gd
+練習を終える,,End Practice,world/areas/practice_room.gd
+練習場,,Practice Ground,world/areas/practice_room.gd
+L（L3）　レベルアップ,,L (L3)   Level up,world/areas/practice_room.gd
+G（R3）　必殺ゲージを満たす,,G (R3)   Fill the Special gauge,world/areas/practice_room.gd
+Esc（Start）　メニュー・練習を終える,,Esc (Start)   Menu / end practice,world/areas/practice_room.gd
+1〜4（Back）　敵の数：%s,,1-4 (Back)   Foes: %s,world/areas/practice_room.gd
+練習場では倒れません,,You cannot fall in the practice ground,world/areas/practice_room.gd
+練習を終えますか？,,End the practice?,world/areas/practice_room.gd
+練習場で得たレベルと強化は残りません。,,The levels and boons gained in the practice ground are not kept.,world/areas/practice_room.gd
+続ける,,Keep Going,world/areas/practice_room.gd
 倒れました　Enterで再開,,You Fell  Press Enter to restart,world/areas/sandbox.gd
 1〜5 敵の数を固定　0 時間で増加　／　L レベルアップ　G 必殺ゲージ　H 必殺技　J 武器の切り替え（試験用）,,1–5 Fix foe count  0 Grow over time  /  L Level up  G Special gauge  H Special  J Switch weapon (testing),world/areas/sandbox.gd
 必殺技：%s,,Special: %s,world/areas/sandbox.gd

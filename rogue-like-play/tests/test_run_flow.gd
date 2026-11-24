@@ -50,11 +50,13 @@ func clear_area(director: RunDirector) -> void:
 	var until := Time.get_ticks_msec() + roundi((BossIntro.total_time() + BattleArea.ENTRANCE_GRACE) * 1000.0) + 2000
 	while area.staging and Time.get_ticks_msec() < until:
 		await process_frame
+	# A boss's hall is left later: its fall is told first.
+	var pause := BattleArea.BOSS_CLEAR_PAUSE + BattleArea.BOSS_FALL_TIME if area.data.boss != null else BattleArea.CLEAR_PAUSE
 	if area.data.kind == AreaData.Kind.FIELD and area.data.survive_time > 0.0:
 		area.elapsed = area.data.survive_time
 	else:
 		area.clear()
-	await wait(BattleArea.CLEAR_PAUSE + 0.3)
+	await wait(pause + 0.3)
 	if director.choice.visible:
 		director.choice._select(0)
 	await process_frame

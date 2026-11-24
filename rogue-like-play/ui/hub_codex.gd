@@ -38,6 +38,11 @@ const TEXT_WIDTH := 620.0
 const NOTES_LEFT := 800.0
 const NOTES_WIDTH := 600.0
 const TRAY := Rect2(40.0, 574.0, 1440.0, 106.0)
+# The window of the leaf where a foe is watched alive, and how many world px
+# it shows across in its close view.
+const WATCH := Rect2(92.0, 164.0, 664.0, 340.0)
+const CLOSE_VIEW := 300.0
+const LEAVES := ["図版", "観察"]
 const SPECIMEN := 24.0
 const SPECIMEN_STEP := 66.0
 const SPECIMENS_LEFT := 262.0
@@ -50,7 +55,20 @@ const BREATH_TIME := 3.2
 const SORTS := ["", "hp", "contact", "speed"]
 const SORT_NAMES := ["番号順", "HPの高い順", "ぶつかる力の高い順", "速さの高い順"]
 
+# Pages newly opened were noted on the progress (it is to be saved).
+signal noted
+
 var meta: MetaProgress
+# The open leaf of the open foe's page: 0, its plate (the painting and its
+# measures); 1, the watch (the foe itself, alive on its own ground, doing
+# what it does). On the watch: which of its ways is shown, and whether from
+# close by.
+var leaf := 0
+var motion := 0
+var close := false
+var stage: FightStage
+var _motions: Array = []
+var _noted_any := false
 # The kind shown (FoeCatalog.KINDS), the tray's order (SORTS), the plate
 # open (an index in `listed`), and the kind's foes in the tray's order.
 var kind := 0
@@ -102,6 +120,13 @@ func _ready() -> void:
 	_figure.add_child(_portrait)
 	_flat = ShaderMaterial.new()
 	_flat.shader = FLAT
+	# The watch: a window onto the foe alive, under the page's own drawing.
+	stage = FightStage.new()
+	stage.name = "Watch"
+	stage.show_behind_parent = true
+	stage.hide()
+	add_child(stage)
+	visibility_changed.connect(_on_page_shown)
 	resized.connect(_fit)
 	theme_changed.connect(_fit)
 	_fit()
@@ -119,6 +144,9 @@ func _fit() -> void:
 	paper.set_shader_parameter(&"zoom", _zoom)
 	for item: StringName in [&"page_dark", &"page_light"]:
 		paper.set_shader_parameter(item, get_theme_color(item))
+	if stage != null:
+		stage.position = _origin + WATCH.position * _zoom
+		stage.size = WATCH.size * _zoom
 	_place_figure()
 	queue_redraw()
 
@@ -203,8 +231,162 @@ func _tell() -> void:
 		foe = foe, known = met, kind = FoeCatalog.kind_name(foe), stats = stats, account = account,
 		name = tr(foe.display_name) if met else tr(UNKNOWN_NAME),
 		epithet = tr(foe.epithet) if met and not foe.epithet.is_empty() else "",
+		fresh = met and meta.is_new(foe.id),
 	}
 	_stand(foe, met)
+	# A foe met has ways to be watched; one not met has only its shape.
+	_motions = HubCodex.motions_of(foe) if met else []
+	motion = clampi(motion, 0, maxi(0, _motions.size() - 1))
+	if not met:
+		leaf = 0
+	elif meta.note(foe.id):
+		_noted_any = true
+	_show_leaf()
+
+
+# What a foe can be watched doing: [id, name, what is told of it, attack,
+# whether it is an attack of its rage] (an attack is told by its figures).
+# Hunting her as in play, standing beside her for its size, and each of its
+# attacks, named by what it is (a foe's data gives its attacks no names).
+static func motions_of(foe: FoeData) -> Array:
+	var ways := [
+		[&"hunt", "狩り", "実戦と同じように、主人公へ向かってくる。", null, false],
+		[&"still", "立ち姿", "主人公と並べて、大きさを比べる。", null, false],
+	]
+	var attacks: Array = foe.attacks.duplicate()
+	var raging := attacks.size()
+	attacks.append_array(foe.phase_two_attacks)
+	for index in attacks.size():
+		var attack: AttackData = attacks[index]
+		ways.append([&"attack", attack_name(attack), "", attack, index >= raging])
+	return ways
+
+
+# The name of a way as it is shown: an attack of its rage says so.
+static func motion_name(way: Array) -> String:
+	var name := TranslationServer.translate(way[1])
+	return TranslationServer.translate("%s（怒り）") % name if way[4] else String(name)
+
+
+static func _reach_of(attack: AttackData) -> float:
+	return attack.projectile.distance if attack.projectile != null else attack.reach
+
+
+# What an attack is, from its shape.
+static func attack_name(attack: AttackData) -> String:
+	if attack.projectile != null:
+		return "弾を撃つ"
+	if attack.lunge >= 60.0:
+		return "飛びかかる"
+	match attack.shape:
+		AttackData.Shape.CIRCLE:
+			return "周りを打つ"
+		AttackData.Shape.LINE:
+			return "突く"
+	return "大きく薙ぐ" if attack.arc_degrees >= 150.0 else "斬りつける"
+
+
+# The open leaf: the painting, or the window onto the foe alive.
+func _show_leaf() -> void:
+	if stage == null:
+		return
+	var watching: bool = leaf == 1 and not told.is_empty() and told.known
+	_figure.visible = not watching
+	stage.visible = watching
+	if watching:
+		_watch()
+	else:
+		stage.halt()
+
+
+# Turns to the other leaf of the page (a foe not met has only its plate).
+func turn_leaf(to: int = -1) -> void:
+	if told.is_empty() or not told.known:
+		return
+	var next := (leaf + 1) % LEAVES.size() if to < 0 else clampi(to, 0, LEAVES.size() - 1)
+	if next == leaf:
+		return
+	leaf = next
+	_kick(&"leaf")
+	_sound(&"ui_open")
+	_show_leaf()
+	queue_redraw()
+
+
+# Another of its ways to be watched.
+func choose_motion(to: int) -> void:
+	if _motions.is_empty():
+		return
+	to = posmod(to, _motions.size())
+	if to == motion and stage.playing():
+		stage.replay()
+		return
+	motion = to
+	_kick(&"motion")
+	_sound(&"ui_move")
+	_watch()
+	queue_redraw()
+
+
+func toggle_close() -> void:
+	close = not close
+	_sound(&"ui_move")
+	_watch()
+	queue_redraw()
+
+
+# How far apart the two stand for the way shown.
+func _apart() -> float:
+	var way: Array = _motions[motion]
+	var attack: AttackData = way[3]
+	if attack == null:
+		return 300.0 if way[0] == &"hunt" else 130.0
+	if attack.projectile != null:
+		return clampf((attack.use_from + attack.use_until) * 0.5, 170.0, 330.0) if attack.use_until > 0.0 else 250.0
+	if attack.lunge >= 60.0:
+		return attack.reach * 0.85
+	return maxf(attack.reach * 0.7, 46.0)
+
+
+# Plays the way shown on the foe's own ground.
+func _watch() -> void:
+	if _motions.is_empty() or not stage.visible:
+		return
+	var apart := _apart()
+	var across := CLOSE_VIEW if close else clampf(apart + 380.0, 430.0, 860.0)
+	var offset := Vector2(apart * 0.5, -24.0) if close else Vector2(0.0, -20.0)
+	stage.show_scene(_watch_scene, FoeCatalog.home_theme(told.foe), across, offset)
+
+
+# The scene of the way shown: she on the left, the foe on the right.
+func _watch_scene(area: StageArea) -> void:
+	var foe: FoeData = told.foe
+	var way: Array = _motions[motion]
+	var apart := _apart()
+	area.enter_hero(area.middle() + Vector2(-apart * 0.5, 12.0))
+	area.steer(Vector2.ZERO, Vector2.RIGHT)
+	var attack: AttackData = way[3]
+	if attack != null:
+		var it := area.enter_foe(foe, area.middle() + Vector2(apart * 0.5, 0.0))
+		area.at(0.8, area.strike_with.bind(it, attack))
+		area.period = 0.8 + attack.duration() + (1.6 if attack.projectile != null else 1.2)
+	elif way[0] == &"hunt":
+		area.enter_foe(foe, area.middle() + Vector2(apart * 0.5, 0.0), true)
+		area.period = 9.0
+	else:
+		area.enter_foe(foe, area.middle() + Vector2(apart * 0.5, 0.0))
+
+
+# Leaving the page: what it was showing stops, and pages newly opened are told.
+func _on_page_shown() -> void:
+	if is_visible_in_tree():
+		return
+	stage.halt()
+	leaf = 0
+	close = false
+	if _noted_any:
+		_noted_any = false
+		noted.emit()
 
 
 # Turns to a plate in the tray.
@@ -214,6 +396,7 @@ func go_to(to: int) -> void:
 		return
 	_way = 1.0 if to > place else -1.0
 	place = to
+	motion = 0
 	_tell()
 	_kick(&"turn")
 	_sound(&"ui_move")
@@ -228,6 +411,7 @@ func turn_kind(to: int) -> void:
 	kind = to
 	listed = []
 	place = 0
+	motion = 0
 	_list()
 	_tell()
 	_way = 0.0
@@ -398,6 +582,14 @@ func _gui_input(event: InputEvent) -> void:
 		go_to(place - 1)
 	elif event.is_action_pressed(&"ui_right", true):
 		go_to(place + 1)
+	elif event.is_action_pressed(&"ui_accept"):
+		turn_leaf()
+	elif leaf == 1 and event.is_action_pressed(&"ui_up", true):
+		choose_motion(motion - 1)
+	elif leaf == 1 and event.is_action_pressed(&"ui_down", true):
+		choose_motion(motion + 1)
+	elif leaf == 1 and _pressed(event, KEY_Z, JOY_BUTTON_X):
+		toggle_close()
 	elif event.is_action_pressed(&"ui_up") or _pressed(event, KEY_Q, JOY_BUTTON_LEFT_SHOULDER):
 		turn_kind(kind - 1)
 	elif event.is_action_pressed(&"ui_down") or _pressed(event, KEY_E, JOY_BUTTON_RIGHT_SHOULDER):
@@ -427,6 +619,12 @@ func _press(id: Variant) -> void:
 			go_to(place + int(what[1]))
 		&"sort":
 			cycle_sort()
+		&"leaf":
+			turn_leaf(what[1])
+		&"motion":
+			choose_motion(what[1])
+		&"close":
+			toggle_close()
 
 
 func _zone(rect: Rect2, id: Variant) -> void:
@@ -496,7 +694,12 @@ func _draw() -> void:
 	draw_rect(border, _colour(&"sepia", 0.7), false, 1.0)
 	draw_rect(border.grow(-5.0), _colour(&"sepia", 0.35), false, 1.0)
 	draw_set_transform(_origin + Vector2(_slide, 0.0) * _zoom, 0.0, Vector2.ONE * _zoom)
-	_draw_plate()
+	_draw_head()
+	if leaf == 1 and told.known:
+		_draw_watch()
+	else:
+		_draw_plate()
+	_draw_leaves()
 	draw_set_transform(_origin, 0.0, Vector2.ONE * _zoom)
 	_draw_steps()
 	_draw_tray()
@@ -521,7 +724,7 @@ func _draw_ribbons() -> void:
 
 # The open plate: its head, the marks on the figure led to their notes, and
 # the foe's account.
-func _draw_plate() -> void:
+func _draw_head() -> void:
 	var foe: FoeData = told.foe
 	var met: bool = told.known
 	_words(Vector2(TEXT_LEFT, 52.0), tr("図版　第 %02d") % (FoeCatalog.FOES.find(foe) + 1), &"font", &"label_size", _ink(&"sepia"))
@@ -533,6 +736,92 @@ func _draw_plate() -> void:
 	elif not met:
 		_words(Vector2(TEXT_LEFT + 4.0, 134.0), tr("いまだ観察されず"), &"font", &"label_size", _ink(&"sepia"))
 	draw_line(Vector2(TEXT_LEFT, 148.0), Vector2(TEXT_LEFT + TEXT_WIDTH, 148.0), _ink(&"sepia", 0.6), 1.0)
+	# Newly recorded: a seal by its name until its page has been turned from.
+	if told.get("fresh", false):
+		var at := Vector2(TEXT_LEFT + _width(told.name, &"title_font", &"name_size") + 34.0, 92.0)
+		draw_circle(at, 21.0, _ink(&"seal"))
+		_ring(at, 21.0, _ink(&"ink"), 1.2)
+		_words(Vector2(at.x - 21.0, at.y + 5.0), tr("新"), &"title_font", &"label_size", _colour(&"seal_light"), HORIZONTAL_ALIGNMENT_CENTER, 42.0)
+
+
+# The page's two leaves, as tabs over the notes: the plate and the watch.
+func _draw_leaves() -> void:
+	var met: bool = told.known
+	var x := NOTES_LEFT
+	for index in LEAVES.size():
+		var name_of := tr(LEAVES[index])
+		var wide := _width(name_of, &"title_font", &"body_size") + 28.0
+		var rect := Rect2(x, 46.0, wide, 34.0)
+		var here := index == leaf
+		var able := met or index == 0
+		var colour := _ink(&"ink") if here else _ink(&"sepia", (1.0 if _hovered(&"leaf", index) else 0.75) if able else 0.35)
+		_words(Vector2(x + 14.0, 70.0), name_of, &"title_font", &"body_size", colour)
+		if here:
+			draw_line(Vector2(x + 8.0, 80.0), Vector2(x + wide - 8.0, 80.0), _ink(&"seal"), 2.5)
+		if able:
+			_zone(rect, [&"leaf", index])
+		x += wide + 6.0
+	if not met:
+		# Under its note, clear of the kinds' ribbons.
+		_words(Vector2(NOTES_LEFT, 214.0), tr("出会うと観察できる"), &"font", &"small_size", _ink(&"sepia", 0.75))
+
+
+# The watch: the window's inked frame and caption, the foe's ways to be
+# watched down the margin (the one shown marked), and under them what is
+# known of the one shown: for an attack, its three figures.
+func _draw_watch() -> void:
+	var frame := WATCH.grow(6.0)
+	draw_rect(frame, _ink(&"ink", 0.85), false, 1.5)
+	for corner: Vector2 in [frame.position, Vector2(frame.end.x, frame.position.y), frame.end, Vector2(frame.position.x, frame.end.y)]:
+		draw_circle(corner, 3.5, _ink(&"seal"))
+	var way: Array = _motions[motion]
+	var view := tr("近くから見ている　Z で引く") if close else tr("引いて見ている　Z で寄る")
+	var view_width := _width(view, &"font", &"label_size")
+	_words(Vector2(WATCH.end.x - view_width - 2.0, WATCH.end.y + 30.0), view, &"font", &"label_size", _ink(&"sepia", 1.0 if _hovered(&"close", 0) else 0.8))
+	_zone(Rect2(WATCH.end.x - view_width - 12.0, WATCH.end.y + 8.0, view_width + 16.0, 30.0), [&"close", 0])
+	_words(Vector2(WATCH.position.x + 2.0, WATCH.end.y + 30.0), tr("主人公と並べた大きさ"), &"font", &"label_size", _ink(&"sepia", 0.8))
+	var left := NOTES_LEFT
+	var y := 124.0
+	_words(Vector2(left, y), tr("その振る舞い"), &"title_font", &"label_size", _ink(&"ink"))
+	draw_line(Vector2(left, y + 10.0), Vector2(left + NOTES_WIDTH, y + 10.0), _ink(&"ink", 0.8), 1.5)
+	y += 20.0
+	var row := minf(40.0, 250.0 / maxf(1.0, _motions.size()))
+	var picked := _eased(&"motion", UIMotion.SELECT_TIME)
+	for index in _motions.size():
+		var entry: Array = _motions[index]
+		var here := index == motion
+		var rect := Rect2(left - 10.0, y, NOTES_WIDTH + 10.0, row - 3.0)
+		if here:
+			draw_rect(rect, _ink(&"sepia", 0.12))
+			draw_rect(Rect2(rect.position, Vector2(4.0, rect.size.y * picked)), _ink(&"seal"))
+		elif _hovered(&"motion", index):
+			draw_rect(rect, _ink(&"sepia", 0.06))
+		_words(Vector2(left + 6.0, y + row * 0.5 + 6.0), "%s." % String.chr(97 + index), &"title_font", &"label_size", _ink(&"seal" if here else &"sepia"))
+		_words(Vector2(left + 36.0, y + row * 0.5 + 7.0), HubCodex.motion_name(entry), &"title_font", &"body_size", _ink(&"ink" if here else &"sepia"))
+		_zone(rect, [&"motion", index])
+		y += row
+	# What is known of the way shown.
+	y = 124.0 + 20.0 + 250.0 + 26.0
+	draw_line(Vector2(left, y - 18.0), Vector2(left + NOTES_WIDTH, y - 18.0), _ink(&"sepia", 0.5), 1.0)
+	var attack: AttackData = way[3]
+	if attack == null:
+		draw_multiline_string(_face(&"font"), Vector2(left, y + 14.0), tr(way[2]), HORIZONTAL_ALIGNMENT_LEFT, NOTES_WIDTH, _size(&"body_size"), 3, _ink(&"ink"))
+		return
+	var reach := HubCodex._reach_of(attack) / AreaGround.CELL
+	var figures := [[tr("予備動作"), tr("%s秒") % String.num(attack.windup, 2)], [tr("届く距離"), tr("%sマス") % String.num(snappedf(reach, 0.1), 1)], [tr("威力"), "%d%%" % roundi(attack.damage_scale * 100.0)]]
+	var span := NOTES_WIDTH / figures.size()
+	for index in figures.size():
+		var figure: Array = figures[index]
+		var x := left + span * index
+		_words(Vector2(x, y), figure[0], &"font", &"label_size", _ink(&"sepia"))
+		_words(Vector2(x, y + 44.0), figure[1], &"title_font", &"held_size", _ink(&"ink"))
+		if index > 0:
+			draw_line(Vector2(x - 14.0, y - 10.0), Vector2(x - 14.0, y + 52.0), _ink(&"sepia", 0.4), 1.0)
+
+
+func _draw_plate() -> void:
+	var foe: FoeData = told.foe
+	var met: bool = told.known
 	# The ground it stands on, hatched as an engraver shades it.
 	var ground := Vector2(STAGE.get_center().x, STAGE.end.y - 4.0)
 	for stroke in 34:
@@ -631,6 +920,10 @@ func _draw_tray() -> void:
 			draw_texture_rect(face, Rect2(centre - Vector2.ONE * SPECIMEN, Vector2.ONE * SPECIMEN * 2.0), false)
 		var rim := &"seal" if here else (&"seal_light" if _hovered(&"specimen", index) else &"tray_edge")
 		_ring(centre, SPECIMEN + 3.0, _colour(rim), 3.0 if here else 1.5)
+		if meta.is_new(foe.id):
+			var dot := centre + Vector2(SPECIMEN * 0.78, -SPECIMEN * 0.78)
+			draw_circle(dot, 7.5, _colour(&"seal"))
+			_ring(dot, 7.5, _colour(&"seal_light"), 1.2)
 		_words(Vector2(centre.x - 30.0, TRAY.end.y - 8.0), "%02d" % (FoeCatalog.FOES.find(foe) + 1), &"font", &"small_size", _colour(&"seal_light", 0.95 if here else 0.5), HORIZONTAL_ALIGNMENT_CENTER, 60.0)
 	# More of the tray lies past its ends.
 	if first > 0:

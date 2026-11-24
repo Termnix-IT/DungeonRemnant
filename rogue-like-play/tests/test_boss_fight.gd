@@ -135,13 +135,18 @@ func run_tests() -> void:
 	await wait(0.1)
 	check(area.boss_down and area.finished and area.foes.is_empty(), "Its fall wins the hall and its escort leaves")
 	# The boss's gems may bring a level: its cards pause the clearing.
-	for attempt in 3:
-		await wait(BattleArea.CLEAR_PAUSE * 0.5)
-		while area.choosing():
+	# Its fall is told before the hall is left (BossOutro).
+	var told := false
+	for attempt in 60:
+		if won[0]:
+			break
+		await wait(0.2)
+		told = told or (is_instance_valid(area.outro) and area.outro.landed)
+		while area.choosing() and area.choice.visible:
 			area.choice._select(0)
 			await process_frame
-	await wait(BattleArea.CLEAR_PAUSE)
 	check(won[0], "The hall reports its clearing")
+	check(told, "Its fall was told before the hall was left")
 	await process_frame
 	check(not area.hud.boss_gauge.visible, "Its gauge goes")
 	area.hit_stop.release()

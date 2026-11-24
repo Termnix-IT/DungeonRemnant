@@ -51,5 +51,36 @@ static func kind_of(foe: FoeData) -> int:
 	return 2 if foe.elite else 1
 
 
+# The fight's theme (AreaGround.THEMES) of the first area a foe is found in:
+# the ground it is watched on in the bestiary. 0 where no area holds it.
+static var _homes := {}
+
+
+static func home_theme(foe: FoeData) -> int:
+	if _homes.is_empty():
+		var files := DirAccess.get_files_at("res://data/areas")
+		files.sort()
+		for file in files:
+			var area := load("res://data/areas/" + file.trim_suffix(".remap")) as AreaData
+			if area == null or area.is_event():
+				continue
+			var held: Array[FoeData] = []
+			if area.boss != null:
+				held.append(area.boss)
+				if area.boss.summon != null:
+					held.append(area.boss.summon)
+			for wave in area.waves:
+				held.append_array(wave.foes)
+			if area.spawn_table != null:
+				for entry in area.spawn_table.entries:
+					held.append(entry.foe)
+				if area.spawn_table.elite != null:
+					held.append(area.spawn_table.elite)
+			for one in held:
+				if one != null and not _homes.has(one.id):
+					_homes[one.id] = area.theme
+	return _homes.get(foe.id, 0)
+
+
 static func kind_name(foe: FoeData) -> String:
 	return TranslationServer.translate(KINDS[kind_of(foe)])

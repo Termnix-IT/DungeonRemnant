@@ -33,6 +33,10 @@ func capture() -> void:
 	main.saving_enabled = false
 	for id in MET:
 		main.meta.met[id] = true
+	# Two of them met since the bestiary was last opened: marked new.
+	main.meta.noted = main.meta.met.duplicate()
+	main.meta.noted.erase(&"gale_rat")
+	main.meta.noted.erase(&"ruin_king")
 	root.add_child(main)
 	var hub = main.get_node("Hub")
 	hub.refresh(main.meta)
@@ -76,6 +80,45 @@ func capture() -> void:
 	codex.go_to(28)
 	await create_timer(0.6).timeout
 	await _grab("codex_far_1600")
+	# The watch: the foe alive on its own ground. Hunting her, standing by
+	# her, an elite's blow from its warning to its landing, from close by, a
+	# boss's attacks, and the watch at the largest size.
+	codex.turn_kind(0)
+	codex.go_to(1)
+	codex.turn_leaf()
+	await create_timer(2.6).timeout
+	await _grab("codex_watch_hunt_1600")
+	codex.choose_motion(1)
+	await create_timer(0.8).timeout
+	await _grab("codex_watch_still_1600")
+	codex.turn_kind(2)
+	codex.go_to(0)
+	await create_timer(0.3).timeout
+	codex.choose_motion(2)
+	await create_timer(0.8 + 0.35).timeout
+	await _grab("codex_watch_warning_1600")
+	await create_timer(0.5).timeout
+	await _grab("codex_watch_blow_1600")
+	codex.toggle_close()
+	await create_timer(1.0).timeout
+	await _grab("codex_watch_close_1600")
+	codex.toggle_close()
+	codex.turn_kind(3)
+	codex.go_to(0)
+	await create_timer(0.3).timeout
+	codex.choose_motion(4)
+	await create_timer(0.8 + 0.5).timeout
+	await _grab("codex_watch_boss_1600")
+	DisplayServer.window_set_size(SIZES[2])
+	root.size = SIZES[2]
+	await create_timer(0.3).timeout
+	codex.choose_motion(3)
+	await create_timer(0.8 + 0.5).timeout
+	await _grab("codex_watch_boss_1920")
+	DisplayServer.window_set_size(SIZES[0])
+	root.size = SIZES[0]
+	codex.turn_leaf()
+	await create_timer(0.3).timeout
 	TranslationServer.set_locale("en")
 	hub.show_page("home")
 	hub.refresh(main.meta)

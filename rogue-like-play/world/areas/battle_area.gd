@@ -41,6 +41,11 @@ const CHOICE := preload("res://ui/ability_choice.tscn")
 const PROMPT := preload("res://ui/choice_prompt.gd")
 # From the clear to `cleared`: the gems fly in and the hero takes a breath.
 const CLEAR_PAUSE := 1.4
+# A boss's hall is left later: its fall is told as its entrance was
+# (BossOutro), and the word of its slaying stands this long before a level's
+# cards may come over it.
+const BOSS_CLEAR_PAUSE := 2.4
+const SLAIN_HOLD := 0.9
 # An elite's echo, as a number over where it fell.
 const ECHO_NUMBER := Color("ffd27a")
 const ECHO_OUTLINE := Color("2a1a04")
@@ -165,6 +170,8 @@ var _chained := false
 # A level gained while a clearing is told is held until this (msec), and a
 # cleared place waits for owed cards only this long past the last hand.
 var _levels_held := false
+# A boss's fall being told (null before it, and once it has gone).
+var outro: BossOutro
 var _levels_after := 0
 var _levels_grace_from := 0
 var _arrive_in := 0
@@ -319,6 +326,9 @@ func _process(delta: float) -> void:
 	# A level held back while a clearing was told: its beat and cards now.
 	if _levels_held and Time.get_ticks_msec() >= _levels_after and not choosing() and not get_tree().paused:
 		_levels_held = false
+		# The word of a boss's slaying gives way to them.
+		if is_instance_valid(outro):
+			outro.leave(LEAD_BRISK)
 		_levels_grace_from = Time.get_ticks_msec()
 		hud.show_message("")
 		_banner_left = 0.0
@@ -412,6 +422,8 @@ func _physics_process(delta: float) -> void:
 		if _clear_left < LEAVE_TIME and not _leaving:
 			_leaving = true
 			_veil_to(0.0, LEAVE_TIME)
+			if is_instance_valid(outro):
+				outro.leave(LEAVE_TIME)
 		if _clear_left < 0.0:
 			run.hp = hero.health.hp
 			run.special_charge = hero.special_charge
@@ -473,8 +485,10 @@ func clear() -> void:
 	gems.pull_radius = INF
 	# The clearing is told by itself: after a boss's fall has had its
 	# moment, and before the cards of any level the last echoes bring.
-	var wait := BOSS_FALL_TIME if data != null and data.boss != null else 0.0
-	_levels_after = Time.get_ticks_msec() + roundi((wait + CLEAR_BEAT) * 1000.0)
+	var boss_hall := data != null and data.boss != null
+	var wait := BOSS_FALL_TIME if boss_hall else 0.0
+	var beat := BossOutro.word_time() + SLAIN_HOLD if boss_hall else CLEAR_BEAT
+	_levels_after = Time.get_ticks_msec() + roundi((wait + beat) * 1000.0)
 	_levels_grace_from = _levels_after
 	if wait > 0.0:
 		get_tree().create_timer(wait, true, false, true).timeout.connect(_tell_clearing)
@@ -485,11 +499,22 @@ func clear() -> void:
 	ground.flash(hero.global_position, 560.0, 0.8, LEVEL_LIGHT, 0.8)
 	sparks.burst(hero.global_position + BODY_MIDDLE * 0.4, 22, LEVEL_LIGHT, Vector2.UP, 1.3, Vector2(30.0, 150.0), Vector2(0.5, 1.1), 5.0, 1.0)
 	_banner_left = CLEAR_PAUSE + wait
-	_clear_left = CLEAR_PAUSE
+	_clear_left = BOSS_CLEAR_PAUSE if boss_hall else CLEAR_PAUSE
 
 
 func _tell_clearing() -> void:
 	if not is_inside_tree() or not finished:
+		return
+	# A boss's hall: its fall is told as its entrance was, in place of the
+	# line a cleared area gets.
+	if data != null and data.boss != null:
+		outro = BossOutro.new()
+		outro.name = "BossOutro"
+		add_child(outro)
+		outro.present(self, HubTheme.create())
+		outro.begin()
+		hud.show_message("")
+		hud.set_cinematic(true, BossOutro.BAR_TIME)
 		return
 	hud.show_message(tr("制圧完了"))
 	GameAudio.play(self, &"victory", -16.0)
@@ -697,17 +722,23 @@ func _lead_in() -> void:
 	_leading = true
 	var beat := LEAD_TIME if _hands == 0 else LEAD_BRISK
 	hit_stop.hold(beat, LEAD_SLOW)
-	var ring := GroundRing.new()
-	marks.add_child(ring)
-	ring.start(hero.global_position, LEAD_RING, &"heavy")
 	shake(HEAVY_SHAKE * 0.4)
-	# The level gained bursts into light round her: on the floor, in the
-	# air, and over her head.
-	ground.flash(hero.global_position, 560.0, 1.2, LEVEL_LIGHT, beat + 0.35)
-	sparks.burst(hero.global_position + BODY_MIDDLE * 0.4, LEVEL_MOTES, LEVEL_LIGHT, Vector2.UP, 1.3, Vector2(40.0, 200.0), Vector2(0.5, 1.1), 5.0, 1.0)
-	_effect(&"level_up", hero.global_position + BODY_MIDDLE * 0.5, Vector2.RIGHT, LEVEL_UP_SCALE)
-	popups.show_number("LEVEL UP", number_spot(hero) + Vector2(0.0, -16.0), LEVEL_LIGHT, ECHO_OUTLINE, DamagePopups.FONT_SIZE + 2)
+	BattleArea.level_light(self, beat)
 	get_tree().create_timer(beat, true, false, true).timeout.connect(_after_lead)
+
+
+# A level gained bursts into light round her: a ring on the floor, the floor
+# lit, motes in the air, and the words over her head. The fight's, and what
+# the help shows of it (StageArea), so the two are one.
+static func level_light(area: CombatArea, beat: float) -> void:
+	var she := area.hero
+	var ring := GroundRing.new()
+	area.marks.add_child(ring)
+	ring.start(she.global_position, LEAD_RING, &"heavy")
+	area.ground.flash(she.global_position, 560.0, 1.2, LEVEL_LIGHT, beat + 0.35)
+	area.sparks.burst(she.global_position + BODY_MIDDLE * 0.4, LEVEL_MOTES, LEVEL_LIGHT, Vector2.UP, 1.3, Vector2(40.0, 200.0), Vector2(0.5, 1.1), 5.0, 1.0)
+	area._effect(&"level_up", she.global_position + BODY_MIDDLE * 0.5, Vector2.RIGHT, LEVEL_UP_SCALE)
+	area.popups.show_number("LEVEL UP", area.number_spot(she) + Vector2(0.0, -16.0), LEVEL_LIGHT, ECHO_OUTLINE, DamagePopups.FONT_SIZE + 2)
 
 
 func _after_lead() -> void:

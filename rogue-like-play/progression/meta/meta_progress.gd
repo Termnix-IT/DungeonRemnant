@@ -100,6 +100,9 @@ var chapter_best: Dictionary = {}
 var chapter_steps: Dictionary = {}
 # Foe ids (FoeData.id) ever met -> true.
 var met: Dictionary = {}
+# Foe ids whose page has been opened in the bestiary -> true. A foe met and
+# not yet looked at is marked new there.
+var noted: Dictionary = {}
 # The skill id in each skill slot (empty: nothing set).
 var loadout: Array[StringName] = DEFAULT_LOADOUT.duplicate()
 # The special move in its slot (empty: none).
@@ -242,6 +245,19 @@ func chapter_open(chapter: ChapterData) -> bool:
 
 func has_met(id: StringName) -> bool:
 	return met.has(id)
+
+
+# Met on a run, and its page in the bestiary not opened since.
+func is_new(id: StringName) -> bool:
+	return met.has(id) and not noted.has(id)
+
+
+# Its page has been opened; true when that is news.
+func note(id: StringName) -> bool:
+	if not met.has(id) or noted.has(id):
+		return false
+	noted[id] = true
+	return true
 
 
 static func find_skill(id: StringName) -> SkillData:

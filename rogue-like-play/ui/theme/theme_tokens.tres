@@ -125,6 +125,7 @@ font_sizes = Dictionary[StringName, int]({
 &"size.18": 64,
 &"size.19": 72,
 &"size.2": 14,
+&"size.20": 104,
 &"size.3": 15,
 &"size.4": 16,
 &"size.5": 17,

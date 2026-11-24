@@ -39,11 +39,15 @@ static func encode(meta: MetaProgress) -> Dictionary:
 	for id: StringName in meta.met:
 		met.append(String(id))
 	met.sort()
+	var noted: Array = []
+	for id: StringName in meta.noted:
+		noted.append(String(id))
+	noted.sort()
 	var loadout: Array = []
 	for id in meta.loadout:
 		loadout.append(String(id))
 	return {"version": VERSION, "echo": meta.echo, "ranks": meta.ranks.duplicate(), "runs": meta.runs,
-		"clears": meta.clears, "best_layer": meta.best_layer, "met": met, "loadout": loadout, "special": String(meta.special), "weapon": String(meta.weapon),
+		"clears": meta.clears, "best_layer": meta.best_layer, "met": met, "noted": noted, "loadout": loadout, "special": String(meta.special), "weapon": String(meta.weapon),
 		"chapters": _chapters_of(meta)}
 
 
@@ -92,6 +96,14 @@ static func decode(data: Variant) -> MetaProgress:
 		meta.ranks[String(MetaProgress.ROOT)] = 1
 	if not _read_met(data.get("met", []), meta, {}):
 		return null
+	# The pages opened in the bestiary. A save from before they were kept
+	# has every foe met as already looked at, so none is marked new at once.
+	if data.has("noted") and data.noted is Array:
+		for id: Variant in data.noted:
+			if meta.met.has(StringName(str(id))):
+				meta.noted[StringName(str(id))] = true
+	else:
+		meta.noted = meta.met.duplicate()
 	if data.has("loadout") and not _read_loadout(data.loadout, meta):
 		return null
 	# The special slot: empty or a learned special move (a save from before

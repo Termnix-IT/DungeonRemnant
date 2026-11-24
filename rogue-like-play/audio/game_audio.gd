@@ -53,6 +53,11 @@ const PROFILES := {
 	&"level_surge": [0.45, 196.0, 392.0, 0.4, 1.2, []],
 	&"boss_tremor": [0.7, 41.0, 55.0, 0.5, 0.9, []],
 	&"boss_fall": [0.7, 150.0, 38.0, 0.4, 1.4, []],
+	&"boss_slain": [0.7, 294.0, 110.0, 0.35, 1.2, []],
+	&"result_dawn": [0.72, 0.0, 0.0, 0.0, 0.8, [293.66, 440.0, 587.33, 880.0]],
+	&"result_fall": [0.72, 0.0, 0.0, 0.05, 1.2, [146.83, 110.0, 73.42]],
+	&"result_return": [0.6, 110.0, 82.0, 0.3, 1.4, []],
+	&"result_tally": [0.06, 190.0, 90.0, 0.5, 2.6, []],
 }
 
 const ASSETS := {
@@ -88,6 +93,11 @@ const ASSETS := {
 	&"level_surge": "res://audio/made/level_surge.ogg",
 	&"boss_tremor": "res://audio/made/boss_tremor.ogg",
 	&"boss_fall": "res://audio/made/boss_fall.ogg",
+	&"boss_slain": "res://audio/made/boss_slain.ogg",
+	&"result_dawn": "res://audio/made/result_dawn.ogg",
+	&"result_fall": "res://audio/made/result_fall.ogg",
+	&"result_return": "res://audio/made/result_return.ogg",
+	&"result_tally": "res://audio/made/result_tally.ogg",
 }
 
 static var _streams: Dictionary = {}

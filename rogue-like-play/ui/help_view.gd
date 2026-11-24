@@ -23,6 +23,8 @@ extends Control
 
 # The close among the keys was clicked.
 signal close_requested
+# The practice ground was asked for from the demonstrations.
+signal practice_requested
 
 const SKY := preload("res://ui/star_chart/star_sky.gdshader")
 const DESIGN := Vector2(1600.0, 900.0)
@@ -38,6 +40,21 @@ const POINTS_TOP := 144.0
 const POINT_GAP := 18.0
 const POINT_INDENT := 26.0
 const KEY_ROW := 40.0
+# The demonstrations: the window, the list beside it, and a row of the list.
+const DEMO_WINDOW := Rect2(166.0, 386.0, 700.0, 394.0)
+const DEMO_LIST := Rect2(920.0, 386.0, 514.0, 300.0)
+const DEMO_ROW := 42.0
+const DEMO_VIEW := 560.0
+# The row of the table of keys (HubSettings.HELP_KEYS) each move is in.
+const DEMO_KEYS := {&"move": 0, &"strike": 1, &"charge": 1, &"dash": 3, &"skill": 4, &"special": 5}
+# The fight's own action slots (ActionSlot, as the HUD shows them) stood in
+# the window's lower right for the moves they tell of: the blow's charge
+# filling, the dash coming back, a skill's wait counted down, the special
+# move's gauge. [the HUD's slot ids] for each move.
+const DEMO_SLOTS := {&"strike": [&"strike"], &"charge": [&"strike"], &"dash": [&"dash"], &"skill": [&"skill", &"skill_2"], &"special": [&"special"]}
+const SLOT_SCALE := 0.8
+const SLOT_STEP := 84.0
+const SLOT_INSET := Vector2(18.0, 10.0)
 const KEY_HEAD := 38.0
 const MOVE_TIME := UIMotion.GOLD_TIME
 # The keys at the foot stand where the hub's do.
@@ -45,6 +62,14 @@ const GUIDE_EDGE := Vector2(40.0, 16.0)
 
 # The topic open (its place in HubSettings.HELP).
 var topic := 0
+# The demonstrations' topic: which of the fight's moves is shown, the window
+# it is shown in (a FightStage: the fight itself, played by the scene), and
+# whether the practice ground can be gone to from here (not in a run).
+var demo := 0
+var stage: FightStage
+var allows_practice := true
+# The HUD's slots shown over the window, by the HUD's ids.
+var slots: Dictionary[StringName, ActionSlot] = {}
 var close_hint: Button
 var _sky: ColorRect
 var _guide: KeyGuide
@@ -83,6 +108,22 @@ func _ready() -> void:
 	_guide.offset_top = -GUIDE_EDGE.y - 44.0
 	close_hint = _guide.add_hint("Esc", "B", tr("閉じる"), func(): close_requested.emit())
 	_guide.add_hint("← / →", "◀ / ▶", tr("話題"))
+	stage = FightStage.new()
+	stage.name = "Demo"
+	stage.hide()
+	add_child(stage)
+	# The HUD's own slots, over the window, each with its key as the HUD
+	# names it.
+	for entry: Array in ActionHud.SLOTS:
+		var slot := ActionSlot.new()
+		slot.name = "Slot_%s" % entry[0]
+		slot.icon = EmblemIcons.texture(entry[1])
+		slot.key_label.text = tr(entry[2])
+		slot.size = slot.custom_minimum_size
+		slot.hide()
+		add_child(slot)
+		slots[entry[0]] = slot
+	visibility_changed.connect(_show_demo)
 	resized.connect(_fit)
 	theme_changed.connect(_fit)
 	_fit()
@@ -104,7 +145,56 @@ func _fit() -> void:
 	night.set_shader_parameter(&"reach", size * 0.5 / _zoom)
 	for item: StringName in [&"sky_deep", &"sky_light", &"sky_haze", &"lamp", &"speck"]:
 		night.set_shader_parameter(item, get_theme_color(item))
+	if stage != null:
+		stage.position = _origin + DEMO_WINDOW.position * _zoom
+		stage.size = DEMO_WINDOW.size * _zoom
+	_place_slots()
 	queue_redraw()
+
+
+# The slots of the move shown, in the window's lower right as in the fight.
+func _place_slots() -> void:
+	var shown: Array = DEMO_SLOTS.get(StageScenes.CONTROLS[demo][0], [])
+	var showing := stage != null and stage.visible
+	var index := 0
+	for id: StringName in slots:
+		var slot := slots[id]
+		slot.visible = showing and shown.has(id)
+		if not slot.visible:
+			continue
+		var place := DEMO_WINDOW.end - SLOT_INSET - Vector2((shown.size() - index) * SLOT_STEP, (ActionSlot.SIZE + 26.0) * SLOT_SCALE)
+		slot.scale = Vector2.ONE * SLOT_SCALE * _zoom
+		slot.position = _origin + place * _zoom
+		index += 1
+
+
+# The slots follow the stage's own hero, as the HUD follows the fight's.
+func _show_slots() -> void:
+	if stage == null or stage.area == null or stage.area.hero == null:
+		return
+	var hero := stage.area.hero
+	var motor := hero.motor
+	if slots[&"strike"].visible:
+		slots[&"strike"].show_state(1.0, motor.charge_progress() if motor.charging() else 0.0)
+	if slots[&"dash"].visible:
+		slots[&"dash"].show_state(1.0 if motor.dash_charges > 0 else motor.dash_recharge(), 0.0, motor.dash_charges, motor.tuning.dash_charges if motor.tuning.dash_charges > 1 else 0)
+	for index in ActionHud.SKILL_SLOTS.size():
+		var skill := slots[ActionHud.SKILL_SLOTS[index]]
+		if not skill.visible or motor.skill_attacks[index] == null:
+			continue
+		var emblem := EmblemIcons.texture(motor.skill_emblems[index]) if not motor.skill_emblems[index].is_empty() else null
+		if emblem != null and skill.icon != emblem:
+			skill.icon = emblem
+		var cooldown := motor.skill_cooldowns[index]
+		var left := motor.skill_cooldowns_left[index]
+		skill.show_state(1.0 if cooldown <= 0.0 else 1.0 - left / cooldown)
+		skill.note_label.text = "%d" % ceili(left) if left > 0.0 else ""
+	if slots[&"special"].visible and hero.special != null:
+		var special := slots[&"special"]
+		var mark := EmblemIcons.texture(hero.special.emblem)
+		if mark != null and special.icon != mark:
+			special.icon = mark
+		special.show_state(hero.special_share(), 0.0 if hero.special_ready() else hero.special_share())
 
 
 # --- The help ---
@@ -130,6 +220,11 @@ static func shows_keys(index: int) -> bool:
 	return index == HubSettings.TOPIC_CONTROLS
 
 
+# Whether a topic is the demonstrations.
+static func shows_demos(index: int) -> bool:
+	return index == HubSettings.TOPIC_DEMOS
+
+
 # Opens the help at a topic, with the focus on it.
 func open(index: int) -> void:
 	topic = clampi(index, 0, count() - 1)
@@ -138,7 +233,35 @@ func open(index: int) -> void:
 	_quiet = true
 	_kick(&"open")
 	grab_focus()
+	_show_demo()
 	queue_redraw()
+
+
+# Shows another of the fight's moves (or the same one again, from its start).
+func choose_demo(to: int) -> void:
+	to = posmod(to, StageScenes.CONTROLS.size())
+	if to == demo and stage.playing():
+		stage.replay()
+		return
+	demo = to
+	_kick(&"demo")
+	if not _quiet and is_visible_in_tree():
+		GameAudio.play(self, &"ui_move", -22.0)
+	_show_demo()
+	queue_redraw()
+
+
+# The window plays while the demonstrations are open, and only then.
+func _show_demo() -> void:
+	if stage == null:
+		return
+	var showing := is_visible_in_tree() and HelpView.shows_demos(topic)
+	stage.visible = showing
+	if showing:
+		stage.show_scene(StageScenes.scene(StageScenes.CONTROLS[demo][0]), 0, DEMO_VIEW)
+	else:
+		stage.halt()
+	_place_slots()
 
 
 # Turns to a topic.
@@ -151,6 +274,7 @@ func choose(index: int) -> void:
 	_kick(&"move")
 	if not _quiet and is_visible_in_tree():
 		GameAudio.play(self, &"ui_move", -22.0)
+	_show_demo()
 	queue_redraw()
 
 
@@ -164,6 +288,7 @@ func _process(delta: float) -> void:
 	# As in the lobby, resting the pointer on a topic opens it.
 	if _rest >= 0 and _rest != topic and _clock - _rest_since >= HubLobby.HOVER_INTENT:
 		choose(_rest)
+	_show_slots()
 	queue_redraw()
 
 
@@ -186,7 +311,7 @@ func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		var id: Variant = _zone_at(event.position)
 		_hover = id
-		var rested: int = (id as Array)[1] if id != null else -1
+		var rested: int = (id as Array)[1] if id != null and (id as Array)[0] == &"topic" else -1
 		if rested != _rest:
 			_rest = rested
 			_rest_since = _clock
@@ -209,13 +334,24 @@ func _gui_input(event: InputEvent) -> void:
 				accept_event()
 		return
 	var handled := true
-	if event.is_action_pressed(&"ui_left", true) or event.is_action_pressed(&"ui_up", true) or _pressed(event, KEY_Q, JOY_BUTTON_LEFT_SHOULDER):
+	var demos := HelpView.shows_demos(topic)
+	if demos and event.is_action_pressed(&"ui_up", true):
+		choose_demo(demo - 1)
+	elif demos and event.is_action_pressed(&"ui_down", true):
+		choose_demo(demo + 1)
+	elif demos and _pressed(event, KEY_T, JOY_BUTTON_Y):
+		if allows_practice:
+			practice_requested.emit()
+	elif event.is_action_pressed(&"ui_left", true) or event.is_action_pressed(&"ui_up", true) or _pressed(event, KEY_Q, JOY_BUTTON_LEFT_SHOULDER):
 		choose(topic - 1)
 	elif event.is_action_pressed(&"ui_right", true) or event.is_action_pressed(&"ui_down", true) or _pressed(event, KEY_E, JOY_BUTTON_RIGHT_SHOULDER):
 		choose(topic + 1)
 	elif event.is_action_pressed(&"ui_accept"):
-		# Nothing to enter here: the press is taken so it reaches nothing under.
-		pass
+		# On the demonstrations Enter plays the one shown again; elsewhere
+		# there is nothing to enter, and the press is taken so it reaches
+		# nothing under.
+		if demos:
+			choose_demo(demo)
 	else:
 		handled = false
 	if handled:
@@ -231,8 +367,14 @@ func _pressed(event: InputEvent, key: Key, button: int) -> bool:
 # A place the pointer clicked: [&"topic", index].
 func _press(id: Variant) -> void:
 	var what: Array = id
-	if what[0] == &"topic":
-		choose(what[1])
+	match what[0]:
+		&"topic":
+			choose(what[1])
+		&"demo":
+			choose_demo(what[1])
+		&"practice":
+			if allows_practice:
+				practice_requested.emit()
 
 
 func _zone(rect: Rect2, id: Variant) -> void:
@@ -391,6 +533,9 @@ func _draw_page(moved: float, come: float) -> void:
 	var half := column_width()
 	_words(Vector2(x, PAGE.position.y + 70.0), title_of(topic), &"title_font", &"name_size", _colour(&"pale", fade))
 	HubUI.trail(self, Vector2(x, PAGE.position.y + 92.0), Vector2(x + 520.0, PAGE.position.y + 92.0), _colour(&"brass", 0.8 * fade))
+	if HelpView.shows_demos(topic):
+		_draw_demos(slide, fade)
+		return
 	var top := PAGE.position.y + POINTS_TOP
 	var at := Vector2(top, top)
 	if shows_keys(topic):
@@ -403,6 +548,72 @@ func _draw_page(moved: float, come: float) -> void:
 		HubUI.mark(self, spot + Vector2(6.0, -6.0), 4.0, _colour(&"gold", fade))
 		draw_multiline_string(_face(&"font"), spot + Vector2(POINT_INDENT, 0.0), listed[place], HORIZONTAL_ALIGNMENT_LEFT, half - POINT_INDENT, _size(&"part_size"), -1, _colour(&"pale", fade), _breaks())
 		at[column] += _point_height(listed[place])
+
+
+# The demonstrations: the window's frame, the fight's moves down a list (the
+# one shown told in a line), and the way to the practice ground.
+func _draw_demos(slide: float, fade: float) -> void:
+	var frame := DEMO_WINDOW.grow(8.0)
+	frame.position.x += slide
+	draw_rect(frame, _colour(&"brass", 0.7 * fade), false, 1.5)
+	for corner: Vector2 in [frame.position, Vector2(frame.end.x, frame.position.y), frame.end, Vector2(frame.position.x, frame.end.y)]:
+		HubUI.mark(self, corner, 6.0, _colour(&"gold", fade))
+	var shown: Array = StageScenes.CONTROLS[demo]
+	var x := DEMO_LIST.position.x + slide
+	var y := DEMO_LIST.position.y
+	_words(Vector2(x, y - 6.0), tr("実際の戦闘で見る"), &"font", &"star_size", _colour(&"dim", fade))
+	y += 14.0
+	var picked := _eased(&"demo", UIMotion.SELECT_TIME)
+	for index in StageScenes.CONTROLS.size():
+		var entry: Array = StageScenes.CONTROLS[index]
+		var here := index == demo
+		var over: bool = _hover is Array and (_hover as Array)[0] == &"demo" and (_hover as Array)[1] == index
+		var rect := Rect2(x - 12.0, y, DEMO_LIST.size.x + 12.0, DEMO_ROW - 4.0)
+		if here:
+			draw_rect(rect, _colour(&"gold", 0.1 * fade))
+			draw_rect(Rect2(rect.position, Vector2(3.0, rect.size.y * picked)), _colour(&"gold", fade))
+		HubUI.star(self, Vector2(x + 10.0, y + DEMO_ROW * 0.5 - 2.0), 8.0 if here else 5.0, _colour(&"gold" if here else &"brass", fade))
+		_words(Vector2(x + 34.0, y + DEMO_ROW * 0.5 + 5.0), tr(entry[1]), &"title_font", &"figure_size" if here else &"part_size", _colour(&"gold" if here else (&"pale" if over else &"dim"), fade))
+		# The chosen move's keys, on their caps at the end of its row (the
+		# table of the controls has them all).
+		var keys_row: int = DEMO_KEYS.get(entry[0], -1)
+		if here and keys_row >= 0:
+			var keys: Array = HubSettings.HELP_KEYS[keys_row]
+			var caps: Array = []
+			for key: String in keys[1]:
+				caps.append([tr(key), 1.0])
+			for key: String in keys[2]:
+				caps.append([tr(key), 0.75])
+			var room := 0.0
+			for cap: Array in caps:
+				room += _cap_width(cap[0]) + 6.0
+			var cap_x := x + DEMO_LIST.size.x - room - 4.0
+			for cap: Array in caps:
+				cap_x += _draw_cap(Vector2(cap_x, y + DEMO_ROW * 0.5 + 4.0), cap[0], fade * float(cap[1])) + 6.0
+		_zone(rect, [&"demo", index])
+		y += DEMO_ROW
+	# What the one shown is, in a line under the list.
+	y += 14.0
+	HubUI.trail(self, Vector2(x, y - 6.0), Vector2(x + DEMO_LIST.size.x, y - 6.0), _colour(&"brass", 0.6 * fade))
+	draw_multiline_string(_face(&"font"), Vector2(x, y + 28.0), tr(shown[2]), HORIZONTAL_ALIGNMENT_LEFT, DEMO_LIST.size.x, _size(&"part_size"), 3, _colour(&"pale", fade), _breaks())
+	# The keys of this page, and the practice ground.
+	var foot := PAGE.end.y - 26.0
+	_words(Vector2(DEMO_WINDOW.position.x + slide, DEMO_WINDOW.position.y - 22.0), tr("↑ / ↓　動きを選ぶ　　Enter　もう一度"), &"font", &"star_size", _colour(&"dim", fade))
+	if allows_practice:
+		var words := tr("T　練習場で自分で試す")
+		var wide := _width(words, &"title_font", &"part_size") + 44.0
+		var plate := Rect2(x + DEMO_LIST.size.x - wide, foot - 34.0, wide, 44.0)
+		var over_it: bool = _hover is Array and (_hover as Array)[0] == &"practice"
+		var face := StyleBoxFlat.new()
+		face.bg_color = _colour(&"gold", (0.22 if over_it else 0.12) * fade)
+		face.border_color = _colour(&"gold", (1.0 if over_it else 0.7) * fade)
+		face.set_border_width_all(1)
+		face.set_corner_radius_all(4)
+		draw_style_box(face, plate)
+		_words(Vector2(plate.position.x + 22.0, plate.position.y + 29.0), words, &"title_font", &"part_size", _colour(&"gold", fade))
+		_zone(plate, [&"practice", 0])
+	else:
+		_words(Vector2(x, foot - 4.0), tr("練習場は、拠点のヘルプから行けます。"), &"font", &"star_size", _colour(&"dim", fade))
 
 
 # The controls' table: a row an action, its keys and its pad buttons on caps.
@@ -423,9 +634,13 @@ func _draw_keys(at: Vector2, width: float, fade: float) -> void:
 
 
 # A key on its cap; returns the cap's width.
+func _cap_width(words: String) -> float:
+	return maxf(34.0, _face(&"bold_font").get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, _size(&"label_size")).x + 18.0)
+
+
 func _draw_cap(at: Vector2, words: String, fade: float) -> float:
 	var size := _size(&"label_size")
-	var wide := maxf(34.0, _face(&"bold_font").get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x + 18.0)
+	var wide := _cap_width(words)
 	var cap := StyleBoxFlat.new()
 	cap.bg_color = _colour(&"void", fade)
 	cap.border_color = _colour(&"brass", 0.8 * fade)

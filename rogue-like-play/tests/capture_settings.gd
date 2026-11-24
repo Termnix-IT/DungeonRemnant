@@ -54,11 +54,41 @@ func capture() -> void:
 	await create_timer(0.5).timeout
 	await _grab("settings_muted_1600")
 	page.put(0, 100)
-	# The shake, caught just after the frame is struck.
+	# The effects' volume, tried with the fight's own sounds; the ambience,
+	# with the field's air.
+	page.choose(2)
+	await create_timer(1.3).timeout
+	await _grab("settings_effects_1600")
+	page.choose(HubSettings.AMBIENCE_ROW)
+	await create_timer(0.5).timeout
+	await _grab("settings_ambience_1600")
+	# The shake, tried with real blows: as the beast's slam is warned of, as
+	# it lands on her, and as her own held blow lands on it; then with the
+	# shake off, at the same moment.
 	page.choose(HubSettings.SHAKE_ROW)
-	page._clock = 1.3 * 20.0 - 0.02
-	await create_timer(0.1).timeout
+	await _stage_at(page, 1.0)
+	await _grab("settings_shake_warning_1600")
+	await _stage_at(page, 0.5 + StageScenes.CHARGER.attacks[0].windup + 0.06)
 	await _grab("settings_shake_1600")
+	await _stage_at(page, 3.5)
+	await _grab("settings_shake_blow_1600")
+	page.put(HubSettings.SHAKE_ROW, 2)
+	await _stage_at(page, 0.5 + StageScenes.CHARGER.attacks[0].windup + 0.06)
+	await _grab("settings_shake_off_1600")
+	page.put(HubSettings.SHAKE_ROW, 0)
+	# The trials at 1920x1080.
+	DisplayServer.window_set_size(SIZES[2])
+	root.size = SIZES[2]
+	await create_timer(0.4).timeout
+	page.choose(0)
+	await _stage_at(page, 1.3)
+	await _grab("settings_volume_trial_1920")
+	page.choose(HubSettings.SHAKE_ROW)
+	await _stage_at(page, 0.5 + StageScenes.CHARGER.attacks[0].windup + 0.06)
+	await _grab("settings_shake_1920")
+	DisplayServer.window_set_size(SIZES[0])
+	root.size = SIZES[0]
+	await create_timer(0.4).timeout
 	page.choose(HubSettings.DISPLAY_ROW)
 	await create_timer(0.5).timeout
 	await _grab("settings_screen_1600")
@@ -105,6 +135,17 @@ func capture() -> void:
 		result |= (shots[file_name] as Image).save_png("res://.godot/%s.png" % file_name)
 	print("Captured the settings: ", ", ".join(shots.keys()))
 	quit(0 if result == OK else 1)
+
+
+# Waits until the settings' trial has played `time` seconds of its scene.
+func _stage_at(page: HubSettings, time: float) -> void:
+	# The page takes a frame to change what it tries.
+	for frame in 3:
+		await process_frame
+	for frame in 900:
+		await process_frame
+		if page.stage.area != null and page.stage.area._clock >= time:
+			return
 
 
 func _grab(file_name: String) -> void:

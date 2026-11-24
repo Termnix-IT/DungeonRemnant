@@ -122,6 +122,17 @@ func capture() -> void:
 	hub.settings_page.select_topic(HubSettings.TOPIC_CONTROLS)
 	await create_timer(UIMotion.DETAIL_SLIDE_TIME + 0.2).timeout
 	await _grab("hub_help_controls_1600")
+	# The demonstrations: the fight's moves played in the help's window.
+	hub.settings_page.select_topic(HubSettings.TOPIC_DEMOS)
+	hub.settings_page.help_view.choose_demo(1)
+	await create_timer(1.25).timeout
+	await _grab("hub_help_demo_strike_1600")
+	hub.settings_page.help_view.choose_demo(3)
+	await create_timer(1.3).timeout
+	await _grab("hub_help_demo_dash_1600")
+	hub.settings_page.help_view.choose_demo(5)
+	await create_timer(1.9).timeout
+	await _grab("hub_help_demo_special_1600")
 	hub.settings_page.close_help()
 	hub.settings_page.ask_quit()
 	await create_timer(0.5).timeout
@@ -148,6 +159,12 @@ func capture() -> void:
 	run.area.hero.health.hp = 1
 	run.area.hero.receive(DamageInfo.make(1000.0, Vector2.RIGHT))
 	await create_timer(RunDirector.FALL_PAUSE + 0.6).timeout
+	# The result's scene plays; it is caught once it is all in.
+	for frame in 900:
+		await process_frame
+		if run.end_view.settled:
+			break
+	await create_timer(0.6).timeout
 	await _grab("hub_run_result_1600")
 	run.end_view._button.pressed.emit()
 	await create_timer(SceneTransition.HOLD_TIME + SceneTransition.REVEAL_TIME + 0.4).timeout

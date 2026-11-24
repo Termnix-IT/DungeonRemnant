@@ -257,13 +257,24 @@ func _boss() -> void:
 	check(area.boss_down and is_equal_approx(Engine.time_scale, BattleArea.BOSS_FALL_SLOW), "Its fall slows the world")
 	await real(BattleArea.BOSS_FALL_TIME + 0.2)
 	check(is_equal_approx(Engine.time_scale, 1.0) or area.choosing(), "And lets it go")
-	for attempt in 10:
+	# Its fall is told as its entrance was: its name back, struck through,
+	# and the word of its slaying, in place of a cleared area's line. It is
+	# only seen: the world goes on under it.
+	var outro := area.outro
+	check(is_instance_valid(outro) and not outro.landed and not outro.leaving and not (area.hud.banner.visible and area.hud.message.text == "制圧完了"), "Its fall is told by its own title, not by a cleared area's line")
+	check(not paused and not area.staging and area.hero.health.alive(), "The world goes on under the title: nothing is stopped or staged for it")
+	await real(BossOutro.word_time() + 0.15)
+	check(is_instance_valid(outro) and outro.landed and outro.word.text == "討伐" and is_equal_approx(outro.word.scale.x, 1.0) and outro.word.modulate.a > 0.95, "The word of its slaying is stamped")
+	var word_stood := Time.get_ticks_msec()
+	for attempt in 14:
 		if won[0]:
 			break
-		await real(0.4)
+		await real(0.3)
 		while area.choosing() and area.choice.visible:
 			area.choice._select(0)
 	check(won[0] and area.ground.dread < 0.05 and area.ground.lift > 1.2 and is_equal_approx(Engine.time_scale, 1.0) and not paused, "The hall is cleared as ever, let out of its red")
+	check(not is_instance_valid(outro) or outro.leaving, "The title leaves with the hall")
+	check(Time.get_ticks_msec() - word_stood < 6000, "And the hall is left without a long wait (%.1f s after the word)" % ((Time.get_ticks_msec() - word_stood) / 1000.0))
 	await leave(area)
 	# The entrance never keeps the world: gone, the area lets the fight begin.
 	var lost := enter("guardian_hall", RunState.new(9))
