@@ -20,6 +20,8 @@ extends Control
 #
 # The upgrades' entry carries a small mark beside its name while the echo
 # held can buy a rank of anything, so that shows without choosing the entry.
+# The bestiary's entry carries the same mark while a foe newly met has not
+# been looked up there (MetaProgress.is_new), and tells how many when chosen.
 #
 # Its things can be held back and brought in (hold(), present()): the pier
 # slides in from the left, the heroine steps in from the right and the plate
@@ -163,8 +165,10 @@ const LEAVE_TIME := 0.24
 var buttons: Array[Button] = []
 var selected := 0
 var decide_button: Button
-# The mark on the upgrades' entry, shown while something can be bought.
+# The mark on the upgrades' entry, shown while something can be bought, and
+# the one on the bestiary's, shown while a new record waits to be looked up.
 var upgrade_mark: Control
+var codex_mark: Control
 var title_label: Label
 var description_label: Label
 var hero: LobbyHero
@@ -183,6 +187,7 @@ var upgrade_ready: Label
 var status_skills: Label
 var status_hp: Label
 var codex_met: Label
+var codex_new: Label
 var codex_runs: Label
 var title_icon: TextureRect
 # The pier and the menu's rows on it.
@@ -294,28 +299,31 @@ func _build_menu() -> void:
 		previous = button
 		buttons.append(button)
 		if entry[0] == &"upgrade":
-			_build_mark(button)
+			upgrade_mark = _build_mark(button)
+		elif entry[0] == &"codex":
+			codex_mark = _build_mark(button)
 	buttons[0].focus_neighbor_top = buttons[0].get_path()
 	buttons[-1].focus_neighbor_bottom = buttons[-1].get_path()
 
 
 # The mark stands past the entry's name, level with the top of its letters.
-func _build_mark(button: Button) -> void:
-	upgrade_mark = Control.new()
-	upgrade_mark.name = "Waiting"
-	upgrade_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	button.add_child(upgrade_mark)
+func _build_mark(button: Button) -> Control:
+	var mark := Control.new()
+	mark.name = "Waiting"
+	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(mark)
 	var font := button.get_theme_font(&"font")
 	var font_size := button.get_theme_font_size(&"font_size")
 	var left := button.get_theme_stylebox(&"normal").get_margin(SIDE_LEFT)
 	var wide := font.get_string_size(button.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
-	upgrade_mark.size = Vector2.ONE * MARK_RADIUS * 2.0
-	upgrade_mark.position = Vector2(left + wide + MARK_GAP, (button.size.y - font.get_height(font_size)) * 0.5 + MARK_RADIUS)
-	upgrade_mark.draw.connect(func():
+	mark.size = Vector2.ONE * MARK_RADIUS * 2.0
+	mark.position = Vector2(left + wide + MARK_GAP, (button.size.y - font.get_height(font_size)) * 0.5 + MARK_RADIUS)
+	mark.draw.connect(func():
 		var colour := get_theme_color(&"waiting", &"HubLobby")
-		upgrade_mark.draw_circle(Vector2.ONE * MARK_RADIUS, MARK_RADIUS, colour)
-		upgrade_mark.draw_circle(Vector2.ONE * MARK_RADIUS, MARK_RADIUS * 0.4, get_theme_color(&"waiting_core", &"HubLobby")))
-	upgrade_mark.hide()
+		mark.draw_circle(Vector2.ONE * MARK_RADIUS, MARK_RADIUS, colour)
+		mark.draw_circle(Vector2.ONE * MARK_RADIUS, MARK_RADIUS * 0.4, get_theme_color(&"waiting_core", &"HubLobby")))
+	mark.hide()
+	return mark
 
 
 func _row_rect(index: int) -> Rect2:
@@ -406,6 +414,8 @@ func _build_panel() -> void:
 	var records: HBoxContainer = HubUI.fact_strip(stack, STRIP_HEIGHT)
 	_details[&"codex"] = records
 	codex_met = HubUI.strip_fact(records, tr("出会った敵"))
+	HubUI.strip_divider(records)
+	codex_new = HubUI.strip_fact(records, tr("新しい記録"))
 	HubUI.strip_divider(records)
 	codex_runs = HubUI.strip_fact(records, tr("探索の回数"))
 	var current: HBoxContainer = HubUI.fact_strip(stack, STRIP_HEIGHT)
@@ -543,6 +553,9 @@ func refresh(meta: MetaProgress, chapter: ChapterData) -> void:
 	status_skills.text = "%d / %d" % [meta.loadout.filter(func(id: StringName): return not id.is_empty()).size(), MetaProgress.SKILL_SLOTS]
 	status_hp.text = str(meta.tuning(load("res://data/hero/mio.tres")).max_hp)
 	codex_met.text = "%d / %d" % [FoeCatalog.FOES.filter(func(foe: FoeData): return meta.has_met(foe.id)).size(), FoeCatalog.FOES.size()]
+	var fresh := FoeCatalog.FOES.filter(func(foe: FoeData): return meta.is_new(foe.id)).size()
+	codex_new.text = tr("%d 件") % fresh
+	codex_mark.visible = fresh > 0
 	codex_runs.text = tr("%d 回") % meta.runs
 	if settings != null:
 		volume_value.text = "%d%%" % settings.volume_percent()

@@ -675,6 +675,7 @@ HPの高い順,,Highest HP first,ui/hub_codex.gd
 装備中のスキル,,Equipped Skills,ui/hub_lobby.gd
 最大HP,,Max HP,ui/hub_lobby.gd
 出会った敵,,Foes Met,ui/hub_lobby.gd
+新しい記録,,New Records,ui/hub_lobby.gd
 探索の回数,,Runs,ui/hub_lobby.gd
 音量,,Volume,ui/hub_lobby.gd
 画面,,Display,ui/hub_lobby.gd

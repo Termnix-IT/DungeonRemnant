@@ -67,6 +67,20 @@ func run_tests() -> void:
 	main.meta.echo = 0
 	hub.refresh(main.meta)
 	check(not lobby.upgrade_mark.visible and lobby.upgrade_ready.text == "0 件", "The mark goes when the echo can buy nothing")
+	# The bestiary's entry is marked while a foe newly met waits to be looked up.
+	check(not lobby.codex_mark.visible and lobby.codex_new.text == "0 件" and lobby.codex_mark.get_parent() == lobby.buttons[3], "With nothing newly met, the bestiary's entry carries no mark")
+	var newly: FoeData = load("res://data/foes/dashing_rat.tres")
+	main.meta.met[newly.id] = true
+	hub.refresh(main.meta)
+	var codex_room := Rect2(Vector2.ZERO, lobby.buttons[3].size)
+	check(lobby.codex_mark.visible and lobby.codex_new.text == "1 件" and codex_room.encloses(Rect2(lobby.codex_mark.position, lobby.codex_mark.size)) and lobby.selected != 3, "A foe newly met marks the bestiary's entry, without its being chosen, and is counted")
+	hub.show_page("codex")
+	hub.codex_page.go_to(hub.codex_page.listed.find(newly))
+	hub.show_page("home")
+	check(not lobby.codex_mark.visible and lobby.codex_new.text == "0 件" and not main.meta.is_new(newly.id), "Its page opened, the mark is gone when the lobby comes back")
+	main.meta.met.erase(newly.id)
+	main.meta.noted.erase(newly.id)
+	hub.refresh(main.meta)
 	main.meta.echo = echo_held
 	hub.refresh(main.meta)
 	lobby.select(0)
