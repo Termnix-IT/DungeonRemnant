@@ -28,6 +28,8 @@ extends CanvasLayer
 # skips the result; the way on takes presses a moment after.
 
 signal again_requested
+# The same chapter is to be set out for again, straight from here.
+signal retry_requested
 
 const DESIGN := Vector2(1600.0, 900.0)
 const SCENE := preload("res://ui/route_map/result_scene.gdshader")
@@ -54,6 +56,8 @@ const PARTS: Array[StringName] = [&"title", &"place", &"foe", &"echo", &"figures
 const COLUMN_X := 104.0
 const COLUMN_WIDTH := 536.0
 const BUTTON_RECT := Rect2(1216.0, 808.0, 288.0, 56.0)
+# The other way on, beside it: the same chapter again (a run lost or left).
+const RETRY_RECT := Rect2(944.0, 814.0, 248.0, 44.0)
 const JOURNEY_AT := Vector2(96.0, 778.0)
 const JOURNEY_SCALE := 0.58
 # The build's emblems: one row of ten while they fit, smaller in more rows
@@ -148,6 +152,7 @@ var _spark_dirs: Array[Vector2] = []
 var _spark_phase := 0.0
 var _save_note: Label
 var _button: Button
+var retry_button: Button
 var _echo_amount := 0
 var _total_before := -1
 var _last_tick := -1
@@ -232,6 +237,13 @@ func _ready() -> void:
 	_button = HubUI.primary_action(_panel, tr("新しい探索を始める"), func(): again_requested.emit())
 	_button.position = BUTTON_RECT.position
 	_button.size = BUTTON_RECT.size
+	retry_button = HubUI.button(_panel, tr("もう一度挑む"), func(): retry_requested.emit())
+	retry_button.position = RETRY_RECT.position
+	retry_button.size = RETRY_RECT.size
+	retry_button.focus_neighbor_right = _button.get_path()
+	retry_button.focus_neighbor_left = retry_button.get_path()
+	retry_button.focus_neighbor_bottom = retry_button.get_path()
+	retry_button.hide()
 	seal = TextureRect.new()
 	seal.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	seal.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -277,8 +289,9 @@ func _face(name: StringName) -> Font:
 # {cleared, abandoned, record, first_clear, echo_before, layer, layers,
 # chapter, chapter_id, step, time, kills, level, build, echo, path,
 # fallen_to, moveset, discovered}; `home` names the way on (back to the
-# base, or a new run).
-func present(result: Dictionary, home: bool = false) -> void:
+# base, or a new run); `retry` offers the same chapter again beside it (the
+# base offers it for a run lost or left: it has recorded the run already).
+func present(result: Dictionary, home: bool = false, retry: bool = false) -> void:
 	var won: bool = result.cleared
 	var left: bool = result.get("abandoned", false)
 	outcome = &"clear" if won else (&"return" if left else &"defeat")
@@ -286,6 +299,9 @@ func present(result: Dictionary, home: bool = false) -> void:
 	var place: String = result.chapter if int(result.get("step", 0)) == 0 else tr("%s（段階%d）") % [result.chapter, int(result.step)]
 	_ending.text = "%s　%s" % [place, tr("ボスを撃破した") if won else (tr("第%d層で中断した") if left else tr("第%d層で倒れた")) % (int(result.layer) + 1)]
 	_button.text = tr("拠点へ戻る") if home else tr("新しい探索を始める")
+	retry_button.visible = retry
+	_button.focus_neighbor_left = retry_button.get_path() if retry else _button.get_path()
+	_button.focus_neighbor_right = _button.get_path()
 	var reached := tr("ボス") if won else tr("第%d層") % (int(result.layer) + 1)
 	figures = [[tr("到達"), reached], [tr("戦った時間"), "%d:%02d" % [floori(float(result.time) / 60.0), floori(float(result.time)) % 60]],
 		[tr("撃破"), tr("%d体") % result.kills], [tr("レベル"), "Lv %d" % result.level]]
@@ -523,6 +539,7 @@ func _set_part(value: float, part: StringName) -> void:
 				_foe.position.y = (_at.foe as Rect2).position.y + FOE_RISE * (1.0 - value)
 		&"button":
 			_button.modulate.a = value
+			retry_button.modulate.a = value
 		&"hero":
 			if hero != null:
 				hero.modulate.a = value

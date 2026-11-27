@@ -139,7 +139,7 @@ func _ready() -> void:
 # way in and that light's colour); without one the painting is taken whole.
 # `frame` is the screen's last picture, whose words fade off the painting as
 # it begins to move (none headless). `arrive` is called as the dark opens.
-func play_departure(chapter: ChapterData, outlook: Dictionary = {}, frame: Texture2D = null, arrive := Callable()) -> void:
+func play_departure(chapter: ChapterData, outlook: Dictionary = {}, frame: Texture2D = null, arrive := Callable(), from_dark: bool = false) -> void:
 	clear()
 	art.texture = null
 	art.visible = false
@@ -160,7 +160,9 @@ func play_departure(chapter: ChapterData, outlook: Dictionary = {}, frame: Textu
 	_worded = not outlook.is_empty()
 	_arrive = arrive
 	_arrived = false
-	_time = 0.0
+	# Out of a dark screen (the result of a run lost or left), there is no way
+	# in to walk: it begins at the chapter's name in the dark.
+	_time = PUSH_TIME - 0.001 if from_dark else 0.0
 	_speed = 1.0
 	departing = true
 	covering = true
@@ -176,7 +178,8 @@ func play_departure(chapter: ChapterData, outlook: Dictionary = {}, frame: Textu
 	heading.modulate.a = 0.0
 	show()
 	_depart(0.0)
-	GameAudio.play(self, &"set_out", -9.0)
+	if not from_dark:
+		GameAudio.play(self, &"set_out", -9.0)
 
 
 # Setting out, on its own clock so it can be hurried: going in, the name in

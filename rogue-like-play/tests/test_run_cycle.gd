@@ -92,6 +92,7 @@ func run_tests() -> void:
 	var way_on: Rect2 = summary._button.get_global_rect()
 	check(sheet.encloses(way_on) and way_on.get_center().x > sheet.get_center().x + sheet.size.x * 0.2 and way_on.get_center().y > sheet.get_center().y + sheet.size.y * 0.3, "The way on stands at the lower right of the scene")
 	check(summary.hero != null and summary.hero.is_visible_in_tree() and not summary._foe.visible, "She stands before the door of a run won")
+	check(not summary.retry_button.visible and summary._button.focus_neighbor_left == summary._button.get_path(), "A run won offers only the way home: its ending and what it opens are told there")
 	check(summary.found.size() == run.result.discovered.size() and summary.found.size() > 0 and summary.found.any(func(foe: FoeData) -> bool: return foe.id == &"ruin_king"), "The foes this run recorded for the first time are shown")
 	check(summary.figures.size() == 4 and summary._boons.visible and summary._boons.get_child_count() == run.result.build.size() and run.result.build.size() == run.run.build.owned().size() and run.result.build.size() > 0, "The run's figures and every boon taken are in view at once, without tabs")
 	var first_boon: BoonData = run.result.build[0][0]
@@ -150,6 +151,7 @@ func run_tests() -> void:
 	root.push_input(enter)
 	await process_frame
 	check(fallen.settled and fallen.counted and main.active_run == run and fallen.visible and fallen._button.has_focus(), "A press during the scene shows all of it at once and stays on the result")
+	check(fallen.retry_button.visible and is_equal_approx(fallen.retry_button.modulate.a, 1.0), "A run lost offers the same chapter again")
 	root.push_input(enter)
 	await process_frame
 	check(main.active_run == run, "A second press straight after does not leave either")
@@ -180,7 +182,35 @@ func run_tests() -> void:
 	check(run.area == null and run.end_view.visible and not paused, "Leaving ends the run on its result")
 	check(run.result.fallen_to == null and run.end_view.journey.figure is DirectionalRig and run.end_view.journey.caption.text.ends_with("で引き返した"), "A run left ends with her where she turned back")
 	check(run.end_view.outcome == &"return" and run.end_view._art.texture == RunEndView.PAINTINGS[&"return"] and run.end_view.hero == null and not run.end_view._foe.visible and run.end_view.felled_by == null, "Its scene is the corridor back, with no one in it")
-	run.end_view._button.pressed.emit()
+	# The same chapter again, straight from the result of a run lost or left.
+	var left_view := run.end_view
+	left_view.settle()
+	check(left_view.retry_button.visible and left_view._button.has_focus() and left_view._button.focus_neighbor_left == left_view.retry_button.get_path() and left_view.retry_button.focus_neighbor_right == left_view._button.get_path(), "A run left offers the same chapter again beside the way home, which keeps the focus")
+	var chapter_before: ChapterData = run.chapter
+	var step_before: int = run.step
+	var runs_before: int = main.meta.runs
+	var echo_before: int = main.meta.echo
+	left_view.retry_button.pressed.emit()
+	await process_frame
+	await process_frame
+	var again: RunDirector = main.active_run
+	check(again != null and again != run and not is_instance_valid(run) or run.is_queued_for_deletion(), "Taking it ends the old run")
+	check(again != null and again.chapter == chapter_before and again.step == step_before and again.result.is_empty() and again.returns_to_base and not hub.visible and not paused, "And sets out for the same chapter at the same step, without the base")
+	check(main.meta.runs == runs_before and main.meta.echo == echo_before, "The run that ended was recorded once, before; setting out again adds nothing")
+	if again.choice.visible:
+		again.choice._select(0)
+		await process_frame
+	again.map_view._choose(again.run.route.nodes(0)[0])
+	await process_frame
+	check(again.area != null, "The new run is played as any other")
+	again.area.hero.controlled = false
+	again.area.open_menu()
+	again.area.menu.abort_requested.emit()
+	again.area.prompt.confirmed.emit()
+	await process_frame
+	await process_frame
+	check(again.result.abandoned and main.meta.runs == runs_before + 1, "And is recorded when it ends")
+	again.end_view._button.pressed.emit()
 	await process_frame
 	check(main.active_run == null and hub.visible, "A run left comes home too")
 	main.free()

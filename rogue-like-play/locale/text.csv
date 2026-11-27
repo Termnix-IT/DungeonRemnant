@@ -888,6 +888,7 @@ X・RT長押し,,Hold X / RT,ui/action_hud/action_hud.gd
 ＋ 残響 %s,,+%s Echoes,ui/route_map/route_gates.gd
 この探索で取得した強化はない,,No boons were gained on this run,ui/route_map/run_end_view.gd
 新しい探索を始める,,Start a New Run,ui/route_map/run_end_view.gd
+もう一度挑む,,Try Again,ui/route_map/run_end_view.gd
 踏破,,Cleared,ui/route_map/run_end_view.gd
 中断,,Abandoned,ui/route_map/run_end_view.gd
 敗北,,Defeated,ui/route_map/run_end_view.gd

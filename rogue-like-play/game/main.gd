@@ -208,23 +208,47 @@ func start_run() -> void:
 	if not outlook.is_empty() and DisplayServer.get_name() != "headless":
 		frame = ImageTexture.create_from_image(get_viewport().get_texture().get_image())
 	$Hub.hide()
+	_set_out($Hub.chapter, clampi($Hub.step, 0, meta.steps_open()), outlook, frame)
+
+
+# A run of `chapter` at `step` begins, behind the cover of setting out.
+func _set_out(chapter: ChapterData, step: int, outlook: Dictionary, frame: Texture2D, from_dark: bool = false) -> void:
 	active_run = run_scene.instantiate()
 	active_run.name = "Run"
 	active_run.seed_value = run_seed
 	active_run.meta = meta
 	active_run.settings = $Hub.settings
 	active_run.returns_to_base = true
-	active_run.chapter = $Hub.chapter
-	active_run.step = clampi($Hub.step, 0, meta.steps_open())
+	active_run.chapter = chapter
+	active_run.step = step
 	active_run.settings_changed.connect(func():
 		if saving_enabled:
 			$Hub.settings.save_settings())
 	active_run.finished.connect(_on_run_finished)
 	active_run.base_requested.connect(return_to_hub)
+	active_run.retry_requested.connect(retry_run, CONNECT_DEFERRED)
 	add_child(active_run)
 	# The run is already live underneath; the cover is the way there, and
 	# the hall of gates opens as the cover does.
-	transition.play_departure(active_run.chapter, outlook, frame, active_run.arrive)
+	transition.play_departure(active_run.chapter, outlook, frame, active_run.arrive, from_dark)
+
+
+# From the result of a run lost or left, the same chapter at the same step
+# again, without going by the base. The run that ended is recorded and saved
+# already (_on_run_finished); she sets out as she was equipped for it. A run
+# won goes home instead: its ending and what it opens are told there.
+func retry_run() -> void:
+	if active_run == null or active_run.result.is_empty() or active_run.result.cleared:
+		return
+	var finished := active_run
+	var chapter: ChapterData = finished.chapter
+	var step: int = finished.step
+	active_run = null
+	remove_child(finished)
+	finished.queue_free()
+	get_tree().paused = false
+	$Hub.refresh(meta)
+	_set_out(chapter, clampi(step, 0, meta.steps_open()), {}, null, true)
 
 
 # The run's end, recorded and saved before its result offers the way home.

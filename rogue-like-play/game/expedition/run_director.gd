@@ -18,6 +18,9 @@ extends Node
 signal finished(result: Dictionary)
 # The result's way home was taken (only when returns_to_base).
 signal base_requested
+# The result's other way on was taken: the same chapter again, at once (only
+# when returns_to_base, after a run lost or left).
+signal retry_requested
 # A setting was changed from a fight's menu (the owner saves it).
 signal settings_changed
 
@@ -123,6 +126,10 @@ func _ready() -> void:
 	end_view = RunEndView.new()
 	add_child(end_view)
 	end_view.again_requested.connect(_again)
+	end_view.retry_requested.connect(func():
+		if returns_to_base and not result.is_empty() and not result.cleared:
+			get_tree().paused = false
+			retry_requested.emit())
 	event_view = EventView.new()
 	add_child(event_view)
 	event_view.chosen.connect(_on_event_choice)
@@ -596,7 +603,7 @@ func finish(cleared: bool, abandoned: bool = false) -> void:
 	map_view.hide()
 	GameMusic.cue(self, &"")
 	GameMusic.muffle(self, false)
-	end_view.present(result, returns_to_base)
+	end_view.present(result, returns_to_base, returns_to_base and not cleared)
 	finished.emit(result)
 
 
