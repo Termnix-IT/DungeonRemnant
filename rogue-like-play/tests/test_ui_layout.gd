@@ -1,11 +1,13 @@
 extends SceneTree
 
-# Where things stand on the 1600x900 screen: the base's content centred, its
-# pages and their actions on the screen; then in a run, the route map
-# filling the screen with its card beside the focused node, the result
-# centred, the fight's HUD in its corners without overlaps and
-# off the ground round the hero, and the level-up cards and the menu
-# centred over the fight.
+# What the layout must keep on the 1600x900 screen, whatever the look: the
+# base's content centred in its frame, its pages and their actions on the
+# screen and answering the pointer; then in a run, the route's gates and
+# keys on the screen, the fight's HUD on it without overlaps and off the
+# ground round the hero, the level-up cards, the menu and the result on the
+# screen, the build reachable from the menu by keys and pad. Which corner a
+# part keeps to is the genre's arrangement and is judged on the captures; a
+# look held on purpose says why where it is checked.
 
 var failures := 0
 var checks := 0
@@ -27,6 +29,21 @@ func centered(control: Control, label: String) -> void:
 	var rect := control.get_global_rect()
 	check(rect.get_center().distance_to(viewport.get_center()) < 2.0, "%s stays centred" % label)
 	check(viewport.grow(1).encloses(rect), "%s fits the screen" % label)
+
+
+func on_screen(control: Control, label: String) -> void:
+	check(root.get_visible_rect().grow(1).encloses(control.get_global_rect()), "%s fits the screen" % label)
+
+
+# Parts that share the fight's screen: each keeps off its edge and off the
+# ground round the hero, and no two overlap.
+func check_apart(all_parts: Array[Control], screen: Rect2, ring: Rect2, label: String) -> void:
+	var parts := all_parts.filter(func(part: Control) -> bool: return part.is_visible_in_tree())
+	for index in parts.size():
+		var rect: Rect2 = (parts[index] as Control).get_global_rect()
+		check(screen.grow(-4).encloses(rect) and not rect.intersects(ring), "%s, %s keeps on the screen and off the hero's ground" % [label, parts[index].name])
+		for other in range(index + 1, parts.size()):
+			check(not rect.intersects((parts[other] as Control).get_global_rect()), "%s, %s and %s do not overlap" % [label, parts[index].name, parts[other].name])
 
 
 func settle(seconds: float = 0.0) -> void:
@@ -139,29 +156,27 @@ func run_tests() -> void:
 	for panel in panels:
 		check(screen.grow(-4).encloses(panel.get_global_rect()), "%s keeps off the screen's edge" % panel.name)
 		check(not panel.get_global_rect().intersects(ring), "%s stays off the ground round the hero" % panel.name)
-	check(not hud.hp_gauge.get_global_rect().intersects(hud.guide.get_global_rect()) and not hud.info.get_global_rect().intersects(hud.exp_bar.get_global_rect()), "HUD parts do not overlap")
-	# The common arrangement: the goal at the top centre, the tally at the
-	# top right, health at the bottom left, the actions at the bottom right.
-	var middle := screen.get_center().x
-	check(absf(hud.goal.get_global_rect().get_center().x - middle) < 2.0 and hud.goal.get_global_rect().end.y < ring.position.y, "The goal stands at the top centre")
-	check(hud.kills_label.get_global_rect().position.x > middle and hud.kills_label.get_global_rect().end.y < ring.position.y, "The tally keeps to the top right")
+	# Every part of the HUD is on the screen, off the ground round the hero
+	# and clear of the others. Which corner each part keeps to follows the
+	# genre's arrangement (docs/画面とUI.md 2.3) and is judged on the
+	# captures, not here.
+	var parts: Array[Control] = [hud.hp_gauge, hud.goal, hud.kills_label, hud.guide, hud.exp_bar, hud.level_label]
+	for key: StringName in hud.slots:
+		if hud.slots[key].visible:
+			parts.append(hud.slots[key])
+	check_apart(parts, screen, ring, "With few action slots")
 	# One count is not shown twice: while the goal counts the foes, the tally
 	# leaves them out; the echo is always there.
 	check(hud.echo_row.visible and hud.kills_row.visible == not (hud.goal.visible and area.data.kill_target > 0), "The tally shows the echo, and the foes only when the goal does not count them")
 	# The controls are the key guide the other screens use.
 	check(hud.guide is KeyGuide and hud.guide.get_child_count() == ActionHud.CONTROLS.size(), "The controls under the fight are a key guide")
-	check(hud.hp_bar.get_global_rect().end.x < middle and hud.hp_bar.get_global_rect().position.y > ring.end.y, "Health keeps to the bottom left")
 	# The health runs inside its painted frame's channel, past the crest.
 	var frame_rect := hud.hp_gauge.frame.get_global_rect()
 	var fill_rect := hud.hp_bar.get_global_rect()
 	check(hud.hp_gauge.frame.texture == ActionHud.HP_FRAME and frame_rect.encloses(fill_rect) and is_equal_approx(fill_rect.position.x - frame_rect.position.x, ActionHud.HP_CAP_LEFT) and is_equal_approx(fill_rect.size.x, ActionHud.BAR_WIDTH), "Health fills the channel of its painted frame")
-	for key: StringName in hud.slots:
-		var slot_rect := hud.slots[key].get_global_rect()
-		check(screen.grow(-4).encloses(slot_rect) and slot_rect.position.x > middle and slot_rect.position.y > ring.end.y and not slot_rect.intersects(hud.guide.get_global_rect()), "The %s slot keeps to the bottom right" % key)
-	check(absf(hud.guide.get_global_rect().get_center().x - middle) < 2.0, "With few action slots the controls keep to the bottom centre")
 	# Two skills and the special make five slots, which reach under the
-	# centre: the controls give way to the left, whichever device's caps
-	# they show, and stay off the health.
+	# centre: the controls give way, whichever device's caps they show, and
+	# every part still keeps clear of the others.
 	var slam: SkillData = load("res://data/skills/slam.tres")
 	var flash: SkillData = load("res://data/skills/thunder_flash.tres")
 	var burst: SpecialData = load("res://data/specials/echo_burst.tres")
@@ -171,16 +186,15 @@ func run_tests() -> void:
 		hud.guide.pad = pad
 		hud.guide.refresh()
 		await settle()
-		var guide_rect := hud.guide.get_global_rect()
+		var all_parts: Array[Control] = [hud.hp_gauge, hud.goal, hud.kills_label, hud.guide, hud.exp_bar, hud.level_label]
 		var shown := 0
-		var clear := true
 		for key: StringName in hud.slots:
 			if hud.slots[key].visible:
 				shown += 1
-				clear = clear and not hud.slots[key].get_global_rect().intersects(guide_rect)
+				all_parts.append(hud.slots[key])
 		var device := "a gamepad" if pad else "the keyboard"
-		check(shown == ActionHud.SLOTS.size() and clear, "With all five action slots the controls keep clear of them on %s" % device)
-		check(screen.grow(-4).encloses(guide_rect) and not guide_rect.intersects(hud.hp_gauge.get_global_rect()) and guide_rect.get_center().x < middle, "They give way to the left, short of the health, on %s" % device)
+		check(shown == ActionHud.SLOTS.size(), "All five action slots show on %s" % device)
+		check_apart(all_parts, screen, ring, "With all five action slots on %s" % device)
 	hud.guide.pad = false
 	hud.guide.refresh()
 	# An elite out of view is pointed at from the frame kept clear of the
@@ -190,6 +204,7 @@ func run_tests() -> void:
 	var near_elite := area.spawn_foe(brute_data, area.hero.global_position + Vector2(200, 0))
 	await settle()
 	var arrow_at := hud.pointer_spot(far_elite.global_position)
+	var middle := screen.get_center().x
 	var clear_frame := Rect2(ActionHud.POINTER_INSET.x - 1.0, ActionHud.POINTER_TOP - 1.0, screen.size.x - ActionHud.POINTER_INSET.x * 2.0 + 2.0, screen.size.y - ActionHud.POINTER_TOP - ActionHud.POINTER_BOTTOM + 2.0)
 	check(hud.pointer_targets().has(far_elite) and arrow_at != Vector2.INF and clear_frame.has_point(arrow_at) and arrow_at.x > middle, "An elite out of view is pointed at from the edge of the ground kept clear")
 	check(hud.pointer_spot(near_elite.global_position) == Vector2.INF, "One in view needs no arrow")
@@ -199,24 +214,25 @@ func run_tests() -> void:
 	# The level-up cards and the menu over the fight.
 	area._on_gems(area.run.progression.required_exp())
 	await settle(0.4)
-	centered(area.choice.get_node("Panel"), "The level-up cards")
+	on_screen(area.choice.get_node("Panel"), "The level-up cards")
 	area.choice._select(0)
 	await settle()
 	var taken := area.run.build.owned()
-	check(hud.boons.get_child_count() == 1 and (hud.boons.get_child(0) as TextureRect).texture == EmblemIcons.texture(taken[0].emblem), "The boon taken shows as its emblem under the goal")
-	check(screen.grow(-4).encloses(hud.boons.get_global_rect()) and not hud.boons.get_global_rect().intersects(ring), "The boons keep to the corner")
+	check(hud.boons.get_child_count() == 1 and (hud.boons.get_child(0) as TextureRect).texture == EmblemIcons.texture(taken[0].emblem), "The boon taken shows as its emblem")
+	check(screen.grow(-4).encloses(hud.boons.get_global_rect()) and not hud.boons.get_global_rect().intersects(ring) and not hud.boons.get_global_rect().intersects(hud.goal.get_global_rect()), "The boons keep on the screen, off the hero's ground and clear of the goal")
 	area.open_menu()
 	await settle(0.3)
 	var menu_panel: Control = area.menu.menu.get_child(0)
-	centered(menu_panel, "The fight's menu")
+	on_screen(menu_panel, "The fight's menu")
 	check(area.menu.build_panel.visible and area.menu.build_grid.get_child_count() == area.run.build.owned().size(), "Beside the menu, every boon of the build is in the grid")
-	check(area.menu.build_panel.get_parent() == area.menu.resume_button.get_parent().get_parent(), "The build and the menu share one window")
 	var first_boon: BoonData = area.run.build.owned()[0]
 	var cells := area.menu.build_grid.get_children()
-	check(cells[0] is EquipSocket and (cells[0] as EquipSocket).emblem == EmblemIcons.texture(first_boon.emblem), "Each boon is its emblem in a socket")
 	check(area.menu.build_name.text == first_boon.display_name and area.menu.build_note.text == first_boon.effect_description(area.run.build.rank(first_boon.id)), "What a boon is and does is told once, under the grid")
 	check(area.menu.resume_button.get_node_or_null(area.menu.resume_button.focus_neighbor_left) == cells[0] and (cells[0] as Button).focus_mode == Control.FOCUS_ALL and (cells[0] as Button).get_node_or_null((cells[0] as Button).focus_neighbor_right) == area.menu.resume_button, "Left from the menu reaches the build and right comes back")
-	# The menu's column stands on one axis: the heading, the buttons and the
+	# Kept on purpose: on 2026-11-10 the user agreed that the things in one
+	# group align on one line, and that the menu's stacked buttons spread
+	# their letters to one width (no more than a letter between letters). So
+	# the menu's column stands on one axis: the heading, the buttons and the
 	# keys share its centre.
 	var menu_column := area.menu.resume_button.get_parent() as Control
 	var axis := area.menu.resume_button.get_global_rect().get_center().x
@@ -248,7 +264,7 @@ func run_tests() -> void:
 	area.menu.open()
 	await settle(0.3)
 	check(area.menu.build_grid.get_child_count() == RunState.BOONS.size(), "A full build is all in the grid")
-	centered(menu_panel, "The fight's menu with every boon")
+	on_screen(menu_panel, "The fight's menu with every boon")
 	area.run.build.ranks = ranks_before
 	area.run.build.changed.emit()
 	area.menu.resume()
@@ -265,6 +281,6 @@ func run_tests() -> void:
 	area.hero.health.hp = 1
 	area.hero.receive(DamageInfo.make(1000.0, Vector2.RIGHT))
 	await settle(RunDirector.FALL_PAUSE + 0.3)
-	centered(run.end_view._panel, "The result")
+	on_screen(run.end_view._panel, "The result")
 	print("UI layout: %d checks, %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)

@@ -5,10 +5,13 @@ extends SceneTree
 # screen styles itself, the upgrades page's actions fit and say when they
 # cannot be pressed, every state of an action is told apart (focus, chosen,
 # disabled), buttons keep their margins in every state, text is large enough
-# and reads against its page, and words over the fight stand on an opaque
-# plate. How things look beyond that (frames, plates, surfaces) is a choice
-# described in docs/画面とUI.md and judged on the captures
-# (tools/compare_captures.py), not checked here.
+# and reads against its page, a page that draws itself does so in colours
+# whose readability is measured, words over the fight stand on an opaque
+# plate, and every face ships with the game beside its licence. How things
+# look beyond that (frames, plates, surfaces, which face, which page shares
+# which type) is a choice described in docs/画面とUI.md and judged on the
+# captures (tools/compare_captures.py), not checked here. A look held on
+# purpose says why where it is checked.
 
 var failures := 0
 var checks := 0
@@ -89,10 +92,7 @@ func check_moods(theme: Theme) -> void:
 
 func run_tests() -> void:
 	var theme := preload("res://ui/theme/dungeon_theme.tres")
-	# The bundled gothic for the body, buttons and figures; titles keep the
-	# display face.
-	check(theme.default_font != null and theme.default_font.resource_path.ends_with("BIZUDPGothic-Regular.ttf"), "The body text uses the bundled BIZ UDPGothic")
-	check(FileAccess.file_exists("res://art/third_party/biz_udp_gothic/OFL.txt") and FileAccess.file_exists("res://art/third_party/biz_udp_gothic/SOURCE.txt"), "The font's licence and source are bundled beside it")
+	check_fonts(theme)
 	check_tokens(theme)
 	check_moods(theme)
 	var main: Node = load("res://game/main.tscn").instantiate()
@@ -114,10 +114,8 @@ func run_tests() -> void:
 		if mood_theme != null:
 			check(hub.get(page + "_page").theme == mood_theme, "The %s page wears its mood" % page)
 	check(hub.echo_label.get_theme_color(&"font_color") == theme.get_color(&"font_color", &"GoldLabel"), "The header keeps the one theme's colours")
-	# The status page draws itself in the Grimoire type's colours and faces.
-	check(hub.status_page.theme_type_variation == &"StarChart" and hub.status_page.get_theme_color(&"pale") == theme.get_color(&"pale", &"StarChart") and hub.status_page.get_theme_font(&"title_font") == theme.get_font(&"title_font", &"StarChart"), "The status page draws itself in the colours and faces it shares with the upgrades' chart")
-	# The help shares the upgrades' chart's colours and faces.
-	check(hub.settings_page.help_view.theme_type_variation == &"StarChart" and hub.settings_page.help_view.get_theme_color(&"pale") == theme.get_color(&"pale", &"StarChart"), "The help draws itself in the StarChart type's colours")
+	for drawn: Control in [hub.sortie_page, hub.upgrade_page, hub.status_page, hub.codex_page, hub.settings_page, hub.settings_page.help_view]:
+		check_drawn_page(drawn, theme)
 	hub.show_page("upgrade")
 	for frame in 3:
 		await process_frame
@@ -139,7 +137,6 @@ func run_tests() -> void:
 	main.meta.ranks.clear()
 	hub.refresh(main.meta)
 	upgrades.choose(MetaProgress.ROOT)
-	check(upgrades.theme_type_variation == &"StarChart" and upgrades.get_theme_color(&"pale") == theme.get_color(&"pale", &"StarChart") and upgrades.get_theme_font(&"title_font") == theme.get_font(&"title_font", &"StarChart"), "The upgrades page draws itself in the StarChart type's colours and faces")
 	check(upgrades.get_global_rect().grow(1).encloses(cheap.get_global_rect()), "%s fits the page" % cheap.text)
 	# The upgrade's buy button is a crest, drawing its own states; its styles
 	# only make room for the crest, the same in every state so it never moves.
@@ -150,7 +147,7 @@ func run_tests() -> void:
 	for state in ["hover", "pressed", "disabled", "focus"]:
 		check(theme_style(theme, state, &"PrimaryAction") != normal, "The primary action has a distinct " + state)
 	var focus := theme_style(theme, "focus", &"PrimaryAction") as StyleBoxFlat
-	check(focus != null and not focus.draw_center and focus.border_width_left >= 2, "Focus overlays a visible outline without hiding state")
+	check(focus != null and not focus.draw_center and widest_edge(focus) >= 2, "Focus overlays a visible outline without hiding state")
 	check(cheap.get_theme_color("font_disabled_color") != cheap.get_theme_color("font_color"), "Disabled text is distinct")
 	check(theme_style(theme, "focus", &"PrimaryAction") == hub.back_button.get_theme_stylebox("focus"), "Buttons share one focus resource")
 	var original := theme.get_color("font_color", "GoldLabel")
@@ -179,12 +176,17 @@ func run_tests() -> void:
 	# cannot be undone is drawn in red.
 	check(theme.get_color(&"lit_edge", &"BandButton") != theme.get_color(&"edge", &"BandButton"), "The chosen answer's edge turns gold")
 	check(theme.get_type_variation_base(&"BandDangerButton") == &"BandButton" and theme.get_color(&"lit_edge", &"BandDangerButton").r > theme.get_color(&"lit_edge", &"BandDangerButton").g + 0.2, "An answer that cannot be undone is drawn in red")
-	var primary := theme.get_stylebox(&"normal", &"PrimaryButton") as StyleBoxFlat
-	check((theme.get_stylebox(&"focus", &"PrimaryButton") as StyleBoxFlat).border_width_top > primary.border_width_top, "A focused primary action draws a stronger edge")
+	check(looks_apart(theme_style(theme, "focus", &"PrimaryButton"), theme_style(theme, "normal", &"PrimaryButton")), "A focused primary action is told apart from one at rest")
+	# Kept on purpose: the user chose the lobby's look on 2026-11-20 and asked
+	# to be asked before it changes (CLAUDE.md), so its painted plate is held.
 	check(theme.get_stylebox(&"normal", &"LobbyAction") is StyleBoxTexture, "The lobby keeps its painted plate")
-	# A chosen or focused item card is told apart by its frame.
-	var card_chosen := theme.get_stylebox(&"pressed", &"CardButton") as StyleBoxFlat
-	check(card_chosen.border_width_top > 0 and (theme.get_stylebox(&"focus", &"CardButton") as StyleBoxFlat).border_width_top > 0, "A chosen or focused card gets its frame")
+	# A chosen item card and a focused one are each told apart from one at
+	# rest and from each other, so a gamepad tells where it is from what it
+	# took. How each is drawn is a choice.
+	var card_rest := theme_style(theme, "normal", &"CardButton")
+	var card_chosen := theme_style(theme, "pressed", &"CardButton")
+	var card_focus := theme_style(theme, "focus", &"CardButton")
+	check(looks_apart(card_chosen, card_rest) and looks_apart(card_focus, card_rest) and looks_apart(card_focus, card_chosen), "A chosen card, a focused card and one at rest are told apart")
 	# A level-up card floats over the fight, so its words need a plate that
 	# hides the floor behind them.
 	var plate := theme.get_stylebox(&"plate", &"AbilityCard") as StyleBoxFlat
@@ -227,6 +229,107 @@ func check_steady_buttons(theme: Theme) -> void:
 			for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
 				same = same and is_equal_approx(style.get_margin(side), rest.get_margin(side))
 			check(same, "%s keeps its margins when %s" % [type, state])
+
+
+# Every face the theme sets ships with the game, so the words look the same
+# on any PC, and its licence lies beside it (the SIL Open Font License asks
+# for its whole text to travel with the font). Which faces are used is a
+# choice and not checked.
+const LICENCE_FILES := ["OFL.txt", "LICENSE.txt", "LICENSE"]
+
+
+func check_fonts(theme: Theme) -> void:
+	var fonts: Array[Font] = [theme.default_font]
+	for type in theme.get_font_type_list():
+		for item in theme.get_font_list(type):
+			fonts.append(theme.get_font(item, type))
+	var folders := {}
+	for font in fonts:
+		var file := bundled_file(font)
+		check(file != null and file.resource_path.begins_with("res://"), "Every face the theme sets is a font file bundled with the game (%s)" % font)
+		if file != null:
+			folders[file.resource_path.get_base_dir()] = true
+	for folder: String in folders:
+		var licensed := false
+		for licence: String in LICENCE_FILES:
+			licensed = licensed or FileAccess.file_exists(folder.path_join(licence))
+		check(licensed, "The fonts in %s have their licence beside them" % folder)
+
+
+# The font file a face is drawn from: itself, or the one a variation is cut
+# from. A system font has none, and would look different on another PC.
+func bundled_file(font: Font) -> FontFile:
+	if font is FontFile:
+		return font
+	if font is FontVariation:
+		return bundled_file((font as FontVariation).base_font) if (font as FontVariation).base_font != null else null
+	return null
+
+
+# The types whose words are measured against their grounds below
+# (check_book and the others). A page that draws itself must take its
+# colours from one of them, so a change of those colours is checked for
+# readability. Which page shares which type is a choice and not checked.
+const MEASURED_TYPES := [&"StarChart", &"Bestiary", &"Vista", &"SettingsStage", &"Gates"]
+
+
+func check_drawn_page(page: Control, theme: Theme) -> void:
+	var type := page.theme_type_variation
+	check(type in MEASURED_TYPES, "%s draws itself in a type whose words are measured (%s)" % [page.name, type])
+	var items := colour_items(theme, type)
+	var own: Theme = page.theme if page.theme != null else theme
+	check(not items.is_empty() and page.get_theme_color(items[0]) == theme_color(own, items[0], type), "%s reads its colours from the theme" % page.name)
+
+
+func colour_items(theme: Theme, type: StringName) -> Array[StringName]:
+	var items: Array[StringName] = []
+	while type != &"":
+		for item in theme.get_color_list(type):
+			if not items.has(StringName(item)):
+				items.append(StringName(item))
+		type = theme.get_type_variation_base(type)
+	return items
+
+
+func font_size_items(theme: Theme, type: StringName) -> Array[StringName]:
+	var items: Array[StringName] = []
+	while type != &"":
+		for item in theme.get_font_size_list(type):
+			if not items.has(StringName(item)):
+				items.append(StringName(item))
+		type = theme.get_type_variation_base(type)
+	return items
+
+
+func theme_size(theme: Theme, item: StringName, type: StringName) -> int:
+	while type != &"":
+		if theme.has_font_size(item, type):
+			return theme.get_font_size(item, type)
+		type = theme.get_type_variation_base(type)
+	return 0
+
+
+# Two states look apart when one draws something the other does not: a face,
+# another colour, another edge. A state that draws nothing looks like none.
+func looks_apart(a: StyleBox, b: StyleBox) -> bool:
+	if a == null or a is StyleBoxEmpty:
+		return false
+	if b == null or b is StyleBoxEmpty:
+		return true
+	if a is StyleBoxFlat and b is StyleBoxFlat:
+		var x := a as StyleBoxFlat
+		var y := b as StyleBoxFlat
+		if x.draw_center != y.draw_center or (x.draw_center and not x.bg_color.is_equal_approx(y.bg_color)):
+			return true
+		for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+			if x.get_border_width(side) != y.get_border_width(side):
+				return true
+		return widest_edge(x) > 0 and not x.border_color.is_equal_approx(y.border_color)
+	return a != b
+
+
+func widest_edge(style: StyleBoxFlat) -> int:
+	return maxi(maxi(style.border_width_left, style.border_width_right), maxi(style.border_width_top, style.border_width_bottom))
 
 
 func theme_reaches(theme: Theme, type: StringName, base: StringName) -> bool:
@@ -274,24 +377,24 @@ func check_contrast(theme: Theme, label := "The theme") -> void:
 		check(contrast(colour, page) >= 3.0, "%s: %s %s stays legible at 3:1 or more (%.1f)" % [label, role[1], role[0], contrast(colour, page)])
 
 
-# The status page's book is ink on parchment: its words keep 4.5:1 against
-# the darkest the paper gets, its faded words (things not learned) 3:1, and
-# no text is smaller than the base's floor.
+# The bestiary's folio is ink on parchment: its words keep 4.5:1 against
+# the darkest the paper gets, its faded words (things not learned) 3:1, the
+# words on its ribbons and its tray read on them, and no text is smaller
+# than 14px. The colours are read as the folio resolves them, through
+# whatever type it is built on.
 func check_book(theme: Theme) -> void:
-	var paper := theme.get_color(&"page_dark", &"Grimoire")
+	var folio := &"Bestiary"
+	var paper := theme_color(theme, &"page_dark", folio)
 	for item: StringName in [&"ink", &"sepia", &"seal", &"note"]:
-		var colour := theme.get_color(item, &"Grimoire")
-		check(contrast(colour, paper) >= 4.5, "The book's %s reads on its paper at 4.5:1 or more (%.1f)" % [item, contrast(colour, paper)])
-	check(contrast(theme.get_color(&"faint", &"Grimoire"), paper) >= 3.0, "The book's faded words stay legible at 3:1 or more (%.1f)" % contrast(theme.get_color(&"faint", &"Grimoire"), paper))
-	check(contrast(theme.get_color(&"seal_light", &"Grimoire"), theme.get_color(&"seal", &"Grimoire")) >= 4.5, "The letter pressed in the wax reads on it")
-	for item in theme.get_font_size_list(&"Grimoire"):
-		check(theme.get_font_size(item, &"Grimoire") >= 14, "The book's %s stays at 14px or more" % item)
-	# The bestiary's folio is the same paper and ink; the words on its ribbons
-	# and its tray read on them.
-	check(theme.get_type_variation_base(&"Bestiary") == &"Grimoire", "The bestiary's folio is a Grimoire")
-	var pale := theme.get_color(&"seal_light", &"Grimoire")
+		var colour := theme_color(theme, item, folio)
+		check(contrast(colour, paper) >= 4.5, "The folio's %s reads on its paper at 4.5:1 or more (%.1f)" % [item, contrast(colour, paper)])
+	check(contrast(theme_color(theme, &"faint", folio), paper) >= 3.0, "The folio's faded words stay legible at 3:1 or more (%.1f)" % contrast(theme_color(theme, &"faint", folio), paper))
+	check(contrast(theme_color(theme, &"seal_light", folio), theme_color(theme, &"seal", folio)) >= 4.5, "The letter pressed in the wax reads on it")
+	for item in font_size_items(theme, folio):
+		check(theme_size(theme, item, folio) >= 14, "The folio's %s stays at 14px or more" % item)
+	var pale := theme_color(theme, &"seal_light", folio)
 	for item: StringName in [&"ribbon_0", &"ribbon_1", &"ribbon_2", &"ribbon_3", &"tray"]:
-		check(contrast(pale, theme.get_color(item, &"Bestiary")) >= 4.5, "The folio's words read on its %s (%.1f)" % [item, contrast(pale, theme.get_color(item, &"Bestiary"))])
+		check(contrast(pale, theme_color(theme, item, folio)) >= 4.5, "The folio's words read on its %s (%.1f)" % [item, contrast(pale, theme_color(theme, item, folio))])
 
 
 # The upgrades page's star chart: its words read on the night they are
